@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea, Table, Empty, StatCard, TagInput, useConfirm } from "@/components/members/ui";
@@ -22,9 +20,9 @@ const BLANK: Omit<Grant, "id" | "createdAt"> = {
 const NEIGHBORHOODS = ["Park Slope", "Sunnyside", "Chinatown", "LIC", "Cypress Hills", "Flatbush", "Mott Haven", "Flushing", "Bayside"];
 
 export default function GrantsPage() {
-  const session = getSession()!;
-  const editable = canEdit(session.role);
-  const deletable = canDelete(session.role);
+  const session = getSession();
+  const editable = session ? canEdit(session.role) : false;
+  const deletable = session ? canDelete(session.role) : false;
 
   const [grants, setGrants] = useState<Grant[]>([]);
   const [search, setSearch] = useState("");

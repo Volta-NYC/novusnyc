@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -16,12 +14,13 @@ function daysTil(iso: string): number {
 }
 
 export default function AdminPage() {
-  const session = getSession()!;
+  const session = getSession();
   const router = useRouter();
 
   useEffect(() => {
+    if (!session) { router.replace("/members/login"); return; }
     if (!canManageKeys(session.role)) router.replace("/members/dashboard");
-  }, [session.role, router]);
+  }, [session, router]);
 
   const [keys, setKeys] = useState<AccessKey[]>([]);
   const [users, setUsers] = useState<ReturnType<typeof getUsers>>([]);
@@ -116,12 +115,12 @@ export default function AdminPage() {
               <div className="w-7 h-7 rounded-full bg-[#85CC17]/15 flex items-center justify-center flex-shrink-0">
                 <span className="text-[#85CC17] text-xs font-bold">{u.name[0]?.toUpperCase()}</span>
               </div>
-              <span className="text-white font-medium">{u.name}{u.id === session.userId && <span className="text-white/30 text-xs ml-1">(you)</span>}</span>
+              <span className="text-white font-medium">{u.name}{u.id === session?.userId && <span className="text-white/30 text-xs ml-1">(you)</span>}</span>
             </div>,
             <span key="e" className="text-white/50">{u.email}</span>,
             <div key="r" className="flex items-center gap-2">
               <Badge label={u.role} />
-              {u.id !== session.userId && (
+              {u.id !== session?.userId && (
                 <select defaultValue={u.role} onChange={e => { updateUser(u.id, { role: e.target.value as Role }); setUsers(getUsers()); }}
                   className="text-xs bg-[#0F1014] border border-white/10 rounded px-2 py-1 text-white/50 focus:outline-none">
                   {ROLES.map(r => <option key={r} value={r}>{r.replace("_"," ")}</option>)}
@@ -129,7 +128,7 @@ export default function AdminPage() {
               )}
             </div>,
             <span key="j" className="text-white/30">{new Date(u.createdAt).toLocaleDateString()}</span>,
-            u.id !== session.userId ? (
+            u.id !== session?.userId ? (
               <Btn key="a" size="sm" variant="danger" onClick={() => handleDeleteUser(u.id)}>Remove</Btn>
             ) : <span key="a" className="text-white/20 text-xs">—</span>,
           ])}

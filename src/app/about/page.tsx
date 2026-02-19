@@ -113,22 +113,13 @@ export default function About() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
           </AnimatedSection>
           <div className="relative">
+            {/* Single continuous line from first circle center to last circle center */}
+            <div className="absolute left-[31px] top-8 w-0.5 bg-v-border" style={{ height: "calc(100% - 4rem)" }} />
             {timeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.1}>
-                <div className="flex gap-8 pb-14 last:pb-0 relative">
-                  {/*
-                    Line connects bottom of THIS circle to top of NEXT circle.
-                    Circle = h-16 = 64px tall. Padding below row = pb-14 = 56px.
-                    Line starts at bottom of circle (top-16 = 64px),
-                    height = pb amount (h-14 = 56px), so it ends exactly at y=120px,
-                    which is where the next row starts (64+56=120, and next circle starts at 0).
-                    Horizontal center: circle is w-16=64px, so center = 32px = left-8, minus half of w-0.5 = 1px → left-[31px].
-                  */}
-                  {i < timeline.length - 1 && (
-                    <div className="absolute left-[31px] top-16 h-14 w-0.5 bg-v-border z-0" />
-                  )}
+                <div className="flex gap-8 pb-14 last:pb-0">
                   {/* Circle */}
-                  <div className="flex-shrink-0 w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center z-10 shadow-sm">
+                  <div className="flex-shrink-0 w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center z-10 shadow-sm relative">
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
                   </div>

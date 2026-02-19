@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea, Table, Empty, StatCard, TagInput, useConfirm } from "@/components/members/ui";
@@ -19,9 +17,9 @@ const BLANK: Omit<TeamMember, "id" | "createdAt"> = {
 };
 
 export default function TeamPage() {
-  const session = getSession()!;
-  const editable = canEdit(session.role);
-  const deletable = canDelete(session.role);
+  const session = getSession();
+  const editable = session ? canEdit(session.role) : false;
+  const deletable = session ? canDelete(session.role) : false;
 
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [search, setSearch] = useState("");

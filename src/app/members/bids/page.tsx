@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea, Table, Empty, StatCard, useConfirm } from "@/components/members/ui";
@@ -18,9 +16,9 @@ const BLANK: Omit<BID, "id" | "createdAt" | "updatedAt"> = {
 };
 
 export default function BIDTrackerPage() {
-  const session = getSession()!;
-  const editable = canEdit(session.role);
-  const deletable = canDelete(session.role);
+  const session = getSession();
+  const editable = session ? canEdit(session.role) : false;
+  const deletable = session ? canDelete(session.role) : false;
 
   const [bids, setBids] = useState<BID[]>([]);
   const [search, setSearch] = useState("");

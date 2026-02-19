@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea, Table, Empty, useConfirm } from "@/components/members/ui";
@@ -27,9 +25,9 @@ const COL_COLORS: Record<string, string> = {
 };
 
 export default function TasksPage() {
-  const session = getSession()!;
-  const editable = canEdit(session.role);
-  const deletable = canDelete(session.role);
+  const session = getSession();
+  const editable = session ? canEdit(session.role) : false;
+  const deletable = session ? canDelete(session.role) : false;
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [search, setSearch] = useState("");
