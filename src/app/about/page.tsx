@@ -12,7 +12,7 @@ const values = [
 const timeline = [
   { month: "Apr", year: "2025", label: "Florida branch founded", desc: "Volta begins working with local businesses, food trucks, and nonprofits in the Jacksonville area." },
   { month: "Nov", year: "2025", label: "NYC branch launched", desc: "Volta NYC is established, beginning outreach to Business Improvement Districts across Brooklyn and Queens." },
-  { month: "Dec", year: "2025", label: "First NYC projects", desc: "First website and social media projects kick off — Souk Al Shater, Higher Learning, and Anatolico." },
+  { month: "Jan", year: "2026", label: "First NYC projects", desc: "First website and social media projects kick off — Souk Al Shater, Higher Learning, and Anatolico." },
   { month: "Spring", year: "2026", label: "Spring Cohort — NYC", desc: "Cohort expands to 80+ students across 9 NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City." },
 ];
 
@@ -113,19 +113,19 @@ export default function About() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
           </AnimatedSection>
           <div className="relative">
-            {/* Single continuous line from first circle center to last circle center */}
-            <div className="absolute left-[31px] top-8 w-0.5 bg-v-border" style={{ height: "calc(100% - 4rem)" }} />
+            {/* Single continuous vertical line */}
+            <div className="absolute left-8 top-8 w-0.5 bg-v-border" style={{ height: "calc(100% - 4rem)" }} />
             {timeline.map((t, i) => (
-              <AnimatedSection key={t.label} delay={i * 0.1}>
-                <div className="flex gap-8 pb-14 last:pb-0">
-                  {/* Circle */}
+              <AnimatedSection key={t.label} delay={i * 0.12}>
+                <div className="flex gap-10 pb-20 last:pb-0">
+                  {/* Circle — fixed width so line always aligns */}
                   <div className="flex-shrink-0 w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center z-10 shadow-sm relative">
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
                   </div>
-                  <div className="pt-3">
-                    <h3 className="font-display font-bold text-v-ink text-lg mb-1">{t.label}</h3>
-                    <p className="font-body text-v-muted text-sm leading-relaxed">{t.desc}</p>
+                  <div className="flex-1 pt-3">
+                    <h3 className="font-display font-bold text-v-ink text-xl mb-2">{t.label}</h3>
+                    <p className="font-body text-v-muted text-base leading-relaxed">{t.desc}</p>
                   </div>
                 </div>
               </AnimatedSection>

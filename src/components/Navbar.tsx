@@ -27,10 +27,6 @@ export default function Navbar() {
 
   useEffect(() => setOpen(false), [pathname]);
 
-  // Pages with dark/coloured hero backgrounds need white nav text when unscrolled
-  const isDarkHero = pathname === "/partners";
-  const useWhiteText = isDarkHero && !scrolled && !open;
-
   return (
     <>
       <header
@@ -47,10 +43,9 @@ export default function Navbar() {
               alt="Volta"
               width={32}
               height={32}
-              className={`object-contain transition-all`}
-              style={{ filter: useWhiteText ? "brightness(0) invert(1)" : "none" }}
+              className="object-contain"
             />
-            <span className={`font-display font-bold text-xl tracking-tight transition-colors ${useWhiteText ? "text-white" : "text-v-ink"}`}>
+            <span className="font-display font-bold text-xl tracking-tight text-v-ink">
               VOLTA NYC
             </span>
           </Link>
@@ -63,8 +58,6 @@ export default function Navbar() {
                 className={`font-body text-sm font-semibold transition-colors ${
                   pathname === l.href
                     ? "text-v-green"
-                    : useWhiteText
-                    ? "text-white/80 hover:text-white"
                     : "text-v-muted hover:text-v-ink"
                 }`}
               >
@@ -81,12 +74,12 @@ export default function Navbar() {
 
           <button
             onClick={() => setOpen(!open)}
-            className={`md:hidden flex flex-col gap-1.5 p-2 ${useWhiteText ? "text-white" : ""}`}
+            className="md:hidden flex flex-col gap-1.5 p-2"
             aria-label="Menu"
           >
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${useWhiteText && !open ? "bg-white" : "bg-v-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${useWhiteText && !open ? "bg-white" : "bg-v-ink"} ${open ? "opacity-0" : ""}`} />
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${useWhiteText && !open ? "bg-white" : "bg-v-ink"} ${open ? "-rotate-45 -translate-y-2" : ""}`} />
+            <span className={`block h-0.5 w-5 bg-v-ink transition-all duration-300 ${open ? "rotate-45 translate-y-2" : ""}`} />
+            <span className={`block h-0.5 w-5 bg-v-ink transition-all duration-300 ${open ? "opacity-0" : ""}`} />
+            <span className={`block h-0.5 w-5 bg-v-ink transition-all duration-300 ${open ? "-rotate-45 -translate-y-2" : ""}`} />
           </button>
         </div>
       </header>

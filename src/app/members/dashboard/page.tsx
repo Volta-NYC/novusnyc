@@ -1,128 +1,71 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import { StatCard, Badge } from "@/components/members/ui";
-import { getSession } from "@/lib/members/auth";
-import { getBusinesses, getTasks, getProjects, getGrants, getBIDs, getTeam } from "@/lib/members/storage";
+import Link from "next/link";
+import { subscribeBIDs, subscribeBusinesses, subscribeTasks, subscribeProjects, subscribeTeam, subscribeGrants } from "@/lib/members/storage";
 
-const MODULES = [
-  { href: "/members/projects", label: "Projects", desc: "Active and past client projects", color: "border-blue-500/30 hover:border-blue-500/60" },
-  { href: "/members/businesses", label: "Businesses", desc: "Client business directory", color: "border-[#85CC17]/30 hover:border-[#85CC17]/60" },
-  { href: "/members/tasks", label: "Tasks", desc: "Team task board", color: "border-purple-500/30 hover:border-purple-500/60" },
-  { href: "/members/bids", label: "BID Tracker", desc: "Outreach to BIDs & partners", color: "border-orange-500/30 hover:border-orange-500/60" },
-  { href: "/members/grants", label: "Grant Library", desc: "Grants researched & applied", color: "border-yellow-500/30 hover:border-yellow-500/60" },
-  { href: "/members/team", label: "Team Directory", desc: "Members, pods, and leads", color: "border-cyan-500/30 hover:border-cyan-500/60" },
-];
-
-export default function Dashboard() {
-  const [session] = useState(getSession());
-  const [data, setData] = useState({ biz: 0, tasks: 0, projects: 0, grants: 0, bids: 0, team: 0 });
-  const [recentTasks, setRecentTasks] = useState<ReturnType<typeof getTasks>>([]);
-  const [activeProjects, setActiveProjects] = useState<ReturnType<typeof getProjects>>([]);
+export default function DashboardPage() {
+  const [counts, setCounts] = useState({ bids: 0, businesses: 0, tasks: 0, projects: 0, team: 0, grants: 0, blocked: 0, active: 0 });
 
   useEffect(() => {
-    const biz = getBusinesses();
-    const tasks = getTasks();
-    const projects = getProjects();
-    const grants = getGrants();
-    const bids = getBIDs();
-    const team = getTeam();
-    setData({ biz: biz.length, tasks: tasks.length, projects: projects.length, grants: grants.length, bids: bids.length, team: team.length });
-    setRecentTasks(tasks.filter(t => t.status !== "Done").slice(0, 5));
-    setActiveProjects(projects.filter(p => p.status === "Active").slice(0, 4));
+    const unsubs = [
+      subscribeBIDs((bids) => setCounts(c => ({ ...c, bids: bids.length }))),
+      subscribeBusinesses((b) => setCounts(c => ({ ...c, businesses: b.length, active: b.filter(x => x.projectStatus === "Active").length }))),
+      subscribeTasks((t) => setCounts(c => ({ ...c, tasks: t.filter(x => x.status !== "Done").length, blocked: t.filter(x => x.status === "Blocked").length }))),
+      subscribeProjects((p) => setCounts(c => ({ ...c, projects: p.filter(x => x.status === "Active").length }))),
+      subscribeTeam((t) => setCounts(c => ({ ...c, team: t.filter(x => x.status === "Active").length }))),
+      subscribeGrants((g) => setCounts(c => ({ ...c, grants: g.filter(x => x.status === "Awarded").length }))),
+    ];
+    return () => unsubs.forEach(u => u());
   }, []);
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const cards = [
+    { href: "/members/projects", label: "Active Projects", value: counts.projects, color: "text-green-400", bg: "bg-green-500/8" },
+    { href: "/members/businesses", label: "Businesses", value: counts.businesses, color: "text-blue-400", bg: "bg-blue-500/8" },
+    { href: "/members/tasks", label: "Open Tasks", value: counts.tasks, color: "text-yellow-400", bg: "bg-yellow-500/8" },
+    { href: "/members/tasks", label: "Blocked", value: counts.blocked, color: "text-red-400", bg: "bg-red-500/8" },
+    { href: "/members/bids", label: "BIDs Tracked", value: counts.bids, color: "text-purple-400", bg: "bg-purple-500/8" },
+    { href: "/members/grants", label: "Grants Awarded", value: counts.grants, color: "text-[#85CC17]", bg: "bg-[#85CC17]/8" },
+    { href: "/members/team", label: "Active Members", value: counts.team, color: "text-cyan-400", bg: "bg-cyan-500/8" },
+  ];
+
+  const quickLinks = [
+    { href: "/members/projects", label: "Projects" },
+    { href: "/members/businesses", label: "Businesses" },
+    { href: "/members/tasks", label: "Tasks" },
+    { href: "/members/bids", label: "BID Tracker" },
+    { href: "/members/grants", label: "Grant Library" },
+    { href: "/members/team", label: "Team Directory" },
+    { href: "/members/admin", label: "Export/Import Data" },
+  ];
 
   return (
     <MembersLayout>
-      <div className="space-y-6">
-        {/* Welcome */}
-        <div>
-          <h1 className="font-display font-bold text-white text-2xl">{greeting}, {session?.name?.split(" ")[0] ?? "there"}</h1>
-          <p className="text-white/40 text-sm mt-1">Volta NYC Members Portal · Spring 2026 Cohort</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="font-display font-bold text-white text-2xl">Dashboard</h1>
+        <p className="text-white/40 text-sm mt-1">Live view — updates in real-time for everyone</p>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard label="Businesses" value={data.biz} />
-          <StatCard label="Projects" value={data.projects} color="text-blue-400" />
-          <StatCard label="Open Tasks" value={recentTasks.length} color="text-purple-400" />
-          <StatCard label="Grants" value={data.grants} color="text-yellow-400" />
-          <StatCard label="BIDs" value={data.bids} color="text-orange-400" />
-          <StatCard label="Team" value={data.team} color="text-cyan-400" />
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+        {cards.map((c) => (
+          <Link key={c.label} href={c.href}
+            className={`${c.bg} border border-white/6 rounded-xl p-4 hover:border-white/15 transition-all`}>
+            <p className={`font-display font-bold text-3xl ${c.color}`}>{c.value}</p>
+            <p className="text-white/50 text-sm mt-1 font-body">{c.label}</p>
+          </Link>
+        ))}
+      </div>
 
-        <div className="grid lg:grid-cols-2 gap-5">
-          {/* Active Projects */}
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-bold text-white">Active Projects</h2>
-              <Link href="/members/projects" className="text-[#85CC17] text-xs hover:underline">View all →</Link>
-            </div>
-            {activeProjects.length === 0 ? (
-              <p className="text-white/25 text-sm text-center py-6">No active projects yet. <Link href="/members/projects" className="text-[#85CC17] hover:underline">Add one</Link></p>
-            ) : (
-              <div className="space-y-3">
-                {activeProjects.map((p) => (
-                  <Link key={p.id} href={`/members/projects`}
-                    className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 hover:opacity-80 transition-opacity">
-                    <div>
-                      <p className="text-white text-sm font-medium">{p.name}</p>
-                      <p className="text-white/30 text-xs mt-0.5">{p.division} · Lead: {p.teamLead || "—"}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white/30 text-xs">{p.progress}</span>
-                      <Badge label={p.status} />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Open Tasks */}
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-bold text-white">Open Tasks</h2>
-              <Link href="/members/tasks" className="text-[#85CC17] text-xs hover:underline">View all →</Link>
-            </div>
-            {recentTasks.length === 0 ? (
-              <p className="text-white/25 text-sm text-center py-6">No open tasks. <Link href="/members/tasks" className="text-[#85CC17] hover:underline">Add one</Link></p>
-            ) : (
-              <div className="space-y-3">
-                {recentTasks.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                    <div>
-                      <p className="text-white text-sm font-medium">{t.name}</p>
-                      <p className="text-white/30 text-xs mt-0.5">{t.assignedTo || "Unassigned"} · {t.division}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge label={t.status} />
-                      <Badge label={t.priority} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* All modules */}
-        <div>
-          <h2 className="font-display font-bold text-white mb-3">All Databases</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {MODULES.map((m) => (
-              <Link key={m.href} href={m.href}
-                className={`bg-[#1C1F26] border rounded-xl p-5 transition-all hover:-translate-y-0.5 ${m.color}`}>
-                <p className="font-display font-bold text-white text-base">{m.label}</p>
-                <p className="text-white/40 text-sm mt-1">{m.desc}</p>
-              </Link>
-            ))}
-          </div>
+      <div className="bg-[#1C1F26] border border-white/6 rounded-xl p-5">
+        <h2 className="font-display font-bold text-white text-sm mb-4 uppercase tracking-wider">Quick Access</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {quickLinks.map((l) => (
+            <Link key={l.href} href={l.href}
+              className="text-white/50 hover:text-white text-sm font-body py-2 px-3 rounded-lg hover:bg-white/5 transition-colors">
+              → {l.label}
+            </Link>
+          ))}
         </div>
       </div>
     </MembersLayout>

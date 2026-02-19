@@ -3,32 +3,22 @@
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea, Table, Empty, useConfirm } from "@/components/members/ui";
-import { getTasks, createTask, updateTask, deleteTask, type Task } from "@/lib/members/storage";
-import { getSession, canEdit, canDelete } from "@/lib/members/auth";
+import { subscribeTasks, createTask, updateTask, deleteTask, type Task } from "@/lib/members/storage";
 
 const STATUSES = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"];
 const DIVISIONS = ["Tech", "Marketing", "Finance", "Outreach", "Operations"];
-
 const BLANK: Omit<Task, "id" | "createdAt"> = {
   name: "", status: "To Do", priority: "Medium", assignedTo: "", businessId: "",
   division: "Tech", dueDate: "", week: "", notes: "", blocker: "", completedAt: "",
 };
-
 const STATUS_COLS: Task["status"][] = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
 const COL_COLORS: Record<string, string> = {
-  "To Do": "border-gray-500/30",
-  "In Progress": "border-blue-500/30",
-  "Blocked": "border-red-500/30",
-  "In Review": "border-yellow-500/30",
-  "Done": "border-green-500/30",
+  "To Do": "border-gray-500/30", "In Progress": "border-blue-500/30",
+  "Blocked": "border-red-500/30", "In Review": "border-yellow-500/30", "Done": "border-green-500/30",
 };
 
 export default function TasksPage() {
-  const session = getSession();
-  const editable = session ? canEdit(session.role) : false;
-  const deletable = session ? canDelete(session.role) : false;
-
   const [tasks, setTasks] = useState<Task[]>([]);
   const [search, setSearch] = useState("");
   const [filterDiv, setFilterDiv] = useState("");
@@ -38,24 +28,20 @@ export default function TasksPage() {
   const [form, setForm] = useState(BLANK);
   const { ask, Dialog } = useConfirm();
 
-  useEffect(() => { setTasks(getTasks()); }, []);
-  const refresh = () => setTasks(getTasks());
-  const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
+  useEffect(() => subscribeTasks(setTasks), []);
 
-  const openCreate = () => { setForm(BLANK); setEditing(null); setModal("create"); };
+  const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
+  const openCreate = (status?: Task["status"]) => { setForm({ ...BLANK, status: status ?? "To Do" }); setEditing(null); setModal("create"); };
   const openEdit = (t: Task) => {
     setForm({ name: t.name, status: t.status, priority: t.priority, assignedTo: t.assignedTo,
       businessId: t.businessId, division: t.division, dueDate: t.dueDate, week: t.week,
       notes: t.notes, blocker: t.blocker, completedAt: t.completedAt });
-    setEditing(t);
-    setModal("edit");
+    setEditing(t); setModal("edit");
   };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (editing) updateTask(editing.id, form as Partial<Task>);
-    else createTask(form as Omit<Task, "id" | "createdAt">);
-    refresh();
+    if (editing) await updateTask(editing.id, form as Partial<Task>);
+    else await createTask(form as Omit<Task, "id" | "createdAt">);
     setModal(null);
   };
 
@@ -67,8 +53,7 @@ export default function TasksPage() {
   return (
     <MembersLayout>
       <Dialog />
-      <PageHeader
-        title="Tasks"
+      <PageHeader title="Tasks"
         subtitle={`${tasks.filter(t => t.status !== "Done").length} open · ${tasks.filter(t => t.status === "Blocked").length} blocked`}
         action={
           <div className="flex gap-2">
@@ -80,11 +65,9 @@ export default function TasksPage() {
                 </button>
               ))}
             </div>
-            {editable && <Btn variant="primary" onClick={openCreate}>+ Task</Btn>}
+            <Btn variant="primary" onClick={() => openCreate()}>+ Task</Btn>
           </div>
-        }
-      />
-
+        } />
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search tasks, assignees…" />
         <select value={filterDiv} onChange={e => setFilterDiv(e.target.value)}
@@ -95,7 +78,7 @@ export default function TasksPage() {
       </div>
 
       {view === "board" ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 overflow-x-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {STATUS_COLS.map(col => {
             const colTasks = filtered.filter(t => t.status === col);
             return (
@@ -107,7 +90,7 @@ export default function TasksPage() {
                 <div className="space-y-2">
                   {colTasks.map(t => (
                     <div key={t.id} className="bg-[#0F1014] border border-white/5 rounded-lg p-3 cursor-pointer hover:border-white/15 transition-colors"
-                      onClick={() => editable && openEdit(t)}>
+                      onClick={() => openEdit(t)}>
                       <p className="text-white text-sm font-medium leading-snug mb-1.5">{t.name}</p>
                       <div className="flex flex-wrap gap-1">
                         <Badge label={t.priority} />
@@ -117,12 +100,10 @@ export default function TasksPage() {
                       {t.dueDate && <p className="text-white/20 text-xs mt-0.5">Due {t.dueDate}</p>}
                     </div>
                   ))}
-                  {editable && (
-                    <button onClick={() => { setForm({ ...BLANK, status: col }); setEditing(null); setModal("create"); }}
-                      className="w-full text-white/20 hover:text-white/50 text-xs py-2 border border-dashed border-white/8 rounded-lg transition-colors">
-                      + Add task
-                    </button>
-                  )}
+                  <button onClick={() => openCreate(col)}
+                    className="w-full text-white/20 hover:text-white/50 text-xs py-2 border border-dashed border-white/8 rounded-lg transition-colors">
+                    + Add task
+                  </button>
                 </div>
               </div>
             );
@@ -130,8 +111,7 @@ export default function TasksPage() {
         </div>
       ) : (
         <>
-          <Table
-            cols={["Task", "Status", "Priority", "Division", "Assigned To", "Due Date", "Actions"]}
+          <Table cols={["Task", "Status", "Priority", "Division", "Assigned To", "Due Date", "Actions"]}
             rows={filtered.map(t => [
               <span key="n" className="text-white font-medium">{t.name}</span>,
               <Badge key="s" label={t.status} />,
@@ -140,12 +120,11 @@ export default function TasksPage() {
               <span key="a" className="text-white/50">{t.assignedTo || "—"}</span>,
               <span key="dd" className="text-white/40">{t.dueDate || "—"}</span>,
               <div key="ac" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                {editable && <Btn size="sm" variant="ghost" onClick={() => openEdit(t)}>Edit</Btn>}
-                {deletable && <Btn size="sm" variant="danger" onClick={() => ask(() => { deleteTask(t.id); refresh(); })}>Del</Btn>}
+                <Btn size="sm" variant="ghost" onClick={() => openEdit(t)}>Edit</Btn>
+                <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTask(t.id))}>Del</Btn>
               </div>,
-            ])}
-          />
-          {filtered.length === 0 && <Empty message="No tasks yet." action={editable ? <Btn variant="primary" onClick={openCreate}>Add first task</Btn> : undefined} />}
+            ])} />
+          {filtered.length === 0 && <Empty message="No tasks yet." action={<Btn variant="primary" onClick={() => openCreate()}>Add first task</Btn>} />}
         </>
       )}
 
@@ -158,7 +137,7 @@ export default function TasksPage() {
           <Field label="Assigned To"><Input value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)} placeholder="Name or @handle" /></Field>
           <Field label="Due Date"><Input type="date" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></Field>
           <Field label="Week"><Input value={form.week} onChange={e => set("week", e.target.value)} placeholder="e.g. Week 3" /></Field>
-          <div className="col-span-2"><Field label="Blocker (if blocked)"><Input value={form.blocker} onChange={e => set("blocker", e.target.value)} /></Field></div>
+          <div className="col-span-2"><Field label="Blocker"><Input value={form.blocker} onChange={e => set("blocker", e.target.value)} /></Field></div>
           <div className="col-span-2"><Field label="Notes"><TextArea rows={3} value={form.notes} onChange={e => set("notes", e.target.value)} /></Field></div>
         </div>
         <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">

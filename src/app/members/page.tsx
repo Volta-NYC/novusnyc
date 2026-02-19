@@ -2,13 +2,12 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getSession } from "@/lib/members/auth";
+import { isAuthenticated } from "@/lib/members/auth";
 
 export default function MembersIndex() {
   const router = useRouter();
   useEffect(() => {
-    const s = getSession();
-    router.replace(s ? "/members/dashboard" : "/members/login");
+    router.replace(isAuthenticated() ? "/members/dashboard" : "/members/login");
   }, [router]);
   return (
     <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">

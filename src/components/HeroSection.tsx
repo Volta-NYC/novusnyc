@@ -21,7 +21,7 @@ export default function HeroSection() {
 
       {/* Logo + Title parallax group */}
       <motion.div
-        className="relative z-10 flex flex-col items-center text-center"
+        className="relative z-10 w-full max-w-5xl mx-auto px-8"
         style={{ scale: titleScale, y: titleY }}
       >
         <motion.div
@@ -29,33 +29,37 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Logo inline with VOLTA on same line, NYC below */}
+          {/* Logo beside VOLTA, spanning full height of VOLTA+NYC */}
           <h1
             className="font-display font-bold text-v-ink leading-none tracking-tight"
             style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)" }}
           >
-            {/* Row 1: logo + VOLTA */}
-            <span className="flex items-center justify-center gap-4 md:gap-6 leading-none">
+            <span className="flex items-center gap-4 md:gap-6">
               <Image
                 src="/logo.png"
                 alt="Volta"
-                width={80}
-                height={80}
+                width={200}
+                height={200}
                 className="object-contain flex-shrink-0"
-                style={{ width: "clamp(52px, 8vw, 90px)", height: "clamp(52px, 8vw, 90px)" }}
+                style={{
+                  /* 2 lines of the display font: clamp(7rem, 20vw, 14rem) */
+                  width: "clamp(7rem, 20vw, 14rem)",
+                  height: "clamp(7rem, 20vw, 14rem)",
+                }}
                 priority
               />
-              VOLTA
+              <span className="flex flex-col leading-none">
+                <span>VOLTA</span>
+                <span className="text-v-green">NYC</span>
+              </span>
             </span>
-            {/* Row 2: NYC */}
-            <span className="block text-v-green">NYC</span>
           </h1>
         </motion.div>
       </motion.div>
 
-      {/* Subtitle + CTAs */}
+      {/* Subtitle + CTAs — left-aligned under the title */}
       <motion.div
-        className="relative z-10 flex flex-col items-center text-center px-5 max-w-3xl mx-auto mt-8"
+        className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8"
         style={{ opacity: ctaOpacity, y: ctaY }}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -69,7 +73,7 @@ export default function HeroSection() {
         <p className="font-body text-sm text-v-muted/70 mb-8">
           A registered 501(c)(3) nonprofit organization.
         </p>
-        <div className="flex gap-4 flex-wrap justify-center">
+        <div className="flex gap-4 flex-wrap">
           <Link
             href="/join"
             className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-all hover:scale-105 shadow-lg shadow-v-green/20"

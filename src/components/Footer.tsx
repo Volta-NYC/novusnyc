@@ -7,16 +7,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="grid md:grid-cols-3 gap-10 mb-12 items-start">
 
-          {/* Brand — bigger logo */}
           <div className="flex flex-col items-start">
-            <Image src="/logo.png" alt="Volta" width={64} height={64} className="object-contain mb-4 brightness-0 invert opacity-85" />
+            <Image src="/logo.png" alt="Volta" width={64} height={64} className="object-contain mb-4" />
             <span className="font-display font-bold text-xl text-white tracking-tight mb-3">VOLTA NYC</span>
             <p className="font-body text-sm leading-relaxed text-white/50">
               A registered nonprofit connecting student teams with NYC small businesses.
             </p>
           </div>
 
-          {/* Navigate */}
           <div>
             <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Navigate</p>
             <div className="flex flex-col gap-3">
@@ -35,7 +33,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Contact us */}
           <div>
             <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Contact Us</p>
             <div className="flex flex-col gap-3">

@@ -3,27 +3,20 @@
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea, Table, Empty, StatCard, TagInput, useConfirm } from "@/components/members/ui";
-import { getGrants, createGrant, updateGrant, deleteGrant, type Grant } from "@/lib/members/storage";
-import { getSession, canEdit, canDelete } from "@/lib/members/auth";
+import { subscribeGrants, createGrant, updateGrant, deleteGrant, type Grant } from "@/lib/members/storage";
 
 const STATUSES = ["Researched", "Application In Progress", "Submitted", "Awarded", "Rejected", "Cycle Closed"];
 const CATEGORIES = ["Government", "Foundation", "Corporate", "CDFI", "Other"];
 const LIKELIHOODS = ["High", "Medium", "Low"];
 const FREQUENCIES = ["Annual", "Biannual", "Rolling", "One-Time"];
-
+const NEIGHBORHOODS = ["Park Slope", "Sunnyside", "Chinatown", "LIC", "Cypress Hills", "Flatbush", "Mott Haven", "Flushing", "Bayside"];
 const BLANK: Omit<Grant, "id" | "createdAt"> = {
   name: "", funder: "", amount: "", deadline: "", businessIds: [], neighborhoodFocus: [],
   category: "Government", status: "Researched", assignedResearcher: "", likelihood: "Medium",
   requirements: "", applicationUrl: "", notes: "", cycleFrequency: "Annual",
 };
 
-const NEIGHBORHOODS = ["Park Slope", "Sunnyside", "Chinatown", "LIC", "Cypress Hills", "Flatbush", "Mott Haven", "Flushing", "Bayside"];
-
 export default function GrantsPage() {
-  const session = getSession();
-  const editable = session ? canEdit(session.role) : false;
-  const deletable = session ? canDelete(session.role) : false;
-
   const [grants, setGrants] = useState<Grant[]>([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -32,25 +25,21 @@ export default function GrantsPage() {
   const [form, setForm] = useState(BLANK);
   const { ask, Dialog } = useConfirm();
 
-  useEffect(() => { setGrants(getGrants()); }, []);
-  const refresh = () => setGrants(getGrants());
-  const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
+  useEffect(() => subscribeGrants(setGrants), []);
 
+  const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
   const openCreate = () => { setForm(BLANK); setEditing(null); setModal("create"); };
   const openEdit = (g: Grant) => {
     setForm({ name: g.name, funder: g.funder, amount: g.amount, deadline: g.deadline,
       businessIds: g.businessIds, neighborhoodFocus: g.neighborhoodFocus, category: g.category,
       status: g.status, assignedResearcher: g.assignedResearcher, likelihood: g.likelihood,
       requirements: g.requirements, applicationUrl: g.applicationUrl, notes: g.notes, cycleFrequency: g.cycleFrequency });
-    setEditing(g);
-    setModal("edit");
+    setEditing(g); setModal("edit");
   };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (editing) updateGrant(editing.id, form as Partial<Grant>);
-    else createGrant(form as Omit<Grant, "id" | "createdAt">);
-    refresh();
+    if (editing) await updateGrant(editing.id, form as Partial<Grant>);
+    else await createGrant(form as Omit<Grant, "id" | "createdAt">);
     setModal(null);
   };
 
@@ -59,24 +48,17 @@ export default function GrantsPage() {
     && (!filterStatus || g.status === filterStatus)
   );
 
-  const awarded = grants.filter(g => g.status === "Awarded");
-
   return (
     <MembersLayout>
       <Dialog />
-      <PageHeader
-        title="Grant Library"
-        subtitle={`${grants.length} grants tracked · ${awarded.length} awarded`}
-        action={editable ? <Btn variant="primary" onClick={openCreate}>+ New Grant</Btn> : undefined}
-      />
-
+      <PageHeader title="Grant Library" subtitle={`${grants.length} grants · ${grants.filter(g => g.status === "Awarded").length} awarded`}
+        action={<Btn variant="primary" onClick={openCreate}>+ New Grant</Btn>} />
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <StatCard label="Total Grants" value={grants.length} />
+        <StatCard label="Total" value={grants.length} />
         <StatCard label="In Progress" value={grants.filter(g => g.status === "Application In Progress").length} color="text-blue-400" />
         <StatCard label="Submitted" value={grants.filter(g => g.status === "Submitted").length} color="text-cyan-400" />
-        <StatCard label="Awarded" value={awarded.length} color="text-yellow-400" />
+        <StatCard label="Awarded" value={grants.filter(g => g.status === "Awarded").length} color="text-yellow-400" />
       </div>
-
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search grants, funders…" />
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
@@ -85,9 +67,7 @@ export default function GrantsPage() {
           {STATUSES.map(s => <option key={s}>{s}</option>)}
         </select>
       </div>
-
-      <Table
-        cols={["Grant Name", "Funder", "Amount", "Deadline", "Status", "Likelihood", "Researcher", "Actions"]}
+      <Table cols={["Grant Name", "Funder", "Amount", "Deadline", "Status", "Likelihood", "Researcher", "Actions"]}
         rows={filtered.map(g => [
           <span key="n" className="text-white font-medium">{g.name}</span>,
           <span key="f" className="text-white/60">{g.funder}</span>,
@@ -97,17 +77,15 @@ export default function GrantsPage() {
           <Badge key="l" label={g.likelihood} />,
           <span key="r" className="text-white/50">{g.assignedResearcher || "—"}</span>,
           <div key="ac" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            {editable && <Btn size="sm" variant="ghost" onClick={() => openEdit(g)}>Edit</Btn>}
-            {deletable && <Btn size="sm" variant="danger" onClick={() => ask(() => { deleteGrant(g.id); refresh(); })}>Del</Btn>}
+            <Btn size="sm" variant="ghost" onClick={() => openEdit(g)}>Edit</Btn>
+            <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(g.id))}>Del</Btn>
           </div>,
-        ])}
-      />
-      {filtered.length === 0 && <Empty message="No grants found." action={editable ? <Btn variant="primary" onClick={openCreate}>Add first grant</Btn> : undefined} />}
-
+        ])} />
+      {filtered.length === 0 && <Empty message="No grants found." action={<Btn variant="primary" onClick={openCreate}>Add first grant</Btn>} />}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editing ? "Edit Grant" : "New Grant"}>
         <div className="grid grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2">
           <div className="col-span-2"><Field label="Grant Name" required><Input value={form.name} onChange={e => set("name", e.target.value)} /></Field></div>
-          <Field label="Funder / Organization"><Input value={form.funder} onChange={e => set("funder", e.target.value)} /></Field>
+          <Field label="Funder"><Input value={form.funder} onChange={e => set("funder", e.target.value)} /></Field>
           <Field label="Amount"><Input value={form.amount} onChange={e => set("amount", e.target.value)} placeholder="e.g. $10,000" /></Field>
           <Field label="Deadline"><Input type="date" value={form.deadline} onChange={e => set("deadline", e.target.value)} /></Field>
           <Field label="Category"><Select options={CATEGORIES} value={form.category} onChange={e => set("category", e.target.value)} /></Field>
@@ -116,11 +94,7 @@ export default function GrantsPage() {
           <Field label="Cycle Frequency"><Select options={FREQUENCIES} value={form.cycleFrequency} onChange={e => set("cycleFrequency", e.target.value)} /></Field>
           <Field label="Assigned Researcher"><Input value={form.assignedResearcher} onChange={e => set("assignedResearcher", e.target.value)} /></Field>
           <div className="col-span-2"><Field label="Application URL"><Input value={form.applicationUrl} onChange={e => set("applicationUrl", e.target.value)} placeholder="https://" /></Field></div>
-          <div className="col-span-2">
-            <Field label="Neighborhood Focus">
-              <TagInput values={form.neighborhoodFocus} onChange={v => set("neighborhoodFocus", v)} options={NEIGHBORHOODS} />
-            </Field>
-          </div>
+          <div className="col-span-2"><Field label="Neighborhood Focus"><TagInput values={form.neighborhoodFocus} onChange={v => set("neighborhoodFocus", v)} options={NEIGHBORHOODS} /></Field></div>
           <div className="col-span-2"><Field label="Requirements"><TextArea rows={3} value={form.requirements} onChange={e => set("requirements", e.target.value)} /></Field></div>
           <div className="col-span-2"><Field label="Notes"><TextArea rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} /></Field></div>
         </div>
