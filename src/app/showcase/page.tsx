@@ -137,7 +137,7 @@ export default function Showcase() {
               Your business could be next.
             </h2>
             <p className="font-body text-v-ink/70 mb-8">
-              We&apos;re actively taking on new projects in Brooklyn, Queens, and Manhattan.
+              We&apos;re actively taking on new projects in the Bronx, Brooklyn, Manhattan, Queens, and Staten Island.
             </p>
             <Link
               href="/partners#contact"
