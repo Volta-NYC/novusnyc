@@ -1,8 +1,7 @@
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
+import ApplicationForm from "@/components/ApplicationForm";
 import { MonitorIcon, FolderIcon, AwardIcon, ArrowUpRightIcon, BuildingIcon, MentorIcon, BarChartIcon, CodeIcon, MegaphoneIcon } from "@/components/Icons";
-
-const APPLY_URL = "https://bit.ly/voltanyc";
 
 const gains = [
   { icon: MonitorIcon, title: "Real deliverables", desc: "Deployed websites, live social media campaigns, submitted grant applications — work you can point to.", color: "text-v-blue", bg: "bg-blue-50" },
@@ -48,9 +47,9 @@ const tracks = [
 
 const faqs = [
   { q: "Is this paid?", a: "No — Volta is a nonprofit and all positions are volunteer. You gain experience, portfolio work, mentorship, references, and leadership opportunities." },
-  { q: "Do I need prior experience?", a: "It depends on the track. Tech requires some coding experience. Finance and marketing are more open to students who are still developing their skills." },
+  { q: "Do I need prior experience?", a: "It depends on the track. Tech requires some coding experience. Finance and marketing are more open to students still developing their skills." },
   { q: "Is it remote?", a: "Yes. All work is remote-friendly. Some NYC members may choose to do in-person client visits, but it's not required." },
-  { q: "How much time does it take?", a: "2–4 hours per week, depending on the project phase. Time commitment varies — some weeks are lighter, some are heavier around deliverable deadlines." },
+  { q: "How much time does it take?", a: "2–4 hours per week, depending on the project phase. Some weeks are lighter, some are heavier around deliverable deadlines." },
   { q: "How long is a project?", a: "Projects are ongoing and vary in scope. There's no fixed contract or semester commitment. You work on a project until it's delivered." },
   { q: "Can college students apply?", a: "Yes. We actively recruit from CUNY schools and other NYC colleges. College students often move into team lead roles." },
 ];
@@ -58,38 +57,25 @@ const faqs = [
 export default function Join() {
   return (
     <>
+      {/* Hero */}
       <section className="bg-v-bg pt-32 pb-20 relative overflow-hidden">
         <div className="absolute inset-0 dot-grid opacity-40" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-v-green/10 rounded-full blur-3xl" />
         <div className="relative max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Join Volta</p>
-            <h1
-              className="font-display font-bold text-v-ink leading-none tracking-tight mb-6"
-              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-            >
-              Do real work.<br />
-              <span className="text-v-green">Build real things.</span>
+            <h1 className="font-display font-bold text-v-ink leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
+              Do real work.<br /><span className="text-v-green">Build real things.</span>
             </h1>
-            <p className="font-body text-v-muted text-lg max-w-2xl leading-relaxed mb-8">
+            <p className="font-body text-v-muted text-lg max-w-2xl leading-relaxed">
               Volta places student teams on real consulting projects for NYC small businesses.
               You get mentorship, experience, and a portfolio. High school and college students both welcome.
             </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link
-                href={APPLY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-all hover:scale-105 shadow-lg shadow-v-green/20"
-              >
-                Apply Now →
-              </Link>
-              <span className="font-body text-sm text-v-muted">Spring 2026 cohort · Rolling admissions</span>
-            </div>
           </AnimatedSection>
         </div>
       </section>
 
+      {/* What you gain */}
       <section className="py-20 bg-v-dark">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
@@ -112,6 +98,7 @@ export default function Join() {
         </div>
       </section>
 
+      {/* Three tracks */}
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
@@ -152,6 +139,7 @@ export default function Join() {
         </div>
       </section>
 
+      {/* Commitment stats */}
       <section className="py-16 bg-white border-y border-v-border">
         <div className="max-w-5xl mx-auto px-5 md:px-8 grid md:grid-cols-3 gap-8 text-center">
           {[
@@ -168,6 +156,7 @@ export default function Join() {
         </div>
       </section>
 
+      {/* FAQ */}
       <section className="py-20 bg-v-bg">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
@@ -186,27 +175,20 @@ export default function Join() {
         </div>
       </section>
 
-      <section className="py-20 bg-v-green">
-        <div className="max-w-3xl mx-auto px-5 text-center">
-          <AnimatedSection>
-            <h2 className="font-display font-bold text-v-ink text-4xl md:text-5xl mb-5">
-              Ready to apply?
+      {/* Application form */}
+      <section className="py-20 bg-v-bg border-t border-v-border" id="apply">
+        <div className="max-w-2xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10 text-center">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Apply now</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-3">
+              Ready to join?
             </h2>
-            <p className="font-body text-v-ink/70 text-lg mb-8">
-              Submit your resume or answer two short prompts. We&apos;ll reach out to schedule
-              a quick conversation and match you with a project and mentor.
+            <p className="font-body text-v-muted">
+              Takes about 5 minutes. Rolling admissions — we&apos;ll follow up within a few days.
             </p>
-            <Link
-              href={APPLY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-v-ink text-white font-display font-bold text-lg px-10 py-5 rounded-full hover:bg-v-ink/80 transition-all hover:scale-105 shadow-xl shadow-v-ink/20"
-            >
-              Apply Now →
-            </Link>
-            <p className="font-body text-sm text-v-ink/50 mt-5">
-              Takes 5 minutes · Rolling admissions
-            </p>
+          </AnimatedSection>
+          <AnimatedSection>
+            <ApplicationForm />
           </AnimatedSection>
         </div>
       </section>

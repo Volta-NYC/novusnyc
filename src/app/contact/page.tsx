@@ -1,9 +1,12 @@
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
+import InquiryForm from "@/components/InquiryForm";
 
-const directors = [
-  { name: "Ethan Zhang", role: "Director, NYC Branch", email: "ethan@voltanpo.org", school: "Stuyvesant High School" },
-  { name: "Andrew Chin", role: "Director, NYC Branch", email: "andrew@voltanpo.org", school: "Stuyvesant High School" },
+const team = [
+  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", school: "Stuyvesant High School", initial: "E" },
+  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", school: "Stuyvesant High School", initial: "A" },
+  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", school: "Stuyvesant High School", initial: "J" },
+  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", school: "Stuyvesant High School", initial: "T" },
 ];
 
 export default function Contact() {
@@ -14,43 +17,36 @@ export default function Contact() {
         <div className="relative max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Get in touch</p>
-            <h1
-              className="font-display font-bold text-v-ink leading-none tracking-tight mb-6"
-              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-            >
-              Contact<br />
-              <span className="text-v-green">Volta NYC</span>
+            <h1 className="font-display font-bold text-v-ink leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
+              Contact<br /><span className="text-v-green">Volta NYC</span>
             </h1>
             <p className="font-body text-v-muted text-lg max-w-xl leading-relaxed">
-              Reach out to our directors directly, or use the business inquiry form on the{" "}
+              Reach out to our team directly, or fill out the form below. For business inquiries, visit the{" "}
               <a href="/partners#contact" className="text-v-blue hover:underline">For Businesses</a> page.
             </p>
           </AnimatedSection>
         </div>
       </section>
 
+      {/* Team cards */}
       <section className="py-20 bg-white border-y border-v-border">
-        <div className="max-w-3xl mx-auto px-5 md:px-8">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl">Directors</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl">The team</h2>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 gap-5">
-            {directors.map((d, i) => (
-              <AnimatedSection key={d.email} delay={i * 0.1}>
-                <div className="bg-v-bg border border-v-border rounded-2xl p-8 project-card">
-                  <div className="w-14 h-14 rounded-full bg-v-green/20 flex items-center justify-center mb-5">
-                    <span className="font-display font-bold text-v-green text-2xl">{d.name[0]}</span>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {team.map((m, i) => (
+              <AnimatedSection key={m.email} delay={i * 0.08}>
+                <div className="bg-v-bg border border-v-border rounded-2xl p-7 project-card h-full">
+                  <div className="w-12 h-12 rounded-full bg-v-green/20 flex items-center justify-center mb-4">
+                    <span className="font-display font-bold text-v-green text-lg">{m.initial}</span>
                   </div>
-                  <h3 className="font-display font-bold text-v-ink text-xl">{d.name}</h3>
-                  <p className="font-body text-sm text-v-muted mt-1">{d.role}</p>
-                  <p className="font-body text-xs text-v-muted/60 mt-0.5">{d.school}</p>
-                  <a
-                    href={`mailto:${d.email}`}
-                    className="flex items-center gap-2.5 mt-5 font-body text-sm text-v-blue hover:underline"
-                  >
-                    <MailIcon className="w-4 h-4 flex-shrink-0" />
-                    {d.email}
+                  <h3 className="font-display font-bold text-v-ink text-lg leading-tight">{m.name}</h3>
+                  <p className="font-body text-sm text-v-muted mt-1">{m.role}</p>
+                  <a href={`mailto:${m.email}`}
+                    className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline break-all">
+                    <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
                   </a>
                 </div>
               </AnimatedSection>
@@ -59,19 +55,18 @@ export default function Contact() {
         </div>
       </section>
 
+      {/* Inquiry form */}
       <section className="py-20 bg-v-bg">
-        <div className="max-w-3xl mx-auto px-5 md:px-8 text-center">
+        <div className="max-w-2xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10 text-center">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Send a message</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-3">General Inquiries</h2>
+            <p className="font-body text-v-muted">
+              Questions, press, partnerships, or anything else — we typically respond within a few days.
+            </p>
+          </AnimatedSection>
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">General inquiries</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl mb-4">General Email</h2>
-            <p className="font-body text-v-muted mb-6">For general questions, BID partnerships, or press:</p>
-            <a
-              href="mailto:volta.newyork@gmail.com"
-              className="inline-flex items-center gap-3 bg-white border border-v-border rounded-2xl px-8 py-5 font-display font-bold text-v-ink text-lg hover:border-v-green transition-colors project-card"
-            >
-              <MailIcon className="w-5 h-5 text-v-green" />
-              volta.newyork@gmail.com
-            </a>
+            <InquiryForm />
           </AnimatedSection>
         </div>
       </section>

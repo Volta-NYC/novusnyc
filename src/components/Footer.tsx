@@ -1,22 +1,47 @@
 import Link from "next/link";
 import Image from "next/image";
 
+const neighborhoods = [
+  "Park Slope, Brooklyn",
+  "Sunnyside, Queens",
+  "Chinatown, Manhattan",
+  "Long Island City, Queens",
+  "Cypress Hills, Brooklyn",
+  "Flatbush, Brooklyn",
+  "Flushing, Queens",
+  "Mott Haven, Bronx",
+  "Bayside, Queens",
+];
+
 export default function Footer() {
   return (
     <footer className="bg-v-dark text-white/70 pt-16 pb-10">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="grid md:grid-cols-3 gap-10 mb-12">
+
+          {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <Image src="/logo.png" alt="Volta" width={28} height={28} className="object-contain brightness-200" />
               <span className="font-display font-bold text-lg text-white tracking-tight">VOLTA NYC</span>
             </div>
-            <p className="font-body text-sm leading-relaxed text-white/50">
+            <p className="font-body text-sm leading-relaxed text-white/50 mb-5">
               A registered nonprofit connecting student teams with NYC small businesses.
             </p>
-            <p className="font-body text-xs mt-4 text-white/30">volta.newyork@gmail.com</p>
+            <div className="flex flex-col gap-2">
+              <a href="mailto:volta.newyork@gmail.com" className="font-body text-xs text-white/30 hover:text-white/60 transition-colors">
+                volta.newyork@gmail.com
+              </a>
+              <a href="mailto:ethan@voltanpo.org" className="font-body text-xs text-white/30 hover:text-white/60 transition-colors">
+                ethan@voltanpo.org
+              </a>
+              <a href="mailto:andrew@voltanpo.org" className="font-body text-xs text-white/30 hover:text-white/60 transition-colors">
+                andrew@voltanpo.org
+              </a>
+            </div>
           </div>
 
+          {/* Navigate */}
           <div>
             <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Navigate</p>
             <div className="flex flex-col gap-3">
@@ -35,27 +60,19 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* Neighborhoods */}
           <div>
-            <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Leadership</p>
-            <div className="space-y-3 mb-6">
-              <div>
-                <p className="font-body text-sm text-white/80 font-semibold">Ethan Zhang</p>
-                <p className="font-body text-xs text-white/40">Director</p>
-                <a href="mailto:ethan@voltanpo.org" className="font-body text-xs text-v-green hover:underline">ethan@voltanpo.org</a>
-              </div>
-              <div>
-                <p className="font-body text-sm text-white/80 font-semibold">Andrew Chin</p>
-                <p className="font-body text-xs text-white/40">Director</p>
-                <a href="mailto:andrew@voltanpo.org" className="font-body text-xs text-v-green hover:underline">andrew@voltanpo.org</a>
-              </div>
+            <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Neighborhoods We Serve</p>
+            <div className="flex flex-col gap-2">
+              {neighborhoods.map((n) => (
+                <span key={n} className="font-body text-sm text-white/40 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-v-green flex-shrink-0" />
+                  {n}
+                </span>
+              ))}
             </div>
-            <Link
-              href="/join"
-              className="inline-block bg-v-green text-v-ink font-display font-bold text-sm px-5 py-2.5 rounded-full hover:bg-v-green-dark transition-colors mb-3"
-            >
-              Apply to Join
-            </Link>
           </div>
+
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-3">

@@ -2,12 +2,12 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
 import HeroSection from "@/components/HeroSection";
-import { BarChartIcon, CodeIcon, MegaphoneIcon, MapPinIcon, BoltIcon } from "@/components/Icons";
+import { BarChartIcon, CodeIcon, MegaphoneIcon, MapPinIcon } from "@/components/Icons";
 
 const stats = [
-  { value: 12, suffix: "+", label: "Businesses Supported" },
-  { value: 8, suffix: "", label: "NYC Neighborhoods" },
-  { value: 40, suffix: "+", label: "Student Members" },
+  { value: 20, suffix: "+", label: "Businesses Supported" },
+  { value: 9, suffix: "", label: "NYC Neighborhoods" },
+  { value: 80, suffix: "+", label: "Student Members" },
   { value: 3, suffix: "", label: "Service Tracks" },
 ];
 
@@ -48,9 +48,14 @@ const currentProjects = [
 ];
 
 const marqueeItems = [
-  "Souk Al Shater · Sunnyside","Anatolico · Park Slope","Higher Learning · Chinatown",
-  "Juliette Floral · Park Slope","The Painted Pot · Park Slope","Bayaal · Park Slope",
-  "Gift Man · Park Slope","The Lay Up · Park Slope","Bricolage · Park Slope","Cafe Martin · Park Slope",
+  "Stuyvesant High School",
+  "Brooklyn Tech",
+  "Bronx Science",
+  "Staten Island Tech",
+  "Binghamton University",
+  "Hunter College",
+  "Stony Brook University",
+  "Baruch College",
 ];
 
 export default function Home() {
@@ -58,17 +63,19 @@ export default function Home() {
     <>
       <HeroSection />
 
+      {/* ── MARQUEE ──────────────────────────────────────────── */}
       <div className="bg-white border-y border-v-border py-4 overflow-hidden">
         <div className="marquee-track">
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
             <span key={i} className="font-body text-sm text-v-muted font-medium whitespace-nowrap inline-flex items-center">
               <span className="px-8">{item}</span>
-              <BoltIcon className="w-3.5 h-3.5 text-v-green flex-shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-v-green flex-shrink-0" />
             </span>
           ))}
         </div>
       </div>
 
+      {/* ── STATS ────────────────────────────────────────────── */}
       <section className="bg-v-dark py-20">
         <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-10">
           {stats.map((s) => (
@@ -82,6 +89,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── THREE TRACKS ─────────────────────────────────────── */}
       <section className="py-24 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
@@ -116,6 +124,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── CURRENT PROJECTS ─────────────────────────────────── */}
       <section className="py-20 bg-white border-y border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
@@ -147,6 +156,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── DUAL CTA ─────────────────────────────────────────── */}
       <section className="grid md:grid-cols-2 min-h-[400px]">
         <AnimatedSection direction="left" className="bg-v-green flex flex-col justify-center p-12 md:p-16">
           <p className="font-display font-bold text-v-ink/60 text-sm uppercase tracking-widest mb-4">For students</p>

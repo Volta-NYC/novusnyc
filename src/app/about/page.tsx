@@ -10,15 +10,15 @@ const values = [
 ];
 
 const timeline = [
-  { date: "April 2025", label: "Florida branch founded", desc: "Volta begins working with local businesses, food trucks, and nonprofits in the Jacksonville area." },
-  { date: "November 2025", label: "NYC branch launched", desc: "Volta NYC is established, beginning outreach to Business Improvement Districts across Brooklyn and Queens." },
-  { date: "December 2025", label: "First NYC projects", desc: "First website and social media projects kick off — Souk Al Shater, Higher Learning, and Anatolico." },
-  { date: "Spring 2026", label: "Spring Cohort — NYC", desc: "Cohort expands to 40+ students across 8+ NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City." },
+  { month: "Apr", year: "2025", label: "Florida branch founded", desc: "Volta begins working with local businesses, food trucks, and nonprofits in the Jacksonville area." },
+  { month: "Nov", year: "2025", label: "NYC branch launched", desc: "Volta NYC is established, beginning outreach to Business Improvement Districts across Brooklyn and Queens." },
+  { month: "Dec", year: "2025", label: "First NYC projects", desc: "First website and social media projects kick off — Souk Al Shater, Higher Learning, and Anatolico." },
+  { month: "Spring", year: "2026", label: "Spring Cohort — NYC", desc: "Cohort expands to 80+ students across 9 NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City." },
 ];
 
 const directors = [
-  { name: "Ethan Zhang", role: "Director, NYC Branch", email: "ethan@voltanpo.org", school: "Stuyvesant High School" },
-  { name: "Andrew Chin", role: "Director, NYC Branch", email: "andrew@voltanpo.org", school: "Stuyvesant High School" },
+  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", school: "Stuyvesant High School" },
+  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", school: "Stuyvesant High School" },
 ];
 
 export default function About() {
@@ -31,13 +31,8 @@ export default function About() {
           <div className="flex-1">
             <AnimatedSection>
               <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">About Volta</p>
-              <h1
-                className="font-display font-bold text-v-ink leading-none tracking-tight mb-6"
-                style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-              >
-                Students who<br />
-                <span className="text-v-green">give back</span><br />
-                by doing real work.
+              <h1 className="font-display font-bold text-v-ink leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
+                Students who<br /><span className="text-v-green">give back</span><br />by doing real work.
               </h1>
             </AnimatedSection>
           </div>
@@ -66,7 +61,6 @@ export default function About() {
               by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
             </blockquote>
           </AnimatedSection>
-
           <AnimatedSection className="mt-14">
             <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 h-64 flex items-center justify-center">
               <div className="text-center">
@@ -100,6 +94,7 @@ export default function About() {
         </div>
       </section>
 
+      {/* Timeline — fixed circles and line */}
       <section className="py-20 bg-white border-y border-v-border">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
@@ -108,14 +103,18 @@ export default function About() {
           </AnimatedSection>
           <div className="space-y-0">
             {timeline.map((t, i) => (
-              <AnimatedSection key={t.date} delay={i * 0.1}>
-                <div className="flex gap-8 pb-10 relative">
+              <AnimatedSection key={t.label} delay={i * 0.1}>
+                <div className="flex gap-8 pb-12 relative">
+                  {/* Vertical line — starts below the circle, not through it */}
                   {i < timeline.length - 1 && (
-                    <div className="absolute left-[27px] top-8 bottom-0 w-px bg-v-border" />
+                    <div className="absolute left-[31px] top-[72px] bottom-0 w-px bg-v-border" />
                   )}
-                  <div className="flex-shrink-0 w-14 h-14 rounded-full bg-v-green/15 border-2 border-v-green flex items-center justify-center z-10">
-                    <span className="font-display font-bold text-v-green text-[10px] text-center leading-tight px-1">{t.date.split(" ")[0]}<br/>{t.date.split(" ")[1]}</span>
+                  {/* Circle — bigger to fit two-line text */}
+                  <div className="flex-shrink-0 w-16 h-16 rounded-full bg-v-green/15 border-2 border-v-green flex flex-col items-center justify-center z-10">
+                    <span className="font-display font-bold text-v-green text-xs leading-none">{t.month}</span>
+                    <span className="font-display font-bold text-v-green text-xs leading-none">{t.year}</span>
                   </div>
+                  {/* Content */}
                   <div className="pt-3">
                     <h3 className="font-display font-bold text-v-ink text-lg mb-1">{t.label}</h3>
                     <p className="font-body text-v-muted text-sm leading-relaxed">{t.desc}</p>
@@ -136,7 +135,6 @@ export default function About() {
               A team of students from Stuyvesant High School, CUNY institutions, and other NYC schools.
             </p>
           </AnimatedSection>
-
           <div className="grid sm:grid-cols-2 gap-5 max-w-2xl">
             {directors.map((d, i) => (
               <AnimatedSection key={d.email} delay={i * 0.1}>
@@ -147,12 +145,8 @@ export default function About() {
                   <h3 className="font-display font-bold text-v-ink text-lg">{d.name}</h3>
                   <p className="font-body text-sm text-v-muted mt-1">{d.role}</p>
                   <p className="font-body text-xs text-v-muted/60 mt-0.5">{d.school}</p>
-                  <a
-                    href={`mailto:${d.email}`}
-                    className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline"
-                  >
-                    <MailIcon className="w-4 h-4" />
-                    {d.email}
+                  <a href={`mailto:${d.email}`} className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline">
+                    <MailIcon className="w-4 h-4" />{d.email}
                   </a>
                 </div>
               </AnimatedSection>
