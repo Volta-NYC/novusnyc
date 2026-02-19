@@ -63,7 +63,7 @@ export default function Home() {
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
             <span key={i} className="font-body text-sm text-v-muted font-medium whitespace-nowrap inline-flex items-center">
               <span className="px-8">{item}</span>
-              <BoltIcon className="w-3.5 h-3.5 text-v-green flex-shrink-0" />
+              <BoltIcon className="w-10 h-10 text-v-green flex-shrink-0" />
             </span>
           ))}
         </div>
