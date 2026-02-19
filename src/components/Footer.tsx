@@ -9,7 +9,7 @@ export default function Footer() {
 
           {/* Brand — bigger logo */}
           <div className="flex flex-col items-start">
-            <Image src="/logo.png" alt="Volta" width={64} height={64} className="object-contain brightness-200 mb-4" />
+            <Image src="/logo.png" alt="Volta" width={64} height={64} className="object-contain mb-4" style={{ filter: "brightness(0) invert(1) opacity(0.85)" }} />
             <span className="font-display font-bold text-xl text-white tracking-tight mb-3">VOLTA NYC</span>
             <p className="font-body text-sm leading-relaxed text-white/50">
               A registered nonprofit connecting student teams with NYC small businesses.

@@ -11,6 +11,7 @@ const links = [
   { href: "/about", label: "About" },
   { href: "/partners", label: "For Businesses" },
   { href: "/contact", label: "Contact" },
+  { href: "/members", label: "Members" },
 ];
 
 export default function Navbar() {
@@ -46,7 +47,8 @@ export default function Navbar() {
               alt="Volta"
               width={32}
               height={32}
-              className={`object-contain transition-all ${useWhiteText ? "brightness-200" : ""}`}
+              className={`object-contain transition-all`}
+              style={{ filter: useWhiteText ? "brightness(0) invert(1)" : "none" }}
             />
             <span className={`font-display font-bold text-xl tracking-tight transition-colors ${useWhiteText ? "text-white" : "text-v-ink"}`}>
               VOLTA NYC
@@ -70,7 +72,7 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              href="/apply"
+              href="/join"
               className="bg-v-green text-v-ink font-display font-bold text-sm px-5 py-2.5 rounded-full hover:bg-v-green-dark transition-colors"
             >
               Apply Now
@@ -108,7 +110,7 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              href="/apply"
+              href="/join"
               className="bg-v-green text-v-ink font-display font-bold text-lg px-6 py-4 rounded-xl text-center mt-2"
             >
               Apply Now

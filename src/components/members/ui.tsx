@@ -1,0 +1,306 @@
+"use client";
+
+import { useState, ReactNode, useEffect } from "react";
+
+// ── BADGE ─────────────────────────────────────────────────────────────────────
+
+const BADGE_COLORS: Record<string, string> = {
+  // status
+  Active: "bg-green-500/15 text-green-400 border-green-500/20",
+  "Active Partner": "bg-green-500/15 text-green-400 border-green-500/20",
+  Complete: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Done: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Delivered: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Planning: "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  Awarded: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Submitted: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  "In Progress": "bg-blue-400/15 text-blue-300 border-blue-400/20",
+  "In Conversation": "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  Discovery: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  Researched: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  "Cold Outreach": "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  "Not Started": "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  Blocked: "bg-red-500/15 text-red-400 border-red-500/20",
+  Rejected: "bg-red-500/15 text-red-400 border-red-500/20",
+  Paused: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  "On Hold": "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  "In Review": "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  "Form Sent": "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  Dead: "bg-red-900/30 text-red-500 border-red-900/20",
+  // priority
+  Urgent: "bg-red-500/15 text-red-400 border-red-500/20",
+  High: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  Medium: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Low: "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  // role
+  admin: "bg-red-500/15 text-red-400 border-red-500/20",
+  project_lead: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  member: "bg-green-500/15 text-green-400 border-green-500/20",
+  viewer: "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  "Team Lead": "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Member: "bg-green-500/15 text-green-400 border-green-500/20",
+  Associate: "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  Alumni: "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  Inactive: "bg-gray-700/40 text-gray-500 border-gray-700/20",
+};
+
+export function Badge({ label }: { label: string }) {
+  const cls = BADGE_COLORS[label] ?? "bg-gray-500/15 text-gray-400 border-gray-500/20";
+  return (
+    <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${cls} whitespace-nowrap`}>
+      {label}
+    </span>
+  );
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+
+export function Modal({ open, onClose, title, children }: {
+  open: boolean; onClose: () => void; title: string; children: ReactNode;
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
+      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative bg-[#1C1F26] border border-white/10 rounded-2xl w-full max-w-2xl p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-display font-bold text-white text-lg">{title}</h2>
+          <button onClick={onClose} className="text-white/40 hover:text-white p-1 transition-colors">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── FORM FIELD ────────────────────────────────────────────────────────────────
+
+export function Field({ label, children, required }: { label: string; children: ReactNode; required?: boolean }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+export function Input({ className = "", ...props }: InputProps) {
+  return (
+    <input
+      {...props}
+      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+    />
+  );
+}
+
+type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+export function TextArea({ className = "", ...props }: TextAreaProps) {
+  return (
+    <textarea
+      {...props}
+      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors resize-none ${className}`}
+    />
+  );
+}
+
+type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & { options: string[] };
+export function Select({ options, className = "", ...props }: SelectProps) {
+  return (
+    <select
+      {...props}
+      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+    >
+      <option value="">— Select —</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
+}
+
+// ── SEARCH/FILTER BAR ─────────────────────────────────────────────────────────
+
+export function SearchBar({ value, onChange, placeholder = "Search…" }: {
+  value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <div className="relative flex-1 min-w-0">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full bg-[#1C1F26] border border-white/8 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 transition-colors" />
+    </div>
+  );
+}
+
+// ── PAGE HEADER ───────────────────────────────────────────────────────────────
+
+export function PageHeader({ title, subtitle, action }: {
+  title: string; subtitle?: string; action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h1 className="font-display font-bold text-white text-2xl">{title}</h1>
+        {subtitle && <p className="text-white/40 text-sm mt-1">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// ── STAT CARD ─────────────────────────────────────────────────────────────────
+
+export function StatCard({ label, value, color = "text-[#85CC17]" }: {
+  label: string; value: string | number; color?: string;
+}) {
+  return (
+    <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
+      <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
+      <p className={`font-display font-bold text-2xl ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+// ── BTN ───────────────────────────────────────────────────────────────────────
+
+type BtnVariant = "primary" | "secondary" | "danger" | "ghost";
+interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: BtnVariant;
+  size?: "sm" | "md";
+}
+const BTN_CLS: Record<BtnVariant, string> = {
+  primary: "bg-[#85CC17] text-[#0D0D0D] font-bold hover:bg-[#72b314]",
+  secondary: "bg-white/8 text-white hover:bg-white/14 border border-white/10",
+  danger: "bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/20",
+  ghost: "text-white/50 hover:text-white hover:bg-white/8",
+};
+export function Btn({ variant = "secondary", size = "md", className = "", children, ...props }: BtnProps) {
+  return (
+    <button
+      {...props}
+      className={`inline-flex items-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+        ${size === "sm" ? "text-xs px-3 py-1.5" : "text-sm px-4 py-2"}
+        ${BTN_CLS[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── EMPTY STATE ───────────────────────────────────────────────────────────────
+
+export function Empty({ message, action }: { message: string; action?: ReactNode }) {
+  return (
+    <div className="text-center py-16">
+      <p className="text-white/30 text-sm mb-3">{message}</p>
+      {action}
+    </div>
+  );
+}
+
+// ── CONFIRM DELETE ────────────────────────────────────────────────────────────
+
+export function useConfirm() {
+  const [pending, setPending] = useState<(() => void) | null>(null);
+  const ask = (fn: () => void) => setPending(() => fn);
+  const confirm = () => { pending?.(); setPending(null); };
+  const cancel = () => setPending(null);
+  const Dialog = () =>
+    pending ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/70" onClick={cancel} />
+        <div className="relative bg-[#1C1F26] border border-white/10 rounded-xl p-6 max-w-sm w-full">
+          <p className="text-white font-semibold mb-2">Delete this record?</p>
+          <p className="text-white/40 text-sm mb-5">This cannot be undone.</p>
+          <div className="flex gap-3 justify-end">
+            <Btn variant="ghost" size="sm" onClick={cancel}>Cancel</Btn>
+            <Btn variant="danger" size="sm" onClick={confirm}>Delete</Btn>
+          </div>
+        </div>
+      </div>
+    ) : null;
+  return { ask, Dialog };
+}
+
+// ── MULTI-SELECT TAGS INPUT ───────────────────────────────────────────────────
+
+export function TagInput({ values, onChange, options }: {
+  values: string[]; onChange: (v: string[]) => void; options: string[];
+}) {
+  const [input, setInput] = useState("");
+  const add = (val: string) => {
+    const v = val.trim();
+    if (v && !values.includes(v)) onChange([...values, v]);
+    setInput("");
+  };
+  const remove = (v: string) => onChange(values.filter((x) => x !== v));
+  return (
+    <div>
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {values.map((v) => (
+          <span key={v} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
+            {v}
+            <button type="button" onClick={() => remove(v)} className="hover:text-red-400 transition-colors">×</button>
+          </span>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <select value="" onChange={(e) => { if (e.target.value) add(e.target.value); }}
+          className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 flex-1">
+          <option value="">Add from list…</option>
+          {options.filter((o) => !values.includes(o)).map((o) => <option key={o}>{o}</option>)}
+        </select>
+        <input value={input} onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(input); } }}
+          placeholder="Or type custom…"
+          className="bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 flex-1" />
+      </div>
+    </div>
+  );
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+
+export function Table({ cols, rows }: {
+  cols: string[];
+  rows: ReactNode[][];
+}) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-white/8">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-[#1C1F26] border-b border-white/8">
+            {cols.map((c) => (
+              <th key={c} className="text-left px-4 py-3 text-white/40 font-medium text-xs uppercase tracking-wider whitespace-nowrap">{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-white/5">
+          {rows.map((row, i) => (
+            <tr key={i} className="hover:bg-white/3 transition-colors group">
+              {row.map((cell, j) => (
+                <td key={j} className="px-4 py-3 text-white/70 whitespace-nowrap">{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {rows.length === 0 && (
+        <div className="text-center py-12 text-white/25 text-sm">No records yet</div>
+      )}
+    </div>
+  );
+}
