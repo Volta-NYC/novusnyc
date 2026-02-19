@@ -1,6 +1,5 @@
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
-import ApplicationForm from "@/components/ApplicationForm";
 import { MonitorIcon, FolderIcon, AwardIcon, ArrowUpRightIcon, BuildingIcon, MentorIcon, BarChartIcon, CodeIcon, MegaphoneIcon } from "@/components/Icons";
 
 const gains = [
@@ -14,32 +13,20 @@ const gains = [
 
 const tracks = [
   {
-    icon: BarChartIcon,
-    name: "Finance & Operations",
-    color: "border-amber-300 bg-amber-50",
-    tagColor: "bg-amber-100 text-amber-800",
-    iconColor: "text-amber-500",
-    iconBg: "bg-amber-100",
+    icon: BarChartIcon, name: "Finance & Operations",
+    color: "border-amber-300 bg-amber-50", tagColor: "bg-amber-100 text-amber-800", iconColor: "text-amber-500", iconBg: "bg-amber-100",
     skills: ["Comfort reading financial and tax documents", "Grant writing or research experience (preferred, not required)", "Interest in finance, accounting, or nonprofit work"],
     doWhat: ["Research and write grant applications for small businesses", "Analyze sales data and POS systems", "Help businesses reduce transaction fees and optimize operations", "Support nonprofit financial filings and documentation"],
   },
   {
-    icon: CodeIcon,
-    name: "Digital & Tech",
-    color: "border-blue-300 bg-blue-50",
-    tagColor: "bg-blue-100 text-blue-800",
-    iconColor: "text-v-blue",
-    iconBg: "bg-blue-100",
+    icon: CodeIcon, name: "Digital & Tech",
+    color: "border-blue-300 bg-blue-50", tagColor: "bg-blue-100 text-blue-800", iconColor: "text-v-blue", iconBg: "bg-blue-100",
     skills: ["React.js and/or TypeScript experience", "Familiarity with GitHub", "Interest in full-stack or frontend development"],
     doWhat: ["Build and launch websites for client businesses", "Set up and optimize Google Maps and Yelp listings", "Implement SEO improvements and web accessibility", "Deploy and manage code in a shared GitHub repo"],
   },
   {
-    icon: MegaphoneIcon,
-    name: "Marketing & Strategy",
-    color: "border-lime-300 bg-lime-50",
-    tagColor: "bg-lime-100 text-lime-800",
-    iconColor: "text-v-green",
-    iconBg: "bg-lime-100",
+    icon: MegaphoneIcon, name: "Marketing & Strategy",
+    color: "border-lime-300 bg-lime-50", tagColor: "bg-lime-100 text-lime-800", iconColor: "text-v-green", iconBg: "bg-lime-100",
     skills: ["Social media or content creation experience", "Design skills (Canva, Adobe, Figma)", "Strong writing and communication"],
     doWhat: ["Manage Instagram accounts for real businesses", "Develop content strategies and posting calendars", "Film and edit founder interview content", "Run analytics and audience growth campaigns"],
   },
@@ -67,10 +54,17 @@ export default function Join() {
             <h1 className="font-display font-bold text-v-ink leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
               Do real work.<br /><span className="text-v-green">Build real things.</span>
             </h1>
-            <p className="font-body text-v-muted text-lg max-w-2xl leading-relaxed">
+            <p className="font-body text-v-muted text-lg max-w-2xl leading-relaxed mb-8">
               Volta places student teams on real consulting projects for NYC small businesses.
               You get mentorship, experience, and a portfolio. High school and college students both welcome.
             </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link href="/apply"
+                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-all hover:scale-105 shadow-lg shadow-v-green/20">
+                Apply Now →
+              </Link>
+              <span className="font-body text-sm text-v-muted">Spring 2026 cohort · Rolling admissions</span>
+            </div>
           </AnimatedSection>
         </div>
       </section>
@@ -98,7 +92,7 @@ export default function Join() {
         </div>
       </section>
 
-      {/* Three tracks */}
+      {/* Tracks */}
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
@@ -139,7 +133,7 @@ export default function Join() {
         </div>
       </section>
 
-      {/* Commitment stats */}
+      {/* Commitment */}
       <section className="py-16 bg-white border-y border-v-border">
         <div className="max-w-5xl mx-auto px-5 md:px-8 grid md:grid-cols-3 gap-8 text-center">
           {[
@@ -175,20 +169,20 @@ export default function Join() {
         </div>
       </section>
 
-      {/* Application form */}
-      <section className="py-20 bg-v-bg border-t border-v-border" id="apply">
-        <div className="max-w-2xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10 text-center">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Apply now</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-3">
-              Ready to join?
-            </h2>
-            <p className="font-body text-v-muted">
-              Takes about 5 minutes. Rolling admissions — we&apos;ll follow up within a few days.
-            </p>
-          </AnimatedSection>
+      {/* Final CTA */}
+      <section className="py-20 bg-v-green">
+        <div className="max-w-3xl mx-auto px-5 text-center">
           <AnimatedSection>
-            <ApplicationForm />
+            <h2 className="font-display font-bold text-v-ink text-4xl md:text-5xl mb-5">Ready to apply?</h2>
+            <p className="font-body text-v-ink/70 text-lg mb-8">
+              Submit your resume or answer two short prompts. We&apos;ll reach out to schedule
+              a quick conversation and match you with a project and mentor.
+            </p>
+            <Link href="/apply"
+              className="inline-block bg-v-ink text-white font-display font-bold text-lg px-10 py-5 rounded-full hover:bg-v-ink/80 transition-all hover:scale-105 shadow-xl shadow-v-ink/20">
+              Apply Now →
+            </Link>
+            <p className="font-body text-sm text-v-ink/50 mt-5">Takes 5 minutes · Rolling admissions</p>
           </AnimatedSection>
         </div>
       </section>

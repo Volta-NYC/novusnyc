@@ -1,44 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
 
-const neighborhoods = [
-  "Park Slope, Brooklyn",
-  "Sunnyside, Queens",
-  "Chinatown, Manhattan",
-  "Long Island City, Queens",
-  "Cypress Hills, Brooklyn",
-  "Flatbush, Brooklyn",
-  "Flushing, Queens",
-  "Mott Haven, Bronx",
-  "Bayside, Queens",
-];
-
 export default function Footer() {
   return (
     <footer className="bg-v-dark text-white/70 pt-16 pb-10">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <div className="grid md:grid-cols-3 gap-10 mb-12">
+        <div className="grid md:grid-cols-3 gap-10 mb-12 items-start">
 
-          {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <Image src="/logo.png" alt="Volta" width={28} height={28} className="object-contain brightness-200" />
-              <span className="font-display font-bold text-lg text-white tracking-tight">VOLTA NYC</span>
-            </div>
-            <p className="font-body text-sm leading-relaxed text-white/50 mb-5">
+          {/* Brand — bigger logo */}
+          <div className="flex flex-col items-start">
+            <Image src="/logo.png" alt="Volta" width={64} height={64} className="object-contain brightness-200 mb-4" />
+            <span className="font-display font-bold text-xl text-white tracking-tight mb-3">VOLTA NYC</span>
+            <p className="font-body text-sm leading-relaxed text-white/50">
               A registered nonprofit connecting student teams with NYC small businesses.
             </p>
-            <div className="flex flex-col gap-2">
-              <a href="mailto:volta.newyork@gmail.com" className="font-body text-xs text-white/30 hover:text-white/60 transition-colors">
-                volta.newyork@gmail.com
-              </a>
-              <a href="mailto:ethan@voltanpo.org" className="font-body text-xs text-white/30 hover:text-white/60 transition-colors">
-                ethan@voltanpo.org
-              </a>
-              <a href="mailto:andrew@voltanpo.org" className="font-body text-xs text-white/30 hover:text-white/60 transition-colors">
-                andrew@voltanpo.org
-              </a>
-            </div>
           </div>
 
           {/* Navigate */}
@@ -60,16 +35,33 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Neighborhoods */}
+          {/* Contact us */}
           <div>
-            <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Neighborhoods We Serve</p>
-            <div className="flex flex-col gap-2">
-              {neighborhoods.map((n) => (
-                <span key={n} className="font-body text-sm text-white/40 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-v-green flex-shrink-0" />
-                  {n}
-                </span>
-              ))}
+            <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Contact Us</p>
+            <div className="flex flex-col gap-3">
+              <a
+                href="mailto:volta.newyork@gmail.com"
+                className="inline-flex items-center gap-2.5 bg-white/8 hover:bg-white/14 border border-white/10 hover:border-white/25 text-white/80 hover:text-white font-body text-sm font-medium px-4 py-2.5 rounded-xl transition-all"
+              >
+                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                volta.newyork@gmail.com
+              </a>
+              <a
+                href="https://www.linkedin.com/company/volta-nyc/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 bg-white/8 hover:bg-white/14 border border-white/10 hover:border-white/25 text-white/80 hover:text-white font-body text-sm font-medium px-4 py-2.5 rounded-xl transition-all"
+              >
+                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                  <rect x="2" y="9" width="4" height="12"/>
+                  <circle cx="4" cy="4" r="2"/>
+                </svg>
+                LinkedIn
+              </a>
             </div>
           </div>
 
@@ -77,7 +69,7 @@ export default function Footer() {
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="font-body text-xs text-white/30">© 2026 Volta NYC. A registered nonprofit organization.</p>
-          <p className="font-body text-xs text-white/30">nyc.voltanpo.org — serving NYC&apos;s small business communities</p>
+          <p className="font-body text-xs text-white/30">nyc.voltanpo.org</p>
         </div>
       </div>
     </footer>

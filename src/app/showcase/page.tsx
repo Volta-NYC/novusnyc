@@ -4,9 +4,9 @@ import CountUp from "@/components/CountUp";
 import { MapPinIcon } from "@/components/Icons";
 
 const bigNumbers = [
-  { value: 12, suffix: "+", label: "Businesses helped" },
-  { value: 8, suffix: "", label: "NYC neighborhoods" },
-  { value: 40, suffix: "+", label: "Student contributors" },
+  { value: 20, suffix: "+", label: "Businesses helped" },
+  { value: 9, suffix: "", label: "NYC neighborhoods" },
+  { value: 80, suffix: "+", label: "Student contributors" },
 ];
 
 const projects = [

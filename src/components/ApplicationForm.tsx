@@ -1,70 +1,45 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { BoltIcon, CheckIcon } from "@/components/Icons";
+import { CheckIcon } from "@/components/Icons";
 
 const TRACKS = ["Finance & Operations", "Digital & Tech", "Marketing & Strategy"];
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Referral", "Other"];
-
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xkovzkwz";
 
 export default function ApplicationForm() {
   const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    city: "",
-    education: "",
-    referral: "",
-    tracks: [] as string[],
-    hasResume: null as boolean | null,
-    tools: "",
-    accomplishment: "",
+    fullName: "", email: "", city: "", education: "", referral: "",
+    tracks: [] as string[], hasResume: null as boolean | null,
+    tools: "", accomplishment: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
-
   const toggleTrack = (t: string) =>
     set("tracks", form.tracks.includes(t) ? form.tracks.filter((x) => x !== t) : [...form.tracks, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
-
     const payload: Record<string, string> = {
       _subject: `Volta NYC — Application from ${form.fullName}`,
-      "Full Name": form.fullName,
-      Email: form.email,
-      City: form.city,
-      Education: form.education,
-      "How They Heard": form.referral,
-      "Tracks Selected": form.tracks.join(", "),
-      "Has Resume": form.hasResume ? "Yes" : "No",
+      "Full Name": form.fullName, Email: form.email, City: form.city,
+      Education: form.education, "How They Heard": form.referral,
+      "Tracks Selected": form.tracks.join(", "), "Has Resume": form.hasResume ? "Yes" : "No",
     };
-
     if (!form.hasResume) {
       payload["Tools/Software"] = form.tools;
       payload["Accomplishment"] = form.accomplishment;
     }
-
-    // For file upload we need multipart, so use FormData
     const fd = new FormData();
     Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
-    if (form.hasResume && fileRef.current?.files?.[0]) {
-      fd.append("resume", fileRef.current.files[0]);
-    }
-
+    if (form.hasResume && fileRef.current?.files?.[0]) fd.append("resume", fileRef.current.files[0]);
     try {
-      const res = await fetch(FORMSPREE_ENDPOINT, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: fd,
-      });
+      const res = await fetch(FORMSPREE_ENDPOINT, { method: "POST", headers: { Accept: "application/json" }, body: fd });
       setStatus(res.ok ? "success" : "error");
-    } catch {
-      setStatus("error");
-    }
+    } catch { setStatus("error"); }
   };
 
   if (status === "success") {
@@ -82,40 +57,35 @@ export default function ApplicationForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-v-border rounded-2xl p-8 md:p-10 space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-7">
 
-      {/* Row 1 */}
-      <div className="grid md:grid-cols-2 gap-5">
-        <div>
-          <label className="block font-body text-sm font-semibold text-v-ink mb-2">Full Name *</label>
-          <input required value={form.fullName} onChange={(e) => set("fullName", e.target.value)}
-            className="volta-input" placeholder="Your full name" />
-        </div>
-        <div>
-          <label className="block font-body text-sm font-semibold text-v-ink mb-2">Email *</label>
-          <input required type="email" value={form.email} onChange={(e) => set("email", e.target.value)}
-            className="volta-input" placeholder="you@email.com" />
-        </div>
+      <div>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">Full Name *</label>
+        <input required value={form.fullName} onChange={(e) => set("fullName", e.target.value)}
+          className="volta-input" placeholder="Your full name" />
       </div>
 
-      {/* Row 2 */}
-      <div className="grid md:grid-cols-2 gap-5">
-        <div>
-          <label className="block font-body text-sm font-semibold text-v-ink mb-2">City *</label>
-          <input required value={form.city} onChange={(e) => set("city", e.target.value)}
-            className="volta-input" placeholder="e.g. New York, NY" />
-        </div>
-        <div>
-          <label className="block font-body text-sm font-semibold text-v-ink mb-2">Education Level *</label>
-          <select required value={form.education} onChange={(e) => set("education", e.target.value)} className="volta-input">
-            <option value="">Select one</option>
-            <option value="High School">High School</option>
-            <option value="College / University">College / University</option>
-          </select>
-        </div>
+      <div>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">Email Address *</label>
+        <input required type="email" value={form.email} onChange={(e) => set("email", e.target.value)}
+          className="volta-input" placeholder="you@email.com" />
       </div>
 
-      {/* How did you hear */}
+      <div>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">City *</label>
+        <input required value={form.city} onChange={(e) => set("city", e.target.value)}
+          className="volta-input" placeholder="e.g. New York, NY" />
+      </div>
+
+      <div>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">Education Level *</label>
+        <select required value={form.education} onChange={(e) => set("education", e.target.value)} className="volta-input">
+          <option value="">Select one</option>
+          <option value="High School">High School</option>
+          <option value="College / University">College / University</option>
+        </select>
+      </div>
+
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">How did you hear about Volta? *</label>
         <select required value={form.referral} onChange={(e) => set("referral", e.target.value)} className="volta-input">
@@ -124,7 +94,6 @@ export default function ApplicationForm() {
         </select>
       </div>
 
-      {/* Track selection */}
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-1">
           Select your track(s) *{" "}
@@ -132,46 +101,43 @@ export default function ApplicationForm() {
             (see what each track does →)
           </a>
         </label>
-        <p className="font-body text-xs text-v-muted mb-3">You can select more than one.</p>
-        <div className="flex flex-wrap gap-3">
+        <p className="font-body text-xs text-v-muted mb-3">You may select more than one.</p>
+        <div className="flex flex-col gap-3">
           {TRACKS.map((t) => {
             const active = form.tracks.includes(t);
             return (
               <button key={t} type="button" onClick={() => toggleTrack(t)}
-                className={`px-5 py-2.5 rounded-full border font-body text-sm font-medium transition-all ${
-                  active ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"
+                className={`w-full text-left px-5 py-3 rounded-xl border font-body text-sm font-medium transition-all flex items-center gap-3 ${
+                  active ? "bg-v-green/10 border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"
                 }`}>
+                <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${active ? "bg-v-green border-v-green" : "border-v-border"}`}>
+                  {active && <CheckIcon className="w-3 h-3 text-v-ink" />}
+                </span>
                 {t}
               </button>
             );
           })}
         </div>
         {form.tracks.length === 0 && (
-          <p className="text-xs text-v-muted/60 mt-2">Please select at least one track to continue.</p>
+          <p className="text-xs text-v-muted/60 mt-2">Please select at least one track.</p>
         )}
       </div>
 
-      {/* Resume or prompts */}
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-3">Do you have a resume to attach?</label>
         <div className="flex gap-3">
           <button type="button" onClick={() => set("hasResume", true)}
-            className={`px-5 py-2.5 rounded-full border font-body text-sm font-medium transition-all ${
-              form.hasResume === true ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"
-            }`}>
-            Yes, I have a resume
+            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === true ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}>
+            Yes — attach resume
           </button>
           <button type="button" onClick={() => set("hasResume", false)}
-            className={`px-5 py-2.5 rounded-full border font-body text-sm font-medium transition-all ${
-              form.hasResume === false ? "bg-v-ink border-v-ink text-white" : "bg-white border-v-border text-v-muted hover:border-v-ink"
-            }`}>
+            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === false ? "bg-v-ink border-v-ink text-white" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}>
             No resume
           </button>
         </div>
 
-        {/* Resume upload */}
         {form.hasResume === true && (
-          <div className="mt-4">
+          <div className="mt-5">
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">Attach Resume *</label>
             <input ref={fileRef} required type="file" accept=".pdf,.doc,.docx"
               className="block w-full text-sm text-v-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-v-green file:text-v-ink hover:file:bg-v-green-dark cursor-pointer" />
@@ -179,9 +145,8 @@ export default function ApplicationForm() {
           </div>
         )}
 
-        {/* No-resume prompts */}
         {form.hasResume === false && (
-          <div className="mt-5 space-y-5 border-l-2 border-v-green pl-5">
+          <div className="mt-6 space-y-6 border-l-2 border-v-green pl-5">
             <div>
               <label className="block font-body text-sm font-semibold text-v-ink mb-2">
                 List any specific tools or software you have experience with *
@@ -195,8 +160,8 @@ export default function ApplicationForm() {
                 What is your most impressive accomplishment, or a goal you&apos;re passionate about? *
               </label>
               <textarea required value={form.accomplishment} onChange={(e) => set("accomplishment", e.target.value)}
-                className="volta-input resize-none" rows={4}
-                placeholder="Tell us something you&apos;re proud of or working toward. No pressure to be formal." />
+                className="volta-input resize-none" rows={5}
+                placeholder="Tell us something you're proud of or working toward." />
             </div>
           </div>
         )}

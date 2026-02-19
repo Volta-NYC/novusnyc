@@ -70,7 +70,7 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              href="/join"
+              href="/apply"
               className="bg-v-green text-v-ink font-display font-bold text-sm px-5 py-2.5 rounded-full hover:bg-v-green-dark transition-colors"
             >
               Apply Now
@@ -108,7 +108,7 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              href="/join"
+              href="/apply"
               className="bg-v-green text-v-ink font-display font-bold text-lg px-6 py-4 rounded-xl text-center mt-2"
             >
               Apply Now

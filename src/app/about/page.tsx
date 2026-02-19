@@ -16,9 +16,20 @@ const timeline = [
   { month: "Spring", year: "2026", label: "Spring Cohort — NYC", desc: "Cohort expands to 80+ students across 9 NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City." },
 ];
 
-const directors = [
-  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", school: "Stuyvesant High School" },
-  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", school: "Stuyvesant High School" },
+const team = [
+  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", initial: "E" },
+  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", initial: "A" },
+  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", initial: "J" },
+  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T" },
+];
+
+const branches = [
+  { city: "Jacksonville", state: "FL" },
+  { city: "Bay Area", state: "CA" },
+  { city: "Atlanta", state: "GA" },
+  { city: "Virginia", state: "VA" },
+  { city: "Dallas", state: "TX" },
+  { city: "New York City", state: "NY" },
 ];
 
 export default function About() {
@@ -57,7 +68,7 @@ export default function About() {
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-6">Our mission</p>
             <blockquote className="font-display font-bold text-white leading-tight" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
-              &ldquo;To close the digital and financial equity gap for NYC&apos;s small businesses
+              &ldquo;To close the digital and financial equity gap for small businesses
               by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
             </blockquote>
           </AnimatedSection>
@@ -94,7 +105,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* Timeline — fixed circles and line */}
+      {/* Timeline */}
       <section className="py-20 bg-white border-y border-v-border">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
@@ -105,16 +116,13 @@ export default function About() {
             {timeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.1}>
                 <div className="flex gap-8 pb-12 relative">
-                  {/* Vertical line — starts below the circle, not through it */}
                   {i < timeline.length - 1 && (
                     <div className="absolute left-[31px] top-[72px] bottom-0 w-px bg-v-border" />
                   )}
-                  {/* Circle — bigger to fit two-line text */}
                   <div className="flex-shrink-0 w-16 h-16 rounded-full bg-v-green/15 border-2 border-v-green flex flex-col items-center justify-center z-10">
                     <span className="font-display font-bold text-v-green text-xs leading-none">{t.month}</span>
                     <span className="font-display font-bold text-v-green text-xs leading-none">{t.year}</span>
                   </div>
-                  {/* Content */}
                   <div className="pt-3">
                     <h3 className="font-display font-bold text-v-ink text-lg mb-1">{t.label}</h3>
                     <p className="font-body text-v-muted text-sm leading-relaxed">{t.desc}</p>
@@ -126,6 +134,7 @@ export default function About() {
         </div>
       </section>
 
+      {/* Team */}
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
@@ -135,18 +144,17 @@ export default function About() {
               A team of students from Stuyvesant High School, CUNY institutions, and other NYC schools.
             </p>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 gap-5 max-w-2xl">
-            {directors.map((d, i) => (
-              <AnimatedSection key={d.email} delay={i * 0.1}>
-                <div className="bg-white border border-v-border rounded-2xl p-7 project-card">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {team.map((m, i) => (
+              <AnimatedSection key={m.email} delay={i * 0.08}>
+                <div className="bg-white border border-v-border rounded-2xl p-7 project-card h-full">
                   <div className="w-12 h-12 rounded-full bg-v-green/20 flex items-center justify-center mb-4">
-                    <span className="font-display font-bold text-v-green text-lg">{d.name[0]}</span>
+                    <span className="font-display font-bold text-v-green text-lg">{m.initial}</span>
                   </div>
-                  <h3 className="font-display font-bold text-v-ink text-lg">{d.name}</h3>
-                  <p className="font-body text-sm text-v-muted mt-1">{d.role}</p>
-                  <p className="font-body text-xs text-v-muted/60 mt-0.5">{d.school}</p>
-                  <a href={`mailto:${d.email}`} className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline">
-                    <MailIcon className="w-4 h-4" />{d.email}
+                  <h3 className="font-display font-bold text-v-ink text-lg">{m.name}</h3>
+                  <p className="font-body text-sm text-v-muted mt-1">{m.role}</p>
+                  <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline break-all">
+                    <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
                   </a>
                 </div>
               </AnimatedSection>
@@ -155,18 +163,30 @@ export default function About() {
         </div>
       </section>
 
-      <section className="py-14 bg-v-dark text-center">
-        <div className="max-w-2xl mx-auto px-5">
-          <AnimatedSection>
+      {/* National reach */}
+      <section className="py-20 bg-v-dark">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10 text-center">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">National reach</p>
-            <h2 className="font-display font-bold text-white text-2xl md:text-3xl mb-4">
-              Our Florida branch has served 30+ businesses.
+            <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
+              Volta operates across the country.
             </h2>
-            <p className="font-body text-white/50">
-              Including OPA Behavioral Health, Persis Indian Grill, Sun City Sustenance,
-              and 30+ food trucks and local stores. NYC is our second branch.
+            <p className="font-body text-white/50 max-w-2xl mx-auto mb-10">
+              Our Florida branch has partnered with 30+ businesses including OPA Behavioral Health,
+              Persis Indian Grill, Sun City Sustenance, and 30+ food trucks and local stores.
+              Volta now has operations across six cities.
             </p>
           </AnimatedSection>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {branches.map((b, i) => (
+              <AnimatedSection key={b.city} delay={i * 0.07}>
+                <div className={`rounded-xl border p-4 text-center ${b.state === "NY" ? "border-v-green/50 bg-v-green/10" : "border-white/10 bg-white/5"}`}>
+                  <p className="font-display font-bold text-white text-base leading-tight">{b.city}</p>
+                  <p className="font-body text-xs text-white/40 mt-1">{b.state}</p>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
         </div>
       </section>
     </>
