@@ -58,12 +58,12 @@ export default function Home() {
     <>
       <HeroSection />
 
-      <div className="bg-white border-y border-v-border py-4 overflow-hidden">
+      <div className="bg-white border-y border-v-border py-6 overflow-hidden">
         <div className="marquee-track">
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
             <span key={i} className="font-body text-sm text-v-muted font-medium whitespace-nowrap inline-flex items-center">
               <span className="px-8">{item}</span>
-              <BoltIcon className="w-10 h-10 text-v-green flex-shrink-0" />
+              <BoltIcon className="w-12 h-12 text-v-green flex-shrink-0" />
             </span>
           ))}
         </div>
