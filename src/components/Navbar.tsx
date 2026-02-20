@@ -11,8 +11,10 @@ const links = [
   { href: "/about", label: "About" },
   { href: "/partners", label: "For Businesses" },
   { href: "/contact", label: "Contact" },
-  { href: "/members", label: "Members" },
 ];
+
+/** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */
+const darkHeroPages = ["/partners", "/showcase", "/join", "/apply"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -26,6 +28,8 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => setOpen(false), [pathname]);
+
+  const darkHero = !scrolled && !open && darkHeroPages.includes(pathname);
 
   return (
     <>
@@ -45,7 +49,7 @@ export default function Navbar() {
               height={32}
               className="object-contain"
             />
-            <span className="font-display font-bold text-xl tracking-tight text-v-ink">
+            <span className={`font-display font-bold text-xl tracking-tight transition-colors ${darkHero ? "text-white" : "text-v-ink"}`}>
               VOLTA NYC
             </span>
           </Link>
@@ -58,12 +62,23 @@ export default function Navbar() {
                 className={`font-body text-sm font-semibold transition-colors ${
                   pathname === l.href
                     ? "text-v-green"
+                    : darkHero
+                    ? "text-white/70 hover:text-white"
                     : "text-v-muted hover:text-v-ink"
                 }`}
               >
                 {l.label}
               </Link>
             ))}
+            <div className={`h-4 w-px ${darkHero ? "bg-white/20" : "bg-v-border"}`} />
+            <Link
+              href="/members"
+              className={`font-body text-xs font-semibold transition-colors ${
+                darkHero ? "text-white/40 hover:text-white/70" : "text-v-muted/60 hover:text-v-muted"
+              }`}
+            >
+              For Members
+            </Link>
             <Link
               href="/join"
               className="bg-v-green text-v-ink font-display font-bold text-sm px-5 py-2.5 rounded-full hover:bg-v-green-dark transition-colors"
@@ -77,9 +92,9 @@ export default function Navbar() {
             className="md:hidden flex flex-col gap-1.5 p-2"
             aria-label="Menu"
           >
-            <span className={`block h-0.5 w-5 bg-v-ink transition-all duration-300 ${open ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block h-0.5 w-5 bg-v-ink transition-all duration-300 ${open ? "opacity-0" : ""}`} />
-            <span className={`block h-0.5 w-5 bg-v-ink transition-all duration-300 ${open ? "-rotate-45 -translate-y-2" : ""}`} />
+            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white" : "bg-v-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
+            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white" : "bg-v-ink"} ${open ? "opacity-0" : ""}`} />
+            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white" : "bg-v-ink"} ${open ? "-rotate-45 -translate-y-2" : ""}`} />
           </button>
         </div>
       </header>
@@ -102,6 +117,12 @@ export default function Navbar() {
                 {l.label}
               </Link>
             ))}
+            <Link
+              href="/members"
+              className="font-display font-bold text-lg text-v-muted border-b border-v-border pb-4"
+            >
+              For Members
+            </Link>
             <Link
               href="/join"
               className="bg-v-green text-v-ink font-display font-bold text-lg px-6 py-4 rounded-xl text-center mt-2"

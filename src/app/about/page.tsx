@@ -53,6 +53,11 @@ export default function About() {
               &ldquo;To close the digital and financial equity gap for small businesses
               by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
             </blockquote>
+            <p className="font-body text-white/60 text-lg leading-relaxed mt-8 max-w-2xl">
+              Most small business owners know what they need. What they lack is the
+              time, bandwidth, and connections to make it happen. We help them see
+              what&apos;s possible — and then we make it happen.
+            </p>
           </AnimatedSection>
           <AnimatedSection className="mt-14">
             <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 h-64 flex items-center justify-center">

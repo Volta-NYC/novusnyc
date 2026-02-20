@@ -155,46 +155,6 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ── LANGUAGE DIFFERENTIATOR ───────────────────────────── */}
-      <section className="py-20 bg-v-dark">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
-              A genuine differentiator
-            </p>
-            <h2
-              className="font-display font-bold text-white leading-tight mb-5"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
-            >
-              We work in your language.
-            </h2>
-            <p className="font-body text-white/60 text-lg max-w-2xl leading-relaxed mb-10">
-              NYC&apos;s small business owners speak dozens of languages. Our contact form
-              and team communications are available in six — because the businesses that
-              need this most are often those working across language barriers.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {[
-                { code: "EN", name: "English" },
-                { code: "ES", name: "Español" },
-                { code: "ZH", name: "中文" },
-                { code: "KO", name: "한국어" },
-                { code: "AR", name: "العربية" },
-                { code: "FR", name: "Français" },
-              ].map((l) => (
-                <div
-                  key={l.code}
-                  className="border border-white/20 rounded-xl px-5 py-3 text-center min-w-[90px]"
-                >
-                  <p className="font-display font-bold text-white text-base">{l.name}</p>
-                  <p className="font-body text-xs text-white/40 mt-0.5">{l.code}</p>
-                </div>
-              ))}
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
       <section className="py-20 bg-v-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
@@ -246,11 +206,11 @@ export default function Partners() {
                 <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
                   Currently active
                 </p>
-                <p className="font-display font-bold text-v-ink text-6xl leading-none mb-1">8+</p>
+                <p className="font-display font-bold text-v-ink text-6xl leading-none mb-1">9</p>
                 <p className="font-body text-v-muted mb-6">BID partnerships across NYC</p>
                 <div className="pt-6 border-t border-v-border">
                   <p className="font-body text-sm text-v-muted">
-                    Active across 9 neighborhoods in Brooklyn, Queens, Manhattan, and the Bronx.
+                    Active across 9 neighborhoods in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
                   </p>
                 </div>
               </div>

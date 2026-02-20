@@ -32,7 +32,7 @@ export const homeStats = [
   { value: 20, suffix: "+", label: "Businesses Supported" },
   { value: 9, suffix: "", label: "NYC Neighborhoods" },
   { value: 80, suffix: "+", label: "Student Members" },
-  { value: 8, suffix: "+", label: "BID Partnerships" },
+  { value: 3, suffix: "", label: "Service Tracks" },
 ];
 
 export const homeTracks = [
@@ -184,7 +184,7 @@ export const aboutValues = [
   },
   {
     title: "Student-led",
-    desc: "High school and college students run every project. We learn by doing.",
+    desc: "We come from across the five boroughs and diverse backgrounds.",
   },
   {
     title: "Community-rooted",
@@ -224,17 +224,17 @@ export const aboutTimeline = [
 ];
 
 export const teamMembers = [
-  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", initial: "E" },
-  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", initial: "A" },
-  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", initial: "J" },
-  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T" },
+  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", initial: "E", desc: "" },
+  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", initial: "A", desc: "" },
+  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "" },
+  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T", desc: "" },
 ];
 
 export const branches = [
   { city: "Jacksonville", state: "FL" },
   { city: "Bay Area", state: "CA" },
   { city: "Atlanta", state: "GA" },
-  { city: "Virginia", state: "VA" },
+  { city: "Alexandria", state: "VA" },
   { city: "Dallas", state: "TX" },
   { city: "New York City", state: "NY" },
 ];

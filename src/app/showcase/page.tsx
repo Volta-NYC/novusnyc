@@ -31,9 +31,9 @@ const neighborhoods = [
   { name: "Long Island City", borough: "Queens" },
   { name: "Cypress Hills", borough: "Brooklyn" },
   { name: "Flatbush", borough: "Brooklyn" },
-  { name: "Flushing", borough: "Queens" },
-  { name: "Mott Haven", borough: "Bronx" },
+  { name: "The Hub", borough: "Bronx" },
   { name: "Bayside", borough: "Queens" },
+  { name: "Forest Avenue", borough: "Staten Island" },
 ];
 
 export default function Showcase() {
@@ -58,7 +58,7 @@ export default function Showcase() {
                 {[
                   { value: "20+", label: "Businesses" },
                   { value: "9", label: "Neighborhoods" },
-                  { value: "8+", label: "BID partners" },
+                  { value: "9", label: "BID partners" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>
@@ -150,7 +150,7 @@ export default function Showcase() {
               Your business could be next.
             </h2>
             <p className="font-body text-v-ink/70 mb-8">
-              We&apos;re actively taking on projects in Brooklyn, Queens, Manhattan, and the Bronx.
+              We&apos;re actively taking on projects in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
             </p>
             <Link
               href="/partners#contact"

@@ -44,17 +44,21 @@ export default function Contact() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl">The team</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl">The Team</h2>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {team.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
                 <div className="bg-v-bg border border-v-border rounded-2xl p-7 project-card h-full">
+                  {/* Photo placeholder — replace div with <Image> when photos are ready */}
                   <div className="w-12 h-12 rounded-full bg-v-green/20 flex items-center justify-center mb-4">
                     <span className="font-display font-bold text-v-green text-lg">{m.initial}</span>
                   </div>
                   <h3 className="font-display font-bold text-v-ink text-lg leading-tight">{m.name}</h3>
                   <p className="font-body text-sm text-v-muted mt-1">{m.role}</p>
+                  {m.desc && (
+                    <p className="font-body text-sm text-v-muted/80 mt-3 leading-relaxed">{m.desc}</p>
+                  )}
                   <a href={`mailto:${m.email}`}
                     className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline break-all">
                     <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
