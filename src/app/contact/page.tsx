@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
 import InquiryForm from "@/components/InquiryForm";
+import { teamMembers } from "@/data";
 
 export const metadata: Metadata = {
   title: "Contact | Volta NYC",
@@ -12,13 +13,6 @@ export const metadata: Metadata = {
     description: "Reach the team behind Volta NYC.",
   },
 };
-
-const team = [
-  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", school: "Stuyvesant High School", initial: "E" },
-  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", school: "Stuyvesant High School", initial: "A" },
-  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", school: "Stuyvesant High School", initial: "J" },
-  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", school: "Stuyvesant High School", initial: "T" },
-];
 
 export default function Contact() {
   return (
@@ -47,7 +41,7 @@ export default function Contact() {
             <h2 className="font-display font-bold text-v-ink text-3xl">The Team</h2>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {team.map((m, i) => (
+            {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
                 <div className="bg-v-bg border border-v-border rounded-2xl p-7 project-card h-full">
                   {/* Photo placeholder — replace div with <Image> when photos are ready */}
