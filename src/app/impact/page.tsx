@@ -199,11 +199,11 @@ export default function Impact() {
                   Geographic reach
                 </p>
                 <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-                  9 neighborhoods.<br />4 boroughs.
+                  9 neighborhoods.<br />5 boroughs.
                 </h2>
                 <p className="font-body text-white/50 leading-relaxed mb-6">
                   Park Slope, Sunnyside, Chinatown, Long Island City, Cypress Hills,
-                  Flatbush, Flushing, Mott Haven, Bayside. Each neighborhood represents
+                  Flatbush, The Hub, Bayside, Forest Avenue. Each neighborhood represents
                   an active BID or community organization partnership.
                 </p>
                 <Link
@@ -216,9 +216,10 @@ export default function Impact() {
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { borough: "Brooklyn", count: "3 neighborhoods" },
-                  { borough: "Queens", count: "4 neighborhoods" },
+                  { borough: "Queens", count: "3 neighborhoods" },
                   { borough: "Manhattan", count: "1 neighborhood" },
                   { borough: "Bronx", count: "1 neighborhood" },
+                  { borough: "Staten Island", count: "1 neighborhood" },
                 ].map((b) => (
                   <div key={b.borough} className="bg-white/5 border border-white/10 rounded-xl p-5">
                     <p className="font-display font-bold text-white text-lg">{b.borough}</p>

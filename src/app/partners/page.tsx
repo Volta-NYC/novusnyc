@@ -1,7 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
 import { partnerServices } from "@/data";
+
+export const metadata: Metadata = {
+  title: "For Businesses | Volta NYC",
+  description:
+    "NYC small businesses: get a free website, social media strategy, grant writing, or SEO from a dedicated student team. No cost, no catch. Volta NYC is a registered 501(c)(3) nonprofit.",
+  openGraph: {
+    title: "Work With Volta NYC — Free for NYC Small Businesses",
+    description:
+      "Student teams build websites, grow social media, write grants, and optimize SEO for NYC small businesses — at no cost. Reach out to get started.",
+  },
+};
 
 export default function Partners() {
   return (
@@ -73,13 +85,14 @@ export default function Partners() {
                 How the partnership works
               </p>
               <p className="font-body text-v-ink text-lg leading-relaxed mb-5">
-                Our student teams are looking for real clients and real deliverables —
-                work they can point to and discuss in an interview.
+                Our student teams work on real client projects — work they can point
+                to, discuss in an interview, and be proud of.
               </p>
               <p className="font-body text-v-muted leading-relaxed mb-5">
-                You get the work done. They build their portfolio. There are no hidden
-                fees, no marketing use of your business, no data collection. The labor
-                is what we provide — the credibility is what we earn.
+                They do the work. You get results you&apos;d normally pay an agency
+                for. No hidden fees, no marketing use of your business, no data
+                collection. The labor is what we provide — the credibility is what
+                we earn.
               </p>
               <p className="font-body text-v-muted leading-relaxed">
                 We are upfront about this exchange with every business we work with.

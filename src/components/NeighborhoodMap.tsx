@@ -11,6 +11,7 @@ interface BusinessMarker {
   lng: number;
   neighborhood: string;
   status: "Active" | "In Progress" | "Upcoming";
+  url?: string; // link to live website or social account — add when available
 }
 
 const neighborhoods = [
@@ -153,6 +154,16 @@ export default function NeighborhoodMap() {
                   <span style={{ fontSize: 11, color: "#374151" }}>·</span>
                   <span style={{ fontSize: 11, color: "#374151" }}>{b.services}</span>
                 </div>
+                {b.url && (
+                  <a
+                    href={b.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: "#3B74ED", textDecoration: "none" }}
+                  >
+                    View →
+                  </a>
+                )}
               </div>
             </Popup>
           </CircleMarker>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { MailIcon, LinkedInIcon } from "@/components/Icons";
 
 export default function Footer() {
   return (
@@ -38,19 +39,19 @@ export default function Footer() {
             <div className="flex flex-col gap-3">
               <a
                 href="mailto:volta.newyork@gmail.com"
-                className="font-body text-sm text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-2 font-body text-sm text-white/60 hover:text-white transition-colors"
               >
-                Email:{" "}
-                <span className="text-white/80 hover:text-white">volta.newyork@gmail.com</span>
+                <MailIcon className="w-4 h-4 flex-shrink-0 text-white/40" />
+                volta.newyork@gmail.com
               </a>
               <a
                 href="https://www.linkedin.com/company/volta-nyc/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-sm text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-2 font-body text-sm text-white/60 hover:text-white transition-colors"
               >
-                LinkedIn:{" "}
-                <span className="text-white/80 hover:text-white">volta-nyc</span>
+                <LinkedInIcon className="w-4 h-4 flex-shrink-0 text-white/40" />
+                volta-nyc
               </a>
             </div>
           </div>

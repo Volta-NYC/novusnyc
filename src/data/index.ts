@@ -7,7 +7,7 @@ import {
   AwardIcon,
   ArrowUpRightIcon,
   BuildingIcon,
-  MentorIcon,
+  UsersIcon,
   GlobeIcon,
   SmartphoneIcon,
   DollarIcon,
@@ -103,6 +103,8 @@ export interface Project {
   status: ProjectStatus;
   color: string;
   desc: string;
+  url?: string;   // live website or social media link — add when available
+  quote?: string; // client testimonial — add when available
 }
 
 export const projects: Project[] = [
@@ -184,7 +186,7 @@ export const aboutValues = [
   },
   {
     title: "Student-led",
-    desc: "We come from across the five boroughs and diverse backgrounds.",
+    desc: "Every project — from website builds to social media campaigns to grant applications — is led and completed entirely by students, from initial scoping to final delivery. We come from across the five boroughs and diverse backgrounds.",
   },
   {
     title: "Community-rooted",
@@ -264,7 +266,7 @@ export const joinGains = [
     bg: "bg-amber-50",
   },
   {
-    icon: MentorIcon,
+    icon: UsersIcon,
     title: "Mentorship",
     desc: "Get guidance from experienced team leads and project directors throughout your time at Volta.",
     color: "text-purple-500",

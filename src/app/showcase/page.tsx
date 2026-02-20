@@ -130,10 +130,27 @@ export default function Showcase() {
                     <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
                     <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
                     <p className="font-body text-sm text-v-ink/70 leading-relaxed flex-1">{p.desc}</p>
-                    <p className="font-body text-xs text-v-muted/70 mt-4 flex items-center gap-1.5">
-                      <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
-                      {p.neighborhood}
-                    </p>
+                    {p.quote && (
+                      <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+                        &ldquo;{p.quote}&rdquo;
+                      </blockquote>
+                    )}
+                    <div className="flex items-center justify-between mt-4">
+                      <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+                        <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                        {p.neighborhood}
+                      </p>
+                      {p.url && (
+                        <a
+                          href={p.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-body text-xs font-semibold text-v-blue hover:underline"
+                        >
+                          View →
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </AnimatedSection>

@@ -52,16 +52,34 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Organization",
+              "@type": "NGO",
               name: "Volta NYC",
+              alternateName: "Volta New York City",
               url: "https://nyc.voltanpo.org",
               logo: "https://nyc.voltanpo.org/logo.png",
               description:
-                "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects for NYC small businesses at no cost.",
+                "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
               email: "volta.newyork@gmail.com",
-              areaServed: "New York City, NY",
-              nonprofitStatus: "Nonprofit501c3",
-              sameAs: ["https://www.linkedin.com/company/volta-nyc/"],
+              foundingDate: "2025",
+              areaServed: {
+                "@type": "City",
+                name: "New York City",
+                containedInPlace: {
+                  "@type": "State",
+                  name: "New York",
+                },
+              },
+              knowsAbout: [
+                "Website Design",
+                "Search Engine Optimization",
+                "Social Media Marketing",
+                "Grant Writing",
+                "Small Business Consulting",
+                "Digital Equity",
+              ],
+              sameAs: [
+                "https://www.linkedin.com/company/volta-nyc/",
+              ],
             }),
           }}
         />

@@ -87,13 +87,14 @@ export default function Join() {
                 <p className="font-body text-v-ink/70 leading-relaxed">
                   Every member works with a team lead from day one. As you build
                   experience, you&apos;ll move into team lead and project director roles
-                  yourself — the mentorship chain goes both ways.
+                  yourself — our leadership track goes both ways, so the person
+                  mentoring you today was in your position not long ago.
                 </p>
               </div>
               <div className="space-y-4">
                 {[
                   "Assigned to a team lead on your first project",
-                  "Bi-weekly check-ins with project directors",
+                  "Twice-monthly check-ins with project directors",
                   "Leadership track: member → team lead → director",
                   "References from people who watched you work",
                 ].map((item) => (
