@@ -2,61 +2,8 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
 import HeroSection from "@/components/HeroSection";
-import { BarChartIcon, CodeIcon, MegaphoneIcon, MapPinIcon } from "@/components/Icons";
-
-const stats = [
-  { value: 20, suffix: "+", label: "Businesses Supported" },
-  { value: 9, suffix: "", label: "NYC Neighborhoods" },
-  { value: 80, suffix: "+", label: "Student Members" },
-  { value: 3, suffix: "", label: "Service Tracks" },
-];
-
-const tracks = [
-  {
-    icon: BarChartIcon,
-    name: "Finance & Operations",
-    color: "bg-amber-50 border-amber-100",
-    accent: "bg-amber-400",
-    iconColor: "text-amber-500",
-    iconBg: "bg-amber-100",
-    items: ["Grant research & writing", "Revenue & sales analysis", "POS & payment optimization", "Operational consulting"],
-  },
-  {
-    icon: CodeIcon,
-    name: "Digital & Tech",
-    color: "bg-blue-50 border-blue-100",
-    accent: "bg-v-blue",
-    iconColor: "text-v-blue",
-    iconBg: "bg-blue-100",
-    items: ["Website design & development", "SEO & Google Maps visibility", "Web accessibility (ADA)", "Cloud & security basics"],
-  },
-  {
-    icon: MegaphoneIcon,
-    name: "Marketing & Strategy",
-    color: "bg-lime-50 border-lime-100",
-    accent: "bg-v-green",
-    iconColor: "text-v-green",
-    iconBg: "bg-lime-100",
-    items: ["Social media management", "Founder storytelling & video", "Content creation & strategy", "Audience growth analytics"],
-  },
-];
-
-const currentProjects = [
-  { name: "Souk Al Shater", type: "Lebanese Restaurant", neighborhood: "Sunnyside, Queens", service: "Website", color: "bg-orange-400" },
-  { name: "Anatolico", type: "Turkish Home Goods", neighborhood: "Park Slope, Brooklyn", service: "Social Media", color: "bg-v-green" },
-  { name: "Higher Learning", type: "Tutoring Center", neighborhood: "Chinatown, Manhattan", service: "Website", color: "bg-v-blue" },
-];
-
-const marqueeItems = [
-  "Stuyvesant High School",
-  "Brooklyn Tech",
-  "Bronx Science",
-  "Staten Island Tech",
-  "Binghamton University",
-  "Hunter College",
-  "Stony Brook University",
-  "Baruch College",
-];
+import { MapPinIcon } from "@/components/Icons";
+import { homeStats, homeTracks, marqueeSchools, currentProjects } from "@/data";
 
 export default function Home() {
   return (
@@ -66,7 +13,7 @@ export default function Home() {
       {/* ── MARQUEE ──────────────────────────────────────────── */}
       <div className="bg-white border-y border-v-border py-4 overflow-hidden">
         <div className="marquee-track">
-          {[...marqueeItems, ...marqueeItems].map((item, i) => (
+          {[...marqueeSchools, ...marqueeSchools].map((item, i) => (
             <span key={i} className="font-body text-sm text-v-muted font-medium whitespace-nowrap inline-flex items-center">
               <span className="px-8">{item}</span>
               <span className="w-2 h-2 rounded-full bg-v-green flex-shrink-0" />
@@ -78,7 +25,7 @@ export default function Home() {
       {/* ── STATS ────────────────────────────────────────────── */}
       <section className="bg-v-dark py-20">
         <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-10">
-          {stats.map((s) => (
+          {homeStats.map((s) => (
             <AnimatedSection key={s.label} className="text-center">
               <div className="font-display font-bold text-5xl md:text-6xl text-v-green mb-2">
                 <CountUp end={s.value} suffix={s.suffix} />
@@ -102,7 +49,7 @@ export default function Home() {
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-5">
-            {tracks.map((t, i) => (
+            {homeTracks.map((t, i) => (
               <AnimatedSection key={t.name} delay={i * 0.1}>
                 <div className={`${t.color} border rounded-2xl p-8 h-full project-card`}>
                   <div className={`w-12 h-12 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
@@ -142,7 +89,7 @@ export default function Home() {
                 <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                   <div className={`${p.color} h-2`} />
                   <div className="p-6">
-                    <span className="tag bg-v-border text-v-muted mb-4 inline-block">{p.service}</span>
+                    <span className="tag bg-v-border text-v-muted mb-4 inline-block">{p.services[0]}</span>
                     <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
                     <p className="font-body text-sm text-v-muted">{p.type}</p>
                     <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">

@@ -1,36 +1,7 @@
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
-
-const values = [
-  { title: "Equity first", desc: "We focus on neighborhoods and businesses that don't have easy access to consultants or agencies." },
-  { title: "Students lead", desc: "High school and college students run every project. We learn by doing." },
-  { title: "Community-rooted", desc: "We work through local BIDs and community organizations because trust in a neighborhood takes time to build." },
-  { title: "Transparent", desc: "Our members gain real experience and portfolio work. Businesses get the labor. We're upfront about that exchange." },
-];
-
-const timeline = [
-  { month: "Apr", year: "2025", label: "Florida branch founded", desc: "Volta begins working with local businesses, food trucks, and nonprofits in the Jacksonville area." },
-  { month: "Nov", year: "2025", label: "NYC branch launched", desc: "Volta NYC is established, beginning outreach to Business Improvement Districts across Brooklyn and Queens." },
-  { month: "Jan", year: "2026", label: "First NYC projects", desc: "First website and social media projects kick off — Souk Al Shater, Higher Learning, and Anatolico." },
-  { month: "Spring", year: "2026", label: "Spring Cohort — NYC", desc: "Cohort expands to 80+ students across 9 NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City." },
-];
-
-const team = [
-  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", initial: "E" },
-  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", initial: "A" },
-  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", initial: "J" },
-  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T" },
-];
-
-const branches = [
-  { city: "Jacksonville", state: "FL" },
-  { city: "Bay Area", state: "CA" },
-  { city: "Atlanta", state: "GA" },
-  { city: "Virginia", state: "VA" },
-  { city: "Dallas", state: "TX" },
-  { city: "New York City", state: "NY" },
-];
+import { aboutValues, aboutTimeline, teamMembers, branches } from "@/data";
 
 export default function About() {
   return (
@@ -90,7 +61,7 @@ export default function About() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 gap-5">
-            {values.map((v, i) => (
+            {aboutValues.map((v, i) => (
               <AnimatedSection key={v.title} delay={i * 0.1}>
                 <div className="bg-white border border-v-border rounded-2xl p-8 project-card">
                   <h3 className="font-display font-bold text-v-ink text-xl mb-3 flex items-center gap-3">
@@ -113,12 +84,10 @@ export default function About() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
           </AnimatedSection>
           <div className="relative">
-            {/* Single continuous vertical line */}
             <div className="absolute left-8 top-8 w-0.5 bg-v-border" style={{ height: "calc(100% - 4rem)" }} />
-            {timeline.map((t, i) => (
+            {aboutTimeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.12}>
                 <div className="flex gap-10 pb-20 last:pb-0">
-                  {/* Circle — fixed width so line always aligns */}
                   <div className="flex-shrink-0 w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center z-10 shadow-sm relative">
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
@@ -145,7 +114,7 @@ export default function About() {
             </p>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {team.map((m, i) => (
+            {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
                 <div className="bg-white border border-v-border rounded-2xl p-7 project-card h-full">
                   <div className="w-12 h-12 rounded-full bg-v-green/20 flex items-center justify-center mb-4">

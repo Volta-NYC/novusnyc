@@ -2,32 +2,51 @@
 
 import { useState, useRef } from "react";
 import { CheckIcon } from "@/components/Icons";
+import { FORMSPREE_ENDPOINT } from "@/lib/formspree";
+import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schemas";
+import { TRACK_NAMES } from "@/data";
 
-const TRACKS = ["Finance & Operations", "Digital & Tech", "Marketing & Strategy"];
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Referral", "Other"];
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/xkovzkwz";
+
+const EMPTY: ApplicationFormValues = {
+  fullName: "", email: "", city: "", education: "", referral: "",
+  tracks: [], hasResume: null, tools: "", accomplishment: "",
+};
 
 export default function ApplicationForm() {
-  const [form, setForm] = useState({
-    fullName: "", email: "", city: "", education: "", referral: "",
-    tracks: [] as string[], hasResume: null as boolean | null,
-    tools: "", accomplishment: "",
-  });
+  const [form, setForm] = useState<ApplicationFormValues>(EMPTY);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
+  const set = <K extends keyof ApplicationFormValues>(k: K, v: ApplicationFormValues[K]) =>
+    setForm((p) => ({ ...p, [k]: v }));
+
+  const clearError = (k: string) =>
+    setErrors((p) => { const next = { ...p }; delete next[k]; return next; });
+
   const toggleTrack = (t: string) =>
     set("tracks", form.tracks.includes(t) ? form.tracks.filter((x) => x !== t) : [...form.tracks, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const result = validateApplicationForm(form);
+    if (!result.success) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
     setStatus("loading");
+
     const payload: Record<string, string> = {
       _subject: `Volta NYC — Application from ${form.fullName}`,
-      "Full Name": form.fullName, Email: form.email, City: form.city,
-      Education: form.education, "How They Heard": form.referral,
-      "Tracks Selected": form.tracks.join(", "), "Has Resume": form.hasResume ? "Yes" : "No",
+      "Full Name": form.fullName,
+      Email: form.email,
+      City: form.city,
+      Education: form.education,
+      "How They Heard": form.referral,
+      "Tracks Selected": form.tracks.join(", "),
+      "Has Resume": form.hasResume ? "Yes" : "No",
     };
     if (!form.hasResume) {
       payload["Tools/Software"] = form.tools;
@@ -35,11 +54,19 @@ export default function ApplicationForm() {
     }
     const fd = new FormData();
     Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
-    if (form.hasResume && fileRef.current?.files?.[0]) fd.append("resume", fileRef.current.files[0]);
+    if (form.hasResume && fileRef.current?.files?.[0]) {
+      fd.append("resume", fileRef.current.files[0]);
+    }
     try {
-      const res = await fetch(FORMSPREE_ENDPOINT, { method: "POST", headers: { Accept: "application/json" }, body: fd });
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: fd,
+      });
       setStatus(res.ok ? "success" : "error");
-    } catch { setStatus("error"); }
+    } catch {
+      setStatus("error");
+    }
   };
 
   if (status === "success") {
@@ -57,41 +84,67 @@ export default function ApplicationForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
+    <form onSubmit={handleSubmit} noValidate className="space-y-7">
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">Full Name *</label>
-        <input required value={form.fullName} onChange={(e) => set("fullName", e.target.value)}
-          className="volta-input" placeholder="Your full name" />
+        <input
+          value={form.fullName}
+          onChange={(e) => { set("fullName", e.target.value); clearError("fullName"); }}
+          className={`volta-input ${errors.fullName ? "border-red-400" : ""}`}
+          placeholder="Your full name"
+        />
+        {errors.fullName && <p className="text-red-500 text-xs mt-1 font-body">{errors.fullName}</p>}
       </div>
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">Email Address *</label>
-        <input required type="email" value={form.email} onChange={(e) => set("email", e.target.value)}
-          className="volta-input" placeholder="you@email.com" />
+        <input
+          type="email"
+          value={form.email}
+          onChange={(e) => { set("email", e.target.value); clearError("email"); }}
+          className={`volta-input ${errors.email ? "border-red-400" : ""}`}
+          placeholder="you@email.com"
+        />
+        {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
       </div>
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">City *</label>
-        <input required value={form.city} onChange={(e) => set("city", e.target.value)}
-          className="volta-input" placeholder="e.g. New York, NY" />
+        <input
+          value={form.city}
+          onChange={(e) => { set("city", e.target.value); clearError("city"); }}
+          className={`volta-input ${errors.city ? "border-red-400" : ""}`}
+          placeholder="e.g. New York, NY"
+        />
+        {errors.city && <p className="text-red-500 text-xs mt-1 font-body">{errors.city}</p>}
       </div>
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">Education Level *</label>
-        <select required value={form.education} onChange={(e) => set("education", e.target.value)} className="volta-input">
+        <select
+          value={form.education}
+          onChange={(e) => { set("education", e.target.value); clearError("education"); }}
+          className={`volta-input ${errors.education ? "border-red-400" : ""}`}
+        >
           <option value="">Select one</option>
           <option value="High School">High School</option>
           <option value="College / University">College / University</option>
         </select>
+        {errors.education && <p className="text-red-500 text-xs mt-1 font-body">{errors.education}</p>}
       </div>
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">How did you hear about Volta? *</label>
-        <select required value={form.referral} onChange={(e) => set("referral", e.target.value)} className="volta-input">
+        <select
+          value={form.referral}
+          onChange={(e) => { set("referral", e.target.value); clearError("referral"); }}
+          className={`volta-input ${errors.referral ? "border-red-400" : ""}`}
+        >
           <option value="">Select one</option>
           {REFERRAL_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
+        {errors.referral && <p className="text-red-500 text-xs mt-1 font-body">{errors.referral}</p>}
       </div>
 
       <div>
@@ -103,13 +156,17 @@ export default function ApplicationForm() {
         </label>
         <p className="font-body text-xs text-v-muted mb-3">You may select more than one.</p>
         <div className="flex flex-col gap-3">
-          {TRACKS.map((t) => {
+          {TRACK_NAMES.map((t) => {
             const active = form.tracks.includes(t);
             return (
-              <button key={t} type="button" onClick={() => toggleTrack(t)}
+              <button
+                key={t}
+                type="button"
+                onClick={() => { toggleTrack(t); clearError("tracks"); }}
                 className={`w-full text-left px-5 py-3 rounded-xl border font-body text-sm font-medium transition-all flex items-center gap-3 ${
                   active ? "bg-v-green/10 border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"
-                }`}>
+                }`}
+              >
                 <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${active ? "bg-v-green border-v-green" : "border-v-border"}`}>
                   {active && <CheckIcon className="w-3 h-3 text-v-ink" />}
                 </span>
@@ -118,29 +175,38 @@ export default function ApplicationForm() {
             );
           })}
         </div>
-        {form.tracks.length === 0 && (
-          <p className="text-xs text-v-muted/60 mt-2">Please select at least one track.</p>
-        )}
+        {errors.tracks && <p className="text-red-500 text-xs mt-2 font-body">{errors.tracks}</p>}
       </div>
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-3">Do you have a resume to attach?</label>
         <div className="flex gap-3">
-          <button type="button" onClick={() => set("hasResume", true)}
-            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === true ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}>
+          <button
+            type="button"
+            onClick={() => { set("hasResume", true); clearError("hasResume"); }}
+            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === true ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+          >
             Yes — attach resume
           </button>
-          <button type="button" onClick={() => set("hasResume", false)}
-            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === false ? "bg-v-ink border-v-ink text-white" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}>
+          <button
+            type="button"
+            onClick={() => { set("hasResume", false); clearError("hasResume"); }}
+            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === false ? "bg-v-ink border-v-ink text-white" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+          >
             No resume
           </button>
         </div>
+        {errors.hasResume && <p className="text-red-500 text-xs mt-2 font-body">{errors.hasResume}</p>}
 
         {form.hasResume === true && (
           <div className="mt-5">
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">Attach Resume *</label>
-            <input ref={fileRef} required type="file" accept=".pdf,.doc,.docx"
-              className="block w-full text-sm text-v-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-v-green file:text-v-ink hover:file:bg-v-green-dark cursor-pointer" />
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="block w-full text-sm text-v-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-v-green file:text-v-ink hover:file:bg-v-green-dark cursor-pointer"
+            />
             <p className="text-xs text-v-muted/60 mt-1.5">PDF, DOC, or DOCX. Max 5MB.</p>
           </div>
         )}
@@ -151,17 +217,27 @@ export default function ApplicationForm() {
               <label className="block font-body text-sm font-semibold text-v-ink mb-2">
                 List any specific tools or software you have experience with *
               </label>
-              <textarea required value={form.tools} onChange={(e) => set("tools", e.target.value)}
-                className="volta-input resize-none" rows={3}
-                placeholder="e.g. Figma, React, Excel, Canva, Python, Google Ads…" />
+              <textarea
+                value={form.tools}
+                onChange={(e) => { set("tools", e.target.value); clearError("tools"); }}
+                className={`volta-input resize-none ${errors.tools ? "border-red-400" : ""}`}
+                rows={3}
+                placeholder="e.g. Figma, React, Excel, Canva, Python, Google Ads…"
+              />
+              {errors.tools && <p className="text-red-500 text-xs mt-1 font-body">{errors.tools}</p>}
             </div>
             <div>
               <label className="block font-body text-sm font-semibold text-v-ink mb-2">
                 What is your most impressive accomplishment, or a goal you&apos;re passionate about? *
               </label>
-              <textarea required value={form.accomplishment} onChange={(e) => set("accomplishment", e.target.value)}
-                className="volta-input resize-none" rows={5}
-                placeholder="Tell us something you're proud of or working toward." />
+              <textarea
+                value={form.accomplishment}
+                onChange={(e) => { set("accomplishment", e.target.value); clearError("accomplishment"); }}
+                className={`volta-input resize-none ${errors.accomplishment ? "border-red-400" : ""}`}
+                rows={5}
+                placeholder="Tell us something you're proud of or working toward."
+              />
+              {errors.accomplishment && <p className="text-red-500 text-xs mt-1 font-body">{errors.accomplishment}</p>}
             </div>
           </div>
         )}
@@ -169,7 +245,7 @@ export default function ApplicationForm() {
 
       <button
         type="submit"
-        disabled={status === "loading" || form.tracks.length === 0 || form.hasResume === null}
+        disabled={status === "loading"}
         className="w-full bg-v-green text-v-ink font-display font-bold text-base py-4 rounded-xl hover:bg-v-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "loading" ? "Submitting…" : "Submit Application →"}

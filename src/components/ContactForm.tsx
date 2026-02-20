@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { CheckIcon } from "@/components/Icons";
-
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/xkovzkwz";
+import { FORMSPREE_ENDPOINT } from "@/lib/formspree";
+import { validateContactForm, type ContactFormValues } from "@/lib/schemas";
 
 type Lang = "en" | "es" | "zh" | "ko" | "ar" | "fr";
 
@@ -39,10 +39,15 @@ const COPY: Record<Lang, {
   fr: { businessName: "Nom de l'entreprise *", ownerName: "Votre nom *", email: "E-mail *", neighborhood: "Quartier", services: "De quoi avez-vous besoin ?", message: "Dites-nous en plus", messagePlaceholder: "Quel est votre plus grand défi en ce moment ?", submit: "Envoyer le message", submitting: "Envoi en cours…", successTitle: "Reçu. Nous vous recontacterons.", successBody: "Nous examinerons votre demande et reviendrons vers vous dans quelques jours.", errorMsg: "Une erreur s'est produite. Écrivez-nous à volta.newyork@gmail.com", footerNote: "Nous répondons généralement sous 2–3 jours ouvrés. Nos services sont 100% gratuits.", dir: "ltr" },
 };
 
+const EMPTY: ContactFormValues = {
+  businessName: "", name: "", email: "", neighborhood: "", services: [], message: "",
+};
+
 export default function ContactForm() {
   const [lang, setLang] = useState<Lang>("en");
-  const [formData, setFormData] = useState({ businessName: "", name: "", email: "", neighborhood: "", services: [] as string[], message: "" });
+  const [formData, setFormData] = useState<ContactFormValues>(EMPTY);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const c = COPY[lang];
   const serviceList = SERVICES_BY_LANG[lang];
@@ -50,11 +55,22 @@ export default function ContactForm() {
   const toggleService = (s: string) =>
     setFormData((prev) => ({
       ...prev,
-      services: prev.services.includes(s) ? prev.services.filter((x) => x !== s) : [...prev.services, s],
+      services: prev.services.includes(s)
+        ? prev.services.filter((x) => x !== s)
+        : [...prev.services, s],
     }));
+
+  const clearError = (k: string) =>
+    setErrors((p) => { const next = { ...p }; delete next[k]; return next; });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const result = validateContactForm(formData);
+    if (!result.success) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
     setStatus("loading");
     try {
       const res = await fetch(FORMSPREE_ENDPOINT, {
@@ -69,9 +85,13 @@ export default function ContactForm() {
       });
       if (res.ok) {
         setStatus("success");
-        setFormData({ businessName: "", name: "", email: "", neighborhood: "", services: [], message: "" });
-      } else setStatus("error");
-    } catch { setStatus("error"); }
+        setFormData(EMPTY);
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
   };
 
   if (status === "success") {
@@ -91,40 +111,72 @@ export default function ContactForm() {
       {/* Language toggle */}
       <div className="flex flex-wrap gap-2 mb-6">
         {(Object.keys(LANG_LABELS) as Lang[]).map((l) => (
-          <button key={l} type="button" onClick={() => { setLang(l); setFormData((p) => ({ ...p, services: [] })); }}
-            className={`px-4 py-1.5 rounded-full border font-body text-sm font-medium transition-all ${lang === l ? "bg-v-ink text-white border-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}>
+          <button
+            key={l}
+            type="button"
+            onClick={() => {
+              setLang(l);
+              setFormData((p) => ({ ...p, services: [] }));
+              setErrors({});
+            }}
+            className={`px-4 py-1.5 rounded-full border font-body text-sm font-medium transition-all ${lang === l ? "bg-v-ink text-white border-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+          >
             {LANG_LABELS[l]}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-v-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir}>
+      <form onSubmit={handleSubmit} noValidate className="bg-white border border-v-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir}>
         <div className="grid md:grid-cols-2 gap-5">
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.businessName}</label>
-            <input required value={formData.businessName} onChange={(e) => setFormData((p) => ({ ...p, businessName: e.target.value }))} className="volta-input" />
+            <input
+              value={formData.businessName}
+              onChange={(e) => { setFormData((p) => ({ ...p, businessName: e.target.value })); clearError("businessName"); }}
+              className={`volta-input ${errors.businessName ? "border-red-400" : ""}`}
+            />
+            {errors.businessName && <p className="text-red-500 text-xs mt-1 font-body">{errors.businessName}</p>}
           </div>
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.ownerName}</label>
-            <input required value={formData.name} onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))} className="volta-input" />
+            <input
+              value={formData.name}
+              onChange={(e) => { setFormData((p) => ({ ...p, name: e.target.value })); clearError("name"); }}
+              className={`volta-input ${errors.name ? "border-red-400" : ""}`}
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1 font-body">{errors.name}</p>}
           </div>
         </div>
         <div className="grid md:grid-cols-2 gap-5">
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.email}</label>
-            <input required type="email" value={formData.email} onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))} className="volta-input" />
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => { setFormData((p) => ({ ...p, email: e.target.value })); clearError("email"); }}
+              className={`volta-input ${errors.email ? "border-red-400" : ""}`}
+            />
+            {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
           </div>
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.neighborhood}</label>
-            <input value={formData.neighborhood} onChange={(e) => setFormData((p) => ({ ...p, neighborhood: e.target.value }))} className="volta-input" />
+            <input
+              value={formData.neighborhood}
+              onChange={(e) => setFormData((p) => ({ ...p, neighborhood: e.target.value }))}
+              className="volta-input"
+            />
           </div>
         </div>
         <div>
           <label className="block font-body text-sm font-semibold text-v-ink mb-3">{c.services}</label>
           <div className="flex flex-wrap gap-2">
             {serviceList.map((s) => (
-              <button key={s} type="button" onClick={() => toggleService(s)}
-                className={`text-sm font-body font-medium px-4 py-2 rounded-full border transition-all ${formData.services.includes(s) ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}>
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleService(s)}
+                className={`text-sm font-body font-medium px-4 py-2 rounded-full border transition-all ${formData.services.includes(s) ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+              >
                 {s}
               </button>
             ))}
@@ -132,11 +184,19 @@ export default function ContactForm() {
         </div>
         <div>
           <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.message}</label>
-          <textarea value={formData.message} onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
-            className="volta-input resize-none" rows={4} placeholder={c.messagePlaceholder} />
+          <textarea
+            value={formData.message}
+            onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
+            className="volta-input resize-none"
+            rows={4}
+            placeholder={c.messagePlaceholder}
+          />
         </div>
-        <button type="submit" disabled={status === "loading"}
-          className="w-full bg-v-blue text-white font-display font-bold text-base py-4 rounded-xl hover:bg-v-blue-dark transition-colors disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="w-full bg-v-blue text-white font-display font-bold text-base py-4 rounded-xl hover:bg-v-blue-dark transition-colors disabled:opacity-60"
+        >
           {status === "loading" ? c.submitting : c.submit}
         </button>
         {status === "error" && <p className="text-red-500 text-sm text-center font-body">{c.errorMsg}</p>}

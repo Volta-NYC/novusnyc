@@ -1,15 +1,6 @@
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
-import { GlobeIcon, SmartphoneIcon, DollarIcon, SearchIcon, TrendingUpIcon, CreditCardIcon } from "@/components/Icons";
-
-const services = [
-  { icon: GlobeIcon, title: "Website Design & Development", desc: "Custom-built sites using modern frameworks. Mobile-friendly, accessible, and maintained.", color: "text-v-blue", bg: "bg-blue-50" },
-  { icon: SmartphoneIcon, title: "Social Media & Content", desc: "Instagram strategy, posting calendars, founder interview videos, and audience growth.", color: "text-v-green", bg: "bg-lime-50" },
-  { icon: DollarIcon, title: "Grant Research & Writing", desc: "We find grants your business qualifies for and help prepare the full application.", color: "text-amber-500", bg: "bg-amber-50" },
-  { icon: SearchIcon, title: "SEO & Online Visibility", desc: "Google Maps optimization, Yelp, Apple Maps, and search engine improvements.", color: "text-v-blue", bg: "bg-blue-50" },
-  { icon: TrendingUpIcon, title: "Sales & Financial Analysis", desc: "POS evaluation, transaction fee reduction, menu pricing, and inventory analysis.", color: "text-v-green", bg: "bg-lime-50" },
-  { icon: CreditCardIcon, title: "Digital Payment Setup", desc: "Help transitioning from cash-only to digital, setting up loyalty programs and online ordering.", color: "text-amber-500", bg: "bg-amber-50" },
-];
+import { partnerServices } from "@/data";
 
 export default function Partners() {
   return (
@@ -71,7 +62,7 @@ export default function Partners() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Services — all free</h2>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((s, i) => (
+            {partnerServices.map((s, i) => (
               <AnimatedSection key={s.title} delay={i * 0.07}>
                 <div className="bg-white border border-v-border rounded-2xl p-7 project-card h-full">
                   <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center mb-4`}>

@@ -2,69 +2,7 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
 import { MapPinIcon } from "@/components/Icons";
-
-const bigNumbers = [
-  { value: 20, suffix: "+", label: "Businesses helped" },
-  { value: 9, suffix: "", label: "NYC neighborhoods" },
-  { value: 80, suffix: "+", label: "Student contributors" },
-];
-
-const projects = [
-  {
-    name: "Souk Al Shater",
-    type: "Lebanese Restaurant",
-    neighborhood: "Sunnyside, Queens",
-    services: ["Website Build"],
-    status: "In Progress",
-    color: "bg-orange-400",
-    desc: "Full website build from scratch for a Sunnyside Lebanese restaurant with no prior online presence.",
-  },
-  {
-    name: "Anatolico",
-    type: "Turkish Home Goods",
-    neighborhood: "Park Slope, Brooklyn",
-    services: ["Social Media"],
-    status: "Active",
-    color: "bg-v-green",
-    desc: "Social media strategy, Founder Stories content series, and Instagram account management.",
-  },
-  {
-    name: "Higher Learning",
-    type: "Tutoring Center",
-    neighborhood: "Chinatown, Manhattan",
-    services: ["Website", "SEO"],
-    status: "In Progress",
-    color: "bg-v-blue",
-    desc: "Website build and SEO setup with Cantonese/Mandarin language support for a Chinatown tutoring center.",
-  },
-  {
-    name: "The Painted Pot",
-    type: "Pottery Studio",
-    neighborhood: "Park Slope, Brooklyn",
-    services: ["SEO", "Google Visibility"],
-    status: "Active",
-    color: "bg-amber-400",
-    desc: "Google Maps optimization, SEO audit, and social media strategy for a Park Slope pottery studio.",
-  },
-  {
-    name: "Juliette Floral Design",
-    type: "Flower Shop",
-    neighborhood: "Park Slope, Brooklyn",
-    services: ["Website"],
-    status: "Upcoming",
-    color: "bg-pink-400",
-    desc: "Website redesign and online ordering setup for a 5th Avenue floral boutique.",
-  },
-  {
-    name: "Bayaal",
-    type: "African Home Goods",
-    neighborhood: "Park Slope, Brooklyn",
-    services: ["Website", "Social Media"],
-    status: "Upcoming",
-    color: "bg-purple-400",
-    desc: "Website clarity improvements and Founder Stories social media content.",
-  },
-];
+import { showcaseStats, projects } from "@/data";
 
 export default function Showcase() {
   return (
@@ -87,7 +25,7 @@ export default function Showcase() {
 
       <section className="bg-v-dark py-16">
         <div className="max-w-5xl mx-auto px-5 grid grid-cols-3 gap-10 text-center">
-          {bigNumbers.map((n) => (
+          {showcaseStats.map((n) => (
             <AnimatedSection key={n.label}>
               <div className="font-display font-bold text-4xl md:text-5xl text-v-green mb-1">
                 <CountUp end={n.value} suffix={n.suffix} />
