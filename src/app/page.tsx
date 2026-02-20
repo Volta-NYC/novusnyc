@@ -108,10 +108,10 @@ export default function Home() {
         <AnimatedSection direction="left" className="bg-v-green flex flex-col justify-center p-12 md:p-16">
           <p className="font-display font-bold text-v-ink/60 text-sm uppercase tracking-widest mb-4">For students</p>
           <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl leading-tight mb-4">
-            Build a portfolio<br />on real projects.
+            Build a portfolio<br />of real projects.
           </h2>
           <p className="font-body text-v-ink/70 mb-8 max-w-sm">
-            2–4 hours a week. Deployed websites, published content, submitted grants. High school and college students welcome.
+            2–4 hours a week. Deploy websites, build social communities, win grants. High school and college students welcome.
           </p>
           <Link href="/join" className="inline-block bg-v-ink text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-ink/80 transition-colors self-start">
             Apply Now →

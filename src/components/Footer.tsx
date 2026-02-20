@@ -34,30 +34,23 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Contact Us</p>
+            <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Connect</p>
             <div className="flex flex-col gap-3">
               <a
                 href="mailto:volta.newyork@gmail.com"
-                className="inline-flex items-center gap-2.5 bg-white/8 hover:bg-white/14 border border-white/10 hover:border-white/25 text-white/80 hover:text-white font-body text-sm font-medium px-4 py-2.5 rounded-xl transition-all"
+                className="font-body text-sm text-white/60 hover:text-white transition-colors"
               >
-                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="22,6 12,13 2,6"/>
-                </svg>
-                volta.newyork@gmail.com
+                Email:{" "}
+                <span className="text-white/80 hover:text-white">volta.newyork@gmail.com</span>
               </a>
               <a
                 href="https://www.linkedin.com/company/volta-nyc/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 bg-white/8 hover:bg-white/14 border border-white/10 hover:border-white/25 text-white/80 hover:text-white font-body text-sm font-medium px-4 py-2.5 rounded-xl transition-all"
+                className="font-body text-sm text-white/60 hover:text-white transition-colors"
               >
-                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-                  <rect x="2" y="9" width="4" height="12"/>
-                  <circle cx="4" cy="4" r="2"/>
-                </svg>
-                LinkedIn
+                LinkedIn:{" "}
+                <span className="text-white/80 hover:text-white">volta-nyc</span>
               </a>
             </div>
           </div>

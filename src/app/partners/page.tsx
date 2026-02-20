@@ -47,7 +47,7 @@ export default function Partners() {
               <p className="font-body text-v-ink text-base leading-relaxed">
                 Our students want hands-on experience they can put on a resume and in their portfolio.
                 Working with real businesses gives them that. Your business gets the work done,
-                they get the skills and credentials. We&apos;re a nonprofit — this is the model.
+                they get the skills and credentials — and everyone walks away with something real.
               </p>
             </div>
           </AnimatedSection>
@@ -100,7 +100,7 @@ export default function Partners() {
           <AnimatedSection>
             <h2 className="font-display font-bold text-white text-2xl mb-4">Are you a BID or community organization?</h2>
             <p className="font-body text-white/50 mb-6">
-              We work directly with BIDs to identify businesses in your district that could use help.
+              We partner directly with BIDs to bring digital and financial resources to businesses in your district.
               Email us to set up a conversation.
             </p>
             <a href="mailto:volta.newyork@gmail.com" className="inline-block border border-white/20 text-white font-display font-bold text-sm px-7 py-3 rounded-full hover:border-v-green hover:text-v-green transition-colors">

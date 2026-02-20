@@ -21,7 +21,7 @@ export default function HeroSection() {
 
       {/* Logo + Title parallax group */}
       <motion.div
-        className="relative z-10 w-full max-w-5xl mx-auto px-8"
+        className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
         style={{ scale: titleScale, y: titleY }}
       >
         <motion.div
@@ -57,23 +57,23 @@ export default function HeroSection() {
         </motion.div>
       </motion.div>
 
-      {/* Subtitle + CTAs — left-aligned under the title */}
+      {/* Subtitle + CTAs — centered under the title */}
       <motion.div
-        className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8"
+        className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center"
         style={{ opacity: ctaOpacity, y: ctaY }}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
         <p className="font-body text-lg md:text-xl text-v-muted max-w-2xl leading-relaxed mb-3">
-          High school and college students building websites, running social
-          media, and writing grants for NYC small businesses.{" "}
+          Join a team of students building websites, growing social media, and
+          winning grants for NYC&apos;s small businesses.{" "}
           <span className="text-v-ink font-semibold">Free of charge.</span>
         </p>
         <p className="font-body text-sm text-v-muted/70 mb-8">
           A registered 501(c)(3) nonprofit organization.
         </p>
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex gap-4 flex-wrap justify-center">
           <Link
             href="/join"
             className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-all hover:scale-105 shadow-lg shadow-v-green/20"

@@ -179,11 +179,11 @@ export const showcaseStats = [
 
 export const aboutValues = [
   {
-    title: "Equity first",
+    title: "Equity-first",
     desc: "We focus on neighborhoods and businesses that don't have easy access to consultants or agencies.",
   },
   {
-    title: "Students lead",
+    title: "Student-led",
     desc: "High school and college students run every project. We learn by doing.",
   },
   {
@@ -192,7 +192,7 @@ export const aboutValues = [
   },
   {
     title: "Transparent",
-    desc: "Our members gain real experience and portfolio work. Businesses get the labor. We're upfront about that exchange.",
+    desc: "Our members gain experience and portfolio work. Businesses get the labor. We're upfront about that exchange.",
   },
 ];
 

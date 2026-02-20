@@ -26,9 +26,9 @@ export default function About() {
               neighborhoods deserve the same digital tools and funding access as larger businesses.
             </p>
             <p className="font-body text-v-muted text-base leading-relaxed">
-              Our members build actual websites, run actual social media accounts, and submit
-              actual grant applications for businesses that need them. They practice real skills,
-              build real portfolios, and create something that matters in the process.
+              Our members build websites, grow social media audiences, and win grants for
+              businesses across the city. They develop professional skills, earn meaningful
+              portfolio work, and contribute directly to the communities around them.
             </p>
           </AnimatedSection>
         </div>
@@ -83,16 +83,20 @@ export default function About() {
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we got here</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
           </AnimatedSection>
-          <div className="relative">
-            <div className="absolute left-8 top-8 w-0.5 bg-v-border" style={{ height: "calc(100% - 4rem)" }} />
+          <div>
             {aboutTimeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.12}>
-                <div className="flex gap-10 pb-20 last:pb-0">
-                  <div className="flex-shrink-0 w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center z-10 shadow-sm relative">
-                    <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
-                    <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
+                <div className="flex gap-10">
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center shadow-sm">
+                      <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
+                      <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
+                    </div>
+                    {i < aboutTimeline.length - 1 && (
+                      <div className="w-0.5 bg-v-border flex-1 min-h-8" />
+                    )}
                   </div>
-                  <div className="flex-1 pt-3">
+                  <div className={`flex-1 pt-3${i < aboutTimeline.length - 1 ? " pb-14" : ""}`}>
                     <h3 className="font-display font-bold text-v-ink text-xl mb-2">{t.label}</h3>
                     <p className="font-body text-v-muted text-base leading-relaxed">{t.desc}</p>
                   </div>
