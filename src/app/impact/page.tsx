@@ -2,8 +2,21 @@
 // It will be published once we have more photos, testimonials, and outcome data.
 // Route: /impact
 
+import type { Metadata } from "next";
+import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
+
+export const metadata: Metadata = {
+  title: "Impact | Volta NYC",
+  description:
+    "Volta NYC impact report: 20+ businesses served, 9 NYC neighborhoods, 80+ student contributors. Outcomes in digital access, financial access, and marketing reach.",
+  openGraph: {
+    title: "Impact | Volta NYC",
+    description: "Measurable outcomes. Real communities.",
+  },
+  robots: { index: false }, // keep unlinked until ready
+};
 
 const outcomes = [
   { value: 20, suffix: "+", label: "Businesses Served", sub: "Across 9 NYC neighborhoods", color: "text-v-green" },
@@ -176,25 +189,45 @@ export default function Impact() {
         </div>
       </section>
 
-      {/* Neighborhoods map placeholder */}
+      {/* Geographic reach — links to the interactive map on /showcase */}
       <section className="py-20 bg-v-dark">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Geographic reach</p>
-            <h2 className="font-display font-bold text-white text-3xl md:text-4xl">Where we operate in NYC</h2>
-            <p className="font-body text-white/50 mt-3 max-w-xl">
-              Each neighborhood represents an active partnership with at least one local BID or business organization.
-            </p>
+          <AnimatedSection>
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
+                  Geographic reach
+                </p>
+                <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
+                  9 neighborhoods.<br />4 boroughs.
+                </h2>
+                <p className="font-body text-white/50 leading-relaxed mb-6">
+                  Park Slope, Sunnyside, Chinatown, Long Island City, Cypress Hills,
+                  Flatbush, Flushing, Mott Haven, Bayside. Each neighborhood represents
+                  an active BID or community organization partnership.
+                </p>
+                <Link
+                  href="/showcase"
+                  className="inline-block border border-white/20 text-white font-display font-bold text-sm px-6 py-3 rounded-full hover:border-v-green hover:text-v-green transition-colors"
+                >
+                  View interactive map →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { borough: "Brooklyn", count: "3 neighborhoods" },
+                  { borough: "Queens", count: "4 neighborhoods" },
+                  { borough: "Manhattan", count: "1 neighborhood" },
+                  { borough: "Bronx", count: "1 neighborhood" },
+                ].map((b) => (
+                  <div key={b.borough} className="bg-white/5 border border-white/10 rounded-xl p-5">
+                    <p className="font-display font-bold text-white text-lg">{b.borough}</p>
+                    <p className="font-body text-xs text-white/40 mt-1">{b.count}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </AnimatedSection>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {["Park Slope, Brooklyn", "Sunnyside, Queens", "Chinatown, Manhattan", "Long Island City, Queens", "Cypress Hills, Brooklyn", "Flatbush, Brooklyn", "Flushing, Queens", "Mott Haven, Bronx", "Bayside, Queens"].map((n, i) => (
-              <AnimatedSection key={n} delay={i * 0.06}>
-                <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center hover:border-v-green/40 transition-colors">
-                  <p className="font-body text-sm text-white/80">{n}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
         </div>
       </section>
 

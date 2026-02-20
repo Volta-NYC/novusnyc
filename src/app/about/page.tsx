@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
 import { aboutValues, aboutTimeline, teamMembers, branches } from "@/data";
+
+export const metadata: Metadata = {
+  title: "About | Volta NYC",
+  description:
+    "Volta NYC is a registered 501(c)(3) nonprofit run by students at Stuyvesant High School and CUNY institutions. Learn about our history, values, and the team behind the work.",
+  openGraph: {
+    title: "About Volta NYC",
+    description: "A student-run nonprofit built on the belief that digital equity is economic equity.",
+  },
+};
 
 export default function About() {
   return (

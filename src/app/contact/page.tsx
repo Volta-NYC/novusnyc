@@ -1,6 +1,17 @@
+import type { Metadata } from "next";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
 import InquiryForm from "@/components/InquiryForm";
+
+export const metadata: Metadata = {
+  title: "Contact | Volta NYC",
+  description:
+    "Reach Volta NYC's leadership team directly or send a general inquiry. We respond to all messages.",
+  openGraph: {
+    title: "Contact Volta NYC",
+    description: "Reach the team behind Volta NYC.",
+  },
+};
 
 const team = [
   { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", school: "Stuyvesant High School", initial: "E" },

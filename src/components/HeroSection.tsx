@@ -15,9 +15,7 @@ export default function HeroSection() {
 
   return (
     <section ref={sectionRef} className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-v-bg pt-16">
-      <div className="absolute inset-0 dot-grid opacity-60" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-v-green/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 left-0 w-72 h-72 bg-v-blue/8 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 dot-grid opacity-30" />
 
       {/* Logo + Title parallax group */}
       <motion.div
@@ -66,8 +64,9 @@ export default function HeroSection() {
         transition={{ duration: 0.6, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
         <p className="font-body text-lg md:text-xl text-v-muted max-w-2xl leading-relaxed mb-3">
-          Join a team of students building websites, growing social media, and
-          winning grants for NYC&apos;s small businesses.{" "}
+          Digital equity is economic equity. Volta places student teams on real
+          consulting projects for the family-owned restaurants, flower shops, and
+          neighborhood businesses that define NYC.{" "}
           <span className="text-v-ink font-semibold">Free of charge.</span>
         </p>
         <p className="font-body text-sm text-v-muted/70 mb-8">

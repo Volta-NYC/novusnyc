@@ -1,41 +1,123 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { joinGains, joinTracks, joinFaqs } from "@/data";
 
+export const metadata: Metadata = {
+  title: "Join Volta NYC — Apply to a Student Consulting Team",
+  description:
+    "High school and college students: join Volta NYC and work on real consulting projects for NYC small businesses. Build a portfolio, earn mentorship, and lead real teams.",
+  openGraph: {
+    title: "Join Volta NYC",
+    description: "Real projects. Real clients. Mentorship from day one.",
+  },
+};
+
 export default function Join() {
   return (
     <>
-      {/* Hero */}
-      <section className="bg-v-bg pt-32 pb-20 relative overflow-hidden">
-        <div className="absolute inset-0 dot-grid opacity-40" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-v-green/10 rounded-full blur-3xl" />
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Join Volta</p>
-            <h1 className="font-display font-bold text-v-ink leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
-              Do real work.<br /><span className="text-v-green">Build real things.</span>
+      {/* ── HERO ─────────────────────────────────────────────── */}
+      <section className="bg-v-ink pt-32 pb-24 relative overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-12 items-center">
+          <AnimatedSection direction="left">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
+              Join Volta NYC
+            </p>
+            <h1
+              className="font-display font-bold text-white leading-none tracking-tight mb-6"
+              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
+            >
+              Real clients.<br />
+              <span className="text-v-green">Real work.</span>
             </h1>
-            <p className="font-body text-v-muted text-lg max-w-2xl leading-relaxed mb-8">
-              Volta places student teams on real consulting projects for NYC small businesses.
-              You get mentorship, experience, and a portfolio. High school and college students both welcome.
+            <p className="font-body text-white/70 text-lg leading-relaxed mb-8">
+              Volta places student teams on real consulting projects for NYC small
+              businesses. You work with an actual client, deliver something they depend
+              on, and walk away with a portfolio piece you can defend.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <Link href="/apply"
-                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-all hover:scale-105 shadow-lg shadow-v-green/20">
+              <Link
+                href="/apply"
+                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-colors"
+              >
                 Apply Now →
               </Link>
-              <span className="font-body text-sm text-v-muted">Spring 2026 cohort · Rolling admissions</span>
+              <span className="font-body text-sm text-white/40">
+                Spring 2026 · Rolling admissions
+              </span>
+            </div>
+          </AnimatedSection>
+          <AnimatedSection direction="right">
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { value: "80+", label: "Student members" },
+                { value: "20+", label: "Businesses served" },
+                { value: "9", label: "NYC neighborhoods" },
+                { value: "3", label: "Service tracks" },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center"
+                >
+                  <p className="font-display font-bold text-v-green text-4xl leading-none mb-2">
+                    {s.value}
+                  </p>
+                  <p className="font-body text-xs text-white/40 uppercase tracking-widest">
+                    {s.label}
+                  </p>
+                </div>
+              ))}
             </div>
           </AnimatedSection>
         </div>
       </section>
 
-      {/* What you gain */}
+      {/* ── MENTORSHIP CALLOUT ───────────────────────────────── */}
+      <section className="py-16 bg-v-green">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection>
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="font-body text-sm font-semibold text-v-ink/60 uppercase tracking-widest mb-3">
+                  Mentorship
+                </p>
+                <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
+                  You&apos;re not dropped into a project alone.
+                </h2>
+                <p className="font-body text-v-ink/70 leading-relaxed">
+                  Every member works with a team lead from day one. As you build
+                  experience, you&apos;ll move into team lead and project director roles
+                  yourself — the mentorship chain goes both ways.
+                </p>
+              </div>
+              <div className="space-y-4">
+                {[
+                  "Assigned to a team lead on your first project",
+                  "Bi-weekly check-ins with project directors",
+                  "Leadership track: member → team lead → director",
+                  "References from people who watched you work",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-v-ink flex-shrink-0 mt-2" />
+                    <p className="font-body text-v-ink/80 text-base">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── WHAT YOU WALK AWAY WITH ──────────────────────────── */}
       <section className="py-20 bg-v-dark">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">This is unpaid. Here&apos;s what you get instead.</p>
-            <h2 className="font-display font-bold text-white text-3xl md:text-4xl">What you walk away with</h2>
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
+              This is unpaid. Here&apos;s what you get instead.
+            </p>
+            <h2 className="font-display font-bold text-white text-3xl md:text-4xl">
+              What you walk away with
+            </h2>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {joinGains.map((g, i) => (
@@ -53,14 +135,16 @@ export default function Join() {
         </div>
       </section>
 
-      {/* Tracks */}
+      {/* ── TRACKS ───────────────────────────────────────────── */}
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Pick your path</p>
+            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
+              Pick your path
+            </p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Three tracks</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
-              You&apos;ll have a mentor and team lead guiding you throughout. Many members contribute across tracks over time.
+              You&apos;ll work with a team lead throughout. Many members contribute across tracks over time.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
@@ -75,15 +159,19 @@ export default function Join() {
                   <ul className="space-y-2 mb-6">
                     {t.doWhat.map((d) => (
                       <li key={d} className="font-body text-sm text-v-muted flex items-start gap-2.5">
-                        <span className="text-v-green mt-0.5 flex-shrink-0">→</span> {d}
+                        <span className="text-v-green mt-0.5 flex-shrink-0">→</span>
+                        {d}
                       </li>
                     ))}
                   </ul>
-                  <h3 className="font-display font-bold text-v-ink text-sm mb-3 uppercase tracking-wide">We look for</h3>
+                  <h3 className="font-display font-bold text-v-ink text-sm mb-3 uppercase tracking-wide">
+                    We look for
+                  </h3>
                   <ul className="space-y-2">
                     {t.skills.map((s) => (
                       <li key={s} className="font-body text-xs text-v-muted flex items-start gap-2">
-                        <span className="text-v-muted/50 mt-0.5 flex-shrink-0">·</span> {s}
+                        <span className="text-v-muted/50 mt-0.5 flex-shrink-0">·</span>
+                        {s}
                       </li>
                     ))}
                   </ul>
@@ -94,24 +182,24 @@ export default function Join() {
         </div>
       </section>
 
-      {/* Commitment */}
-      <section className="py-16 bg-white border-y border-v-border">
-        <div className="max-w-5xl mx-auto px-5 md:px-8 grid md:grid-cols-3 gap-8 text-center">
+      {/* ── COMMITMENT ───────────────────────────────────────── */}
+      <section className="py-14 bg-white border-y border-v-border">
+        <div className="max-w-5xl mx-auto px-5 md:px-8 grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-v-border">
           {[
-            { label: "Time Commitment", value: "2–4 hrs/week", sub: "Varies by project phase" },
-            { label: "Duration", value: "Project-based", sub: "No fixed contract or semester" },
-            { label: "Team Size", value: "3–5 students", sub: "Small, focused teams per project" },
-          ].map((item, i) => (
-            <AnimatedSection key={item.label} delay={i * 0.1}>
+            { label: "Time commitment", value: "2–4 hrs/week", sub: "Varies by project phase" },
+            { label: "Structure", value: "Project-based", sub: "No fixed contract or semester" },
+            { label: "Team size", value: "3–5 students", sub: "Small, focused pods per project" },
+          ].map((item) => (
+            <div key={item.label} className="text-center py-8 md:py-0 md:px-8">
               <p className="font-body text-xs uppercase tracking-widest text-v-muted mb-2">{item.label}</p>
               <p className="font-display font-bold text-v-ink text-3xl mb-1">{item.value}</p>
               <p className="font-body text-sm text-v-muted">{item.sub}</p>
-            </AnimatedSection>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* ── FAQ ──────────────────────────────────────────────── */}
       <section className="py-20 bg-v-bg">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
@@ -130,20 +218,26 @@ export default function Join() {
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* ── FINAL CTA ────────────────────────────────────────── */}
       <section className="py-20 bg-v-green">
         <div className="max-w-3xl mx-auto px-5 text-center">
           <AnimatedSection>
-            <h2 className="font-display font-bold text-v-ink text-4xl md:text-5xl mb-5">Ready to apply?</h2>
+            <h2 className="font-display font-bold text-v-ink text-4xl md:text-5xl mb-5">
+              Ready to apply?
+            </h2>
             <p className="font-body text-v-ink/70 text-lg mb-8">
-              Submit your resume or answer two short prompts. We&apos;ll reach out to schedule
-              a quick conversation and match you with a project and mentor.
+              Answer two short prompts and optionally share your resume. We&apos;ll
+              reach out to schedule a conversation and match you with a project.
             </p>
-            <Link href="/apply"
-              className="inline-block bg-v-ink text-white font-display font-bold text-lg px-10 py-5 rounded-full hover:bg-v-ink/80 transition-all hover:scale-105 shadow-xl shadow-v-ink/20">
+            <Link
+              href="/apply"
+              className="inline-block bg-v-ink text-white font-display font-bold text-lg px-10 py-5 rounded-full hover:bg-v-ink/80 transition-colors"
+            >
               Apply Now →
             </Link>
-            <p className="font-body text-sm text-v-ink/50 mt-5">Takes 5 minutes · Rolling admissions</p>
+            <p className="font-body text-sm text-v-ink/50 mt-5">
+              Takes 5 minutes · Rolling admissions
+            </p>
           </AnimatedSection>
         </div>
       </section>

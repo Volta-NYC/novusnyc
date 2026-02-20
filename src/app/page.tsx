@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
 import { homeStats, homeTracks, marqueeSchools, currentProjects } from "@/data";
+
+export const metadata: Metadata = {
+  title: "Volta NYC — Student-Led Consulting for NYC Small Businesses",
+  description:
+    "Volta NYC places student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, and SEO. Free of charge. 9 neighborhoods, 80+ students.",
+  openGraph: {
+    title: "Volta NYC",
+    description: "Student consultants. Real deliverables. Free for NYC small businesses.",
+  },
+};
 
 export default function Home() {
   return (
@@ -27,7 +38,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-10">
           {homeStats.map((s) => (
             <AnimatedSection key={s.label} className="text-center">
-              <div className="font-display font-bold text-5xl md:text-6xl text-v-green mb-2">
+              <div className="font-display font-bold text-7xl md:text-8xl text-v-green mb-2">
                 <CountUp end={s.value} suffix={s.suffix} />
               </div>
               <div className="font-body text-xs uppercase tracking-widest text-white/40">{s.label}</div>
@@ -37,28 +48,26 @@ export default function Home() {
       </section>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
-      <section className="py-24 bg-v-bg">
+      <section className="py-24 bg-v-dark border-t border-white/5">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">What we do</p>
-            <h2 className="font-display font-bold text-v-ink" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
+            <h2 className="font-display font-bold text-white" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
               Three tracks.
             </h2>
-            <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
+            <p className="font-body text-white/50 text-lg mt-3 max-w-xl">
               Student teams work directly with business owners to deliver work they actually need.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-5">
             {homeTracks.map((t, i) => (
               <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className={`${t.color} border rounded-2xl p-8 h-full project-card`}>
-                  <div className={`w-12 h-12 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
-                    <t.icon className={`w-6 h-6 ${t.iconColor}`} />
-                  </div>
-                  <h3 className="font-display font-bold text-v-ink text-lg mb-4">{t.name}</h3>
+                <div className="border border-white/10 rounded-2xl p-8 h-full bg-white/[0.03] project-card">
+                  <span className="font-display font-bold text-white/10 text-7xl leading-none block mb-4">{i + 1}</span>
+                  <h3 className="font-display font-bold text-white text-xl mb-5">{t.name}</h3>
                   <ul className="space-y-2.5">
                     {t.items.map((item) => (
-                      <li key={item} className="flex items-center gap-2.5 font-body text-sm text-v-muted">
+                      <li key={item} className="flex items-center gap-2.5 font-body text-sm text-white/60">
                         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.accent}`} />
                         {item}
                       </li>
@@ -95,6 +104,7 @@ export default function Home() {
                     <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
                       <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
                     </p>
+                    <p className="font-body text-sm text-v-muted/80 mt-3 leading-relaxed">{p.desc}</p>
                   </div>
                 </div>
               </AnimatedSection>

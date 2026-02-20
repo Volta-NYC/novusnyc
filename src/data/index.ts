@@ -32,7 +32,7 @@ export const homeStats = [
   { value: 20, suffix: "+", label: "Businesses Supported" },
   { value: 9, suffix: "", label: "NYC Neighborhoods" },
   { value: 80, suffix: "+", label: "Student Members" },
-  { value: 3, suffix: "", label: "Service Tracks" },
+  { value: 8, suffix: "+", label: "BID Partnerships" },
 ];
 
 export const homeTracks = [
