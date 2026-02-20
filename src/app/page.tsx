@@ -62,18 +62,15 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-5">
             {homeTracks.map((t, i) => (
               <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className="border border-v-border rounded-2xl p-8 h-full bg-white project-card">
-                  <span className="font-display font-bold text-v-border text-7xl leading-none block mb-4">{i + 1}</span>
-                  <h3 className="font-display font-bold text-v-ink text-xl mb-5">{t.name}</h3>
+                <div className={`${t.color} border rounded-2xl p-8 h-full project-card`}>
+                  <div className={`w-12 h-12 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
+                    <t.icon className={`w-6 h-6 ${t.iconColor}`} />
+                  </div>
+                  <h3 className="font-display font-bold text-v-ink text-lg mb-4">{t.name}</h3>
                   <ul className="space-y-2.5">
                     {t.items.map((item) => (
                       <li key={item} className="flex items-center gap-2.5 font-body text-sm text-v-muted">
-                        <span
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{
-                            background: i === 0 ? "#f59e0b" : i === 1 ? "#3B74ED" : "#85CC17",
-                          }}
-                        />
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.accent}`} />
                         {item}
                       </li>
                     ))}

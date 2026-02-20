@@ -99,35 +99,8 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ── SERVICES ─────────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
-              What we deliver
-            </p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
-              Six service areas.
-            </h2>
-          </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {partnerServices.map((s, i) => (
-              <AnimatedSection key={s.title} delay={i * 0.07}>
-                <div className="bg-white border border-v-border rounded-2xl p-7 project-card h-full">
-                  <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center mb-4`}>
-                    <s.icon className={`w-5 h-5 ${s.color}`} />
-                  </div>
-                  <h3 className="font-display font-bold text-v-ink mb-2">{s.title}</h3>
-                  <p className="font-body text-sm text-v-muted leading-relaxed">{s.desc}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── PROCESS ──────────────────────────────────────────── */}
-      <section className="py-16 bg-white border-y border-v-border">
+      <section className="py-16 bg-white border-b border-v-border">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
@@ -155,10 +128,37 @@ export default function Partners() {
                 desc: "A dedicated student pod is assigned to your project. One point of contact throughout.",
               },
             ].map((s, i) => (
-              <AnimatedSection key={s.n} delay={i * 0.1}>
+              <AnimatedSection key={s.n} delay={i * 0.1} className="text-center">
                 <p className="font-display font-bold text-v-green text-5xl leading-none mb-4">{s.n}</p>
                 <h3 className="font-display font-bold text-v-ink text-lg mb-2">{s.title}</h3>
                 <p className="font-body text-sm text-v-muted leading-relaxed">{s.desc}</p>
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SERVICES ─────────────────────────────────────────── */}
+      <section className="py-20 bg-v-bg">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-12">
+            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
+              What we deliver
+            </p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+              Six service areas.
+            </h2>
+          </AnimatedSection>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {partnerServices.map((s, i) => (
+              <AnimatedSection key={s.title} delay={i * 0.07}>
+                <div className="bg-white border border-v-border rounded-2xl p-7 project-card h-full">
+                  <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center mb-4`}>
+                    <s.icon className={`w-5 h-5 ${s.color}`} />
+                  </div>
+                  <h3 className="font-display font-bold text-v-ink mb-2">{s.title}</h3>
+                  <p className="font-body text-sm text-v-muted leading-relaxed">{s.desc}</p>
+                </div>
               </AnimatedSection>
             ))}
           </div>
