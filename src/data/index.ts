@@ -182,11 +182,11 @@ export const showcaseStats = [
 export const aboutValues = [
   {
     title: "Equity-first",
-    desc: "We focus on neighborhoods and businesses that don't have easy access to consultants or agencies.",
+    desc: "We focus on neighborhoods and businesses that don't have the resources to hire consultants or the capacity to manage everything on their own. Our goal is to broaden what's possible by showing new opportunities for growth and efficiency.",
   },
   {
     title: "Student-led",
-    desc: "Every project — from website builds to social media campaigns to grant applications — is led and completed entirely by students, from initial scoping to final delivery. We come from across the five boroughs and diverse backgrounds.",
+    desc: "Every project, from initial outreach to final delivery, is led by our diverse team from across the five boroughs.",
   },
   {
     title: "Community-rooted",
@@ -194,7 +194,7 @@ export const aboutValues = [
   },
   {
     title: "Transparent",
-    desc: "Our members gain experience and portfolio work. Businesses get the labor. We're upfront about that exchange.",
+    desc: "Our students gain hands-on experience and build their portfolios, while businesses receive dedicated, high-quality support.",
   },
 ];
 
@@ -226,7 +226,7 @@ export const aboutTimeline = [
 ];
 
 export const teamMembers = [
-  { name: "Ethan Zhang", role: "Director", email: "ethan@voltanpo.org", initial: "E", desc: "" },
+  { name: "Ethan Zhang", role: "Founder", email: "ethan@voltanpo.org", initial: "E", desc: "" },
   { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", initial: "A", desc: "" },
   { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "" },
   { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T", desc: "" },

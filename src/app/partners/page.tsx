@@ -56,7 +56,7 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ── THE EXCHANGE ─────────────────────────────────────── */}
+      {/* ── WHAT YOU GET + WHY IT'S FREE ─────────────────────── */}
       <section className="py-20 bg-white border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <div className="grid md:grid-cols-2 gap-16 items-start">
@@ -81,22 +81,19 @@ export default function Partners() {
               </ul>
             </AnimatedSection>
             <AnimatedSection direction="right">
-              <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-5">
-                How the partnership works
-              </p>
-              <p className="font-body text-v-ink text-lg leading-relaxed mb-5">
-                Our student teams work on real client projects — work they can point
-                to, discuss in an interview, and be proud of.
-              </p>
-              <p className="font-body text-v-muted leading-relaxed mb-5">
-                They do the work. You get results you&apos;d normally pay an agency
-                for. No hidden fees, no marketing use of your business, no data
-                collection. The labor is what we provide — the credibility is what
-                we earn.
-              </p>
-              <p className="font-body text-v-muted leading-relaxed">
-                We are upfront about this exchange with every business we work with.
-              </p>
+              <div className="bg-v-bg border border-v-border rounded-2xl p-8">
+                <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
+                  Why is this free?
+                </p>
+                <p className="font-body text-v-ink text-lg leading-relaxed mb-4">
+                  Our students want hands-on experience they can put on a resume
+                  and in their portfolio. Working with real businesses gives them that.
+                </p>
+                <p className="font-body text-v-muted leading-relaxed">
+                  Your business gets the work done, they get the skills and credentials.
+                  This is the mutual benefit we want to create.
+                </p>
+              </div>
             </AnimatedSection>
           </div>
         </div>

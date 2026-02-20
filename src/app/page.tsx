@@ -48,26 +48,26 @@ export default function Home() {
       </section>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
-      <section className="py-24 bg-v-dark border-t border-white/5">
+      <section className="py-24 bg-v-bg border-t border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">What we do</p>
-            <h2 className="font-display font-bold text-white" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
+            <h2 className="font-display font-bold text-v-ink" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
               Three tracks.
             </h2>
-            <p className="font-body text-white/50 text-lg mt-3 max-w-xl">
+            <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
               Student teams work directly with business owners on what they can benefit most from.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-5">
             {homeTracks.map((t, i) => (
               <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className="border border-white/10 rounded-2xl p-8 h-full bg-white/[0.03] project-card">
-                  <span className="font-display font-bold text-white/30 text-7xl leading-none block mb-4">{i + 1}</span>
-                  <h3 className="font-display font-bold text-white text-xl mb-5">{t.name}</h3>
+                <div className="border border-v-border rounded-2xl p-8 h-full bg-white project-card">
+                  <span className="font-display font-bold text-v-border text-7xl leading-none block mb-4">{i + 1}</span>
+                  <h3 className="font-display font-bold text-v-ink text-xl mb-5">{t.name}</h3>
                   <ul className="space-y-2.5">
                     {t.items.map((item) => (
-                      <li key={item} className="flex items-center gap-2.5 font-body text-sm text-white/60">
+                      <li key={item} className="flex items-center gap-2.5 font-body text-sm text-v-muted">
                         <span
                           className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                           style={{

@@ -33,7 +33,7 @@ export default function Join() {
             <p className="font-body text-white/70 text-lg leading-relaxed mb-8">
               Volta places student teams on real consulting projects for NYC small
               businesses. You work with an actual client, deliver something they depend
-              on, and walk away with a portfolio piece you can defend.
+              on, and walk away with a portfolio piece you can point to anywhere.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link
@@ -72,63 +72,26 @@ export default function Join() {
         </div>
       </section>
 
-      {/* ── MENTORSHIP CALLOUT ───────────────────────────────── */}
-      <section className="py-16 bg-v-green">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection>
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <p className="font-body text-sm font-semibold text-v-ink/60 uppercase tracking-widest mb-3">
-                  Mentorship
-                </p>
-                <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
-                  You&apos;re not dropped into a project alone.
-                </h2>
-                <p className="font-body text-v-ink/70 leading-relaxed">
-                  Every member works with a team lead from day one. As you build
-                  experience, you&apos;ll move into team lead and project director roles
-                  yourself — our leadership track goes both ways, so the person
-                  mentoring you today was in your position not long ago.
-                </p>
-              </div>
-              <div className="space-y-4">
-                {[
-                  "Assigned to a team lead on your first project",
-                  "Twice-monthly check-ins with project directors",
-                  "Leadership track: member → team lead → director",
-                  "References from people who watched you work",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-v-ink flex-shrink-0 mt-2" />
-                    <p className="font-body text-v-ink/80 text-base">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
       {/* ── WHAT YOU WALK AWAY WITH ──────────────────────────── */}
-      <section className="py-20 bg-v-dark">
+      <section className="py-20 bg-v-bg border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
               This is unpaid. Here&apos;s what you get instead.
             </p>
-            <h2 className="font-display font-bold text-white text-3xl md:text-4xl">
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
               What you walk away with
             </h2>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {joinGains.map((g, i) => (
               <AnimatedSection key={g.title} delay={i * 0.07}>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 h-full hover:border-v-green/40 transition-colors">
+                <div className="bg-white border border-v-border rounded-2xl p-6 h-full hover:border-v-green/40 transition-colors project-card">
                   <div className={`w-11 h-11 rounded-xl ${g.bg} flex items-center justify-center mb-4`}>
                     <g.icon className={`w-5 h-5 ${g.color}`} />
                   </div>
-                  <h3 className="font-display font-bold text-white text-base mb-2">{g.title}</h3>
-                  <p className="font-body text-white/50 text-sm leading-relaxed">{g.desc}</p>
+                  <h3 className="font-display font-bold text-v-ink text-base mb-2">{g.title}</h3>
+                  <p className="font-body text-v-muted text-sm leading-relaxed">{g.desc}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -137,7 +100,7 @@ export default function Join() {
       </section>
 
       {/* ── TRACKS ───────────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
@@ -184,7 +147,7 @@ export default function Join() {
       </section>
 
       {/* ── COMMITMENT ───────────────────────────────────────── */}
-      <section className="py-14 bg-white border-y border-v-border">
+      <section className="py-14 bg-v-bg border-y border-v-border">
         <div className="max-w-5xl mx-auto px-5 md:px-8 grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-v-border">
           {[
             { label: "Time commitment", value: "2–4 hrs/week", sub: "Varies by project phase" },
@@ -197,6 +160,43 @@ export default function Join() {
               <p className="font-body text-sm text-v-muted">{item.sub}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── MENTORSHIP CALLOUT ───────────────────────────────── */}
+      <section className="py-16 bg-v-green">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection>
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="font-body text-sm font-semibold text-v-ink/60 uppercase tracking-widest mb-3">
+                  Mentorship
+                </p>
+                <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
+                  You&apos;re not dropped into a project alone.
+                </h2>
+                <p className="font-body text-v-ink/70 leading-relaxed">
+                  Every member works with a team lead from day one. As you build
+                  experience, you&apos;ll move into team lead and project director roles
+                  yourself — our leadership track goes both ways, so the person
+                  mentoring you today was in your position not long ago.
+                </p>
+              </div>
+              <div className="space-y-4">
+                {[
+                  "Assigned to a team lead on your first project",
+                  "Twice-monthly check-ins with project directors",
+                  "Leadership track: member → team lead → director",
+                  "References from people who watched you work",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-v-ink flex-shrink-0 mt-2" />
+                    <p className="font-body text-v-ink/80 text-base">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
