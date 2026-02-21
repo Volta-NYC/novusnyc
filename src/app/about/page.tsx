@@ -137,9 +137,12 @@ export default function About() {
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
                 <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
-                  {/* Photo area — replace this div with <Image> when photos are ready */}
-                  <div className="aspect-[3/4] bg-v-border flex items-center justify-center">
-                    <span className="font-display font-bold text-v-muted/40 text-6xl">{m.initial}</span>
+                  <div className="aspect-[3/4] bg-v-border flex items-center justify-center overflow-hidden">
+                    {m.photo ? (
+                      <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-top" />
+                    ) : (
+                      <span className="font-display font-bold text-v-muted/40 text-6xl">{m.initial}</span>
+                    )}
                   </div>
                   <div className="p-6 flex flex-col flex-1">
                     <h3 className="font-display font-bold text-v-ink text-lg leading-tight">{m.name}</h3>

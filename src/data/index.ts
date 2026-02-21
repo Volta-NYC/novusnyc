@@ -226,10 +226,10 @@ export const aboutTimeline = [
 ];
 
 export const teamMembers = [
-  { name: "Ethan Zhang", role: "Founder", email: "ethan@voltanpo.org", initial: "E", desc: "" },
-  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", initial: "A", desc: "" },
-  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "" },
-  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T", desc: "" },
+  { name: "Ethan Zhang", role: "Founder", email: "ethan@voltanpo.org", initial: "E", desc: "", photo: "/team/ethan.png" },
+  { name: "Andrew Chin", role: "Director", email: "andrew@voltanpo.org", initial: "A", desc: "", photo: "/team/andrew.jpeg" },
+  { name: "Joseph Long", role: "Assistant Director", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "", photo: "" },
+  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
 ];
 
 export const branches = [
