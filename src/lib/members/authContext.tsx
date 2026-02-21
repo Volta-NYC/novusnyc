@@ -43,27 +43,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const db = getDB();
         if (db) {
-          const profileSnap = await get(ref(db, `userProfiles/${firebaseUser.uid}`));
+          try {
+            const profileSnap = await get(ref(db, `userProfiles/${firebaseUser.uid}`));
 
-          if (profileSnap.exists()) {
-            const profile = profileSnap.val() as Omit<UserProfile, "id">;
-            setUserProfile({ ...profile, id: firebaseUser.uid });
-          } else {
-            // First login: create a profile record in the database.
-            const newProfile: UserProfile = {
-              id:        firebaseUser.uid,
-              email:     firebaseUser.email ?? "",
-              authRole:  "member",
-              active:    true,
-              createdAt: new Date().toISOString(),
-            };
-            await set(ref(db, `userProfiles/${firebaseUser.uid}`), {
-              email:     newProfile.email,
-              authRole:  newProfile.authRole,
-              active:    newProfile.active,
-              createdAt: newProfile.createdAt,
-            });
-            setUserProfile(newProfile);
+            if (profileSnap.exists()) {
+              const profile = profileSnap.val() as Omit<UserProfile, "id">;
+              setUserProfile({ ...profile, id: firebaseUser.uid });
+            } else {
+              // First login: create a profile record in the database.
+              const newProfile: UserProfile = {
+                id:        firebaseUser.uid,
+                email:     firebaseUser.email ?? "",
+                authRole:  "member",
+                active:    true,
+                createdAt: new Date().toISOString(),
+              };
+              await set(ref(db, `userProfiles/${firebaseUser.uid}`), {
+                email:     newProfile.email,
+                authRole:  newProfile.authRole,
+                active:    newProfile.active,
+                createdAt: newProfile.createdAt,
+              });
+              setUserProfile(newProfile);
+            }
+          } catch {
+            // DB unavailable or permission denied — proceed with no profile.
           }
         }
       } else {
