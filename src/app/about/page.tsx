@@ -76,14 +76,14 @@ export default function About() {
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">What drives us</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 gap-5">
+          <div className="divide-y divide-v-border border-y border-v-border">
             {aboutValues.map((v, i) => (
-              <AnimatedSection key={v.title} delay={i * 0.1}>
-                <div className="bg-white border border-v-border rounded-2xl p-8 project-card">
-                  <h3 className="font-display font-bold text-v-ink text-xl mb-3 flex items-center gap-3">
-                    <span className="w-2 h-2 rounded-full bg-v-green flex-shrink-0" />
-                    {v.title}
-                  </h3>
+              <AnimatedSection key={v.title} delay={i * 0.08}>
+                <div className="grid md:grid-cols-[80px_1fr_2fr] gap-4 md:gap-10 py-8 items-start">
+                  <span className="font-display font-bold text-v-green/40 text-4xl leading-none">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="font-display font-bold text-v-ink text-xl pt-1">{v.title}</h3>
                   <p className="font-body text-v-muted leading-relaxed">{v.desc}</p>
                 </div>
               </AnimatedSection>

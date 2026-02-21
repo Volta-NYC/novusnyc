@@ -14,7 +14,7 @@ const links = [
 ];
 
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */
-const darkHeroPages = ["/partners", "/showcase", "/join", "/apply"];
+const darkHeroPages = ["/partners", "/showcase", "/join"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);

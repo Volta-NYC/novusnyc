@@ -83,7 +83,15 @@ export default function InterviewsPage() {
     return () => { unsubscribeInvites(); unsubscribeSlots(); };
   }, []);
 
-  if (loading || (authRole !== "admin" && authRole !== "project_lead")) return null;
+  if (loading || (authRole !== "admin" && authRole !== "project_lead")) {
+    return (
+      <MembersLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+        </div>
+      </MembersLayout>
+    );
+  }
 
   // ── Invite form handlers ──────────────────────────────────────────────────
 
