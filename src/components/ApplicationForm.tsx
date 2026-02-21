@@ -2,9 +2,7 @@
 
 import { useState, useRef } from "react";
 import { CheckIcon } from "@/components/Icons";
-import { FORMSPREE_ENDPOINT } from "@/lib/formspree";
 import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schemas";
-import { logToSheets } from "@/lib/sheetsLogger";
 import { TRACK_NAMES } from "@/data";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Referral", "Other"];
@@ -40,7 +38,7 @@ export default function ApplicationForm() {
     setStatus("loading");
 
     const payload: Record<string, string> = {
-      _subject: `Volta NYC — Application from ${form.fullName}`,
+      formType: "application",
       "Full Name": form.fullName,
       Email: form.email,
       City: form.city,
@@ -49,28 +47,25 @@ export default function ApplicationForm() {
       "Tracks Selected": form.tracks.join(", "),
       "Has Resume": form.hasResume ? "Yes" : "No",
     };
-    if (!form.hasResume) {
+    if (form.hasResume === false) {
       payload["Tools/Software"] = form.tools;
       payload["Accomplishment"] = form.accomplishment;
     }
-    const fd = new FormData();
-    Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
-    if (form.hasResume && fileRef.current?.files?.[0]) {
-      fd.append("resume", fileRef.current.files[0]);
-    }
-    try {
-      const res = await fetch(FORMSPREE_ENDPOINT, {
+
+    // Send to Google Sheets via Apps Script.
+    // Fire-and-forget: we show success once dispatched.
+    // Note: file uploads are not supported via this method — applicants with
+    // resumes should email them to volta.newyork@gmail.com after submitting.
+    const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
+    if (url) {
+      fetch(url, {
         method: "POST",
-        headers: { Accept: "application/json" },
-        body: fd,
-      });
-      if (res.ok) {
-        logToSheets({ formType: "application", ...payload });
-      }
-      setStatus(res.ok ? "success" : "error");
-    } catch {
-      setStatus("error");
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
     }
+
+    setStatus("success");
   };
 
   if (status === "success") {
@@ -82,6 +77,7 @@ export default function ApplicationForm() {
         <h3 className="font-display font-bold text-2xl text-v-ink mb-3">Application received.</h3>
         <p className="font-body text-v-muted max-w-sm mx-auto">
           We&apos;ll review your application and reach out within a few days to schedule a quick conversation.
+          {form.hasResume && " Please email your resume to volta.newyork@gmail.com."}
         </p>
       </div>
     );
