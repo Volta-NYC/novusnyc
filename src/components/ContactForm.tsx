@@ -79,23 +79,21 @@ export default function ContactForm() {
       return idx >= 0 ? SERVICES_BY_LANG["en"][idx] : s;
     }).join(", ");
 
-    const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
-    if (url) {
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formType:     "contact",
-          businessName: formData.businessName,
-          name:         formData.name,
-          email:        formData.email,
-          neighborhood: formData.neighborhood,
-          services:     englishServices,
-          message:      formData.message,
-          language:     LANG_LABELS[lang], // English label e.g. "Korean"
-        }),
-      }).catch(() => {});
-    }
+    // Send via server-side proxy to avoid CORS issues with Apps Script.
+    fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        formType:     "contact",
+        businessName: formData.businessName,
+        name:         formData.name,
+        email:        formData.email,
+        neighborhood: formData.neighborhood,
+        services:     englishServices,
+        message:      formData.message,
+        language:     LANG_LABELS[lang],
+      }),
+    }).catch(() => {});
 
     setStatus("success");
     setFormData(EMPTY);

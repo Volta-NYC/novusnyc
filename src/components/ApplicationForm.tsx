@@ -52,18 +52,15 @@ export default function ApplicationForm() {
       payload["Accomplishment"] = form.accomplishment;
     }
 
-    // Send to Google Sheets via Apps Script.
+    // Send to Google Sheets via server-side proxy (/api/submit → Apps Script).
     // Fire-and-forget: we show success once dispatched.
-    // Note: file uploads are not supported via this method — applicants with
-    // resumes should email them to volta.newyork@gmail.com after submitting.
-    const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
-    if (url) {
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).catch(() => {});
-    }
+    // Note: file uploads are not supported — applicants with resumes should
+    // email them to volta.newyork@gmail.com after submitting.
+    fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
 
     setStatus("success");
   };

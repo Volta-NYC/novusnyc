@@ -27,19 +27,17 @@ export default function InquiryForm() {
     setErrors({});
     setStatus("loading");
 
-    const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
-    if (url) {
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formType: "inquiry",
-          name:     form.name,
-          email:    form.email,
-          inquiry:  form.inquiry,
-        }),
-      }).catch(() => {});
-    }
+    // Send via server-side proxy to avoid CORS issues with Apps Script.
+    fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        formType: "inquiry",
+        name:     form.name,
+        email:    form.email,
+        inquiry:  form.inquiry,
+      }),
+    }).catch(() => {});
 
     setStatus("success");
     setForm(EMPTY);
