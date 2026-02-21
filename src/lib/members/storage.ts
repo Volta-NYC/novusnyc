@@ -483,6 +483,6 @@ export async function importAllData(json: string): Promise<void> {
   const db = getDB();
   if (!db) return;
   const data = JSON.parse(json);
-  const { exportedAt, ...rest } = data;
+  const { exportedAt: _unused, ...rest } = data; // strip exportedAt before restoring
   await set(ref(db, "/"), rest);
 }

@@ -1,5 +1,4 @@
 interface IconProps { className?: string; }
-const base = "stroke-current fill-none stroke-[1.75] [stroke-linecap:round] [stroke-linejoin:round]";
 
 export function BarChartIcon({ className }: IconProps) {
   return (

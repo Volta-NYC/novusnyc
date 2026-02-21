@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/members/firebaseAuth";
+import { getInviteCodes, updateInviteCode } from "@/lib/members/storage";
 import { ref, set } from "firebase/database";
 import { getDB } from "@/lib/firebase";
 
@@ -27,23 +28,38 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      // TEMPORARY: invite code check bypassed for initial admin setup
+      // Validate invite code
+      const codes = await getInviteCodes();
+      const inviteCode = codes.find(c => c.code === code.trim().toUpperCase());
+
+      if (!inviteCode) { setError("Invalid invite code."); setLoading(false); return; }
+      if (inviteCode.used) { setError("This invite code has already been used."); setLoading(false); return; }
+      if (new Date(inviteCode.expiresAt) < new Date()) { setError("This invite code has expired."); setLoading(false); return; }
+
       // Create Firebase Auth account
       const cred = await signUp(email.trim().toLowerCase(), password);
 
-      // Create userProfile in Realtime Database as admin
+      // Create userProfile in Realtime Database
       const db = getDB();
       if (db) {
         await set(ref(db, `userProfiles/${cred.user.uid}`), {
           email: email.trim().toLowerCase(),
-          authRole: "admin",
+          authRole: inviteCode.role,
           name: name.trim(),
           active: true,
           createdAt: new Date().toISOString(),
         });
       }
 
-      router.replace("/members/dashboard");
+      // Mark invite code as used
+      await updateInviteCode(inviteCode.id, {
+        used: true,
+        usedBy: email.trim().toLowerCase(),
+        usedAt: new Date().toISOString(),
+      });
+
+      // Redirect based on role
+      router.replace(inviteCode.role === "member" ? "/members/my-work" : "/members/dashboard");
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code;
       if (code === "auth/email-already-in-use") {

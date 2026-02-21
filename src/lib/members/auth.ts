@@ -4,4 +4,4 @@
 export function isAuthenticated(): boolean { return false; }
 export function setAuthenticated(): void {}
 export function clearAuth(): void {}
-export function checkPassword(_pw: string): boolean { return false; }
+export function checkPassword(): boolean { return false; }
