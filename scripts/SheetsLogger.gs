@@ -18,6 +18,7 @@ function doPost(e) {
     if (data.formType === 'application') return handleApplication(data);
     if (data.formType === 'contact')     return handleContact(data);
     if (data.formType === 'inquiry')     return handleInquiry(data);
+    if (data.formType === 'upload')      return handleFileUpload(data);
     return jsonResponse({ error: 'Unknown formType: ' + data.formType });
   } catch (err) {
     Logger.log('SheetsLogger error: ' + err.toString());
@@ -86,6 +87,18 @@ function handleInquiry(data) {
     data['inquiry'] || '',
   ]);
   return jsonResponse({ success: true });
+}
+
+// ── Resume Upload to Google Drive ─────────────────────────────────────────────
+
+function handleFileUpload(data) {
+  var folders = DriveApp.getFoldersByName('Volta Resumes');
+  var folder  = folders.hasNext() ? folders.next() : DriveApp.createFolder('Volta Resumes');
+  var bytes   = Utilities.base64Decode(data.fileData);
+  var blob    = Utilities.newBlob(bytes, data.mimeType, data.fileName);
+  var file    = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return jsonResponse({ url: file.getUrl() });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

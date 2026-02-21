@@ -5,7 +5,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getDatabase, Database } from "firebase/database";
 import { getAuth as firebaseGetAuth, Auth } from "firebase/auth";
-import { getStorage as firebaseGetStorage, FirebaseStorage } from "@firebase/storage";
 
 const firebaseConfig = {
   apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,9 +17,8 @@ const firebaseConfig = {
 };
 
 // Cached instances — initialized at most once per page session.
-let db:      Database        | null = null;
-let auth:    Auth            | null = null;
-let storage: FirebaseStorage | null = null;
+let db:   Database | null = null;
+let auth: Auth     | null = null;
 
 // Returns the Firebase App instance, or null if not configured or server-side.
 function getFirebaseApp() {
@@ -44,15 +42,6 @@ export function getAuth(): Auth | null {
   if (!app) return null;
   if (!auth) auth = firebaseGetAuth(app);
   return auth;
-}
-
-// Returns the Firebase Storage instance, or null if not configured.
-export function getStorage(): FirebaseStorage | null {
-  if (!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET) return null;
-  const app = getFirebaseApp();
-  if (!app) return null;
-  if (!storage) storage = firebaseGetStorage(app);
-  return storage;
 }
 
 // Returns true if the required Firebase env vars are present.

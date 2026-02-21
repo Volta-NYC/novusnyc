@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
 import { CheckIcon } from "@/components/Icons";
 import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schemas";
-import { getStorage } from "@/lib/firebase";
 import { TRACK_NAMES } from "@/data";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Referral", "Other"];
@@ -17,7 +15,7 @@ const EMPTY: ApplicationFormValues = {
 export default function ApplicationForm() {
   const [form, setForm] = useState<ApplicationFormValues>(EMPTY);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -30,22 +28,6 @@ export default function ApplicationForm() {
   const toggleTrack = (t: string) =>
     set("tracks", form.tracks.includes(t) ? form.tracks.filter((x) => x !== t) : [...form.tracks, t]);
 
-  // Uploads the selected file to Firebase Storage and returns its download URL.
-  const uploadResume = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const storage = getStorage();
-      if (!storage) { resolve(""); return; }
-      const path = `resumes/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const task = uploadBytesResumable(ref(storage, path), file);
-      task.on(
-        "state_changed",
-        (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        (err) => reject(err),
-        () => getDownloadURL(task.snapshot.ref).then(resolve).catch(reject),
-      );
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = validateApplicationForm(form);
@@ -56,16 +38,21 @@ export default function ApplicationForm() {
     setErrors({});
     setStatus("loading");
 
-    // Upload resume to Firebase Storage if provided.
+    // Upload resume to Google Drive via Apps Script if a file was selected.
     let resumeUrl = "";
     const file = fileRef.current?.files?.[0];
     if (form.hasResume === true && file) {
+      setUploadProgress("Uploading resume…");
+      const fd = new FormData();
+      fd.append("file", file);
       try {
-        resumeUrl = await uploadResume(file);
+        const res = await fetch("/api/upload-resume", { method: "POST", body: fd });
+        const json = await res.json();
+        resumeUrl = json.url ?? "";
       } catch {
         // Non-fatal: submit without URL if upload fails.
       }
-      setUploadProgress(null);
+      setUploadProgress("");
     }
 
     const payload: Record<string, string> = {
@@ -232,16 +219,8 @@ export default function ApplicationForm() {
               className="block w-full text-sm text-v-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-v-green file:text-v-ink hover:file:bg-v-green-dark cursor-pointer"
             />
             <p className="text-xs text-v-muted/60 mt-1.5">PDF, DOC, or DOCX. Max 5MB.</p>
-            {uploadProgress !== null && (
-              <div className="mt-2">
-                <div className="h-1.5 bg-v-border rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-v-green transition-all duration-200"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="text-xs text-v-muted mt-1">Uploading… {uploadProgress}%</p>
-              </div>
+            {uploadProgress && (
+              <p className="text-xs text-v-muted mt-2">{uploadProgress}</p>
             )}
           </div>
         )}
@@ -284,7 +263,7 @@ export default function ApplicationForm() {
         className="w-full bg-v-green text-v-ink font-display font-bold text-base py-4 rounded-xl hover:bg-v-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "loading"
-          ? uploadProgress !== null ? `Uploading resume… ${uploadProgress}%` : "Submitting…"
+          ? uploadProgress || "Submitting…"
           : "Submit Application →"}
       </button>
 
