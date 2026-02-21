@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { CheckIcon } from "@/components/Icons";
-import { FORMSPREE_ENDPOINT } from "@/lib/formspree";
 import { validateInquiryForm, type InquiryFormValues } from "@/lib/schemas";
-import { logToSheets } from "@/lib/sheetsLogger";
 
 const EMPTY: InquiryFormValues = { name: "", email: "", inquiry: "" };
 
@@ -28,19 +26,23 @@ export default function InquiryForm() {
     }
     setErrors({});
     setStatus("loading");
-    try {
-      const res = await fetch(FORMSPREE_ENDPOINT, {
+
+    const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
+    if (url) {
+      fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ _subject: `Volta NYC — Inquiry from ${form.name}`, ...form }),
-      });
-      const ok = res.ok;
-      if (ok) logToSheets({ formType: "inquiry", ...form });
-      setStatus(ok ? "success" : "error");
-      if (ok) setForm(EMPTY);
-    } catch {
-      setStatus("error");
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formType: "inquiry",
+          name:     form.name,
+          email:    form.email,
+          inquiry:  form.inquiry,
+        }),
+      }).catch(() => {});
     }
+
+    setStatus("success");
+    setForm(EMPTY);
   };
 
   if (status === "success") {

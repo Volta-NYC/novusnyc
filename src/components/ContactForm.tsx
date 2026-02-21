@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { CheckIcon } from "@/components/Icons";
-import { FORMSPREE_ENDPOINT } from "@/lib/formspree";
 import { validateContactForm, type ContactFormValues } from "@/lib/schemas";
-import { logToSheets } from "@/lib/sheetsLogger";
 
 type Lang = "en" | "es" | "zh" | "ko" | "ar" | "fr";
 
@@ -73,27 +71,34 @@ export default function ContactForm() {
     }
     setErrors({});
     setStatus("loading");
-    try {
-      const res = await fetch(FORMSPREE_ENDPOINT, {
+
+    // Translate selected services back to English using the array index,
+    // regardless of which language the user submitted the form in.
+    const englishServices = formData.services.map((s) => {
+      const idx = serviceList.indexOf(s);
+      return idx >= 0 ? SERVICES_BY_LANG["en"][idx] : s;
+    }).join(", ");
+
+    const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
+    if (url) {
+      fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
-          services: formData.services.join(", "),
-          language: LANG_LABELS[lang],
-          _subject: `Volta NYC — Business inquiry from ${formData.businessName}`,
+          formType:     "contact",
+          businessName: formData.businessName,
+          name:         formData.name,
+          email:        formData.email,
+          neighborhood: formData.neighborhood,
+          services:     englishServices,
+          message:      formData.message,
+          language:     LANG_LABELS[lang], // English label e.g. "Korean"
         }),
-      });
-      if (res.ok) {
-        logToSheets({ formType: "contact", ...formData, services: formData.services.join(", "), language: LANG_LABELS[lang] });
-        setStatus("success");
-        setFormData(EMPTY);
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
+      }).catch(() => {});
     }
+
+    setStatus("success");
+    setFormData(EMPTY);
   };
 
   if (status === "success") {
