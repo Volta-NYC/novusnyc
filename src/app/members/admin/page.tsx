@@ -250,9 +250,11 @@ function DataTab() {
   );
 }
 
-// ── MAIN ADMIN PAGE ───────────────────────────────────────────────────────────
+// ── ADMIN CONTENT (inside AuthProvider via MembersLayout) ─────────────────────
+// useAuth() must be called from inside MembersLayout's AuthProvider — not from
+// the page root, which is outside it.
 
-export default function AdminPage() {
+function AdminContent() {
   const [activeTab, setActiveTab] = useState<"codes" | "users" | "data">("codes");
   const { user, authRole, loading } = useAuth();
   const router = useRouter();
@@ -266,11 +268,9 @@ export default function AdminPage() {
 
   if (loading || authRole !== "admin") {
     return (
-      <MembersLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
-        </div>
-      </MembersLayout>
+      <div className="flex items-center justify-center h-64">
+        <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+      </div>
     );
   }
 
@@ -281,7 +281,7 @@ export default function AdminPage() {
   ];
 
   return (
-    <MembersLayout>
+    <>
       <div className="mb-6">
         <h1 className="font-display font-bold text-white text-2xl">Admin</h1>
         <p className="text-white/40 text-sm mt-1">Manage access, users, and data.</p>
@@ -305,6 +305,16 @@ export default function AdminPage() {
       {activeTab === "codes" && <AccessCodesTab uid={user?.uid ?? ""} />}
       {activeTab === "users" && <UsersTab />}
       {activeTab === "data"  && <DataTab />}
+    </>
+  );
+}
+
+// ── PAGE EXPORT ───────────────────────────────────────────────────────────────
+
+export default function AdminPage() {
+  return (
+    <MembersLayout>
+      <AdminContent />
     </MembersLayout>
   );
 }

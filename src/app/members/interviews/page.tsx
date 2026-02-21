@@ -48,9 +48,11 @@ const BLANK_SLOT_FORM = {
   date: "", time: "10:00", durationMinutes: "30", location: "",
 };
 
-// ── PAGE COMPONENT ────────────────────────────────────────────────────────────
+// ── INTERVIEWS CONTENT (inside AuthProvider via MembersLayout) ────────────────
+// useAuth() must be called from inside MembersLayout's AuthProvider — not from
+// the page root, which is outside it.
 
-export default function InterviewsPage() {
+function InterviewsContent() {
   const { user, authRole, loading } = useAuth();
   const router = useRouter();
 
@@ -85,11 +87,9 @@ export default function InterviewsPage() {
 
   if (loading || (authRole !== "admin" && authRole !== "project_lead")) {
     return (
-      <MembersLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
-        </div>
-      </MembersLayout>
+      <div className="flex items-center justify-center h-64">
+        <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+      </div>
     );
   }
 
@@ -158,7 +158,7 @@ export default function InterviewsPage() {
   ];
 
   return (
-    <MembersLayout>
+    <>
       <Dialog />
 
       {/* Page header */}
@@ -389,6 +389,16 @@ export default function InterviewsPage() {
           <Btn variant="primary" onClick={handleCreateSlot}>Add Slot</Btn>
         </div>
       </Modal>
+    </>
+  );
+}
+
+// ── PAGE EXPORT ───────────────────────────────────────────────────────────────
+
+export default function InterviewsPage() {
+  return (
+    <MembersLayout>
+      <InterviewsContent />
     </MembersLayout>
   );
 }
