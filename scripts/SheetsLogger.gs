@@ -1,17 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // VOLTA NYC — Google Apps Script (SheetsLogger)
 // Deploy as a Web App (Execute as: Me, Access: Anyone).
-// Routes submissions to the correct spreadsheet and tab based on formType.
+// All form types route to one spreadsheet, each on its own named tab.
 //
-//   formType: "application" → Applications spreadsheet
-//   formType: "contact"     → Contacts spreadsheet, Business Inquiries tab (gid 0)
-//   formType: "inquiry"     → Contacts spreadsheet, General Inquiries tab (gid 541419052)
+//   formType: "application" → "Applications" tab
+//   formType: "contact"     → "Business Inquiries" tab
+//   formType: "inquiry"     → "General Inquiries" tab
+//
+// Tabs are created automatically on first submission if they don't exist.
 // ─────────────────────────────────────────────────────────────────────────────
 
-var APPLICATIONS_SHEET_ID  = '1fi6ziWGIEyDNdEpUxBdcXL8TXZaEaE2lmmuo4BUis74';
-var CONTACTS_SHEET_ID      = '14Fqhvhqmb6FDXq-TTKG3_5PxpbNHVIPOZXgKpYoqTms';
-var BUSINESS_INQUIRIES_GID = 0;
-var GENERAL_INQUIRIES_GID  = 541419052;
+var SHEET_ID = '1UGcUy6pP7ND0BXrnKnd9GNh_d2Q_xph71b_dRNp19w4';
 
 function doPost(e) {
   try {
@@ -29,7 +28,7 @@ function doPost(e) {
 // ── Student Application ────────────────────────────────────────────────────────
 
 function handleApplication(data) {
-  var ss    = SpreadsheetApp.openById(APPLICATIONS_SHEET_ID);
+  var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('Applications') || ss.insertSheet('Applications');
   ensureHeaders(sheet, [
     'Timestamp', 'Full Name', 'Email', 'City', 'Education',
@@ -54,8 +53,8 @@ function handleApplication(data) {
 // Services and language are always sent in English by the client.
 
 function handleContact(data) {
-  var ss    = SpreadsheetApp.openById(CONTACTS_SHEET_ID);
-  var sheet = getSheetByGid(ss, BUSINESS_INQUIRIES_GID) || ss.getSheets()[0];
+  var ss    = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('Business Inquiries') || ss.insertSheet('Business Inquiries');
   ensureHeaders(sheet, [
     'Timestamp', 'Business Name', 'Owner Name', 'Email',
     'Neighborhood', 'Services Requested', 'Message', 'Language',
@@ -76,8 +75,8 @@ function handleContact(data) {
 // ── General Inquiry ───────────────────────────────────────────────────────────
 
 function handleInquiry(data) {
-  var ss    = SpreadsheetApp.openById(CONTACTS_SHEET_ID);
-  var sheet = getSheetByGid(ss, GENERAL_INQUIRIES_GID) || ss.insertSheet('General Inquiries');
+  var ss    = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('General Inquiries') || ss.insertSheet('General Inquiries');
   ensureHeaders(sheet, ['Timestamp', 'Name', 'Email', 'Inquiry']);
   sheet.appendRow([
     new Date().toISOString(),
@@ -89,14 +88,6 @@ function handleInquiry(data) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getSheetByGid(spreadsheet, gid) {
-  var sheets = spreadsheet.getSheets();
-  for (var i = 0; i < sheets.length; i++) {
-    if (sheets[i].getSheetId() === gid) return sheets[i];
-  }
-  return null;
-}
 
 function ensureHeaders(sheet, headers) {
   if (sheet.getLastRow() === 0) {
@@ -110,8 +101,7 @@ function jsonResponse(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Run once manually to verify both spreadsheets are accessible.
+// Run once manually to verify the spreadsheet is accessible.
 function setup() {
-  Logger.log('Applications: ' + SpreadsheetApp.openById(APPLICATIONS_SHEET_ID).getName());
-  Logger.log('Contacts: ' + SpreadsheetApp.openById(CONTACTS_SHEET_ID).getName());
+  Logger.log('Sheet: ' + SpreadsheetApp.openById(SHEET_ID).getName());
 }
