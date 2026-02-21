@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { Analytics } from "@vercel/analytics/next";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -86,6 +87,7 @@ export default function RootLayout({
       </head>
       <body>
         <ConditionalLayout>{children}</ConditionalLayout>
+        <Analytics />
       </body>
     </html>
   );
