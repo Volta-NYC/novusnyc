@@ -32,7 +32,7 @@ function handleApplication(data) {
   var sheet = ss.getSheetByName('Applications') || ss.insertSheet('Applications');
   ensureHeaders(sheet, [
     'Timestamp', 'Full Name', 'Email', 'City', 'Education',
-    'How They Heard', 'Tracks', 'Has Resume', 'Tools/Software', 'Accomplishment',
+    'How They Heard', 'Tracks', 'Has Resume', 'Resume URL', 'Tools/Software', 'Accomplishment',
   ]);
   sheet.appendRow([
     new Date().toISOString(),
@@ -43,6 +43,7 @@ function handleApplication(data) {
     data['How They Heard']  || '',
     data['Tracks Selected'] || '',
     data['Has Resume']      || '',
+    data['Resume URL']      || '',
     data['Tools/Software']  || '',
     data['Accomplishment']  || '',
   ]);
