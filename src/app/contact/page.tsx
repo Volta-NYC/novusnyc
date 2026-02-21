@@ -55,7 +55,7 @@ export default function Contact() {
 
       {/* ── TEAM ─────────────────────────────────────────────── */}
       <section className="py-20 bg-white border-y border-v-border">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
               Leadership
@@ -64,29 +64,20 @@ export default function Contact() {
               The Team
             </h2>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
-                <div className="bg-v-bg border border-v-border rounded-2xl p-8 project-card h-full flex gap-6 items-start">
-                  {/* Photo placeholder — swap this div for <Image> when photos are ready */}
-                  <div className="flex-shrink-0 w-20 h-20 rounded-full bg-v-border flex items-center justify-center">
-                    <svg
-                      className="w-9 h-9 text-v-muted/30"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M12 12c2.67 0 8 1.34 8 4v2H4v-2c0-2.66 5.33-4 8-4zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-                    </svg>
+                <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
+                  {/* Photo area — replace this div with <Image> when photos are ready */}
+                  <div className="aspect-[3/4] bg-v-border flex items-center justify-center">
+                    <span className="font-display font-bold text-v-muted/40 text-6xl">{m.initial}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-display font-bold text-v-ink text-xl leading-tight">
+                  <div className="p-6 flex flex-col flex-1">
+                    <h3 className="font-display font-bold text-v-ink text-lg leading-tight">
                       {m.name}
                     </h3>
                     <p className="font-body text-sm text-v-muted mt-1">{m.role}</p>
-                    {/* Bio — add description to teamMembers in src/data/index.ts */}
-                    <p className="font-body text-sm text-v-muted/60 italic mt-3 leading-relaxed">
-                      {m.desc || "Bio coming soon."}
-                    </p>
+                    {m.desc && <p className="font-body text-sm text-v-muted/60 italic mt-3 leading-relaxed flex-1">{m.desc}</p>}
                     <a
                       href={`mailto:${m.email}`}
                       className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline break-all"

@@ -127,7 +127,7 @@ export default function About() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">The team</p>
+            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Who runs Volta NYC</h2>
             <p className="font-body text-v-muted mt-3 max-w-lg">
               A team of students from Stuyvesant High School, CUNY institutions, and other NYC schools.
@@ -136,15 +136,19 @@ export default function About() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
-                <div className="bg-white border border-v-border rounded-2xl p-7 project-card h-full">
-                  <div className="w-12 h-12 rounded-full bg-v-green/20 flex items-center justify-center mb-4">
-                    <span className="font-display font-bold text-v-green text-lg">{m.initial}</span>
+                <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
+                  {/* Photo area — replace this div with <Image> when photos are ready */}
+                  <div className="aspect-[3/4] bg-v-border flex items-center justify-center">
+                    <span className="font-display font-bold text-v-muted/40 text-6xl">{m.initial}</span>
                   </div>
-                  <h3 className="font-display font-bold text-v-ink text-lg">{m.name}</h3>
-                  <p className="font-body text-sm text-v-muted mt-1">{m.role}</p>
-                  <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline break-all">
-                    <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
-                  </a>
+                  <div className="p-6 flex flex-col flex-1">
+                    <h3 className="font-display font-bold text-v-ink text-lg leading-tight">{m.name}</h3>
+                    <p className="font-body text-sm text-v-muted mt-1">{m.role}</p>
+                    {m.desc && <p className="font-body text-sm text-v-muted/60 italic mt-3 leading-relaxed flex-1">{m.desc}</p>}
+                    <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline break-all">
+                      <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
+                    </a>
+                  </div>
                 </div>
               </AnimatedSection>
             ))}

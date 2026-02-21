@@ -181,7 +181,7 @@ export default function Home() {
               },
             ].map((s, i) => (
               <AnimatedSection key={s.n} delay={i * 0.1} className="text-center">
-                <p className="font-display font-bold text-v-ink/15 text-8xl leading-none mb-3 select-none">{s.n}</p>
+                <p className="font-display font-bold text-v-ink text-8xl leading-none mb-3 select-none">{s.n}</p>
                 <h3 className="font-display font-bold text-v-ink text-lg mb-2">{s.title}</h3>
                 <p className="font-body text-sm text-v-ink/70 leading-relaxed">{s.desc}</p>
               </AnimatedSection>
@@ -257,20 +257,6 @@ export default function Home() {
               </AnimatedSection>
             ))}
           </div>
-          <AnimatedSection>
-            <div className="mt-14 pt-10 border-t border-white/10 flex flex-wrap justify-center gap-10">
-              {[
-                { value: "501(c)(3)", label: "Registered nonprofit" },
-                { value: "Free", label: "For every business" },
-                { value: "NYC", label: "Born and raised" },
-              ].map((f) => (
-                <div key={f.label} className="text-center">
-                  <p className="font-display font-bold text-white text-xl mb-1">{f.value}</p>
-                  <p className="font-body text-xs text-white/40 uppercase tracking-widest">{f.label}</p>
-                </div>
-              ))}
-            </div>
-          </AnimatedSection>
         </div>
       </section>
 
