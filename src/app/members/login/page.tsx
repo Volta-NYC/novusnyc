@@ -4,27 +4,43 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkPassword, setAuthenticated } from "@/lib/members/auth";
+import { signIn } from "@/lib/members/firebaseAuth";
+import { getDB } from "@/lib/firebase";
+import { ref, get } from "firebase/database";
 
 export default function MembersLogin() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      if (checkPassword(password)) {
-        setAuthenticated();
-        router.replace("/members/dashboard");
-      } else {
-        setError("Incorrect password.");
-        setLoading(false);
+    try {
+      const cred = await signIn(email.trim().toLowerCase(), password);
+      const db = getDB();
+      let role = "member";
+      if (db) {
+        const snap = await get(ref(db, `userProfiles/${cred.user.uid}/authRole`));
+        if (snap.exists()) role = snap.val();
       }
-    }, 300);
+      // Always admin for designated email
+      if (email.trim().toLowerCase() === "ethan@voltanpo.org") role = "admin";
+      router.replace(role === "member" ? "/members/my-work" : "/members/dashboard");
+    } catch (err: unknown) {
+      const msg = (err as { code?: string })?.code;
+      if (msg === "auth/invalid-credential" || msg === "auth/wrong-password" || msg === "auth/user-not-found") {
+        setError("Incorrect email or password.");
+      } else if (msg === "auth/too-many-requests") {
+        setError("Too many attempts. Please wait a few minutes.");
+      } else {
+        setError("Sign in failed. Check your connection and try again.");
+      }
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,10 +49,26 @@ export default function MembersLogin() {
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Volta" width={48} height={48} className="object-contain mb-4" />
           <h1 className="font-display font-bold text-white text-2xl">Members Portal</h1>
-          <p className="text-white/40 text-sm mt-1">Enter the team password to continue</p>
+          <p className="text-white/40 text-sm mt-1">Sign in with your Volta account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+              placeholder="you@email.com"
+              autoComplete="email"
+              autoFocus
+            />
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Password
@@ -48,7 +80,7 @@ export default function MembersLogin() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
               placeholder="••••••••"
-              autoFocus
+              autoComplete="current-password"
             />
           </div>
 
@@ -67,7 +99,12 @@ export default function MembersLogin() {
           </button>
         </form>
 
-        <p className="text-center mt-5">
+        <p className="text-center mt-4 text-sm font-body">
+          <Link href="/members/signup" className="text-[#85CC17]/70 hover:text-[#85CC17] transition-colors">
+            First time? Sign up with your invite code →
+          </Link>
+        </p>
+        <p className="text-center mt-3">
           <Link href="/" className="text-white/25 text-sm hover:text-white/50 transition-colors">
             ← Back to voltanyc.org
           </Link>

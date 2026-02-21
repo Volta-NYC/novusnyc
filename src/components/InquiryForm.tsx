@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckIcon } from "@/components/Icons";
 import { FORMSPREE_ENDPOINT } from "@/lib/formspree";
 import { validateInquiryForm, type InquiryFormValues } from "@/lib/schemas";
+import { logToSheets } from "@/lib/sheetsLogger";
 
 const EMPTY: InquiryFormValues = { name: "", email: "", inquiry: "" };
 
@@ -33,8 +34,10 @@ export default function InquiryForm() {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ _subject: `Volta NYC — Inquiry from ${form.name}`, ...form }),
       });
-      setStatus(res.ok ? "success" : "error");
-      if (res.ok) setForm(EMPTY);
+      const ok = res.ok;
+      if (ok) logToSheets({ formType: "inquiry", ...form });
+      setStatus(ok ? "success" : "error");
+      if (ok) setForm(EMPTY);
     } catch {
       setStatus("error");
     }

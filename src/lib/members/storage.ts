@@ -1,5 +1,10 @@
-// Firebase Realtime Database storage for Volta NYC members portal.
+// Firebase Realtime Database storage for the Volta NYC members portal.
 // All data is shared in real-time across all authenticated users.
+//
+// IMPORTANT: Firebase Realtime Database does NOT store empty arrays or null
+// values. If a field like `activeServices: []` is saved, Firebase omits it
+// entirely on read. Every caller that uses array fields must guard with `?? []`
+// to avoid "Cannot read properties of undefined" crashes.
 
 import { ref, push, update, remove, onValue, get, set, off } from "firebase/database";
 import { getDB } from "@/lib/firebase";
@@ -10,193 +15,468 @@ export interface BID {
   id: string;
   name: string;
   status: "Cold Outreach" | "Form Sent" | "In Conversation" | "Active Partner" | "Paused" | "Dead";
-  contactName: string; contactEmail: string; phone: string;
-  neighborhood: string; borough: string;
-  lastContact: string; nextAction: string; nextActionDate: string;
-  tourCompleted: boolean; notes: string;
+  contactName: string;
+  contactEmail: string;
+  phone: string;
+  neighborhood: string;
+  borough: string;
+  lastContact: string;
+  nextAction: string;
+  nextActionDate: string;
+  tourCompleted: boolean;
+  notes: string;
   priority: "High" | "Medium" | "Low";
-  referredBy: string; createdAt: string; updatedAt: string;
+  referredBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Business {
-  id: string; name: string; bidId: string; ownerName: string; ownerEmail: string;
-  phone: string; address: string; website: string; businessType: string;
-  activeServices: string[];
+  id: string;
+  name: string;
+  bidId: string;
+  ownerName: string;
+  ownerEmail: string;
+  phone: string;
+  address: string;
+  website: string;
+  businessType: string;
+  activeServices: string[];   // may be undefined if Firebase omitted empty array
   projectStatus: "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
-  teamLead: string; slackChannel: string; languages: string[];
+  teamLead: string;
+  slackChannel: string;
+  languages: string[];        // may be undefined if Firebase omitted empty array
   priority: "High" | "Medium" | "Low";
-  firstContactDate: string; grantEligible: boolean; notes: string;
-  createdAt: string; updatedAt: string;
+  firstContactDate: string;
+  grantEligible: boolean;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Task {
-  id: string; name: string;
+  id: string;
+  name: string;
   status: "To Do" | "In Progress" | "Blocked" | "In Review" | "Done";
   priority: "Urgent" | "High" | "Medium" | "Low";
-  assignedTo: string; businessId: string;
+  assignedTo: string;
+  businessId: string;
   division: "Tech" | "Marketing" | "Finance" | "Outreach" | "Operations";
-  dueDate: string; week: string; notes: string; blocker: string;
-  createdAt: string; completedAt: string;
+  dueDate: string;
+  week: string;
+  notes: string;
+  blocker: string;
+  createdAt: string;
+  completedAt: string;
 }
 
 export interface Grant {
-  id: string; name: string; funder: string; amount: string; deadline: string;
-  businessIds: string[]; neighborhoodFocus: string[];
+  id: string;
+  name: string;
+  funder: string;
+  amount: string;
+  deadline: string;
+  businessIds: string[];          // may be undefined if Firebase omitted empty array
+  neighborhoodFocus: string[];    // may be undefined if Firebase omitted empty array
   category: "Government" | "Foundation" | "Corporate" | "CDFI" | "Other";
   status: "Researched" | "Application In Progress" | "Submitted" | "Awarded" | "Rejected" | "Cycle Closed";
   assignedResearcher: string;
   likelihood: "High" | "Medium" | "Low";
-  requirements: string; applicationUrl: string; notes: string;
+  requirements: string;
+  applicationUrl: string;
+  notes: string;
   cycleFrequency: "Annual" | "Biannual" | "Rolling" | "One-Time";
   createdAt: string;
 }
 
 export interface TeamMember {
-  id: string; name: string; school: string; divisions: string[]; pod: string;
+  id: string;
+  name: string;
+  school: string;
+  divisions: string[];    // may be undefined if Firebase omitted empty array
+  pod: string;
   role: "Team Lead" | "Member" | "Associate" | "Advisor";
-  slackHandle: string; email: string;
+  slackHandle: string;
+  email: string;
   status: "Active" | "On Leave" | "Alumni" | "Inactive";
-  skills: string[]; joinDate: string; notes: string; createdAt: string;
+  skills: string[];       // may be undefined if Firebase omitted empty array
+  joinDate: string;
+  notes: string;
+  createdAt: string;
 }
 
 export interface Project {
-  id: string; name: string; businessId: string;
+  id: string;
+  name: string;
+  businessId: string;
   division: "Tech" | "Marketing" | "Finance" | "Operations";
   status: "Planning" | "Active" | "On Hold" | "Delivered" | "Complete";
-  teamLead: string; teamMembers: string[];
-  startDate: string; targetEndDate: string; actualEndDate: string;
-  week1Deliverable: string; finalDeliverable: string;
-  slackChannel: string; driveFolderUrl: string; clientNotes: string;
+  teamLead: string;
+  teamMembers: string[];  // may be undefined if Firebase omitted empty array
+  startDate: string;
+  targetEndDate: string;
+  actualEndDate: string;
+  week1Deliverable: string;
+  finalDeliverable: string;
+  slackChannel: string;
+  driveFolderUrl: string;
+  clientNotes: string;
   progress: "0%" | "25%" | "50%" | "75%" | "100%";
-  createdAt: string; updatedAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+// ── Auth and invite types ─────────────────────────────────────────────────────
 
-function now(): string { return new Date().toISOString(); }
+export type AuthRole = "admin" | "project_lead" | "member";
 
+export interface UserProfile {
+  id: string;       // Firebase Auth UID, set to the snapshot key by snapToList
+  email: string;
+  authRole: AuthRole;
+  name?: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface InviteCode {
+  id: string;
+  code: string;     // e.g. "VOLTA-AB3X7C"
+  role: AuthRole;
+  expiresAt: string;  // ISO date string
+  used: boolean;
+  usedBy?: string;    // email address of the user who redeemed it
+  usedAt?: string;
+  createdBy: string;  // uid of the admin who generated it
+  createdAt: string;
+}
+
+// ── Calendar event type ───────────────────────────────────────────────────────
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;        // ISO datetime string
+  end: string;          // ISO datetime string
+  description?: string;
+  color?: string;       // hex color, e.g. "#85CC17"
+  allDay?: boolean;
+  createdBy: string;    // uid
+  createdAt: number;    // Unix ms timestamp
+}
+
+// ── Interview scheduling types ────────────────────────────────────────────────
+
+export type InterviewStatus = "pending" | "booked" | "expired" | "cancelled";
+
+export interface InterviewInvite {
+  id: string;             // the booking token used as the Firebase key
+  applicantName: string;
+  applicantEmail: string;
+  role: string;
+  expiresAt: number;      // Unix ms timestamp
+  bookedSlotId?: string;
+  status: InterviewStatus;
+  createdBy: string;      // uid
+  createdAt: number;      // Unix ms timestamp
+  note?: string;
+}
+
+export interface InterviewSlot {
+  id: string;
+  datetime: string;       // ISO datetime (UTC)
+  durationMinutes: number;
+  available: boolean;
+  bookedBy?: string;      // booking token that reserved this slot
+  location?: string;
+  createdBy: string;      // uid
+  createdAt: number;      // Unix ms timestamp
+}
+
+// ── INTERNAL HELPERS ──────────────────────────────────────────────────────────
+
+// Returns the current time as an ISO string, used for createdAt / updatedAt fields.
+function nowISO(): string {
+  return new Date().toISOString();
+}
+
+// Converts a Firebase snapshot object into a typed array.
+// Firebase stores collections as plain objects keyed by push-ID; this turns
+// them back into arrays and injects each item's Firebase key as its `id` field.
 function snapToList<T>(snap: import("firebase/database").DataSnapshot): T[] {
   const val = snap.val();
   if (!val) return [];
   return Object.entries(val).map(([id, data]) => ({ ...(data as object), id } as T));
 }
 
+// Factory that creates a real-time subscriber function for a given database path.
+// Returns a function that registers the listener and returns an unsubscribe callback.
 function makeSubscriber<T>(path: string) {
-  return (cb: (items: T[]) => void): (() => void) => {
+  return (callback: (items: T[]) => void): (() => void) => {
     const database = getDB();
-    if (!database) { cb([]); return () => {}; }
-    const r = ref(database, path);
-    const handler = onValue(r, (snap) => cb(snapToList<T>(snap)));
-    return () => off(r, "value", handler);
+    if (!database) {
+      callback([]);
+      return () => {};
+    }
+    const dbRef = ref(database, path);
+    const handler = onValue(dbRef, (snap) => callback(snapToList<T>(snap)));
+    return () => off(dbRef, "value", handler);
   };
 }
 
-// ── SUBSCRIBE (real-time listeners) ──────────────────────────────────────────
+// ── REAL-TIME SUBSCRIBERS ─────────────────────────────────────────────────────
 
-export const subscribeBIDs = makeSubscriber<BID>("bids");
-export const subscribeBusinesses = makeSubscriber<Business>("businesses");
-export const subscribeTasks = makeSubscriber<Task>("tasks");
-export const subscribeGrants = makeSubscriber<Grant>("grants");
-export const subscribeTeam = makeSubscriber<TeamMember>("team");
-export const subscribeProjects = makeSubscriber<Project>("projects");
+export const subscribeBIDs        = makeSubscriber<BID>("bids");
+export const subscribeBusinesses  = makeSubscriber<Business>("businesses");
+export const subscribeTasks       = makeSubscriber<Task>("tasks");
+export const subscribeGrants      = makeSubscriber<Grant>("grants");
+export const subscribeTeam        = makeSubscriber<TeamMember>("team");
+export const subscribeProjects    = makeSubscriber<Project>("projects");
 
 // ── BIDs ──────────────────────────────────────────────────────────────────────
 
 export async function createBID(data: Omit<BID, "id" | "createdAt" | "updatedAt">): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await push(ref(db, "bids"), { ...data, createdAt: now(), updatedAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "bids"), { ...data, createdAt: nowISO(), updatedAt: nowISO() });
 }
+
 export async function updateBID(id: string, data: Partial<BID>): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await update(ref(db, `bids/${id}`), { ...data, updatedAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `bids/${id}`), { ...data, updatedAt: nowISO() });
 }
+
 export async function deleteBID(id: string): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await remove(ref(db, `bids/${id}`));
 }
 
 // ── Businesses ────────────────────────────────────────────────────────────────
 
 export async function createBusiness(data: Omit<Business, "id" | "createdAt" | "updatedAt">): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await push(ref(db, "businesses"), { ...data, createdAt: now(), updatedAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "businesses"), { ...data, createdAt: nowISO(), updatedAt: nowISO() });
 }
+
 export async function updateBusiness(id: string, data: Partial<Business>): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await update(ref(db, `businesses/${id}`), { ...data, updatedAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `businesses/${id}`), { ...data, updatedAt: nowISO() });
 }
+
 export async function deleteBusiness(id: string): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await remove(ref(db, `businesses/${id}`));
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 
 export async function createTask(data: Omit<Task, "id" | "createdAt">): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await push(ref(db, "tasks"), { ...data, createdAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "tasks"), { ...data, createdAt: nowISO() });
 }
+
 export async function updateTask(id: string, data: Partial<Task>): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await update(ref(db, `tasks/${id}`), data);
 }
+
 export async function deleteTask(id: string): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await remove(ref(db, `tasks/${id}`));
 }
 
 // ── Grants ────────────────────────────────────────────────────────────────────
 
 export async function createGrant(data: Omit<Grant, "id" | "createdAt">): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await push(ref(db, "grants"), { ...data, createdAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "grants"), { ...data, createdAt: nowISO() });
 }
+
 export async function updateGrant(id: string, data: Partial<Grant>): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await update(ref(db, `grants/${id}`), data);
 }
+
 export async function deleteGrant(id: string): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await remove(ref(db, `grants/${id}`));
 }
 
 // ── Team ──────────────────────────────────────────────────────────────────────
 
 export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt">): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await push(ref(db, "team"), { ...data, createdAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "team"), { ...data, createdAt: nowISO() });
 }
+
 export async function updateTeamMember(id: string, data: Partial<TeamMember>): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await update(ref(db, `team/${id}`), data);
 }
+
 export async function deleteTeamMember(id: string): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await remove(ref(db, `team/${id}`));
 }
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
 export async function createProject(data: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await push(ref(db, "projects"), { ...data, createdAt: now(), updatedAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "projects"), { ...data, createdAt: nowISO(), updatedAt: nowISO() });
 }
+
 export async function updateProject(id: string, data: Partial<Project>): Promise<void> {
-  const db = getDB(); if (!db) return;
-  await update(ref(db, `projects/${id}`), { ...data, updatedAt: now() });
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `projects/${id}`), { ...data, updatedAt: nowISO() });
 }
+
 export async function deleteProject(id: string): Promise<void> {
-  const db = getDB(); if (!db) return;
+  const db = getDB();
+  if (!db) return;
   await remove(ref(db, `projects/${id}`));
 }
 
+// ── UserProfiles (admin only) ─────────────────────────────────────────────────
+
+export const subscribeUserProfiles = makeSubscriber<UserProfile>("userProfiles");
+
+export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `userProfiles/${uid}`), data);
+}
+
+// ── InviteCodes ───────────────────────────────────────────────────────────────
+
+export const subscribeInviteCodes = makeSubscriber<InviteCode>("inviteCodes");
+
+export async function createInviteCode(data: Omit<InviteCode, "id">): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "inviteCodes"), data);
+}
+
+export async function updateInviteCode(id: string, data: Partial<InviteCode>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `inviteCodes/${id}`), data);
+}
+
+export async function deleteInviteCode(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `inviteCodes/${id}`));
+}
+
+export async function getInviteCodes(): Promise<InviteCode[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "inviteCodes"));
+  return snapToList<InviteCode>(snap);
+}
+
+// ── CalendarEvents ────────────────────────────────────────────────────────────
+
+export const subscribeCalendarEvents = makeSubscriber<CalendarEvent>("calendarEvents");
+
+export async function createCalendarEvent(data: Omit<CalendarEvent, "id">): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "calendarEvents"), data);
+}
+
+export async function updateCalendarEvent(id: string, data: Partial<CalendarEvent>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `calendarEvents/${id}`), data);
+}
+
+export async function deleteCalendarEvent(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `calendarEvents/${id}`));
+}
+
+// ── InterviewInvites ──────────────────────────────────────────────────────────
+// Uses the booking token as the Firebase key (instead of a push-generated key),
+// so the token IS the record's ID and is embedded in the shareable URL.
+
+export const subscribeInterviewInvites = makeSubscriber<InterviewInvite>("interviewInvites");
+
+export async function createInterviewInvite(token: string, data: Omit<InterviewInvite, "id">): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await set(ref(db, `interviewInvites/${token}`), data);
+}
+
+export async function updateInterviewInvite(token: string, data: Partial<InterviewInvite>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `interviewInvites/${token}`), data);
+}
+
+export async function getInterviewInvite(token: string): Promise<InterviewInvite | null> {
+  const db = getDB();
+  if (!db) return null;
+  const snap = await get(ref(db, `interviewInvites/${token}`));
+  if (!snap.exists()) return null;
+  return { ...snap.val(), id: token } as InterviewInvite;
+}
+
+// ── InterviewSlots ────────────────────────────────────────────────────────────
+
+export const subscribeInterviewSlots = makeSubscriber<InterviewSlot>("interviewSlots");
+
+export async function createInterviewSlot(data: Omit<InterviewSlot, "id">): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, "interviewSlots"), data);
+}
+
+export async function updateInterviewSlot(id: string, data: Partial<InterviewSlot>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `interviewSlots/${id}`), data);
+}
+
+export async function deleteInterviewSlot(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `interviewSlots/${id}`));
+}
+
+export async function getInterviewSlots(): Promise<InterviewSlot[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "interviewSlots"));
+  return snapToList<InterviewSlot>(snap);
+}
+
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
+// Export downloads the entire database as JSON; import overwrites it entirely.
 
 export async function exportAllData(): Promise<string> {
   const db = getDB();
   if (!db) return JSON.stringify({ error: "Firebase not configured" });
   const snap = await get(ref(db, "/"));
-  return JSON.stringify({ exportedAt: now(), ...snap.val() }, null, 2);
+  return JSON.stringify({ exportedAt: nowISO(), ...snap.val() }, null, 2);
 }
 
 export async function importAllData(json: string): Promise<void> {

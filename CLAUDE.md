@@ -1,11 +1,13 @@
-# Volta NYC — Claude Code Memory
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project overview
 
 Nonprofit website + internal members portal. Students run consulting projects for NYC small businesses (websites, social media, grants). Public site markets the org; members portal is a private CRM dashboard.
 
 - **Live URL:** https://nyc.voltanpo.org
-- **Repo root:** `volta-nyc/` (one level inside `nichetuffwebsite/`)
+- **Repo root:** `volta-nyc/`
 - **Deployed on:** Vercel (auto-deploys on push to `main`)
 
 ---
@@ -19,8 +21,8 @@ Nonprofit website + internal members portal. Students run consulting projects fo
 | Styling | Tailwind CSS + custom CSS (`globals.css`) |
 | Animations | Framer Motion |
 | Database | Firebase Realtime Database (members portal only) |
-| Forms | Formspree (`xkovzkwz`) |
-| Auth | localStorage password check (`src/lib/members/auth.ts`) |
+| Auth | Firebase Authentication (members portal) |
+| Forms | Formspree + Google Sheets via Apps Script |
 | Fonts | Space Grotesk (display), DM Sans (body) — Google Fonts via `next/font` |
 
 ---
@@ -39,15 +41,21 @@ src/
 │   ├── showcase/page.tsx     # Project portfolio
 │   ├── about/page.tsx        # Team, timeline, values
 │   ├── contact/page.tsx      # Team contacts + InquiryForm
+│   ├── impact/page.tsx       # Impact metrics
+│   ├── book/[token]/page.tsx # Dynamic booking/scheduling route
 │   └── members/              # Private portal (no Navbar/Footer)
 │       ├── login/page.tsx
+│       ├── signup/page.tsx
 │       ├── dashboard/page.tsx
+│       ├── my-work/page.tsx
 │       ├── projects/page.tsx
 │       ├── businesses/page.tsx
 │       ├── tasks/page.tsx
 │       ├── bids/page.tsx
 │       ├── grants/page.tsx
 │       ├── team/page.tsx
+│       ├── interviews/page.tsx
+│       ├── calendar/page.tsx
 │       └── admin/page.tsx
 │
 ├── components/
@@ -56,11 +64,12 @@ src/
 │   ├── HeroSection.tsx       # Homepage hero with parallax
 │   ├── AnimatedSection.tsx   # Scroll-reveal wrapper (Framer Motion whileInView)
 │   ├── CountUp.tsx           # Animated number counter
-│   ├── Icons.tsx             # 24 custom SVG icons (named exports)
+│   ├── Icons.tsx             # 24+ custom SVG icons (named exports)
 │   ├── ConditionalLayout.tsx # Wraps Navbar+Footer; hides on /members routes
 │   ├── ContactForm.tsx       # Multilingual business inquiry (6 languages, Formspree)
 │   ├── ApplicationForm.tsx   # Student application with optional resume upload
 │   ├── InquiryForm.tsx       # General contact form
+│   ├── NeighborhoodMap.tsx   # Leaflet map with NYC neighborhoods
 │   └── members/
 │       ├── MembersLayout.tsx # Dark sidebar layout + auth check
 │       └── ui.tsx            # Members UI primitives
@@ -74,9 +83,13 @@ src/
     ├── formspree.ts          # FORMSPREE_ENDPOINT constant
     ├── schemas.ts            # Form validation (validateContactForm, validateApplicationForm,
     │                         #   validateInquiryForm) — returns { success, errors }
+    ├── sheetsLogger.ts       # Google Sheets integration via Apps Script
+    ├── interviews.ts         # Interview scheduling logic
     └── members/
-        ├── auth.ts           # Password auth (localStorage)
-        └── storage.ts        # Firebase CRUD + real-time subscribers for all 6 entity types
+        ├── auth.ts           # Legacy stub (superseded by Firebase auth)
+        ├── firebaseAuth.ts   # Firebase Authentication functions
+        ├── authContext.tsx   # React Context + useAuth() hook for auth state
+        └── storage.ts        # Firebase CRUD + real-time subscribers for all entity types
 ```
 
 ---
@@ -140,8 +153,8 @@ export const currentProjects = projects.filter(p => p.status !== "Upcoming").sli
 
 ### Members portal
 - All `/members/*` routes skip Navbar/Footer (handled by `ConditionalLayout`)
-- Auth is localStorage-based: `isAuthenticated()` from `@/lib/members/auth`
-- Firebase data: use `subscribe*` functions for real-time listeners — always unsubscribe on unmount
+- Auth uses Firebase Authentication: use `useAuth()` hook from `@/lib/members/authContext` for auth state
+- Firebase data: use `subscribe*` functions from `@/lib/members/storage` for real-time listeners — always unsubscribe on unmount
 - Members pages use `MembersLayout` wrapper from `@/components/members/MembersLayout`
 
 ### Icon usage
@@ -158,13 +171,14 @@ import { BarChartIcon, CodeIcon, MapPinIcon } from "@/components/Icons";
 
 ## Environment variables
 
-Required for members portal Firebase (set in `.env.local`, never commit):
+Required for members portal Firebase and forms (set in `.env.local`, never commit):
 ```
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
 NEXT_PUBLIC_FIREBASE_DATABASE_URL=
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_APPS_SCRIPT_URL=   # Google Sheets Apps Script endpoint
 ```
 Firebase is lazy-loaded — the public site works without any env vars set.
 

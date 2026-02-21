@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { CheckIcon } from "@/components/Icons";
 import { FORMSPREE_ENDPOINT } from "@/lib/formspree";
 import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schemas";
+import { logToSheets } from "@/lib/sheetsLogger";
 import { TRACK_NAMES } from "@/data";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Referral", "Other"];
@@ -63,6 +64,9 @@ export default function ApplicationForm() {
         headers: { Accept: "application/json" },
         body: fd,
       });
+      if (res.ok) {
+        logToSheets({ formType: "application", ...payload });
+      }
       setStatus(res.ok ? "success" : "error");
     } catch {
       setStatus("error");

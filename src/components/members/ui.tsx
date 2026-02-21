@@ -3,51 +3,56 @@
 import { useState, ReactNode, useEffect } from "react";
 
 // ── BADGE ─────────────────────────────────────────────────────────────────────
+// Maps status/priority/role strings to their Tailwind color classes.
 
 const BADGE_COLORS: Record<string, string> = {
-  // status
-  Active: "bg-green-500/15 text-green-400 border-green-500/20",
-  "Active Partner": "bg-green-500/15 text-green-400 border-green-500/20",
-  Complete: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  Done: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  Delivered: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  Planning: "bg-purple-500/15 text-purple-400 border-purple-500/20",
-  Awarded: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-  Submitted: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
-  "In Progress": "bg-blue-400/15 text-blue-300 border-blue-400/20",
-  "In Conversation": "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
-  Discovery: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
-  Researched: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
-  "Cold Outreach": "bg-gray-500/15 text-gray-400 border-gray-500/20",
-  "Not Started": "bg-gray-500/15 text-gray-400 border-gray-500/20",
-  Blocked: "bg-red-500/15 text-red-400 border-red-500/20",
-  Rejected: "bg-red-500/15 text-red-400 border-red-500/20",
-  Paused: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-  "On Hold": "bg-orange-500/15 text-orange-400 border-orange-500/20",
-  "In Review": "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-  "Form Sent": "bg-purple-500/15 text-purple-400 border-purple-500/20",
-  Dead: "bg-red-900/30 text-red-500 border-red-900/20",
+  // project / business status
+  Active:              "bg-green-500/15 text-green-400 border-green-500/20",
+  "Active Partner":    "bg-green-500/15 text-green-400 border-green-500/20",
+  Complete:            "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Done:                "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Delivered:           "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Planning:            "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  Awarded:             "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Submitted:           "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  "In Progress":       "bg-blue-400/15 text-blue-300 border-blue-400/20",
+  "In Conversation":   "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  Discovery:           "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  Researched:          "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  "Cold Outreach":     "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  "Not Started":       "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  Blocked:             "bg-red-500/15 text-red-400 border-red-500/20",
+  Rejected:            "bg-red-500/15 text-red-400 border-red-500/20",
+  Paused:              "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  "On Hold":           "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  "In Review":         "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  "Form Sent":         "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  Dead:                "bg-red-900/30 text-red-500 border-red-900/20",
+  // interview status
+  Available:           "bg-green-500/15 text-green-400 border-green-500/20",
+  Booked:              "bg-blue-500/15 text-blue-400 border-blue-500/20",
   // priority
   Urgent: "bg-red-500/15 text-red-400 border-red-500/20",
-  High: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  High:   "bg-orange-500/15 text-orange-400 border-orange-500/20",
   Medium: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-  Low: "bg-gray-500/15 text-gray-400 border-gray-500/20",
-  // role
-  admin: "bg-red-500/15 text-red-400 border-red-500/20",
+  Low:    "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  // auth role
+  admin:        "bg-red-500/15 text-red-400 border-red-500/20",
   project_lead: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  member: "bg-green-500/15 text-green-400 border-green-500/20",
-  viewer: "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  member:       "bg-green-500/15 text-green-400 border-green-500/20",
+  viewer:       "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  // team role
   "Team Lead": "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  Member: "bg-green-500/15 text-green-400 border-green-500/20",
-  Associate: "bg-purple-500/15 text-purple-400 border-purple-500/20",
-  Alumni: "bg-gray-500/15 text-gray-400 border-gray-500/20",
-  Inactive: "bg-gray-700/40 text-gray-500 border-gray-700/20",
+  Member:      "bg-green-500/15 text-green-400 border-green-500/20",
+  Associate:   "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  Alumni:      "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  Inactive:    "bg-gray-700/40 text-gray-500 border-gray-700/20",
 };
 
 export function Badge({ label }: { label: string }) {
-  const cls = BADGE_COLORS[label] ?? "bg-gray-500/15 text-gray-400 border-gray-500/20";
+  const colorClass = BADGE_COLORS[label] ?? "bg-gray-500/15 text-gray-400 border-gray-500/20";
   return (
-    <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${cls} whitespace-nowrap`}>
+    <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${colorClass} whitespace-nowrap`}>
       {label}
     </span>
   );
@@ -56,12 +61,16 @@ export function Badge({ label }: { label: string }) {
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 
 export function Modal({ open, onClose, title, children }: {
-  open: boolean; onClose: () => void; title: string; children: ReactNode;
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
 }) {
+  // Close on Escape key
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
   if (!open) return null;
@@ -85,7 +94,11 @@ export function Modal({ open, onClose, title, children }: {
 
 // ── FORM FIELD ────────────────────────────────────────────────────────────────
 
-export function Field({ label, children, required }: { label: string; children: ReactNode; required?: boolean }) {
+export function Field({ label, children, required }: {
+  label: string;
+  children: ReactNode;
+  required?: boolean;
+}) {
   return (
     <div>
       <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
@@ -124,39 +137,54 @@ export function Select({ options, className = "", ...props }: SelectProps) {
       className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
     >
       <option value="">— Select —</option>
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      {options.map((option) => <option key={option} value={option}>{option}</option>)}
     </select>
   );
 }
 
-// ── SEARCH/FILTER BAR ─────────────────────────────────────────────────────────
+// ── SEARCH BAR ────────────────────────────────────────────────────────────────
 
 export function SearchBar({ value, onChange, placeholder = "Search…" }: {
-  value: string; onChange: (v: string) => void; placeholder?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }) {
   return (
     <div className="relative flex-1 min-w-0">
       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full bg-[#1C1F26] border border-white/8 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 transition-colors" />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-[#1C1F26] border border-white/8 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 transition-colors"
+      />
     </div>
   );
 }
 
 // ── PAGE HEADER ───────────────────────────────────────────────────────────────
+// Renders the page title, optional subtitle, and an optional action area (e.g. "Add" button).
+// Uses min-w-0 on the title so it can shrink, and flex-shrink-0 on the action
+// so buttons are never compressed or pushed off-screen by long content.
 
 export function PageHeader({ title, subtitle, action }: {
-  title: string; subtitle?: string; action?: ReactNode;
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
 }) {
   return (
     <div className="flex items-start justify-between gap-4 mb-6">
-      <div>
+      <div className="min-w-0">
         <h1 className="font-display font-bold text-white text-2xl">{title}</h1>
         {subtitle && <p className="text-white/40 text-sm mt-1">{subtitle}</p>}
       </div>
-      {action}
+      {action && (
+        <div className="flex-shrink-0">
+          {action}
+        </div>
+      )}
     </div>
   );
 }
@@ -164,7 +192,9 @@ export function PageHeader({ title, subtitle, action }: {
 // ── STAT CARD ─────────────────────────────────────────────────────────────────
 
 export function StatCard({ label, value, color = "text-[#85CC17]" }: {
-  label: string; value: string | number; color?: string;
+  label: string;
+  value: string | number;
+  color?: string;
 }) {
   return (
     <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
@@ -174,26 +204,29 @@ export function StatCard({ label, value, color = "text-[#85CC17]" }: {
   );
 }
 
-// ── BTN ───────────────────────────────────────────────────────────────────────
+// ── BUTTON ────────────────────────────────────────────────────────────────────
 
 type BtnVariant = "primary" | "secondary" | "danger" | "ghost";
+
 interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: BtnVariant;
   size?: "sm" | "md";
 }
-const BTN_CLS: Record<BtnVariant, string> = {
-  primary: "bg-[#85CC17] text-[#0D0D0D] font-bold hover:bg-[#72b314]",
+
+const BTN_CLASSES: Record<BtnVariant, string> = {
+  primary:   "bg-[#85CC17] text-[#0D0D0D] font-bold hover:bg-[#72b314]",
   secondary: "bg-white/8 text-white hover:bg-white/14 border border-white/10",
-  danger: "bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/20",
-  ghost: "text-white/50 hover:text-white hover:bg-white/8",
+  danger:    "bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/20",
+  ghost:     "text-white/50 hover:text-white hover:bg-white/8",
 };
+
 export function Btn({ variant = "secondary", size = "md", className = "", children, ...props }: BtnProps) {
   return (
     <button
       {...props}
       className={`inline-flex items-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
         ${size === "sm" ? "text-xs px-3 py-1.5" : "text-sm px-4 py-2"}
-        ${BTN_CLS[variant]} ${className}`}
+        ${BTN_CLASSES[variant]} ${className}`}
     >
       {children}
     </button>
@@ -211,15 +244,20 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
   );
 }
 
-// ── CONFIRM DELETE ────────────────────────────────────────────────────────────
+// ── CONFIRM DELETE DIALOG ─────────────────────────────────────────────────────
+// Returns an `ask` function to trigger the dialog and a `Dialog` component to render it.
+// Usage: const { ask, Dialog } = useConfirm();
+//        <Dialog /> somewhere in JSX, then ask(() => doDelete()) on button click.
 
 export function useConfirm() {
-  const [pending, setPending] = useState<(() => void) | null>(null);
-  const ask = (fn: () => void) => setPending(() => fn);
-  const confirm = () => { pending?.(); setPending(null); };
-  const cancel = () => setPending(null);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  const ask = (action: () => void) => setPendingAction(() => action);
+  const confirm = () => { pendingAction?.(); setPendingAction(null); };
+  const cancel  = () => setPendingAction(null);
+
   const Dialog = () =>
-    pending ? (
+    pendingAction ? (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="fixed inset-0 bg-black/70" onClick={cancel} />
         <div className="relative bg-[#1C1F26] border border-white/10 rounded-xl p-6 max-w-sm w-full">
@@ -232,41 +270,60 @@ export function useConfirm() {
         </div>
       </div>
     ) : null;
+
   return { ask, Dialog };
 }
 
-// ── MULTI-SELECT TAGS INPUT ───────────────────────────────────────────────────
+// ── MULTI-SELECT TAG INPUT ────────────────────────────────────────────────────
+// Renders existing tags as removable pills. Users can add tags by picking from
+// the dropdown or by typing a custom value and pressing Enter.
 
 export function TagInput({ values, onChange, options }: {
-  values: string[]; onChange: (v: string[]) => void; options: string[];
+  values: string[];
+  onChange: (values: string[]) => void;
+  options: string[];
 }) {
-  const [input, setInput] = useState("");
-  const add = (val: string) => {
-    const v = val.trim();
-    if (v && !values.includes(v)) onChange([...values, v]);
-    setInput("");
+  const [inputText, setInputText] = useState("");
+
+  // Guard: Firebase may return undefined for empty arrays
+  const safeValues = values ?? [];
+
+  const addTag = (raw: string) => {
+    const tag = raw.trim();
+    if (tag && !safeValues.includes(tag)) onChange([...safeValues, tag]);
+    setInputText("");
   };
-  const remove = (v: string) => onChange(values.filter((x) => x !== v));
+
+  const removeTag = (tag: string) => onChange(safeValues.filter((v) => v !== tag));
+
   return (
     <div>
+      {/* Current tags */}
       <div className="flex flex-wrap gap-1.5 mb-2">
-        {values.map((v) => (
-          <span key={v} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
-            {v}
-            <button type="button" onClick={() => remove(v)} className="hover:text-red-400 transition-colors">×</button>
+        {safeValues.map((tag) => (
+          <span key={tag} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
+            {tag}
+            <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">×</button>
           </span>
         ))}
       </div>
+      {/* Add tag controls */}
       <div className="flex gap-2">
-        <select value="" onChange={(e) => { if (e.target.value) add(e.target.value); }}
-          className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 flex-1">
+        <select
+          value=""
+          onChange={(e) => { if (e.target.value) addTag(e.target.value); }}
+          className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 flex-1"
+        >
           <option value="">Add from list…</option>
-          {options.filter((o) => !values.includes(o)).map((o) => <option key={o}>{o}</option>)}
+          {options.filter((opt) => !safeValues.includes(opt)).map((opt) => <option key={opt}>{opt}</option>)}
         </select>
-        <input value={input} onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(input); } }}
+        <input
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(inputText); } }}
           placeholder="Or type custom…"
-          className="bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 flex-1" />
+          className="bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 flex-1"
+        />
       </div>
     </div>
   );
@@ -283,16 +340,18 @@ export function Table({ cols, rows }: {
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-[#1C1F26] border-b border-white/8">
-            {cols.map((c) => (
-              <th key={c} className="text-left px-4 py-3 text-white/40 font-medium text-xs uppercase tracking-wider whitespace-nowrap">{c}</th>
+            {cols.map((col) => (
+              <th key={col} className="text-left px-4 py-3 text-white/40 font-medium text-xs uppercase tracking-wider whitespace-nowrap">
+                {col}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-white/5">
-          {rows.map((row, i) => (
-            <tr key={i} className="hover:bg-white/3 transition-colors group">
-              {row.map((cell, j) => (
-                <td key={j} className="px-4 py-3 text-white/70 whitespace-nowrap">{cell}</td>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex} className="hover:bg-white/3 transition-colors group">
+              {row.map((cell, colIndex) => (
+                <td key={colIndex} className="px-4 py-3 text-white/70 whitespace-nowrap">{cell}</td>
               ))}
             </tr>
           ))}

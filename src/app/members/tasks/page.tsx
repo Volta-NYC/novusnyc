@@ -2,147 +2,256 @@
 
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import { PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea, Table, Empty, useConfirm } from "@/components/members/ui";
-import { subscribeTasks, createTask, updateTask, deleteTask, type Task } from "@/lib/members/storage";
+import {
+  PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
+  Table, Empty, useConfirm,
+} from "@/components/members/ui";
+import {
+  subscribeTasks, createTask, updateTask, deleteTask, type Task,
+} from "@/lib/members/storage";
+import { useAuth } from "@/lib/members/authContext";
 
-const STATUSES = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+
+const STATUSES  = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"];
-const DIVISIONS = ["Tech", "Marketing", "Finance", "Outreach", "Operations"];
-const BLANK: Omit<Task, "id" | "createdAt"> = {
+const DIVISIONS  = ["Tech", "Marketing", "Finance", "Outreach", "Operations"];
+
+// Blank form values for creating a new task.
+const BLANK_FORM: Omit<Task, "id" | "createdAt"> = {
   name: "", status: "To Do", priority: "Medium", assignedTo: "", businessId: "",
   division: "Tech", dueDate: "", week: "", notes: "", blocker: "", completedAt: "",
 };
-const STATUS_COLS: Task["status"][] = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
-const COL_COLORS: Record<string, string> = {
-  "To Do": "border-gray-500/30", "In Progress": "border-blue-500/30",
-  "Blocked": "border-red-500/30", "In Review": "border-yellow-500/30", "Done": "border-green-500/30",
+
+// Ordered columns for the kanban board view.
+const BOARD_COLUMNS: Task["status"][] = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
+
+// Left border color for each kanban column.
+const COLUMN_BORDER_COLOR: Record<string, string> = {
+  "To Do":      "border-gray-500/30",
+  "In Progress": "border-blue-500/30",
+  "Blocked":    "border-red-500/30",
+  "In Review":  "border-yellow-500/30",
+  "Done":       "border-green-500/30",
 };
 
-export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [search, setSearch] = useState("");
-  const [filterDiv, setFilterDiv] = useState("");
-  const [view, setView] = useState<"board" | "table">("board");
-  const [modal, setModal] = useState<"create" | "edit" | null>(null);
-  const [editing, setEditing] = useState<Task | null>(null);
-  const [form, setForm] = useState(BLANK);
-  const { ask, Dialog } = useConfirm();
+// ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
+export default function TasksPage() {
+  const [tasks, setTasks]             = useState<Task[]>([]);
+  const [search, setSearch]           = useState("");
+  const [filterDiv, setFilterDiv]     = useState("");
+  const [view, setView]               = useState<"board" | "table">("board");
+  const [modal, setModal]             = useState<"create" | "edit" | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [form, setForm]               = useState(BLANK_FORM);
+
+  const { ask, Dialog } = useConfirm();
+  const { authRole }    = useAuth();
+  const canEdit = authRole === "admin" || authRole === "project_lead";
+
+  // Subscribe to real-time task updates; unsubscribe on unmount.
   useEffect(() => subscribeTasks(setTasks), []);
 
-  const set = (k: string, v: unknown) => setForm((p) => ({ ...p, [k]: v }));
-  const openCreate = (status?: Task["status"]) => { setForm({ ...BLANK, status: status ?? "To Do" }); setEditing(null); setModal("create"); };
-  const openEdit = (t: Task) => {
-    setForm({ name: t.name, status: t.status, priority: t.priority, assignedTo: t.assignedTo,
-      businessId: t.businessId, division: t.division, dueDate: t.dueDate, week: t.week,
-      notes: t.notes, blocker: t.blocker, completedAt: t.completedAt });
-    setEditing(t); setModal("edit");
+  // Generic field updater used by all form inputs.
+  const setField = (key: string, value: unknown) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  // Open create modal, optionally pre-selecting the column's status.
+  const openCreate = (status?: Task["status"]) => {
+    setForm({ ...BLANK_FORM, status: status ?? "To Do" });
+    setEditingTask(null);
+    setModal("create");
   };
+
+  const openEdit = (task: Task) => {
+    setForm({
+      name:        task.name,
+      status:      task.status,
+      priority:    task.priority,
+      assignedTo:  task.assignedTo,
+      businessId:  task.businessId,
+      division:    task.division,
+      dueDate:     task.dueDate,
+      week:        task.week,
+      notes:       task.notes,
+      blocker:     task.blocker,
+      completedAt: task.completedAt,
+    });
+    setEditingTask(task);
+    setModal("edit");
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (editing) await updateTask(editing.id, form as Partial<Task>);
-    else await createTask(form as Omit<Task, "id" | "createdAt">);
+    if (editingTask) {
+      await updateTask(editingTask.id, form as Partial<Task>);
+    } else {
+      await createTask(form as Omit<Task, "id" | "createdAt">);
+    }
     setModal(null);
   };
 
-  const filtered = tasks.filter(t =>
-    (!search || t.name.toLowerCase().includes(search.toLowerCase()) || t.assignedTo.toLowerCase().includes(search.toLowerCase()))
-    && (!filterDiv || t.division === filterDiv)
+  // Filter by search text and/or division dropdown.
+  const filtered = tasks.filter(task =>
+    (!search
+      || task.name.toLowerCase().includes(search.toLowerCase())
+      || task.assignedTo.toLowerCase().includes(search.toLowerCase()))
+    && (!filterDiv || task.division === filterDiv)
   );
 
   return (
     <MembersLayout>
       <Dialog />
-      <PageHeader title="Tasks"
+
+      <PageHeader
+        title="Tasks"
         subtitle={`${tasks.filter(t => t.status !== "Done").length} open · ${tasks.filter(t => t.status === "Blocked").length} blocked`}
         action={
           <div className="flex gap-2">
+            {/* Board / Table view toggle */}
             <div className="flex bg-[#1C1F26] border border-white/8 rounded-lg p-0.5">
-              {(["board", "table"] as const).map(v => (
-                <button key={v} onClick={() => setView(v)}
-                  className={`px-3 py-1.5 rounded text-xs font-medium capitalize transition-colors ${view === v ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/40 hover:text-white"}`}>
-                  {v}
+              {(["board", "table"] as const).map(viewMode => (
+                <button
+                  key={viewMode}
+                  onClick={() => setView(viewMode)}
+                  className={`px-3 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
+                    view === viewMode ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/40 hover:text-white"
+                  }`}
+                >
+                  {viewMode}
                 </button>
               ))}
             </div>
-            <Btn variant="primary" onClick={() => openCreate()}>+ Task</Btn>
+            {canEdit && <Btn variant="primary" onClick={() => openCreate()}>+ Task</Btn>}
           </div>
-        } />
+        }
+      />
+
+      {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search tasks, assignees…" />
-        <select value={filterDiv} onChange={e => setFilterDiv(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none">
+        <select
+          value={filterDiv}
+          onChange={e => setFilterDiv(e.target.value)}
+          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
+        >
           <option value="">All divisions</option>
           {DIVISIONS.map(d => <option key={d}>{d}</option>)}
         </select>
       </div>
 
+      {/* ── Board view ── */}
       {view === "board" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {STATUS_COLS.map(col => {
-            const colTasks = filtered.filter(t => t.status === col);
+          {BOARD_COLUMNS.map(column => {
+            const columnTasks = filtered.filter(t => t.status === column);
             return (
-              <div key={col} className={`bg-[#1C1F26] border ${COL_COLORS[col]} rounded-xl p-3 min-h-[200px]`}>
+              <div key={column} className={`bg-[#1C1F26] border ${COLUMN_BORDER_COLOR[column]} rounded-xl p-3 min-h-[200px]`}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-white/50 uppercase tracking-wider">{col}</span>
-                  <span className="text-xs bg-white/8 text-white/40 px-1.5 py-0.5 rounded-full">{colTasks.length}</span>
+                  <span className="text-xs font-bold text-white/50 uppercase tracking-wider">{column}</span>
+                  <span className="text-xs bg-white/8 text-white/40 px-1.5 py-0.5 rounded-full">{columnTasks.length}</span>
                 </div>
                 <div className="space-y-2">
-                  {colTasks.map(t => (
-                    <div key={t.id} className="bg-[#0F1014] border border-white/5 rounded-lg p-3 cursor-pointer hover:border-white/15 transition-colors"
-                      onClick={() => openEdit(t)}>
-                      <p className="text-white text-sm font-medium leading-snug mb-1.5">{t.name}</p>
+                  {columnTasks.map(task => (
+                    <div
+                      key={task.id}
+                      className="bg-[#0F1014] border border-white/5 rounded-lg p-3 cursor-pointer hover:border-white/15 transition-colors"
+                      onClick={() => canEdit ? openEdit(task) : undefined}
+                    >
+                      <p className="text-white text-sm font-medium leading-snug mb-1.5">{task.name}</p>
                       <div className="flex flex-wrap gap-1">
-                        <Badge label={t.priority} />
-                        <span className="text-xs text-white/30">{t.division}</span>
+                        <Badge label={task.priority} />
+                        <span className="text-xs text-white/30">{task.division}</span>
                       </div>
-                      {t.assignedTo && <p className="text-white/30 text-xs mt-1.5">→ {t.assignedTo}</p>}
-                      {t.dueDate && <p className="text-white/20 text-xs mt-0.5">Due {t.dueDate}</p>}
+                      {task.assignedTo && (
+                        <p className="text-white/30 text-xs mt-1.5">→ {task.assignedTo}</p>
+                      )}
+                      {task.dueDate && (
+                        <p className="text-white/20 text-xs mt-0.5">Due {task.dueDate}</p>
+                      )}
                     </div>
                   ))}
-                  <button onClick={() => openCreate(col)}
-                    className="w-full text-white/20 hover:text-white/50 text-xs py-2 border border-dashed border-white/8 rounded-lg transition-colors">
-                    + Add task
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => openCreate(column)}
+                      className="w-full text-white/20 hover:text-white/50 text-xs py-2 border border-dashed border-white/8 rounded-lg transition-colors"
+                    >
+                      + Add task
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
+        /* ── Table view ── */
         <>
-          <Table cols={["Task", "Status", "Priority", "Division", "Assigned To", "Due Date", "Actions"]}
-            rows={filtered.map(t => [
-              <span key="n" className="text-white font-medium">{t.name}</span>,
-              <Badge key="s" label={t.status} />,
-              <Badge key="p" label={t.priority} />,
-              <span key="d" className="text-white/50">{t.division}</span>,
-              <span key="a" className="text-white/50">{t.assignedTo || "—"}</span>,
-              <span key="dd" className="text-white/40">{t.dueDate || "—"}</span>,
-              <div key="ac" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Btn size="sm" variant="ghost" onClick={() => openEdit(t)}>Edit</Btn>
-                <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTask(t.id))}>Del</Btn>
+          <Table
+            cols={["Task", "Status", "Priority", "Division", "Assigned To", "Due Date", "Actions"]}
+            rows={filtered.map(task => [
+              <span key="name" className="text-white font-medium">{task.name}</span>,
+              <Badge key="status" label={task.status} />,
+              <Badge key="priority" label={task.priority} />,
+              <span key="division" className="text-white/50">{task.division}</span>,
+              <span key="assigned" className="text-white/50">{task.assignedTo || "—"}</span>,
+              <span key="due" className="text-white/40">{task.dueDate || "—"}</span>,
+              <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(task)}>Edit</Btn>}
+                {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTask(task.id))}>Del</Btn>}
               </div>,
-            ])} />
-          {filtered.length === 0 && <Empty message="No tasks yet." action={<Btn variant="primary" onClick={() => openCreate()}>Add first task</Btn>} />}
+            ])}
+          />
+          {filtered.length === 0 && (
+            <Empty
+              message="No tasks yet."
+              action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first task</Btn> : undefined}
+            />
+          )}
         </>
       )}
 
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={editing ? "Edit Task" : "New Task"}>
+      {/* Create / Edit modal */}
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={editingTask ? "Edit Task" : "New Task"}>
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2"><Field label="Task Name" required><Input value={form.name} onChange={e => set("name", e.target.value)} placeholder="What needs to happen?" /></Field></div>
-          <Field label="Status"><Select options={STATUSES} value={form.status} onChange={e => set("status", e.target.value)} /></Field>
-          <Field label="Priority"><Select options={PRIORITIES} value={form.priority} onChange={e => set("priority", e.target.value)} /></Field>
-          <Field label="Division"><Select options={DIVISIONS} value={form.division} onChange={e => set("division", e.target.value)} /></Field>
-          <Field label="Assigned To"><Input value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)} placeholder="Name or @handle" /></Field>
-          <Field label="Due Date"><Input type="date" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></Field>
-          <Field label="Week"><Input value={form.week} onChange={e => set("week", e.target.value)} placeholder="e.g. Week 3" /></Field>
-          <div className="col-span-2"><Field label="Blocker"><Input value={form.blocker} onChange={e => set("blocker", e.target.value)} /></Field></div>
-          <div className="col-span-2"><Field label="Notes"><TextArea rows={3} value={form.notes} onChange={e => set("notes", e.target.value)} /></Field></div>
+          <div className="col-span-2">
+            <Field label="Task Name" required>
+              <Input value={form.name} onChange={e => setField("name", e.target.value)} placeholder="What needs to happen?" />
+            </Field>
+          </div>
+          <Field label="Status">
+            <Select options={STATUSES} value={form.status} onChange={e => setField("status", e.target.value)} />
+          </Field>
+          <Field label="Priority">
+            <Select options={PRIORITIES} value={form.priority} onChange={e => setField("priority", e.target.value)} />
+          </Field>
+          <Field label="Division">
+            <Select options={DIVISIONS} value={form.division} onChange={e => setField("division", e.target.value)} />
+          </Field>
+          <Field label="Assigned To">
+            <Input value={form.assignedTo} onChange={e => setField("assignedTo", e.target.value)} placeholder="Name or @handle" />
+          </Field>
+          <Field label="Due Date">
+            <Input type="date" value={form.dueDate} onChange={e => setField("dueDate", e.target.value)} />
+          </Field>
+          <Field label="Week">
+            <Input value={form.week} onChange={e => setField("week", e.target.value)} placeholder="e.g. Week 3" />
+          </Field>
+          <div className="col-span-2">
+            <Field label="Blocker">
+              <Input value={form.blocker} onChange={e => setField("blocker", e.target.value)} />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Notes">
+              <TextArea rows={3} value={form.notes} onChange={e => setField("notes", e.target.value)} />
+            </Field>
+          </div>
         </div>
         <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
           <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave}>{editing ? "Save" : "Create Task"}</Btn>
+          <Btn variant="primary" onClick={handleSave}>{editingTask ? "Save" : "Create Task"}</Btn>
         </div>
       </Modal>
     </MembersLayout>
