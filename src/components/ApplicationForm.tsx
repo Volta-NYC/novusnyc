@@ -154,7 +154,7 @@ export default function ApplicationForm() {
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-1">
           Select your track(s) *{" "}
-          <a href="/showcase" target="_blank" rel="noopener noreferrer" className="text-v-blue font-normal hover:underline text-xs">
+          <a href="/showcase#tracks" target="_blank" rel="noopener noreferrer" className="text-v-blue font-normal hover:underline text-xs">
             (see what each track does →)
           </a>
         </label>

@@ -88,11 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  // Always return admin for the designated email, even if the DB says otherwise.
-  // This is a client-side override — the DB write above keeps them in sync.
-  const effectiveRole: AuthRole | null = userProfile
-    ? (userProfile.email === ADMIN_EMAIL ? "admin" : userProfile.authRole)
-    : null;
+  // Admin email always gets admin role — even if the DB profile hasn't loaded yet.
+  // This ensures the admin can access admin pages even when the DB is slow or unavailable.
+  const effectiveRole: AuthRole | null =
+    user?.email === ADMIN_EMAIL ? "admin" : userProfile?.authRole ?? null;
 
   return (
     <AuthContext.Provider value={{ user, userProfile, authRole: effectiveRole, loading }}>
