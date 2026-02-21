@@ -7,7 +7,7 @@
 //   formType: "inquiry"     → writes to GeneralInquiries sheet
 // ─────────────────────────────────────────────────────────────────────────────
 
-var SPREADSHEET_ID = '681276981'; // ← your Google Sheet ID
+var SPREADSHEET_ID = '1fi6ziWGIEyDNdEpUxBdcXL8TXZaEaE2lmmuo4BUis74'; // ← your Google Sheet ID
 
 function doPost(e) {
   try {
