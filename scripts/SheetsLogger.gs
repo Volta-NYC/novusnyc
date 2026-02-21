@@ -119,3 +119,14 @@ function jsonResponse(data) {
 function setup() {
   Logger.log('Sheet: ' + SpreadsheetApp.openById(SHEET_ID).getName());
 }
+
+// ── ONE-TIME AUTHORIZATION ────────────────────────────────────────────────────
+// DriveApp requires explicit authorization that cannot be granted via a web
+// request — it must be triggered by running a function manually in the editor.
+// Run authorizeDrive() once from the editor (▶ Run button), approve the
+// permission prompt, then you can delete this function if you like.
+function authorizeDrive() {
+  var folders = DriveApp.getFoldersByName('Volta Resumes');
+  var folder  = folders.hasNext() ? folders.next() : DriveApp.createFolder('Volta Resumes');
+  Logger.log('Drive authorized. Folder: ' + folder.getName() + ' (' + folder.getId() + ')');
+}
