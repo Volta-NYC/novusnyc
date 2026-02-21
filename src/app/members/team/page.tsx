@@ -107,7 +107,7 @@ export default function TeamPage() {
       />
 
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <StatCard label="Total" value={team.length} />
         <StatCard label="Active" value={activeMembers.length} color="text-green-400" />
         <StatCard label="Team Leads" value={team.filter(m => m.role === "Team Lead").length} color="text-blue-400" />
@@ -152,7 +152,7 @@ export default function TeamPage() {
             <span key="slack" className="text-white/40 font-mono text-xs">
               {member.slackHandle ? `@${member.slackHandle}` : "—"}
             </span>,
-            <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div key="actions" className="flex gap-2">
               {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(member)}>Edit</Btn>}
               {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTeamMember(member.id))}>Del</Btn>}
             </div>,

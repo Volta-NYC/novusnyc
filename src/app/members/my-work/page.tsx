@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  subscribeTeam, subscribeProjects, subscribeTasks,
+  subscribeTeam, subscribeProjects, subscribeTasks, updateTask,
   type TeamMember, type Project, type Task,
 } from "@/lib/members/storage";
-import { Badge } from "@/components/members/ui";
+import { Badge, Btn } from "@/components/members/ui";
 
 // ── TASK STATUS TEXT COLORS ───────────────────────────────────────────────────
 
@@ -121,6 +121,13 @@ export default function MyWorkPage() {
                       <span className={`text-xs font-medium ${TASK_STATUS_COLOR[task.status] ?? "text-white/40"}`}>
                         {task.status}
                       </span>
+                      <Btn
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => updateTask(task.id, { status: "Done", completedAt: new Date().toISOString() })}
+                      >
+                        ✓ Done
+                      </Btn>
                     </div>
                   </div>
                 ))}

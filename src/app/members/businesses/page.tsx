@@ -154,7 +154,7 @@ export default function BusinessesPage() {
               )}
             </div>,
             <span key="lead" className="text-white/50">{business.teamLead || "—"}</span>,
-            <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div key="actions" className="flex gap-2">
               {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(business)}>Edit</Btn>}
               {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteBusiness(business.id))}>Del</Btn>}
             </div>,

@@ -107,7 +107,7 @@ export default function GrantsPage() {
       />
 
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <StatCard label="Total"       value={grants.length} />
         <StatCard label="In Progress" value={grants.filter(g => g.status === "Application In Progress").length} color="text-blue-400" />
         <StatCard label="Submitted"   value={grants.filter(g => g.status === "Submitted").length} color="text-cyan-400" />
@@ -138,7 +138,7 @@ export default function GrantsPage() {
           <Badge key="status" label={grant.status} />,
           <Badge key="likelihood" label={grant.likelihood} />,
           <span key="researcher" className="text-white/50">{grant.assignedResearcher || "—"}</span>,
-          <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div key="actions" className="flex gap-2">
             {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(grant)}>Edit</Btn>}
             {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(grant.id))}>Del</Btn>}
           </div>,

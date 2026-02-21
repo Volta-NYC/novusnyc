@@ -143,7 +143,7 @@ export default function BIDTrackerPage() {
           <span key="contact" className="text-white/50">{bid.contactName || "—"}</span>,
           <span key="nextAction" className="text-white/50 max-w-[180px] truncate block">{bid.nextAction || "—"}</span>,
           <Badge key="priority" label={bid.priority} />,
-          <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div key="actions" className="flex gap-2">
             {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(bid)}>Edit</Btn>}
             {canEdit && <Btn size="sm" variant="danger" onClick={() => handleDelete(bid.id)}>Del</Btn>}
           </div>,

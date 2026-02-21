@@ -110,7 +110,7 @@ interface PopupPosition { top: number; left: number; }
 
 export default function CalendarPage() {
   const { user, authRole } = useAuth();
-  const isAdmin = authRole === "admin";
+  const canEdit = authRole === "admin" || authRole === "project_lead";
 
   const today = new Date();
   const [viewYear, setViewYear]   = useState(today.getFullYear());
@@ -270,7 +270,7 @@ export default function CalendarPage() {
           <h1 className="font-display font-bold text-white text-2xl">Calendar</h1>
           <p className="text-white/40 text-sm mt-1 font-body">Task deadlines and team events.</p>
         </div>
-        {isAdmin && (
+        {canEdit && (
           <Btn variant="primary" onClick={() => openCreate()}>+ Add Event</Btn>
         )}
       </div>
@@ -326,12 +326,12 @@ export default function CalendarPage() {
             return (
               <div
                 key={index}
-                onClick={isAdmin ? () => openCreate(dateStr) : undefined}
+                onClick={canEdit ? () => openCreate(dateStr) : undefined}
                 className={`min-h-[100px] border-b border-r border-white/6 p-1.5
                   ${index % 7 === 6 ? "border-r-0" : ""}
                   ${index >= monthGrid.length - 7 ? "border-b-0" : ""}
                   ${inMonth ? "" : "opacity-30"}
-                  ${isAdmin ? "cursor-pointer hover:bg-white/3 transition-colors" : ""}
+                  ${canEdit ? "cursor-pointer hover:bg-white/3 transition-colors" : ""}
                 `}
               >
                 {/* Day number */}
@@ -371,7 +371,7 @@ export default function CalendarPage() {
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events
         </span>
-        {isAdmin && <span className="italic">Click a day to add an event.</span>}
+        {canEdit && <span className="italic">Click a day to add an event.</span>}
       </div>
 
       {/* Event detail popup */}
@@ -404,7 +404,7 @@ export default function CalendarPage() {
             )}
           </div>
 
-          {isAdmin && !popup.event.isTask && popup.event.calEvent && (
+          {canEdit && !popup.event.isTask && popup.event.calEvent && (
             <div className="flex gap-2 pt-2 border-t border-white/8">
               <Btn size="sm" variant="ghost" onClick={() => openEdit(popup.event.calEvent!)}>Edit</Btn>
               <Btn size="sm" variant="danger" onClick={() => handleDelete(popup.event.id)}>Delete</Btn>

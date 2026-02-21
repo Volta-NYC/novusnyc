@@ -197,7 +197,7 @@ export default function TasksPage() {
               <span key="division" className="text-white/50">{task.division}</span>,
               <span key="assigned" className="text-white/50">{task.assignedTo || "—"}</span>,
               <span key="due" className="text-white/40">{task.dueDate || "—"}</span>,
-              <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div key="actions" className="flex gap-2">
                 {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(task)}>Edit</Btn>}
                 {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTask(task.id))}>Del</Btn>}
               </div>,
