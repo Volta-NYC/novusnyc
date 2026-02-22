@@ -1,4 +1,4 @@
-# Volta NYC — nyc.voltanpo.org
+# Volta NYC — voltanyc.org
 
 Next.js website for Volta's NYC branch. Deployable to Vercel.
 
@@ -84,21 +84,21 @@ Replace `YOUR_GITHUB_USERNAME` with your GitHub username.
 5. Click Deploy
 6. Your site goes live at `volta-nyc.vercel.app`
 
-### Step 4 — Set up the nyc.voltanpo.org subdomain
+### Step 4 — Set up the voltanyc.org subdomain
 
 **On Vercel:**
 1. Go to your project → Settings → Domains
-2. Add `nyc.voltanpo.org`
+2. Add `voltanyc.org`
 3. Vercel will show you two DNS records to add
 
-**On your DNS provider (wherever voltanpo.org is managed — likely Namecheap, GoDaddy, or Vercel itself):**
-1. Find where your DNS records for `voltanpo.org` are managed
+**On your DNS provider (wherever voltanyc.org is managed — likely Namecheap, GoDaddy, or Vercel itself):**
+1. Find where your DNS records for `voltanyc.org` are managed
 2. Add a `CNAME` record:
    - Name: `nyc`
    - Value: `cname.vercel-dns.com`
 3. Or if Vercel gives you an `A` record, add that instead
 
-DNS changes take 5–30 minutes to propagate. After that, `nyc.voltanpo.org` will point to your Vercel deployment.
+DNS changes take 5–30 minutes to propagate. After that, `voltanyc.org` will point to your Vercel deployment.
 
 ---
 

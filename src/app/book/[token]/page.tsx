@@ -365,7 +365,7 @@ export default function BookPage() {
 
             <div className="px-6 pb-6">
               <p className="text-white/25 text-xs text-center font-body">
-                Need to reschedule? Contact us at <span className="text-white/40">info@voltanpo.org</span>
+                Need to reschedule? Contact us at <span className="text-white/40">info@voltanyc.org</span>
               </p>
             </div>
           </div>

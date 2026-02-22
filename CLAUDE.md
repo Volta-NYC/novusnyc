@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Nonprofit website + internal members portal. Students run consulting projects for NYC small businesses (websites, social media, grants). Public site markets the org; members portal is a private CRM dashboard.
 
-- **Live URL:** https://nyc.voltanpo.org
+- **Live URL:** https://voltanyc.org
 - **Repo root:** `volta-nyc/`
 - **Deployed on:** Vercel (auto-deploys on push to `main`)
 

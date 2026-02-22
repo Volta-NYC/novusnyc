@@ -28,7 +28,7 @@ export default function MembersLogin() {
         if (snap.exists()) role = snap.val();
       }
       // Always admin for designated email
-      if (email.trim().toLowerCase() === "ethan@voltanpo.org") role = "admin";
+      if (email.trim().toLowerCase() === "ethan@voltanyc.org") role = "admin";
       router.replace(role === "member" ? "/members/my-work" : "/members/dashboard");
     } catch (err: unknown) {
       const msg = (err as { code?: string })?.code;

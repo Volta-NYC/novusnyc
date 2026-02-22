@@ -25,12 +25,12 @@ export const metadata: Metadata = {
   },
   description:
     "Volta NYC is a registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, SEO, and more. Free of charge.",
-  metadataBase: new URL("https://nyc.voltanpo.org"),
+  metadataBase: new URL("https://voltanyc.org"),
   openGraph: {
     title: "Volta NYC",
     description:
       "Student consultants. Real deliverables. Free for NYC small businesses.",
-    url: "https://nyc.voltanpo.org",
+    url: "https://voltanyc.org",
     siteName: "Volta NYC",
     locale: "en_US",
     type: "website",
@@ -56,8 +56,8 @@ export default function RootLayout({
               "@type": "NGO",
               name: "Volta NYC",
               alternateName: "Volta New York City",
-              url: "https://nyc.voltanpo.org",
-              logo: "https://nyc.voltanpo.org/logo.png",
+              url: "https://voltanyc.org",
+              logo: "https://voltanyc.org/logo.png",
               description:
                 "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
               email: "volta.newyork@gmail.com",
