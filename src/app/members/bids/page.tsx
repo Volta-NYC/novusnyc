@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES   = ["Cold Outreach", "Form Sent", "In Conversation", "Active Partner", "Paused", "Dead"];
+const STATUSES   = ["Active Partner", "In Conversation", "Materials Sent", "Cold Outreach", "Paused", "Dead"];
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
 const PRIORITIES = ["High", "Medium", "Low"];
 const TIMELINE_TYPES = ["Email", "Call", "Tour", "Meeting", "Outreach", "Other"];
@@ -34,7 +34,7 @@ export default function BIDTrackerPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
-  const [sortCol, setSortCol]         = useState(-1);
+  const [sortCol, setSortCol]         = useState(1);
   const [sortDir, setSortDir]         = useState<"asc" | "desc">("asc");
 
   // Timeline entry form state
@@ -130,6 +130,7 @@ export default function BIDTrackerPage() {
   });
 
   const PRIORITY_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
+  const STATUS_ORDER: Record<string, number>   = { "Active Partner": 0, "In Conversation": 1, "Materials Sent": 2, "Cold Outreach": 3, "Paused": 4, "Dead": 5 };
   const handleSort = (i: number) => {
     if (sortCol === i) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortCol(i); setSortDir("asc"); }
@@ -138,7 +139,7 @@ export default function BIDTrackerPage() {
     let cmp = 0;
     switch (sortCol) {
       case 0: cmp = a.name.localeCompare(b.name); break;
-      case 1: cmp = a.status.localeCompare(b.status); break;
+      case 1: cmp = (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3); break;
       case 2: cmp = (a.borough || "").localeCompare(b.borough || ""); break;
       case 3: cmp = (a.contactName || "").localeCompare(b.contactName || ""); break;
       case 4: cmp = (a.nextAction || a.notes || "").localeCompare(b.nextAction || b.notes || ""); break;
@@ -151,7 +152,7 @@ export default function BIDTrackerPage() {
   const stats = {
     total:    bids.length,
     active:   bids.filter(b => b.status === "Active Partner").length,
-    pipeline: bids.filter(b => ["Form Sent", "In Conversation"].includes(b.status)).length,
+    pipeline: bids.filter(b => ["Materials Sent", "In Conversation"].includes(b.status)).length,
   };
 
   return (

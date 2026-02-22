@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/members/authContext";
 
 const STATUSES  = ["To Do", "In Progress", "Blocked", "Done"];
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"];
-const DIVISIONS  = ["Tech", "Marketing", "Finance", "Outreach", "Operations"];
+const DIVISIONS  = ["Tech", "Marketing", "Finance", "Outreach"];
 
 // Blank form values for creating a new task.
 const BLANK_FORM: Omit<Task, "id" | "createdAt"> = {

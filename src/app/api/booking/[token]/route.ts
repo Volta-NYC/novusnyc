@@ -1,55 +1,101 @@
 // Public API route — no authentication required.
 // Handles interview invite lookup and slot booking for the /book/[token] page.
-// Uses Firebase Admin SDK to bypass Realtime Database security rules so
-// unauthenticated applicants can read invite data and book a time slot.
+//
+// Data access priority:
+//   1. Firebase Admin SDK (if FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY are set)
+//   2. Firebase REST API (if Firebase rules allow public read of interviewInvites + interviewSlots)
+//
+// To use the REST fallback set these Firebase security rules:
+//   "interviewInvites": { "$token": { ".read": true } }
+//   "interviewSlots":   { ".read": true, ".write": "auth != null || newData.child('bookedBy').exists()" }
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDB } from "@/lib/firebaseAdmin";
 
 type Params = { params: { token: string } };
 
+// ── DB helpers — Admin SDK preferred, REST API fallback ───────────────────────
+
+const DB_URL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL ?? "";
+
+async function dbGet(path: string): Promise<unknown> {
+  const db = getAdminDB();
+  if (db) {
+    const snap = await db.ref(path).get();
+    return snap.exists() ? snap.val() : null;
+  }
+  if (!DB_URL) return null;
+  const res = await fetch(`${DB_URL}/${path}.json`, { cache: "no-store" });
+  if (!res.ok || res.status === 404) return null;
+  const data = await res.json() as unknown;
+  // Firebase REST returns the JSON literal "null" for missing paths
+  return data ?? null;
+}
+
+async function dbPatch(path: string, data: Record<string, unknown>): Promise<void> {
+  const db = getAdminDB();
+  if (db) {
+    await db.ref(path).update(data);
+    return;
+  }
+  if (!DB_URL) throw new Error("no_db");
+  const res = await fetch(`${DB_URL}/${path}.json`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("db_write_failed");
+}
+
 // ── GET /api/booking/[token] ──────────────────────────────────────────────────
 // Returns { invite, slots } for a valid, unexpired booking token.
-// Marks the invite as expired in the DB if its expiresAt has passed.
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const { token } = params;
-  const db = getAdminDB();
 
-  if (!db) {
+  let inviteData: unknown;
+  try {
+    inviteData = await dbGet(`interviewInvites/${token}`);
+  } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 
-  // Fetch invite record.
-  const inviteSnap = await db.ref(`interviewInvites/${token}`).get();
-  if (!inviteSnap.exists()) {
+  if (!inviteData) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const invite = { ...inviteSnap.val(), id: token };
+  type RawInvite = Record<string, unknown> & { id: string };
+  const invite: RawInvite = { ...(inviteData as Record<string, unknown>), id: token };
 
   // Cancelled or already marked expired.
-  if (invite.status === "cancelled" || invite.status === "expired") {
+  if (invite["status"] === "cancelled" || invite["status"] === "expired") {
     return NextResponse.json({ error: "expired" }, { status: 410 });
   }
 
   // Expired by time — update DB then return expired.
-  if (Date.now() > invite.expiresAt) {
-    await db.ref(`interviewInvites/${token}`).update({ status: "expired" });
+  if (Date.now() > (invite["expiresAt"] as number)) {
+    await dbPatch(`interviewInvites/${token}`, { status: "expired" }).catch(() => {});
     return NextResponse.json({ error: "expired" }, { status: 410 });
   }
 
   // Single-use invite already consumed.
-  if (!invite.multiUse && invite.status === "booked") {
+  if (!invite["multiUse"] && invite["status"] === "booked") {
     return NextResponse.json({ error: "already_booked", invite }, { status: 409 });
   }
 
   // Fetch available slots (future, not yet booked).
-  const slotsSnap = await db.ref("interviewSlots").get();
+  let slotsData: unknown;
+  try {
+    slotsData = await dbGet("interviewSlots");
+  } catch {
+    slotsData = null;
+  }
+
   const now = Date.now();
   type RawSlot = Record<string, unknown> & { id: string };
-  const slots: RawSlot[] = slotsSnap.exists()
-    ? (Object.entries(slotsSnap.val() as Record<string, Record<string, unknown>>)
+  const slots: RawSlot[] = slotsData
+    ? (Object.entries(slotsData as Record<string, Record<string, unknown>>)
         .map(([id, data]): RawSlot => ({ ...data, id }))
         .filter((s) => s["available"] && !s["bookedBy"] && new Date(s["datetime"] as string).getTime() > now)
         .sort((a, b) => new Date(a["datetime"] as string).getTime() - new Date(b["datetime"] as string).getTime()))
@@ -63,11 +109,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   const { token } = params;
-  const db = getAdminDB();
-
-  if (!db) {
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
-  }
 
   const { slotId, bookerName, bookerEmail } = await req.json() as {
     slotId: string;
@@ -80,26 +121,37 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   // Fetch invite to determine multiUse flag.
-  const inviteSnap = await db.ref(`interviewInvites/${token}`).get();
-  if (!inviteSnap.exists()) {
+  let inviteData: unknown;
+  try {
+    inviteData = await dbGet(`interviewInvites/${token}`);
+  } catch {
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
+  }
+
+  if (!inviteData) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  const invite = inviteSnap.val() as { multiUse?: boolean };
 
-  // Mark the slot as taken.
-  await db.ref(`interviewSlots/${slotId}`).update({
-    available:   false,
-    bookedBy:    token,
-    bookerName:  bookerName || "",
-    bookerEmail: bookerEmail || "",
-  });
+  const invite = inviteData as { multiUse?: boolean };
 
-  // For single-use invites, mark the invite itself as booked.
-  if (!invite.multiUse) {
-    await db.ref(`interviewInvites/${token}`).update({
-      status:       "booked",
-      bookedSlotId: slotId,
+  try {
+    // Mark the slot as taken.
+    await dbPatch(`interviewSlots/${slotId}`, {
+      available:   false,
+      bookedBy:    token,
+      bookerName:  bookerName || "",
+      bookerEmail: bookerEmail || "",
     });
+
+    // For single-use invites, mark the invite itself as booked.
+    if (!invite.multiUse) {
+      await dbPatch(`interviewInvites/${token}`, {
+        status:       "booked",
+        bookedSlotId: slotId,
+      });
+    }
+  } catch {
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

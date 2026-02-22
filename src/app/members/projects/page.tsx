@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/members/authContext";
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
 const STATUSES  = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
-const DIVISIONS = ["Tech", "Marketing", "Finance", "Operations"];
+const DIVISIONS = ["Tech", "Marketing", "Finance"];
 const SERVICES  = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
 const PRIORITIES = ["High", "Medium", "Low"];
 const LANGUAGES  = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
@@ -144,12 +144,14 @@ export default function BusinessesPage() {
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 <Badge label={b.projectStatus} />
-                {b.division && <span className="text-[10px] text-white/40 bg-white/6 px-2 py-0.5 rounded-full">{b.division}</span>}
+                {b.division && (
+                  <span className="text-[10px] font-medium text-white/60 bg-white/8 px-2 py-0.5 rounded-full">{b.division}</span>
+                )}
               </div>
             </div>
 
             {/* Contact info */}
-            {(b.ownerName || b.ownerEmail || b.phone) && (
+            {(b.ownerName || b.ownerEmail || b.phone || b.website) && (
               <div className="bg-white/4 rounded-lg px-3 py-2 space-y-1">
                 {b.ownerName && (
                   <p className="text-white/70 text-xs font-medium">{b.ownerName}</p>
@@ -162,7 +164,28 @@ export default function BusinessesPage() {
                     <span className="text-white/40 text-xs">{b.phone}</span>
                   )}
                 </div>
+                {b.website && (
+                  <a href={b.website} target="_blank" rel="noopener noreferrer" className="text-blue-400/70 hover:text-blue-400 text-xs font-mono transition-colors truncate block">{b.website}</a>
+                )}
               </div>
+            )}
+
+            {/* GitHub / Drive link */}
+            {b.division === "Tech" && b.githubUrl && (
+              <a href={b.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.15-1.11-1.46-1.11-1.46-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.58 9.58 0 0 1 12 6.8c.85 0 1.71.11 2.51.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10.01 10.01 0 0 0 22 12c0-5.52-4.48-10-10-10z"/>
+                </svg>
+                <span className="truncate">GitHub</span>
+              </a>
+            )}
+            {b.division !== "Tech" && b.driveFolderUrl && (
+              <a href={b.driveFolderUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span className="truncate">Drive Folder</span>
+              </a>
             )}
 
             {/* Dates */}
