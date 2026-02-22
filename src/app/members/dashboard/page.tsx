@@ -3,17 +3,16 @@
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import Link from "next/link";
-import { subscribeBIDs, subscribeBusinesses, subscribeTasks, subscribeProjects, subscribeTeam, subscribeGrants } from "@/lib/members/storage";
+import { subscribeBIDs, subscribeBusinesses, subscribeTasks, subscribeTeam, subscribeGrants } from "@/lib/members/storage";
 
 export default function DashboardPage() {
-  const [counts, setCounts] = useState({ bids: 0, businesses: 0, tasks: 0, projects: 0, team: 0, grants: 0, blocked: 0, active: 0 });
+  const [counts, setCounts] = useState({ bids: 0, businesses: 0, tasks: 0, team: 0, grants: 0, blocked: 0, active: 0 });
 
   useEffect(() => {
     const unsubs = [
       subscribeBIDs((bids) => setCounts(c => ({ ...c, bids: bids.length }))),
       subscribeBusinesses((b) => setCounts(c => ({ ...c, businesses: b.length, active: b.filter(x => x.projectStatus === "Active").length }))),
       subscribeTasks((t) => setCounts(c => ({ ...c, tasks: t.filter(x => x.status !== "Done").length, blocked: t.filter(x => x.status === "Blocked").length }))),
-      subscribeProjects((p) => setCounts(c => ({ ...c, projects: p.filter(x => x.status === "Active").length }))),
       subscribeTeam((t) => setCounts(c => ({ ...c, team: t.filter(x => x.status === "Active").length }))),
       subscribeGrants((g) => setCounts(c => ({ ...c, grants: g.filter(x => x.status === "Awarded").length }))),
     ];
@@ -21,8 +20,8 @@ export default function DashboardPage() {
   }, []);
 
   const cards = [
-    { href: "/members/projects", label: "Active Projects", value: counts.projects, color: "text-green-400", bg: "bg-green-500/8" },
-    { href: "/members/businesses", label: "Businesses", value: counts.businesses, color: "text-blue-400", bg: "bg-blue-500/8" },
+    { href: "/members/projects", label: "Active Projects", value: counts.active, color: "text-green-400", bg: "bg-green-500/8" },
+    { href: "/members/projects", label: "Total Projects", value: counts.businesses, color: "text-blue-400", bg: "bg-blue-500/8" },
     { href: "/members/tasks", label: "Open Tasks", value: counts.tasks, color: "text-yellow-400", bg: "bg-yellow-500/8" },
     { href: "/members/tasks", label: "Blocked", value: counts.blocked, color: "text-red-400", bg: "bg-red-500/8" },
     { href: "/members/bids", label: "BIDs Tracked", value: counts.bids, color: "text-purple-400", bg: "bg-purple-500/8" },
@@ -32,7 +31,6 @@ export default function DashboardPage() {
 
   const quickLinks = [
     { href: "/members/projects", label: "Projects" },
-    { href: "/members/businesses", label: "Businesses" },
     { href: "/members/tasks", label: "Tasks" },
     { href: "/members/bids", label: "BID Tracker" },
     { href: "/members/grants", label: "Grant Library" },
