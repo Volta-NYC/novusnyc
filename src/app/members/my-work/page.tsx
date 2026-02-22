@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  subscribeTeam, subscribeProjects, subscribeTasks, updateTask,
-  type TeamMember, type Project, type Task,
+  subscribeTeam, subscribeProjects, subscribeTasks, updateTask, subscribeGrants,
+  type TeamMember, type Project, type Task, type Grant,
 } from "@/lib/members/storage";
 import { Badge, Btn } from "@/components/members/ui";
 
@@ -26,13 +26,15 @@ export default function MyWorkPage() {
   const [team, setTeam]         = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks]       = useState<Task[]>([]);
+  const [grants, setGrants]     = useState<Grant[]>([]);
 
-  // Subscribe to all three collections; unsubscribe on unmount.
+  // Subscribe to all four collections; unsubscribe on unmount.
   useEffect(() => {
     const unsubscribeTeam     = subscribeTeam(setTeam);
     const unsubscribeProjects = subscribeProjects(setProjects);
     const unsubscribeTasks    = subscribeTasks(setTasks);
-    return () => { unsubscribeTeam(); unsubscribeProjects(); unsubscribeTasks(); };
+    const unsubscribeGrants   = subscribeGrants(setGrants);
+    return () => { unsubscribeTeam(); unsubscribeProjects(); unsubscribeTasks(); unsubscribeGrants(); };
   }, []);
 
   const myEmail = user?.email?.toLowerCase() ?? "";
@@ -54,6 +56,21 @@ export default function MyWorkPage() {
   const myTasks   = tasks.filter(t => myName && t.assignedTo.toLowerCase() === myName.toLowerCase());
   const openTasks = myTasks.filter(t => t.status !== "Done");
   const doneTasks = myTasks.filter(t => t.status === "Done");
+
+  // Grants assigned to this member as researcher.
+  const myGrants = grants.filter(g => myName && g.assignedResearcher.toLowerCase() === myName.toLowerCase());
+
+  // Upcoming deadlines: open tasks with due dates + grant deadlines, sorted soonest first.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcomingDeadlines = [
+    ...openTasks
+      .filter(t => t.dueDate)
+      .map(t => ({ label: t.name, date: t.dueDate, type: "Task" as const, status: t.status })),
+    ...myGrants
+      .filter(g => g.deadline && g.status !== "Awarded" && g.status !== "Rejected" && g.status !== "Cycle Closed")
+      .map(g => ({ label: g.name, date: g.deadline, type: "Grant" as const, status: g.status })),
+  ].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
 
   // Active teammates in the same pod (excluding myself).
   const podmates = myMember?.pod
@@ -134,6 +151,28 @@ export default function MyWorkPage() {
               </div>
             )}
           </section>
+
+          {/* My Grants */}
+          {myGrants.length > 0 && (
+            <section>
+              <h2 className="font-display font-bold text-white text-sm uppercase tracking-wider mb-3">
+                My Grants <span className="text-white/30 font-normal normal-case">({myGrants.length})</span>
+              </h2>
+              <div className="space-y-2">
+                {myGrants.map(grant => (
+                  <div key={grant.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-white text-sm font-medium truncate">{grant.name}</p>
+                      <Badge label={grant.status} />
+                    </div>
+                    <p className="text-white/30 text-xs">
+                      {grant.funder}{grant.deadline ? ` · Due ${grant.deadline}` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Projects */}
           <section>
@@ -228,15 +267,41 @@ export default function MyWorkPage() {
             )}
           </section>
 
+          {/* Upcoming Deadlines */}
+          {upcomingDeadlines.length > 0 && (
+            <section className="mt-5">
+              <h2 className="font-display font-bold text-white text-sm uppercase tracking-wider mb-3">
+                Upcoming Deadlines
+              </h2>
+              <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-3 space-y-2">
+                {upcomingDeadlines.map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 px-2 py-1.5">
+                    <span className={`text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5 ${
+                      item.type === "Grant" ? "bg-yellow-500/15 text-yellow-400" : "bg-blue-500/15 text-blue-400"
+                    }`}>{item.type}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/70 text-xs font-medium truncate">{item.label}</p>
+                      <p className="text-white/30 text-xs">{item.date}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Quick numeric stats */}
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-3 gap-3">
             <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 text-center">
               <p className="font-display font-bold text-2xl text-[#85CC17]">{openTasks.length}</p>
-              <p className="text-white/40 text-xs mt-1 font-body">Open tasks</p>
+              <p className="text-white/40 text-xs mt-1 font-body">Tasks</p>
             </div>
             <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 text-center">
               <p className="font-display font-bold text-2xl text-blue-400">{myProjects.length}</p>
               <p className="text-white/40 text-xs mt-1 font-body">Projects</p>
+            </div>
+            <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 text-center">
+              <p className="font-display font-bold text-2xl text-yellow-400">{myGrants.length}</p>
+              <p className="text-white/40 text-xs mt-1 font-body">Grants</p>
             </div>
           </div>
         </div>

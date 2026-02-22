@@ -8,6 +8,7 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeGrants, createGrant, updateGrant, deleteGrant, type Grant,
+  subscribeBusinesses, type Business,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -33,6 +34,7 @@ const BLANK_FORM: Omit<Grant, "id" | "createdAt"> = {
 
 export default function GrantsPage() {
   const [grants, setGrants]             = useState<Grant[]>([]);
+  const [businesses, setBusinesses]     = useState<Business[]>([]);
   const [search, setSearch]             = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [modal, setModal]               = useState<"create" | "edit" | null>(null);
@@ -44,7 +46,11 @@ export default function GrantsPage() {
   const canEdit = authRole === "admin" || authRole === "project_lead";
 
   // Subscribe to real-time grant updates; unsubscribe on unmount.
-  useEffect(() => subscribeGrants(setGrants), []);
+  useEffect(() => {
+    const unsubGrants = subscribeGrants(setGrants);
+    const unsubBusinesses = subscribeBusinesses(setBusinesses);
+    return () => { unsubGrants(); unsubBusinesses(); };
+  }, []);
 
   // Generic field updater used by all form inputs.
   const setField = (key: string, value: unknown) =>
@@ -129,7 +135,7 @@ export default function GrantsPage() {
 
       {/* Grant list */}
       <Table
-        cols={["Grant Name", "Funder", "Amount", "Deadline", "Status", "Likelihood", "Researcher", "Actions"]}
+        cols={["Grant Name", "Funder", "Amount", "Deadline", "Status", "Likelihood", "Researcher", "Businesses", "Actions"]}
         rows={filtered.map(grant => [
           <span key="name" className="text-white font-medium">{grant.name}</span>,
           <span key="funder" className="text-white/60">{grant.funder}</span>,
@@ -138,6 +144,9 @@ export default function GrantsPage() {
           <Badge key="status" label={grant.status} />,
           <Badge key="likelihood" label={grant.likelihood} />,
           <span key="researcher" className="text-white/50">{grant.assignedResearcher || "—"}</span>,
+          <span key="businesses" className="text-white/40 text-xs">
+            {(grant.businessIds ?? []).length > 0 ? `${grant.businessIds.length} linked` : "—"}
+          </span>,
           <div key="actions" className="flex gap-2">
             {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(grant)}>Edit</Btn>}
             {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(grant.id))}>Del</Btn>}
@@ -191,6 +200,36 @@ export default function GrantsPage() {
           <div className="col-span-2">
             <Field label="Neighborhood Focus">
               <TagInput values={form.neighborhoodFocus} onChange={v => setField("neighborhoodFocus", v)} options={NEIGHBORHOODS} />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Associated Businesses">
+              <div className="flex flex-wrap gap-2 mt-1">
+                {businesses.map(b => {
+                  const selected = (form.businessIds ?? []).includes(b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => {
+                        const current = form.businessIds ?? [];
+                        setField("businessIds", selected
+                          ? current.filter(id => id !== b.id)
+                          : [...current, b.id]
+                        );
+                      }}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        selected
+                          ? "bg-[#85CC17]/20 border-[#85CC17]/40 text-[#85CC17]"
+                          : "bg-white/4 border-white/10 text-white/40 hover:text-white/70"
+                      }`}
+                    >
+                      {b.name}
+                    </button>
+                  );
+                })}
+                {businesses.length === 0 && <span className="text-white/25 text-xs font-body">No businesses added yet.</span>}
+              </div>
             </Field>
           </div>
           <div className="col-span-2">

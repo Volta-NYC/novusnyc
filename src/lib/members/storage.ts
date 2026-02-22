@@ -18,15 +18,11 @@ export interface BID {
   contactName: string;
   contactEmail: string;
   phone: string;
-  neighborhood: string;
   borough: string;
-  lastContact: string;
   nextAction: string;
-  nextActionDate: string;
-  tourCompleted: boolean;
   notes: string;
   priority: "High" | "Medium" | "Low";
-  referredBy: string;
+  timeline?: Record<string, { date: string; type: string; note: string; createdAt: string }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,7 +53,7 @@ export interface Business {
 export interface Task {
   id: string;
   name: string;
-  status: "To Do" | "In Progress" | "Blocked" | "In Review" | "Done";
+  status: "To Do" | "In Progress" | "Blocked" | "Done";
   priority: "Urgent" | "High" | "Medium" | "Low";
   assignedTo: string;
   businessId: string;
@@ -251,6 +247,21 @@ export async function deleteBID(id: string): Promise<void> {
   const db = getDB();
   if (!db) return;
   await remove(ref(db, `bids/${id}`));
+}
+
+export async function addBIDTimelineEntry(
+  bidId: string,
+  entry: { date: string; type: string; note: string; createdAt: string }
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await push(ref(db, `bids/${bidId}/timeline`), entry);
+}
+
+export async function deleteBIDTimelineEntry(bidId: string, entryId: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `bids/${bidId}/timeline/${entryId}`));
 }
 
 // ── Businesses ────────────────────────────────────────────────────────────────

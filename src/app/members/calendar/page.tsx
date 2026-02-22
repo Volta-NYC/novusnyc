@@ -327,7 +327,7 @@ export default function CalendarPage() {
               <div
                 key={index}
                 onClick={canEdit ? () => openCreate(dateStr) : undefined}
-                className={`min-h-[100px] border-b border-r border-white/6 p-1.5
+                className={`min-h-[110px] border-b border-r border-white/6 p-1.5
                   ${index % 7 === 6 ? "border-r-0" : ""}
                   ${index >= monthGrid.length - 7 ? "border-b-0" : ""}
                   ${inMonth ? "" : "opacity-30"}
@@ -346,8 +346,8 @@ export default function CalendarPage() {
                     <button
                       key={ev.id}
                       onClick={e => handleEventPillClick(ev, e)}
-                      className="w-full text-left px-1.5 py-0.5 rounded text-xs truncate font-body transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: ev.color + "33", color: ev.color, borderLeft: `2px solid ${ev.color}` }}
+                      className="w-full text-left px-1.5 py-1 rounded text-xs truncate font-body transition-opacity hover:opacity-80 font-medium"
+                      style={{ backgroundColor: ev.color + "44", color: ev.color, borderLeft: `3px solid ${ev.color}` }}
                     >
                       {ev.time && <span className="opacity-60 mr-1">{ev.time}</span>}
                       {ev.title}

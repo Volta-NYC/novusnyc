@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES  = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
+const STATUSES  = ["To Do", "In Progress", "Blocked", "Done"];
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"];
 const DIVISIONS  = ["Tech", "Marketing", "Finance", "Outreach", "Operations"];
 
@@ -24,14 +24,13 @@ const BLANK_FORM: Omit<Task, "id" | "createdAt"> = {
 };
 
 // Ordered columns for the kanban board view.
-const BOARD_COLUMNS: Task["status"][] = ["To Do", "In Progress", "Blocked", "In Review", "Done"];
+const BOARD_COLUMNS: Task["status"][] = ["To Do", "In Progress", "Blocked", "Done"];
 
 // Left border color for each kanban column.
 const COLUMN_BORDER_COLOR: Record<string, string> = {
   "To Do":      "border-gray-500/30",
   "In Progress": "border-blue-500/30",
   "Blocked":    "border-red-500/30",
-  "In Review":  "border-yellow-500/30",
   "Done":       "border-green-500/30",
 };
 
@@ -45,6 +44,8 @@ export default function TasksPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
+  const [draggingId, setDraggingId]   = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
   const { ask, Dialog } = useConfirm();
   const { authRole }    = useAuth();
@@ -143,11 +144,28 @@ export default function TasksPage() {
 
       {/* ── Board view ── */}
       {view === "board" ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {BOARD_COLUMNS.map(column => {
             const columnTasks = filtered.filter(t => t.status === column);
             return (
-              <div key={column} className={`bg-[#1C1F26] border ${COLUMN_BORDER_COLOR[column]} rounded-xl p-3 min-h-[200px]`}>
+              <div
+                key={column}
+                className={`bg-[#1C1F26] border ${COLUMN_BORDER_COLOR[column]} rounded-xl p-3 min-h-[200px] transition-colors
+                  ${dragOverColumn === column ? "bg-[#1C1F26]/80 border-white/20" : ""}`}
+                onDragOver={e => e.preventDefault()}
+                onDragEnter={() => setDragOverColumn(column)}
+                onDragLeave={e => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverColumn(null);
+                }}
+                onDrop={async e => {
+                  e.preventDefault();
+                  setDragOverColumn(null);
+                  if (draggingId) {
+                    await updateTask(draggingId, { status: column });
+                    setDraggingId(null);
+                  }
+                }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-white/50 uppercase tracking-wider">{column}</span>
                   <span className="text-xs bg-white/8 text-white/40 px-1.5 py-0.5 rounded-full">{columnTasks.length}</span>
@@ -156,7 +174,11 @@ export default function TasksPage() {
                   {columnTasks.map(task => (
                     <div
                       key={task.id}
-                      className="bg-[#0F1014] border border-white/5 rounded-lg p-3 cursor-pointer hover:border-white/15 transition-colors"
+                      draggable
+                      onDragStart={() => setDraggingId(task.id)}
+                      onDragEnd={() => setDraggingId(null)}
+                      className={`bg-[#0F1014] border border-white/5 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-white/15 transition-all
+                        ${draggingId === task.id ? "opacity-40 scale-95" : ""}`}
                       onClick={() => canEdit ? openEdit(task) : undefined}
                     >
                       <p className="text-white text-sm font-medium leading-snug mb-1.5">{task.name}</p>
