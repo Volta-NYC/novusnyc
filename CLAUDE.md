@@ -85,6 +85,7 @@ src/
     │                         #   validateInquiryForm) — returns { success, errors }
     ├── sheetsLogger.ts       # Google Sheets integration via Apps Script
     ├── interviews.ts         # Interview scheduling logic
+    ├── site.ts               # SITE_URL constant (reads from NEXT_PUBLIC_SITE_URL env var)
     └── members/
         ├── auth.ts           # Legacy stub (superseded by Firebase auth)
         ├── firebaseAuth.ts   # Firebase Authentication functions
@@ -173,6 +174,7 @@ import { BarChartIcon, CodeIcon, MapPinIcon } from "@/components/Icons";
 
 Required for members portal Firebase and forms (set in `.env.local`, never commit):
 ```
+NEXT_PUBLIC_SITE_URL=          # Canonical site URL; defaults to https://voltanyc.org
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
 NEXT_PUBLIC_FIREBASE_DATABASE_URL=

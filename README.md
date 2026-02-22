@@ -2,6 +2,8 @@
 
 Next.js website for Volta's NYC branch. Deployable to Vercel.
 
+> **Domain note:** The old domain `nyc.voltanpo.org` (old domain, redirects to voltanyc.org) now 301-redirects to `voltanyc.org`. The primary canonical domain is `voltanyc.org`.
+
 ---
 
 ## Before You Deploy — Two Things to Fill In
@@ -82,23 +84,28 @@ Replace `YOUR_GITHUB_USERNAME` with your GitHub username.
 3. Import your `volta-nyc` repo from GitHub
 4. Vercel auto-detects Next.js — no config needed
 5. Click Deploy
-6. Your site goes live at `volta-nyc.vercel.app`
+6. Your site goes live — add your custom domain in the next step
 
-### Step 4 — Set up the voltanyc.org subdomain
+### Step 4 — DNS setup for voltanyc.org
+
+**Primary domain:** `voltanyc.org`
+**www redirect:** `www.voltanyc.org` → redirects to `voltanyc.org` (handled by `next.config.mjs`)
+**Old domain:** `nyc.voltanpo.org` (old domain, redirects to voltanyc.org) — 301-redirects to `voltanyc.org` via `next.config.mjs`
 
 **On Vercel:**
 1. Go to your project → Settings → Domains
-2. Add `voltanyc.org`
-3. Vercel will show you two DNS records to add
+2. Add `voltanyc.org` as your primary domain
+3. Also add `www.voltanyc.org` — Vercel or `next.config.mjs` handles the redirect
+4. Vercel will show you DNS records to add
 
-**On your DNS provider (wherever voltanyc.org is managed — likely Namecheap, GoDaddy, or Vercel itself):**
-1. Find where your DNS records for `voltanyc.org` are managed
-2. Add a `CNAME` record:
-   - Name: `nyc`
-   - Value: `cname.vercel-dns.com`
-3. Or if Vercel gives you an `A` record, add that instead
+**On your DNS provider (wherever voltanyc.org is managed):**
+1. Add an `A` record pointing `voltanyc.org` → Vercel's IP (shown in the Vercel dashboard)
+2. Or add a `CNAME` record: `www` → `cname.vercel-dns.com`
 
-DNS changes take 5–30 minutes to propagate. After that, `voltanyc.org` will point to your Vercel deployment.
+DNS changes take 5–30 minutes to propagate.
+
+**Environment variable on Vercel:**
+Set `NEXT_PUBLIC_SITE_URL=https://voltanyc.org` in Vercel → Settings → Environment Variables (it already defaults to this value, but setting it explicitly is recommended).
 
 ---
 
@@ -112,6 +119,8 @@ volta-nyc/
 │   ├── app/
 │   │   ├── globals.css       ← Global styles, dot grid, marquee
 │   │   ├── layout.tsx        ← Root layout with fonts and navbar
+│   │   ├── sitemap.ts        ← Auto-generated sitemap (uses SITE_URL)
+│   │   ├── robots.ts         ← Robots.txt (uses SITE_URL)
 │   │   ├── page.tsx          ← Home page
 │   │   ├── showcase/
 │   │   │   └── page.tsx      ← BID partners + business clients
@@ -121,14 +130,17 @@ volta-nyc/
 │   │   │   └── page.tsx      ← Business/BID inquiry + contact form
 │   │   └── about/
 │   │       └── page.tsx      ← Mission, history, team
-│   └── components/
-│       ├── Navbar.tsx         ← Sticky nav, mobile menu
-│       ├── Footer.tsx         ← Links, contact
-│       ├── AnimatedSection.tsx← Scroll-reveal wrapper (Framer Motion)
-│       ├── CountUp.tsx        ← Animated number counter
-│       └── ContactForm.tsx    ← Business inquiry form (Formspree)
+│   ├── components/
+│   │   ├── Navbar.tsx         ← Sticky nav, mobile menu
+│   │   ├── Footer.tsx         ← Links, contact
+│   │   ├── AnimatedSection.tsx← Scroll-reveal wrapper (Framer Motion)
+│   │   ├── CountUp.tsx        ← Animated number counter
+│   │   └── ContactForm.tsx    ← Business inquiry form (Formspree)
+│   └── lib/
+│       ├── site.ts            ← SITE_URL constant (reads NEXT_PUBLIC_SITE_URL)
+│       └── ...
 ├── tailwind.config.ts         ← Custom colors: v-green, v-blue, v-bg, v-ink
-├── next.config.mjs
+├── next.config.mjs            ← Host-based redirects for old domains
 ├── package.json
 └── tsconfig.json
 ```
