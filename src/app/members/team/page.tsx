@@ -36,6 +36,8 @@ export default function TeamPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
+  const [sortCol, setSortCol]         = useState(-1);
+  const [sortDir, setSortDir]         = useState<"asc" | "desc">("asc");
 
   const { ask, Dialog } = useConfirm();
   const { authRole }    = useAuth();
@@ -94,6 +96,24 @@ export default function TeamPage() {
     return matchesSearch && matchesDivision;
   });
 
+  const handleSort = (i: number) => {
+    if (sortCol === i) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(i); setSortDir("asc"); }
+  };
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    switch (sortCol) {
+      case 0: cmp = a.name.localeCompare(b.name); break;
+      case 1: cmp = (a.school || "").localeCompare(b.school || ""); break;
+      case 2: cmp = a.role.localeCompare(b.role); break;
+      case 3: cmp = ((a.divisions ?? [])[0] || "").localeCompare((b.divisions ?? [])[0] || ""); break;
+      case 4: cmp = a.status.localeCompare(b.status); break;
+      case 5: cmp = (a.slackHandle || "").localeCompare(b.slackHandle || ""); break;
+      default: return 0;
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   const activeMembers = team.filter(m => m.status === "Active");
 
   return (
@@ -130,7 +150,8 @@ export default function TeamPage() {
       {/* Team member list */}
       <Table
         cols={["Name", "School", "Role", "Division(s)", "Status", "Slack", "Actions"]}
-        rows={filtered.map(member => {
+        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} sortableCols={[0,1,2,3,4,5]}
+        rows={sorted.map(member => {
           // Guard: divisions may be undefined if Firebase omitted the empty array.
           const divisions = member.divisions ?? [];
           return [

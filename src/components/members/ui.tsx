@@ -345,20 +345,45 @@ export function TagInput({ values, onChange, options }: {
 
 // ── TABLE ─────────────────────────────────────────────────────────────────────
 
-export function Table({ cols, rows }: {
+export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
   cols: string[];
   rows: ReactNode[][];
+  sortCol?: number;
+  sortDir?: "asc" | "desc";
+  onSort?: (colIndex: number) => void;
+  sortableCols?: number[];
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-white/8">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-[#1C1F26] border-b border-white/8">
-            {cols.map((col) => (
-              <th key={col} className="text-left px-4 py-3 text-white/40 font-medium text-xs uppercase tracking-wider whitespace-nowrap">
-                {col}
+            {cols.map((col, i) => {
+              const sortable = sortableCols?.includes(i) && !!onSort;
+              const isActive = sortCol === i;
+              return (
+              <th
+                key={col}
+                onClick={sortable ? () => onSort!(i) : undefined}
+                className={`text-left px-4 py-3 text-white/40 font-medium text-xs uppercase tracking-wider whitespace-nowrap
+                  ${sortable ? "cursor-pointer hover:text-white/70 select-none" : ""}`}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {col}
+                  {sortable && (
+                    <span className="inline-flex flex-col gap-px">
+                      <svg className={`w-2 h-2 ${isActive && sortDir === "asc" ? "text-[#85CC17]" : "text-white/20"}`} viewBox="0 0 8 5" fill="currentColor">
+                        <path d="M4 0L8 5H0L4 0Z"/>
+                      </svg>
+                      <svg className={`w-2 h-2 ${isActive && sortDir === "desc" ? "text-[#85CC17]" : "text-white/20"}`} viewBox="0 0 8 5" fill="currentColor">
+                        <path d="M4 5L0 0H8L4 5Z"/>
+                      </svg>
+                    </span>
+                  )}
+                </span>
               </th>
-            ))}
+              );
+            })}
           </tr>
         </thead>
         <tbody className="divide-y divide-white/5">

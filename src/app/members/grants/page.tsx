@@ -40,6 +40,8 @@ export default function GrantsPage() {
   const [modal, setModal]               = useState<"create" | "edit" | null>(null);
   const [editingGrant, setEditingGrant] = useState<Grant | null>(null);
   const [form, setForm]                 = useState(BLANK_FORM);
+  const [sortCol, setSortCol]           = useState(-1);
+  const [sortDir, setSortDir]           = useState<"asc" | "desc">("asc");
 
   const { ask, Dialog } = useConfirm();
   const { authRole, userProfile } = useAuth();
@@ -110,6 +112,27 @@ export default function GrantsPage() {
     && (!filterStatus || grant.status === filterStatus)
   );
 
+  const LIKELIHOOD_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
+  const handleSort = (i: number) => {
+    if (sortCol === i) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(i); setSortDir("asc"); }
+  };
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    switch (sortCol) {
+      case 0: cmp = a.name.localeCompare(b.name); break;
+      case 1: cmp = (a.funder || "").localeCompare(b.funder || ""); break;
+      case 2: cmp = (a.amount || "").localeCompare(b.amount || ""); break;
+      case 3: cmp = (a.deadline || "").localeCompare(b.deadline || ""); break;
+      case 4: cmp = a.status.localeCompare(b.status); break;
+      case 5: cmp = (LIKELIHOOD_ORDER[a.likelihood] ?? 1) - (LIKELIHOOD_ORDER[b.likelihood] ?? 1); break;
+      case 6: cmp = (a.assignedResearcher || "").localeCompare(b.assignedResearcher || ""); break;
+      case 7: cmp = (a.businessIds?.length ?? 0) - (b.businessIds?.length ?? 0); break;
+      default: return 0;
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   return (
     <MembersLayout>
       <Dialog />
@@ -144,7 +167,8 @@ export default function GrantsPage() {
       {/* Grant list */}
       <Table
         cols={["Grant Name", "Funder", "Amount", "Deadline", "Status", "Likelihood", "Researcher", "Businesses", "Actions"]}
-        rows={filtered.map(grant => [
+        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} sortableCols={[0,1,2,3,4,5,6,7]}
+        rows={sorted.map(grant => [
           <span key="name" className="text-white font-medium">{grant.name}</span>,
           <span key="funder" className="text-white/60">{grant.funder}</span>,
           <span key="amount" className="text-[#85CC17] font-mono text-sm">{grant.amount || "—"}</span>,

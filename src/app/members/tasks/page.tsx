@@ -46,6 +46,8 @@ export default function TasksPage() {
   const [form, setForm]               = useState(BLANK_FORM);
   const [draggingId, setDraggingId]   = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [sortCol, setSortCol]         = useState(-1);
+  const [sortDir, setSortDir]         = useState<"asc" | "desc">("asc");
 
   const { ask, Dialog } = useConfirm();
   const { authRole }    = useAuth();
@@ -100,6 +102,26 @@ export default function TasksPage() {
       || task.assignedTo.toLowerCase().includes(search.toLowerCase()))
     && (!filterDiv || task.division === filterDiv)
   );
+
+  const TASK_PRIORITY_ORDER: Record<string, number> = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
+  const TASK_STATUS_ORDER: Record<string, number>   = { "To Do": 0, "In Progress": 1, "Blocked": 2, "Done": 3 };
+  const handleSort = (i: number) => {
+    if (sortCol === i) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(i); setSortDir("asc"); }
+  };
+  const sortedTasks = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    switch (sortCol) {
+      case 0: cmp = a.name.localeCompare(b.name); break;
+      case 1: cmp = (TASK_STATUS_ORDER[a.status] ?? 0) - (TASK_STATUS_ORDER[b.status] ?? 0); break;
+      case 2: cmp = (TASK_PRIORITY_ORDER[a.priority] ?? 2) - (TASK_PRIORITY_ORDER[b.priority] ?? 2); break;
+      case 3: cmp = a.division.localeCompare(b.division); break;
+      case 4: cmp = (a.assignedTo || "").localeCompare(b.assignedTo || ""); break;
+      case 5: cmp = (a.dueDate || "").localeCompare(b.dueDate || ""); break;
+      default: return 0;
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
 
   return (
     <MembersLayout>
@@ -212,7 +234,8 @@ export default function TasksPage() {
         <>
           <Table
             cols={["Task", "Status", "Priority", "Division", "Assigned To", "Due Date", "Actions"]}
-            rows={filtered.map(task => [
+            sortCol={sortCol} sortDir={sortDir} onSort={handleSort} sortableCols={[0,1,2,3,4,5]}
+            rows={sortedTasks.map(task => [
               <span key="name" className="text-white font-medium">{task.name}</span>,
               <Badge key="status" label={task.status} />,
               <Badge key="priority" label={task.priority} />,

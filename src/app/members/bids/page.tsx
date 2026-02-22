@@ -35,6 +35,8 @@ export default function BIDTrackerPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
+  const [sortCol, setSortCol]         = useState(-1);
+  const [sortDir, setSortDir]         = useState<"asc" | "desc">("asc");
 
   // Timeline entry form state
   const [tlDate, setTlDate]   = useState(() => new Date().toISOString().split("T")[0]);
@@ -130,6 +132,25 @@ export default function BIDTrackerPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const PRIORITY_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
+  const handleSort = (i: number) => {
+    if (sortCol === i) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(i); setSortDir("asc"); }
+  };
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    switch (sortCol) {
+      case 0: cmp = a.name.localeCompare(b.name); break;
+      case 1: cmp = a.status.localeCompare(b.status); break;
+      case 2: cmp = (a.borough || "").localeCompare(b.borough || ""); break;
+      case 3: cmp = (a.contactName || "").localeCompare(b.contactName || ""); break;
+      case 4: cmp = (a.nextAction || a.notes || "").localeCompare(b.nextAction || b.notes || ""); break;
+      case 5: cmp = (PRIORITY_ORDER[a.priority] ?? 1) - (PRIORITY_ORDER[b.priority] ?? 1); break;
+      default: return 0;
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   const stats = {
     total:    bids.length,
     active:   bids.filter(b => b.status === "Active Partner").length,
@@ -169,7 +190,8 @@ export default function BIDTrackerPage() {
       {/* BID list */}
       <Table
         cols={["BID Name", "Status", "Borough", "Contact", "Notes / Next Action", "Priority", "Actions"]}
-        rows={filtered.map(bid => [
+        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} sortableCols={[0,1,2,3,4,5]}
+        rows={sorted.map(bid => [
           <span key="name" className="text-white font-medium">{bid.name}</span>,
           <Badge key="status" label={bid.status} />,
           <span key="borough" className="text-white/50">{bid.borough || "—"}</span>,
