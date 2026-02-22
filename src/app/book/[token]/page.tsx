@@ -2,12 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import {
-  getInterviewInvite, getInterviewSlots,
-  updateInterviewInvite, updateInterviewSlot,
-  type InterviewInvite, type InterviewSlot,
-} from "@/lib/members/storage";
 import { isValidToken } from "@/lib/interviews";
+import type { InterviewInvite, InterviewSlot } from "@/lib/members/storage";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -44,31 +40,30 @@ export default function BookPage() {
   const [bookerEmail, setBookerEmail] = useState("");
   const [infoError, setInfoError]     = useState("");
 
-  // ── Load invite + slots ──────────────────────────────────────────────────
+  // ── Load invite + slots via API ───────────────────────────────────────────
 
   useEffect(() => {
     if (!token || !isValidToken(token)) { setState("invalid"); return; }
 
     (async () => {
       try {
-        const inv = await getInterviewInvite(token);
-        if (!inv) { setState("invalid"); return; }
-        if (inv.status === "cancelled" || inv.status === "expired") { setState("expired"); return; }
-        if (Date.now() > inv.expiresAt) {
-          await updateInterviewInvite(token, { status: "expired" });
-          setState("expired"); return;
+        const res = await fetch(`/api/booking/${token}`);
+        const data = await res.json() as {
+          error?: string;
+          invite?: InterviewInvite;
+          slots?: InterviewSlot[];
+        };
+
+        if (!res.ok) {
+          if (data.error === "not_found")      { setState("invalid"); return; }
+          if (data.error === "expired")        { setState("expired"); return; }
+          if (data.error === "already_booked") { setInvite(data.invite ?? null); setState("already_booked"); return; }
+          setState("error"); return;
         }
-        // Single-use: already booked by the named applicant.
-        if (!inv.multiUse && inv.status === "booked") {
-          setState("already_booked"); setInvite(inv); return;
-        }
+
+        const inv = data.invite!;
         setInvite(inv);
-        const allSlots = await getInterviewSlots();
-        const available = allSlots
-          .filter(s => s.available && !s.bookedBy && new Date(s.datetime) > new Date())
-          .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
-        setSlots(available);
-        // Multi-use: collect visitor info first.
+        setSlots(data.slots ?? []);
         setState(inv.multiUse ? "enter_info" : "choose_slot");
       } catch (err) {
         console.error("Booking page load error:", err);
@@ -87,7 +82,7 @@ export default function BookPage() {
     setState("choose_slot");
   };
 
-  // ── Book the selected slot ────────────────────────────────────────────────
+  // ── Book the selected slot via API ────────────────────────────────────────
 
   const handleBook = async () => {
     if (!selectedSlot || !invite) return;
@@ -96,21 +91,13 @@ export default function BookPage() {
       const name  = invite.multiUse ? bookerName.trim()  : (invite.applicantName  ?? "");
       const email = invite.multiUse ? bookerEmail.trim() : (invite.applicantEmail ?? "");
 
-      // Mark slot as booked, store who booked it.
-      await updateInterviewSlot(selectedSlot.id, {
-        available:   false,
-        bookedBy:    token,
-        bookerName:  name,
-        bookerEmail: email,
+      const res = await fetch(`/api/booking/${token}`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ slotId: selectedSlot.id, bookerName: name, bookerEmail: email }),
       });
 
-      if (invite.multiUse) {
-        // Multi-use: leave invite as "pending" so others can still book.
-        // Nothing to update on the invite record itself.
-      } else {
-        // Single-use: mark invite as fully booked.
-        await updateInterviewInvite(token, { status: "booked", bookedSlotId: selectedSlot.id });
-      }
+      if (!res.ok) { setState("error"); return; }
 
       setConfirmedSlot(selectedSlot);
       setState("confirmed");
@@ -204,9 +191,7 @@ export default function BookPage() {
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl overflow-hidden">
             <div className="px-6 py-5 border-b border-white/8">
               <h2 className="text-white font-bold text-lg">Book an Interview</h2>
-              <p className="text-white/50 text-sm mt-1 font-body">
-                {invite.role ? `Applying for: ${invite.role}` : "Select a time that works for you."}
-              </p>
+              <p className="text-white/50 text-sm mt-1 font-body">Select a time that works for you.</p>
               <p className="text-white/30 text-xs mt-1 font-body">
                 Link expires {new Date(invite.expiresAt).toLocaleDateString()}
               </p>
@@ -259,9 +244,7 @@ export default function BookPage() {
                 {invite.multiUse ? `Hi, ${bookerName}!` : `Hi, ${invite.applicantName}!`}
               </h2>
               <p className="text-white/50 text-sm mt-1 font-body">
-                {invite.role
-                  ? <>You&apos;ve been invited to interview for the <span className="text-white">{invite.role}</span> role. Select a time that works for you.</>
-                  : "Select a time that works for you."}
+                Select a time that works for you.
               </p>
               <p className="text-white/30 text-xs mt-2 font-body">
                 Link expires {new Date(invite.expiresAt).toLocaleDateString()}
@@ -324,9 +307,11 @@ export default function BookPage() {
                 >
                   {submitting ? "Booking…" : selectedSlot ? "Confirm Interview" : "Select a time above"}
                 </button>
-                <p className="text-white/25 text-xs text-center mt-3 font-body">
-                  You&apos;ll receive confirmation at {displayEmail}
-                </p>
+                {displayEmail && (
+                  <p className="text-white/25 text-xs text-center mt-3 font-body">
+                    You&apos;ll receive confirmation at {displayEmail}
+                  </p>
+                )}
               </div>
             )}
           </div>

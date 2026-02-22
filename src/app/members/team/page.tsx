@@ -174,8 +174,8 @@ export default function TeamPage() {
               {member.slackHandle ? `@${member.slackHandle}` : "—"}
             </span>,
             <div key="actions" className="flex gap-2">
-              {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(member)}>Edit</Btn>}
-              {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTeamMember(member.id))}>Del</Btn>}
+              {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(member)}>Edit</Btn>}
+              {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTeamMember(member.id))}>Delete</Btn>}
             </div>,
           ];
         })}

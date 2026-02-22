@@ -36,7 +36,6 @@ export default function GrantsPage() {
   const [grants, setGrants]             = useState<Grant[]>([]);
   const [businesses, setBusinesses]     = useState<Business[]>([]);
   const [search, setSearch]             = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
   const [modal, setModal]               = useState<"create" | "edit" | null>(null);
   const [editingGrant, setEditingGrant] = useState<Grant | null>(null);
   const [form, setForm]                 = useState(BLANK_FORM);
@@ -104,12 +103,11 @@ export default function GrantsPage() {
     setModal(null);
   };
 
-  // Filter by search text and/or status dropdown.
+  // Filter by search text.
   const filtered = grants.filter(grant =>
-    (!search
-      || grant.name.toLowerCase().includes(search.toLowerCase())
-      || grant.funder.toLowerCase().includes(search.toLowerCase()))
-    && (!filterStatus || grant.status === filterStatus)
+    !search
+    || grant.name.toLowerCase().includes(search.toLowerCase())
+    || grant.funder.toLowerCase().includes(search.toLowerCase())
   );
 
   const LIKELIHOOD_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
@@ -154,14 +152,6 @@ export default function GrantsPage() {
       {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search grants, funders…" />
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
       </div>
 
       {/* Grant list */}
@@ -180,8 +170,8 @@ export default function GrantsPage() {
             {(grant.businessIds ?? []).length > 0 ? `${grant.businessIds.length} linked` : "—"}
           </span>,
           <div key="actions" className="flex gap-2">
-            {canEditGrant(grant) && <Btn size="sm" variant="ghost" onClick={() => openEdit(grant)}>Edit</Btn>}
-            {canManageAll && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(grant.id))}>Del</Btn>}
+            {canEditGrant(grant) && <Btn size="sm" variant="secondary" onClick={() => openEdit(grant)}>Edit</Btn>}
+            {canManageAll && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(grant.id))}>Delete</Btn>}
           </div>,
         ])}
       />

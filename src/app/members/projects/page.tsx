@@ -34,7 +34,6 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
 export default function BusinessesPage() {
   const [businesses, setBusinesses]           = useState<Business[]>([]);
   const [search, setSearch]                   = useState("");
-  const [filterStatus, setFilterStatus]       = useState("");
   const [filterDiv, setFilterDiv]             = useState("");
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
@@ -96,9 +95,8 @@ export default function BusinessesPage() {
       || b.ownerName.toLowerCase().includes(q)
       || b.businessType.toLowerCase().includes(q)
       || (b.teamLead ?? "").toLowerCase().includes(q);
-    const matchesStatus = !filterStatus || b.projectStatus === filterStatus;
-    const matchesDiv    = !filterDiv    || b.division === filterDiv;
-    return matchesSearch && matchesStatus && matchesDiv;
+    const matchesDiv = !filterDiv || b.division === filterDiv;
+    return matchesSearch && matchesDiv;
   });
 
   return (
@@ -122,15 +120,6 @@ export default function BusinessesPage() {
       {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search projects, owners, leads…" />
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-9 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff66' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
         <select
           value={filterDiv}
           onChange={e => setFilterDiv(e.target.value)}
@@ -208,8 +197,8 @@ export default function BusinessesPage() {
             {/* Actions */}
             {canEdit && (
               <div className="flex gap-2 pt-2 border-t border-white/5 mt-auto">
-                <Btn size="sm" variant="ghost" className="flex-1 justify-center" onClick={() => openEdit(b)}>Edit</Btn>
-                <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteBusiness(b.id))}>Del</Btn>
+                <Btn size="sm" variant="secondary" className="flex-1 justify-center" onClick={() => openEdit(b)}>Edit</Btn>
+                <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteBusiness(b.id))}>Delete</Btn>
               </div>
             )}
           </div>

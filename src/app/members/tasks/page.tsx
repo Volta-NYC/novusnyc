@@ -243,8 +243,8 @@ export default function TasksPage() {
               <span key="assigned" className="text-white/50">{task.assignedTo || "—"}</span>,
               <span key="due" className="text-white/40">{task.dueDate || "—"}</span>,
               <div key="actions" className="flex gap-2">
-                {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(task)}>Edit</Btn>}
-                {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTask(task.id))}>Del</Btn>}
+                {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(task)}>Edit</Btn>}
+                {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTask(task.id))}>Delete</Btn>}
               </div>,
             ])}
           />

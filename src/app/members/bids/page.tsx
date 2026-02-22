@@ -31,7 +31,6 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
 export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
   const [search, setSearch]           = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
@@ -121,15 +120,13 @@ export default function BIDTrackerPage() {
   // The editingBID from state is stale — get the live version from bids array.
   const liveBID = editingBID ? bids.find(b => b.id === editingBID.id) ?? editingBID : null;
 
-  // Filter by search text and/or status dropdown.
+  // Filter by search text.
   const filtered = bids.filter((bid) => {
     const query = search.toLowerCase();
-    const matchesSearch = !search
+    return !search
       || bid.name.toLowerCase().includes(query)
       || bid.borough.toLowerCase().includes(query)
       || bid.contactName.toLowerCase().includes(query);
-    const matchesStatus = !filterStatus || bid.status === filterStatus;
-    return matchesSearch && matchesStatus;
   });
 
   const PRIORITY_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
@@ -177,14 +174,6 @@ export default function BIDTrackerPage() {
       {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search BIDs, boroughs…" />
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
       </div>
 
       {/* BID list */}
@@ -199,8 +188,8 @@ export default function BIDTrackerPage() {
           <span key="notes" className="text-white/50 max-w-[200px] truncate block">{bid.nextAction || bid.notes || "—"}</span>,
           <Badge key="priority" label={bid.priority} />,
           <div key="actions" className="flex gap-2">
-            {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(bid)}>Edit</Btn>}
-            {canEdit && <Btn size="sm" variant="danger" onClick={() => handleDelete(bid.id)}>Del</Btn>}
+            {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>}
+            {canEdit && <Btn size="sm" variant="danger" onClick={() => handleDelete(bid.id)}>Delete</Btn>}
           </div>,
         ])}
       />

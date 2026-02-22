@@ -116,7 +116,7 @@ function AccessCodesTab({ uid }: { uid: string }) {
               >
                 {copiedCodeId === code.id ? "Copied!" : "Copy"}
               </button>
-              <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteInviteCode(code.id))}>Del</Btn>
+              <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteInviteCode(code.id))}>Delete</Btn>
             </div>,
           ];
         })}
