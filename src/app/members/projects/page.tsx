@@ -13,39 +13,32 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES         = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
-const DIVISIONS        = ["Tech", "Marketing", "Finance", "Operations"];
-const PROGRESS_OPTIONS = ["0%", "25%", "50%", "75%", "100%"];
-const SERVICES         = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
-const PRIORITIES       = ["High", "Medium", "Low"];
-const LANGUAGES        = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
+const STATUSES  = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
+const DIVISIONS = ["Tech", "Marketing", "Finance", "Operations"];
+const SERVICES  = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
+const PRIORITIES = ["High", "Medium", "Low"];
+const LANGUAGES  = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
 
-const PROGRESS_TO_PERCENT: Record<string, number> = {
-  "0%": 0, "25%": 25, "50%": 50, "75%": 75, "100%": 100,
-};
-
-// Blank form for creating a new project/business entry.
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "", bidId: "", ownerName: "", ownerEmail: "", phone: "", address: "", website: "",
   businessType: "", activeServices: [], projectStatus: "Not Started", teamLead: "",
   slackChannel: "", languages: [], priority: "Medium", firstContactDate: "",
   grantEligible: false, notes: "",
-  // Project fields
-  division: "Tech", progress: "0%", teamMembers: [],
+  division: "Tech", teamMembers: [],
   startDate: "", targetEndDate: "", actualEndDate: "",
-  week1Deliverable: "", finalDeliverable: "", driveFolderUrl: "", clientNotes: "",
+  nextStep: "", nextStepDeadline: "", githubUrl: "", driveFolderUrl: "", clientNotes: "",
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function BusinessesPage() {
-  const [businesses, setBusinesses]         = useState<Business[]>([]);
-  const [search, setSearch]                 = useState("");
-  const [filterStatus, setFilterStatus]     = useState("");
-  const [filterDiv, setFilterDiv]           = useState("");
-  const [modal, setModal]                   = useState<"create" | "edit" | null>(null);
+  const [businesses, setBusinesses]           = useState<Business[]>([]);
+  const [search, setSearch]                   = useState("");
+  const [filterStatus, setFilterStatus]       = useState("");
+  const [filterDiv, setFilterDiv]             = useState("");
+  const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
-  const [form, setForm]                     = useState(BLANK_FORM);
+  const [form, setForm]                       = useState(BLANK_FORM);
 
   const { ask, Dialog } = useConfirm();
   const { authRole }    = useAuth();
@@ -56,41 +49,31 @@ export default function BusinessesPage() {
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  const openCreate = () => {
-    setForm(BLANK_FORM);
-    setEditingBusiness(null);
-    setModal("create");
-  };
+  const openCreate = () => { setForm(BLANK_FORM); setEditingBusiness(null); setModal("create"); };
 
   const openEdit = (b: Business) => {
     setForm({
-      name:             b.name,
-      bidId:            b.bidId,
-      ownerName:        b.ownerName,
-      ownerEmail:       b.ownerEmail,
-      phone:            b.phone,
-      address:          b.address,
-      website:          b.website,
-      businessType:     b.businessType,
-      activeServices:   b.activeServices  ?? [],
-      projectStatus:    b.projectStatus,
-      teamLead:         b.teamLead,
-      slackChannel:     b.slackChannel,
-      languages:        b.languages       ?? [],
-      priority:         b.priority,
+      name: b.name, bidId: b.bidId, ownerName: b.ownerName, ownerEmail: b.ownerEmail,
+      phone: b.phone, address: b.address, website: b.website, businessType: b.businessType,
+      activeServices: b.activeServices  ?? [],
+      projectStatus:  b.projectStatus,
+      teamLead:       b.teamLead,
+      slackChannel:   b.slackChannel,
+      languages:      b.languages       ?? [],
+      priority:       b.priority,
       firstContactDate: b.firstContactDate,
-      grantEligible:    b.grantEligible,
-      notes:            b.notes,
-      division:         b.division        ?? "Tech",
-      progress:         b.progress        ?? "0%",
-      teamMembers:      b.teamMembers     ?? [],
-      startDate:        b.startDate       ?? "",
-      targetEndDate:    b.targetEndDate   ?? "",
-      actualEndDate:    b.actualEndDate   ?? "",
-      week1Deliverable: b.week1Deliverable ?? "",
-      finalDeliverable: b.finalDeliverable ?? "",
-      driveFolderUrl:   b.driveFolderUrl  ?? "",
-      clientNotes:      b.clientNotes     ?? "",
+      grantEligible:  b.grantEligible,
+      notes:          b.notes,
+      division:       b.division        ?? "Tech",
+      teamMembers:    b.teamMembers     ?? [],
+      startDate:      b.startDate       ?? "",
+      targetEndDate:  b.targetEndDate   ?? "",
+      actualEndDate:  b.actualEndDate   ?? "",
+      nextStep:         b.nextStep         ?? "",
+      nextStepDeadline: b.nextStepDeadline ?? "",
+      githubUrl:        b.githubUrl        ?? "",
+      driveFolderUrl:   b.driveFolderUrl   ?? "",
+      clientNotes:      b.clientNotes      ?? "",
     });
     setEditingBusiness(b);
     setModal("edit");
@@ -128,12 +111,12 @@ export default function BusinessesPage() {
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Project</Btn> : undefined}
       />
 
-      {/* Summary stats */}
+      {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length} color="text-green-400" />
-        <StatCard label="Planning"  value={businesses.filter(b => b.projectStatus === "Not Started" || b.projectStatus === "Discovery").length} color="text-purple-400" />
+        <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length}   color="text-green-400" />
+        <StatCard label="Planning"  value={businesses.filter(b => ["Not Started","Discovery"].includes(b.projectStatus)).length} color="text-purple-400" />
         <StatCard label="Complete"  value={businesses.filter(b => b.projectStatus === "Complete").length} color="text-blue-400" />
-        <StatCard label="Grant Eligible" value={businesses.filter(b => b.grantEligible).length} color="text-yellow-400" />
+        <StatCard label="Grant Eligible" value={businesses.filter(b => b.grantEligible).length}          color="text-yellow-400" />
       </div>
 
       {/* Filters */}
@@ -142,7 +125,8 @@ export default function BusinessesPage() {
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-8 py-2.5 text-sm text-white/70 focus:outline-none"
+          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-9 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
+          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff66' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
         >
           <option value="">All statuses</option>
           {STATUSES.map(s => <option key={s}>{s}</option>)}
@@ -150,7 +134,8 @@ export default function BusinessesPage() {
         <select
           value={filterDiv}
           onChange={e => setFilterDiv(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-8 py-2.5 text-sm text-white/70 focus:outline-none"
+          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-9 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
+          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff66' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
         >
           <option value="">All divisions</option>
           {DIVISIONS.map(d => <option key={d}>{d}</option>)}
@@ -159,51 +144,76 @@ export default function BusinessesPage() {
 
       {/* Project cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {filtered.map(b => {
-          const progress = b.progress ?? "0%";
-          const pct      = PROGRESS_TO_PERCENT[progress] ?? 0;
-          return (
-            <div key={b.id} className="bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1 min-w-0 mr-2">
-                  <p className="text-white font-bold text-base leading-tight">{b.name}</p>
-                  <p className="text-white/40 text-xs mt-0.5">
-                    {b.businessType || "—"}{b.division ? ` · ${b.division}` : ""}
-                  </p>
-                </div>
+        {filtered.map(b => (
+          <div key={b.id} className="bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col gap-3">
+
+            {/* Name + badges */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-bold text-base leading-tight">{b.name}</p>
+                {b.businessType && <p className="text-white/40 text-xs mt-0.5">{b.businessType}</p>}
+              </div>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 <Badge label={b.projectStatus} />
+                {b.division && <span className="text-[10px] text-white/40 bg-white/6 px-2 py-0.5 rounded-full">{b.division}</span>}
               </div>
-
-              {/* Owner */}
-              {b.ownerName && (
-                <p className="text-white/50 text-xs mb-2">{b.ownerName}</p>
-              )}
-
-              {/* Progress bar */}
-              <div className="mb-3">
-                <div className="flex justify-between text-xs text-white/30 mb-1">
-                  <span>Progress</span>
-                  <span>{progress}</span>
-                </div>
-                <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#85CC17] rounded-full" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-white/30 mb-3">
-                <span>Lead: {b.teamLead || "—"}</span>
-                {b.targetEndDate && <span>Due {b.targetEndDate}</span>}
-              </div>
-
-              {canEdit && (
-                <div className="flex gap-2 mt-auto pt-3 border-t border-white/5">
-                  <Btn size="sm" variant="ghost" className="flex-1 justify-center" onClick={() => openEdit(b)}>Edit</Btn>
-                  <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteBusiness(b.id))}>Del</Btn>
-                </div>
-              )}
             </div>
-          );
-        })}
+
+            {/* Contact info */}
+            {(b.ownerName || b.ownerEmail || b.phone) && (
+              <div className="bg-white/4 rounded-lg px-3 py-2 space-y-1">
+                {b.ownerName && (
+                  <p className="text-white/70 text-xs font-medium">{b.ownerName}</p>
+                )}
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                  {b.ownerEmail && (
+                    <a href={`mailto:${b.ownerEmail}`} className="text-[#85CC17]/70 hover:text-[#85CC17] text-xs font-mono transition-colors">{b.ownerEmail}</a>
+                  )}
+                  {b.phone && (
+                    <span className="text-white/40 text-xs">{b.phone}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Dates */}
+            {(b.startDate || b.targetEndDate) && (
+              <div className="flex gap-4 text-xs">
+                {b.startDate && (
+                  <div>
+                    <span className="text-white/30 block">Start</span>
+                    <span className="text-white/60">{b.startDate}</span>
+                  </div>
+                )}
+                {b.targetEndDate && (
+                  <div>
+                    <span className="text-white/30 block">Target End</span>
+                    <span className="text-white/60">{b.targetEndDate}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Next step */}
+            {(b.nextStep || b.nextStepDeadline) && (
+              <div className="border-l-2 border-[#85CC17]/40 pl-3">
+                <p className="text-white/30 text-[10px] uppercase tracking-wider mb-0.5">Next Step</p>
+                {b.nextStep && <p className="text-white/70 text-xs">{b.nextStep}</p>}
+                {b.nextStepDeadline && (
+                  <p className="text-[#85CC17]/60 text-[10px] mt-0.5">Due {b.nextStepDeadline}</p>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            {canEdit && (
+              <div className="flex gap-2 pt-2 border-t border-white/5 mt-auto">
+                <Btn size="sm" variant="ghost" className="flex-1 justify-center" onClick={() => openEdit(b)}>Edit</Btn>
+                <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteBusiness(b.id))}>Del</Btn>
+              </div>
+            )}
+          </div>
+        ))}
         {filtered.length === 0 && (
           <div className="col-span-3">
             <Empty
@@ -218,7 +228,7 @@ export default function BusinessesPage() {
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>
         <div className="grid grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2">
 
-          {/* ── Business info ── */}
+          {/* ── Business Info ── */}
           <div className="col-span-2">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Business Info</p>
           </div>
@@ -240,7 +250,7 @@ export default function BusinessesPage() {
           <Field label="Website">
             <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
           </Field>
-          <Field label="First Contact">
+          <Field label="First Contact Date">
             <Input type="date" value={form.firstContactDate} onChange={e => setField("firstContactDate", e.target.value)} />
           </Field>
           <Field label="Grant Eligible">
@@ -265,7 +275,7 @@ export default function BusinessesPage() {
             </Field>
           </div>
 
-          {/* ── Project info ── */}
+          {/* ── Project Info ── */}
           <div className="col-span-2 mt-2">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Project Info</p>
           </div>
@@ -275,17 +285,11 @@ export default function BusinessesPage() {
           <Field label="Division">
             <Select options={DIVISIONS} value={form.division ?? "Tech"} onChange={e => setField("division", e.target.value)} />
           </Field>
-          <Field label="Progress">
-            <Select options={PROGRESS_OPTIONS} value={form.progress ?? "0%"} onChange={e => setField("progress", e.target.value)} />
-          </Field>
           <Field label="Priority">
             <Select options={PRIORITIES} value={form.priority} onChange={e => setField("priority", e.target.value)} />
           </Field>
           <Field label="Team Lead">
             <Input value={form.teamLead} onChange={e => setField("teamLead", e.target.value)} />
-          </Field>
-          <Field label="Slack Channel">
-            <Input value={form.slackChannel} onChange={e => setField("slackChannel", e.target.value)} placeholder="#channel" />
           </Field>
           <Field label="Start Date">
             <Input type="date" value={form.startDate ?? ""} onChange={e => setField("startDate", e.target.value)} />
@@ -293,28 +297,37 @@ export default function BusinessesPage() {
           <Field label="Target End Date">
             <Input type="date" value={form.targetEndDate ?? ""} onChange={e => setField("targetEndDate", e.target.value)} />
           </Field>
+          <Field label="Slack Channel">
+            <Input value={form.slackChannel} onChange={e => setField("slackChannel", e.target.value)} placeholder="#channel" />
+          </Field>
+          <Field label="Actual End Date">
+            <Input type="date" value={form.actualEndDate ?? ""} onChange={e => setField("actualEndDate", e.target.value)} />
+          </Field>
           <div className="col-span-2">
-            <Field label="Drive Folder URL">
-              <Input value={form.driveFolderUrl ?? ""} onChange={e => setField("driveFolderUrl", e.target.value)} placeholder="https://drive.google.com/…" />
+            <Field label="Next Step">
+              <Input value={form.nextStep ?? ""} onChange={e => setField("nextStep", e.target.value)} placeholder="What needs to happen next?" />
             </Field>
           </div>
+          <Field label="Next Step Deadline">
+            <Input type="date" value={form.nextStepDeadline ?? ""} onChange={e => setField("nextStepDeadline", e.target.value)} />
+          </Field>
           <div className="col-span-2">
             <Field label="Team Members">
               <TagInput values={form.teamMembers ?? []} onChange={v => setField("teamMembers", v)} options={[]} />
             </Field>
           </div>
           <div className="col-span-2">
-            <Field label="Week 1 Deliverable">
-              <Input value={form.week1Deliverable ?? ""} onChange={e => setField("week1Deliverable", e.target.value)} />
+            <Field label="GitHub Repo URL">
+              <Input value={form.githubUrl ?? ""} onChange={e => setField("githubUrl", e.target.value)} placeholder="https://github.com/…" />
             </Field>
           </div>
           <div className="col-span-2">
-            <Field label="Final Deliverable">
-              <TextArea rows={2} value={form.finalDeliverable ?? ""} onChange={e => setField("finalDeliverable", e.target.value)} />
+            <Field label="Drive Folder URL">
+              <Input value={form.driveFolderUrl ?? ""} onChange={e => setField("driveFolderUrl", e.target.value)} placeholder="https://drive.google.com/…" />
             </Field>
           </div>
           <div className="col-span-2">
-            <Field label="Notes / Client Notes">
+            <Field label="Notes">
               <TextArea rows={3} value={form.notes} onChange={e => setField("notes", e.target.value)} />
             </Field>
           </div>

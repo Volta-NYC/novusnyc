@@ -566,10 +566,38 @@ function InterviewsContent() {
 
                       {/* 15-min sub-slot popover */}
                       {isOpen && (
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 z-20 mt-1 bg-[#0F1014] border border-white/15 rounded-xl p-2 shadow-xl min-w-[110px]">
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 z-20 mt-1 bg-[#0F1014] border border-white/15 rounded-xl p-2 shadow-xl min-w-[120px]">
                           <p className="text-white/30 text-[10px] font-body text-center mb-1.5 uppercase tracking-wider">
                             {fmtHour(hour)}
                           </p>
+
+                          {/* "All" toggle row */}
+                          {(() => {
+                            const allChecked = MINUTES.every(min => {
+                              const slot = slotMap[`${d}T${h}:${min}`];
+                              return !!slot && !slot.bookedBy;
+                            });
+                            const anyBookedOrPast = MINUTES.some(min => {
+                              const slot = slotMap[`${d}T${h}:${min}`];
+                              return !!slot?.bookedBy || new Date(`${d}T${h}:${min}`) < new Date();
+                            });
+                            return (
+                              <button
+                                disabled={anyBookedOrPast && !allChecked}
+                                onClick={async (e) => { e.stopPropagation(); await toggleHour(day, hour); }}
+                                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-body transition-colors mb-1 border-b border-white/8 pb-2
+                                  ${anyBookedOrPast && !allChecked ? "opacity-40 cursor-default" : "hover:bg-white/8 cursor-pointer"}`}
+                              >
+                                <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
+                                  allChecked ? "border-[#85CC17] bg-[#85CC17]/20" : "border-white/20"
+                                }`}>
+                                  {allChecked && <span className="text-[8px] font-bold text-[#85CC17]">✓</span>}
+                                </span>
+                                <span className={allChecked ? "text-[#85CC17] font-medium" : "text-white/60"}>All</span>
+                              </button>
+                            );
+                          })()}
+
                           {MINUTES.map(min => {
                             const key       = `${d}T${h}:${min}`;
                             const slot      = slotMap[key];

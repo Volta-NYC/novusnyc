@@ -48,15 +48,15 @@ export interface Business {
   notes: string;
   createdAt: string;
   updatedAt: string;
-  // Project-level fields (added when Projects tab was merged into Businesses)
+  // Project-level fields (merged from Projects tab)
   division?: "Tech" | "Marketing" | "Finance" | "Operations";
-  progress?: "0%" | "25%" | "50%" | "75%" | "100%";
   teamMembers?: string[];     // may be undefined if Firebase omitted empty array
   startDate?: string;
   targetEndDate?: string;
   actualEndDate?: string;
-  week1Deliverable?: string;
-  finalDeliverable?: string;
+  nextStep?: string;          // replaces deliverable fields
+  nextStepDeadline?: string;
+  githubUrl?: string;
   driveFolderUrl?: string;
   clientNotes?: string;
 }
