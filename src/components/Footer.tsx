@@ -59,7 +59,7 @@ export default function Footer() {
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="font-body text-xs text-white/30">© 2026 Volta NYC. A registered nonprofit organization.</p>
-          <p className="font-body text-xs text-white/30">voltanyc.org</p>
+          <p className="font-body text-xs text-white/30"><a href="/">voltanyc.org</a></p>
         </div>
       </div>
     </footer>

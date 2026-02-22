@@ -3,6 +3,7 @@ import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { Analytics } from "@vercel/analytics/next";
+import { SITE_URL } from "@/lib/site";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -25,12 +26,12 @@ export const metadata: Metadata = {
   },
   description:
     "Volta NYC is a registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, SEO, and more. Free of charge.",
-  metadataBase: new URL("https://voltanyc.org"),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     title: "Volta NYC",
     description:
       "Student consultants. Real deliverables. Free for NYC small businesses.",
-    url: "https://voltanyc.org",
+    url: SITE_URL,
     siteName: "Volta NYC",
     locale: "en_US",
     type: "website",
@@ -56,8 +57,8 @@ export default function RootLayout({
               "@type": "NGO",
               name: "Volta NYC",
               alternateName: "Volta New York City",
-              url: "https://voltanyc.org",
-              logo: "https://voltanyc.org/logo.png",
+              url: SITE_URL,
+              logo: `${SITE_URL}/logo.png`,
               description:
                 "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
               email: "volta.newyork@gmail.com",
