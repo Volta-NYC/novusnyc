@@ -70,7 +70,8 @@ export default function BookPage() {
         setSlots(available);
         // Multi-use: collect visitor info first.
         setState(inv.multiUse ? "enter_info" : "choose_slot");
-      } catch {
+      } catch (err) {
+        console.error("Booking page load error:", err);
         setState("error");
       }
     })();
@@ -113,7 +114,8 @@ export default function BookPage() {
 
       setConfirmedSlot(selectedSlot);
       setState("confirmed");
-    } catch {
+    } catch (err) {
+      console.error("Booking slot error:", err);
       setState("error");
     } finally {
       setSubmitting(false);
