@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/members/firebaseAuth";
-import { getInviteCodeByValue, updateInviteCode, type AuthRole } from "@/lib/members/storage";
+import { getInviteCodeByValue, updateInviteCode, createTeamMember, type AuthRole } from "@/lib/members/storage";
 import { ref, set } from "firebase/database";
 import { getDB } from "@/lib/firebase";
 
@@ -74,6 +74,26 @@ export default function SignupPage() {
           createdAt: new Date().toISOString(),
         });
       }
+    } catch { /* non-fatal */ }
+
+    // ── Step 4: Add to team members database ──────────────────────────────────
+    // Non-fatal: creates a team entry so the member shows up in the Team tab
+    // immediately without needing manual entry by an admin.
+    try {
+      const teamRole = inviteRole === "project_lead" ? "Team Lead" : "Member";
+      await createTeamMember({
+        name:        name.trim(),
+        email:       email.trim().toLowerCase(),
+        role:        teamRole,
+        status:      "Active",
+        joinDate:    new Date().toISOString().split("T")[0],
+        school:      "",
+        divisions:   [],
+        pod:         "",
+        slackHandle: "",
+        skills:      [],
+        notes:       "",
+      });
     } catch { /* non-fatal */ }
 
     // ── Step 4: Mark invite code as used ──────────────────────────────────────

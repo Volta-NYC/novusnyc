@@ -5,7 +5,8 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInviteCodes, createInviteCode, deleteInviteCode,
-  subscribeUserProfiles, updateUserProfile,
+  subscribeUserProfiles, updateUserProfile, deleteUserProfile,
+  getUserProfilesList, getTeamMembersList, createTeamMember,
   exportAllData, importAllData,
   type InviteCode, type UserProfile, type AuthRole,
 } from "@/lib/members/storage";
@@ -131,6 +132,7 @@ function AccessCodesTab({ uid }: { uid: string }) {
 
 function UsersTab() {
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const { ask, Dialog } = useConfirm();
 
   useEffect(() => subscribeUserProfiles(setUsers), []);
 
@@ -142,42 +144,54 @@ function UsersTab() {
     await updateUserProfile(uid, { active: !currentlyActive });
   };
 
+  const handleDelete = (user: UserProfile) => {
+    ask(
+      async () => deleteUserProfile(user.id),
+      `Delete ${user.email}? This removes them from the portal database. Their Firebase login still exists — if they sign in again they'll be recreated as a plain member. Disable the account instead to block access without deleting.`
+    );
+  };
+
   // Display users in the order they joined.
   const sortedUsers = [...users].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
   return (
-    <Table
-      cols={["Email", "Name", "Role", "Active", "Joined", "Actions"]}
-      rows={sortedUsers.map(user => [
-        <span key="email" className="text-white text-sm font-mono">{user.email}</span>,
-        <span key="name" className="text-white/70 text-sm">{user.name ?? "—"}</span>,
-        <select
-          key="role"
-          value={user.authRole}
-          onChange={e => changeRole(user.id, e.target.value as AuthRole)}
-          className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/50"
-        >
-          <option value="member">member</option>
-          <option value="project_lead">project_lead</option>
-          <option value="admin">admin</option>
-        </select>,
-        <span key="active" className={`text-xs font-medium ${user.active ? "text-green-400" : "text-red-400"}`}>
-          {user.active ? "Active" : "Disabled"}
-        </span>,
-        <span key="joined" className="text-white/30 text-xs">{user.createdAt?.split("T")[0] ?? "—"}</span>,
-        <button
-          key="toggle"
-          onClick={() => toggleActive(user.id, user.active)}
-          className={`text-xs font-body transition-colors opacity-0 group-hover:opacity-100 ${
-            user.active ? "text-red-400/70 hover:text-red-400" : "text-green-400/70 hover:text-green-400"
-          }`}
-        >
-          {user.active ? "Disable" : "Enable"}
-        </button>,
-      ])}
-    />
+    <>
+      <Dialog />
+      <Table
+        cols={["Email", "Name", "Role", "Active", "Joined", "Actions"]}
+        rows={sortedUsers.map(user => [
+          <span key="email" className="text-white text-sm font-mono">{user.email}</span>,
+          <span key="name" className="text-white/70 text-sm">{user.name ?? "—"}</span>,
+          <select
+            key="role"
+            value={user.authRole}
+            onChange={e => changeRole(user.id, e.target.value as AuthRole)}
+            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/50"
+          >
+            <option value="member">member</option>
+            <option value="project_lead">project_lead</option>
+            <option value="admin">admin</option>
+          </select>,
+          <span key="active" className={`text-xs font-medium ${user.active ? "text-green-400" : "text-red-400"}`}>
+            {user.active ? "Active" : "Disabled"}
+          </span>,
+          <span key="joined" className="text-white/30 text-xs">{user.createdAt?.split("T")[0] ?? "—"}</span>,
+          <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => toggleActive(user.id, user.active)}
+              className={`text-xs font-body transition-colors ${
+                user.active ? "text-red-400/70 hover:text-red-400" : "text-green-400/70 hover:text-green-400"
+              }`}
+            >
+              {user.active ? "Disable" : "Enable"}
+            </button>
+            <Btn size="sm" variant="danger" onClick={() => handleDelete(user)}>Delete</Btn>
+          </div>,
+        ])}
+      />
+    </>
   );
 }
 
@@ -186,6 +200,7 @@ function UsersTab() {
 function DataTab() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isImporting, setIsImporting]     = useState(false);
+  const [isSyncing, setIsSyncing]         = useState(false);
 
   const handleExport = async () => {
     setStatusMessage("Exporting…");
@@ -219,8 +234,62 @@ function DataTab() {
     reader.readAsText(file);
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setStatusMessage("Checking for missing team entries…");
+    try {
+      const [profiles, teamMembers] = await Promise.all([
+        getUserProfilesList(),
+        getTeamMembersList(),
+      ]);
+      const teamEmails = new Set(teamMembers.map(t => t.email.trim().toLowerCase()));
+      const missing = profiles.filter(p => !teamEmails.has(p.email.trim().toLowerCase()));
+      if (missing.length === 0) {
+        setStatusMessage("All users already have a team entry — nothing to sync.");
+      } else {
+        await Promise.all(
+          missing.map(user =>
+            createTeamMember({
+              name:        user.name ?? user.email,
+              email:       user.email.trim().toLowerCase(),
+              role:        user.authRole === "project_lead" ? "Team Lead" : "Member",
+              status:      "Active",
+              joinDate:    user.createdAt?.split("T")[0] ?? new Date().toISOString().split("T")[0],
+              school:      "",
+              divisions:   [],
+              pod:         "",
+              slackHandle: "",
+              skills:      [],
+              notes:       "",
+            })
+          )
+        );
+        setStatusMessage(`Done — added ${missing.length} team ${missing.length === 1 ? "entry" : "entries"}: ${missing.map(u => u.name ?? u.email).join(", ")}.`);
+      }
+    } catch {
+      setStatusMessage("Sync failed — check your connection and try again.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="max-w-lg space-y-4">
+      {/* Sync users → team */}
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
+        <h2 className="font-display font-bold text-white mb-1">Sync Users to Team</h2>
+        <p className="text-white/40 text-sm mb-4">
+          Creates a Team tab entry for any portal user who doesn&apos;t already have one.
+          Safe to run multiple times — existing entries are never overwritten.
+        </p>
+        <button
+          onClick={handleSync}
+          disabled={isSyncing}
+          className="bg-[#3B74ED] text-white font-display font-bold px-5 py-2.5 rounded-xl hover:bg-[#2B62D9] transition-colors text-sm disabled:opacity-60"
+        >
+          {isSyncing ? "Syncing…" : "Sync Now"}
+        </button>
+      </div>
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
         <h2 className="font-display font-bold text-white mb-1">Export Data</h2>
         <p className="text-white/40 text-sm mb-4">Download a JSON backup of all portal data.</p>

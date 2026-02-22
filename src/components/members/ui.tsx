@@ -251,18 +251,22 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
 
 export function useConfirm() {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const ask = (action: () => void) => setPendingAction(() => action);
-  const confirm = () => { pendingAction?.(); setPendingAction(null); };
-  const cancel  = () => setPendingAction(null);
+  const ask = (action: () => void, customMessage?: string) => {
+    setPendingAction(() => action);
+    setMessage(customMessage ?? null);
+  };
+  const confirm = () => { pendingAction?.(); setPendingAction(null); setMessage(null); };
+  const cancel  = () => { setPendingAction(null); setMessage(null); };
 
   const Dialog = () =>
     pendingAction ? (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="fixed inset-0 bg-black/70" onClick={cancel} />
         <div className="relative bg-[#1C1F26] border border-white/10 rounded-xl p-6 max-w-sm w-full">
-          <p className="text-white font-semibold mb-2">Delete this record?</p>
-          <p className="text-white/40 text-sm mb-5">This cannot be undone.</p>
+          <p className="text-white font-semibold mb-2">Are you sure?</p>
+          <p className="text-white/40 text-sm mb-5">{message ?? "This cannot be undone."}</p>
           <div className="flex gap-3 justify-end">
             <Btn variant="ghost" size="sm" onClick={cancel}>Cancel</Btn>
             <Btn variant="danger" size="sm" onClick={confirm}>Delete</Btn>

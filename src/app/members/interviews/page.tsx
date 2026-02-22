@@ -114,6 +114,8 @@ function InterviewsContent() {
 
   // Availability grid state
   const [slotWeek, setSlotWeek] = useState(0);
+  // Popover state: "YYYY-MM-DD|hour" for the open cell, null when closed.
+  const [activePopover, setActivePopover] = useState<string | null>(null);
 
   const { ask, Dialog } = useConfirm();
 
@@ -295,6 +297,26 @@ function InterviewsContent() {
     );
   };
 
+  // Toggle a single 15-minute sub-slot (used by the per-cell popover).
+  const toggleMinuteSlot = async (date: Date, hour: number, minute: string) => {
+    const d   = toDateString(date);
+    const h   = String(hour).padStart(2, "0");
+    const key = `${d}T${h}:${minute}`;
+    const existing = slotMap[key];
+    if (existing) {
+      if (!existing.bookedBy) await deleteInterviewSlot(existing.id);
+    } else {
+      await createInterviewSlot({
+        datetime:        `${d}T${h}:${minute}:00`,
+        durationMinutes: 15,
+        available:       true,
+        location:        "",
+        createdBy:       user?.uid ?? "",
+        createdAt:       Date.now(),
+      });
+    }
+  };
+
   // Sort invites newest-first; sort slots chronologically.
   const sortedInvites = [...invites].sort((a, b) => b.createdAt - a.createdAt);
   const sortedSlots   = [...slots].sort((a, b) =>
@@ -432,8 +454,13 @@ function InterviewsContent() {
             >Next →</button>
           </div>
 
-          {/* Hour-block grid */}
+          {/* Grid */}
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-hidden">
+            {/* Backdrop to close popover when clicking outside the grid */}
+            {activePopover && (
+              <div className="fixed inset-0 z-10" onClick={() => setActivePopover(null)} />
+            )}
+
             {/* Header row: empty corner + day columns */}
             <div className="grid border-b border-white/8" style={{ gridTemplateColumns: "64px repeat(7, 1fr)" }}>
               <div className="p-2 text-[10px] text-white/20 font-body text-center">hour</div>
@@ -472,10 +499,17 @@ function InterviewsContent() {
                   {fmtHour(hour)}
                 </button>
 
-                {/* Day cells — one per day */}
+                {/* Day cells — click opens 15-min sub-slot popover */}
                 {weekDates.map((day, dayIdx) => {
                   const isPast  = new Date(toDateString(day) + "T" + String(hour).padStart(2, "0") + ":59") < new Date();
                   const state   = getHourState(day, hour, slotMap);
+                  const pKey    = `${toDateString(day)}|${hour}`;
+                  const isOpen  = activePopover === pKey;
+
+                  // Sub-slot data for popover
+                  const MINUTES = ["00", "15", "30", "45"];
+                  const h       = String(hour).padStart(2, "0");
+                  const d       = toDateString(day);
 
                   let cellClass = "";
                   let cellLabel = "";
@@ -495,21 +529,71 @@ function InterviewsContent() {
                   }
 
                   return (
-                    <button
-                      key={dayIdx}
-                      onClick={() => !isPast && state !== "booked" && toggleHour(day, hour)}
-                      disabled={isPast || state === "booked"}
-                      className={`h-11 border-l border-white/6 text-[10px] font-body transition-colors flex items-center justify-center ${cellClass}`}
-                    >
-                      <span className={
-                        state === "full"    ? "text-[#85CC17] font-bold text-sm" :
-                        state === "partial" ? "text-[#85CC17]/50 text-sm" :
-                        state === "booked"  ? "text-blue-400" :
-                        "text-white/10"
-                      }>
-                        {cellLabel}
-                      </span>
-                    </button>
+                    <div key={dayIdx} className="relative border-l border-white/6">
+                      <button
+                        onClick={() => {
+                          if (isPast || state === "booked") return;
+                          setActivePopover(isOpen ? null : pKey);
+                        }}
+                        disabled={isPast || state === "booked"}
+                        className={`w-full h-11 text-[10px] font-body transition-colors flex items-center justify-center ${cellClass}`}
+                      >
+                        <span className={
+                          state === "full"    ? "text-[#85CC17] font-bold text-sm" :
+                          state === "partial" ? "text-[#85CC17]/50 text-sm" :
+                          state === "booked"  ? "text-blue-400" :
+                          "text-white/10"
+                        }>
+                          {cellLabel}
+                        </span>
+                      </button>
+
+                      {/* 15-min sub-slot popover */}
+                      {isOpen && (
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 z-20 mt-1 bg-[#0F1014] border border-white/15 rounded-xl p-2 shadow-xl min-w-[110px]">
+                          <p className="text-white/30 text-[10px] font-body text-center mb-1.5 uppercase tracking-wider">
+                            {fmtHour(hour)}
+                          </p>
+                          {MINUTES.map(min => {
+                            const key       = `${d}T${h}:${min}`;
+                            const slot      = slotMap[key];
+                            const isBooked  = !!slot?.bookedBy;
+                            const isChecked = !!slot && !isBooked;
+                            const isPastMin = new Date(`${d}T${h}:${min}`) < new Date();
+                            const label     = `${hour % 12 || 12}:${min} ${hour >= 12 ? "PM" : "AM"}`;
+
+                            return (
+                              <button
+                                key={min}
+                                disabled={isBooked || isPastMin}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await toggleMinuteSlot(day, hour, min);
+                                }}
+                                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-body transition-colors
+                                  ${isBooked || isPastMin
+                                    ? "opacity-30 cursor-default"
+                                    : "hover:bg-white/8 cursor-pointer"}
+                                `}
+                              >
+                                <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
+                                  isBooked  ? "border-blue-400 bg-blue-400/20" :
+                                  isChecked ? "border-[#85CC17] bg-[#85CC17]/20" :
+                                              "border-white/20"
+                                }`}>
+                                  {(isChecked || isBooked) && (
+                                    <span className={`text-[8px] font-bold ${isBooked ? "text-blue-400" : "text-[#85CC17]"}`}>✓</span>
+                                  )}
+                                </span>
+                                <span className={isChecked ? "text-[#85CC17]" : isBooked ? "text-blue-400" : "text-white/50"}>
+                                  {label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

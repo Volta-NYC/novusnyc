@@ -374,6 +374,26 @@ export async function updateUserProfile(uid: string, data: Partial<UserProfile>)
   await update(ref(db, `userProfiles/${uid}`), data);
 }
 
+export async function deleteUserProfile(uid: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `userProfiles/${uid}`));
+}
+
+export async function getUserProfilesList(): Promise<UserProfile[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "userProfiles"));
+  return snapToList<UserProfile>(snap);
+}
+
+export async function getTeamMembersList(): Promise<TeamMember[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "team"));
+  return snapToList<TeamMember>(snap);
+}
+
 // ── InviteCodes ───────────────────────────────────────────────────────────────
 
 export const subscribeInviteCodes = makeSubscriber<InviteCode>("inviteCodes");
