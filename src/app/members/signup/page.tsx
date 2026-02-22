@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/members/firebaseAuth";
-import { getInviteCodes, updateInviteCode } from "@/lib/members/storage";
+import { getInviteCodeByValue, updateInviteCode, type AuthRole } from "@/lib/members/storage";
 import { ref, set } from "firebase/database";
 import { getDB } from "@/lib/firebase";
 
@@ -24,53 +24,72 @@ export default function SignupPage() {
     setError("");
 
     if (password !== confirm) { setError("Passwords do not match."); return; }
-    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (password.length < 6)  { setError("Password must be at least 6 characters."); return; }
 
     setLoading(true);
+    const normalizedCode = code.trim().toUpperCase();
+
+    // ── Step 1: Validate invite code ──────────────────────────────────────────
+    // Reads the specific code directly (inviteCodes/{code}) so the signup page
+    // can verify without needing auth to list the entire inviteCodes collection.
+    let inviteRole: AuthRole = "member";
     try {
-      // Validate invite code
-      const codes = await getInviteCodes();
-      const inviteCode = codes.find(c => c.code === code.trim().toUpperCase());
+      const invite = await getInviteCodeByValue(normalizedCode);
+      if (!invite)                                   { setError("Invalid invite code."); setLoading(false); return; }
+      if (invite.used)                               { setError("This invite code has already been used."); setLoading(false); return; }
+      if (new Date(invite.expiresAt) < new Date())   { setError("This invite code has expired."); setLoading(false); return; }
+      inviteRole = invite.role;
+    } catch {
+      setError("Could not verify invite code. Please try again or contact an admin.");
+      setLoading(false);
+      return;
+    }
 
-      if (!inviteCode) { setError("Invalid invite code."); setLoading(false); return; }
-      if (inviteCode.used) { setError("This invite code has already been used."); setLoading(false); return; }
-      if (new Date(inviteCode.expiresAt) < new Date()) { setError("This invite code has expired."); setLoading(false); return; }
-
-      // Create Firebase Auth account
+    // ── Step 2: Create Firebase Auth account ──────────────────────────────────
+    let uid: string;
+    try {
       const cred = await signUp(email.trim().toLowerCase(), password);
+      uid = cred.user.uid;
+    } catch (err: unknown) {
+      const errCode = (err as { code?: string })?.code;
+      if (errCode === "auth/email-already-in-use")  setError("An account with this email already exists. Sign in instead.");
+      else if (errCode === "auth/invalid-email")     setError("Please enter a valid email address.");
+      else if (errCode === "auth/operation-not-allowed") setError("Email/password sign-up is not enabled. Contact an admin.");
+      else if (errCode === "auth/weak-password")     setError("Password is too weak. Use at least 6 characters.");
+      else                                           setError("Account creation failed. Please try again.");
+      setLoading(false);
+      return;
+    }
 
-      // Create userProfile in Realtime Database
+    // ── Step 3: Write user profile ────────────────────────────────────────────
+    // Non-fatal: if this fails (e.g. DB rules), authContext will create a default
+    // "member" profile on first login. Admin can then manually set the correct role.
+    try {
       const db = getDB();
       if (db) {
-        await set(ref(db, `userProfiles/${cred.user.uid}`), {
-          email: email.trim().toLowerCase(),
-          authRole: inviteCode.role,
-          name: name.trim(),
-          active: true,
+        await set(ref(db, `userProfiles/${uid}`), {
+          email:     email.trim().toLowerCase(),
+          authRole:  inviteRole,
+          name:      name.trim(),
+          active:    true,
           createdAt: new Date().toISOString(),
         });
       }
+    } catch { /* non-fatal */ }
 
-      // Mark invite code as used
-      await updateInviteCode(inviteCode.id, {
-        used: true,
+    // ── Step 4: Mark invite code as used ──────────────────────────────────────
+    // Non-fatal: new members don't have write access to inviteCodes. The code
+    // appears unused in admin, but the account is created with the correct role.
+    // Admin can delete the code manually after verifying the account was created.
+    try {
+      await updateInviteCode(normalizedCode, {
+        used:   true,
         usedBy: email.trim().toLowerCase(),
         usedAt: new Date().toISOString(),
       });
+    } catch { /* non-fatal */ }
 
-      // Redirect based on role
-      router.replace(inviteCode.role === "member" ? "/members/my-work" : "/members/dashboard");
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code;
-      if (code === "auth/email-already-in-use") {
-        setError("An account with this email already exists. Sign in instead.");
-      } else if (code === "auth/invalid-email") {
-        setError("Please enter a valid email address.");
-      } else {
-        setError("Sign up failed. Please try again.");
-      }
-      setLoading(false);
-    }
+    router.replace(inviteRole === "member" ? "/members/my-work" : "/members/dashboard");
   };
 
   return (

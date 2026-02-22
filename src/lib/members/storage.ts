@@ -381,7 +381,20 @@ export const subscribeInviteCodes = makeSubscriber<InviteCode>("inviteCodes");
 export async function createInviteCode(data: Omit<InviteCode, "id">): Promise<void> {
   const db = getDB();
   if (!db) return;
-  await push(ref(db, "inviteCodes"), data);
+  // Store at inviteCodes/{code} so the signup page can read a single code without
+  // needing to list the entire collection (which requires admin auth).
+  await set(ref(db, `inviteCodes/${data.code}`), data);
+}
+
+// Reads a single invite code by its code value (e.g. "VOLTA-A3BX7M").
+// Safe to call while unauthenticated if the Firebase rule allows reading
+// individual children of inviteCodes (see CLAUDE.md for rule snippet).
+export async function getInviteCodeByValue(code: string): Promise<InviteCode | null> {
+  const db = getDB();
+  if (!db) return null;
+  const snap = await get(ref(db, `inviteCodes/${code}`));
+  if (!snap.exists()) return null;
+  return { ...snap.val(), id: code } as InviteCode;
 }
 
 export async function updateInviteCode(id: string, data: Partial<InviteCode>): Promise<void> {
