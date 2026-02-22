@@ -24,7 +24,7 @@ function formatDateTime(iso: string): string {
 
 // ── Page states ───────────────────────────────────────────────────────────────
 
-type PageState = "loading" | "invalid" | "expired" | "already_booked" | "choose_slot" | "confirmed" | "error";
+type PageState = "loading" | "invalid" | "expired" | "already_booked" | "enter_info" | "choose_slot" | "confirmed" | "error";
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -39,6 +39,11 @@ export default function BookPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmedSlot, setConfirmedSlot] = useState<InterviewSlot | null>(null);
 
+  // Name + email for multi-use links (collected from visitor).
+  const [bookerName, setBookerName]   = useState("");
+  const [bookerEmail, setBookerEmail] = useState("");
+  const [infoError, setInfoError]     = useState("");
+
   // ── Load invite + slots ──────────────────────────────────────────────────
 
   useEffect(() => {
@@ -48,11 +53,14 @@ export default function BookPage() {
       try {
         const inv = await getInterviewInvite(token);
         if (!inv) { setState("invalid"); return; }
-        if (inv.status === "booked") { setState("already_booked"); setInvite(inv); return; }
         if (inv.status === "cancelled" || inv.status === "expired") { setState("expired"); return; }
         if (Date.now() > inv.expiresAt) {
           await updateInterviewInvite(token, { status: "expired" });
           setState("expired"); return;
+        }
+        // Single-use: already booked by the named applicant.
+        if (!inv.multiUse && inv.status === "booked") {
+          setState("already_booked"); setInvite(inv); return;
         }
         setInvite(inv);
         const allSlots = await getInterviewSlots();
@@ -60,12 +68,23 @@ export default function BookPage() {
           .filter(s => s.available && !s.bookedBy && new Date(s.datetime) > new Date())
           .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
         setSlots(available);
-        setState("choose_slot");
+        // Multi-use: collect visitor info first.
+        setState(inv.multiUse ? "enter_info" : "choose_slot");
       } catch {
         setState("error");
       }
     })();
   }, [token]);
+
+  // ── Proceed from info form to slot selection ──────────────────────────────
+
+  const handleInfoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookerName.trim())  { setInfoError("Please enter your name."); return; }
+    if (!bookerEmail.trim()) { setInfoError("Please enter your email."); return; }
+    setInfoError("");
+    setState("choose_slot");
+  };
 
   // ── Book the selected slot ────────────────────────────────────────────────
 
@@ -73,10 +92,25 @@ export default function BookPage() {
     if (!selectedSlot || !invite) return;
     setSubmitting(true);
     try {
-      // Mark slot as booked
-      await updateInterviewSlot(selectedSlot.id, { available: false, bookedBy: token });
-      // Mark invite as booked
-      await updateInterviewInvite(token, { status: "booked", bookedSlotId: selectedSlot.id });
+      const name  = invite.multiUse ? bookerName.trim()  : (invite.applicantName  ?? "");
+      const email = invite.multiUse ? bookerEmail.trim() : (invite.applicantEmail ?? "");
+
+      // Mark slot as booked, store who booked it.
+      await updateInterviewSlot(selectedSlot.id, {
+        available:   false,
+        bookedBy:    token,
+        bookerName:  name,
+        bookerEmail: email,
+      });
+
+      if (invite.multiUse) {
+        // Multi-use: leave invite as "pending" so others can still book.
+        // Nothing to update on the invite record itself.
+      } else {
+        // Single-use: mark invite as fully booked.
+        await updateInterviewInvite(token, { status: "booked", bookedSlotId: selectedSlot.id });
+      }
+
       setConfirmedSlot(selectedSlot);
       setState("confirmed");
     } catch {
@@ -85,6 +119,10 @@ export default function BookPage() {
       setSubmitting(false);
     }
   };
+
+  // Resolved display name + email (from invite or from form).
+  const displayName  = invite?.multiUse ? bookerName  : (invite?.applicantName  ?? "");
+  const displayEmail = invite?.multiUse ? bookerEmail : (invite?.applicantEmail ?? "");
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -107,7 +145,7 @@ export default function BookPage() {
         {state === "loading" && (
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl p-8 text-center">
             <div className="w-8 h-8 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-white/40 text-sm font-body">Loading your invite…</p>
+            <p className="text-white/40 text-sm font-body">Loading…</p>
           </div>
         )}
 
@@ -124,13 +162,13 @@ export default function BookPage() {
             </h2>
             <p className="text-white/40 text-sm font-body">
               {state === "expired"
-                ? "This interview invitation has expired or been cancelled. Please contact Volta NYC for a new link."
+                ? "This interview link has expired or been cancelled. Please contact Volta NYC for a new link."
                 : "This booking link is not valid. Please check the URL or contact Volta NYC."}
             </p>
           </div>
         )}
 
-        {/* Already booked */}
+        {/* Already booked (single-use only) */}
         {state === "already_booked" && invite && (
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl p-8 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-green-500/15 flex items-center justify-center mx-auto">
@@ -159,16 +197,69 @@ export default function BookPage() {
           </div>
         )}
 
+        {/* Multi-use: collect visitor name + email */}
+        {state === "enter_info" && invite && (
+          <div className="bg-[#1C1F26] border border-white/8 rounded-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-white/8">
+              <h2 className="text-white font-bold text-lg">Book an Interview</h2>
+              <p className="text-white/50 text-sm mt-1 font-body">
+                {invite.role ? `Applying for: ${invite.role}` : "Select a time that works for you."}
+              </p>
+              <p className="text-white/30 text-xs mt-1 font-body">
+                Link expires {new Date(invite.expiresAt).toLocaleDateString()}
+              </p>
+            </div>
+            <form onSubmit={handleInfoSubmit} className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+                  Your Name
+                </label>
+                <input
+                  required
+                  value={bookerName}
+                  onChange={e => setBookerName(e.target.value)}
+                  placeholder="Jane Smith"
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+                  Your Email
+                </label>
+                <input
+                  required
+                  type="email"
+                  value={bookerEmail}
+                  onChange={e => setBookerEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+                />
+              </div>
+              {infoError && (
+                <p className="text-red-400 text-xs">{infoError}</p>
+              )}
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-[#85CC17] text-[#0D0D0D] font-display font-bold text-sm hover:bg-[#72b314] transition-colors"
+              >
+                Continue →
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* Choose a slot */}
         {state === "choose_slot" && invite && (
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl overflow-hidden">
-            {/* Invite header */}
+            {/* Header */}
             <div className="px-6 py-5 border-b border-white/8">
-              <h2 className="text-white font-bold text-lg">Hi, {invite.applicantName}!</h2>
+              <h2 className="text-white font-bold text-lg">
+                {invite.multiUse ? `Hi, ${bookerName}!` : `Hi, ${invite.applicantName}!`}
+              </h2>
               <p className="text-white/50 text-sm mt-1 font-body">
-                You&apos;ve been invited to interview for the{" "}
-                <span className="text-white">{invite.role || "Volta NYC team member"}</span>{" "}
-                role. Select a time that works for you.
+                {invite.role
+                  ? <>You&apos;ve been invited to interview for the <span className="text-white">{invite.role}</span> role. Select a time that works for you.</>
+                  : "Select a time that works for you."}
               </p>
               <p className="text-white/30 text-xs mt-2 font-body">
                 Link expires {new Date(invite.expiresAt).toLocaleDateString()}
@@ -232,7 +323,7 @@ export default function BookPage() {
                   {submitting ? "Booking…" : selectedSlot ? "Confirm Interview" : "Select a time above"}
                 </button>
                 <p className="text-white/25 text-xs text-center mt-3 font-body">
-                  You&apos;ll receive confirmation at {invite.applicantEmail}
+                  You&apos;ll receive confirmation at {displayEmail}
                 </p>
               </div>
             )}
@@ -240,7 +331,7 @@ export default function BookPage() {
         )}
 
         {/* Confirmed */}
-        {state === "confirmed" && invite && confirmedSlot && (
+        {state === "confirmed" && confirmedSlot && (
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl overflow-hidden">
             <div className="px-6 pt-8 pb-6 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#85CC17]/15 flex items-center justify-center mx-auto">
@@ -250,7 +341,7 @@ export default function BookPage() {
               </div>
               <div>
                 <h2 className="text-white font-bold text-xl">Interview booked!</h2>
-                <p className="text-white/50 text-sm mt-1 font-body">See you soon, {invite.applicantName}.</p>
+                <p className="text-white/50 text-sm mt-1 font-body">See you soon, {displayName}.</p>
               </div>
             </div>
 
@@ -275,12 +366,14 @@ export default function BookPage() {
                 </svg>
                 <span className="text-white/70">{confirmedSlot.durationMinutes} minutes</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-                </svg>
-                <span className="text-white/70">Confirmation sent to {invite.applicantEmail}</span>
-              </div>
+              {displayEmail && (
+                <div className="flex items-center gap-2 text-sm">
+                  <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  <span className="text-white/70">Confirmation sent to {displayEmail}</span>
+                </div>
+              )}
             </div>
 
             <div className="px-6 pb-6">

@@ -167,12 +167,13 @@ export type InterviewStatus = "pending" | "booked" | "expired" | "cancelled";
 
 export interface InterviewInvite {
   id: string;             // the booking token used as the Firebase key
-  applicantName: string;
-  applicantEmail: string;
+  applicantName?: string; // only set for single-use invites
+  applicantEmail?: string;
   role: string;
   expiresAt: number;      // Unix ms timestamp
-  bookedSlotId?: string;
+  bookedSlotId?: string;  // only for single-use invites
   status: InterviewStatus;
+  multiUse?: boolean;     // if true, link can be used by multiple applicants
   createdBy: string;      // uid
   createdAt: number;      // Unix ms timestamp
   note?: string;
@@ -184,6 +185,8 @@ export interface InterviewSlot {
   durationMinutes: number;
   available: boolean;
   bookedBy?: string;      // booking token that reserved this slot
+  bookerName?: string;    // name entered by applicant at booking time
+  bookerEmail?: string;   // email entered by applicant at booking time
   location?: string;
   createdBy: string;      // uid
   createdAt: number;      // Unix ms timestamp

@@ -168,7 +168,7 @@ function UsersTab() {
             key="role"
             value={user.authRole}
             onChange={e => changeRole(user.id, e.target.value as AuthRole)}
-            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/50"
+            className="bg-[#0F1014] border border-white/10 rounded-lg pl-2 pr-6 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/50"
           >
             <option value="member">member</option>
             <option value="project_lead">project_lead</option>

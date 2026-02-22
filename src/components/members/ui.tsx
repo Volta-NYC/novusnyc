@@ -134,7 +134,7 @@ export function Select({ options, className = "", ...props }: SelectProps) {
   return (
     <select
       {...props}
-      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
     >
       <option value="">— Select —</option>
       {options.map((option) => <option key={option} value={option}>{option}</option>)}

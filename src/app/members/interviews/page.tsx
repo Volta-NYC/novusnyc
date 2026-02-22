@@ -91,7 +91,7 @@ function fmtHour(h: number): string {
 // ── BLANK FORMS ───────────────────────────────────────────────────────────────
 
 const BLANK_INVITE_FORM = {
-  applicantName: "", applicantEmail: "", role: "", note: "", expiryDays: "7",
+  applicantName: "", applicantEmail: "", role: "", note: "", expiryDays: "7", multiUse: false,
 };
 
 // ── INTERVIEWS CONTENT (inside AuthProvider via MembersLayout) ────────────────
@@ -159,14 +159,15 @@ function InterviewsContent() {
     setInviteForm(prev => ({ ...prev, [key]: value }));
 
   const handleCreateInvite = async () => {
-    if (!inviteForm.applicantName.trim() || !inviteForm.applicantEmail.trim()) return;
+    if (!inviteForm.multiUse && (!inviteForm.applicantName.trim() || !inviteForm.applicantEmail.trim())) return;
     const token     = generateToken();
     const expiresAt = Date.now() + parseInt(inviteForm.expiryDays) * 86400000;
     await createInterviewInvite(token, {
-      applicantName:  inviteForm.applicantName.trim(),
-      applicantEmail: inviteForm.applicantEmail.trim(),
+      applicantName:  inviteForm.multiUse ? undefined : inviteForm.applicantName.trim(),
+      applicantEmail: inviteForm.multiUse ? undefined : inviteForm.applicantEmail.trim(),
       role:           inviteForm.role.trim(),
       note:           inviteForm.note.trim(),
+      multiUse:       inviteForm.multiUse,
       expiresAt,
       status:         "pending",
       createdBy:      user?.uid ?? "",
@@ -367,20 +368,34 @@ function InterviewsContent() {
               No invite links yet. Create one to send to an applicant.
             </div>
           )}
-          {sortedInvites.map(invite => (
+          {sortedInvites.map(invite => {
+            // Count how many slots have been booked through this token.
+            const bookingCount = slots.filter(s => s.bookedBy === invite.id).length;
+            return (
             <div
               key={invite.id}
               className="bg-[#1C1F26] border border-white/8 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-white font-medium text-sm">{invite.applicantName}</p>
+                  {invite.multiUse ? (
+                    <>
+                      <p className="text-white font-medium text-sm">Multi-use link</p>
+                      <span className="text-white/40 text-xs bg-white/6 px-2 py-0.5 rounded-full">
+                        {bookingCount} {bookingCount === 1 ? "booking" : "bookings"}
+                      </span>
+                    </>
+                  ) : (
+                    <p className="text-white font-medium text-sm">{invite.applicantName}</p>
+                  )}
                   {invite.role && <span className="text-white/40 text-xs">{invite.role}</span>}
                   <span className={`text-xs font-medium ${inviteStatusColor(invite.status)}`}>
                     {invite.status.charAt(0).toUpperCase() + invite.status.slice(1)}
                   </span>
                 </div>
-                <p className="text-white/40 text-xs mt-0.5 font-mono">{invite.applicantEmail}</p>
+                {!invite.multiUse && (
+                  <p className="text-white/40 text-xs mt-0.5 font-mono">{invite.applicantEmail}</p>
+                )}
                 {invite.status === "booked" && invite.bookedSlotId && (
                   <p className="text-green-400/70 text-xs mt-0.5">
                     Booked · Slot ID: {invite.bookedSlotId.slice(0, 8)}…
@@ -408,7 +423,8 @@ function InterviewsContent() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -650,23 +666,41 @@ function InterviewsContent() {
         title="New Invite Link"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Applicant Name" required>
-              <Input
-                value={inviteForm.applicantName}
-                onChange={e => setInviteField("applicantName", e.target.value)}
-                placeholder="Jane Smith"
-              />
-            </Field>
-            <Field label="Applicant Email" required>
-              <Input
-                type="email"
-                value={inviteForm.applicantEmail}
-                onChange={e => setInviteField("applicantEmail", e.target.value)}
-                placeholder="jane@example.com"
-              />
-            </Field>
+          {/* Multi-use toggle */}
+          <div className="flex items-center justify-between bg-white/4 border border-white/8 rounded-xl px-4 py-3">
+            <div>
+              <p className="text-white text-sm font-medium">Multi-use link</p>
+              <p className="text-white/40 text-xs mt-0.5 font-body">Anyone with the link can book a slot. Each person enters their own name and email.</p>
+            </div>
+            <button
+              onClick={() => setInviteForm(prev => ({ ...prev, multiUse: !prev.multiUse }))}
+              className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${inviteForm.multiUse ? "bg-[#85CC17]" : "bg-white/15"}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${inviteForm.multiUse ? "left-5" : "left-1"}`} />
+            </button>
           </div>
+
+          {/* Applicant fields — only shown for single-use */}
+          {!inviteForm.multiUse && (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Applicant Name" required>
+                <Input
+                  value={inviteForm.applicantName}
+                  onChange={e => setInviteField("applicantName", e.target.value)}
+                  placeholder="Jane Smith"
+                />
+              </Field>
+              <Field label="Applicant Email" required>
+                <Input
+                  type="email"
+                  value={inviteForm.applicantEmail}
+                  onChange={e => setInviteField("applicantEmail", e.target.value)}
+                  placeholder="jane@example.com"
+                />
+              </Field>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <Field label="Role / Position">
               <Input
@@ -677,7 +711,7 @@ function InterviewsContent() {
             </Field>
             <Field label="Link expires in">
               <Select
-                options={["3", "7", "14", "30"]}
+                options={["1", "3", "7", "14", "30"]}
                 value={inviteForm.expiryDays}
                 onChange={e => setInviteField("expiryDays", e.target.value)}
               />
@@ -688,7 +722,7 @@ function InterviewsContent() {
               rows={2}
               value={inviteForm.note}
               onChange={e => setInviteField("note", e.target.value)}
-              placeholder="Optional context for this candidate…"
+              placeholder="Optional context…"
             />
           </Field>
         </div>
