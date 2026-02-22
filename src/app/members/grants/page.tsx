@@ -42,8 +42,16 @@ export default function GrantsPage() {
   const [form, setForm]                 = useState(BLANK_FORM);
 
   const { ask, Dialog } = useConfirm();
-  const { authRole }    = useAuth();
-  const canEdit = authRole === "admin" || authRole === "project_lead";
+  const { authRole, userProfile } = useAuth();
+
+  const canManageAll = authRole === "admin" || authRole === "project_lead";
+  const myName = userProfile?.name ?? "";
+
+  // Members can create grants and edit ones they're assigned to.
+  const canCreate = canManageAll || authRole === "member";
+  const canEditGrant = (grant: Grant) =>
+    canManageAll ||
+    (authRole === "member" && myName !== "" && grant.assignedResearcher.toLowerCase() === myName.toLowerCase());
 
   // Subscribe to real-time grant updates; unsubscribe on unmount.
   useEffect(() => {
@@ -57,7 +65,7 @@ export default function GrantsPage() {
     setForm(prev => ({ ...prev, [key]: value }));
 
   const openCreate = () => {
-    setForm(BLANK_FORM);
+    setForm({ ...BLANK_FORM, assignedResearcher: canManageAll ? "" : myName });
     setEditingGrant(null);
     setModal("create");
   };
@@ -109,7 +117,7 @@ export default function GrantsPage() {
       <PageHeader
         title="Grant Library"
         subtitle={`${grants.length} grants · ${grants.filter(g => g.status === "Awarded").length} awarded`}
-        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Grant</Btn> : undefined}
+        action={canCreate ? <Btn variant="primary" onClick={openCreate}>+ New Grant</Btn> : undefined}
       />
 
       {/* Summary stats */}
@@ -148,15 +156,15 @@ export default function GrantsPage() {
             {(grant.businessIds ?? []).length > 0 ? `${grant.businessIds.length} linked` : "—"}
           </span>,
           <div key="actions" className="flex gap-2">
-            {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(grant)}>Edit</Btn>}
-            {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(grant.id))}>Del</Btn>}
+            {canEditGrant(grant) && <Btn size="sm" variant="ghost" onClick={() => openEdit(grant)}>Edit</Btn>}
+            {canManageAll && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(grant.id))}>Del</Btn>}
           </div>,
         ])}
       />
       {filtered.length === 0 && (
         <Empty
           message="No grants found."
-          action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first grant</Btn> : undefined}
+          action={canCreate ? <Btn variant="primary" onClick={openCreate}>Add first grant</Btn> : undefined}
         />
       )}
 

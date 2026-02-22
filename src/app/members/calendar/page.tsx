@@ -5,8 +5,8 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
-  subscribeTasks,
-  type CalendarEvent, type Task,
+  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeGrants,
+  type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite, type Grant,
 } from "@/lib/members/storage";
 import { Btn, Modal, Field, Input, TextArea, useConfirm } from "@/components/members/ui";
 
@@ -73,11 +73,10 @@ const EVENT_COLOR_OPTIONS = [
 
 // Maps task status to a hex color for rendering tasks on the calendar.
 const TASK_STATUS_COLORS: Record<string, string> = {
-  "To Do":      "#6B7280",
+  "To Do":       "#6B7280",
   "In Progress": "#60A5FA",
-  "Blocked":    "#EF4444",
-  "In Review":  "#FBBF24",
-  "Done":       "#34D399",
+  "Blocked":     "#EF4444",
+  "Done":        "#34D399",
 };
 
 // ── DISPLAY EVENT TYPE ────────────────────────────────────────────────────────
@@ -91,6 +90,7 @@ interface DisplayEvent {
   time?: string;          // formatted time string; undefined means all-day
   description?: string;
   isTask: boolean;
+  isInterview?: boolean;
   calEvent?: CalendarEvent;
 }
 
@@ -116,12 +116,15 @@ export default function CalendarPage() {
   const [viewYear, setViewYear]   = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
-  const [calEvents, setCalEvents] = useState<CalendarEvent[]>([]);
-  const [tasks, setTasks]         = useState<Task[]>([]);
+  const [calEvents, setCalEvents]           = useState<CalendarEvent[]>([]);
+  const [tasks, setTasks]                   = useState<Task[]>([]);
+  const [interviewSlots, setInterviewSlots] = useState<InterviewSlot[]>([]);
+  const [interviewInvites, setInterviewInvites] = useState<InterviewInvite[]>([]);
+  const [grants, setGrants]                 = useState<Grant[]>([]);
 
-  const [modal, setModal]           = useState<"create" | "edit" | null>(null);
+  const [modal, setModal]               = useState<"create" | "edit" | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-  const [form, setForm]             = useState<EventForm>(BLANK_EVENT_FORM);
+  const [form, setForm]                 = useState<EventForm>(BLANK_EVENT_FORM);
 
   // Popup for viewing event details when a pill is clicked.
   const [popup, setPopup] = useState<{ event: DisplayEvent; pos: PopupPosition } | null>(null);
@@ -129,12 +132,15 @@ export default function CalendarPage() {
 
   const { ask, Dialog } = useConfirm();
 
-  // Subscribe to calendar events and tasks; unsubscribe on unmount.
+  // Subscribe to all data sources; unsubscribe on unmount.
   useEffect(() => {
-    const unsubscribeEvents = subscribeCalendarEvents(setCalEvents);
-    const unsubscribeTasks  = subscribeTasks(setTasks);
-    return () => { unsubscribeEvents(); unsubscribeTasks(); };
-  }, []);
+    const unsubEvents   = subscribeCalendarEvents(setCalEvents);
+    const unsubTasks    = subscribeTasks(setTasks);
+    const unsubGrants   = subscribeGrants(setGrants);
+    const unsubISlots   = authRole === "admin" ? subscribeInterviewSlots(setInterviewSlots) : () => {};
+    const unsubIInvites = authRole === "admin" ? subscribeInterviewInvites(setInterviewInvites) : () => {};
+    return () => { unsubEvents(); unsubTasks(); unsubGrants(); unsubISlots(); unsubIInvites(); };
+  }, [authRole]);
 
   // Close popup when clicking outside of it.
   useEffect(() => {
@@ -149,8 +155,15 @@ export default function CalendarPage() {
 
   // ── Build merged display events ───────────────────────────────────────────
 
-  // Combine calendar events and task due dates into one list for grid rendering.
+  // Map: invite id → invite (for looking up applicant name on booked slots)
+  const inviteMap: Record<string, InterviewInvite> = {};
+  for (const invite of interviewInvites) {
+    inviteMap[invite.id] = invite;
+  }
+
+  // Combine all event sources into one list for grid rendering.
   const displayEvents: DisplayEvent[] = [
+    // Calendar events (admin/leads can create)
     ...calEvents.map(ev => ({
       id:          ev.id,
       title:       ev.title,
@@ -161,8 +174,9 @@ export default function CalendarPage() {
       isTask:      false,
       calEvent:    ev,
     })),
+    // Task deadlines (everyone, exclude Done tasks)
     ...tasks
-      .filter(t => t.dueDate)
+      .filter(t => t.dueDate && t.status !== "Done")
       .map(t => ({
         id:          `task-${t.id}`,
         title:       t.name,
@@ -172,6 +186,36 @@ export default function CalendarPage() {
         description: `${t.assignedTo} · ${t.status}`,
         isTask:      true,
       })),
+    // Grant deadlines (everyone, upcoming statuses only)
+    ...grants
+      .filter(g => g.deadline && !["Awarded", "Rejected", "Cycle Closed"].includes(g.status))
+      .map(g => ({
+        id:          `grant-${g.id}`,
+        title:       `Grant: ${g.name}`,
+        color:       "#F59E0B",
+        dateStr:     g.deadline,
+        time:        undefined,
+        description: `${g.funder} · ${g.status}`,
+        isTask:      false,
+      })),
+    // Booked interview slots (admin-only)
+    ...(authRole === "admin" ? interviewSlots
+      .filter(s => !!s.bookedBy)
+      .map(s => {
+        const invite = s.bookedBy ? inviteMap[s.bookedBy] : undefined;
+        return {
+          id:          `interview-${s.id}`,
+          title:       `Interview: ${invite?.applicantName ?? "Applicant"}`,
+          color:       "#8B5CF6",
+          dateStr:     s.datetime.split("T")[0],
+          time:        formatTime(s.datetime),
+          description: invite
+            ? `${invite.role ?? ""} · ${invite.applicantEmail}`.trim().replace(/^·\s/, "")
+            : "",
+          isTask:      false,
+          isInterview: true,
+        };
+      }) : []),
   ];
 
   const eventsForDay = (dateStr: string): DisplayEvent[] =>
@@ -369,8 +413,16 @@ export default function CalendarPage() {
           <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />Task deadlines
         </span>
         <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Grant deadlines
+        </span>
+        <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events
         </span>
+        {authRole === "admin" && (
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />Interviews
+          </span>
+        )}
         {canEdit && <span className="italic">Click a day to add an event.</span>}
       </div>
 
@@ -402,9 +454,12 @@ export default function CalendarPage() {
             {popup.event.isTask && (
               <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-white/8 text-white/40">Task deadline</span>
             )}
+            {popup.event.isInterview && (
+              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6]">Interview</span>
+            )}
           </div>
 
-          {canEdit && !popup.event.isTask && popup.event.calEvent && (
+          {canEdit && !popup.event.isTask && !popup.event.isInterview && popup.event.calEvent && (
             <div className="flex gap-2 pt-2 border-t border-white/8">
               <Btn size="sm" variant="ghost" onClick={() => openEdit(popup.event.calEvent!)}>Edit</Btn>
               <Btn size="sm" variant="danger" onClick={() => handleDelete(popup.event.id)}>Delete</Btn>

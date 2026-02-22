@@ -38,14 +38,39 @@ function buildBookingUrl(token: string): string {
   return `${window.location.origin}/book/${token}`;
 }
 
+// ── GRID HELPERS ──────────────────────────────────────────────────────────────
+
+// Returns the 7 dates (Mon–Sun) for the week offset from today.
+function getWeekDates(weekOffset: number): Date[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dow = today.getDay(); // 0=Sun
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - dow + 1 + weekOffset * 7); // Start from Monday
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+// All 15-minute time slots from 08:00 to 19:45.
+const SLOT_TIMES: string[] = [];
+for (let h = 8; h < 20; h++) {
+  for (let m = 0; m < 60; m += 15) {
+    SLOT_TIMES.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+}
+
+// Format a Date as YYYY-MM-DD.
+function toDateString(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 // ── BLANK FORMS ───────────────────────────────────────────────────────────────
 
 const BLANK_INVITE_FORM = {
   applicantName: "", applicantEmail: "", role: "", note: "", expiryDays: "7",
-};
-
-const BLANK_SLOT_FORM = {
-  date: "", time: "10:00", durationMinutes: "30", location: "",
 };
 
 // ── INTERVIEWS CONTENT (inside AuthProvider via MembersLayout) ────────────────
@@ -66,8 +91,8 @@ function InterviewsContent() {
   const [newToken, setNewToken]               = useState<string | null>(null);
   const [linkCopied, setLinkCopied]           = useState(false);
 
-  const [showSlotModal, setShowSlotModal] = useState(false);
-  const [slotForm, setSlotForm]           = useState(BLANK_SLOT_FORM);
+  // Availability grid state
+  const [slotWeek, setSlotWeek] = useState(0);
 
   const { ask, Dialog } = useConfirm();
 
@@ -92,6 +117,17 @@ function InterviewsContent() {
       </div>
     );
   }
+
+  // ── Derived data ──────────────────────────────────────────────────────────
+
+  // Build a map keyed by first 16 chars of datetime ("YYYY-MM-DDTHH:MM") for O(1) lookup.
+  const slotMap: Record<string, InterviewSlot> = {};
+  for (const slot of slots) {
+    const key = slot.datetime.slice(0, 16);
+    slotMap[key] = slot;
+  }
+
+  const weekDates = getWeekDates(slotWeek);
 
   // ── Invite form handlers ──────────────────────────────────────────────────
 
@@ -126,24 +162,28 @@ function InterviewsContent() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  // ── Slot form handlers ────────────────────────────────────────────────────
+  // ── Grid slot toggle handler ──────────────────────────────────────────────
 
-  // Generic field updater for the slot form.
-  const setSlotField = (key: string, value: string) =>
-    setSlotForm(prev => ({ ...prev, [key]: value }));
-
-  const handleCreateSlot = async () => {
-    if (!slotForm.date || !slotForm.time) return;
-    await createInterviewSlot({
-      datetime:        `${slotForm.date}T${slotForm.time}:00`,
-      durationMinutes: parseInt(slotForm.durationMinutes) || 30,
-      location:        slotForm.location.trim(),
-      available:       true,
-      createdBy:       user?.uid ?? "",
-      createdAt:       Date.now(),
-    });
-    setShowSlotModal(false);
-    setSlotForm(BLANK_SLOT_FORM);
+  const toggleSlot = async (date: Date, timeStr: string) => {
+    const year  = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day   = String(date.getDate()).padStart(2, "0");
+    const dateStr  = `${year}-${month}-${day}`;
+    const datetime = `${dateStr}T${timeStr}:00`;
+    const key      = `${dateStr}T${timeStr}`;
+    const existing = slotMap[key];
+    if (existing) {
+      if (!existing.bookedBy) await deleteInterviewSlot(existing.id);
+    } else {
+      await createInterviewSlot({
+        datetime,
+        durationMinutes: 15,
+        available: true,
+        location: "",
+        createdBy: user?.uid ?? "",
+        createdAt: Date.now(),
+      });
+    }
   };
 
   // Sort invites newest-first; sort slots chronologically.
@@ -151,6 +191,8 @@ function InterviewsContent() {
   const sortedSlots   = [...slots].sort((a, b) =>
     new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
   );
+  // Only show upcoming slots in the summary list.
+  const upcomingSlots = sortedSlots.filter(s => new Date(s.datetime) >= new Date());
 
   const TABS: { key: typeof activeTab; label: string }[] = [
     { key: "invites", label: "Invite Links" },
@@ -167,10 +209,9 @@ function InterviewsContent() {
           <h1 className="font-display font-bold text-white text-2xl">Interviews</h1>
           <p className="text-white/40 text-sm mt-1 font-body">Manage invite links and available time slots.</p>
         </div>
-        {activeTab === "invites"
-          ? <Btn variant="primary" onClick={() => setShowInviteModal(true)}>+ New Invite</Btn>
-          : <Btn variant="primary" onClick={() => setShowSlotModal(true)}>+ Add Slot</Btn>
-        }
+        {activeTab === "invites" && (
+          <Btn variant="primary" onClick={() => setShowInviteModal(true)}>+ New Invite</Btn>
+        )}
       </div>
 
       {/* Tab switcher */}
@@ -242,37 +283,134 @@ function InterviewsContent() {
 
       {/* ── Availability tab ── */}
       {activeTab === "slots" && (
-        <div className="space-y-3">
-          {sortedSlots.length === 0 && (
-            <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-8 text-center text-white/30 text-sm font-body">
-              No time slots yet. Add slots so applicants can choose a time.
+        <div className="space-y-4">
+          {/* Week navigation */}
+          <div className="flex items-center gap-4 mb-4">
+            <button
+              onClick={() => setSlotWeek(w => Math.max(0, w - 1))}
+              disabled={slotWeek === 0}
+              className="px-3 py-1.5 rounded-lg bg-white/8 text-white/60 hover:text-white hover:bg-white/12 transition-colors text-sm disabled:opacity-30"
+            >← Prev</button>
+            <span className="text-white/60 text-sm font-body flex-1 text-center">
+              Week {slotWeek + 1} of 3
+            </span>
+            <button
+              onClick={() => setSlotWeek(w => Math.min(2, w + 1))}
+              disabled={slotWeek === 2}
+              className="px-3 py-1.5 rounded-lg bg-white/8 text-white/60 hover:text-white hover:bg-white/12 transition-colors text-sm disabled:opacity-30"
+            >Next →</button>
+          </div>
+
+          {/* Grid */}
+          <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-hidden">
+            {/* Header row: time label col + day columns */}
+            <div className="grid sticky top-0 bg-[#1C1F26] border-b border-white/8 z-10" style={{ gridTemplateColumns: "56px repeat(7, 1fr)" }}>
+              <div className="p-1" />
+              {weekDates.map((day, i) => {
+                const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                const isToday = toDateString(day) === toDateString(new Date());
+                return (
+                  <div key={i} className={`py-2 text-center text-xs font-medium font-body border-l border-white/6 ${isToday ? "text-[#85CC17]" : "text-white/40"}`}>
+                    <div>{dayNames[day.getDay()]}</div>
+                    <div className={`text-[10px] mt-0.5 ${isToday ? "text-[#85CC17]/70" : "text-white/25"}`}>
+                      {day.getMonth() + 1}/{day.getDate()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Scrollable time rows */}
+            <div className="max-h-[480px] overflow-y-auto">
+              {SLOT_TIMES.map(timeStr => {
+                const isHour = timeStr.endsWith(":00");
+                const hStr   = timeStr.split(":")[0];
+                const h      = parseInt(hStr);
+                const ampm   = h >= 12 ? "PM" : "AM";
+                const label  = isHour ? `${h % 12 || 12} ${ampm}` : "";
+
+                return (
+                  <div key={timeStr} className={`grid border-b border-white/4 ${isHour ? "border-white/8" : ""}`} style={{ gridTemplateColumns: "56px repeat(7, 1fr)" }}>
+                    {/* Time label */}
+                    <div className="flex items-center justify-end pr-2 py-0.5">
+                      {isHour && <span className="text-[10px] text-white/25 font-body whitespace-nowrap">{label}</span>}
+                    </div>
+                    {/* Day cells */}
+                    {weekDates.map((day, dayIdx) => {
+                      const year  = day.getFullYear();
+                      const month = String(day.getMonth() + 1).padStart(2, "0");
+                      const dayStr = String(day.getDate()).padStart(2, "0");
+                      const key   = `${year}-${month}-${dayStr}T${timeStr}`;
+                      const slot  = slotMap[key];
+                      const isPast = new Date(`${year}-${month}-${dayStr}T${timeStr}`) < new Date();
+                      const isBooked    = !!slot?.bookedBy;
+                      const isAvailable = !!slot && !isBooked;
+
+                      return (
+                        <button
+                          key={dayIdx}
+                          onClick={() => !isPast && !isBooked && toggleSlot(day, timeStr)}
+                          disabled={isPast || isBooked}
+                          className={`h-6 border-l border-white/4 transition-colors text-[9px] font-body
+                            ${isBooked
+                              ? "bg-blue-500/20 text-blue-400 cursor-default"
+                              : isAvailable
+                                ? "bg-[#85CC17]/20 hover:bg-[#85CC17]/30 cursor-pointer"
+                                : isPast
+                                  ? "opacity-30 cursor-default"
+                                  : "hover:bg-white/5 cursor-pointer"}
+                          `}
+                        >
+                          {isBooked ? "•" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex gap-4 text-xs text-white/40 font-body mt-3">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#85CC17]/20 border border-[#85CC17]/40" />Available</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-500/20 border border-blue-400/40" />Booked</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-white/5" />Click to add</span>
+          </div>
+
+          {/* Upcoming slots summary list */}
+          {upcomingSlots.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-white/50 text-xs font-body uppercase tracking-wider mb-3">Upcoming Slots</h3>
+              <div className="space-y-2">
+                {upcomingSlots.map(slot => (
+                  <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-5 py-3 flex items-center gap-4">
+                    {/* Status dot: green = available, blue = booked */}
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: slot.bookedBy ? "#60A5FA" : "#85CC17" }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium">{formatDateTime(slot.datetime)}</p>
+                      <p className="text-white/40 text-xs mt-0.5 font-body">
+                        {slot.durationMinutes} min
+                        {slot.location ? ` · ${slot.location}` : ""}
+                        {slot.bookedBy ? ` · Booked` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <Badge label={slot.bookedBy ? "Booked" : "Available"} />
+                      {!slot.bookedBy && (
+                        <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteInterviewSlot(slot.id))}>
+                          Remove
+                        </Btn>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-          {sortedSlots.map(slot => (
-            <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-5 py-4 flex items-center gap-4">
-              {/* Status dot: green = available, blue = booked, gray = unavailable */}
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: slot.available ? "#85CC17" : (slot.bookedBy ? "#60A5FA" : "#6B7280") }}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium">{formatDateTime(slot.datetime)}</p>
-                <p className="text-white/40 text-xs mt-0.5 font-body">
-                  {slot.durationMinutes} min
-                  {slot.location ? ` · ${slot.location}` : ""}
-                  {slot.bookedBy ? ` · Booked by invite ${slot.bookedBy.slice(0, 6)}…` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <Badge label={slot.bookedBy ? "Booked" : "Available"} />
-                {!slot.bookedBy && (
-                  <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteInterviewSlot(slot.id))}>
-                    Remove
-                  </Btn>
-                )}
-              </div>
-            </div>
-          ))}
         </div>
       )}
 
@@ -353,40 +491,6 @@ function InterviewsContent() {
         </div>
         <div className="flex justify-end mt-4 pt-4 border-t border-white/8">
           <Btn variant="ghost" onClick={() => { setNewToken(null); setShowInviteModal(false); }}>Done</Btn>
-        </div>
-      </Modal>
-
-      {/* ── Add Slot modal ── */}
-      <Modal open={showSlotModal} onClose={() => setShowSlotModal(false)} title="Add Time Slot">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Date" required>
-              <Input type="date" value={slotForm.date} onChange={e => setSlotField("date", e.target.value)} />
-            </Field>
-            <Field label="Time" required>
-              <Input type="time" value={slotForm.time} onChange={e => setSlotField("time", e.target.value)} />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Duration">
-              <Select
-                options={["15", "30", "45", "60", "90"]}
-                value={slotForm.durationMinutes}
-                onChange={e => setSlotField("durationMinutes", e.target.value)}
-              />
-            </Field>
-            <Field label="Location">
-              <Input
-                value={slotForm.location}
-                onChange={e => setSlotField("location", e.target.value)}
-                placeholder="Zoom / in-person / etc."
-              />
-            </Field>
-          </div>
-        </div>
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setShowSlotModal(false)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleCreateSlot}>Add Slot</Btn>
         </div>
       </Modal>
     </>
