@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
-  Table, Empty, StatCard, TagInput, useConfirm,
+  Empty, StatCard, TagInput, useConfirm,
 } from "@/components/members/ui";
 import {
   subscribeBusinesses, createBusiness, updateBusiness, deleteBusiness, type Business,
@@ -13,36 +13,46 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES   = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
-const SERVICES   = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
-const PRIORITIES = ["High", "Medium", "Low"];
-const LANGUAGES  = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
+const STATUSES         = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
+const DIVISIONS        = ["Tech", "Marketing", "Finance", "Operations"];
+const PROGRESS_OPTIONS = ["0%", "25%", "50%", "75%", "100%"];
+const SERVICES         = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
+const PRIORITIES       = ["High", "Medium", "Low"];
+const LANGUAGES        = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
 
-// Blank form values for creating a new business.
+const PROGRESS_TO_PERCENT: Record<string, number> = {
+  "0%": 0, "25%": 25, "50%": 50, "75%": 75, "100%": 100,
+};
+
+// Blank form for creating a new project/business entry.
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "", bidId: "", ownerName: "", ownerEmail: "", phone: "", address: "", website: "",
   businessType: "", activeServices: [], projectStatus: "Not Started", teamLead: "",
-  slackChannel: "", languages: [], priority: "Medium", firstContactDate: "", grantEligible: false, notes: "",
+  slackChannel: "", languages: [], priority: "Medium", firstContactDate: "",
+  grantEligible: false, notes: "",
+  // Project fields
+  division: "Tech", progress: "0%", teamMembers: [],
+  startDate: "", targetEndDate: "", actualEndDate: "",
+  week1Deliverable: "", finalDeliverable: "", driveFolderUrl: "", clientNotes: "",
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function BusinessesPage() {
-  const [businesses, setBusinesses]   = useState<Business[]>([]);
-  const [search, setSearch]           = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [modal, setModal]             = useState<"create" | "edit" | null>(null);
+  const [businesses, setBusinesses]         = useState<Business[]>([]);
+  const [search, setSearch]                 = useState("");
+  const [filterStatus, setFilterStatus]     = useState("");
+  const [filterDiv, setFilterDiv]           = useState("");
+  const [modal, setModal]                   = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
-  const [form, setForm]               = useState(BLANK_FORM);
+  const [form, setForm]                     = useState(BLANK_FORM);
 
   const { ask, Dialog } = useConfirm();
   const { authRole }    = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
 
-  // Subscribe to real-time business updates; unsubscribe on unmount.
   useEffect(() => subscribeBusinesses(setBusinesses), []);
 
-  // Generic field updater used by all form inputs.
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
@@ -52,28 +62,37 @@ export default function BusinessesPage() {
     setModal("create");
   };
 
-  const openEdit = (business: Business) => {
+  const openEdit = (b: Business) => {
     setForm({
-      name:             business.name,
-      bidId:            business.bidId,
-      ownerName:        business.ownerName,
-      ownerEmail:       business.ownerEmail,
-      phone:            business.phone,
-      address:          business.address,
-      website:          business.website,
-      businessType:     business.businessType,
-      // Guard against undefined: Firebase omits empty arrays when storing.
-      activeServices:   business.activeServices ?? [],
-      projectStatus:    business.projectStatus,
-      teamLead:         business.teamLead,
-      slackChannel:     business.slackChannel,
-      languages:        business.languages ?? [],
-      priority:         business.priority as Business["priority"],
-      firstContactDate: business.firstContactDate,
-      grantEligible:    business.grantEligible,
-      notes:            business.notes,
+      name:             b.name,
+      bidId:            b.bidId,
+      ownerName:        b.ownerName,
+      ownerEmail:       b.ownerEmail,
+      phone:            b.phone,
+      address:          b.address,
+      website:          b.website,
+      businessType:     b.businessType,
+      activeServices:   b.activeServices  ?? [],
+      projectStatus:    b.projectStatus,
+      teamLead:         b.teamLead,
+      slackChannel:     b.slackChannel,
+      languages:        b.languages       ?? [],
+      priority:         b.priority,
+      firstContactDate: b.firstContactDate,
+      grantEligible:    b.grantEligible,
+      notes:            b.notes,
+      division:         b.division        ?? "Tech",
+      progress:         b.progress        ?? "0%",
+      teamMembers:      b.teamMembers     ?? [],
+      startDate:        b.startDate       ?? "",
+      targetEndDate:    b.targetEndDate   ?? "",
+      actualEndDate:    b.actualEndDate   ?? "",
+      week1Deliverable: b.week1Deliverable ?? "",
+      finalDeliverable: b.finalDeliverable ?? "",
+      driveFolderUrl:   b.driveFolderUrl  ?? "",
+      clientNotes:      b.clientNotes     ?? "",
     });
-    setEditingBusiness(business);
+    setEditingBusiness(b);
     setModal("edit");
   };
 
@@ -87,15 +106,16 @@ export default function BusinessesPage() {
     setModal(null);
   };
 
-  // Filter by search text and/or status dropdown.
-  const filtered = businesses.filter((business) => {
-    const query = search.toLowerCase();
+  const filtered = businesses.filter(b => {
+    const q = search.toLowerCase();
     const matchesSearch = !search
-      || business.name.toLowerCase().includes(query)
-      || business.ownerName.toLowerCase().includes(query)
-      || business.businessType.toLowerCase().includes(query);
-    const matchesStatus = !filterStatus || business.projectStatus === filterStatus;
-    return matchesSearch && matchesStatus;
+      || b.name.toLowerCase().includes(q)
+      || b.ownerName.toLowerCase().includes(q)
+      || b.businessType.toLowerCase().includes(q)
+      || (b.teamLead ?? "").toLowerCase().includes(q);
+    const matchesStatus = !filterStatus || b.projectStatus === filterStatus;
+    const matchesDiv    = !filterDiv    || b.division === filterDiv;
+    return matchesSearch && matchesStatus && matchesDiv;
   });
 
   return (
@@ -103,74 +123,105 @@ export default function BusinessesPage() {
       <Dialog />
 
       <PageHeader
-        title="Business Directory"
-        subtitle={`${businesses.length} businesses · ${businesses.filter(b => b.projectStatus === "Active").length} active`}
-        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Business</Btn> : undefined}
+        title="Projects"
+        subtitle={`${businesses.length} projects · ${businesses.filter(b => b.projectStatus === "Active").length} active`}
+        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Project</Btn> : undefined}
       />
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatCard label="Total" value={businesses.length} />
-        <StatCard label="Active" value={businesses.filter(b => b.projectStatus === "Active").length} color="text-green-400" />
+      <div className="grid grid-cols-4 gap-3 mb-5">
+        <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length} color="text-green-400" />
+        <StatCard label="Planning"  value={businesses.filter(b => b.projectStatus === "Not Started" || b.projectStatus === "Discovery").length} color="text-purple-400" />
+        <StatCard label="Complete"  value={businesses.filter(b => b.projectStatus === "Complete").length} color="text-blue-400" />
         <StatCard label="Grant Eligible" value={businesses.filter(b => b.grantEligible).length} color="text-yellow-400" />
       </div>
 
-      {/* Search and filter controls */}
+      {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search businesses, owners…" />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search projects, owners, leads…" />
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
+          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-8 py-2.5 text-sm text-white/70 focus:outline-none"
         >
           <option value="">All statuses</option>
           {STATUSES.map(s => <option key={s}>{s}</option>)}
         </select>
+        <select
+          value={filterDiv}
+          onChange={e => setFilterDiv(e.target.value)}
+          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-8 py-2.5 text-sm text-white/70 focus:outline-none"
+        >
+          <option value="">All divisions</option>
+          {DIVISIONS.map(d => <option key={d}>{d}</option>)}
+        </select>
       </div>
 
-      {/* Business list */}
-      <Table
-        cols={["Business", "Type", "Owner", "Status", "Services", "Team Lead", "Actions"]}
-        rows={filtered.map(business => {
-          // Guard: activeServices may be undefined if Firebase omitted the empty array.
-          const services = business.activeServices ?? [];
-          return [
-            <div key="name">
-              <p className="text-white font-medium">{business.name}</p>
-              <p className="text-white/30 text-xs">{business.slackChannel && `#${business.slackChannel}`}</p>
-            </div>,
-            <span key="type" className="text-white/50">{business.businessType || "—"}</span>,
-            <div key="owner">
-              <p className="text-white/70 text-sm">{business.ownerName || "—"}</p>
-              <p className="text-white/30 text-xs">{business.ownerEmail}</p>
-            </div>,
-            <Badge key="status" label={business.projectStatus} />,
-            <div key="services" className="flex flex-wrap gap-1">
-              {services.slice(0, 2).map(service => (
-                <span key={service} className="text-xs bg-white/8 text-white/50 px-2 py-0.5 rounded-full">{service}</span>
-              ))}
-              {services.length > 2 && (
-                <span className="text-xs text-white/30">+{services.length - 2}</span>
+      {/* Project cards */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {filtered.map(b => {
+          const progress = b.progress ?? "0%";
+          const pct      = PROGRESS_TO_PERCENT[progress] ?? 0;
+          return (
+            <div key={b.id} className="bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1 min-w-0 mr-2">
+                  <p className="text-white font-bold text-base leading-tight">{b.name}</p>
+                  <p className="text-white/40 text-xs mt-0.5">
+                    {b.businessType || "—"}{b.division ? ` · ${b.division}` : ""}
+                  </p>
+                </div>
+                <Badge label={b.projectStatus} />
+              </div>
+
+              {/* Owner */}
+              {b.ownerName && (
+                <p className="text-white/50 text-xs mb-2">{b.ownerName}</p>
               )}
-            </div>,
-            <span key="lead" className="text-white/50">{business.teamLead || "—"}</span>,
-            <div key="actions" className="flex gap-2">
-              {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(business)}>Edit</Btn>}
-              {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteBusiness(business.id))}>Del</Btn>}
-            </div>,
-          ];
+
+              {/* Progress bar */}
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-white/30 mb-1">
+                  <span>Progress</span>
+                  <span>{progress}</span>
+                </div>
+                <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#85CC17] rounded-full" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-white/30 mb-3">
+                <span>Lead: {b.teamLead || "—"}</span>
+                {b.targetEndDate && <span>Due {b.targetEndDate}</span>}
+              </div>
+
+              {canEdit && (
+                <div className="flex gap-2 mt-auto pt-3 border-t border-white/5">
+                  <Btn size="sm" variant="ghost" className="flex-1 justify-center" onClick={() => openEdit(b)}>Edit</Btn>
+                  <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteBusiness(b.id))}>Del</Btn>
+                </div>
+              )}
+            </div>
+          );
         })}
-      />
-      {filtered.length === 0 && (
-        <Empty
-          message="No businesses."
-          action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first business</Btn> : undefined}
-        />
-      )}
+        {filtered.length === 0 && (
+          <div className="col-span-3">
+            <Empty
+              message="No projects found."
+              action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first project</Btn> : undefined}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Create / Edit modal */}
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Business" : "New Business"}>
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>
         <div className="grid grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2">
+
+          {/* ── Business info ── */}
+          <div className="col-span-2">
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Business Info</p>
+          </div>
           <Field label="Business Name" required>
             <Input value={form.name} onChange={e => setField("name", e.target.value)} />
           </Field>
@@ -189,29 +240,12 @@ export default function BusinessesPage() {
           <Field label="Website">
             <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
           </Field>
-          <Field label="Project Status">
-            <Select options={STATUSES} value={form.projectStatus} onChange={e => setField("projectStatus", e.target.value)} />
-          </Field>
-          <Field label="Priority">
-            <Select options={PRIORITIES} value={form.priority} onChange={e => setField("priority", e.target.value)} />
-          </Field>
-          <Field label="Team Lead">
-            <Input value={form.teamLead} onChange={e => setField("teamLead", e.target.value)} />
-          </Field>
-          <Field label="Slack Channel">
-            <Input value={form.slackChannel} onChange={e => setField("slackChannel", e.target.value)} placeholder="#channel" />
-          </Field>
           <Field label="First Contact">
             <Input type="date" value={form.firstContactDate} onChange={e => setField("firstContactDate", e.target.value)} />
           </Field>
           <Field label="Grant Eligible">
             <div className="flex items-center gap-2 mt-2">
-              <input
-                type="checkbox"
-                checked={form.grantEligible}
-                onChange={e => setField("grantEligible", e.target.checked)}
-                className="accent-[#85CC17] w-4 h-4"
-              />
+              <input type="checkbox" checked={form.grantEligible} onChange={e => setField("grantEligible", e.target.checked)} className="accent-[#85CC17] w-4 h-4" />
               <span className="text-sm text-white/60">Yes</span>
             </div>
           </Field>
@@ -230,8 +264,57 @@ export default function BusinessesPage() {
               <TagInput values={form.languages} onChange={v => setField("languages", v)} options={LANGUAGES} />
             </Field>
           </div>
+
+          {/* ── Project info ── */}
+          <div className="col-span-2 mt-2">
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Project Info</p>
+          </div>
+          <Field label="Status">
+            <Select options={STATUSES} value={form.projectStatus} onChange={e => setField("projectStatus", e.target.value)} />
+          </Field>
+          <Field label="Division">
+            <Select options={DIVISIONS} value={form.division ?? "Tech"} onChange={e => setField("division", e.target.value)} />
+          </Field>
+          <Field label="Progress">
+            <Select options={PROGRESS_OPTIONS} value={form.progress ?? "0%"} onChange={e => setField("progress", e.target.value)} />
+          </Field>
+          <Field label="Priority">
+            <Select options={PRIORITIES} value={form.priority} onChange={e => setField("priority", e.target.value)} />
+          </Field>
+          <Field label="Team Lead">
+            <Input value={form.teamLead} onChange={e => setField("teamLead", e.target.value)} />
+          </Field>
+          <Field label="Slack Channel">
+            <Input value={form.slackChannel} onChange={e => setField("slackChannel", e.target.value)} placeholder="#channel" />
+          </Field>
+          <Field label="Start Date">
+            <Input type="date" value={form.startDate ?? ""} onChange={e => setField("startDate", e.target.value)} />
+          </Field>
+          <Field label="Target End Date">
+            <Input type="date" value={form.targetEndDate ?? ""} onChange={e => setField("targetEndDate", e.target.value)} />
+          </Field>
           <div className="col-span-2">
-            <Field label="Notes">
+            <Field label="Drive Folder URL">
+              <Input value={form.driveFolderUrl ?? ""} onChange={e => setField("driveFolderUrl", e.target.value)} placeholder="https://drive.google.com/…" />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Team Members">
+              <TagInput values={form.teamMembers ?? []} onChange={v => setField("teamMembers", v)} options={[]} />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Week 1 Deliverable">
+              <Input value={form.week1Deliverable ?? ""} onChange={e => setField("week1Deliverable", e.target.value)} />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Final Deliverable">
+              <TextArea rows={2} value={form.finalDeliverable ?? ""} onChange={e => setField("finalDeliverable", e.target.value)} />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Notes / Client Notes">
               <TextArea rows={3} value={form.notes} onChange={e => setField("notes", e.target.value)} />
             </Field>
           </div>
