@@ -36,7 +36,6 @@ export default function SignupPage() {
     try {
       const invite = await getInviteCodeByValue(normalizedCode);
       if (!invite)                                   { setError("Invalid invite code."); setLoading(false); return; }
-      if (invite.used)                               { setError("This invite code has already been used."); setLoading(false); return; }
       if (new Date(invite.expiresAt) < new Date())   { setError("This invite code has expired."); setLoading(false); return; }
       inviteRole = invite.role;
     } catch {

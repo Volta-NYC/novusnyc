@@ -88,7 +88,7 @@ function AccessCodesTab({ uid }: { uid: string }) {
           </Field>
           <Field label="Expires in">
             <Select
-              options={["3", "7", "14", "30"]}
+              options={["1", "3", "7", "14", "30"]}
               value={expireDays}
               onChange={e => setExpireDays(e.target.value)}
             />
