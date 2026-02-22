@@ -91,7 +91,7 @@ function fmtHour(h: number): string {
 // ── BLANK FORMS ───────────────────────────────────────────────────────────────
 
 const BLANK_INVITE_FORM = {
-  applicantName: "", applicantEmail: "", role: "", note: "", expiryDays: "7", multiUse: false,
+  applicantName: "", applicantEmail: "", note: "", expiryDays: "7", multiUse: false,
 };
 
 // ── INTERVIEWS CONTENT (inside AuthProvider via MembersLayout) ────────────────
@@ -162,17 +162,23 @@ function InterviewsContent() {
     if (!inviteForm.multiUse && (!inviteForm.applicantName.trim() || !inviteForm.applicantEmail.trim())) return;
     const token     = generateToken();
     const expiresAt = Date.now() + parseInt(inviteForm.expiryDays) * 86400000;
-    await createInterviewInvite(token, {
-      applicantName:  inviteForm.multiUse ? undefined : inviteForm.applicantName.trim(),
-      applicantEmail: inviteForm.multiUse ? undefined : inviteForm.applicantEmail.trim(),
-      role:           inviteForm.role.trim(),
-      note:           inviteForm.note.trim(),
-      multiUse:       inviteForm.multiUse,
+
+    // Build data without undefined values — Firebase rejects undefined fields.
+    const inviteData: Omit<import("@/lib/members/storage").InterviewInvite, "id"> = {
+      role:      "",
+      note:      inviteForm.note.trim(),
+      multiUse:  inviteForm.multiUse,
       expiresAt,
-      status:         "pending",
-      createdBy:      user?.uid ?? "",
-      createdAt:      Date.now(),
-    });
+      status:    "pending",
+      createdBy: user?.uid ?? "",
+      createdAt: Date.now(),
+    };
+    if (!inviteForm.multiUse) {
+      inviteData.applicantName  = inviteForm.applicantName.trim();
+      inviteData.applicantEmail = inviteForm.applicantEmail.trim();
+    }
+
+    await createInterviewInvite(token, inviteData);
     setNewToken(token);
     setInviteForm(BLANK_INVITE_FORM);
   };
@@ -388,7 +394,6 @@ function InterviewsContent() {
                   ) : (
                     <p className="text-white font-medium text-sm">{invite.applicantName}</p>
                   )}
-                  {invite.role && <span className="text-white/40 text-xs">{invite.role}</span>}
                   <span className={`text-xs font-medium ${inviteStatusColor(invite.status)}`}>
                     {invite.status.charAt(0).toUpperCase() + invite.status.slice(1)}
                   </span>
@@ -730,13 +735,6 @@ function InterviewsContent() {
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Role / Position">
-              <Input
-                value={inviteForm.role}
-                onChange={e => setInviteField("role", e.target.value)}
-                placeholder="e.g. Tech Consultant"
-              />
-            </Field>
             <Field label="Link expires in">
               <Select
                 options={["1", "3", "7", "14", "30"]}
