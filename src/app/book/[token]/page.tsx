@@ -1,46 +1,161 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { isValidToken } from "@/lib/interviews";
 import type { InterviewInvite, InterviewSlot } from "@/lib/members/storage";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── ICS download ──────────────────────────────────────────────────────────────
 
-function formatDayHeader(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+function downloadICS(slot: InterviewSlot, zoomLink: string) {
+  const start = new Date(slot.datetime);
+  const end   = new Date(start.getTime() + (slot.durationMinutes ?? 30) * 60000);
+  const fmt   = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Volta NYC//Interview//EN",
+    "BEGIN:VEVENT",
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    "SUMMARY:Interview — Volta NYC",
+  ];
+
+  const descParts: string[] = [];
+  if (zoomLink) descParts.push(`Join Zoom: ${zoomLink}`);
+  descParts.push("Organized by Volta NYC");
+  lines.push(`DESCRIPTION:${descParts.join("\\n")}`);
+
+  if (slot.location) lines.push(`LOCATION:${slot.location}`);
+  if (zoomLink)      lines.push(`URL:${zoomLink}`);
+
+  lines.push(
+    `DTSTAMP:${fmt(new Date())}`,
+    `UID:volta-${slot.id}@voltanyc.org`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  );
+
+  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = "volta-nyc-interview.ics";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const h = d.getHours();
-  const m = String(d.getMinutes()).padStart(2, "0");
-  const ampm = h >= 12 ? "PM" : "AM";
-  return `${h % 12 || 12}:${m} ${ampm}`;
+// ── Format helpers ────────────────────────────────────────────────────────────
+
+function formatDrumDate(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric",
+  });
+}
+
+function formatDrumTime(isoDatetime: string): string {
+  const d    = new Date(isoDatetime);
+  const h    = d.getHours();
+  const mins = String(d.getMinutes()).padStart(2, "0");
+  return `${h % 12 || 12}:${mins} ${h >= 12 ? "PM" : "AM"}`;
 }
 
 function formatConfirmed(iso: string): string {
-  const d = new Date(iso);
-  const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const months = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"];
-  const h = d.getHours();
-  const m = String(d.getMinutes()).padStart(2, "0");
-  const ampm = h >= 12 ? "PM" : "AM";
-  return `${weekdays[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()} · ${h % 12 || 12}:${m} ${ampm}`;
+  const d    = new Date(iso);
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const mos  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const h    = d.getHours();
+  const mins = String(d.getMinutes()).padStart(2, "0");
+  return `${days[d.getDay()]}, ${mos[d.getMonth()]} ${d.getDate()} · ${h % 12 || 12}:${mins} ${h >= 12 ? "PM" : "AM"}`;
 }
 
-// Groups a sorted slot array into [[dayLabel, [slots]], ...] preserving order.
-function groupByDay(slots: InterviewSlot[]): [string, InterviewSlot[]][] {
-  const order: string[] = [];
-  const map: Record<string, InterviewSlot[]> = {};
-  for (const slot of slots) {
-    const key = formatDayHeader(slot.datetime);
-    if (!map[key]) { map[key] = []; order.push(key); }
-    map[key].push(slot);
-  }
-  return order.map(k => [k, map[k]]);
+// ── Drum picker ───────────────────────────────────────────────────────────────
+
+const ITEM_H = 46;
+
+function DrumPicker({
+  items,
+  selectedIdx,
+  onSelect,
+}: {
+  items: string[];
+  selectedIdx: number;
+  onSelect: (idx: number) => void;
+}) {
+  const listRef    = useRef<HTMLDivElement>(null);
+  const pgRef      = useRef(false); // true while we're programmatically scrolling
+  const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scrollTo = useCallback((idx: number, smooth = false) => {
+    if (!listRef.current) return;
+    pgRef.current = true;
+    listRef.current.scrollTo({ top: idx * ITEM_H, behavior: smooth ? "smooth" : "instant" });
+    setTimeout(() => { pgRef.current = false; }, 350);
+  }, []);
+
+  // Scroll to selection whenever it changes (also fires on initial mount)
+  useEffect(() => {
+    scrollTo(Math.max(0, selectedIdx));
+  }, [selectedIdx, items, scrollTo]);
+
+  const handleScroll = () => {
+    if (pgRef.current) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      if (!listRef.current) return;
+      const idx     = Math.round(listRef.current.scrollTop / ITEM_H);
+      const clamped = Math.max(0, Math.min(items.length - 1, idx));
+      scrollTo(clamped, true);
+      onSelect(clamped);
+    }, 130);
+  };
+
+  return (
+    <div className="relative flex-1 overflow-hidden" style={{ height: ITEM_H * 5 }}>
+
+      {/* Selection band */}
+      <div
+        className="absolute inset-x-2 pointer-events-none z-10 rounded-xl bg-white/6 border-y border-white/12"
+        style={{ top: ITEM_H * 2, height: ITEM_H }}
+      />
+
+      {/* Top & bottom fade */}
+      <div
+        className="absolute inset-x-0 top-0 pointer-events-none z-20"
+        style={{ height: ITEM_H * 2.4, background: "linear-gradient(to bottom, #1C1F26 45%, transparent)" }}
+      />
+      <div
+        className="absolute inset-x-0 bottom-0 pointer-events-none z-20"
+        style={{ height: ITEM_H * 2.4, background: "linear-gradient(to top, #1C1F26 45%, transparent)" }}
+      />
+
+      {/* Scrollable column */}
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="h-full overflow-y-scroll"
+        style={{ scrollSnapType: "y mandatory", scrollbarWidth: "none" } as React.CSSProperties}
+      >
+        <div style={{ height: ITEM_H * 2 }} />
+        {items.map((label, i) => (
+          <div
+            key={i}
+            style={{ height: ITEM_H, scrollSnapAlign: "center" }}
+            onClick={() => { scrollTo(i, true); onSelect(i); }}
+            className={`flex items-center justify-center px-2 text-sm font-body select-none cursor-pointer transition-colors
+              ${i === selectedIdx ? "text-white font-semibold" : "text-white/28"}`}
+          >
+            {label}
+          </div>
+        ))}
+        <div style={{ height: ITEM_H * 2 }} />
+      </div>
+    </div>
+  );
 }
 
 // ── Page states ───────────────────────────────────────────────────────────────
@@ -51,32 +166,53 @@ type PageState = "loading" | "invalid" | "expired" | "already_booked" | "enter_i
 
 export default function BookPage() {
   const params = useParams();
-  const token = typeof params.token === "string" ? params.token : "";
+  const token  = typeof params.token === "string" ? params.token : "";
 
-  const [state, setState] = useState<PageState>("loading");
-  const [invite, setInvite] = useState<InterviewInvite | null>(null);
-  const [slots, setSlots] = useState<InterviewSlot[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<InterviewSlot | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [state, setState]               = useState<PageState>("loading");
+  const [invite, setInvite]             = useState<InterviewInvite | null>(null);
+  const [slots, setSlots]               = useState<InterviewSlot[]>([]);
+  const [zoomLink, setZoomLink]         = useState("");
+  const [submitting, setSubmitting]     = useState(false);
   const [confirmedSlot, setConfirmedSlot] = useState<InterviewSlot | null>(null);
 
-  // Name + email collected from visitor (multi-use links).
+  // Drum picker selections
+  const [selectedDate, setSelectedDate] = useState("");  // YYYY-MM-DD
+  const [selectedTime, setSelectedTime] = useState("");  // full ISO datetime
+
+  // Multi-use invite info
   const [bookerName, setBookerName]   = useState("");
   const [bookerEmail, setBookerEmail] = useState("");
   const [infoError, setInfoError]     = useState("");
 
-  // ── Load invite + slots via API ───────────────────────────────────────────
+  // ── Derived slot data ───────────────────────────────────────────────────────
+
+  const dateSlotMap = useMemo(() => {
+    const map: Record<string, InterviewSlot[]> = {};
+    for (const s of slots) {
+      const day = s.datetime.slice(0, 10);
+      if (!map[day]) map[day] = [];
+      map[day].push(s);
+    }
+    return map;
+  }, [slots]);
+
+  const sortedDates   = useMemo(() => Object.keys(dateSlotMap).sort(), [dateSlotMap]);
+  const timesForDate  = dateSlotMap[selectedDate] ?? [];
+  const selectedSlot  = timesForDate.find(s => s.datetime === selectedTime) ?? null;
+
+  // ── Load invite + slots ─────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!token || !isValidToken(token)) { setState("invalid"); return; }
 
     (async () => {
       try {
-        const res = await fetch(`/api/booking/${token}`);
+        const res  = await fetch(`/api/booking/${token}`);
         const data = await res.json() as {
           error?: string;
           invite?: InterviewInvite;
           slots?: InterviewSlot[];
+          zoomLink?: string;
         };
 
         if (!res.ok) {
@@ -86,9 +222,17 @@ export default function BookPage() {
           setState("error"); return;
         }
 
-        const inv = data.invite!;
+        const inv    = data.invite!;
+        const loaded = data.slots ?? [];
         setInvite(inv);
-        setSlots(data.slots ?? []);
+        setSlots(loaded);
+        setZoomLink(data.zoomLink ?? "");
+
+        if (loaded.length > 0) {
+          setSelectedDate(loaded[0].datetime.slice(0, 10));
+          setSelectedTime(loaded[0].datetime);
+        }
+
         setState(inv.multiUse ? "enter_info" : "choose_slot");
       } catch (err) {
         console.error("Booking page load error:", err);
@@ -97,7 +241,7 @@ export default function BookPage() {
     })();
   }, [token]);
 
-  // ── Proceed from info form to slot selection ──────────────────────────────
+  // ── Info form → slot picker ─────────────────────────────────────────────────
 
   const handleInfoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +251,7 @@ export default function BookPage() {
     setState("choose_slot");
   };
 
-  // ── Book the selected slot via API ────────────────────────────────────────
+  // ── Book selected slot ──────────────────────────────────────────────────────
 
   const handleBook = async () => {
     if (!selectedSlot || !invite) return;
@@ -123,7 +267,6 @@ export default function BookPage() {
       });
 
       if (!res.ok) { setState("error"); return; }
-
       setConfirmedSlot(selectedSlot);
       setState("confirmed");
     } catch (err) {
@@ -134,10 +277,9 @@ export default function BookPage() {
     }
   };
 
-  const displayName  = invite?.multiUse ? bookerName  : (invite?.applicantName  ?? "");
-  const displayEmail = invite?.multiUse ? bookerEmail : (invite?.applicantEmail ?? "");
+  const displayName = invite?.multiUse ? bookerName : (invite?.applicantName ?? "");
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-[#0F1014] flex items-center justify-center p-4">
@@ -256,7 +398,7 @@ export default function BookPage() {
           </div>
         )}
 
-        {/* Choose a slot — calendar grouped by day */}
+        {/* Choose a slot — drum pickers */}
         {state === "choose_slot" && invite && (
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl overflow-hidden">
             <div className="px-6 py-5 border-b border-white/8">
@@ -268,66 +410,76 @@ export default function BookPage() {
               </p>
             </div>
 
-            <div className="px-6 py-5 max-h-[55vh] overflow-y-auto">
-              {slots.length === 0 ? (
-                <div className="text-center py-6 space-y-2">
-                  <p className="text-white/40 text-sm font-body">No available times right now.</p>
-                  <p className="text-white/25 text-xs font-body">Please contact Volta NYC to arrange a time.</p>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  {groupByDay(slots).map(([day, daySlots]) => (
-                    <div key={day}>
-                      <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-2">{day}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {daySlots.map(slot => (
-                          <button
-                            key={slot.id}
-                            onClick={() => setSelectedSlot(selectedSlot?.id === slot.id ? null : slot)}
-                            className={`px-3.5 py-2 rounded-lg border text-sm font-body transition-all flex items-center gap-1.5
-                              ${selectedSlot?.id === slot.id
-                                ? "bg-[#85CC17]/15 border-[#85CC17]/60 text-white"
-                                : "bg-white/4 border-white/10 text-white/70 hover:bg-white/8 hover:border-white/20"
-                              }`}
-                          >
-                            {selectedSlot?.id === slot.id && (
-                              <svg className="w-3 h-3 text-[#85CC17] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                <polyline points="20 6 9 17 4 12"/>
-                              </svg>
-                            )}
-                            <span>{formatTime(slot.datetime)}</span>
-                            <span className="text-xs text-white/30">{slot.durationMinutes}m</span>
-                          </button>
-                        ))}
-                      </div>
-                      {daySlots[0]?.location && (
-                        <p className="text-white/25 text-xs mt-1.5">{daySlots[0].location}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {slots.length > 0 && (
-              <div className="px-6 pb-6 pt-2 border-t border-white/8 mt-2">
-                <button
-                  onClick={handleBook}
-                  disabled={!selectedSlot || submitting}
-                  className={`w-full py-3 rounded-xl font-display font-bold text-sm transition-all
-                    ${selectedSlot && !submitting
-                      ? "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
-                      : "bg-white/8 text-white/25 cursor-not-allowed"
-                    }`}
-                >
-                  {submitting ? "Booking…" : selectedSlot ? `Confirm ${formatTime(selectedSlot.datetime)}` : "Select a time above"}
-                </button>
-                {displayEmail && (
-                  <p className="text-white/25 text-xs text-center mt-2 font-body">
-                    Confirmation will be sent to {displayEmail}
-                  </p>
-                )}
+            {slots.length === 0 ? (
+              <div className="text-center py-10 px-6 space-y-2">
+                <p className="text-white/40 text-sm font-body">No available times right now.</p>
+                <p className="text-white/25 text-xs font-body">Please contact Volta NYC to arrange a time.</p>
               </div>
+            ) : (
+              <>
+                {/* Column labels */}
+                <div className="flex px-4 pt-5 pb-1 gap-px">
+                  <p className="flex-1 text-center text-[10px] font-semibold text-white/30 uppercase tracking-widest">Date</p>
+                  <p className="flex-1 text-center text-[10px] font-semibold text-white/30 uppercase tracking-widest">Time</p>
+                </div>
+
+                {/* Drum pickers */}
+                <div className="flex px-2 gap-px">
+                  {/* Date drum */}
+                  <DrumPicker
+                    items={sortedDates.map(formatDrumDate)}
+                    selectedIdx={Math.max(0, sortedDates.indexOf(selectedDate))}
+                    onSelect={idx => {
+                      const newDate  = sortedDates[idx];
+                      const newSlots = dateSlotMap[newDate] ?? [];
+                      setSelectedDate(newDate);
+                      setSelectedTime(newSlots[0]?.datetime ?? "");
+                    }}
+                  />
+
+                  {/* Divider */}
+                  <div className="w-px bg-white/6 self-stretch my-4" />
+
+                  {/* Time drum */}
+                  <DrumPicker
+                    items={timesForDate.map(s => formatDrumTime(s.datetime))}
+                    selectedIdx={Math.max(0, timesForDate.findIndex(s => s.datetime === selectedTime))}
+                    onSelect={idx => {
+                      const slot = timesForDate[idx];
+                      if (slot) setSelectedTime(slot.datetime);
+                    }}
+                  />
+                </div>
+
+                {/* Duration / location hint */}
+                <div className="flex justify-center pb-2">
+                  {selectedSlot && (
+                    <p className="text-white/25 text-xs font-body">
+                      {selectedSlot.durationMinutes} min
+                      {selectedSlot.location ? ` · ${selectedSlot.location}` : ""}
+                    </p>
+                  )}
+                </div>
+
+                {/* Confirm button */}
+                <div className="px-6 pb-6 pt-2 border-t border-white/6">
+                  <button
+                    onClick={handleBook}
+                    disabled={!selectedSlot || submitting}
+                    className={`w-full py-3 rounded-xl font-display font-bold text-sm transition-all
+                      ${selectedSlot && !submitting
+                        ? "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+                        : "bg-white/8 text-white/25 cursor-not-allowed"
+                      }`}
+                  >
+                    {submitting
+                      ? "Booking…"
+                      : selectedSlot
+                        ? `Confirm · ${formatDrumDate(selectedDate)}, ${formatDrumTime(selectedSlot.datetime)}`
+                        : "Select a time above"}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -335,7 +487,7 @@ export default function BookPage() {
         {/* Confirmed */}
         {state === "confirmed" && confirmedSlot && (
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl overflow-hidden">
-            <div className="px-6 pt-8 pb-6 text-center space-y-4">
+            <div className="px-6 pt-8 pb-5 text-center space-y-3">
               <div className="w-16 h-16 rounded-full bg-[#85CC17]/15 flex items-center justify-center mx-auto">
                 <svg className="w-8 h-8 text-[#85CC17]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="20 6 9 17 4 12"/>
@@ -347,7 +499,8 @@ export default function BookPage() {
               </div>
             </div>
 
-            <div className="mx-6 mb-6 bg-[#0F1014] border border-white/10 rounded-xl p-4 space-y-2.5">
+            {/* Details */}
+            <div className="mx-6 mb-5 bg-[#0F1014] border border-white/10 rounded-xl p-4 space-y-2.5">
               <div className="flex items-center gap-2.5 text-sm">
                 <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
@@ -368,13 +521,36 @@ export default function BookPage() {
                   <span className="text-white/70">{confirmedSlot.location}</span>
                 </div>
               )}
-              {displayEmail && (
-                <div className="flex items-center gap-2.5 text-sm">
-                  <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </div>
+
+            {/* Action buttons */}
+            <div className="px-6 pb-5 space-y-2.5">
+              {/* Add to Calendar → downloads .ics */}
+              <button
+                onClick={() => downloadICS(confirmedSlot, zoomLink)}
+                className="w-full py-3 rounded-xl bg-white/6 border border-white/10 text-white font-display font-bold text-sm hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  <line x1="12" y1="15" x2="12" y2="19"/><line x1="10" y1="17" x2="14" y2="17"/>
+                </svg>
+                Add to Calendar
+              </button>
+
+              {/* Zoom link */}
+              {zoomLink && (
+                <a
+                  href={zoomLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 rounded-xl bg-[#2D8CFF]/12 border border-[#2D8CFF]/25 text-[#6DB8FF] font-display font-bold text-sm hover:bg-[#2D8CFF]/20 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
                   </svg>
-                  <span className="text-white/70">Confirmation sent to {displayEmail}</span>
-                </div>
+                  Join Zoom Meeting
+                </a>
               )}
             </div>
 
