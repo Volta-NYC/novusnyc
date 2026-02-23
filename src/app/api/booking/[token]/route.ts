@@ -5,10 +5,13 @@
 //   1. Firebase Admin SDK (if FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY are set in Vercel)
 //   2. Firebase REST API (requires Firebase rules to allow public reads — see CLAUDE.md)
 //
-// Email sending requires: RESEND_API_KEY in Vercel env vars (get a free key at resend.com).
-// Zoom link:  set INTERVIEW_ZOOM_LINK env var to your Zoom URL.
-// From email: set INTERVIEW_FROM_EMAIL (e.g. "Volta NYC <noreply@voltanyc.org>").
-//             Your domain must be verified in Resend, or use "onboarding@resend.dev" for testing.
+// Email sending — set ONE of these in Vercel env vars:
+//   SENDGRID_API_KEY  →  sendgrid.com (free 100/day; verify a single Gmail as sender — no domain needed)
+//   RESEND_API_KEY    →  resend.com   (free 3k/mo;  requires verified domain)
+//
+// INTERVIEW_FROM_EMAIL  →  The "From" address (must be verified in whichever service you use)
+//                          e.g. "Volta NYC <yourname@gmail.com>"  for SendGrid single-sender
+// INTERVIEW_ZOOM_LINK   →  Your recurring Zoom URL (shown as a button in the email)
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDB } from "@/lib/firebaseAdmin";
@@ -48,8 +51,9 @@ async function dbPatch(path: string, data: Record<string, unknown>): Promise<voi
   if (!res.ok) throw new Error("db_write_failed");
 }
 
-// ── Email confirmation — uses Resend API (no npm install needed) ──────────────
-// Only sends if RESEND_API_KEY is configured. Silent no-op otherwise.
+// ── Email confirmation ─────────────────────────────────────────────────────────
+// Supports SendGrid (SENDGRID_API_KEY) or Resend (RESEND_API_KEY).
+// If neither key is set, skips silently — booking still succeeds.
 
 async function sendConfirmationEmail(
   toEmail: string,
@@ -58,10 +62,11 @@ async function sendConfirmationEmail(
   durationMinutes: number,
   location: string,
 ): Promise<void> {
-  const apiKey   = process.env.RESEND_API_KEY;
-  if (!apiKey || !toEmail) return;
+  const sendgridKey = process.env.SENDGRID_API_KEY;
+  const resendKey   = process.env.RESEND_API_KEY;
+  if ((!sendgridKey && !resendKey) || !toEmail) return;
 
-  const from     = process.env.INTERVIEW_FROM_EMAIL ?? "Volta NYC <noreply@voltanyc.org>";
+  const from     = process.env.INTERVIEW_FROM_EMAIL ?? "Volta NYC Interviews <noreply@voltanyc.org>";
   const zoomLink = process.env.INTERVIEW_ZOOM_LINK  ?? "";
 
   // Format the date and time in a readable way.
@@ -118,14 +123,32 @@ async function sendConfirmationEmail(
 </td></tr></table>
 </body></html>`;
 
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Content-Type":  "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({ from, to: [toEmail], subject: "Your Interview is Scheduled — Volta NYC", html }),
-  });
+  if (sendgridKey) {
+    // SendGrid — supports single-sender verification (no domain needed)
+    await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${sendgridKey}`,
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: toEmail, name: toName }] }],
+        from: { email: from.match(/<(.+)>/)?.[1] ?? from, name: "Volta NYC" },
+        subject: "Your Interview is Scheduled — Volta NYC",
+        content: [{ type: "text/html", value: html }],
+      }),
+    });
+  } else if (resendKey) {
+    // Resend — requires verified domain
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify({ from, to: [toEmail], subject: "Your Interview is Scheduled — Volta NYC", html }),
+    });
+  }
 }
 
 // ── GET /api/booking/[token] ──────────────────────────────────────────────────
