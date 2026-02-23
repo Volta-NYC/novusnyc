@@ -373,8 +373,7 @@ export default function BookPage() {
                           >
                             {timesForDate.map(slot => (
                               <option key={slot.id} value={slot.datetime}>
-                                {formatTime(slot.datetime)}{slot.durationMinutes ? ` · ${slot.durationMinutes} min` : ""}
-                                {slot.location ? ` · ${slot.location}` : ""}
+                                {formatTime(slot.datetime)}{slot.location ? ` · ${slot.location}` : ""}
                               </option>
                             ))}
                           </select>
