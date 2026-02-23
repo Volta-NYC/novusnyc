@@ -59,12 +59,16 @@ export default function About() {
               what&apos;s possible — and then we make it happen.
             </p>
           </AnimatedSection>
-          <AnimatedSection className="mt-14">
-            <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 h-64 flex items-center justify-center">
-              <div className="text-center">
-                <Image src="/logo.png" alt="Volta" width={60} height={60} className="object-contain mx-auto mb-4" />
-                <p className="font-body text-white/30 text-sm">Team photo coming soon</p>
-              </div>
+          <AnimatedSection className="mt-14 flex justify-center">
+            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-xl w-full max-w-sm">
+              <iframe
+                src="https://www.instagram.com/p/DVBS-6LDvk9/embed/"
+                width="400"
+                height="505"
+                frameBorder="0"
+                scrolling="no"
+                style={{ display: "block", width: "100%", height: 505 }}
+              />
             </div>
           </AnimatedSection>
         </div>
