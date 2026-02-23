@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
   subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeGrants,
+  deleteInterviewSlot,
   type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite, type Grant,
 } from "@/lib/members/storage";
 import { Btn, Modal, Field, Input, TextArea, useConfirm } from "@/components/members/ui";
@@ -92,6 +93,7 @@ interface DisplayEvent {
   isTask: boolean;
   isInterview?: boolean;
   calEvent?: CalendarEvent;
+  interviewSlotId?: string; // for deleting booked interview slots
 }
 
 // ── FORM STATE ────────────────────────────────────────────────────────────────
@@ -137,8 +139,8 @@ export default function CalendarPage() {
     const unsubEvents   = subscribeCalendarEvents(setCalEvents);
     const unsubTasks    = subscribeTasks(setTasks);
     const unsubGrants   = subscribeGrants(setGrants);
-    const unsubISlots   = authRole === "admin" ? subscribeInterviewSlots(setInterviewSlots) : () => {};
-    const unsubIInvites = authRole === "admin" ? subscribeInterviewInvites(setInterviewInvites) : () => {};
+    const unsubISlots   = canEdit ? subscribeInterviewSlots(setInterviewSlots) : () => {};
+    const unsubIInvites = canEdit ? subscribeInterviewInvites(setInterviewInvites) : () => {};
     return () => { unsubEvents(); unsubTasks(); unsubGrants(); unsubISlots(); unsubIInvites(); };
   }, [authRole]);
 
@@ -198,22 +200,24 @@ export default function CalendarPage() {
         description: `${g.funder} · ${g.status}`,
         isTask:      false,
       })),
-    // Booked interview slots (admin-only)
-    ...(authRole === "admin" ? interviewSlots
+    // Booked interview slots (admin + project_lead)
+    ...(canEdit ? interviewSlots
       .filter(s => !!s.bookedBy)
       .map(s => {
         const invite = s.bookedBy ? inviteMap[s.bookedBy] : undefined;
+        // Multi-use invites store the booker's name/email on the slot itself.
+        const name  = s.bookerName  ?? invite?.applicantName  ?? "Applicant";
+        const email = s.bookerEmail ?? invite?.applicantEmail ?? "";
         return {
-          id:          `interview-${s.id}`,
-          title:       `Interview: ${invite?.applicantName ?? "Applicant"}`,
-          color:       "#8B5CF6",
-          dateStr:     s.datetime.split("T")[0],
-          time:        formatTime(s.datetime),
-          description: invite
-            ? `${invite.role ?? ""} · ${invite.applicantEmail}`.trim().replace(/^·\s/, "")
-            : "",
-          isTask:      false,
-          isInterview: true,
+          id:              `interview-${s.id}`,
+          title:           `Interview: ${name}`,
+          color:           "#8B5CF6",
+          dateStr:         s.datetime.split("T")[0],
+          time:            formatTime(s.datetime),
+          description:     [invite?.role, email].filter(Boolean).join(" · "),
+          isTask:          false,
+          isInterview:     true,
+          interviewSlotId: s.id,
         };
       }) : []),
   ];
@@ -287,6 +291,10 @@ export default function CalendarPage() {
 
   const handleDelete = (id: string) => {
     ask(async () => { await deleteCalendarEvent(id); setPopup(null); });
+  };
+
+  const handleDeleteInterviewSlot = (slotId: string) => {
+    ask(async () => { await deleteInterviewSlot(slotId); setPopup(null); });
   };
 
   // Show a detail popup anchored below the clicked event pill.
@@ -418,7 +426,7 @@ export default function CalendarPage() {
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events
         </span>
-        {authRole === "admin" && (
+        {canEdit && (
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />Interviews
           </span>
@@ -463,6 +471,11 @@ export default function CalendarPage() {
             <div className="flex gap-2 pt-2 border-t border-white/8">
               <Btn size="sm" variant="ghost" onClick={() => openEdit(popup.event.calEvent!)}>Edit</Btn>
               <Btn size="sm" variant="danger" onClick={() => handleDelete(popup.event.id)}>Delete</Btn>
+            </div>
+          )}
+          {canEdit && popup.event.isInterview && popup.event.interviewSlotId && (
+            <div className="flex gap-2 pt-2 border-t border-white/8">
+              <Btn size="sm" variant="danger" onClick={() => handleDeleteInterviewSlot(popup.event.interviewSlotId!)}>Cancel Slot</Btn>
             </div>
           )}
         </div>
