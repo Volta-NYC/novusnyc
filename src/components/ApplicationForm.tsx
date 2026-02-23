@@ -269,7 +269,7 @@ export default function ApplicationForm() {
 
       {status === "error" && (
         <p className="text-red-500 text-sm text-center font-body">
-          Something went wrong. Email us at volta.newyork@gmail.com
+          Something went wrong. Email us at info@voltanyc.org
         </p>
       )}
       <p className="text-xs text-v-muted text-center font-body">

@@ -100,7 +100,7 @@ export default function InquiryForm() {
       </button>
       {status === "error" && (
         <p className="text-red-500 text-sm text-center font-body">
-          Something went wrong. Email us at volta.newyork@gmail.com
+          Something went wrong. Email us at info@voltanyc.org
         </p>
       )}
     </form>

@@ -37,11 +37,11 @@ export default function Footer() {
             <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Connect</p>
             <div className="flex flex-col gap-3">
               <a
-                href="mailto:volta.newyork@gmail.com"
+                href="mailto:info@voltanyc.org"
                 className="font-body text-sm hover:text-white transition-colors"
               >
                 <span className="text-white/50">Email: </span>
-                <span className="text-v-green">volta.newyork@gmail.com</span>
+                <span className="text-v-green">info@voltanyc.org</span>
               </a>
               <a
                 href="https://www.linkedin.com/company/volta-nyc/"

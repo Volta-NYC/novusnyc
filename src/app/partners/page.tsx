@@ -205,7 +205,7 @@ export default function Partners() {
                 project.
               </p>
               <a
-                href="mailto:volta.newyork@gmail.com"
+                href="mailto:info@voltanyc.org"
                 className="inline-block bg-v-ink text-white font-display font-bold text-sm px-7 py-3 rounded-full hover:bg-v-ink/80 transition-colors"
               >
                 Contact us directly
