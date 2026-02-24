@@ -288,6 +288,39 @@ export const joinGains = [
   },
 ];
 
+export const trackHighlights = [
+  {
+    name: "Digital & Tech",
+    tagColor: "bg-blue-100 text-blue-800",
+    outputs: [
+      "Built and launched websites for NYC businesses from scratch",
+      "Implemented bilingual support for Chinese-speaking communities",
+      "Optimized Google Maps and Yelp listings for search visibility",
+      "Deployed production code across multiple active client repos",
+    ],
+  },
+  {
+    name: "Marketing & Strategy",
+    tagColor: "bg-lime-100 text-lime-800",
+    outputs: [
+      "Managed live Instagram accounts for active client businesses",
+      "Produced original Founder Stories video content series",
+      "Built content calendars and audience growth strategies",
+      "Ran analytics and iterated campaigns based on real engagement data",
+    ],
+  },
+  {
+    name: "Finance & Operations",
+    tagColor: "bg-amber-100 text-amber-800",
+    outputs: [
+      "Researched grant opportunities for NYC nonprofits and small businesses",
+      "Analyzed POS systems and identified transaction fee savings",
+      "Supported financial documentation and nonprofit reporting",
+      "Drafted full grant applications on behalf of client businesses",
+    ],
+  },
+];
+
 export const joinTracks = [
   {
     icon: BarChartIcon,

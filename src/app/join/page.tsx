@@ -75,6 +75,7 @@ export default function Join() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="bg-v-ink pt-32 pb-24 relative overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-12 items-center">
@@ -205,62 +206,81 @@ export default function Join() {
         </div>
       </section>
 
-      {/* ── COMMITMENT ───────────────────────────────────────── */}
-      <section className="py-14 bg-v-bg border-y border-v-border">
-        <div className="max-w-5xl mx-auto px-5 md:px-8 grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-v-border">
-          {[
-            { label: "Time commitment", value: "2–4 hrs/week", sub: "Varies by project phase" },
-            { label: "Structure", value: "Project-based", sub: "No fixed contract or semester" },
-            { label: "Team size", value: "3–5 students", sub: "Small, focused pods per project" },
-          ].map((item) => (
-            <div key={item.label} className="text-center py-8 md:py-0 md:px-8">
-              <p className="font-body text-xs uppercase tracking-widest text-v-muted mb-2">{item.label}</p>
-              <p className="font-display font-bold text-v-ink text-3xl mb-1">{item.value}</p>
-              <p className="font-body text-sm text-v-muted">{item.sub}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── MENTORSHIP CALLOUT ───────────────────────────────── */}
-      <section className="py-16 bg-v-green">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection>
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <p className="font-body text-sm font-semibold text-v-ink/60 uppercase tracking-widest mb-3">
-                  Mentorship
-                </p>
-                <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
-                  You&apos;re not dropped into a project alone.
-                </h2>
-                <p className="font-body text-v-ink/70 leading-relaxed">
-                  Every member works with a team lead from day one. As you build
-                  experience, you&apos;ll move into team lead and project director roles
-                  yourself — our leadership track goes both ways, so the person
-                  mentoring you today was in your position not long ago.
-                </p>
-              </div>
-              <div className="space-y-4">
+      {/* ── EXPECTATIONS ─────────────────────────────────────── */}
+      <section className="py-20 bg-v-bg border-y border-v-border">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-12">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
+              Before you apply
+            </p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+              What we expect
+            </h2>
+          </AnimatedSection>
+          <div className="grid md:grid-cols-2 gap-8">
+            <AnimatedSection direction="left">
+              <div className="space-y-6">
                 {[
-                  "Assigned to a team lead on your first project",
-                  "Twice-monthly check-ins with project directors",
-                  "Leadership track: member → team lead → director",
-                  "References from people who watched you work",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-v-ink flex-shrink-0 mt-2" />
-                    <p className="font-body text-v-ink/80 text-base">{item}</p>
+                  {
+                    title: "Show up for your client",
+                    desc: "You're working with a real business owner who is counting on your team. Missed deadlines have real consequences for them.",
+                  },
+                  {
+                    title: "Communicate when things come up",
+                    desc: "Life happens. If you're swamped with exams or can't meet a deadline, tell your team lead early — don't go quiet.",
+                  },
+                  {
+                    title: "Put in the work, not just the hours",
+                    desc: "2–4 hours a week is a rough guide. What matters is whether the deliverable is done and done well.",
+                  },
+                  {
+                    title: "Be open to feedback",
+                    desc: "You'll get notes from team leads and directors. Taking that feedback seriously is how you move up.",
+                  },
+                ].map((item, i) => (
+                  <div key={item.title} className="flex gap-4">
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-v-green flex items-center justify-center mt-0.5">
+                      <span className="font-display font-bold text-v-ink text-xs">{i + 1}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-v-ink mb-1">{item.title}</h3>
+                      <p className="font-body text-sm text-v-muted leading-relaxed">{item.desc}</p>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </AnimatedSection>
+            </AnimatedSection>
+            <AnimatedSection direction="right">
+              <div className="bg-white border border-v-border rounded-2xl p-8 h-full">
+                <h3 className="font-display font-bold text-v-ink text-lg mb-6">Logistics at a glance</h3>
+                <div className="space-y-1">
+                  {[
+                    { label: "Time commitment", value: "2–4 hrs / week", note: "Varies by project phase" },
+                    { label: "Location", value: "Remote-first", note: "Optional in-person visits for NYC members" },
+                    { label: "Team size", value: "3–5 students", note: "Small, focused pods per project" },
+                    { label: "Structure", value: "Project-based", note: "No fixed semester or contract" },
+                    { label: "Admissions", value: "Rolling", note: "We review applications year-round" },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex justify-between items-start gap-4 py-4 border-b border-v-border last:border-0"
+                    >
+                      <p className="font-body text-xs text-v-muted uppercase tracking-wide">{item.label}</p>
+                      <div className="text-right">
+                        <p className="font-display font-bold text-v-ink text-sm">{item.value}</p>
+                        <p className="font-body text-xs text-v-muted">{item.note}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </AnimatedSection>
+          </div>
         </div>
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl">Questions</h2>
@@ -268,7 +288,7 @@ export default function Join() {
           <div className="space-y-4">
             {joinFaqs.map((f, i) => (
               <AnimatedSection key={f.q} delay={i * 0.06}>
-                <div className="bg-white border border-v-border rounded-xl p-6">
+                <div className="bg-v-bg border border-v-border rounded-xl p-6">
                   <h3 className="font-display font-bold text-v-ink mb-2">{f.q}</h3>
                   <p className="font-body text-sm text-v-muted leading-relaxed">{f.a}</p>
                 </div>

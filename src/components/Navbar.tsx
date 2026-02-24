@@ -13,12 +13,18 @@ const links = [
   { href: "/contact", label: "Contact" },
 ];
 
+const studentsLinks = [
+  { href: "/students", label: "For Students" },
+  { href: "/apply", label: "Apply" },
+];
+
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */
-const darkHeroPages = ["/partners", "/showcase", "/join", "/students"];
+const darkHeroPages = ["/partners", "/showcase", "/join"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [studentsOpen, setStudentsOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -27,9 +33,13 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    setOpen(false);
+    setStudentsOpen(false);
+  }, [pathname]);
 
   const darkHero = !scrolled && !open && darkHeroPages.includes(pathname);
+  const studentsActive = studentsLinks.some((l) => pathname === l.href);
 
   return (
     <>
@@ -71,6 +81,59 @@ export default function Navbar() {
               </Link>
             ))}
 
+            {/* Students dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setStudentsOpen(true)}
+              onMouseLeave={() => setStudentsOpen(false)}
+            >
+              <button
+                className={`font-body text-sm font-semibold transition-colors flex items-center gap-1 ${
+                  studentsActive
+                    ? "text-v-green"
+                    : darkHero
+                    ? "text-white/70 hover:text-white"
+                    : "text-v-muted hover:text-v-ink"
+                }`}
+              >
+                Students
+                <svg
+                  className={`w-3 h-3 transition-transform duration-200 ${studentsOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <AnimatePresence>
+                {studentsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 pt-3 min-w-[152px]"
+                  >
+                    <div className="bg-white border border-v-border rounded-xl shadow-lg py-1.5 overflow-hidden">
+                      {studentsLinks.map((l) => (
+                        <Link
+                          key={l.href}
+                          href={l.href}
+                          className={`block px-4 py-2.5 font-body text-sm transition-colors hover:bg-v-bg ${
+                            pathname === l.href ? "text-v-green font-semibold" : "text-v-ink"
+                          }`}
+                        >
+                          {l.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <Link
               href="/members"
               className={`font-body text-sm transition-colors ${
@@ -81,7 +144,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/join"
+              href="/apply"
               className="bg-v-green text-v-ink font-display font-bold text-sm px-5 py-2.5 rounded-full hover:bg-v-green-dark transition-colors"
             >
               Apply Now
@@ -119,6 +182,23 @@ export default function Navbar() {
                 {l.label}
               </Link>
             ))}
+
+            {/* Students section in mobile */}
+            <div className="border-b border-v-border pb-4">
+              <p className="font-display font-bold text-2xl text-v-ink mb-3">Students</p>
+              <div className="flex flex-col gap-2 pl-2">
+                {studentsLinks.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className="font-body text-base text-v-muted hover:text-v-ink transition-colors"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
             <Link
               href="/members"
               className="font-body text-base text-v-muted/60 border-b border-v-border pb-4"
@@ -126,7 +206,7 @@ export default function Navbar() {
               Member Login
             </Link>
             <Link
-              href="/join"
+              href="/apply"
               className="bg-v-green text-v-ink font-display font-bold text-lg px-6 py-4 rounded-xl text-center mt-2"
             >
               Apply Now
