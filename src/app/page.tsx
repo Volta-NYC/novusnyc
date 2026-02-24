@@ -7,11 +7,11 @@ import { MapPinIcon } from "@/components/Icons";
 import { homeStats, homeTracks, marqueeSchools, currentProjects } from "@/data";
 
 export const metadata: Metadata = {
-  title: "Volta NYC — Student-Led Consulting for NYC Small Businesses",
+  title: "Free Student Consulting for NYC Small Businesses | Volta NYC",
   description:
-    "Volta NYC places student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, and SEO. Free of charge. 9 neighborhoods, 80+ students.",
+    "Volta NYC places high school and college student teams on free consulting projects for NYC small businesses — websites, SEO, social media, and grant writing. 501(c)(3) nonprofit. 9 neighborhoods, 80+ students.",
   openGraph: {
-    title: "Volta NYC",
+    title: "Volta NYC — Free Student Consulting for NYC Small Businesses",
     description: "Student consultants. Real deliverables. Free for NYC small businesses.",
   },
 };

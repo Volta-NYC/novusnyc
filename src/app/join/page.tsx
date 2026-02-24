@@ -4,18 +4,77 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { joinGains, joinTracks, joinFaqs } from "@/data";
 
 export const metadata: Metadata = {
-  title: "Join Volta NYC — Apply to a Student Consulting Team",
+  title: "Join Volta NYC | High School Extracurricular Consulting in NYC",
   description:
-    "High school and college students: join Volta NYC and work on real consulting projects for NYC small businesses. Build a portfolio, earn mentorship, and lead real teams.",
+    "High school students in NYC: join Volta NYC and lead real consulting projects for local small businesses. Pick a track — web development, marketing, or grant writing. Meaningful extracurricular, real portfolio work, strong for college apps.",
   openGraph: {
-    title: "Join Volta NYC",
+    title: "Join Volta NYC | High School Consulting Extracurricular, NYC",
     description: "Real projects. Real clients. Mentorship from day one.",
   },
 };
 
 export default function Join() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Is Volta NYC a good extracurricular for high school students?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. Volta NYC places high school students on real consulting projects for NYC small businesses, giving you a tangible portfolio piece, mentorship, and leadership experience — all of which stand out on college applications.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is this paid?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No — Volta is a nonprofit and all positions are volunteer. You gain experience, portfolio work, mentorship, references, and leadership opportunities.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Do I need prior experience to join Volta NYC?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "It depends on the track. The Digital & Tech track requires some coding experience. Finance and Marketing are more open to students still developing their skills.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Can high school students join Volta NYC?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. Volta NYC was founded by high school students and actively recruits from NYC high schools. College students are also welcome and often move into team lead roles.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is the work remote?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. All work is remote-friendly. Some NYC members may choose to do in-person client visits, but it is not required.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How much time does Volta NYC take each week?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "2–4 hours per week, depending on the project phase. Some weeks are lighter, some are heavier around deliverable deadlines.",
+        },
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="bg-v-ink pt-32 pb-24 relative overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-12 items-center">

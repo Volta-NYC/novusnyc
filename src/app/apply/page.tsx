@@ -4,11 +4,11 @@ import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationForm from "@/components/ApplicationForm";
 
 export const metadata: Metadata = {
-  title: "Apply | Volta NYC",
+  title: "Apply to Volta NYC | Student Consulting Program, NYC",
   description:
-    "Apply to join Volta NYC — a student-led consulting nonprofit placing teams on real projects for NYC small businesses. Takes 5 minutes.",
+    "NYC high school and college students: apply to join Volta NYC's consulting teams. Work on real projects for local small businesses, build a real portfolio, and earn a standout extracurricular for college applications.",
   openGraph: {
-    title: "Apply to Volta NYC",
+    title: "Apply to Volta NYC | Student Consulting Program",
     description: "Real projects. Real clients. Takes 5 minutes to apply.",
   },
 };

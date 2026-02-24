@@ -90,6 +90,51 @@ export default function RootLayout({
                 "Small Business Consulting",
                 "Digital Equity",
               ],
+              contactPoint: {
+                "@type": "ContactPoint",
+                email: "info@voltanyc.org",
+                contactType: "customer service",
+                areaServed: "US",
+                availableLanguage: ["English", "Spanish", "Chinese", "Bengali", "Korean", "Arabic"],
+              },
+              hasOfferCatalog: {
+                "@type": "OfferCatalog",
+                name: "Free Consulting Services for NYC Small Businesses",
+                itemListElement: [
+                  {
+                    "@type": "Offer",
+                    itemOffered: {
+                      "@type": "Service",
+                      name: "Website Design & Development",
+                      description: "Custom websites built with modern frameworks — mobile-friendly, accessible, and maintained.",
+                    },
+                  },
+                  {
+                    "@type": "Offer",
+                    itemOffered: {
+                      "@type": "Service",
+                      name: "Social Media & Content Strategy",
+                      description: "Instagram strategy, posting calendars, founder interview videos, and audience growth campaigns.",
+                    },
+                  },
+                  {
+                    "@type": "Offer",
+                    itemOffered: {
+                      "@type": "Service",
+                      name: "Grant Research & Writing",
+                      description: "Identify grants the business qualifies for and prepare full applications.",
+                    },
+                  },
+                  {
+                    "@type": "Offer",
+                    itemOffered: {
+                      "@type": "Service",
+                      name: "Search Engine Optimization",
+                      description: "On-page SEO, Google Maps setup, Yelp optimization, and web accessibility improvements.",
+                    },
+                  },
+                ],
+              },
               sameAs: [
                 "https://www.linkedin.com/company/volta-nyc/",
               ],

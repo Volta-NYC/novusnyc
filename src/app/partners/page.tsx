@@ -5,19 +5,70 @@ import ContactForm from "@/components/ContactForm";
 import { partnerServices } from "@/data";
 
 export const metadata: Metadata = {
-  title: "For Businesses | Volta NYC",
+  title: "Free Website & Digital Help for NYC Small Businesses | Volta NYC",
   description:
-    "NYC small businesses: get a free website, social media strategy, grant writing, or SEO from a dedicated student team. No cost, no catch. Volta NYC is a registered 501(c)(3) nonprofit.",
+    "Get a free website, SEO, social media strategy, or grant writing from a dedicated student team. Volta NYC is a 501(c)(3) nonprofit serving small businesses across NYC — no cost, no catch.",
   openGraph: {
-    title: "Work With Volta NYC — Free for NYC Small Businesses",
+    title: "Free Website & Digital Help for NYC Small Businesses | Volta NYC",
     description:
       "Student teams build websites, grow social media, write grants, and optimize SEO for NYC small businesses — at no cost. Reach out to get started.",
   },
 };
 
 export default function Partners() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How can I get free website help for my NYC small business?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Volta NYC pairs NYC small businesses with student consulting teams at no cost. Fill out the interest form on this page and a team lead will follow up within a few days to discuss your project.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is Volta NYC's consulting really free?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, completely free. Volta NYC is a registered 501(c)(3) nonprofit. There is no cost, no hidden fees, and no catch.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What services does Volta NYC provide for small businesses?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Volta NYC student teams offer website design and development, social media strategy and content creation, grant research and writing, and SEO and Google Maps optimization — all at no cost to the business.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Which NYC neighborhoods does Volta NYC serve?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Volta NYC currently serves small businesses across 9 NYC neighborhoods, with active projects in areas including Brooklyn, Queens, Manhattan, and the Bronx.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How does the student consulting process work?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "After you reach out, Volta NYC matches your business with a student team based on your needs. The team works with you to scope a project, then delivers the work — a website, social media strategy, grant application, or SEO improvements — over several weeks.",
+        },
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="bg-v-dark pt-32 pb-24 relative overflow-hidden">
         <div className="absolute inset-0 dot-grid opacity-[0.06]" />

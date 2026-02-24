@@ -5,11 +5,11 @@ import { MailIcon } from "@/components/Icons";
 import { aboutValues, aboutTimeline, teamMembers, branches } from "@/data";
 
 export const metadata: Metadata = {
-  title: "About | Volta NYC",
+  title: "About Volta NYC | Student-Run Nonprofit Consulting for NYC Small Businesses",
   description:
-    "Volta NYC is a registered 501(c)(3) nonprofit run by students at Stuyvesant High School and CUNY institutions. Learn about our history, values, and the team behind the work.",
+    "Volta NYC is a 501(c)(3) nonprofit founded by students at Stuyvesant High School. We place student consulting teams on real projects — websites, SEO, social media, grant writing — for NYC small businesses at no cost.",
   openGraph: {
-    title: "About Volta NYC",
+    title: "About Volta NYC | Student-Run Nonprofit Consulting",
     description: "A student-run nonprofit built on the belief that digital equity is economic equity.",
   },
 };
