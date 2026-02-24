@@ -67,7 +67,7 @@ export function validateApplicationForm(
   const errors: Record<string, string> = {};
   addError(errors, "fullName", required(data.fullName, "Full name is required"));
   addError(errors, "email", validEmail(data.email, "Enter a valid email address"));
-  addError(errors, "city", required(data.city, "City is required"));
+  addError(errors, "city", required(data.city, "City, state is required"));
   addError(errors, "schoolName", required(data.schoolName, "School name is required"));
   addError(errors, "referral", required(data.referral, "Select how you heard about us"));
   if (data.tracks.length === 0) errors.tracks = "Select at least one track";

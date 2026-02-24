@@ -32,14 +32,14 @@ function handleApplication(data) {
   var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('Applications') || ss.insertSheet('Applications');
   ensureHeaders(sheet, [
-    'Timestamp', 'Full Name', 'Email', 'City', 'School Name',
+    'Timestamp', 'Full Name', 'Email', 'City, State', 'School Name',
     'How They Heard', 'Tracks', 'Has Resume', 'Resume URL', 'Tools/Software', 'Accomplishment',
   ]);
   sheet.appendRow([
     new Date().toISOString(),
     data['Full Name']       || '',
     data['Email']           || '',
-    data['City']            || '',
+    data['City, State']     || data['City'] || '',
     data['School Name']     || data['Education'] || '',
     data['How They Heard']  || '',
     data['Tracks Selected'] || '',

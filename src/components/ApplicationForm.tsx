@@ -59,7 +59,7 @@ export default function ApplicationForm() {
       formType: "application",
       "Full Name": form.fullName,
       Email: form.email,
-      City: form.city,
+      "City, State": form.city,
       "School Name": form.schoolName,
       "How They Heard": form.referral,
       "Tracks Selected": form.tracks.join(", "),
@@ -121,7 +121,7 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">City *</label>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">City, State *</label>
         <input
           value={form.city}
           onChange={(e) => { set("city", e.target.value); clearError("city"); }}
