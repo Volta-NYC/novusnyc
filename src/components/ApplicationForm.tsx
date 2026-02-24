@@ -59,8 +59,8 @@ export default function ApplicationForm() {
       formType: "application",
       "Full Name": form.fullName,
       Email: form.email,
-      "City, State": form.city,
       "School Name": form.schoolName,
+      "City, State": form.city,
       "How They Heard": form.referral,
       "Tracks Selected": form.tracks.join(", "),
       "Has Resume": form.hasResume ? "Yes" : "No",
@@ -121,17 +121,6 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">City, State *</label>
-        <input
-          value={form.city}
-          onChange={(e) => { set("city", e.target.value); clearError("city"); }}
-          className={`volta-input ${errors.city ? "border-red-400" : ""}`}
-          placeholder="e.g. New York, NY"
-        />
-        {errors.city && <p className="text-red-500 text-xs mt-1 font-body">{errors.city}</p>}
-      </div>
-
-      <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">School Name *</label>
         <input
           value={form.schoolName}
@@ -140,6 +129,17 @@ export default function ApplicationForm() {
           placeholder="e.g. Stuyvesant High School"
         />
         {errors.schoolName && <p className="text-red-500 text-xs mt-1 font-body">{errors.schoolName}</p>}
+      </div>
+
+      <div>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">City, State *</label>
+        <input
+          value={form.city}
+          onChange={(e) => { set("city", e.target.value); clearError("city"); }}
+          className={`volta-input ${errors.city ? "border-red-400" : ""}`}
+          placeholder="e.g. New York, New York"
+        />
+        {errors.city && <p className="text-red-500 text-xs mt-1 font-body">{errors.city}</p>}
       </div>
 
       <div>
