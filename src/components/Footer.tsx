@@ -21,10 +21,11 @@ export default function Footer() {
               {[
                 { href: "/", label: "Home" },
                 { href: "/showcase", label: "Our Work" },
+                { href: "/students", label: "For Students" },
                 { href: "/join", label: "Join Volta" },
+                { href: "/apply", label: "Apply" },
                 { href: "/partners", label: "For Businesses" },
                 { href: "/about", label: "About" },
-                { href: "/contact", label: "Contact" },
               ].map((l) => (
                 <Link key={l.href} href={l.href} className="font-body text-sm hover:text-white transition-colors">
                   {l.label}

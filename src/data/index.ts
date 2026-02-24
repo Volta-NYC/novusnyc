@@ -234,11 +234,11 @@ export const teamMembers = [
 
 export const branches = [
   { city: "Jacksonville", state: "FL" },
+  { city: "New York City", state: "NY" },
   { city: "Bay Area", state: "CA" },
   { city: "Atlanta", state: "GA" },
   { city: "Alexandria", state: "VA" },
   { city: "Dallas", state: "TX" },
-  { city: "New York City", state: "NY" },
 ];
 
 // ─── Join page ────────────────────────────────────────────────────────────────

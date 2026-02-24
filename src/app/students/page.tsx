@@ -21,39 +21,61 @@ interface SchoolGroup {
   schools: string[];
 }
 
+function dedupeSchools(schools: string[]): string[] {
+  const seen = new Set<string>();
+  return schools.filter((school) => {
+    const key = school.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function parseSchools(markdown: string): SchoolGroup[] {
   const sections: SchoolGroup[] = [];
   let current: SchoolGroup | null = null;
   for (const line of markdown.split("\n")) {
     const t = line.trim();
     if (t.startsWith("## ")) {
-      if (current) sections.push(current);
+      if (current) {
+        sections.push({ ...current, schools: dedupeSchools(current.schools) });
+      }
       current = { category: t.slice(3), schools: [] };
     } else if (t.startsWith("- ") && current) {
       current.schools.push(t.slice(2));
     }
   }
-  if (current) sections.push(current);
+  if (current) sections.push({ ...current, schools: dedupeSchools(current.schools) });
   return sections;
 }
 
 const leadershipSteps = [
   {
-    role: "Member",
-    desc: "Join a project team, work directly with a client, and deliver your first real-world output.",
+    role: "Analyst",
+    desc: "Contribute on live projects and ship your first client-facing deliverables.",
   },
   {
-    role: "Team Lead",
-    desc: "Own a project end-to-end — manage your pod, set the timeline, and present to the client.",
+    role: "Senior Analyst",
+    desc: "Take ownership of workstreams and mentor newer analysts on execution quality.",
   },
   {
-    role: "Project Director",
-    desc: "Oversee multiple teams, onboard new members, and set standards across active projects.",
+    role: "Associate",
+    desc: "Manage core project pieces, coordinate with teammates, and keep client progress on track.",
   },
   {
-    role: "Chapter Lead",
-    desc: "Build and run a Volta chapter in a new city, recruiting students and sourcing clients.",
+    role: "Senior Associate",
+    desc: "Lead larger initiatives across teams and help drive standards across active projects.",
   },
+  {
+    role: "Project Lead",
+    desc: "Run projects end to end, lead pods, and serve as the main client-facing owner.",
+  },
+];
+
+const otherRoles = [
+  "Neighborhood Liaison",
+  "School Ambassador",
+  "Head of City Expansion",
 ];
 
 export default function Students() {
@@ -267,8 +289,8 @@ export default function Students() {
           </AnimatedSection>
           <div className="relative">
             {/* Connector line */}
-            <div className="hidden md:block absolute top-10 left-10 right-10 h-px bg-v-border" />
-            <div className="grid md:grid-cols-4 gap-6">
+            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-px bg-v-border" />
+            <div className="grid md:grid-cols-5 gap-6">
               {leadershipSteps.map((step, i) => (
                 <AnimatedSection key={step.role} delay={i * 0.1}>
                   <div className="relative flex flex-col items-start md:items-center">
@@ -282,6 +304,21 @@ export default function Students() {
               ))}
             </div>
           </div>
+          <AnimatedSection className="mt-10">
+            <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
+              Other roles
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {otherRoles.map((role) => (
+                <span
+                  key={role}
+                  className="font-body text-sm font-medium text-v-ink bg-white border border-v-border rounded-full px-4 py-2"
+                >
+                  {role}
+                </span>
+              ))}
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 

@@ -10,12 +10,11 @@ const links = [
   { href: "/showcase", label: "Our Work" },
   { href: "/about", label: "About" },
   { href: "/partners", label: "For Businesses" },
-  { href: "/contact", label: "Contact" },
 ];
 
 const studentsLinks = [
   { href: "/students", label: "For Students" },
-  { href: "/apply", label: "Join the Team" },
+  { href: "/join", label: "Join the Team" },
 ];
 
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */

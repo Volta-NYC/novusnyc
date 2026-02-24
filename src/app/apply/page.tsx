@@ -72,7 +72,7 @@ export default function Apply() {
                 <div className="mt-8 pt-6 border-t border-v-border">
                   <p className="font-body text-xs text-v-muted">
                     Questions?{" "}
-                    <Link href="/contact" className="text-v-blue hover:underline">
+                    <Link href="/partners#contact" className="text-v-blue hover:underline">
                       Contact the team
                     </Link>{" "}
                     or{" "}
