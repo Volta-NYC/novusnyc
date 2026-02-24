@@ -4,11 +4,11 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { joinGains, joinTracks, joinFaqs } from "@/data";
 
 export const metadata: Metadata = {
-  title: "Join Volta NYC | High School Extracurricular Consulting in NYC",
+  title: "Get Involved | Volta NYC",
   description:
-    "High school students in NYC: join Volta NYC and lead real consulting projects for local small businesses. Pick a track — web development, marketing, or grant writing. Meaningful extracurricular, real portfolio work, strong for college apps.",
+    "High school and college students: join Volta NYC and work on real consulting projects for NYC small businesses. Build a portfolio, earn mentorship, and lead real teams.",
   openGraph: {
-    title: "Join Volta NYC | High School Consulting Extracurricular, NYC",
+    title: "Get Involved | Volta NYC",
     description: "Real projects. Real clients. Mentorship from day one.",
   },
 };

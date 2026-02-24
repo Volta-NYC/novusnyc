@@ -5,11 +5,11 @@ import ContactForm from "@/components/ContactForm";
 import { partnerServices } from "@/data";
 
 export const metadata: Metadata = {
-  title: "Free Website & Digital Help for NYC Small Businesses | Volta NYC",
+  title: "Free Help for NYC Small Businesses | Volta NYC",
   description:
-    "Get a free website, SEO, social media strategy, or grant writing from a dedicated student team. Volta NYC is a 501(c)(3) nonprofit serving small businesses across NYC — no cost, no catch.",
+    "NYC small businesses: get a free website, social media strategy, grant writing, or SEO from a dedicated student team. No cost, no catch. Volta NYC is a registered 501(c)(3) nonprofit.",
   openGraph: {
-    title: "Free Website & Digital Help for NYC Small Businesses | Volta NYC",
+    title: "Free Help for NYC Small Businesses | Volta NYC",
     description:
       "Student teams build websites, grow social media, write grants, and optimize SEO for NYC small businesses — at no cost. Reach out to get started.",
   },

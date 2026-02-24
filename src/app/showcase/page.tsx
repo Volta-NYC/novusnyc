@@ -6,11 +6,11 @@ import { MapPinIcon } from "@/components/Icons";
 import { projects, joinTracks } from "@/data";
 
 export const metadata: Metadata = {
-  title: "Student Consulting Portfolio | NYC Small Business Projects | Volta NYC",
+  title: "Our Work | Volta NYC",
   description:
-    "Browse Volta NYC's consulting projects across 9 NYC neighborhoods — websites built, social media campaigns run, grants written, and SEO done for 20+ local small businesses. See the work.",
+    "Interactive map and project portfolio showing Volta NYC's active work across 9 NYC neighborhoods — websites, social media, SEO, and grant writing for small businesses.",
   openGraph: {
-    title: "Student Consulting Portfolio | Volta NYC",
+    title: "Our Work | Volta NYC",
     description: "20+ businesses across 9 NYC neighborhoods. See every project.",
   },
 };

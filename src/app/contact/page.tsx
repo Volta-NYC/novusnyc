@@ -6,11 +6,11 @@ import InquiryForm from "@/components/InquiryForm";
 import { teamMembers } from "@/data";
 
 export const metadata: Metadata = {
-  title: "Contact Volta NYC | Free Student Consulting NYC",
+  title: "Contact | Volta NYC",
   description:
-    "Questions about free digital consulting for your NYC small business, or interested in joining our student teams? Reach the Volta NYC team directly — we respond to every message.",
+    "Meet the student team behind Volta NYC and reach out directly. We respond to every message.",
   openGraph: {
-    title: "Contact Volta NYC | Free Student Consulting NYC",
+    title: "Contact | Volta NYC",
     description: "The students running Volta NYC — and how to reach them.",
   },
 };

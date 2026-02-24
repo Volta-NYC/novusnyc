@@ -14,7 +14,7 @@ const links = [
 ];
 
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */
-const darkHeroPages = ["/partners", "/showcase", "/join"];
+const darkHeroPages = ["/partners", "/showcase", "/join", "/students"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -74,10 +74,10 @@ export default function Navbar() {
             <Link
               href="/members"
               className={`font-body text-sm transition-colors ${
-                darkHero ? "text-white/30 hover:text-white/60" : "text-v-muted/40 hover:text-v-muted"
+                darkHero ? "text-white/50 hover:text-white/80" : "text-v-muted/60 hover:text-v-ink"
               }`}
             >
-              Members
+              Member Login
             </Link>
 
             <Link
@@ -121,9 +121,9 @@ export default function Navbar() {
             ))}
             <Link
               href="/members"
-              className="font-body text-base text-v-muted/50 border-b border-v-border pb-4"
+              className="font-body text-base text-v-muted/60 border-b border-v-border pb-4"
             >
-              Members
+              Member Login
             </Link>
             <Link
               href="/join"
