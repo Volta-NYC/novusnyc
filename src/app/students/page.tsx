@@ -73,9 +73,18 @@ const leadershipSteps = [
 ];
 
 const otherRoles = [
-  "Neighborhood Liaison",
-  "School Ambassador",
-  "Head of City Expansion",
+  {
+    role: "Neighborhood Liaison",
+    desc: "Coordinate between project teams and neighborhood business owners, including BID tours and on-the-ground merchant outreach.",
+  },
+  {
+    role: "School Ambassador",
+    desc: "Represent Volta at your school, expand student outreach, and help build a reliable pipeline of project teams.",
+  },
+  {
+    role: "Head of City Expansion",
+    desc: "Launch Volta in a new city, build local partnerships, and set up the first student teams and operating structure.",
+  },
 ];
 
 export default function Students() {
@@ -184,10 +193,14 @@ export default function Students() {
                   {group.category}
                 </h3>
                 <div className="flex flex-wrap gap-3">
-                  {group.schools.map((school) => (
+                  {group.schools.map((school, index) => (
                     <span
                       key={school}
-                      className="font-body text-sm font-medium text-v-ink bg-white border border-v-border rounded-full px-4 py-2"
+                      className={`font-body text-sm font-medium text-v-ink border rounded-full px-4 py-2 ${
+                        index % 2 === 0
+                          ? "bg-white border-v-border"
+                          : "bg-lime-50 border-v-green/30"
+                      }`}
                     >
                       {school}
                     </span>
@@ -308,14 +321,19 @@ export default function Students() {
             <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
               Other roles
             </h3>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid md:grid-cols-3 gap-4">
               {otherRoles.map((role) => (
-                <span
-                  key={role}
-                  className="font-body text-sm font-medium text-v-ink bg-white border border-v-border rounded-full px-4 py-2"
+                <div
+                  key={role.role}
+                  className="bg-white border border-v-border rounded-2xl p-5"
                 >
-                  {role}
-                </span>
+                  <h4 className="font-display font-bold text-v-ink text-base mb-2">
+                    {role.role}
+                  </h4>
+                  <p className="font-body text-sm text-v-muted leading-relaxed">
+                    {role.desc}
+                  </p>
+                </div>
               ))}
             </div>
           </AnimatedSection>
