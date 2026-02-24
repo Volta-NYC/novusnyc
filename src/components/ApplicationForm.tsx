@@ -8,7 +8,7 @@ import { TRACK_NAMES } from "@/data";
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Referral", "Other"];
 
 const EMPTY: ApplicationFormValues = {
-  fullName: "", email: "", city: "", education: "", referral: "",
+  fullName: "", email: "", city: "", schoolName: "", referral: "",
   tracks: [], hasResume: null, tools: "", accomplishment: "",
 };
 
@@ -60,7 +60,7 @@ export default function ApplicationForm() {
       "Full Name": form.fullName,
       Email: form.email,
       City: form.city,
-      Education: form.education,
+      "School Name": form.schoolName,
       "How They Heard": form.referral,
       "Tracks Selected": form.tracks.join(", "),
       "Has Resume": form.hasResume ? "Yes" : "No",
@@ -132,17 +132,14 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">Education Level *</label>
-        <select
-          value={form.education}
-          onChange={(e) => { set("education", e.target.value); clearError("education"); }}
-          className={`volta-input ${errors.education ? "border-red-400" : ""}`}
-        >
-          <option value="">Select one</option>
-          <option value="High School">High School</option>
-          <option value="College / University">College / University</option>
-        </select>
-        {errors.education && <p className="text-red-500 text-xs mt-1 font-body">{errors.education}</p>}
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">School Name *</label>
+        <input
+          value={form.schoolName}
+          onChange={(e) => { set("schoolName", e.target.value); clearError("schoolName"); }}
+          className={`volta-input ${errors.schoolName ? "border-red-400" : ""}`}
+          placeholder="e.g. Stuyvesant High School"
+        />
+        {errors.schoolName && <p className="text-red-500 text-xs mt-1 font-body">{errors.schoolName}</p>}
       </div>
 
       <div>

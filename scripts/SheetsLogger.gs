@@ -32,7 +32,7 @@ function handleApplication(data) {
   var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('Applications') || ss.insertSheet('Applications');
   ensureHeaders(sheet, [
-    'Timestamp', 'Full Name', 'Email', 'City', 'Education',
+    'Timestamp', 'Full Name', 'Email', 'City', 'School Name',
     'How They Heard', 'Tracks', 'Has Resume', 'Resume URL', 'Tools/Software', 'Accomplishment',
   ]);
   sheet.appendRow([
@@ -40,7 +40,7 @@ function handleApplication(data) {
     data['Full Name']       || '',
     data['Email']           || '',
     data['City']            || '',
-    data['Education']       || '',
+    data['School Name']     || data['Education'] || '',
     data['How They Heard']  || '',
     data['Tracks Selected'] || '',
     data['Has Resume']      || '',
