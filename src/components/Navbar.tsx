@@ -15,7 +15,7 @@ const links = [
 
 const studentsLinks = [
   { href: "/students", label: "For Students" },
-  { href: "/apply", label: "Apply" },
+  { href: "/apply", label: "Join the Team" },
 ];
 
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */
@@ -39,7 +39,8 @@ export default function Navbar() {
   }, [pathname]);
 
   const darkHero = !scrolled && !open && darkHeroPages.includes(pathname);
-  const studentsActive = studentsLinks.some((l) => pathname === l.href);
+  const studentsActive =
+    studentsLinks.some((l) => pathname === l.href) || pathname === "/members";
 
   return (
     <>
@@ -114,7 +115,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 pt-3 min-w-[152px]"
+                    className="absolute top-full left-1/2 -translate-x-1/2 pt-3 min-w-[160px]"
                   >
                     <div className="bg-white border border-v-border rounded-xl shadow-lg py-1.5 overflow-hidden">
                       {studentsLinks.map((l) => (
@@ -128,20 +129,20 @@ export default function Navbar() {
                           {l.label}
                         </Link>
                       ))}
+                      <div className="border-t border-v-border my-1" />
+                      <Link
+                        href="/members"
+                        className={`block px-4 py-2.5 font-body text-sm transition-colors hover:bg-v-bg ${
+                          pathname === "/members" ? "text-v-green font-semibold" : "text-v-green"
+                        }`}
+                      >
+                        Member Login
+                      </Link>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
-            <Link
-              href="/members"
-              className={`font-body text-sm transition-colors ${
-                darkHero ? "text-white/50 hover:text-white/80" : "text-v-muted/60 hover:text-v-ink"
-              }`}
-            >
-              Member Login
-            </Link>
 
             <Link
               href="/apply"
@@ -196,15 +197,15 @@ export default function Navbar() {
                     {l.label}
                   </Link>
                 ))}
+                <Link
+                  href="/members"
+                  className="font-body text-base text-v-green"
+                >
+                  Member Login
+                </Link>
               </div>
             </div>
 
-            <Link
-              href="/members"
-              className="font-body text-base text-v-muted/60 border-b border-v-border pb-4"
-            >
-              Member Login
-            </Link>
             <Link
               href="/apply"
               className="bg-v-green text-v-ink font-display font-bold text-lg px-6 py-4 rounded-xl text-center mt-2"
