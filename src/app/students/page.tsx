@@ -198,8 +198,8 @@ export default function Students() {
                       key={school}
                       className={`font-body text-sm font-medium text-v-ink border rounded-full px-4 py-2 ${
                         index % 2 === 0
-                          ? "bg-white border-v-border"
-                          : "bg-lime-50 border-v-green/30"
+                          ? "bg-lime-50 border-lime-200"
+                          : "bg-lime-100 border-lime-300"
                       }`}
                     >
                       {school}

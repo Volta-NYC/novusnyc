@@ -14,10 +14,10 @@
 
 ## Colleges & Universities
 - Binghamton University
-- Queens College (CUNY)
-- Brooklyn College (CUNY)
-- Hunter College (CUNY)
-- Baruch College (CUNY)
+- Queens College
+- Brooklyn College
+- Hunter College
+- Baruch College
 - Borough of Manhattan Community College
 - Queensborough Community College
 - CUNY School of Professional Studies
@@ -25,6 +25,6 @@
 - New Jersey Institute of Technology
 - Penn State University
 - The City College of New York
-- Lehman College (CUNY)
+- Lehman College
 - Stevens Institute of Technology
 - University of Rochester
