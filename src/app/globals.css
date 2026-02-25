@@ -17,6 +17,10 @@
 
 html {
   scroll-behavior: smooth;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -27,13 +31,17 @@ body {
   margin: 0;
   padding: 0;
   width: 100%;
-  /* Prevent horizontal scroll without affecting sticky/fixed positioning */
-  overflow-x: clip;
+  max-width: 100%;
+  /* Lock horizontal overflow on mobile Safari/Chrome to remove right-side dead space */
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 main {
   width: 100%;
+  max-width: 100%;
   position: relative;
+  overflow-x: clip;
 }
 
 /* Dot grid pattern */
