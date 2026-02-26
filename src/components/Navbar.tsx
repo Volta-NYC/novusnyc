@@ -114,7 +114,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 pt-3 min-w-[160px]"
+                    className="absolute top-full right-0 pt-3 min-w-[160px]"
                   >
                     <div className="bg-white border border-v-border rounded-xl shadow-lg py-1.5 overflow-hidden">
                       {studentsLinks.map((l) => (

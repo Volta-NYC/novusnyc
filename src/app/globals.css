@@ -61,12 +61,13 @@ main {
 
 .hero-map-lines {
   background-image:
-    linear-gradient(18deg, rgba(122, 156, 75, 0.09) 1px, transparent 1px),
-    linear-gradient(-24deg, rgba(122, 156, 75, 0.08) 1px, transparent 1px),
-    linear-gradient(88deg, rgba(122, 156, 75, 0.07) 1px, transparent 1px);
-  background-size: 130px 130px, 95px 95px, 160px 160px;
-  background-position: 0 0, 24px 18px, -40px 35px;
-  filter: blur(0.2px);
+    linear-gradient(16deg, rgba(104, 137, 62, 0.2) 1px, transparent 1px),
+    linear-gradient(-21deg, rgba(104, 137, 62, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(104, 137, 62, 0.14) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(104, 137, 62, 0.1) 1px, transparent 1px);
+  background-size: 120px 120px, 88px 88px, 170px 170px, 210px 210px;
+  background-position: 0 0, 26px 14px, -34px 30px, 18px -22px;
+  mix-blend-mode: multiply;
 }
 
 /* Card hover */
