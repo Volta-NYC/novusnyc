@@ -114,6 +114,7 @@ function InterviewsContent() {
 
   // Availability grid state
   const [slotWeek, setSlotWeek] = useState(0);
+  const [slotListFilter, setSlotListFilter] = useState<"booked" | "free" | "all">("booked");
   // (no popover state — grid uses individual bar buttons)
 
   const { ask, Dialog } = useConfirm();
@@ -330,6 +331,14 @@ function InterviewsContent() {
   );
   // Only show upcoming slots in the summary list.
   const upcomingSlots = sortedSlots.filter(s => new Date(s.datetime) >= new Date());
+  const upcomingBookedSlots = upcomingSlots.filter(s => !!s.bookedBy);
+  const upcomingFreeSlots = upcomingSlots.filter(s => !s.bookedBy);
+  const filteredUpcomingSlots =
+    slotListFilter === "booked"
+      ? upcomingBookedSlots
+      : slotListFilter === "free"
+      ? upcomingFreeSlots
+      : upcomingSlots;
 
   const TABS: { key: typeof activeTab; label: string }[] = [
     { key: "invites", label: "Invite Links" },
@@ -596,9 +605,35 @@ function InterviewsContent() {
           {/* Upcoming slots summary list */}
           {upcomingSlots.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-white/50 text-xs font-body uppercase tracking-wider mb-3">Upcoming Slots</h3>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h3 className="text-white/50 text-xs font-body uppercase tracking-wider">Upcoming Slots</h3>
+                <div className="flex gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
+                  {[
+                    { key: "booked" as const, label: `Booked (${upcomingBookedSlots.length})` },
+                    { key: "free" as const, label: `Free (${upcomingFreeSlots.length})` },
+                    { key: "all" as const, label: `All (${upcomingSlots.length})` },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setSlotListFilter(tab.key)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-body transition-colors ${
+                        slotListFilter === tab.key
+                          ? "bg-[#85CC17] text-[#0D0D0D] font-semibold"
+                          : "text-white/50 hover:text-white"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-2">
-                {upcomingSlots.map(slot => (
+                {filteredUpcomingSlots.length === 0 && (
+                  <div className="bg-[#1C1F26] border border-white/8 rounded-xl px-5 py-4 text-white/35 text-sm font-body">
+                    No {slotListFilter === "booked" ? "booked" : slotListFilter === "free" ? "free" : ""} upcoming slots.
+                  </div>
+                )}
+                {filteredUpcomingSlots.map(slot => (
                   <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-5 py-3 flex items-center gap-4">
                     {/* Status dot: green = available, blue = booked */}
                     <div

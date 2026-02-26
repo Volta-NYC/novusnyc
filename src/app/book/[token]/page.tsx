@@ -52,6 +52,13 @@ function formatDayTab(isoDate: string): string {
   });
 }
 
+function formatDayHeading(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  });
+}
+
 function formatTime(isoDatetime: string): string {
   const d = new Date(isoDatetime);
   const h = d.getHours();
@@ -110,6 +117,14 @@ export default function BookPage() {
   const sortedDates  = useMemo(() => Object.keys(dateSlotMap).sort(), [dateSlotMap]);
   const timesForDate = dateSlotMap[selectedDate] ?? [];
   const selectedSlot = timesForDate.find(s => s.datetime === selectedTime) ?? null;
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const daySlots = dateSlotMap[selectedDate] ?? [];
+    if (daySlots.length === 0) return;
+    const selectedStillExists = daySlots.some(s => s.datetime === selectedTime);
+    if (!selectedStillExists) setSelectedTime(daySlots[0].datetime);
+  }, [dateSlotMap, selectedDate, selectedTime]);
 
   // ── Load invite + slots ─────────────────────────────────────────────────────
 
@@ -330,57 +345,59 @@ export default function BookPage() {
               </div>
             ) : (
               <div className="px-6 py-5 space-y-5">
-
-                {/* Day list */}
-                <div className="space-y-2">
-                  {sortedDates.map(date => (
-                    <div key={date}>
-                      {/* Day header button */}
-                      <button
-                        onClick={() => {
-                          setSelectedDate(date);
-                          const first = dateSlotMap[date]?.[0];
-                          if (first) setSelectedTime(first.datetime);
-                        }}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all
-                          ${selectedDate === date
-                            ? "bg-[#85CC17]/10 border-[#85CC17]/30 text-white"
-                            : "bg-white/3 border-white/8 text-white/60 hover:bg-white/6 hover:text-white/80"
+                <div className="grid md:grid-cols-[210px,1fr] gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/35 text-[11px] uppercase tracking-wider font-body">Choose a day</p>
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                      {sortedDates.map(date => (
+                        <button
+                          key={date}
+                          onClick={() => {
+                            setSelectedDate(date);
+                            const first = dateSlotMap[date]?.[0];
+                            if (first) setSelectedTime(first.datetime);
+                          }}
+                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg border text-left transition-colors ${
+                            selectedDate === date
+                              ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-white"
+                              : "bg-white/3 border-white/8 text-white/65 hover:bg-white/7 hover:text-white"
                           }`}
-                      >
-                        <span className="text-sm font-semibold font-body">{formatDayTab(date)}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-white/30 font-body">
-                            {dateSlotMap[date].length} slot{dateSlotMap[date].length !== 1 ? "s" : ""}
+                        >
+                          <span className="text-sm font-semibold font-body">{formatDayTab(date)}</span>
+                          <span className="text-[11px] text-white/35 font-body">
+                            {dateSlotMap[date].length}
                           </span>
-                          <svg
-                            className={`w-4 h-4 transition-transform ${selectedDate === date ? "rotate-180 text-[#85CC17]" : "text-white/20"}`}
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                          >
-                            <polyline points="6 9 12 15 18 9"/>
-                          </svg>
-                        </div>
-                      </button>
-
-                      {/* Time dropdown — shown when day is selected */}
-                      {selectedDate === date && (
-                        <div className="mt-2 px-1">
-                          <select
-                            value={selectedTime}
-                            onChange={e => setSelectedTime(e.target.value)}
-                            className="w-full bg-[#0F1014] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#85CC17]/40 transition-colors appearance-none cursor-pointer"
-                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff40' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center" }}
-                          >
-                            {timesForDate.map(slot => (
-                              <option key={slot.id} value={slot.datetime}>
-                                {formatTime(slot.datetime)}{slot.location ? ` · ${slot.location}` : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
+                    <p className="text-white text-sm font-semibold font-body mb-1">
+                      {selectedDate ? formatDayHeading(selectedDate) : "Select a day"}
+                    </p>
+                    <p className="text-white/40 text-xs font-body mb-3">
+                      {timesForDate.length} available time{timesForDate.length !== 1 ? "s" : ""}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {timesForDate.map(slot => {
+                        const active = selectedTime === slot.datetime;
+                        return (
+                          <button
+                            key={slot.id}
+                            onClick={() => setSelectedTime(slot.datetime)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-body transition-colors ${
+                              active
+                                ? "bg-[#85CC17] border-[#85CC17] text-[#0D0D0D] font-semibold"
+                                : "bg-white/5 border-white/10 text-white/75 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            {formatTime(slot.datetime)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Confirm button */}
