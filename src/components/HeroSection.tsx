@@ -15,9 +15,11 @@ export default function HeroSection() {
 
   return (
     <section ref={sectionRef} className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-v-bg pt-16">
-      <div className="absolute inset-0 dot-grid opacity-60" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-v-green/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 left-0 w-72 h-72 bg-v-blue/8 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 hero-wash" />
+      <div className="absolute inset-0 hero-map-lines opacity-80" />
+      <div className="absolute top-[-8%] left-[10%] w-[42vw] h-[28vw] bg-v-green/14 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[2%] w-[46vw] h-[30vw] bg-v-blue/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/12 via-transparent to-white/16 pointer-events-none" />
 
       {/* Logo + Title parallax group */}
       <motion.div

@@ -50,6 +50,25 @@ main {
   background-size: 28px 28px;
 }
 
+/* Home hero background: watercolor wash + abstract neighborhood map lines */
+.hero-wash {
+  background:
+    radial-gradient(120% 90% at 12% 16%, rgba(218, 240, 178, 0.38) 0%, rgba(218, 240, 178, 0) 55%),
+    radial-gradient(90% 80% at 84% 22%, rgba(171, 214, 114, 0.2) 0%, rgba(171, 214, 114, 0) 60%),
+    radial-gradient(75% 75% at 32% 86%, rgba(245, 247, 234, 0.9) 0%, rgba(245, 247, 234, 0) 62%),
+    linear-gradient(160deg, #f7f7f2 0%, #f2f6e6 45%, #eef5df 100%);
+}
+
+.hero-map-lines {
+  background-image:
+    linear-gradient(18deg, rgba(122, 156, 75, 0.09) 1px, transparent 1px),
+    linear-gradient(-24deg, rgba(122, 156, 75, 0.08) 1px, transparent 1px),
+    linear-gradient(88deg, rgba(122, 156, 75, 0.07) 1px, transparent 1px);
+  background-size: 130px 130px, 95px 95px, 160px 160px;
+  background-position: 0 0, 24px 18px, -40px 35px;
+  filter: blur(0.2px);
+}
+
 /* Card hover */
 .project-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
