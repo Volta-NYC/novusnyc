@@ -36,6 +36,7 @@ export default function BusinessesPage() {
   const [team, setTeam]                       = useState<TeamMember[]>([]);
   const [search, setSearch]                   = useState("");
   const [filterDiv, setFilterDiv]             = useState("");
+  const [statusPage, setStatusPage]           = useState<"active_planning" | "completed" | "scouting">("active_planning");
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -90,7 +91,14 @@ export default function BusinessesPage() {
     setModal(null);
   };
 
+  const statusMatchesPage = (status: Business["projectStatus"]) => {
+    if (statusPage === "active_planning") return status === "Active" || status === "Not Started";
+    if (statusPage === "completed") return status === "Complete";
+    return status === "Discovery" || status === "On Hold";
+  };
+
   const filtered = businesses.filter(b => {
+    if (!statusMatchesPage(b.projectStatus)) return false;
     const q = search.toLowerCase();
     const matchesSearch = !search
       || b.name.toLowerCase().includes(q)
@@ -100,7 +108,33 @@ export default function BusinessesPage() {
     const matchesDiv = !filterDiv || b.division === filterDiv;
     return matchesSearch && matchesDiv;
   });
-  const teamNameOptions = Array.from(new Set(team.map(member => member.name).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+
+  const teamNameCounts = new Map<string, number>();
+  team.forEach((member) => {
+    const key = member.name.trim().toLowerCase();
+    if (!key) return;
+    teamNameCounts.set(key, (teamNameCounts.get(key) ?? 0) + 1);
+  });
+
+  const teamNameOptions = Array.from(
+    new Set(
+      team
+        .map((member) => {
+          const name = member.name.trim();
+          if (!name) return "";
+          const nameKey = name.toLowerCase();
+          const count = teamNameCounts.get(nameKey) ?? 0;
+          if (count <= 1) return name;
+          const suffix = member.email?.trim() || member.school?.trim() || member.id.slice(-6);
+          return `${name} (${suffix})`;
+        })
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const activePlanningCount = businesses.filter((b) => b.projectStatus === "Active" || b.projectStatus === "Not Started").length;
+  const completedCount = businesses.filter((b) => b.projectStatus === "Complete").length;
+  const scoutingCount = businesses.filter((b) => b.projectStatus === "Discovery" || b.projectStatus === "On Hold").length;
 
   return (
     <MembersLayout>
@@ -108,16 +142,34 @@ export default function BusinessesPage() {
 
       <PageHeader
         title="Projects"
-        subtitle={`${businesses.length} projects · ${businesses.filter(b => b.projectStatus === "Active").length} active`}
+        subtitle={`${filtered.length} shown · ${businesses.length} total projects`}
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Project</Btn> : undefined}
       />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length}   color="text-green-400" />
-        <StatCard label="Planning"  value={businesses.filter(b => ["Not Started","Discovery"].includes(b.projectStatus)).length} color="text-purple-400" />
+        <StatCard label="Planning"  value={businesses.filter(b => b.projectStatus === "Not Started").length} color="text-purple-400" />
         <StatCard label="Complete"  value={businesses.filter(b => b.projectStatus === "Complete").length} color="text-blue-400" />
         <StatCard label="Grant Eligible" value={businesses.filter(b => b.grantEligible).length}          color="text-yellow-400" />
+      </div>
+
+      <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-4 w-fit">
+        {[
+          { key: "active_planning" as const, label: "Active / Planning", count: activePlanningCount },
+          { key: "completed" as const, label: "Completed", count: completedCount },
+          { key: "scouting" as const, label: "Scouting", count: scoutingCount },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatusPage(tab.key)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium font-body transition-colors ${
+              statusPage === tab.key ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/55 hover:text-white"
+            }`}
+          >
+            {tab.label} <span className="text-xs opacity-75">({tab.count})</span>
+          </button>
+        ))}
       </div>
 
       {/* Filters */}
@@ -251,7 +303,7 @@ export default function BusinessesPage() {
         {filtered.length === 0 && (
           <div className="col-span-3">
             <Empty
-              message="No projects found."
+              message="No projects found in this section."
               action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first project</Btn> : undefined}
             />
           </div>

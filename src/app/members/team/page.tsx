@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
@@ -27,6 +27,69 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
   email: "", status: "Active", skills: [], joinDate: "", notes: "",
 };
 
+type ImportedMember = {
+  name: string;
+  email: string;
+  school: string;
+};
+
+function normalizeText(v: string): string {
+  return v.trim().replace(/\s+/g, " ");
+}
+
+function normalizeKey(v: string): string {
+  return normalizeText(v).toLowerCase();
+}
+
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === "\"") {
+      if (inQuotes && line[i + 1] === "\"") {
+        current += "\"";
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      cells.push(current);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+
+  cells.push(current);
+  return cells.map((c) => c.trim());
+}
+
+function parseCsv(csvText: string): string[][] {
+  return csvText
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim() !== "")
+    .map(parseCsvLine);
+}
+
+function headerKey(raw: string): string {
+  return raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function findHeaderIndex(headers: string[], aliases: string[]): number {
+  const normalized = headers.map(headerKey);
+  for (const alias of aliases) {
+    const idx = normalized.indexOf(alias);
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function TeamPage() {
@@ -38,6 +101,9 @@ export default function TeamPage() {
   const [form, setForm]               = useState(BLANK_FORM);
   const [sortCol, setSortCol]         = useState(-1);
   const [sortDir, setSortDir]         = useState<"asc" | "desc">("asc");
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ask, Dialog } = useConfirm();
   const { authRole }    = useAuth();
@@ -54,6 +120,162 @@ export default function TeamPage() {
     setForm(BLANK_FORM);
     setEditingMember(null);
     setModal("create");
+  };
+
+  const handleImportCsv = async (file: File) => {
+    setImportingCsv(true);
+    setImportMessage(null);
+    try {
+      const csvText = await file.text();
+      const rows = parseCsv(csvText);
+      if (rows.length < 2) {
+        setImportMessage("CSV must include a header row and at least one data row.");
+        return;
+      }
+
+      const headers = rows[0];
+      const nameIdx = findHeaderIndex(headers, ["name", "full name", "student name"]);
+      const emailIdx = findHeaderIndex(headers, ["email", "email address", "student email"]);
+      const schoolIdx = findHeaderIndex(headers, ["high school", "high school name", "school", "school name"]);
+
+      if (nameIdx === -1 || emailIdx === -1 || schoolIdx === -1) {
+        setImportMessage("CSV needs columns for Name, Email, and High School.");
+        return;
+      }
+
+      const rawEntries: ImportedMember[] = [];
+      let invalidRows = 0;
+
+      for (const row of rows.slice(1)) {
+        const name = normalizeText(row[nameIdx] ?? "");
+        const email = normalizeText(row[emailIdx] ?? "");
+        const school = normalizeText(row[schoolIdx] ?? "");
+        if (!name) {
+          invalidRows += 1;
+          continue;
+        }
+        rawEntries.push({ name, email, school });
+      }
+
+      const deduped: ImportedMember[] = [];
+      const seenEmail = new Map<string, ImportedMember>();
+      const seenNameSchool = new Map<string, ImportedMember>();
+
+      for (const entry of rawEntries) {
+        const emailKey = normalizeKey(entry.email);
+        const nameSchoolKey = `${normalizeKey(entry.name)}|${normalizeKey(entry.school)}`;
+
+        if (emailKey) {
+          const existing = seenEmail.get(emailKey);
+          if (existing) {
+            if (!existing.school && entry.school) existing.school = entry.school;
+            if (!existing.name && entry.name) existing.name = entry.name;
+            continue;
+          }
+          seenEmail.set(emailKey, { ...entry });
+          deduped.push(seenEmail.get(emailKey)!);
+          continue;
+        }
+
+        if (seenNameSchool.has(nameSchoolKey)) continue;
+        seenNameSchool.set(nameSchoolKey, entry);
+        deduped.push(entry);
+      }
+
+      const existingByEmail = new Map<string, TeamMember>();
+      const existingByNameSchool = new Map<string, TeamMember>();
+      const existingByName = new Map<string, TeamMember[]>();
+
+      for (const member of team) {
+        const memberEmailKey = normalizeKey(member.email ?? "");
+        const memberNameKey = normalizeKey(member.name ?? "");
+        const memberNameSchoolKey = `${memberNameKey}|${normalizeKey(member.school ?? "")}`;
+        if (memberEmailKey) existingByEmail.set(memberEmailKey, member);
+        if (memberNameKey) {
+          const arr = existingByName.get(memberNameKey) ?? [];
+          arr.push(member);
+          existingByName.set(memberNameKey, arr);
+        }
+        existingByNameSchool.set(memberNameSchoolKey, member);
+      }
+
+      let added = 0;
+      let updated = 0;
+      let skipped = 0;
+      const today = new Date().toISOString().split("T")[0];
+
+      for (const entry of deduped) {
+        const emailKey = normalizeKey(entry.email);
+        const nameKey = normalizeKey(entry.name);
+        const nameSchoolKey = `${nameKey}|${normalizeKey(entry.school)}`;
+
+        const existingByExactEmail = emailKey ? existingByEmail.get(emailKey) : undefined;
+        if (existingByExactEmail) {
+          const patch: Partial<TeamMember> = {};
+          if (entry.name && entry.name !== existingByExactEmail.name) patch.name = entry.name;
+          if (entry.school && entry.school !== existingByExactEmail.school) patch.school = entry.school;
+          if (!existingByExactEmail.email && entry.email) patch.email = entry.email;
+          if (Object.keys(patch).length > 0) {
+            // eslint-disable-next-line no-await-in-loop
+            await updateTeamMember(existingByExactEmail.id, patch);
+            updated += 1;
+          } else {
+            skipped += 1;
+          }
+          continue;
+        }
+
+        if (!emailKey) {
+          if (existingByNameSchool.has(nameSchoolKey)) {
+            skipped += 1;
+            continue;
+          }
+        } else {
+          const sameName = existingByName.get(nameKey) ?? [];
+          const namematchWithoutEmail = sameName.find((m) => !normalizeKey(m.email ?? ""));
+          if (namematchWithoutEmail) {
+            const patch: Partial<TeamMember> = { email: entry.email };
+            if (entry.school) patch.school = entry.school;
+            // eslint-disable-next-line no-await-in-loop
+            await updateTeamMember(namematchWithoutEmail.id, patch);
+            updated += 1;
+            existingByEmail.set(emailKey, { ...namematchWithoutEmail, ...patch });
+            continue;
+          }
+        }
+
+        // eslint-disable-next-line no-await-in-loop
+        await createTeamMember({
+          name: entry.name,
+          email: entry.email,
+          school: entry.school,
+          divisions: [],
+          pod: "",
+          role: "Member",
+          slackHandle: "",
+          status: "Active",
+          skills: [],
+          joinDate: today,
+          notes: "",
+        });
+        added += 1;
+      }
+
+      setImportMessage(
+        `Imported ${rows.length - 1} rows: ${added} added, ${updated} updated, ${skipped} skipped${invalidRows ? `, ${invalidRows} invalid` : ""}.`
+      );
+    } catch {
+      setImportMessage("Could not import CSV. Check formatting and try again.");
+    } finally {
+      setImportingCsv(false);
+    }
+  };
+
+  const onCsvInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleImportCsv(file);
+    e.target.value = "";
   };
 
   const openEdit = (member: TeamMember) => {
@@ -119,12 +341,31 @@ export default function TeamPage() {
   return (
     <MembersLayout>
       <Dialog />
+      {canEdit && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={onCsvInputChange}
+        />
+      )}
 
       <PageHeader
         title="Team Directory"
         subtitle={`${activeMembers.length} active · ${team.filter(m => m.role === "Team Lead").length} team leads`}
-        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ Add Member</Btn> : undefined}
+        action={canEdit ? (
+          <div className="flex gap-2">
+            <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importingCsv}>
+              {importingCsv ? "Importing..." : "Import CSV"}
+            </Btn>
+            <Btn variant="primary" onClick={openCreate}>+ Add Member</Btn>
+          </div>
+        ) : undefined}
       />
+      {importMessage && (
+        <p className="text-xs text-white/55 mb-4">{importMessage}</p>
+      )}
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
