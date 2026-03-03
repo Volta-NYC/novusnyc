@@ -203,6 +203,13 @@ export interface InterviewSlot {
   createdAt: number;      // Unix ms timestamp
 }
 
+export interface InterviewSettings {
+  zoomLink?: string;
+  zoomEnabled?: boolean;
+  updatedAt?: number;
+  updatedBy?: string;
+}
+
 // ── INTERNAL HELPERS ──────────────────────────────────────────────────────────
 
 // Returns the current time as an ISO string, used for createdAt / updatedAt fields.
@@ -525,6 +532,27 @@ export async function getInterviewSlots(): Promise<InterviewSlot[]> {
   if (!db) return [];
   const snap = await get(ref(db, "interviewSlots"));
   return snapToList<InterviewSlot>(snap);
+}
+
+// ── Interview Settings ───────────────────────────────────────────────────────
+
+export function subscribeInterviewSettings(callback: (settings: InterviewSettings | null) => void): (() => void) {
+  const db = getDB();
+  if (!db) {
+    callback(null);
+    return () => {};
+  }
+  const dbRef = ref(db, "interviewSettings");
+  const handler = onValue(dbRef, (snap) => {
+    callback(snap.exists() ? (snap.val() as InterviewSettings) : null);
+  });
+  return () => off(dbRef, "value", handler);
+}
+
+export async function updateInterviewSettings(data: Partial<InterviewSettings>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, "interviewSettings"), data);
 }
 
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────────

@@ -5,11 +5,14 @@
 //   1. Firebase Admin SDK (if FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY are set in Vercel)
 //   2. Firebase REST API (requires Firebase rules to allow public reads — see CLAUDE.md)
 //
-// Env vars:
-//   INTERVIEW_ZOOM_LINK  →  Your recurring Zoom URL (shown on the confirmation screen)
+// Zoom link source:
+//   interviewSettings/zoomLink   → custom admin-managed link in Realtime DB
+//   interviewSettings/zoomEnabled -> toggle showing Zoom link to applicants
+//   INTERVIEW_ZOOM_LINK          → fallback default when custom link is not set
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDB } from "@/lib/firebaseAdmin";
+import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 
 type Params = { params: { token: string } };
 
@@ -95,10 +98,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
         .sort((a, b) => new Date(a["datetime"] as string).getTime() - new Date(b["datetime"] as string).getTime()))
     : [];
 
+  let settingsData: unknown = null;
+  try {
+    settingsData = await dbGet("interviewSettings");
+  } catch {
+    settingsData = null;
+  }
+  const zoom = resolveInterviewZoomSettings(settingsData, process.env.INTERVIEW_ZOOM_LINK ?? "");
+
   return NextResponse.json({
     invite,
     slots,
-    zoomLink: process.env.INTERVIEW_ZOOM_LINK ?? "",
+    zoomLink: zoom.zoomLink,
   });
 }
 

@@ -204,9 +204,24 @@ export default function BookPage() {
     }
   };
 
+  const fetchLatestZoomLink = async (): Promise<string> => {
+    try {
+      const res = await fetch("/api/booking/zoom", { cache: "no-store" });
+      if (!res.ok) return zoomLink;
+      const data = await res.json() as { zoomLink?: string };
+      const latest = data.zoomLink ?? "";
+      setZoomLink(latest);
+      return latest;
+    } catch {
+      return zoomLink;
+    }
+  };
+
   const handleCopyZoom = async () => {
     try {
-      await navigator.clipboard.writeText(zoomLink);
+      const latest = await fetchLatestZoomLink();
+      if (!latest) return;
+      await navigator.clipboard.writeText(latest);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch { /* fallback: do nothing */ }
@@ -463,7 +478,10 @@ export default function BookPage() {
             {/* Action buttons */}
             <div className="px-6 pb-5 space-y-2.5">
               <button
-                onClick={() => downloadICS(confirmedSlot, zoomLink)}
+                onClick={async () => {
+                  const latest = await fetchLatestZoomLink();
+                  downloadICS(confirmedSlot, latest);
+                }}
                 className="w-full py-3 rounded-xl bg-white/6 border border-white/10 text-white font-display font-bold text-sm hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

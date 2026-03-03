@@ -8,6 +8,7 @@ import {
   subscribeInterviewInvites,
   createInterviewInvite,
   updateInterviewInvite,
+  updateInterviewSettings,
   subscribeInterviewSlots,
   createInterviewSlot,
   updateInterviewSlot,
@@ -102,6 +103,12 @@ function InterviewsContent() {
   const [newToken, setNewToken] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [assignSlotByInvite, setAssignSlotByInvite] = useState<Record<string, string>>({});
+  const [zoomEnabled, setZoomEnabled] = useState(true);
+  const [zoomLinkInput, setZoomLinkInput] = useState("");
+  const [effectiveZoomLink, setEffectiveZoomLink] = useState("");
+  const [zoomSource, setZoomSource] = useState<"custom" | "env" | "disabled" | "none">("none");
+  const [zoomSaveMessage, setZoomSaveMessage] = useState<string | null>(null);
+  const [savingZoom, setSavingZoom] = useState(false);
 
   const [slotWeek, setSlotWeek] = useState(0);
 
@@ -119,6 +126,67 @@ function InterviewsContent() {
       unsubSlots();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/booking/zoom", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json() as {
+          zoomLink?: string;
+          zoomEnabled?: boolean;
+          source?: "custom" | "env" | "disabled" | "none";
+          customZoomLink?: string;
+        };
+        if (cancelled) return;
+        const custom = (data.customZoomLink ?? "").trim();
+        setZoomEnabled(data.zoomEnabled ?? true);
+        setEffectiveZoomLink(data.zoomLink ?? "");
+        setZoomSource(data.source ?? "none");
+        setZoomLinkInput(custom || (data.zoomLink ?? ""));
+      } catch {
+        if (cancelled) return;
+        setEffectiveZoomLink("");
+        setZoomSource("none");
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const saveZoomSettings = async () => {
+    setSavingZoom(true);
+    setZoomSaveMessage(null);
+    try {
+      await updateInterviewSettings({
+        zoomEnabled,
+        zoomLink: zoomLinkInput.trim(),
+        updatedAt: Date.now(),
+        updatedBy: user?.uid ?? "",
+      });
+      const res = await fetch("/api/booking/zoom", { cache: "no-store" });
+      const data = await res.json() as {
+        zoomLink?: string;
+        zoomEnabled?: boolean;
+        source?: "custom" | "env" | "disabled" | "none";
+        customZoomLink?: string;
+      };
+      const custom = (data.customZoomLink ?? "").trim();
+      setZoomEnabled(data.zoomEnabled ?? true);
+      setEffectiveZoomLink(data.zoomLink ?? "");
+      setZoomSource(data.source ?? "none");
+      setZoomLinkInput(custom || (data.zoomLink ?? ""));
+      setZoomSaveMessage("Zoom settings saved.");
+    } catch {
+      setZoomSaveMessage("Could not save Zoom settings. Try again.");
+    } finally {
+      setSavingZoom(false);
+      setTimeout(() => setZoomSaveMessage(null), 2200);
+    }
+  };
 
   const now = Date.now();
   const weekDates = getWeekDates(slotWeek);
@@ -258,18 +326,14 @@ function InterviewsContent() {
   const toggleHour = async (date: Date, hour: number) => {
     const keys = hourSlotKeys(date, hour);
     const quarterSlots = keys.map((k) => slotMap[k]).filter(Boolean);
-    const hasBooked = quarterSlots.some((s) => !!s.bookedBy);
-    if (hasBooked) return;
+    const visibleSlots = quarterSlots.filter((s) => !s.bookedBy);
 
-    const hasAnyAvailable = quarterSlots.some((s) => !s.bookedBy);
-
-    if (!hasAnyAvailable) {
-      const d = toDateString(date);
-      const h = String(hour).padStart(2, "0");
+    const missingKeys = keys.filter((k) => !slotMap[k]);
+    if (missingKeys.length > 0 && quarterSlots.some((s) => !s.bookedBy)) {
       await Promise.all(
-        ["00", "15", "30", "45"].map((m) =>
+        missingKeys.map((k) =>
           createInterviewSlot({
-            datetime: `${d}T${h}:${m}:00`,
+            datetime: `${k}:00`,
             durationMinutes: 15,
             available: true,
             location: "",
@@ -281,9 +345,25 @@ function InterviewsContent() {
       return;
     }
 
-    await Promise.all(
-      quarterSlots.filter((s) => !s.bookedBy).map((s) => deleteInterviewSlot(s.id))
-    );
+    if (visibleSlots.length > 0) {
+      await Promise.all(visibleSlots.map((s) => deleteInterviewSlot(s.id)));
+      return;
+    }
+
+    if (missingKeys.length > 0) {
+      await Promise.all(
+        missingKeys.map((k) =>
+          createInterviewSlot({
+            datetime: `${k}:00`,
+            durationMinutes: 15,
+            available: true,
+            location: "",
+            createdBy: user?.uid ?? "",
+            createdAt: Date.now(),
+          })
+        )
+      );
+    }
   };
 
   const toggleDay = async (date: Date) => {
@@ -295,21 +375,21 @@ function InterviewsContent() {
       return;
     }
 
-    const d = toDateString(date);
     await Promise.all(
-      GRID_HOURS.flatMap((hour) => {
-        const h = String(hour).padStart(2, "0");
-        return ["00", "15", "30", "45"].map((m) =>
+      GRID_HOURS.flatMap((hour) =>
+        hourSlotKeys(date, hour)
+          .filter((k) => !slotMap[k])
+          .map((k) =>
           createInterviewSlot({
-            datetime: `${d}T${h}:${m}:00`,
+            datetime: `${k}:00`,
             durationMinutes: 15,
             available: true,
             location: "",
             createdBy: user?.uid ?? "",
             createdAt: Date.now(),
           })
-        );
-      })
+        )
+      )
     );
   };
 
@@ -329,13 +409,13 @@ function InterviewsContent() {
       return;
     }
 
-    const h = String(hour).padStart(2, "0");
     await Promise.all(
       futureDays.flatMap((date) => {
-        const d = toDateString(date);
-        return ["00", "15", "30", "45"].map((m) =>
+        return hourSlotKeys(date, hour)
+          .filter((k) => !slotMap[k])
+          .map((k) =>
           createInterviewSlot({
-            datetime: `${d}T${h}:${m}:00`,
+            datetime: `${k}:00`,
             durationMinutes: 15,
             available: true,
             location: "",
@@ -347,6 +427,24 @@ function InterviewsContent() {
     );
   };
 
+  const ensureHourVisible = async (date: Date, hour: number) => {
+    const keys = hourSlotKeys(date, hour);
+    const missingKeys = keys.filter((k) => !slotMap[k]);
+    if (missingKeys.length === 0) return;
+    await Promise.all(
+      missingKeys.map((k) =>
+        createInterviewSlot({
+          datetime: `${k}:00`,
+          durationMinutes: 15,
+          available: true,
+          location: "",
+          createdBy: user?.uid ?? "",
+          createdAt: Date.now(),
+        })
+      )
+    );
+  };
+
   const applyPreset = async (startHour: number, endHour: number) => {
     const range = GRID_HOURS.filter((h) => h >= startHour && h < endHour);
     for (const date of weekDates) {
@@ -354,40 +452,19 @@ function InterviewsContent() {
         const hourTs = new Date(toDateString(date) + "T" + String(hour).padStart(2, "0") + ":00").getTime();
         if (hourTs < now) continue;
         // eslint-disable-next-line no-await-in-loop
-        await toggleHour(date, hour);
+        await ensureHourVisible(date, hour);
       }
     }
   };
 
-  const toggleMinuteSlot = async (date: Date, hour: number, minute: string) => {
+  const getDayVisibleCount = (date: Date) => {
     const d = toDateString(date);
-    const h = String(hour).padStart(2, "0");
-    const key = `${d}T${h}:${minute}`;
-    const existing = slotMap[key];
-    if (existing) {
-      if (!existing.bookedBy) await deleteInterviewSlot(existing.id);
-      return;
-    }
-    await createInterviewSlot({
-      datetime: `${d}T${h}:${minute}:00`,
-      durationMinutes: 15,
-      available: true,
-      location: "",
-      createdBy: user?.uid ?? "",
-      createdAt: Date.now(),
-    });
-  };
-
-  const getDayCounts = (date: Date) => {
-    const d = toDateString(date);
-    let available = 0;
-    let booked = 0;
+    let visible = 0;
     slots.forEach((slot) => {
       if (!slot.datetime.startsWith(d) || new Date(slot.datetime).getTime() < now) return;
-      if (slot.bookedBy) booked += 1;
-      else available += 1;
+      if (!slot.bookedBy) visible += 1;
     });
-    return { available, booked };
+    return visible;
   };
 
   const TABS: { key: "upcoming" | "invites" | "availability"; label: string }[] = [
@@ -438,6 +515,57 @@ function InterviewsContent() {
 
       {activeTab === "upcoming" && (
         <div className="space-y-5">
+          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-white/85 text-sm font-semibold">Interview Zoom Link</p>
+                <p className="text-white/40 text-xs mt-1 font-body">
+                  {zoomSource === "custom" && "Using custom link for applicants and ICS files."}
+                  {zoomSource === "env" && "Using default environment link. Save a custom link to override."}
+                  {zoomSource === "disabled" && "Zoom link is currently disabled for applicants."}
+                  {zoomSource === "none" && "No Zoom link configured yet."}
+                </p>
+              </div>
+              <button
+                onClick={() => setZoomEnabled((v) => !v)}
+                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                  zoomEnabled ? "bg-[#85CC17]" : "bg-white/20"
+                }`}
+                title="Toggle Zoom link visibility for applicants"
+              >
+                <span
+                  className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
+                    zoomEnabled ? "left-6" : "left-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                value={zoomLinkInput}
+                onChange={(e) => setZoomLinkInput(e.target.value)}
+                placeholder="https://zoom.us/j/..."
+                className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/45"
+              />
+              <Btn variant="primary" size="sm" onClick={saveZoomSettings} disabled={savingZoom}>
+                {savingZoom ? "Saving..." : "Save Zoom"}
+              </Btn>
+              {zoomEnabled && effectiveZoomLink && (
+                <a
+                  href={effectiveZoomLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#2D8CFF]/14 border border-[#2D8CFF]/30 text-[#6DB8FF] text-sm font-semibold hover:bg-[#2D8CFF]/22 transition-colors"
+                >
+                  Join Zoom
+                </a>
+              )}
+            </div>
+
+            {zoomSaveMessage && <p className="text-xs text-white/55">{zoomSaveMessage}</p>}
+          </div>
+
           {upcomingBookedByDate.length === 0 && (
             <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-8 text-center text-white/30 text-sm font-body">
               No upcoming interviews booked yet.
@@ -597,7 +725,7 @@ function InterviewsContent() {
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
             <p className="text-white/65 text-sm font-semibold">Weekly Availability</p>
             <p className="text-white/35 text-xs mt-1 font-body">
-              Click cells to add/remove times. Booked times are locked. This controls what appears on booking links.
+              Select hour blocks to control what times are visible on invite booking links.
             </p>
             <div className="flex flex-wrap gap-2 items-center mt-3">
               <span className="text-white/40 text-xs font-body mr-1">Quick fill:</span>
@@ -656,7 +784,7 @@ function InterviewsContent() {
                 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 const isToday = toDateString(day) === toDateString(new Date());
                 const isPastDay = day < new Date(new Date().setHours(0, 0, 0, 0));
-                const counts = getDayCounts(day);
+                const visibleCount = getDayVisibleCount(day);
                 return (
                   <button
                     key={i}
@@ -671,7 +799,7 @@ function InterviewsContent() {
                     <div className={`text-[10px] mt-0.5 ${isToday ? "text-[#85CC17]/80" : "text-white/25"}`}>
                       {day.getMonth() + 1}/{day.getDate()}
                     </div>
-                    <div className="text-[10px] mt-1 text-white/30">{counts.available} free · {counts.booked} booked</div>
+                    <div className="text-[10px] mt-1 text-white/30">{visibleCount} visible</div>
                   </button>
                 );
               })}
@@ -690,47 +818,35 @@ function InterviewsContent() {
                 {weekDates.map((day, dayIdx) => {
                   const d = toDateString(day);
                   const h = String(hour).padStart(2, "0");
+                  const keys = hourSlotKeys(day, hour);
+                  const quarterSlots = keys.map((k) => slotMap[k]).filter(Boolean);
+                  const visibleCount = quarterSlots.filter((s) => !s.bookedBy).length;
                   const isPastHour = new Date(`${d}T${h}:59`).getTime() < now;
+                  const disabled = isPastHour;
+                  const isVisible = visibleCount > 0;
+                  const isPartiallyVisible = visibleCount > 0 && visibleCount < 4;
+
+                  let cellClass = "bg-white/10 hover:bg-white/25";
+                  if (isVisible) cellClass = "bg-[#85CC17]/70 hover:bg-[#85CC17]/45";
+                  if (isPartiallyVisible) cellClass = "bg-[#85CC17]/45 hover:bg-[#85CC17]/35";
+
+                  const title = (() => {
+                    const label = fmtHour(hour);
+                    if (isPastHour) return `${label} — Past`;
+                    if (isVisible) return `${label} — Visible on booking links`;
+                    return `${label} — Hidden on booking links`;
+                  })();
+
                   return (
                     <div key={dayIdx} className="relative border-l border-white/6">
-                      <div className={`flex h-11 gap-px px-0.5 py-1.5 items-stretch ${isPastHour ? "opacity-20" : ""}`}>
-                        {(["00", "15", "30", "45"] as const).map((minute) => {
-                          const key = `${d}T${h}:${minute}`;
-                          const slot = slotMap[key];
-                          const isBooked = !!slot?.bookedBy;
-                          const isAvailable = !!slot && !isBooked;
-                          const isPastMinute = new Date(`${d}T${h}:${minute}`).getTime() < now;
-                          const label = `${Number(h) % 12 || 12}:${minute} ${Number(h) >= 12 ? "PM" : "AM"}`;
-
-                          return (
-                            <button
-                              key={minute}
-                              disabled={isPastMinute || isBooked}
-                              onClick={async () => {
-                                if (!isPastMinute && !isBooked) await toggleMinuteSlot(day, hour, minute);
-                              }}
-                              title={
-                                isBooked
-                                  ? `${label} — Booked${slot?.bookerName ? ` · ${slot.bookerName}` : ""}`
-                                  : isAvailable
-                                  ? `${label} — Available (click to remove)`
-                                  : isPastMinute
-                                  ? label
-                                  : `${label} — Click to add`
-                              }
-                              className={`flex-1 rounded-[3px] transition-colors ${
-                                isBooked
-                                  ? "bg-blue-400/75 cursor-default"
-                                  : isAvailable
-                                  ? "bg-[#85CC17]/70 hover:bg-[#85CC17]/45 cursor-pointer"
-                                  : isPastMinute
-                                  ? "bg-white/5 cursor-default"
-                                  : "bg-white/10 hover:bg-white/25 cursor-pointer"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
+                      <button
+                        disabled={disabled}
+                        onClick={() => toggleHour(day, hour)}
+                        title={title}
+                        className={`w-full h-11 rounded-none transition-colors ${
+                          disabled ? `${cellClass} cursor-default ${isPastHour ? "opacity-20" : ""}` : `${cellClass} cursor-pointer`
+                        }`}
+                      />
                     </div>
                   );
                 })}
@@ -741,15 +857,11 @@ function InterviewsContent() {
           <div className="flex flex-wrap gap-4 text-xs text-white/40 font-body">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-[#85CC17]/20 border border-[#85CC17]/40" />
-              Available
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-blue-500/15 border border-blue-400/30" />
-              Booked
+              Visible to applicants
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-white/8" />
-              Click day header to toggle day · click hour label to toggle row
+              Click hour blocks to toggle full hours · click day header to toggle day
             </span>
           </div>
         </div>
