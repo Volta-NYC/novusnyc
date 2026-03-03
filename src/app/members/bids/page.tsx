@@ -18,7 +18,6 @@ import { useAuth } from "@/lib/members/authContext";
 const STATUSES   = ["Active Partner", "In Conversation", "Materials Sent", "Cold Outreach", "Paused", "Dead"];
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
 const PRIORITIES = ["High", "Medium", "Low"];
-const TIMELINE_TYPES = ["Email", "Call", "Tour", "Meeting", "Outreach", "Other"];
 
 // Blank form values for creating a new BID record.
 const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
@@ -35,7 +34,7 @@ export default function BIDTrackerPage() {
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
   const [timelineDrafts, setTimelineDrafts] = useState<
-    Record<string, { date: string; type: string; note: string; saving: boolean }>
+    Record<string, { date: string; action: string; saving: boolean }>
   >({});
 
   const { ask, Dialog } = useConfirm();
@@ -85,8 +84,7 @@ export default function BIDTrackerPage() {
 
   const defaultTimelineDraft = () => ({
     date: new Date().toISOString().split("T")[0],
-    type: "Email",
-    note: "",
+    action: "",
     saving: false,
   });
 
@@ -95,7 +93,7 @@ export default function BIDTrackerPage() {
 
   const setTimelineDraft = (
     bidId: string,
-    patch: Partial<{ date: string; type: string; note: string; saving: boolean }>
+    patch: Partial<{ date: string; action: string; saving: boolean }>
   ) => {
     setTimelineDrafts((prev) => ({
       ...prev,
@@ -105,15 +103,14 @@ export default function BIDTrackerPage() {
 
   const handleAddTimeline = async (bidId: string) => {
     const draft = getTimelineDraft(bidId);
-    if (!draft.note.trim()) return;
+    if (!draft.action.trim()) return;
     setTimelineDraft(bidId, { saving: true });
     await addBIDTimelineEntry(bidId, {
       date: draft.date,
-      type: draft.type,
-      note: draft.note.trim(),
+      action: draft.action.trim(),
       createdAt: new Date().toISOString(),
     });
-    setTimelineDraft(bidId, { note: "", saving: false });
+    setTimelineDraft(bidId, { action: "", saving: false });
   };
 
   const handleDeleteTimeline = (bidId: string, entryId: string) => {
@@ -227,13 +224,8 @@ export default function BIDTrackerPage() {
                     timeline.map((entry) => (
                       <div key={entry.id} className="flex items-start gap-3 rounded-lg border border-white/7 bg-[#0F1014] px-3 py-2.5">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[10px] font-medium text-white/45 uppercase tracking-wide bg-white/8 px-1.5 py-0.5 rounded">
-                              {entry.type}
-                            </span>
-                            <span className="text-[11px] text-white/30">{entry.date}</span>
-                          </div>
-                          <p className="text-sm text-white/70">{entry.note}</p>
+                          <span className="text-[11px] text-white/30 block mb-1">{entry.date}</span>
+                          <p className="text-sm text-white/70">{entry.action ?? entry.note ?? ""}</p>
                         </div>
                         {canEdit && (
                           <button
@@ -255,34 +247,23 @@ export default function BIDTrackerPage() {
                 {canEdit && (
                   <div className="mt-3 rounded-xl border border-white/8 bg-[#141821] p-3 space-y-2">
                     <p className="text-xs text-white/45">Log activity</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <select
-                        value={draft.type}
-                        onChange={(e) => setTimelineDraft(bid.id, { type: e.target.value })}
-                        className="bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none"
-                      >
-                        {TIMELINE_TYPES.map((t) => (
-                          <option key={t}>{t}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="date"
-                        value={draft.date}
-                        onChange={(e) => setTimelineDraft(bid.id, { date: e.target.value })}
-                        className="bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none"
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      value={draft.date}
+                      onChange={(e) => setTimelineDraft(bid.id, { date: e.target.value })}
+                      className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none"
+                    />
                     <textarea
-                      value={draft.note}
-                      onChange={(e) => setTimelineDraft(bid.id, { note: e.target.value })}
-                      placeholder="What happened?"
+                      value={draft.action}
+                      onChange={(e) => setTimelineDraft(bid.id, { action: e.target.value })}
+                      placeholder="Action"
                       rows={2}
                       className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none resize-none font-body"
                     />
                     <Btn
                       variant="primary"
                       onClick={() => handleAddTimeline(bid.id)}
-                      disabled={draft.saving || !draft.note.trim()}
+                      disabled={draft.saving || !draft.action.trim()}
                     >
                       {draft.saving ? "Saving…" : "+ Log Entry"}
                     </Btn>

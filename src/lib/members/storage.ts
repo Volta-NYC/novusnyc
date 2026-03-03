@@ -22,7 +22,14 @@ export interface BID {
   nextAction: string;
   notes: string;
   priority: "High" | "Medium" | "Low";
-  timeline?: Record<string, { date: string; type: string; note: string; createdAt: string }>;
+  timeline?: Record<string, {
+    date: string;
+    action?: string;
+    // Legacy fields retained for backward compatibility with existing entries.
+    type?: string;
+    note?: string;
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -334,7 +341,7 @@ export async function deleteBID(id: string): Promise<void> {
 
 export async function addBIDTimelineEntry(
   bidId: string,
-  entry: { date: string; type: string; note: string; createdAt: string }
+  entry: { date: string; action: string; createdAt: string }
 ): Promise<void> {
   const db = getDB();
   if (!db) return;
@@ -344,7 +351,7 @@ export async function addBIDTimelineEntry(
     action: "create",
     collection: "bids.timeline",
     recordId: `${bidId}/${tlRef.key ?? ""}`,
-    details: { type: entry.type, date: entry.date },
+    details: { action: entry.action, date: entry.date },
   });
 }
 

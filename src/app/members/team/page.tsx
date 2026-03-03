@@ -91,7 +91,7 @@ export default function TeamPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
-  const [sortCol, setSortCol]         = useState(-1);
+  const [sortCol, setSortCol]         = useState(0);
   const [sortDir, setSortDir]         = useState<"asc" | "desc">("asc");
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
