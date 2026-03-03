@@ -292,10 +292,18 @@ export function useConfirm() {
 // Renders existing tags as removable pills. Users can add tags by picking from
 // the dropdown or by typing a custom value and pressing Enter.
 
-export function TagInput({ values, onChange, options }: {
+export function TagInput({
+  values,
+  onChange,
+  options,
+  commitOnBlur = false,
+  customPlaceholder = "Or type custom…",
+}: {
   values: string[];
   onChange: (values: string[]) => void;
   options: string[];
+  commitOnBlur?: boolean;
+  customPlaceholder?: string;
 }) {
   const [inputText, setInputText] = useState("");
 
@@ -334,10 +342,26 @@ export function TagInput({ values, onChange, options }: {
         <input
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(inputText); } }}
-          placeholder="Or type custom…"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "," || e.key === "Tab") {
+              e.preventDefault();
+              addTag(inputText);
+            }
+          }}
+          onBlur={() => {
+            if (commitOnBlur) addTag(inputText);
+          }}
+          placeholder={customPlaceholder}
           className="bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 flex-1"
         />
+        <button
+          type="button"
+          onClick={() => addTag(inputText)}
+          disabled={!inputText.trim()}
+          className="px-3 py-2 rounded-lg text-sm bg-[#85CC17]/20 text-[#85CC17] border border-[#85CC17]/35 hover:bg-[#85CC17]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Add
+        </button>
       </div>
     </div>
   );

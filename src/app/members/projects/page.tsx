@@ -347,7 +347,13 @@ export default function BusinessesPage() {
           </Field>
           <div className="col-span-2">
             <Field label="Assigned Members">
-              <TagInput values={form.teamMembers ?? []} onChange={v => setField("teamMembers", v)} options={teamNameOptions} />
+              <TagInput
+                values={form.teamMembers ?? []}
+                onChange={v => setField("teamMembers", v)}
+                options={teamNameOptions}
+                commitOnBlur
+                customPlaceholder="Type a name not in directory, then Enter"
+              />
             </Field>
           </div>
           <div className="col-span-2">
