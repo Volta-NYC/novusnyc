@@ -6,6 +6,7 @@
 - CSI High School for International Studies
 - Staten Island Technical High School
 - Marvin Ridge High School
+- Manhattan / Hunter Science High School
 - Manhattan Center for Science and Mathematics
 - Staten Island Academy
 - Brooklyn Technical High School

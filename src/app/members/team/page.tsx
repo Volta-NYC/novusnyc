@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, Table, Empty, StatCard, useConfirm,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Table, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, type TeamMember,
@@ -336,10 +336,6 @@ export default function TeamPage() {
     return sortDir === "asc" ? cmp : -cmp;
   });
 
-  const withEmail = team.filter((m) => (m.email ?? "").trim() !== "").length;
-  const withSchool = team.filter((m) => (m.school ?? "").trim() !== "").length;
-  const withGrade = team.filter((m) => (m.grade ?? "").trim() !== "").length;
-
   return (
     <MembersLayout>
       <Dialog />
@@ -368,14 +364,6 @@ export default function TeamPage() {
       {importMessage && (
         <p className="text-xs text-white/55 mb-4">{importMessage}</p>
       )}
-
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <StatCard label="Total" value={team.length} />
-        <StatCard label="With Email" value={withEmail} color="text-green-400" />
-        <StatCard label="With School" value={withSchool} color="text-blue-400" />
-        <StatCard label="With Grade" value={withGrade} color="text-white/40" />
-      </div>
 
       {/* Search controls */}
       <div className="flex gap-3 mb-4 flex-wrap">

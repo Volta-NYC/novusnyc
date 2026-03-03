@@ -192,19 +192,14 @@ export default function Students() {
                 <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
                   {group.category}
                 </h3>
-                <div className="flex flex-wrap gap-3">
-                  {group.schools.map((school, index) => (
-                    <span
-                      key={school}
-                      className={`font-body text-sm font-medium text-v-ink border rounded-full px-4 py-2 ${
-                        index % 2 === 0
-                          ? "bg-lime-50 border-lime-200"
-                          : "bg-lime-100 border-lime-300"
-                      }`}
-                    >
-                      {school}
-                    </span>
-                  ))}
+                <div className="bg-white border border-v-border rounded-2xl px-5 py-5 md:px-6 md:py-6">
+                  <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2 list-disc pl-5">
+                    {group.schools.map((school) => (
+                      <li key={school} className="font-body text-sm text-v-ink marker:text-v-green">
+                        {school}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </AnimatedSection>
             ))}

@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES  = ["To Do", "In Progress", "Blocked", "Done"];
+const STATUSES  = ["To Do", "In Progress", "Blocked"];
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"];
 const DIVISIONS  = ["Tech", "Marketing", "Finance", "Outreach"];
 
@@ -25,14 +25,13 @@ const BLANK_FORM: Omit<Task, "id" | "createdAt"> = {
 };
 
 // Ordered columns for the kanban board view.
-const BOARD_COLUMNS: Task["status"][] = ["To Do", "In Progress", "Blocked", "Done"];
+const BOARD_COLUMNS: Task["status"][] = ["To Do", "In Progress", "Blocked"];
 
 // Left border color for each kanban column.
 const COLUMN_BORDER_COLOR: Record<string, string> = {
   "To Do":      "border-gray-500/30",
   "In Progress": "border-blue-500/30",
   "Blocked":    "border-red-500/30",
-  "Done":       "border-green-500/30",
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
@@ -295,9 +294,6 @@ export default function TasksPage() {
           </Field>
           <Field label="Due Date">
             <Input type="date" value={form.dueDate} onChange={e => setField("dueDate", e.target.value)} />
-          </Field>
-          <Field label="Week">
-            <Input value={form.week} onChange={e => setField("week", e.target.value)} placeholder="e.g. Week 3" />
           </Field>
           <div className="col-span-2">
             <Field label="Blocker">
