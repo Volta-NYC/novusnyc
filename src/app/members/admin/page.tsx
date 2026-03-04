@@ -6,8 +6,6 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInviteCodes, createInviteCode, deleteInviteCode,
   subscribeUserProfiles, updateUserProfile, deletePortalUserAccount,
-  subscribeAuditLogs,
-  exportAllData,
   type InviteCode, type UserProfile, type AuthRole, type AuditLogEntry,
 } from "@/lib/members/storage";
 import { Btn, Badge, Table, Field, Select, useConfirm } from "@/components/members/ui";
@@ -199,18 +197,39 @@ function UsersTab() {
 
 function DataTab() {
   const [statusMessage, setStatusMessage] = useState("");
+  const { user } = useAuth();
 
   const handleExport = async () => {
+    if (!user) {
+      setStatusMessage("You must be signed in as admin to export.");
+      return;
+    }
+
     setStatusMessage("Exporting…");
-    const json = await exportAllData();
-    const blob = new Blob([json], { type: "application/json" });
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href     = url;
-    link.download = `volta-data-${new Date().toISOString().split("T")[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setStatusMessage("Export complete.");
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/admin/export", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error("export_failed");
+      }
+
+      const data = await res.json() as Record<string, unknown>;
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href     = url;
+      link.download = `volta-data-${new Date().toISOString().split("T")[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatusMessage("Export complete.");
+    } catch {
+      setStatusMessage("Export failed. Check admin access and try again.");
+    }
   };
 
   return (
@@ -238,8 +257,48 @@ function DataTab() {
 
 function AuditLogTab() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const { user } = useAuth();
 
-  useEffect(() => subscribeAuditLogs(setLogs), []);
+  useEffect(() => {
+    let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const loadLogs = async () => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/members/admin/audit?limit=250", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          throw new Error("load_failed");
+        }
+        const data = await res.json() as { logs?: AuditLogEntry[] };
+        if (cancelled) return;
+        setLogs(Array.isArray(data.logs) ? data.logs : []);
+        setErrorMessage("");
+      } catch {
+        if (cancelled) return;
+        setErrorMessage("Could not load audit logs.");
+      } finally {
+        if (cancelled) return;
+        setLoadingLogs(false);
+      }
+    };
+
+    void loadLogs();
+    intervalId = setInterval(() => {
+      void loadLogs();
+    }, 10000);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [user]);
 
   const sortedLogs = [...logs]
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -250,6 +309,16 @@ function AuditLogTab() {
       <p className="text-white/45 text-sm font-body">
         Latest 250 database changes with actor attribution.
       </p>
+      {errorMessage && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-300 text-sm font-body">
+          {errorMessage}
+        </div>
+      )}
+      {loadingLogs && (
+        <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-6 text-center text-white/40 text-sm font-body">
+          Loading audit logs…
+        </div>
+      )}
       <Table
         cols={["Time", "Action", "Collection", "Record", "Actor", "Details"]}
         rows={sortedLogs.map((log) => [

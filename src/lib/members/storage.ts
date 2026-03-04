@@ -220,7 +220,7 @@ export interface InterviewSettings {
   updatedBy?: string;
 }
 
-export type AuditAction = "create" | "update" | "delete" | "import";
+export type AuditAction = "create" | "update" | "delete" | "import" | "export";
 
 export interface AuditLogEntry {
   id: string;
@@ -300,7 +300,6 @@ export const subscribeTasks       = makeSubscriber<Task>("tasks");
 export const subscribeGrants      = makeSubscriber<Grant>("grants");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
-export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
 
 // ── BIDs ──────────────────────────────────────────────────────────────────────
 
@@ -834,40 +833,4 @@ export function subscribeInterviewSettings(callback: (settings: InterviewSetting
     callback(snap.exists() ? (snap.val() as InterviewSettings) : null);
   });
   return () => off(dbRef, "value", handler);
-}
-
-export async function updateInterviewSettings(data: Partial<InterviewSettings>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, "interviewSettings"), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "interviewSettings",
-    recordId: "singleton",
-    details: { fields: Object.keys(data) },
-  });
-}
-
-// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
-// Export downloads the entire database as JSON; import overwrites it entirely.
-
-export async function exportAllData(): Promise<string> {
-  const db = getDB();
-  if (!db) return JSON.stringify({ error: "Firebase not configured" });
-  const snap = await get(ref(db, "/"));
-  return JSON.stringify({ exportedAt: nowISO(), ...snap.val() }, null, 2);
-}
-
-export async function importAllData(json: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const data = JSON.parse(json);
-  const { exportedAt: _unused, ...rest } = data; // strip exportedAt before restoring
-  await set(ref(db, "/"), rest);
-  await writeAuditLog(db, {
-    action: "import",
-    collection: "database",
-    recordId: "root",
-    details: { source: "importAllData" },
-  });
 }
