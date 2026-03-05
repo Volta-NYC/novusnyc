@@ -3,6 +3,7 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
 import { partnerServices } from "@/data";
+import { VOLTA_STATS, formatStat } from "@/data/stats";
 
 export const metadata: Metadata = {
   title: "Free Help for NYC Small Businesses | Volta NYC",
@@ -49,7 +50,7 @@ export default function Partners() {
         name: "Which NYC neighborhoods does Volta NYC serve?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Volta NYC currently serves small businesses across 9 NYC neighborhoods, with active projects in areas including Brooklyn, Queens, Manhattan, and the Bronx.",
+          text: `Volta NYC currently serves small businesses across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods, with active projects in areas including Brooklyn, Queens, Manhattan, and the Bronx.`,
         },
       },
       {
@@ -267,11 +268,11 @@ export default function Partners() {
                 <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
                   Currently active
                 </p>
-                <p className="font-display font-bold text-v-ink text-6xl leading-none mb-1">9</p>
+                <p className="font-display font-bold text-v-ink text-6xl leading-none mb-1">{formatStat(VOLTA_STATS.bidPartners)}</p>
                 <p className="font-body text-v-muted mb-6">BID partnerships across NYC</p>
                 <div className="pt-6 border-t border-v-border">
                   <p className="font-body text-sm text-v-muted">
-                    Active across 9 neighborhoods in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
+                    Active across {formatStat(VOLTA_STATS.nycNeighborhoods)} neighborhoods in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
                   </p>
                 </div>
               </div>

@@ -5,11 +5,12 @@ import CountUp from "@/components/CountUp";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
 import { homeStats, homeTracks, marqueeSchools, currentProjects } from "@/data";
+import { VOLTA_STATS, formatStat } from "@/data/stats";
 
 export const metadata: Metadata = {
   title: "Volta NYC — Free Consulting for NYC Small Businesses",
   description:
-    "Volta NYC places student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, and SEO. Free of charge. 9 neighborhoods, 80+ students.",
+    `Volta NYC places student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, and SEO. Free of charge. ${formatStat(VOLTA_STATS.nycNeighborhoods)} neighborhoods, ${formatStat(VOLTA_STATS.studentMembers)} students.`,
   openGraph: {
     title: "Volta NYC",
     description: "Student consultants. Real deliverables. Free for NYC small businesses.",
@@ -239,7 +240,7 @@ export default function Home() {
               Across all five boroughs.
             </h2>
             <p className="font-body text-white/50 text-lg max-w-xl mx-auto">
-              9 active neighborhoods and growing — we go where NYC&apos;s small businesses are.
+              {formatStat(VOLTA_STATS.nycNeighborhoods)} active neighborhoods and growing — we go where NYC&apos;s small businesses are.
             </p>
           </AnimatedSection>
           <div className="flex flex-wrap justify-center gap-3 mt-8">

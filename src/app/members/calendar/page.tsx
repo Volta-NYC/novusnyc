@@ -39,6 +39,15 @@ function formatDateLabel(isoString: string): string {
   return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
+function addMinutesToTime(time: string, minutesToAdd: number): string {
+  const [h, m] = time.split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return time;
+  const total = (h * 60 + m + minutesToAdd + 1440) % 1440;
+  const nextH = Math.floor(total / 60);
+  const nextM = total % 60;
+  return `${String(nextH).padStart(2, "0")}:${String(nextM).padStart(2, "0")}`;
+}
+
 // Build the 35-42 day cells for a month grid starting on Sunday.
 function buildMonthGrid(year: number, month: number): Date[] {
   const firstDay = new Date(year, month, 1);
@@ -99,7 +108,7 @@ interface DisplayEvent {
 // ── FORM STATE ────────────────────────────────────────────────────────────────
 
 const BLANK_EVENT_FORM = {
-  title: "", description: "", date: "", startTime: "09:00", endTime: "10:00",
+  title: "", description: "", date: "", startTime: "09:00", endTime: "09:30",
   allDay: false, color: "#85CC17",
 };
 type EventForm = typeof BLANK_EVENT_FORM;
@@ -522,7 +531,18 @@ export default function CalendarPage() {
           {!form.allDay && (
             <div className="grid grid-cols-2 gap-4">
               <Field label="Start time">
-                <Input type="time" value={form.startTime} onChange={e => setField("startTime", e.target.value)} />
+                <Input
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => {
+                    const nextStart = e.target.value;
+                    setForm((prev) => ({
+                      ...prev,
+                      startTime: nextStart,
+                      endTime: addMinutesToTime(nextStart, 30),
+                    }));
+                  }}
+                />
               </Field>
               <Field label="End time">
                 <Input type="time" value={form.endTime} onChange={e => setField("endTime", e.target.value)} />

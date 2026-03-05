@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { joinGains, joinTracks, joinFaqs } from "@/data";
+import { VOLTA_STATS, formatStat } from "@/data/stats";
 
 export const metadata: Metadata = {
   title: "Get Involved | Volta NYC",
@@ -110,10 +111,10 @@ export default function Join() {
           <AnimatedSection direction="right">
             <div className="grid grid-cols-2 gap-4">
               {[
-                { value: "80+", label: "Student members" },
-                { value: "20+", label: "Businesses served" },
-                { value: "9", label: "NYC neighborhoods" },
-                { value: "3", label: "Service tracks" },
+                { value: formatStat(VOLTA_STATS.studentMembers), label: "Student members" },
+                { value: formatStat(VOLTA_STATS.businessesServed), label: "Businesses served" },
+                { value: formatStat(VOLTA_STATS.nycNeighborhoods), label: "NYC neighborhoods" },
+                { value: formatStat(VOLTA_STATS.serviceTracks), label: "Service tracks" },
               ].map((s) => (
                 <div
                   key={s.label}

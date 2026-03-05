@@ -28,12 +28,12 @@ const neighborhoods = [
 
 const businesses: BusinessMarker[] = [
   {
-    name: "Souk Al Shater",
-    type: "Lebanese Restaurant",
-    services: "Website",
-    lat: 40.7440,
-    lng: -73.9213,
-    neighborhood: "Sunnyside, Queens",
+    name: "Petite Dumpling",
+    type: "Restaurant",
+    services: "Website, Social Media",
+    lat: 40.6707,
+    lng: -73.9793,
+    neighborhood: "Park Slope, Brooklyn",
     status: "In Progress",
   },
   {

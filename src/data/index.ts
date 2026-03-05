@@ -15,6 +15,7 @@ import {
   TrendingUpIcon,
   CreditCardIcon,
 } from "@/components/Icons";
+import { VOLTA_STATS, formatStat } from "./stats";
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
 
@@ -29,10 +30,10 @@ export type TrackName = (typeof TRACK_NAMES)[number];
 // ─── Homepage ─────────────────────────────────────────────────────────────────
 
 export const homeStats = [
-  { value: 20, suffix: "+", label: "Businesses Supported" },
-  { value: 9, suffix: "", label: "NYC Neighborhoods" },
-  { value: 80, suffix: "+", label: "Student Members" },
-  { value: 3, suffix: "", label: "Service Tracks" },
+  { value: VOLTA_STATS.businessesServed.value, suffix: VOLTA_STATS.businessesServed.suffix, label: "Businesses Supported" },
+  { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
+  { value: VOLTA_STATS.studentMembers.value, suffix: VOLTA_STATS.studentMembers.suffix, label: "Student Members" },
+  { value: VOLTA_STATS.serviceTracks.value, suffix: VOLTA_STATS.serviceTracks.suffix, label: "Service Tracks" },
 ];
 
 export const homeTracks = [
@@ -109,13 +110,13 @@ export interface Project {
 
 export const projects: Project[] = [
   {
-    name: "Souk Al Shater",
-    type: "Lebanese Restaurant",
-    neighborhood: "Sunnyside, Queens",
-    services: ["Website"],
+    name: "Petite Dumpling",
+    type: "Restaurant",
+    neighborhood: "Park Slope, Brooklyn",
+    services: ["Website", "Social Media"],
     status: "In Progress",
     color: "bg-orange-400",
-    desc: "Full website build from scratch for a Sunnyside Lebanese restaurant with no prior online presence.",
+    desc: "Website improvement project for Petite Dumpling in Park Slope, with support for stronger social media consistency.",
   },
   {
     name: "Anatolico",
@@ -172,9 +173,9 @@ export const currentProjects = projects
 // ─── Showcase ─────────────────────────────────────────────────────────────────
 
 export const showcaseStats = [
-  { value: 20, suffix: "+", label: "Businesses helped" },
-  { value: 9, suffix: "", label: "NYC neighborhoods" },
-  { value: 80, suffix: "+", label: "Student contributors" },
+  { value: VOLTA_STATS.businessesServed.value, suffix: VOLTA_STATS.businessesServed.suffix, label: "Businesses helped" },
+  { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC neighborhoods" },
+  { value: VOLTA_STATS.studentMembers.value, suffix: VOLTA_STATS.studentMembers.suffix, label: "Student contributors" },
 ];
 
 // ─── About ────────────────────────────────────────────────────────────────────
@@ -215,13 +216,13 @@ export const aboutTimeline = [
     month: "Jan",
     year: "2026",
     label: "First NYC projects",
-    desc: "First website and social media projects kick off — Souk Al Shater, Higher Learning, and Anatolico.",
+    desc: "First website and social media projects kick off — Petite Dumpling, Higher Learning, and Anatolico.",
   },
   {
     month: "Spring",
     year: "2026",
     label: "Spring Cohort — NYC",
-    desc: "Cohort expands to 80+ students across 9 NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City.",
+    desc: `Cohort expands to ${formatStat(VOLTA_STATS.studentMembers)} students across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City.`,
   },
 ];
 

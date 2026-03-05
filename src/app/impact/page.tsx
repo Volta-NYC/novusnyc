@@ -6,11 +6,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
+import { VOLTA_STATS, formatStat } from "@/data/stats";
 
 export const metadata: Metadata = {
   title: "Impact | Volta NYC",
   description:
-    "Volta NYC impact report: 20+ businesses served, 9 NYC neighborhoods, 80+ student contributors. Outcomes in digital access, financial access, and marketing reach.",
+    `Volta NYC impact report: ${formatStat(VOLTA_STATS.businessesServed)} businesses served, ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods, ${formatStat(VOLTA_STATS.studentMembers)} student contributors. Outcomes in digital access, financial access, and marketing reach.`,
   openGraph: {
     title: "Impact | Volta NYC",
     description: "Measurable outcomes. Real communities.",
@@ -19,12 +20,48 @@ export const metadata: Metadata = {
 };
 
 const outcomes = [
-  { value: 20, suffix: "+", label: "Businesses Served", sub: "Across 9 NYC neighborhoods", color: "text-v-green" },
-  { value: 80, suffix: "+", label: "Student Members", sub: "High school & college", color: "text-v-blue" },
-  { value: 9, suffix: "", label: "Neighborhoods Active", sub: "Brooklyn, Queens, Manhattan, Bronx", color: "text-amber-500" },
-  { value: 30, suffix: "+", label: "FL Businesses Served", sub: "National total growing", color: "text-purple-500" },
-  { value: 6, suffix: "", label: "Cities Operating", sub: "NYC, Jacksonville, Bay Area, Atlanta, VA, Dallas", color: "text-v-green" },
-  { value: 3, suffix: "", label: "Service Tracks", sub: "Tech, Finance, Marketing", color: "text-v-blue" },
+  {
+    value: VOLTA_STATS.businessesServed.value,
+    suffix: VOLTA_STATS.businessesServed.suffix,
+    label: "Businesses Served",
+    sub: `Across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods`,
+    color: "text-v-green",
+  },
+  {
+    value: VOLTA_STATS.studentMembers.value,
+    suffix: VOLTA_STATS.studentMembers.suffix,
+    label: "Student Members",
+    sub: "High school & college",
+    color: "text-v-blue",
+  },
+  {
+    value: VOLTA_STATS.nycNeighborhoods.value,
+    suffix: VOLTA_STATS.nycNeighborhoods.suffix,
+    label: "Neighborhoods Active",
+    sub: "Brooklyn, Queens, Manhattan, Bronx",
+    color: "text-amber-500",
+  },
+  {
+    value: VOLTA_STATS.floridaBusinessesServed.value,
+    suffix: VOLTA_STATS.floridaBusinessesServed.suffix,
+    label: "FL Businesses Served",
+    sub: "National total growing",
+    color: "text-purple-500",
+  },
+  {
+    value: VOLTA_STATS.operatingCities.value,
+    suffix: VOLTA_STATS.operatingCities.suffix,
+    label: "Cities Operating",
+    sub: "NYC, Jacksonville, Bay Area, Atlanta, VA, Dallas",
+    color: "text-v-green",
+  },
+  {
+    value: VOLTA_STATS.serviceTracks.value,
+    suffix: VOLTA_STATS.serviceTracks.suffix,
+    label: "Service Tracks",
+    sub: "Tech, Finance, Marketing",
+    color: "text-v-blue",
+  },
 ];
 
 const impactAreas = [
@@ -57,8 +94,8 @@ const testimonials = [
   {
     quote: "They built us a website in three weeks and optimized our Google listing. We're getting calls we never got before.",
     name: "Business Owner",
-    business: "Souk Al Shater — Sunnyside, Queens",
-    initials: "S",
+    business: "Petite Dumpling — Park Slope, Brooklyn",
+    initials: "P",
   },
   {
     quote: "Our Instagram went from zero to consistent content for the first time. The students really understood the brand.",
@@ -199,7 +236,7 @@ export default function Impact() {
                   Geographic reach
                 </p>
                 <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-                  9 neighborhoods.<br />5 boroughs.
+                  {formatStat(VOLTA_STATS.nycNeighborhoods)} neighborhoods.<br />5 boroughs.
                 </h2>
                 <p className="font-body text-white/50 leading-relaxed mb-6">
                   Park Slope, Sunnyside, Chinatown, Long Island City, Cypress Hills,

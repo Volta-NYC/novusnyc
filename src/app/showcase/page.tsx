@@ -4,14 +4,15 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MapPinIcon } from "@/components/Icons";
 import { projects, joinTracks } from "@/data";
+import { VOLTA_STATS, formatStat } from "@/data/stats";
 
 export const metadata: Metadata = {
   title: "Our Work | Volta NYC",
   description:
-    "Interactive map and project portfolio showing Volta NYC's active work across 9 NYC neighborhoods — websites, social media, SEO, and grant writing for small businesses.",
+    `Interactive map and project portfolio showing Volta NYC's active work across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods — websites, social media, SEO, and grant writing for small businesses.`,
   openGraph: {
     title: "Our Work | Volta NYC",
-    description: "20+ businesses across 9 NYC neighborhoods. See every project.",
+    description: `${formatStat(VOLTA_STATS.businessesServed)} businesses across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods. See every project.`,
   },
 };
 
@@ -56,9 +57,9 @@ export default function Showcase() {
               </h1>
               <div className="flex gap-8 md:pb-2">
                 {[
-                  { value: "20+", label: "Businesses" },
-                  { value: "9", label: "Neighborhoods" },
-                  { value: "9", label: "BID partners" },
+                  { value: formatStat(VOLTA_STATS.businessesServed), label: "Businesses" },
+                  { value: formatStat(VOLTA_STATS.nycNeighborhoods), label: "Neighborhoods" },
+                  { value: formatStat(VOLTA_STATS.bidPartners), label: "BID partners" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>
