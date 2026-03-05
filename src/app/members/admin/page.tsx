@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInviteCodes, createInviteCode, deleteInviteCode,
   subscribeUserProfiles, updateUserProfile, deletePortalUserAccount,
-  getAuditLogsList,
-  type InviteCode, type UserProfile, type AuthRole, type AuditLogEntry,
+  getAuditLogsList, getUserProfilesList, getTeamMembersList, createTeamMember, updateTeamMember,
+  type InviteCode, type UserProfile, type AuthRole, type AuditLogEntry, type TeamMember,
 } from "@/lib/members/storage";
 import { Btn, Badge, Table, Field, Select, useConfirm } from "@/components/members/ui";
 import { useRouter } from "next/navigation";
@@ -69,8 +69,9 @@ function AccessCodesTab({ uid }: { uid: string }) {
     });
   };
 
-  const copyCode = (codeText: string, id: string) => {
-    navigator.clipboard.writeText(codeText);
+  const copySignupLink = (codeText: string, id: string) => {
+    const signupLink = `${window.location.origin}/members/signup?code=${encodeURIComponent(codeText)}`;
+    navigator.clipboard.writeText(signupLink);
     setCopiedCodeId(id);
     setTimeout(() => setCopiedCodeId(""), 2000);
   };
@@ -119,10 +120,10 @@ function AccessCodesTab({ uid }: { uid: string }) {
             <span key="usedBy" className="text-white/30 text-xs">{code.usedBy ?? "—"}</span>,
             <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
-                onClick={() => copyCode(code.code, code.id)}
+                onClick={() => copySignupLink(code.code, code.id)}
                 className="text-xs text-[#85CC17]/70 hover:text-[#85CC17] transition-colors font-body"
               >
-                {copiedCodeId === code.id ? "Copied!" : "Copy"}
+                {copiedCodeId === code.id ? "Copied!" : "Copy Link"}
               </button>
               <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteInviteCode(code.id))}>Delete</Btn>
             </div>,
@@ -208,7 +209,10 @@ function UsersTab() {
 
 function DataTab() {
   const [statusMessage, setStatusMessage] = useState("");
+  const [syncingAccounts, setSyncingAccounts] = useState(false);
   const { user } = useAuth();
+
+  const normalizeKey = (v?: string) => (v ?? "").trim().toLowerCase();
 
   const handleExport = async () => {
     if (!user) {
@@ -243,8 +247,155 @@ function DataTab() {
     }
   };
 
+  const handleSyncAccountsToTeam = async () => {
+    if (!user) {
+      setStatusMessage("You must be signed in as admin to sync.");
+      return;
+    }
+
+    setSyncingAccounts(true);
+    setStatusMessage("Syncing accounts into team directory…");
+
+    try {
+      const [profiles, team] = await Promise.all([
+        getUserProfilesList(),
+        getTeamMembersList(),
+      ]);
+
+      const existingByEmail = new Map<string, TeamMember>();
+      const existingByName = new Map<string, TeamMember[]>();
+
+      for (const member of team) {
+        const emailKey = normalizeKey(member.email);
+        const altEmailKey = normalizeKey(member.alternateEmail);
+        const nameKey = normalizeKey(member.name);
+        if (emailKey) existingByEmail.set(emailKey, member);
+        if (altEmailKey) existingByEmail.set(altEmailKey, member);
+        if (nameKey) {
+          const arr = existingByName.get(nameKey) ?? [];
+          arr.push(member);
+          existingByName.set(nameKey, arr);
+        }
+      }
+
+      let added = 0;
+      let updated = 0;
+      let skipped = 0;
+      let ambiguous = 0;
+      const today = new Date().toISOString().split("T")[0];
+
+      for (const profile of profiles) {
+        const email = (profile.email ?? "").trim().toLowerCase();
+        const name = (profile.name ?? "").trim();
+        const school = (profile.school ?? "").trim();
+        const grade = (profile.grade ?? "").trim();
+
+        const emailKey = normalizeKey(email);
+        const nameKey = normalizeKey(name);
+        if (!emailKey && !nameKey) {
+          skipped += 1;
+          continue;
+        }
+
+        let target: TeamMember | undefined = emailKey ? existingByEmail.get(emailKey) : undefined;
+
+        if (!target && nameKey) {
+          const sameName = existingByName.get(nameKey) ?? [];
+          if (sameName.length === 1) {
+            [target] = sameName;
+          } else if (sameName.length > 1) {
+            ambiguous += 1;
+            continue;
+          }
+        }
+
+        if (target) {
+          const patch: Partial<TeamMember> = {};
+          if (name && name !== target.name) patch.name = name;
+          if (school && school !== target.school) patch.school = school;
+          if (grade && grade !== (target.grade ?? "")) patch.grade = grade;
+
+          if (emailKey) {
+            const primaryEmailKey = normalizeKey(target.email);
+            const altEmailKey = normalizeKey(target.alternateEmail);
+            if (emailKey !== primaryEmailKey && emailKey !== altEmailKey) {
+              if (!target.email) patch.email = email;
+              else if (!target.alternateEmail) patch.alternateEmail = email;
+            }
+          }
+
+          if (Object.keys(patch).length === 0) {
+            skipped += 1;
+            continue;
+          }
+
+          // eslint-disable-next-line no-await-in-loop
+          await updateTeamMember(target.id, patch);
+          const merged = { ...target, ...patch } as TeamMember;
+
+          const mergedPrimary = normalizeKey(merged.email);
+          const mergedAlt = normalizeKey(merged.alternateEmail);
+          const mergedName = normalizeKey(merged.name);
+          if (mergedPrimary) existingByEmail.set(mergedPrimary, merged);
+          if (mergedAlt) existingByEmail.set(mergedAlt, merged);
+          if (mergedName) {
+            const arr = (existingByName.get(mergedName) ?? []).filter((m) => m.id !== merged.id);
+            arr.push(merged);
+            existingByName.set(mergedName, arr);
+          }
+
+          updated += 1;
+          continue;
+        }
+
+        const newMember: Omit<TeamMember, "id" | "createdAt"> = {
+          name: name || (email ? email.split("@")[0] : "New Member"),
+          email,
+          alternateEmail: "",
+          school,
+          grade,
+          divisions: [],
+          pod: "",
+          role: "Member",
+          slackHandle: "",
+          status: "Active",
+          skills: [],
+          joinDate: today,
+          notes: "Synced from portal account",
+        };
+
+        // eslint-disable-next-line no-await-in-loop
+        await createTeamMember(newMember);
+        added += 1;
+      }
+
+      setStatusMessage(
+        `Sync complete: ${added} added, ${updated} updated, ${skipped} unchanged/skipped${
+          ambiguous ? `, ${ambiguous} ambiguous name matches skipped` : ""
+        }.`
+      );
+    } catch {
+      setStatusMessage("Sync failed. Check Firebase permissions and try again.");
+    } finally {
+      setSyncingAccounts(false);
+    }
+  };
+
   return (
     <div className="max-w-lg space-y-4">
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
+        <h2 className="font-display font-bold text-white mb-1">Sync Accounts to Team Directory</h2>
+        <p className="text-white/40 text-sm mb-4">
+          Import/update team members from website account profiles (name, email, school, grade).
+        </p>
+        <button
+          onClick={handleSyncAccountsToTeam}
+          disabled={syncingAccounts}
+          className="bg-[#85CC17] text-[#0D0D0D] font-display font-bold px-5 py-2.5 rounded-xl hover:bg-[#72b314] transition-colors text-sm disabled:opacity-60"
+        >
+          {syncingAccounts ? "Syncing..." : "Sync Now"}
+        </button>
+      </div>
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
         <h2 className="font-display font-bold text-white mb-1">Export Data</h2>
         <p className="text-white/40 text-sm mb-4">Download a JSON backup of all portal data.</p>

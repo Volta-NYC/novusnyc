@@ -152,6 +152,8 @@ export interface UserProfile {
   email: string;
   authRole: AuthRole;
   name?: string;
+  school?: string;
+  grade?: string;
   active: boolean;
   createdAt: string;
 }

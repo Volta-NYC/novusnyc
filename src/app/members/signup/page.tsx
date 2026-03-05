@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,15 +17,34 @@ function isInviteCodeExpired(expiresAt: string): boolean {
   return t < Date.now();
 }
 
+function getInviteCodeFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  const params = new URLSearchParams(window.location.search);
+  const raw =
+    params.get("code")
+    || params.get("accessCode")
+    || params.get("access_key")
+    || "";
+  return raw.trim().toUpperCase();
+}
+
 export default function SignupPage() {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(() => getInviteCodeFromUrl());
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [school, setSchool] = useState("");
+  const [grade, setGrade] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const normalized = getInviteCodeFromUrl();
+    if (!normalized) return;
+    setCode(normalized);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +52,8 @@ export default function SignupPage() {
 
     if (password !== confirm) { setError("Passwords do not match."); return; }
     if (password.length < 6)  { setError("Password must be at least 6 characters."); return; }
+    if (!school.trim())       { setError("Please enter your school."); return; }
+    if (!grade.trim())        { setError("Please select your grade."); return; }
 
     setLoading(true);
     const normalizedCode = code.trim().toUpperCase();
@@ -76,6 +97,8 @@ export default function SignupPage() {
         email:     email.trim().toLowerCase(),
         authRole:  inviteRole,
         name:      name.trim(),
+        school:    school.trim(),
+        grade:     grade.trim(),
         active:    true,
         createdAt: new Date().toISOString(),
       });
@@ -146,6 +169,39 @@ export default function SignupPage() {
               placeholder="you@email.com"
               autoComplete="email"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+              School
+            </label>
+            <input
+              required
+              value={school}
+              onChange={(e) => setSchool(e.target.value)}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+              placeholder="School name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+              Grade
+            </label>
+            <select
+              required
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+            >
+              <option value="">Select grade</option>
+              <option value="Freshman">Freshman</option>
+              <option value="Sophomore">Sophomore</option>
+              <option value="Junior">Junior</option>
+              <option value="Senior">Senior</option>
+              <option value="College">College</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
 
           <div>
