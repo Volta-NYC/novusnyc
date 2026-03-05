@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbRead, verifyCaller } from "@/lib/server/adminApi";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type AuditLogRecord = {
   id: string;
   timestamp: string;
@@ -12,6 +15,22 @@ type AuditLogRecord = {
   actorName?: string;
   details?: Record<string, unknown>;
 };
+
+function toAuditLogRecord(id: string, raw: unknown): AuditLogRecord | null {
+  if (!raw || typeof raw !== "object") return null;
+  const data = raw as Record<string, unknown>;
+  return {
+    id,
+    timestamp: typeof data.timestamp === "string" ? data.timestamp : "",
+    action: typeof data.action === "string" ? data.action : "",
+    collection: typeof data.collection === "string" ? data.collection : "",
+    recordId: typeof data.recordId === "string" ? data.recordId : "",
+    actorUid: typeof data.actorUid === "string" ? data.actorUid : "",
+    actorEmail: typeof data.actorEmail === "string" ? data.actorEmail : "",
+    actorName: typeof data.actorName === "string" ? data.actorName : "",
+    details: data.details && typeof data.details === "object" ? (data.details as Record<string, unknown>) : undefined,
+  };
+}
 
 export async function GET(req: NextRequest) {
   const verified = await verifyCaller(req, ["admin"]);
@@ -30,19 +49,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "read_failed" }, { status: 500 });
   }
 
-  const logs: AuditLogRecord[] = logsData && typeof logsData === "object"
-    ? Object.entries(logsData as Record<string, Record<string, unknown>>).map(([id, raw]) => ({
-        id,
-        timestamp: typeof raw.timestamp === "string" ? raw.timestamp : "",
-        action: typeof raw.action === "string" ? raw.action : "",
-        collection: typeof raw.collection === "string" ? raw.collection : "",
-        recordId: typeof raw.recordId === "string" ? raw.recordId : "",
-        actorUid: typeof raw.actorUid === "string" ? raw.actorUid : "",
-        actorEmail: typeof raw.actorEmail === "string" ? raw.actorEmail : "",
-        actorName: typeof raw.actorName === "string" ? raw.actorName : "",
-        details: raw.details && typeof raw.details === "object" ? (raw.details as Record<string, unknown>) : undefined,
-      }))
-    : [];
+  let logs: AuditLogRecord[] = [];
+  try {
+    logs = logsData && typeof logsData === "object"
+      ? Object.entries(logsData as Record<string, unknown>)
+          .map(([id, raw]) => toAuditLogRecord(id, raw))
+          .filter((record): record is AuditLogRecord => record !== null)
+      : [];
+  } catch {
+    return NextResponse.json({ error: "parse_failed" }, { status: 500 });
+  }
 
   logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 

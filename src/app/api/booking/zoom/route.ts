@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbPatch, dbRead, verifyCaller, writeAuditLog } from "@/lib/server/adminApi";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function parseSettingsPayload(raw: unknown): {
   zoomLink: string;
   zoomEnabled: boolean;

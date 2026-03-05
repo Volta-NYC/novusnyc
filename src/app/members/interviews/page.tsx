@@ -5,18 +5,13 @@ import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  subscribeInterviewInvites,
-  createInterviewInvite,
-  updateInterviewInvite,
   subscribeInterviewSlots,
   createInterviewSlot,
-  updateInterviewSlot,
+  deleteBookedInterview,
   deleteInterviewSlot,
-  type InterviewInvite,
   type InterviewSlot,
 } from "@/lib/members/storage";
-import { Btn, Modal, Field, Input, Select, TextArea, useConfirm } from "@/components/members/ui";
-import { generateToken } from "@/lib/interviews";
+import { Btn, useConfirm } from "@/components/members/ui";
 
 function formatDateTime(isoString: string): string {
   const d = new Date(isoString);
@@ -38,9 +33,9 @@ function formatDateHeading(isoDate: string): string {
   });
 }
 
-function buildBookingUrl(token: string): string {
-  if (typeof window === "undefined") return `/book/${token}`;
-  return `${window.location.origin}/book/${token}`;
+function buildBookingUrl(): string {
+  if (typeof window === "undefined") return "/book";
+  return `${window.location.origin}/book`;
 }
 
 function getWeekDates(weekOffset: number): Date[] {
@@ -73,35 +68,15 @@ function fmtHour(h: number): string {
   return `${h % 12 || 12} ${ampm}`;
 }
 
-function inviteStatusColor(status: string): string {
-  if (status === "booked") return "text-green-400";
-  if (status === "expired") return "text-white/35";
-  if (status === "cancelled") return "text-red-400";
-  return "text-[#85CC17]";
-}
-
-const BLANK_INVITE_FORM = {
-  applicantName: "",
-  applicantEmail: "",
-  note: "",
-  expiryDays: "7",
-  multiUse: false,
-};
-
 function InterviewsContent() {
   const { user, authRole, loading } = useAuth();
   const router = useRouter();
   const { ask, Dialog } = useConfirm();
 
-  const [activeTab, setActiveTab] = useState<"upcoming" | "invites" | "availability">("upcoming");
-  const [invites, setInvites] = useState<InterviewInvite[]>([]);
+  const [activeTab, setActiveTab] = useState<"upcoming" | "availability">("upcoming");
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
 
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteForm, setInviteForm] = useState(BLANK_INVITE_FORM);
-  const [newToken, setNewToken] = useState<string | null>(null);
-  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
-  const [assignSlotByInvite, setAssignSlotByInvite] = useState<Record<string, string>>({});
+  const [copiedBookingLink, setCopiedBookingLink] = useState(false);
   const [zoomLinkInput, setZoomLinkInput] = useState("");
   const [effectiveZoomLink, setEffectiveZoomLink] = useState("");
   const [editingZoom, setEditingZoom] = useState(false);
@@ -110,21 +85,17 @@ function InterviewsContent() {
   const [savingZoom, setSavingZoom] = useState(false);
 
   const [slotWeek, setSlotWeek] = useState(0);
+  const canAccessInterviews = authRole === "admin" || authRole === "project_lead" || authRole === "interviewer";
+  const canDeleteInterviews = authRole === "admin" || authRole === "project_lead";
+  const canEditZoom = authRole === "admin" || authRole === "project_lead";
 
   useEffect(() => {
-    if (!loading && authRole !== "admin" && authRole !== "project_lead") {
+    if (!loading && !canAccessInterviews) {
       router.replace("/members/projects");
     }
-  }, [authRole, loading, router]);
+  }, [canAccessInterviews, loading, router]);
 
-  useEffect(() => {
-    const unsubInvites = subscribeInterviewInvites(setInvites);
-    const unsubSlots = subscribeInterviewSlots(setSlots);
-    return () => {
-      unsubInvites();
-      unsubSlots();
-    };
-  }, []);
+  useEffect(() => subscribeInterviewSlots(setSlots), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,6 +123,7 @@ function InterviewsContent() {
   }, []);
 
   const saveZoomSettings = async () => {
+    if (!canEditZoom) return;
     setSavingZoom(true);
     setZoomSaveMessage(null);
     try {
@@ -194,6 +166,12 @@ function InterviewsContent() {
     }
   };
 
+  const copyBookingLink = async () => {
+    await navigator.clipboard.writeText(buildBookingUrl());
+    setCopiedBookingLink(true);
+    setTimeout(() => setCopiedBookingLink(false), 1800);
+  };
+
   const copyZoomLink = async () => {
     if (!effectiveZoomLink) return;
     await navigator.clipboard.writeText(effectiveZoomLink);
@@ -210,31 +188,13 @@ function InterviewsContent() {
     slotMap[key] = slot;
   }
 
-  const invitesById = useMemo(() => {
-    const m: Record<string, InterviewInvite> = {};
-    invites.forEach((i) => {
-      m[i.id] = i;
-    });
-    return m;
-  }, [invites]);
-
-  const sortedInvites = useMemo(
-    () => [...invites].sort((a, b) => b.createdAt - a.createdAt),
-    [invites]
-  );
-
   const sortedSlots = useMemo(
     () => [...slots].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()),
     [slots]
   );
 
   const upcomingBookedSlots = useMemo(
-    () => sortedSlots.filter((s) => !!s.bookedBy && new Date(s.datetime).getTime() >= now),
-    [sortedSlots, now]
-  );
-
-  const availableUpcomingSlots = useMemo(
-    () => sortedSlots.filter((s) => !s.bookedBy && new Date(s.datetime).getTime() >= now),
+    () => sortedSlots.filter((s) => (s.bookedBy || !s.available) && new Date(s.datetime).getTime() >= now),
     [sortedSlots, now]
   );
 
@@ -248,101 +208,20 @@ function InterviewsContent() {
     return Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
   }, [upcomingBookedSlots]);
 
-  const setInviteField = (key: string, value: string | boolean) =>
-    setInviteForm((prev) => ({ ...prev, [key]: value }));
-
-  const copyInviteLink = async (token: string) => {
-    await navigator.clipboard.writeText(buildBookingUrl(token));
-    setCopiedInviteId(token);
-    setTimeout(() => setCopiedInviteId(null), 1800);
-  };
-
-  const handleCreateInvite = async () => {
-    if (!inviteForm.multiUse) {
-      if (!inviteForm.applicantName.trim() || !inviteForm.applicantEmail.trim()) return;
-    }
-
-    const token = generateToken();
-    const expiresAt = Date.now() + parseInt(inviteForm.expiryDays, 10) * 86400000;
-
-    const inviteData: Omit<InterviewInvite, "id"> = {
-      role: "",
-      note: inviteForm.note.trim(),
-      multiUse: inviteForm.multiUse,
-      expiresAt,
-      status: "pending",
-      createdBy: user?.uid ?? "",
-      createdAt: Date.now(),
-    };
-
-    if (!inviteForm.multiUse) {
-      inviteData.applicantName = inviteForm.applicantName.trim();
-      inviteData.applicantEmail = inviteForm.applicantEmail.trim();
-    }
-
-    await createInterviewInvite(token, inviteData);
-    setNewToken(token);
-    setInviteForm(BLANK_INVITE_FORM);
-  };
-
-  const cancelInvite = (token: string) =>
-    ask(
-      async () => updateInterviewInvite(token, { status: "cancelled" }),
-      "Cancel this invite link? Existing interviews under this link will remain unless removed separately."
-    );
-
-  const assignInterviewToInvite = async (invite: InterviewInvite) => {
-    const selectedSlotId = assignSlotByInvite[invite.id];
-    if (!selectedSlotId) return;
-
-    const selectedSlot = availableUpcomingSlots.find((s) => s.id === selectedSlotId);
-    if (!selectedSlot) return;
-
-    await updateInterviewSlot(selectedSlot.id, {
-      available: false,
-      bookedBy: invite.id,
-      bookerName: invite.multiUse ? "" : invite.applicantName ?? "",
-      bookerEmail: invite.multiUse ? "" : invite.applicantEmail ?? "",
-    });
-
-    if (!invite.multiUse) {
-      await updateInterviewInvite(invite.id, {
-        status: "booked",
-        bookedSlotId: selectedSlot.id,
-      });
-    }
-
-    setAssignSlotByInvite((prev) => ({ ...prev, [invite.id]: "" }));
-  };
-
   const cancelBookedInterview = (slot: InterviewSlot) => {
+    if (!canDeleteInterviews) return;
     ask(async () => {
-      await updateInterviewSlot(slot.id, {
-        available: true,
-        bookedBy: "",
-        bookerName: "",
-        bookerEmail: "",
-      });
-
-      if (slot.bookedBy) {
-        const invite = invitesById[slot.bookedBy];
-        if (invite && !invite.multiUse) {
-          await updateInterviewInvite(invite.id, {
-            status: "pending",
-            bookedSlotId: "",
-          });
-        }
-      }
+      await deleteBookedInterview(slot.id);
     }, "Remove this booked interview and return the time to available?");
   };
 
   const toggleHour = async (date: Date, hour: number) => {
     const keys = hourSlotKeys(date, hour);
     const quarterSlots = keys.map((k) => slotMap[k]).filter(Boolean);
-    const visibleSlots = quarterSlots.filter((s) => !s.bookedBy);
+    const visibleSlots = quarterSlots.filter((s) => s.available && !s.bookedBy);
 
     const missingKeys = keys.filter((k) => !slotMap[k]);
-    if (missingKeys.length > 0 && quarterSlots.some((s) => !s.bookedBy)) {
+    if (missingKeys.length > 0 && quarterSlots.some((s) => s.available && !s.bookedBy)) {
       await Promise.all(
         missingKeys.map((k) =>
           createInterviewSlot({
@@ -359,6 +238,7 @@ function InterviewsContent() {
     }
 
     if (visibleSlots.length > 0) {
+      if (!canDeleteInterviews) return;
       await Promise.all(visibleSlots.map((s) => deleteInterviewSlot(s.id)));
       return;
     }
@@ -381,9 +261,9 @@ function InterviewsContent() {
 
   const toggleDay = async (date: Date) => {
     const daySlots = GRID_HOURS.flatMap((hour) => hourSlotKeys(date, hour).map((k) => slotMap[k])).filter(Boolean);
-    const removable = daySlots.filter((s) => !s.bookedBy);
+    const removable = daySlots.filter((s) => s.available && !s.bookedBy);
 
-    if (removable.length > 0) {
+    if (removable.length > 0 && canDeleteInterviews) {
       await Promise.all(removable.map((s) => deleteInterviewSlot(s.id)));
       return;
     }
@@ -393,15 +273,15 @@ function InterviewsContent() {
         hourSlotKeys(date, hour)
           .filter((k) => !slotMap[k])
           .map((k) =>
-          createInterviewSlot({
-            datetime: `${k}:00`,
-            durationMinutes: 15,
-            available: true,
-            location: "",
-            createdBy: user?.uid ?? "",
-            createdAt: Date.now(),
-          })
-        )
+            createInterviewSlot({
+              datetime: `${k}:00`,
+              durationMinutes: 15,
+              available: true,
+              location: "",
+              createdBy: user?.uid ?? "",
+              createdAt: Date.now(),
+            })
+          )
       )
     );
   };
@@ -416,8 +296,8 @@ function InterviewsContent() {
       .flatMap((d) => hourSlotKeys(d, hour).map((k) => slotMap[k]))
       .filter(Boolean);
 
-    const removable = rowSlots.filter((s) => !s.bookedBy);
-    if (removable.length > 0) {
+    const removable = rowSlots.filter((s) => s.available && !s.bookedBy);
+    if (removable.length > 0 && canDeleteInterviews) {
       await Promise.all(removable.map((s) => deleteInterviewSlot(s.id)));
       return;
     }
@@ -427,15 +307,15 @@ function InterviewsContent() {
         return hourSlotKeys(date, hour)
           .filter((k) => !slotMap[k])
           .map((k) =>
-          createInterviewSlot({
-            datetime: `${k}:00`,
-            durationMinutes: 15,
-            available: true,
-            location: "",
-            createdBy: user?.uid ?? "",
-            createdAt: Date.now(),
-          })
-        );
+            createInterviewSlot({
+              datetime: `${k}:00`,
+              durationMinutes: 15,
+              available: true,
+              location: "",
+              createdBy: user?.uid ?? "",
+              createdAt: Date.now(),
+            })
+          );
       })
     );
   };
@@ -475,18 +355,17 @@ function InterviewsContent() {
     let visible = 0;
     slots.forEach((slot) => {
       if (!slot.datetime.startsWith(d) || new Date(slot.datetime).getTime() < now) return;
-      if (!slot.bookedBy) visible += 1;
+      if (slot.available && !slot.bookedBy) visible += 1;
     });
     return visible;
   };
 
-  const TABS: { key: "upcoming" | "invites" | "availability"; label: string }[] = [
+  const TABS: { key: "upcoming" | "availability"; label: string }[] = [
     { key: "upcoming", label: "Upcoming Interviews" },
-    { key: "invites", label: "Invite Links" },
     { key: "availability", label: "Availability" },
   ];
 
-  if (loading || (authRole !== "admin" && authRole !== "project_lead")) {
+  if (loading || !canAccessInterviews) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
@@ -498,18 +377,11 @@ function InterviewsContent() {
     <>
       <Dialog />
 
-      <div className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display font-bold text-white text-2xl">Interviews</h1>
-          <p className="text-white/40 text-sm mt-1 font-body">
-            Calendly-style scheduling for links, availability, and booked interviews.
-          </p>
-        </div>
-        {activeTab === "invites" && (
-          <Btn variant="primary" onClick={() => setShowInviteModal(true)}>
-            + New Invite
-          </Btn>
-        )}
+      <div className="mb-6">
+        <h1 className="font-display font-bold text-white text-2xl">Interviews</h1>
+        <p className="text-white/40 text-sm mt-1 font-body">
+          Manage one public booking link, availability, and upcoming interviews.
+        </p>
       </div>
 
       <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-6 w-fit">
@@ -529,6 +401,21 @@ function InterviewsContent() {
       {activeTab === "upcoming" && (
         <div className="space-y-5">
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
+            <p className="text-white/85 text-sm font-semibold">Interview Booking Link</p>
+            <p className="text-white/40 text-xs font-body">Use this one link for all applicants. It does not expire.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                value={buildBookingUrl()}
+                readOnly
+                className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#85CC17] font-mono"
+              />
+              <Btn variant="primary" size="sm" onClick={copyBookingLink}>
+                {copiedBookingLink ? "Copied!" : "Copy Link"}
+              </Btn>
+            </div>
+          </div>
+
+          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
                 <p className="text-white/85 text-sm font-semibold">Interview Zoom Link</p>
@@ -537,9 +424,11 @@ function InterviewsContent() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Btn variant="secondary" size="sm" onClick={() => setEditingZoom(true)}>
-                  Edit
-                </Btn>
+                {canEditZoom && (
+                  <Btn variant="secondary" size="sm" onClick={() => setEditingZoom(true)}>
+                    Edit
+                  </Btn>
+                )}
                 <Btn variant="secondary" size="sm" onClick={copyZoomLink} disabled={!effectiveZoomLink}>
                   {copiedZoom ? "Copied!" : "Copy Link"}
                 </Btn>
@@ -562,7 +451,7 @@ function InterviewsContent() {
               <p className="text-white/35 text-xs font-body">No Zoom link configured yet.</p>
             )}
 
-            {editingZoom && (
+            {editingZoom && canEditZoom && (
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   value={zoomLinkInput}
@@ -599,8 +488,7 @@ function InterviewsContent() {
               <h3 className="text-white/60 text-sm font-semibold font-body mb-2">{formatDateHeading(day)}</h3>
               <div className="space-y-2">
                 {daySlots.map((slot) => {
-                  const invite = slot.bookedBy ? invitesById[slot.bookedBy] : undefined;
-                  const displayName = slot.bookerName || invite?.applicantName || "Interviewee";
+                  const displayName = slot.bookerName?.trim() || "Interviewee";
                   return (
                     <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-4 py-3 flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
@@ -612,17 +500,13 @@ function InterviewsContent() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {slot.bookedBy && (
-                          <button
-                            onClick={() => copyInviteLink(slot.bookedBy!)}
-                            className="text-xs text-[#85CC17]/75 hover:text-[#85CC17] transition-colors font-body px-2 py-1 rounded-lg bg-[#85CC17]/10 hover:bg-[#85CC17]/20"
-                          >
-                            {copiedInviteId === slot.bookedBy ? "Copied!" : "Copy Link"}
-                          </button>
+                        {canDeleteInterviews ? (
+                          <Btn size="sm" variant="danger" onClick={() => cancelBookedInterview(slot)}>
+                            Cancel
+                          </Btn>
+                        ) : (
+                          <span className="text-white/30 text-xs font-body">View only</span>
                         )}
-                        <Btn size="sm" variant="danger" onClick={() => cancelBookedInterview(slot)}>
-                          Cancel
-                        </Btn>
                       </div>
                     </div>
                   );
@@ -633,148 +517,43 @@ function InterviewsContent() {
         </div>
       )}
 
-      {activeTab === "invites" && (
-        <div className="space-y-3">
-          {sortedInvites.length === 0 && (
-            <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-8 text-center text-white/30 text-sm font-body">
-              No invite links yet. Create one to send to an applicant.
-            </div>
-          )}
-          {sortedInvites.map((invite) => {
-            const bookedForInvite = sortedSlots.filter((slot) => slot.bookedBy === invite.id);
-            const upcomingForInvite = bookedForInvite.filter((slot) => new Date(slot.datetime).getTime() >= now);
-            const canUseLink = invite.status !== "cancelled" && invite.status !== "expired";
-
-            return (
-              <div key={invite.id} className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-white font-semibold text-sm">
-                        {invite.multiUse ? "Multi-use invite" : invite.applicantName || "Single-use invite"}
-                      </p>
-                      <span className={`text-xs font-medium ${inviteStatusColor(invite.status)}`}>
-                        {invite.status.charAt(0).toUpperCase() + invite.status.slice(1)}
-                      </span>
-                      <span className="text-white/35 text-xs bg-white/6 px-2 py-0.5 rounded-full">
-                        {bookedForInvite.length} total
-                      </span>
-                    </div>
-                    {!invite.multiUse && invite.applicantEmail && (
-                      <p className="text-white/45 text-xs mt-0.5 font-mono">{invite.applicantEmail}</p>
-                    )}
-                    {invite.note && (
-                      <p className="text-white/30 text-xs mt-1 italic">{invite.note}</p>
-                    )}
-                    <p className="text-white/25 text-xs mt-1 font-body">
-                      Expires {new Date(invite.expiresAt).toLocaleDateString()} · Created{" "}
-                      {new Date(invite.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => copyInviteLink(invite.id)}
-                      className="text-xs text-[#85CC17]/75 hover:text-[#85CC17] transition-colors font-body px-2 py-1 rounded-lg bg-[#85CC17]/10 hover:bg-[#85CC17]/20"
-                    >
-                      {copiedInviteId === invite.id ? "Copied!" : "Copy Link"}
-                    </button>
-                    {canUseLink && (
-                      <Btn size="sm" variant="danger" onClick={() => cancelInvite(invite.id)}>
-                        Cancel Link
-                      </Btn>
-                    )}
-                  </div>
-                </div>
-
-                {canUseLink && (
-                  <div className="bg-[#111318] border border-white/8 rounded-xl px-3 py-3">
-                    <p className="text-white/45 text-[11px] uppercase tracking-wider mb-2">Add Interview Under This Link</p>
-                    <div className="flex gap-2 flex-col sm:flex-row">
-                      <select
-                        value={assignSlotByInvite[invite.id] ?? ""}
-                        onChange={(e) => setAssignSlotByInvite((prev) => ({ ...prev, [invite.id]: e.target.value }))}
-                        className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-                      >
-                        <option value="">Select an available time…</option>
-                        {availableUpcomingSlots.map((slot) => (
-                          <option key={slot.id} value={slot.id}>
-                            {formatDateTime(slot.datetime)}
-                          </option>
-                        ))}
-                      </select>
-                      <Btn
-                        variant="primary"
-                        size="sm"
-                        disabled={!assignSlotByInvite[invite.id]}
-                        onClick={() => assignInterviewToInvite(invite)}
-                      >
-                        Add Interview
-                      </Btn>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-white/45 text-[11px] uppercase tracking-wider mb-2">Interviews Under This Link</p>
-                  {upcomingForInvite.length === 0 ? (
-                    <p className="text-white/30 text-xs font-body">No upcoming interviews for this link.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {upcomingForInvite.map((slot) => (
-                        <div key={slot.id} className="bg-[#111318] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white/80 text-xs font-semibold">{formatDateTime(slot.datetime)}</p>
-                            <p className="text-white/35 text-xs mt-0.5">
-                              {slot.bookerName || "Interviewee"}
-                              {slot.bookerEmail ? ` · ${slot.bookerEmail}` : ""}
-                            </p>
-                          </div>
-                          <Btn size="sm" variant="danger" onClick={() => cancelBookedInterview(slot)}>
-                            Remove
-                          </Btn>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {activeTab === "availability" && (
         <div className="space-y-4">
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
             <p className="text-white/65 text-sm font-semibold">Weekly Availability</p>
             <p className="text-white/35 text-xs mt-1 font-body">
-              Select hour blocks to control what times are visible on invite booking links.
+              Select hour blocks to control what times are visible on the booking page.
             </p>
+            {!canDeleteInterviews && (
+              <p className="text-white/35 text-xs mt-1 font-body">
+                Interviewer role can add hours but cannot remove existing visible times.
+              </p>
+            )}
             <div className="flex flex-wrap gap-2 items-center mt-3">
               <span className="text-white/40 text-xs font-body mr-1">Quick fill:</span>
               <button
                 onClick={() => applyPreset(9, 12)}
                 className="px-3 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/65 hover:text-white text-xs font-body transition-colors"
               >
-                Morning (9–12)
+                Morning (9-12)
               </button>
               <button
                 onClick={() => applyPreset(12, 17)}
                 className="px-3 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/65 hover:text-white text-xs font-body transition-colors"
               >
-                Afternoon (12–5)
+                Afternoon (12-5)
               </button>
               <button
                 onClick={() => applyPreset(9, 17)}
                 className="px-3 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/65 hover:text-white text-xs font-body transition-colors"
               >
-                Business Hours (9–5)
+                Business Hours (9-5)
               </button>
               <button
                 onClick={() => applyPreset(8, 20)}
                 className="px-3 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/65 hover:text-white text-xs font-body transition-colors"
               >
-                Full Day (8–8)
+                Full Day (8-8)
               </button>
             </div>
           </div>
@@ -788,7 +567,7 @@ function InterviewsContent() {
               ← Prev
             </button>
             <span className="text-white/65 text-sm font-body flex-1 text-center">
-              {weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} –{" "}
+              {weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
               {weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
             </span>
             <button
@@ -813,7 +592,7 @@ function InterviewsContent() {
                     key={i}
                     onClick={() => !isPastDay && toggleDay(day)}
                     disabled={isPastDay}
-                    title={isPastDay ? undefined : "Toggle entire day"}
+                    title={isPastDay ? undefined : canDeleteInterviews ? "Toggle entire day" : "Add missing hours for this day"}
                     className={`py-2 text-center text-xs font-medium font-body border-l border-white/6 transition-colors ${
                       isPastDay ? "opacity-30 cursor-default" : "hover:bg-white/5 cursor-pointer"
                     } ${isToday ? "text-[#85CC17]" : "text-white/45"}`}
@@ -832,7 +611,7 @@ function InterviewsContent() {
               <div key={hour} className="grid border-b border-white/4" style={{ gridTemplateColumns: "64px repeat(7, 1fr)" }}>
                 <button
                   onClick={() => toggleHourRow(hour)}
-                  title="Toggle this hour across all days"
+                  title={canDeleteInterviews ? "Toggle this hour across all days" : "Add this hour across all days"}
                   className="flex items-center justify-center py-3 text-[11px] text-white/35 hover:text-white/70 font-body transition-colors cursor-pointer hover:bg-white/5"
                 >
                   {fmtHour(hour)}
@@ -843,10 +622,11 @@ function InterviewsContent() {
                   const h = String(hour).padStart(2, "0");
                   const keys = hourSlotKeys(day, hour);
                   const quarterSlots = keys.map((k) => slotMap[k]).filter(Boolean);
-                  const visibleCount = quarterSlots.filter((s) => !s.bookedBy).length;
+                  const visibleCount = quarterSlots.filter((s) => s.available && !s.bookedBy).length;
                   const isPastHour = new Date(`${d}T${h}:59`).getTime() < now;
-                  const disabled = isPastHour;
                   const isVisible = visibleCount > 0;
+                  const cannotRemoveVisible = !canDeleteInterviews && isVisible;
+                  const disabled = isPastHour || cannotRemoveVisible;
                   const isPartiallyVisible = visibleCount > 0 && visibleCount < 4;
 
                   let cellClass = "bg-white/10 hover:bg-white/25";
@@ -855,9 +635,10 @@ function InterviewsContent() {
 
                   const title = (() => {
                     const label = fmtHour(hour);
-                    if (isPastHour) return `${label} — Past`;
-                    if (isVisible) return `${label} — Visible on booking links`;
-                    return `${label} — Hidden on booking links`;
+                    if (isPastHour) return `${label} - Past`;
+                    if (cannotRemoveVisible) return `${label} - Visible (interviewer cannot remove)`;
+                    if (isVisible) return `${label} - Visible on booking page`;
+                    return `${label} - Hidden on booking page`;
                   })();
 
                   return (
@@ -867,7 +648,7 @@ function InterviewsContent() {
                         onClick={() => toggleHour(day, hour)}
                         title={title}
                         className={`w-full h-11 rounded-none transition-colors ${
-                          disabled ? `${cellClass} cursor-default ${isPastHour ? "opacity-20" : ""}` : `${cellClass} cursor-pointer`
+                          disabled ? `${cellClass} cursor-default ${isPastHour ? "opacity-20" : "opacity-70"}` : `${cellClass} cursor-pointer`
                         }`}
                       />
                     </div>
@@ -884,126 +665,13 @@ function InterviewsContent() {
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-white/8" />
-              Click hour blocks to toggle full hours · click day header to toggle day
+              {canDeleteInterviews
+                ? "Click hour blocks to toggle full hours · click day header to toggle day"
+                : "Click hidden hour blocks (or quick fill) to add visible times"}
             </span>
           </div>
         </div>
       )}
-
-      <Modal
-        open={showInviteModal && !newToken}
-        onClose={() => {
-          setShowInviteModal(false);
-          setNewToken(null);
-        }}
-        title="New Invite Link"
-      >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between bg-white/4 border border-white/8 rounded-xl px-4 py-3">
-            <div>
-              <p className="text-white text-sm font-medium">Multi-use link</p>
-              <p className="text-white/40 text-xs mt-0.5 font-body">
-                Anyone with the link can book a slot. Each person enters their own name and email.
-              </p>
-            </div>
-            <button
-              onClick={() => setInviteField("multiUse", !inviteForm.multiUse)}
-              className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${
-                inviteForm.multiUse ? "bg-[#85CC17]" : "bg-white/15"
-              }`}
-            >
-              <span
-                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
-                  inviteForm.multiUse ? "left-5" : "left-1"
-                }`}
-              />
-            </button>
-          </div>
-
-          {!inviteForm.multiUse && (
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Applicant Name" required>
-                <Input
-                  value={inviteForm.applicantName}
-                  onChange={(e) => setInviteField("applicantName", e.target.value)}
-                  placeholder="Jane Smith"
-                />
-              </Field>
-              <Field label="Applicant Email" required>
-                <Input
-                  type="email"
-                  value={inviteForm.applicantEmail}
-                  onChange={(e) => setInviteField("applicantEmail", e.target.value)}
-                  placeholder="jane@example.com"
-                />
-              </Field>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Link expires in">
-              <Select
-                options={["1", "3", "7", "14", "30"]}
-                value={inviteForm.expiryDays}
-                onChange={(e) => setInviteField("expiryDays", e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <Field label="Internal note">
-            <TextArea
-              rows={2}
-              value={inviteForm.note}
-              onChange={(e) => setInviteField("note", e.target.value)}
-              placeholder="Optional context…"
-            />
-          </Field>
-        </div>
-
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setShowInviteModal(false)}>
-            Cancel
-          </Btn>
-          <Btn variant="primary" onClick={handleCreateInvite}>
-            Generate Link
-          </Btn>
-        </div>
-      </Modal>
-
-      <Modal
-        open={!!newToken}
-        onClose={() => {
-          setNewToken(null);
-          setShowInviteModal(false);
-        }}
-        title="Invite Link Created"
-      >
-        <div className="space-y-4">
-          <p className="text-white/60 text-sm font-body">
-            Share this link with the applicant. It expires based on the days you selected.
-          </p>
-          <div className="bg-[#0F1014] border border-white/10 rounded-xl p-3 font-mono text-sm text-[#85CC17] break-all">
-            {newToken ? buildBookingUrl(newToken) : ""}
-          </div>
-          <button
-            onClick={() => newToken && copyInviteLink(newToken)}
-            className="w-full py-2.5 rounded-xl bg-[#85CC17] text-[#0D0D0D] font-display font-bold text-sm hover:bg-[#72b314] transition-colors"
-          >
-            {copiedInviteId === newToken ? "Copied!" : "Copy Link"}
-          </button>
-        </div>
-        <div className="flex justify-end mt-4 pt-4 border-t border-white/8">
-          <Btn
-            variant="ghost"
-            onClick={() => {
-              setNewToken(null);
-              setShowInviteModal(false);
-            }}
-          >
-            Done
-          </Btn>
-        </div>
-      </Modal>
     </>
   );
 }

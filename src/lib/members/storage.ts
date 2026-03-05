@@ -145,7 +145,7 @@ export interface Project {
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
 
-export type AuthRole = "admin" | "project_lead" | "member";
+export type AuthRole = "admin" | "project_lead" | "interviewer" | "member";
 
 export interface UserProfile {
   id: string;       // Firebase Auth UID, set to the snapshot key by snapToList
@@ -300,6 +300,7 @@ export const subscribeTasks       = makeSubscriber<Task>("tasks");
 export const subscribeGrants      = makeSubscriber<Grant>("grants");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
+export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
 
 // ── BIDs ──────────────────────────────────────────────────────────────────────
 
@@ -636,6 +637,13 @@ export async function getTeamMembersList(): Promise<TeamMember[]> {
   return snapToList<TeamMember>(snap);
 }
 
+export async function getAuditLogsList(): Promise<AuditLogEntry[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "auditLogs"));
+  return snapToList<AuditLogEntry>(snap);
+}
+
 // ── InviteCodes ───────────────────────────────────────────────────────────────
 
 export const subscribeInviteCodes = makeSubscriber<InviteCode>("inviteCodes");
@@ -799,6 +807,34 @@ export async function updateInterviewSlot(id: string, data: Partial<InterviewSlo
     collection: "interviewSlots",
     recordId: id,
     details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteBookedInterview(slotId: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+
+  const slotRef = ref(db, `interviewSlots/${slotId}`);
+  const snap = await get(slotRef);
+  if (!snap.exists()) return;
+
+  const slot = snap.val() as Partial<InterviewSlot>;
+  await update(slotRef, {
+    available: true,
+    bookedBy: "",
+    bookerName: "",
+    bookerEmail: "",
+  });
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "interviewBookings",
+    recordId: slotId,
+    details: {
+      datetime: slot.datetime ?? "",
+      previousBookedBy: slot.bookedBy ?? "",
+      previousBookerName: slot.bookerName ?? "",
+      previousBookerEmail: slot.bookerEmail ?? "",
+    },
   });
 }
 

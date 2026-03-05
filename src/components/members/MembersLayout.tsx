@@ -15,6 +15,7 @@ type NavItem = {
   href: string;
   label: string;
   minRole?: AuthRole;   // if set, only users with this role or higher can see this item
+  visibleTo?: AuthRole[]; // if set, only these roles can see this item
   icon: React.ReactNode;
 };
 
@@ -55,7 +56,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: "/members/interviews",
     label: "Interviews",
-    minRole: "project_lead",
+    visibleTo: ["admin", "project_lead", "interviewer"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>,
   },
   {
@@ -72,11 +73,13 @@ const NAV_ITEMS: NavItem[] = [
 function rolePriority(role: AuthRole | null): number {
   if (role === "admin") return 3;
   if (role === "project_lead") return 2;
+  if (role === "interviewer") return 1;
   return 1; // "member" or null
 }
 
 // Returns true if the user's role meets the minimum required for this nav item.
 function canViewNavItem(item: NavItem, userRole: AuthRole | null): boolean {
+  if (item.visibleTo) return userRole ? item.visibleTo.includes(userRole) : false;
   if (!item.minRole) return true;
   return rolePriority(userRole) >= rolePriority(item.minRole);
 }
@@ -116,7 +119,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   const visibleNavItems = NAV_ITEMS.filter(item => canViewNavItem(item, authRole));
   const memberDisplayName = userProfile?.name || user.email?.split("@")[0] || "Member";
-  const memberRoleLabel = authRole === "admin" ? "Admin" : authRole === "project_lead" ? "Project Lead" : "Member";
+  const memberRoleLabel =
+    authRole === "admin" ? "Admin" :
+    authRole === "project_lead" ? "Project Lead" :
+    authRole === "interviewer" ? "Interviewer" :
+    "Member";
 
   return (
     <div className="min-h-screen bg-[#0F1014] flex">

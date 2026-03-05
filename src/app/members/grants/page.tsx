@@ -46,13 +46,14 @@ export default function GrantsPage() {
   const { authRole, userProfile } = useAuth();
 
   const canManageAll = authRole === "admin" || authRole === "project_lead";
+  const isContributorRole = authRole === "member" || authRole === "interviewer";
   const myName = userProfile?.name ?? "";
 
-  // Members can create grants and edit ones they're assigned to.
-  const canCreate = canManageAll || authRole === "member";
+  // Members/interviewers can create grants and edit ones they're assigned to.
+  const canCreate = canManageAll || isContributorRole;
   const canEditGrant = (grant: Grant) =>
     canManageAll ||
-    (authRole === "member" && myName !== "" && grant.assignedResearcher.toLowerCase() === myName.toLowerCase());
+    (isContributorRole && myName !== "" && grant.assignedResearcher.toLowerCase() === myName.toLowerCase());
 
   // Subscribe to real-time grant updates; unsubscribe on unmount.
   useEffect(() => {

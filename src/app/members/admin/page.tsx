@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInviteCodes, createInviteCode, deleteInviteCode,
   subscribeUserProfiles, updateUserProfile, deletePortalUserAccount,
+  getAuditLogsList,
   type InviteCode, type UserProfile, type AuthRole, type AuditLogEntry,
 } from "@/lib/members/storage";
 import { Btn, Badge, Table, Field, Select, useConfirm } from "@/components/members/ui";
@@ -80,7 +81,7 @@ function AccessCodesTab({ uid }: { uid: string }) {
         <div className="flex flex-wrap gap-3 items-end">
           <Field label="Role">
             <Select
-              options={["member", "project_lead", "admin"]}
+              options={["member", "interviewer", "project_lead", "admin"]}
               value={newRole}
               onChange={e => setNewRole(e.target.value as AuthRole)}
             />
@@ -169,6 +170,7 @@ function UsersTab() {
             className="bg-[#0F1014] border border-white/10 rounded-lg pl-2 pr-6 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/50"
           >
             <option value="member">member</option>
+            <option value="interviewer">interviewer</option>
             <option value="project_lead">project_lead</option>
             <option value="admin">admin</option>
           </select>,
@@ -274,15 +276,34 @@ function AuditLogTab() {
           cache: "no-store",
         });
         if (!res.ok) {
-          throw new Error("load_failed");
+          let apiError = "load_failed";
+          try {
+            const data = await res.json() as { error?: string };
+            if (typeof data.error === "string" && data.error.trim()) {
+              apiError = data.error.trim();
+            }
+          } catch {
+            // ignore json parse error
+          }
+          throw new Error(apiError);
         }
         const data = await res.json() as { logs?: AuditLogEntry[] };
         if (cancelled) return;
         setLogs(Array.isArray(data.logs) ? data.logs : []);
         setErrorMessage("");
-      } catch {
+      } catch (apiErr) {
         if (cancelled) return;
-        setErrorMessage("Could not load audit logs.");
+        try {
+          const fallbackLogs = await getAuditLogsList();
+          if (cancelled) return;
+          setLogs(fallbackLogs);
+          setErrorMessage("");
+        } catch {
+          if (cancelled) return;
+          setErrorMessage(
+            `Could not load audit logs (${apiErr instanceof Error ? apiErr.message : "unknown_error"}).`
+          );
+        }
       } finally {
         if (cancelled) return;
         setLoadingLogs(false);
