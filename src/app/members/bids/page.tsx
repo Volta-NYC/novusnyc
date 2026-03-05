@@ -18,6 +18,36 @@ import { useAuth } from "@/lib/members/authContext";
 const STATUSES   = ["Active Partner", "In Conversation", "Materials Sent", "Cold Outreach", "Paused", "Dead"];
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
 const PRIORITIES = ["High", "Medium", "Low"];
+const SORT_OPTIONS = [
+  { value: "custom", label: "Custom Order" },
+  { value: "name", label: "Name" },
+  { value: "date_added", label: "Date Added" },
+] as const;
+type SortMode = (typeof SORT_OPTIONS)[number]["value"];
+
+function getDateValue(value: string | undefined): number {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function customBidCompare(a: BID, b: BID): number {
+  const aSort = a.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  const bSort = b.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  if (aSort !== bSort) return aSort - bSort;
+  const aCreated = getDateValue(a.createdAt);
+  const bCreated = getDateValue(b.createdAt);
+  if (aCreated !== bCreated) return aCreated - bCreated;
+  return a.name.localeCompare(b.name);
+}
+
+function nextSortIndex(items: BID[]): number {
+  const max = items.reduce((best, item) => {
+    const value = item.sortIndex ?? 0;
+    return value > best ? value : best;
+  }, 0);
+  return max + 1000;
+}
 
 // Blank form values for creating a new BID record.
 const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
@@ -30,9 +60,11 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
 export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
   const [search, setSearch]           = useState("");
+  const [sortMode, setSortMode]       = useState<SortMode>("custom");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
+  const [draggingBidId, setDraggingBidId] = useState<string | null>(null);
   const [timelineDrafts, setTimelineDrafts] = useState<
     Record<string, { date: string; action: string; saving: boolean }>
   >({});
@@ -75,7 +107,10 @@ export default function BIDTrackerPage() {
     if (editingBID) {
       await updateBID(editingBID.id, form as Partial<BID>);
     } else {
-      await createBID(form as Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline">);
+      await createBID({
+        ...form,
+        sortIndex: nextSortIndex(bids),
+      } as Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline">);
     }
     setModal(null);
   };
@@ -125,24 +160,61 @@ export default function BIDTrackerPage() {
       .sort((a, b) => b.date.localeCompare(a.date));
   };
 
-  // Filter by search text.
-  const filtered = bids.filter((bid) => {
-    const query = search.toLowerCase();
-    return !search
-      || bid.name.toLowerCase().includes(query)
+  const matchesSearch = (bid: BID) => {
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+    return bid.name.toLowerCase().includes(query)
       || bid.borough.toLowerCase().includes(query)
       || bid.contactName.toLowerCase().includes(query);
-  });
+  };
 
-  const PRIORITY_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
-  const STATUS_ORDER: Record<string, number>   = { "Active Partner": 0, "In Conversation": 1, "Materials Sent": 2, "Cold Outreach": 3, "Paused": 4, "Dead": 5 };
-  const sorted = [...filtered].sort((a, b) => {
-    const statusCmp = (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3);
-    if (statusCmp !== 0) return statusCmp;
-    const priorityCmp = (PRIORITY_ORDER[a.priority] ?? 1) - (PRIORITY_ORDER[b.priority] ?? 1);
-    if (priorityCmp !== 0) return priorityCmp;
-    return a.name.localeCompare(b.name);
-  });
+  const sortBids = (list: BID[]) => {
+    if (sortMode === "name") {
+      return [...list].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (sortMode === "date_added") {
+      return [...list].sort((a, b) => getDateValue(b.createdAt) - getDateValue(a.createdAt));
+    }
+    return [...list].sort(customBidCompare);
+  };
+
+  const filtered = bids.filter(matchesSearch);
+  const sorted = sortBids(filtered);
+  const customOrdered = [...bids].sort(customBidCompare);
+  const canCustomReorder = canEdit && sortMode === "custom";
+
+  const persistCustomOrder = async (ordered: BID[]) => {
+    const updates: Promise<void>[] = [];
+    ordered.forEach((bid, index) => {
+      const nextSort = (index + 1) * 1000;
+      if (bid.sortIndex !== nextSort) {
+        updates.push(updateBID(bid.id, { sortIndex: nextSort }));
+      }
+    });
+    if (updates.length > 0) await Promise.all(updates);
+  };
+
+  const moveBidBefore = async (dragId: string, targetId: string) => {
+    if (sortMode !== "custom" || dragId === targetId) return;
+    const ordered = [...customOrdered];
+    const fromIndex = ordered.findIndex((bid) => bid.id === dragId);
+    const targetIndex = ordered.findIndex((bid) => bid.id === targetId);
+    if (fromIndex < 0 || targetIndex < 0) return;
+    const [dragged] = ordered.splice(fromIndex, 1);
+    const insertAt = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    ordered.splice(insertAt, 0, dragged);
+    await persistCustomOrder(ordered);
+  };
+
+  const moveBidToEnd = async (dragId: string) => {
+    if (sortMode !== "custom") return;
+    const ordered = [...customOrdered];
+    const fromIndex = ordered.findIndex((bid) => bid.id === dragId);
+    if (fromIndex < 0) return;
+    const [dragged] = ordered.splice(fromIndex, 1);
+    ordered.push(dragged);
+    await persistCustomOrder(ordered);
+  };
 
   const stats = {
     total:    bids.length,
@@ -170,15 +242,56 @@ export default function BIDTrackerPage() {
       {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search BIDs, boroughs…" />
+        <select
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value as SortMode)}
+          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
+        >
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* BID cards with inline timeline */}
-      <div className="space-y-4">
+      <div
+        className="space-y-4"
+        onDragOver={(e) => {
+          if (!canCustomReorder) return;
+          e.preventDefault();
+        }}
+        onDrop={async (e) => {
+          if (!canCustomReorder || !draggingBidId) return;
+          e.preventDefault();
+          await moveBidToEnd(draggingBidId);
+          setDraggingBidId(null);
+        }}
+      >
         {sorted.map((bid) => {
           const timeline = getTimeline(bid);
           const draft = getTimelineDraft(bid.id);
           return (
-            <div key={bid.id} className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
+            <div
+              key={bid.id}
+              draggable={canCustomReorder}
+              onDragStart={() => setDraggingBidId(bid.id)}
+              onDragEnd={() => setDraggingBidId(null)}
+              onDragOver={(e) => {
+                if (!canCustomReorder) return;
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={async (e) => {
+                if (!canCustomReorder || !draggingBidId) return;
+                e.preventDefault();
+                e.stopPropagation();
+                await moveBidBefore(draggingBidId, bid.id);
+                setDraggingBidId(null);
+              }}
+              className={`bg-[#1C1F26] border border-white/8 rounded-xl p-4
+                ${canCustomReorder ? "cursor-grab active:cursor-grabbing" : ""}
+                ${draggingBidId === bid.id ? "opacity-40 scale-[0.99]" : ""}`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1 min-w-0">
                   <p className="text-white font-semibold truncate">{bid.name}</p>

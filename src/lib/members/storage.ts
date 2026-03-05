@@ -30,6 +30,7 @@ export interface BID {
     note?: string;
     createdAt: string;
   }>;
+  sortIndex?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,6 +67,7 @@ export interface Business {
   githubUrl?: string;
   driveFolderUrl?: string;
   clientNotes?: string;
+  sortIndex?: number;
 }
 
 export interface Task {
@@ -81,6 +83,7 @@ export interface Task {
   week: string;
   notes: string;
   blocker: string;
+  sortIndex?: number;
   createdAt: string;
   completedAt: string;
 }

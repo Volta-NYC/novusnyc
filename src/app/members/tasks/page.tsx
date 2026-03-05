@@ -12,50 +12,77 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
-// ── CONSTANTS ─────────────────────────────────────────────────────────────────
-
-const STATUSES  = ["To Do", "On Hold"];
+const STATUSES = ["To Do", "On Hold"];
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"];
-const DIVISIONS  = ["Tech", "Marketing", "Finance", "Outreach"];
+const DIVISIONS = ["Tech", "Marketing", "Finance", "Outreach"];
+const SORT_OPTIONS = [
+  { value: "custom", label: "Custom Order" },
+  { value: "name", label: "Name" },
+  { value: "date_added", label: "Date Added" },
+] as const;
 
-// Blank form values for creating a new task.
 const BLANK_FORM: Omit<Task, "id" | "createdAt"> = {
   name: "", status: "To Do", priority: "Medium", assignedTo: "", businessId: "",
   division: "Tech", dueDate: "", week: "", notes: "", blocker: "", completedAt: "",
 };
 
-// Ordered columns for the kanban board view.
 const BOARD_COLUMNS = ["To Do", "On Hold"] as const;
 type BoardStatus = (typeof BOARD_COLUMNS)[number];
+type SortMode = (typeof SORT_OPTIONS)[number]["value"];
 
-// Left border color for each kanban column.
-const COLUMN_BORDER_COLOR: Record<string, string> = {
-  "To Do":   "border-gray-500/30",
+const COLUMN_BORDER_COLOR: Record<BoardStatus, string> = {
+  "To Do": "border-gray-500/30",
   "On Hold": "border-amber-500/30",
+};
+
+const TASK_STATUS_ORDER: Record<BoardStatus, number> = {
+  "To Do": 0,
+  "On Hold": 1,
 };
 
 function normalizeStatus(status: Task["status"]): BoardStatus {
   return status === "To Do" ? "To Do" : "On Hold";
 }
 
-// ── PAGE COMPONENT ────────────────────────────────────────────────────────────
+function getDateValue(value: string | undefined): number {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function customTaskCompare(a: Task, b: Task): number {
+  const aSort = a.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  const bSort = b.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  if (aSort !== bSort) return aSort - bSort;
+
+  const aCreated = getDateValue(a.createdAt);
+  const bCreated = getDateValue(b.createdAt);
+  if (aCreated !== bCreated) return aCreated - bCreated;
+  return a.name.localeCompare(b.name);
+}
+
+function nextSortIndex(items: Task[]): number {
+  const max = items.reduce((best, item) => {
+    const value = item.sortIndex ?? 0;
+    return value > best ? value : best;
+  }, 0);
+  return max + 1000;
+}
 
 export default function TasksPage() {
-  const [tasks, setTasks]             = useState<Task[]>([]);
-  const [team, setTeam]               = useState<TeamMember[]>([]);
-  const [search, setSearch]           = useState("");
-  const [filterDiv, setFilterDiv]     = useState("");
-  const [view, setView]               = useState<"board" | "table">("board");
-  const [modal, setModal]             = useState<"create" | "edit" | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [search, setSearch] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("custom");
+  const [view, setView] = useState<"board" | "table">("board");
+  const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [form, setForm]               = useState(BLANK_FORM);
-  const [draggingId, setDraggingId]   = useState<string | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
-  const [sortCol, setSortCol]         = useState(-1);
-  const [sortDir, setSortDir]         = useState<"asc" | "desc">("asc");
+  const [form, setForm] = useState(BLANK_FORM);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<BoardStatus | null>(null);
 
   const { ask, Dialog } = useConfirm();
-  const { authRole }    = useAuth();
+  const { authRole } = useAuth();
   const router = useRouter();
   const canEdit = authRole === "admin";
 
@@ -63,7 +90,6 @@ export default function TasksPage() {
     if (authRole && authRole !== "admin") router.replace("/members/projects");
   }, [authRole, router]);
 
-  // Subscribe to real-time task updates; unsubscribe on unmount.
   useEffect(() => subscribeTasks(setTasks), []);
   useEffect(() => subscribeTeam(setTeam), []);
 
@@ -79,30 +105,37 @@ export default function TasksPage() {
     [team]
   );
 
-  // Generic field updater used by all form inputs.
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  // Open create modal, optionally pre-selecting the column's status.
+  const openTasks = useMemo(
+    () => tasks.filter((task) => task.status !== "Done"),
+    [tasks]
+  );
+
   const openCreate = (status?: BoardStatus) => {
-    setForm({ ...BLANK_FORM, status: status ?? "To Do" });
+    const seedStatus = status ?? "To Do";
+    const nextForStatus = openTasks
+      .filter((task) => normalizeStatus(task.status) === seedStatus);
+    setForm({ ...BLANK_FORM, status: seedStatus, sortIndex: nextSortIndex(nextForStatus) });
     setEditingTask(null);
     setModal("create");
   };
 
   const openEdit = (task: Task) => {
     setForm({
-      name:        task.name,
-      status:      normalizeStatus(task.status),
-      priority:    task.priority,
-      assignedTo:  task.assignedTo,
-      businessId:  task.businessId,
-      division:    task.division,
-      dueDate:     task.dueDate,
-      week:        task.week,
-      notes:       task.notes,
-      blocker:     task.blocker,
+      name: task.name,
+      status: normalizeStatus(task.status),
+      priority: task.priority,
+      assignedTo: task.assignedTo,
+      businessId: task.businessId,
+      division: task.division,
+      dueDate: task.dueDate,
+      week: task.week,
+      notes: task.notes,
+      blocker: task.blocker,
       completedAt: task.completedAt,
+      sortIndex: task.sortIndex,
     });
     setEditingTask(task);
     setModal("edit");
@@ -118,36 +151,130 @@ export default function TasksPage() {
     setModal(null);
   };
 
-  // Filter by search text and/or division dropdown.
-  const filtered = tasks.filter(task =>
-    task.status !== "Done"
-    && (
-    (!search
-      || task.name.toLowerCase().includes(search.toLowerCase())
-      || task.assignedTo.toLowerCase().includes(search.toLowerCase()))
-    && (!filterDiv || task.division === filterDiv)
-    )
-  );
-
-  const TASK_PRIORITY_ORDER: Record<string, number> = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
-  const TASK_STATUS_ORDER: Record<string, number> = { "To Do": 0, "On Hold": 1 };
-  const handleSort = (i: number) => {
-    if (sortCol === i) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortCol(i); setSortDir("asc"); }
+  const matchesSearch = (task: Task) => {
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+    return task.name.toLowerCase().includes(query)
+      || task.assignedTo.toLowerCase().includes(query);
   };
-  const sortedTasks = [...filtered].sort((a, b) => {
-    let cmp = 0;
-    switch (sortCol) {
-      case 0: cmp = a.name.localeCompare(b.name); break;
-      case 1: cmp = (TASK_STATUS_ORDER[normalizeStatus(a.status)] ?? 0) - (TASK_STATUS_ORDER[normalizeStatus(b.status)] ?? 0); break;
-      case 2: cmp = (TASK_PRIORITY_ORDER[a.priority] ?? 2) - (TASK_PRIORITY_ORDER[b.priority] ?? 2); break;
-      case 3: cmp = a.division.localeCompare(b.division); break;
-      case 4: cmp = (a.assignedTo || "").localeCompare(b.assignedTo || ""); break;
-      case 5: cmp = (a.dueDate || "").localeCompare(b.dueDate || ""); break;
-      default: return 0;
+
+  const getColumnCustomOrder = (status: BoardStatus, source: Task[] = openTasks) =>
+    source
+      .filter((task) => normalizeStatus(task.status) === status)
+      .sort(customTaskCompare);
+
+  const getColumnDisplayTasks = (status: BoardStatus) => {
+    const searched = openTasks
+      .filter((task) => normalizeStatus(task.status) === status)
+      .filter(matchesSearch);
+    if (sortMode === "name") return [...searched].sort((a, b) => a.name.localeCompare(b.name));
+    if (sortMode === "date_added") {
+      return [...searched].sort((a, b) => getDateValue(b.createdAt) - getDateValue(a.createdAt));
     }
-    return sortDir === "asc" ? cmp : -cmp;
-  });
+    return [...searched].sort(customTaskCompare);
+  };
+
+  const persistColumnOrder = async (status: BoardStatus, orderedTasks: Task[]) => {
+    const updates: Promise<void>[] = [];
+    orderedTasks.forEach((task, index) => {
+      const nextSort = (index + 1) * 1000;
+      const nextStatus = status as Task["status"];
+      const patch: Partial<Task> = {};
+      if (normalizeStatus(task.status) !== status) patch.status = nextStatus;
+      if (task.sortIndex !== nextSort) patch.sortIndex = nextSort;
+      if (Object.keys(patch).length > 0) {
+        updates.push(updateTask(task.id, patch));
+      }
+    });
+    if (updates.length > 0) await Promise.all(updates);
+  };
+
+  const moveTaskToColumnEnd = async (taskId: string, targetStatus: BoardStatus) => {
+    const dragged = openTasks.find((task) => task.id === taskId);
+    if (!dragged) return;
+
+    if (sortMode !== "custom") {
+      if (normalizeStatus(dragged.status) !== targetStatus) {
+        await updateTask(taskId, { status: targetStatus as Task["status"] });
+      }
+      return;
+    }
+
+    const sourceStatus = normalizeStatus(dragged.status);
+    const sourceColumn = getColumnCustomOrder(sourceStatus).filter((task) => task.id !== taskId);
+    const targetSeed = sourceStatus === targetStatus
+      ? sourceColumn
+      : getColumnCustomOrder(targetStatus);
+    const targetColumn = [...targetSeed, { ...dragged, status: targetStatus }];
+
+    if (sourceStatus === targetStatus) {
+      await persistColumnOrder(targetStatus, targetColumn);
+      return;
+    }
+
+    await Promise.all([
+      persistColumnOrder(sourceStatus, sourceColumn),
+      persistColumnOrder(targetStatus, targetColumn),
+    ]);
+  };
+
+  const moveTaskBefore = async (
+    taskId: string,
+    targetTaskId: string,
+    targetStatus: BoardStatus
+  ) => {
+    if (taskId === targetTaskId) return;
+
+    const dragged = openTasks.find((task) => task.id === taskId);
+    if (!dragged) return;
+
+    if (sortMode !== "custom") {
+      if (normalizeStatus(dragged.status) !== targetStatus) {
+        await updateTask(taskId, { status: targetStatus as Task["status"] });
+      }
+      return;
+    }
+
+    const sourceStatus = normalizeStatus(dragged.status);
+    const sourceColumn = getColumnCustomOrder(sourceStatus).filter((task) => task.id !== taskId);
+    const targetSeed = sourceStatus === targetStatus
+      ? sourceColumn
+      : getColumnCustomOrder(targetStatus);
+    const targetIndex = targetSeed.findIndex((task) => task.id === targetTaskId);
+    if (targetIndex < 0) {
+      await moveTaskToColumnEnd(taskId, targetStatus);
+      return;
+    }
+
+    const targetColumn = [...targetSeed];
+    targetColumn.splice(targetIndex, 0, { ...dragged, status: targetStatus });
+
+    if (sourceStatus === targetStatus) {
+      await persistColumnOrder(targetStatus, targetColumn);
+      return;
+    }
+
+    await Promise.all([
+      persistColumnOrder(sourceStatus, sourceColumn),
+      persistColumnOrder(targetStatus, targetColumn),
+    ]);
+  };
+
+  const filtered = openTasks.filter(matchesSearch);
+  const tableTasks = useMemo(() => {
+    if (sortMode === "name") {
+      return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (sortMode === "date_added") {
+      return [...filtered].sort((a, b) => getDateValue(b.createdAt) - getDateValue(a.createdAt));
+    }
+    return [...filtered].sort((a, b) => {
+      const statusCmp = (TASK_STATUS_ORDER[normalizeStatus(a.status)] ?? 0)
+        - (TASK_STATUS_ORDER[normalizeStatus(b.status)] ?? 0);
+      if (statusCmp !== 0) return statusCmp;
+      return customTaskCompare(a, b);
+    });
+  }, [filtered, sortMode]);
 
   if (authRole && authRole !== "admin") {
     return (
@@ -165,10 +292,9 @@ export default function TasksPage() {
 
       <PageHeader
         title="Tasks"
-        subtitle={`${filtered.length} open · ${filtered.filter(t => normalizeStatus(t.status) === "On Hold").length} on hold`}
+        subtitle={`${filtered.length} open · ${filtered.filter((t) => normalizeStatus(t.status) === "On Hold").length} on hold`}
         action={
           <div className="flex gap-2">
-            {/* Board / Table view toggle */}
             <div className="flex bg-[#1C1F26] border border-white/8 rounded-lg p-0.5">
               {(["board", "table"] as const).map(viewMode => (
                 <button
@@ -187,41 +313,39 @@ export default function TasksPage() {
         }
       />
 
-      {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search tasks, assignees…" />
         <select
-          value={filterDiv}
-          onChange={e => setFilterDiv(e.target.value)}
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value as SortMode)}
           className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
         >
-          <option value="">All divisions</option>
-          {DIVISIONS.map(d => <option key={d}>{d}</option>)}
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
         </select>
       </div>
 
-      {/* ── Board view ── */}
       {view === "board" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
           {BOARD_COLUMNS.map(column => {
-            const columnTasks = filtered.filter(t => normalizeStatus(t.status) === column);
+            const columnTasks = getColumnDisplayTasks(column);
             return (
               <div
                 key={column}
                 className={`bg-[#1C1F26] border ${COLUMN_BORDER_COLOR[column]} rounded-xl p-3 min-h-[200px] transition-colors
                   ${dragOverColumn === column ? "bg-[#1C1F26]/80 border-white/20" : ""}`}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
                 onDragEnter={() => setDragOverColumn(column)}
-                onDragLeave={e => {
+                onDragLeave={(e) => {
                   if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverColumn(null);
                 }}
-                onDrop={async e => {
+                onDrop={async (e) => {
                   e.preventDefault();
                   setDragOverColumn(null);
-                  if (draggingId) {
-                    await updateTask(draggingId, { status: column as Task["status"] });
-                    setDraggingId(null);
-                  }
+                  if (!draggingId || !canEdit) return;
+                  await moveTaskToColumnEnd(draggingId, column);
+                  setDraggingId(null);
                 }}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -232,14 +356,45 @@ export default function TasksPage() {
                   {columnTasks.map(task => (
                     <div
                       key={task.id}
-                      draggable
+                      draggable={canEdit}
                       onDragStart={() => setDraggingId(task.id)}
                       onDragEnd={() => setDraggingId(null)}
-                      className={`bg-[#0F1014] border border-white/5 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-white/15 transition-all
+                      onDragOver={(e) => {
+                        if (!canEdit || sortMode !== "custom") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={async (e) => {
+                        if (!canEdit) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!draggingId) return;
+                        await moveTaskBefore(draggingId, task.id, column);
+                        setDragOverColumn(null);
+                        setDraggingId(null);
+                      }}
+                      className={`group relative bg-[#0F1014] border border-white/5 rounded-lg p-3 transition-all
+                        ${canEdit ? "cursor-grab active:cursor-grabbing hover:border-white/15" : ""}
                         ${draggingId === task.id ? "opacity-40 scale-95" : ""}`}
                       onClick={() => canEdit ? openEdit(task) : undefined}
                     >
-                      <p className="text-white text-sm font-medium leading-snug mb-1.5">{task.name}</p>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ask(async () => deleteTask(task.id));
+                          }}
+                          className="absolute right-2 top-2 text-white/25 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label="Delete task"
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      )}
+                      <p className="text-white text-sm font-medium leading-snug mb-1.5 pr-4">{task.name}</p>
                       <div className="flex flex-wrap gap-1">
                         <Badge label={task.priority} />
                         <span className="text-xs text-white/30">{task.division}</span>
@@ -266,12 +421,10 @@ export default function TasksPage() {
           })}
         </div>
       ) : (
-        /* ── Table view ── */
         <>
           <Table
             cols={["Task", "Status", "Priority", "Division", "Assigned To", "Due Date", "Actions"]}
-            sortCol={sortCol} sortDir={sortDir} onSort={handleSort} sortableCols={[0,1,2,3,4,5]}
-            rows={sortedTasks.map(task => [
+            rows={tableTasks.map(task => [
               <span key="name" className="text-white font-medium">{task.name}</span>,
               <Badge key="status" label={normalizeStatus(task.status)} />,
               <Badge key="priority" label={task.priority} />,
@@ -293,7 +446,6 @@ export default function TasksPage() {
         </>
       )}
 
-      {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingTask ? "Edit Task" : "New Task"}>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">

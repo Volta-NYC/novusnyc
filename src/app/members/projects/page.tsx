@@ -18,6 +18,37 @@ const DIVISIONS = ["Tech", "Marketing", "Finance"];
 const SERVICES  = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
 const PRIORITIES = ["High", "Medium", "Low"];
 const LANGUAGES  = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
+const SORT_OPTIONS = [
+  { value: "custom", label: "Custom Order" },
+  { value: "name", label: "Name" },
+  { value: "date_added", label: "Date Added" },
+] as const;
+type ProjectSortMode = (typeof SORT_OPTIONS)[number]["value"];
+
+function getDateValue(value: string | undefined): number {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function customBusinessCompare(a: Business, b: Business): number {
+  const aSort = a.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  const bSort = b.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  if (aSort !== bSort) return aSort - bSort;
+
+  const aCreated = getDateValue(a.createdAt);
+  const bCreated = getDateValue(b.createdAt);
+  if (aCreated !== bCreated) return aCreated - bCreated;
+  return a.name.localeCompare(b.name);
+}
+
+function nextSortIndex(items: Business[]): number {
+  const max = items.reduce((best, item) => {
+    const value = item.sortIndex ?? 0;
+    return value > best ? value : best;
+  }, 0);
+  return max + 1000;
+}
 
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "", bidId: "", ownerName: "", ownerEmail: "", phone: "", address: "", website: "",
@@ -36,10 +67,12 @@ export default function BusinessesPage() {
   const [team, setTeam]                       = useState<TeamMember[]>([]);
   const [search, setSearch]                   = useState("");
   const [filterDiv, setFilterDiv]             = useState("");
+  const [sortMode, setSortMode]               = useState<ProjectSortMode>("custom");
   const [statusPage, setStatusPage]           = useState<"active_planning" | "completed" | "scouting">("active_planning");
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
+  const [draggingBusinessId, setDraggingBusinessId] = useState<string | null>(null);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -86,7 +119,10 @@ export default function BusinessesPage() {
     if (editingBusiness) {
       await updateBusiness(editingBusiness.id, form as Partial<Business>);
     } else {
-      await createBusiness(form as Omit<Business, "id" | "createdAt" | "updatedAt">);
+      await createBusiness({
+        ...form,
+        sortIndex: nextSortIndex(businesses),
+      } as Omit<Business, "id" | "createdAt" | "updatedAt">);
     }
     setModal(null);
   };
@@ -97,17 +133,62 @@ export default function BusinessesPage() {
     return status === "Discovery" || status === "On Hold";
   };
 
-  const filtered = businesses.filter(b => {
-    if (!statusMatchesPage(b.projectStatus)) return false;
-    const q = search.toLowerCase();
-    const matchesSearch = !search
-      || b.name.toLowerCase().includes(q)
-      || b.ownerName.toLowerCase().includes(q)
-      || b.businessType.toLowerCase().includes(q)
-      || (b.teamLead ?? "").toLowerCase().includes(q);
-    const matchesDiv = !filterDiv || b.division === filterDiv;
-    return matchesSearch && matchesDiv;
-  });
+  const matchesSearch = (project: Business) => {
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+    return project.name.toLowerCase().includes(query)
+      || project.ownerName.toLowerCase().includes(query)
+      || project.businessType.toLowerCase().includes(query)
+      || (project.teamLead ?? "").toLowerCase().includes(query);
+  };
+
+  const sortBusinesses = (list: Business[]) => {
+    if (sortMode === "name") {
+      return [...list].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (sortMode === "date_added") {
+      return [...list].sort((a, b) => getDateValue(b.createdAt) - getDateValue(a.createdAt));
+    }
+    return [...list].sort(customBusinessCompare);
+  };
+
+  const statusScoped = businesses.filter((business) => statusMatchesPage(business.projectStatus));
+  const divisionScoped = statusScoped.filter((business) => !filterDiv || business.division === filterDiv);
+  const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
+  const customScoped = [...divisionScoped].sort(customBusinessCompare);
+
+  const persistCustomOrder = async (ordered: Business[]) => {
+    const updates: Promise<void>[] = [];
+    ordered.forEach((business, index) => {
+      const nextSort = (index + 1) * 1000;
+      if (business.sortIndex !== nextSort) {
+        updates.push(updateBusiness(business.id, { sortIndex: nextSort }));
+      }
+    });
+    if (updates.length > 0) await Promise.all(updates);
+  };
+
+  const moveBusinessBefore = async (dragId: string, targetId: string) => {
+    if (dragId === targetId || sortMode !== "custom") return;
+    const ordered = [...customScoped];
+    const fromIndex = ordered.findIndex((business) => business.id === dragId);
+    const targetIndex = ordered.findIndex((business) => business.id === targetId);
+    if (fromIndex < 0 || targetIndex < 0) return;
+    const [dragged] = ordered.splice(fromIndex, 1);
+    const insertAt = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    ordered.splice(insertAt, 0, dragged);
+    await persistCustomOrder(ordered);
+  };
+
+  const moveBusinessToEnd = async (dragId: string) => {
+    if (sortMode !== "custom") return;
+    const ordered = [...customScoped];
+    const fromIndex = ordered.findIndex((business) => business.id === dragId);
+    if (fromIndex < 0) return;
+    const [dragged] = ordered.splice(fromIndex, 1);
+    ordered.push(dragged);
+    await persistCustomOrder(ordered);
+  };
 
   const teamNameCounts = new Map<string, number>();
   team.forEach((member) => {
@@ -155,9 +236,29 @@ export default function BusinessesPage() {
   const isNonAdminMember = authRole !== "admin";
   const myProjects = isNonAdminMember ? filtered.filter(isProjectMine) : [];
   const otherProjects = isNonAdminMember ? filtered.filter((p) => !isProjectMine(p)) : filtered;
+  const canCustomReorder = canEdit && sortMode === "custom";
 
   const renderProjectCard = (b: Business) => (
-    <div key={b.id} className="bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col gap-3">
+    <div
+      key={b.id}
+      draggable={canCustomReorder}
+      onDragStart={() => setDraggingBusinessId(b.id)}
+      onDragEnd={() => setDraggingBusinessId(null)}
+      onDragOver={(e) => {
+        if (!canCustomReorder) return;
+        e.preventDefault();
+      }}
+      onDrop={async (e) => {
+        if (!canCustomReorder || !draggingBusinessId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        await moveBusinessBefore(draggingBusinessId, b.id);
+        setDraggingBusinessId(null);
+      }}
+      className={`bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col gap-3
+        ${canCustomReorder ? "cursor-grab active:cursor-grabbing" : ""}
+        ${draggingBusinessId === b.id ? "opacity-40 scale-95" : ""}`}
+    >
 
       {/* Name + badges */}
       <div className="flex items-start justify-between gap-2">
@@ -317,12 +418,33 @@ export default function BusinessesPage() {
           <option value="">All divisions</option>
           {DIVISIONS.map(d => <option key={d}>{d}</option>)}
         </select>
+        <select
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value as ProjectSortMode)}
+          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
+        >
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
       </div>
 
       {isNonAdminMember && myProjects.length > 0 && (
         <div className="mb-6">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-3">My Projects</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            onDragOver={(e) => {
+              if (!canCustomReorder) return;
+              e.preventDefault();
+            }}
+            onDrop={async (e) => {
+              if (!canCustomReorder || !draggingBusinessId) return;
+              e.preventDefault();
+              await moveBusinessToEnd(draggingBusinessId);
+              setDraggingBusinessId(null);
+            }}
+          >
             {myProjects.map(renderProjectCard)}
           </div>
         </div>
@@ -332,7 +454,19 @@ export default function BusinessesPage() {
       {isNonAdminMember && myProjects.length > 0 && (
         <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-3">Other Projects</h2>
       )}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div
+        className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
+        onDragOver={(e) => {
+          if (!canCustomReorder) return;
+          e.preventDefault();
+        }}
+        onDrop={async (e) => {
+          if (!canCustomReorder || !draggingBusinessId) return;
+          e.preventDefault();
+          await moveBusinessToEnd(draggingBusinessId);
+          setDraggingBusinessId(null);
+        }}
+      >
         {otherProjects.map(renderProjectCard)}
         {filtered.length === 0 && (
           <div className="col-span-3">
