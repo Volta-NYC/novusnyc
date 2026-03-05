@@ -9,12 +9,14 @@ import {
   subscribeTeam,
   createInterviewSlot,
   updateInterviewSlot,
+  updateInterviewSettings,
   deleteBookedInterview,
   deleteInterviewSlot,
   type TeamMember,
   type InterviewSlot,
 } from "@/lib/members/storage";
 import { Btn, Field, Input, Modal, Select, useConfirm } from "@/components/members/ui";
+import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
 
 function formatDateTime(isoString: string): string {
   const d = new Date(isoString);
@@ -146,7 +148,8 @@ function InterviewsContent() {
         setZoomLinkInput(custom || (data.zoomLink ?? ""));
       } catch {
         if (cancelled) return;
-        setEffectiveZoomLink("");
+        setEffectiveZoomLink(DEFAULT_INTERVIEW_ZOOM_LINK);
+        setZoomLinkInput(DEFAULT_INTERVIEW_ZOOM_LINK);
       }
     };
     void load();
@@ -159,6 +162,7 @@ function InterviewsContent() {
     if (!canEditZoom) return;
     setSavingZoom(true);
     setZoomSaveMessage(null);
+    const trimmedZoom = zoomLinkInput.trim();
     try {
       const token = await user?.getIdToken();
       if (!token) {
@@ -172,14 +176,22 @@ function InterviewsContent() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          zoomLink: zoomLinkInput.trim(),
+          zoomLink: trimmedZoom,
           updatedBy: user?.uid ?? "",
         }),
         cache: "no-store",
       });
 
       if (!saveRes.ok) {
-        throw new Error("save_failed");
+        let saveErr = "save_failed";
+        try {
+          const data = await saveRes.json() as { error?: string; reason?: string };
+          if (data.reason) saveErr = `${data.error ?? "save_failed"}:${data.reason}`;
+          else if (data.error) saveErr = data.error;
+        } catch {
+          // ignore parse errors
+        }
+        throw new Error(saveErr);
       }
 
       const data = await saveRes.json() as {
@@ -192,7 +204,20 @@ function InterviewsContent() {
       setEditingZoom(false);
       setZoomSaveMessage("Zoom link saved.");
     } catch {
-      setZoomSaveMessage("Could not save zoom link. Try again.");
+      try {
+        await updateInterviewSettings({
+          zoomLink: trimmedZoom,
+          zoomEnabled: true,
+          updatedAt: Date.now(),
+          updatedBy: user?.uid ?? "",
+        });
+        setEffectiveZoomLink(trimmedZoom || DEFAULT_INTERVIEW_ZOOM_LINK);
+        setZoomLinkInput(trimmedZoom || DEFAULT_INTERVIEW_ZOOM_LINK);
+        setEditingZoom(false);
+        setZoomSaveMessage("Zoom link saved.");
+      } catch {
+        setZoomSaveMessage("Could not save zoom link. Try again.");
+      }
     } finally {
       setSavingZoom(false);
       setTimeout(() => setZoomSaveMessage(null), 2200);

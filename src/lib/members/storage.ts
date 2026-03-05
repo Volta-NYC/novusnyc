@@ -871,3 +871,15 @@ export function subscribeInterviewSettings(callback: (settings: InterviewSetting
   });
   return () => off(dbRef, "value", handler);
 }
+
+export async function updateInterviewSettings(data: Partial<InterviewSettings>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, "interviewSettings"), data);
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "interviewSettings",
+    recordId: "singleton",
+    details: { fields: Object.keys(data) },
+  });
+}

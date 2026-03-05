@@ -6,12 +6,15 @@ export interface EffectiveInterviewZoomSettings {
   source: ZoomLinkSource;
 }
 
+export const DEFAULT_INTERVIEW_ZOOM_LINK =
+  "https://us05web.zoom.us/j/84798682099?pwd=T8q20lLePlAVSeDk7401FQxYaTzgg5.1";
+
 export function resolveInterviewZoomSettings(raw: unknown, fallbackEnvLink: string): EffectiveInterviewZoomSettings {
   const settings = (raw && typeof raw === "object") ? (raw as Record<string, unknown>) : {};
 
   const zoomEnabled = typeof settings.zoomEnabled === "boolean" ? settings.zoomEnabled : true;
   const customLink = typeof settings.zoomLink === "string" ? settings.zoomLink.trim() : "";
-  const fallback = fallbackEnvLink.trim();
+  const fallback = fallbackEnvLink.trim() || DEFAULT_INTERVIEW_ZOOM_LINK;
 
   if (!zoomEnabled) {
     return { zoomEnabled: false, zoomLink: "", source: "disabled" };
