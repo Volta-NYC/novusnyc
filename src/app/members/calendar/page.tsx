@@ -159,7 +159,7 @@ export default function CalendarPage() {
     const unsubISlots   = canEdit ? subscribeInterviewSlots(setInterviewSlots) : () => {};
     const unsubIInvites = canEdit ? subscribeInterviewInvites(setInterviewInvites) : () => {};
     return () => { unsubEvents(); unsubTasks(); unsubGrants(); unsubISlots(); unsubIInvites(); };
-  }, [authRole]);
+  }, [canEdit]);
 
   // Close popup when clicking outside of it.
   useEffect(() => {
@@ -175,73 +175,79 @@ export default function CalendarPage() {
   // ── Build merged display events ───────────────────────────────────────────
 
   // Map: invite id → invite (for looking up applicant name on booked slots)
-  const inviteMap: Record<string, InterviewInvite> = {};
-  for (const invite of interviewInvites) {
-    inviteMap[invite.id] = invite;
-  }
+  const inviteMap = useMemo<Record<string, InterviewInvite>>(() => {
+    const map: Record<string, InterviewInvite> = {};
+    for (const invite of interviewInvites) {
+      map[invite.id] = invite;
+    }
+    return map;
+  }, [interviewInvites]);
 
   // Combine all event sources into one list for grid rendering.
-  const displayEvents: DisplayEvent[] = [
-    // Calendar events (admin/leads can create)
-    ...calEvents.map(ev => ({
-      id:          ev.id,
-      title:       ev.title,
-      color:       ev.color ?? "#85CC17",
-      kind:        "event",
-      dateStr:     ev.start.split("T")[0],
-      time:        ev.allDay ? undefined : formatTime(ev.start),
-      description: ev.description,
-      isTask:      false,
-      calEvent:    ev,
-    })),
-    // Task deadlines (everyone, exclude Done tasks)
-    ...tasks
-      .filter(t => t.dueDate && t.status !== "Done")
-      .map(t => ({
-        id:          `task-${t.id}`,
-        title:       t.name,
-        color:       TASK_STATUS_COLORS[t.status] ?? "#6B7280",
-        kind:        "task",
-        dateStr:     t.dueDate,
-        time:        undefined,
-        description: `${t.assignedTo} · ${t.status}`,
-        isTask:      true,
-      })),
-    // Grant deadlines (everyone, upcoming statuses only)
-    ...grants
-      .filter(g => g.deadline && !["Awarded", "Rejected", "Cycle Closed"].includes(g.status))
-      .map(g => ({
-        id:          `grant-${g.id}`,
-        title:       `Grant: ${g.name}`,
-        color:       "#F59E0B",
-        kind:        "grant",
-        dateStr:     g.deadline,
-        time:        undefined,
-        description: `${g.funder} · ${g.status}`,
+  const displayEvents = useMemo<DisplayEvent[]>(
+    () => [
+      // Calendar events (admin/leads can create)
+      ...calEvents.map((ev): DisplayEvent => ({
+        id:          ev.id,
+        title:       ev.title,
+        color:       ev.color ?? "#85CC17",
+        kind:        "event",
+        dateStr:     ev.start.split("T")[0],
+        time:        ev.allDay ? undefined : formatTime(ev.start),
+        description: ev.description,
         isTask:      false,
+        calEvent:    ev,
       })),
-    // Booked interview slots (admin + project_lead)
-    ...(canEdit ? interviewSlots
-      .filter(s => !!s.bookedBy)
-      .map(s => {
-        const invite = s.bookedBy ? inviteMap[s.bookedBy] : undefined;
-        // Multi-use invites store the booker's name/email on the slot itself.
-        const name  = s.bookerName  ?? invite?.applicantName  ?? "Applicant";
-        const email = s.bookerEmail ?? invite?.applicantEmail ?? "";
-        return {
-          id:              `interview-${s.id}`,
-          title:           `Interview: ${name}`,
-          color:           "#8B5CF6",
-          kind:            "interview",
-          dateStr:         s.datetime.split("T")[0],
-          time:            formatTime(s.datetime),
-          description:     [invite?.role, email].filter(Boolean).join(" · "),
-          isTask:          false,
-          isInterview:     true,
-          interviewSlotId: s.id,
-        };
-      }) : []),
-  ];
+      // Task deadlines (everyone, exclude Done tasks)
+      ...tasks
+        .filter(t => t.dueDate && t.status !== "Done")
+        .map((t): DisplayEvent => ({
+          id:          `task-${t.id}`,
+          title:       t.name,
+          color:       TASK_STATUS_COLORS[t.status] ?? "#6B7280",
+          kind:        "task",
+          dateStr:     t.dueDate,
+          time:        undefined,
+          description: `${t.assignedTo} · ${t.status}`,
+          isTask:      true,
+        })),
+      // Grant deadlines (everyone, upcoming statuses only)
+      ...grants
+        .filter(g => g.deadline && !["Awarded", "Rejected", "Cycle Closed"].includes(g.status))
+        .map((g): DisplayEvent => ({
+          id:          `grant-${g.id}`,
+          title:       `Grant: ${g.name}`,
+          color:       "#F59E0B",
+          kind:        "grant",
+          dateStr:     g.deadline,
+          time:        undefined,
+          description: `${g.funder} · ${g.status}`,
+          isTask:      false,
+        })),
+      // Booked interview slots (admin + project_lead)
+      ...(canEdit ? interviewSlots
+        .filter(s => !!s.bookedBy)
+        .map((s): DisplayEvent => {
+          const invite = s.bookedBy ? inviteMap[s.bookedBy] : undefined;
+          // Multi-use invites store the booker's name/email on the slot itself.
+          const name  = s.bookerName  ?? invite?.applicantName  ?? "Applicant";
+          const email = s.bookerEmail ?? invite?.applicantEmail ?? "";
+          return {
+            id:              `interview-${s.id}`,
+            title:           `Interview: ${name}`,
+            color:           "#8B5CF6",
+            kind:            "interview",
+            dateStr:         s.datetime.split("T")[0],
+            time:            formatTime(s.datetime),
+            description:     [invite?.role, email].filter(Boolean).join(" · "),
+            isTask:          false,
+            isInterview:     true,
+            interviewSlotId: s.id,
+          };
+        }) : []),
+    ],
+    [calEvents, tasks, grants, canEdit, interviewSlots, inviteMap]
+  );
 
   const filteredDisplayEvents = useMemo(
     () =>

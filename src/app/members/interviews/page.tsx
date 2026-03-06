@@ -733,14 +733,14 @@ function InterviewsContent() {
     if (!nextDate) return;
     const parsed = new Date(`${nextDate}T00:00:00`);
     if (Number.isNaN(parsed.getTime())) return;
-    const offset = weekOffsetFromDate(parsed);
+    const offset = weekOffsetFromDate(parsed, windowAnchor);
     setSlotWeek(Math.max(0, Math.min(MAX_WEEK_OFFSET, offset)));
   };
 
   useEffect(() => {
-    const dates = getWeekDates(slotWeek);
+    const dates = getWeekDates(slotWeek, windowAnchor);
     setJumpToDate(toDateString(dates[0]));
-  }, [slotWeek]);
+  }, [slotWeek, windowAnchor]);
 
   const getDayVisibleCount = (date: Date) => {
     const d = toDateString(date);
