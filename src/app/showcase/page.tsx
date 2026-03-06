@@ -38,6 +38,20 @@ const neighborhoods = [
 ];
 
 export default function Showcase() {
+  const getServiceTagClass = (service: string) => {
+    const key = service.trim().toLowerCase();
+    if (key.includes("website") || key.includes("seo") || key.includes("google")) {
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    }
+    if (key.includes("social")) {
+      return "bg-lime-100 text-lime-700 border-lime-200";
+    }
+    if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
+      return "bg-amber-100 text-amber-700 border-amber-200";
+    }
+    return "bg-v-border text-v-muted border-v-border";
+  };
+
   return (
     <>
       {/* ── INTRO ─────────────────────────────────────────────── */}
@@ -109,11 +123,14 @@ export default function Showcase() {
               <AnimatedSection key={p.name} delay={i * 0.07}>
                 <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
                   <div className={`${p.color} h-2`} />
+                  <div className="mx-7 mt-7 rounded-xl border border-v-border bg-v-bg h-40 flex items-center justify-center">
+                    <span className="font-body text-xs text-v-muted uppercase tracking-wider">Image placeholder</span>
+                  </div>
                   <div className="p-7 flex-1 flex flex-col">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex gap-2 flex-wrap">
                         {p.services.map((s) => (
-                          <span key={s} className="tag bg-v-border text-v-muted">{s}</span>
+                          <span key={s} className={`tag border ${getServiceTagClass(s)}`}>{s}</span>
                         ))}
                       </div>
                       <span

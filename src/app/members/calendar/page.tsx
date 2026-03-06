@@ -47,6 +47,197 @@ function addMinutesToTime(time: string, minutesToAdd: number): string {
   return `${String(nextH).padStart(2, "0")}:${String(nextM).padStart(2, "0")}`;
 }
 
+function toICSDateTime(isoString: string): string {
+  const d = new Date(isoString);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  const ss = String(d.getUTCSeconds()).padStart(2, "0");
+  return `${y}${m}${day}T${hh}${mm}${ss}Z`;
+}
+
+function toICSDate(isoString: string): string {
+  const d = new Date(isoString);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}${m}${day}`;
+}
+
+function escapeICSValue(value: string): string {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function buildICSForEvent(event: CalendarEvent): string {
+  const uid = event.iCalUID?.trim() || `volta-${event.id}@voltanyc.org`;
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Volta NYC//Members Calendar//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${toICSDateTime(new Date().toISOString())}`,
+    `SUMMARY:${escapeICSValue(event.title)}`,
+  ];
+
+  if (event.allDay) {
+    lines.push(`DTSTART;VALUE=DATE:${toICSDate(event.start)}`);
+    lines.push(`DTEND;VALUE=DATE:${toICSDate(event.end)}`);
+  } else {
+    lines.push(`DTSTART:${toICSDateTime(event.start)}`);
+    lines.push(`DTEND:${toICSDateTime(event.end)}`);
+  }
+
+  if (event.description?.trim()) {
+    lines.push(`DESCRIPTION:${escapeICSValue(event.description.trim())}`);
+  }
+  lines.push("END:VEVENT", "END:VCALENDAR");
+  return `${lines.join("\r\n")}\r\n`;
+}
+
+type ParsedICSDate = { iso: string; allDay: boolean };
+type ParsedICSEvent = {
+  uid: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  description: string;
+};
+
+function parseICSDateValue(raw: string, params: string[]): ParsedICSDate | null {
+  const value = raw.trim();
+  if (!value) return null;
+  const isDateOnly = params.some((p) => p.toUpperCase() === "VALUE=DATE") || /^\d{8}$/.test(value);
+
+  if (isDateOnly) {
+    const y = Number.parseInt(value.slice(0, 4), 10);
+    const m = Number.parseInt(value.slice(4, 6), 10) - 1;
+    const d = Number.parseInt(value.slice(6, 8), 10);
+    const date = new Date(y, m, d, 0, 0, 0, 0);
+    if (Number.isNaN(date.getTime())) return null;
+    return { iso: date.toISOString(), allDay: true };
+  }
+
+  const zuluMatch = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  if (zuluMatch) {
+    const [, y, mo, d, h, mi, s] = zuluMatch;
+    const date = new Date(Date.UTC(
+      Number.parseInt(y, 10),
+      Number.parseInt(mo, 10) - 1,
+      Number.parseInt(d, 10),
+      Number.parseInt(h, 10),
+      Number.parseInt(mi, 10),
+      Number.parseInt(s, 10)
+    ));
+    if (Number.isNaN(date.getTime())) return null;
+    return { iso: date.toISOString(), allDay: false };
+  }
+
+  const localMatch = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/);
+  if (localMatch) {
+    const [, y, mo, d, h, mi, s] = localMatch;
+    const date = new Date(
+      Number.parseInt(y, 10),
+      Number.parseInt(mo, 10) - 1,
+      Number.parseInt(d, 10),
+      Number.parseInt(h, 10),
+      Number.parseInt(mi, 10),
+      Number.parseInt(s, 10)
+    );
+    if (Number.isNaN(date.getTime())) return null;
+    return { iso: date.toISOString(), allDay: false };
+  }
+
+  return null;
+}
+
+function parseICS(text: string): ParsedICSEvent[] {
+  const unfolded = text.replace(/\r\n[ \t]/g, "").replace(/\n[ \t]/g, "");
+  const lines = unfolded.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const events: ParsedICSEvent[] = [];
+  let inside = false;
+  let fields: Record<string, { value: string; params: string[] }> = {};
+
+  const flush = () => {
+    const uid = fields.UID?.value?.trim() ?? "";
+    const title = fields.SUMMARY?.value?.trim() ?? "";
+    const description = fields.DESCRIPTION?.value?.replace(/\\n/g, "\n").trim() ?? "";
+    const start = fields.DTSTART ? parseICSDateValue(fields.DTSTART.value, fields.DTSTART.params) : null;
+    const endRaw = fields.DTEND ? parseICSDateValue(fields.DTEND.value, fields.DTEND.params) : null;
+    if (!title || !start) return;
+
+    let end = endRaw;
+    if (!end) {
+      const fallback = new Date(start.iso);
+      fallback.setMinutes(fallback.getMinutes() + (start.allDay ? 24 * 60 : 30));
+      end = { iso: fallback.toISOString(), allDay: start.allDay };
+    }
+
+    if (start.allDay) {
+      // ICS all-day DTEND is usually exclusive; normalize to same-day end when possible.
+      const startDate = new Date(start.iso);
+      const endDate = new Date(end.iso);
+      if (endDate.getTime() > startDate.getTime()) {
+        endDate.setDate(endDate.getDate() - 1);
+      }
+      endDate.setHours(23, 59, 59, 0);
+      startDate.setHours(0, 0, 0, 0);
+      events.push({
+        uid,
+        title,
+        description,
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        allDay: true,
+      });
+      return;
+    }
+
+    events.push({
+      uid,
+      title,
+      description,
+      start: start.iso,
+      end: end.iso,
+      allDay: false,
+    });
+  };
+
+  for (const line of lines) {
+    if (line === "BEGIN:VEVENT") {
+      inside = true;
+      fields = {};
+      continue;
+    }
+    if (line === "END:VEVENT") {
+      if (inside) flush();
+      inside = false;
+      fields = {};
+      continue;
+    }
+    if (!inside) continue;
+
+    const colonIdx = line.indexOf(":");
+    if (colonIdx <= 0) continue;
+    const left = line.slice(0, colonIdx);
+    const value = line.slice(colonIdx + 1);
+    const [name, ...params] = left.split(";");
+    const key = name.toUpperCase();
+    fields[key] = { value, params };
+  }
+
+  return events;
+}
+
 // Build the 35-42 day cells for a month grid starting on Sunday.
 function buildMonthGrid(year: number, month: number): Date[] {
   const firstDay = new Date(year, month, 1);
@@ -141,6 +332,8 @@ export default function CalendarPage() {
   const [modal, setModal]               = useState<"create" | "edit" | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [form, setForm]                 = useState<EventForm>(BLANK_EVENT_FORM);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   // Popup for viewing event details when a pill is clicked.
   const [popup, setPopup] = useState<{ event: DisplayEvent; pos: PopupPosition } | null>(null);
@@ -302,6 +495,7 @@ export default function CalendarPage() {
       end:         endIso,
       allDay:      form.allDay,
       color:       form.color,
+      iCalUID:     editingEvent?.iCalUID ?? `volta-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@voltanyc.org`,
       createdBy:   user?.uid ?? "",
       createdAt:   Date.now(),
     };
@@ -319,6 +513,73 @@ export default function CalendarPage() {
 
   const handleDeleteInterviewSlot = (slotId: string) => {
     ask(async () => { await deleteInterviewSlot(slotId); setPopup(null); });
+  };
+
+  const downloadEventICS = (event: CalendarEvent) => {
+    const ics = buildICSForEvent(event);
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const safeTitle = event.title.trim().replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "event";
+    link.href = url;
+    link.download = `${safeTitle}.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportICS = async (file: File) => {
+    if (!canEdit) return;
+    try {
+      const raw = await file.text();
+      const parsed = parseICS(raw);
+      if (parsed.length === 0) {
+        setImportMessage("No valid events found in this .ics file.");
+        return;
+      }
+
+      const byUID = new Map<string, CalendarEvent>();
+      const byTitleStart = new Map<string, CalendarEvent>();
+      for (const ev of calEvents) {
+        const uid = ev.iCalUID?.trim();
+        if (uid) byUID.set(uid, ev);
+        byTitleStart.set(`${ev.title.trim().toLowerCase()}|${ev.start}`, ev);
+      }
+
+      let created = 0;
+      let updated = 0;
+      for (const item of parsed) {
+        const key = `${item.title.trim().toLowerCase()}|${item.start}`;
+        const existing = (item.uid ? byUID.get(item.uid) : undefined) ?? byTitleStart.get(key);
+        const payload = {
+          title: item.title,
+          start: item.start,
+          end: item.end,
+          allDay: item.allDay,
+          description: item.description,
+          color: existing?.color ?? "#85CC17",
+          iCalUID: item.uid || existing?.iCalUID || "",
+          createdBy: existing?.createdBy ?? (user?.uid ?? ""),
+          createdAt: existing?.createdAt ?? Date.now(),
+        };
+
+        if (existing) {
+          // eslint-disable-next-line no-await-in-loop
+          await updateCalendarEvent(existing.id, payload);
+          updated += 1;
+        } else {
+          // eslint-disable-next-line no-await-in-loop
+          await createCalendarEvent(payload);
+          created += 1;
+        }
+      }
+
+      setImportMessage(`Imported ${parsed.length} event(s): ${created} created, ${updated} updated.`);
+    } catch {
+      setImportMessage("Could not import .ics file. Please check file format.");
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = "";
+      setTimeout(() => setImportMessage(null), 3000);
+    }
   };
 
   // Show a detail popup anchored below the clicked event pill.
@@ -351,9 +612,27 @@ export default function CalendarPage() {
           <p className="text-white/40 text-sm mt-1 font-body">Task deadlines and team events.</p>
         </div>
         {canEdit && (
-          <Btn variant="primary" onClick={() => openCreate()}>+ Add Event</Btn>
+          <div className="flex items-center gap-2">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".ics,text/calendar"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleImportICS(file);
+              }}
+            />
+            <Btn variant="secondary" onClick={() => importInputRef.current?.click()}>Import .ics</Btn>
+            <Btn variant="primary" onClick={() => openCreate()}>+ Add Event</Btn>
+          </div>
         )}
       </div>
+      {importMessage && (
+        <div className="mb-4 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-body">
+          {importMessage}
+        </div>
+      )}
 
       {/* Month navigation bar */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -434,16 +713,15 @@ export default function CalendarPage() {
               <div
                 key={index}
                 onClick={canEdit ? () => openCreate(dateStr) : undefined}
-                className={`min-h-[110px] border-b border-r border-white/6 p-1.5
+                className={`min-h-[110px] border-b border-r border-white p-1.5
                   ${index % 7 === 6 ? "border-r-0" : ""}
                   ${index >= monthGrid.length - 7 ? "border-b-0" : ""}
-                  ${inMonth ? "" : "opacity-30"}
                   ${canEdit ? "cursor-pointer hover:bg-white/3 transition-colors" : ""}
                 `}
               >
                 {/* Day number */}
                 <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium mb-1 font-body
-                  ${isToday ? "bg-[#85CC17] text-[#0D0D0D] font-bold" : "text-white/50"}`}>
+                  ${isToday ? "bg-[#85CC17] text-[#0D0D0D] font-bold" : (inMonth ? "text-white/50" : "text-white/25")}`}>
                   {day.getDate()}
                 </div>
 
@@ -567,6 +845,7 @@ export default function CalendarPage() {
 
           {canEdit && !popup.event.isTask && !popup.event.isInterview && popup.event.calEvent && (
             <div className="flex gap-2 pt-2 border-t border-white/8">
+              <Btn size="sm" variant="secondary" onClick={() => downloadEventICS(popup.event.calEvent!)}>Download .ics</Btn>
               <Btn size="sm" variant="ghost" onClick={() => openEdit(popup.event.calEvent!)}>Edit</Btn>
               <Btn size="sm" variant="danger" onClick={() => handleDelete(popup.event.id)}>Delete</Btn>
             </div>

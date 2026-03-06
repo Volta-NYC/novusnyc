@@ -173,6 +173,7 @@ export interface CalendarEvent {
   title: string;
   start: string;        // ISO datetime string
   end: string;          // ISO datetime string
+  iCalUID?: string;
   description?: string;
   color?: string;       // hex color, e.g. "#85CC17"
   allDay?: boolean;

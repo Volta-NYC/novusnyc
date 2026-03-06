@@ -18,6 +18,20 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  const getServiceTagClass = (service: string) => {
+    const key = service.trim().toLowerCase();
+    if (key.includes("website") || key.includes("seo") || key.includes("google")) {
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    }
+    if (key.includes("social")) {
+      return "bg-lime-100 text-lime-700 border-lime-200";
+    }
+    if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
+      return "bg-amber-100 text-amber-700 border-amber-200";
+    }
+    return "bg-v-border text-v-muted border-v-border";
+  };
+
   return (
     <>
       <HeroSection />
@@ -216,8 +230,11 @@ export default function Home() {
               <AnimatedSection key={p.name} delay={i * 0.1}>
                 <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                   <div className={`${p.color} h-2`} />
+                  <div className="mx-6 mt-6 rounded-xl border border-v-border bg-white h-36 flex items-center justify-center">
+                    <span className="font-body text-xs text-v-muted uppercase tracking-wider">Image placeholder</span>
+                  </div>
                   <div className="p-6">
-                    <span className="tag bg-v-border text-v-muted mb-4 inline-block">{p.services[0]}</span>
+                    <span className={`tag border mb-4 inline-block ${getServiceTagClass(p.services[0])}`}>{p.services[0]}</span>
                     <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
                     <p className="font-body text-sm text-v-muted">{p.type}</p>
                     <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
