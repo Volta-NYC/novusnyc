@@ -48,8 +48,8 @@ function getMondayForDate(date: Date): Date {
   return d;
 }
 
-function getWeekDates(weekOffset: number): Date[] {
-  const monday = getMondayForDate(new Date());
+function getWeekDates(weekOffset: number, referenceDate: Date): Date[] {
+  const monday = getMondayForDate(referenceDate);
   monday.setDate(monday.getDate() + weekOffset * 7);
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
@@ -61,7 +61,7 @@ function getWeekDates(weekOffset: number): Date[] {
 const GRID_HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM -> 11 PM
 const QUARTER_MINUTES = [0, 15, 30, 45] as const;
 const GRID_ROWS = GRID_HOURS.length * QUARTER_MINUTES.length;
-const MAX_WEEK_OFFSET = 156; // ~3 years ahead
+const MAX_WEEK_OFFSET = 2; // current week + next 2 weeks
 
 function toDateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -164,8 +164,8 @@ function mapZoomSaveError(code: string): string {
   return "Could not save zoom link. Try again.";
 }
 
-function weekOffsetFromDate(date: Date): number {
-  const currentMonday = getMondayForDate(new Date());
+function weekOffsetFromDate(date: Date, referenceDate: Date): number {
+  const currentMonday = getMondayForDate(referenceDate);
   const targetMonday = getMondayForDate(date);
   const diffMs = targetMonday.getTime() - currentMonday.getTime();
   return Math.floor(diffMs / 604800000);
@@ -194,6 +194,7 @@ function InterviewsContent() {
   const [savingZoom, setSavingZoom] = useState(false);
 
   const [slotWeek, setSlotWeek] = useState(0);
+  const [windowAnchor, setWindowAnchor] = useState(() => new Date());
   const [jumpToDate, setJumpToDate] = useState(toDateString(new Date()));
   const [dragSelection, setDragSelection] = useState<Record<string, DragCell>>({});
   const [dragMode, setDragMode] = useState<DragMode | null>(null);
@@ -244,9 +245,10 @@ function InterviewsContent() {
           customZoomLink?: string;
         };
         if (cancelled) return;
+        const effective = (data.zoomLink ?? "").trim() || DEFAULT_INTERVIEW_ZOOM_LINK;
         const custom = (data.customZoomLink ?? "").trim();
-        setEffectiveZoomLink(data.zoomLink ?? "");
-        setZoomLinkInput(custom || (data.zoomLink ?? ""));
+        setEffectiveZoomLink(effective);
+        setZoomLinkInput(custom || effective);
       } catch {
         if (cancelled) return;
         setEffectiveZoomLink(DEFAULT_INTERVIEW_ZOOM_LINK);
@@ -257,6 +259,14 @@ function InterviewsContent() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Keep the rolling 3-week planner current without requiring a reload.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setWindowAnchor(new Date());
+    }, 12 * 60 * 60 * 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const saveZoomSettings = async () => {
@@ -341,7 +351,7 @@ function InterviewsContent() {
   };
 
   const now = Date.now();
-  const weekDates = getWeekDates(slotWeek);
+  const weekDates = useMemo(() => getWeekDates(slotWeek, windowAnchor), [slotWeek, windowAnchor]);
 
   const slotMap: Record<string, InterviewSlot> = {};
   for (const slot of slots) {
@@ -367,7 +377,7 @@ function InterviewsContent() {
   );
 
   const typedDateOptions = useMemo(() => {
-    const start = new Date();
+    const start = new Date(windowAnchor);
     start.setHours(0, 0, 0, 0);
     const days = MAX_WEEK_OFFSET * 7 + 7;
     const options: string[] = [];
@@ -377,7 +387,7 @@ function InterviewsContent() {
       options.push(toDateString(d));
     }
     return options;
-  }, []);
+  }, [windowAnchor]);
 
   const typedTimeOptions = useMemo(
     () => GRID_HOURS.flatMap((hour) => QUARTER_MINUTES.map((minute) => fmtTimeOption(hour, minute))),
@@ -513,8 +523,8 @@ function InterviewsContent() {
 
     const startMinutes = startTime.hour * 60 + startTime.minute;
     const endMinutes = endTime.hour * 60 + endTime.minute;
-    if (endMinutes < startMinutes) {
-      setManualAddMessage("End time must be on or after start time.");
+    if (endMinutes <= startMinutes) {
+      setManualAddMessage("End time must be after start time.");
       return;
     }
 
@@ -523,17 +533,14 @@ function InterviewsContent() {
       baseDates.push(toDateString(d));
     }
 
-    const repeatCount = manualRepeatWeekly ? MAX_WEEK_OFFSET + 1 : 1;
-    const planningWindowEnd = new Date();
-    planningWindowEnd.setDate(planningWindowEnd.getDate() + MAX_WEEK_OFFSET * 7 + 6);
+    const repeatCount = manualRepeatWeekly ? 3 : 1;
     const uniqueTargets: Record<string, DragCell> = {};
     baseDates.forEach((baseDate) => {
       for (let week = 0; week < repeatCount; week += 1) {
         const date = new Date(`${baseDate}T00:00:00`);
         date.setDate(date.getDate() + week * 7);
-        if (date.getTime() > planningWindowEnd.getTime()) break;
         const dateISO = toDateString(date);
-        for (let t = startMinutes; t <= endMinutes; t += 15) {
+        for (let t = startMinutes; t < endMinutes; t += 15) {
           const hour = Math.floor(t / 60);
           const minute = t % 60;
           if (!GRID_HOURS.includes(hour) || !QUARTER_MINUTES.includes(minute as (typeof QUARTER_MINUTES)[number])) continue;

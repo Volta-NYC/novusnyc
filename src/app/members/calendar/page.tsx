@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
@@ -84,9 +84,10 @@ const EVENT_COLOR_OPTIONS = [
 // Maps task status to a hex color for rendering tasks on the calendar.
 const TASK_STATUS_COLORS: Record<string, string> = {
   "To Do":       "#6B7280",
-  "In Progress": "#60A5FA",
-  "Blocked":     "#EF4444",
-  "Done":        "#34D399",
+  "On Hold":     "#F59E0B",
+  "In Progress": "#60A5FA", // legacy support
+  "Blocked":     "#EF4444", // legacy support
+  "Done":        "#34D399", // legacy support
 };
 
 // ── DISPLAY EVENT TYPE ────────────────────────────────────────────────────────
@@ -96,6 +97,7 @@ interface DisplayEvent {
   id: string;
   title: string;
   color: string;
+  kind: "event" | "task" | "grant" | "interview";
   dateStr: string;        // YYYY-MM-DD
   time?: string;          // formatted time string; undefined means all-day
   description?: string;
@@ -132,6 +134,12 @@ export default function CalendarPage() {
   const [interviewSlots, setInterviewSlots] = useState<InterviewSlot[]>([]);
   const [interviewInvites, setInterviewInvites] = useState<InterviewInvite[]>([]);
   const [grants, setGrants]                 = useState<Grant[]>([]);
+  const [visibleKinds, setVisibleKinds] = useState<Record<DisplayEvent["kind"], boolean>>({
+    event: true,
+    task: true,
+    grant: true,
+    interview: true,
+  });
 
   const [modal, setModal]               = useState<"create" | "edit" | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
@@ -179,6 +187,7 @@ export default function CalendarPage() {
       id:          ev.id,
       title:       ev.title,
       color:       ev.color ?? "#85CC17",
+      kind:        "event",
       dateStr:     ev.start.split("T")[0],
       time:        ev.allDay ? undefined : formatTime(ev.start),
       description: ev.description,
@@ -192,6 +201,7 @@ export default function CalendarPage() {
         id:          `task-${t.id}`,
         title:       t.name,
         color:       TASK_STATUS_COLORS[t.status] ?? "#6B7280",
+        kind:        "task",
         dateStr:     t.dueDate,
         time:        undefined,
         description: `${t.assignedTo} · ${t.status}`,
@@ -204,6 +214,7 @@ export default function CalendarPage() {
         id:          `grant-${g.id}`,
         title:       `Grant: ${g.name}`,
         color:       "#F59E0B",
+        kind:        "grant",
         dateStr:     g.deadline,
         time:        undefined,
         description: `${g.funder} · ${g.status}`,
@@ -221,6 +232,7 @@ export default function CalendarPage() {
           id:              `interview-${s.id}`,
           title:           `Interview: ${name}`,
           color:           "#8B5CF6",
+          kind:            "interview",
           dateStr:         s.datetime.split("T")[0],
           time:            formatTime(s.datetime),
           description:     [invite?.role, email].filter(Boolean).join(" · "),
@@ -231,8 +243,22 @@ export default function CalendarPage() {
       }) : []),
   ];
 
+  const filteredDisplayEvents = useMemo(
+    () =>
+      displayEvents
+        .filter((ev) => visibleKinds[ev.kind])
+        .sort((a, b) => {
+          if (a.dateStr !== b.dateStr) return a.dateStr.localeCompare(b.dateStr);
+          if (!a.time && !b.time) return a.title.localeCompare(b.title);
+          if (!a.time) return -1;
+          if (!b.time) return 1;
+          return a.time.localeCompare(b.time);
+        }),
+    [displayEvents, visibleKinds]
+  );
+
   const eventsForDay = (dateStr: string): DisplayEvent[] =>
-    displayEvents.filter(ev => ev.dateStr === dateStr);
+    filteredDisplayEvents.filter(ev => ev.dateStr === dateStr);
 
   // ── Month navigation ──────────────────────────────────────────────────────
 
@@ -319,6 +345,10 @@ export default function CalendarPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   const monthGrid  = buildMonthGrid(viewYear, viewMonth);
+  const monthDays = useMemo(
+    () => Array.from({ length: new Date(viewYear, viewMonth + 1, 0).getDate() }, (_, i) => new Date(viewYear, viewMonth, i + 1)),
+    [viewYear, viewMonth]
+  );
   const todayStr   = toDateString(today);
 
   return (
@@ -337,14 +367,14 @@ export default function CalendarPage() {
       </div>
 
       {/* Month navigation bar */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <button
           onClick={goToPrevMonth}
           className="w-8 h-8 rounded-lg bg-white/8 hover:bg-white/12 text-white/60 hover:text-white transition-colors flex items-center justify-center"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <h2 className="font-display font-bold text-white text-xl min-w-[200px] text-center">
+        <h2 className="font-display font-bold text-white text-xl min-w-[160px] text-center">
           {MONTHS[viewMonth]} {viewYear}
         </h2>
         <button
@@ -355,14 +385,42 @@ export default function CalendarPage() {
         </button>
         <button
           onClick={() => { setViewYear(today.getFullYear()); setViewMonth(today.getMonth()); }}
-          className="ml-2 text-xs text-white/40 hover:text-white/70 transition-colors font-body"
+          className="text-xs text-white/40 hover:text-white/70 transition-colors font-body"
         >
           Today
         </button>
       </div>
 
-      {/* Calendar grid */}
-      <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-hidden">
+      <div className="mb-4 flex flex-wrap gap-2">
+        {[
+          { key: "event", label: "Events", color: "#85CC17" },
+          { key: "task", label: "Tasks", color: "#60A5FA" },
+          { key: "grant", label: "Grants", color: "#F59E0B" },
+          ...(canEdit ? [{ key: "interview", label: "Interviews", color: "#8B5CF6" }] : []),
+        ].map((item) => {
+          const eventType = item.key as DisplayEvent["kind"];
+          return (
+            <label
+              key={item.key}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-[#1C1F26] text-xs text-white/70 font-body"
+            >
+              <input
+                type="checkbox"
+                checked={visibleKinds[eventType]}
+                onChange={(e) => {
+                  setVisibleKinds((prev) => ({ ...prev, [eventType]: e.target.checked }));
+                }}
+                className="accent-[#85CC17] w-4 h-4"
+              />
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+              {item.label}
+            </label>
+          );
+        })}
+      </div>
+
+      {/* Desktop / tablet month grid */}
+      <div className="hidden md:block bg-[#1C1F26] border border-white/8 rounded-xl overflow-hidden">
 
         {/* Weekday header row */}
         <div className="grid grid-cols-7 border-b border-white/8">
@@ -422,6 +480,55 @@ export default function CalendarPage() {
             );
           })}
         </div>
+      </div>
+
+      {/* Mobile day list */}
+      <div className="md:hidden space-y-2">
+        {monthDays.map((day) => {
+          const dateStr = toDateString(day);
+          const isToday = dateStr === todayStr;
+          const dayEvents = eventsForDay(dateStr);
+          return (
+            <button
+              key={dateStr}
+              onClick={canEdit ? () => openCreate(dateStr) : undefined}
+              className={`w-full text-left bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-3 ${
+                canEdit ? "hover:border-[#85CC17]/30 transition-colors" : ""
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <p className={`text-sm font-semibold font-body ${isToday ? "text-[#85CC17]" : "text-white/85"}`}>
+                  {day.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+                <span className="text-[11px] text-white/35 font-body">
+                  {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              {dayEvents.length === 0 ? (
+                <p className="text-xs text-white/35 font-body">No events</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {dayEvents.map((ev) => (
+                    <div
+                      key={ev.id}
+                      onClick={(e) => handleEventPillClick(ev, e)}
+                      className="w-full text-left px-2 py-1.5 rounded text-xs truncate font-body font-medium"
+                      style={{ backgroundColor: `${ev.color}33`, color: ev.color, borderLeft: `3px solid ${ev.color}` }}
+                    >
+                      {ev.time && <span className="opacity-60 mr-1">{ev.time}</span>}
+                      {ev.title}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Legend */}
