@@ -17,6 +17,7 @@ const BADGE_COLORS: Record<string, string> = {
   Submitted:           "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
   "In Progress":       "bg-blue-400/15 text-blue-300 border-blue-400/20",
   "In Conversation":   "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  Outreach:            "bg-gray-500/15 text-gray-300 border-gray-500/20",
   Discovery:           "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
   Researched:          "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
   "Cold Outreach":     "bg-gray-500/15 text-gray-400 border-gray-500/20",

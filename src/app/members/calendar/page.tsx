@@ -5,9 +5,8 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
-  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeGrants,
-  deleteInterviewSlot,
-  type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite, type Grant,
+  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites,
+  deleteInterviewSlot, type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite,
 } from "@/lib/members/storage";
 import { Btn, Modal, Field, Input, TextArea, useConfirm } from "@/components/members/ui";
 
@@ -97,7 +96,7 @@ interface DisplayEvent {
   id: string;
   title: string;
   color: string;
-  kind: "event" | "task" | "grant" | "interview";
+  kind: "event" | "task" | "interview";
   dateStr: string;        // YYYY-MM-DD
   time?: string;          // formatted time string; undefined means all-day
   description?: string;
@@ -133,11 +132,9 @@ export default function CalendarPage() {
   const [tasks, setTasks]                   = useState<Task[]>([]);
   const [interviewSlots, setInterviewSlots] = useState<InterviewSlot[]>([]);
   const [interviewInvites, setInterviewInvites] = useState<InterviewInvite[]>([]);
-  const [grants, setGrants]                 = useState<Grant[]>([]);
   const [visibleKinds, setVisibleKinds] = useState<Record<DisplayEvent["kind"], boolean>>({
     event: true,
     task: true,
-    grant: true,
     interview: true,
   });
 
@@ -155,10 +152,9 @@ export default function CalendarPage() {
   useEffect(() => {
     const unsubEvents   = subscribeCalendarEvents(setCalEvents);
     const unsubTasks    = subscribeTasks(setTasks);
-    const unsubGrants   = subscribeGrants(setGrants);
     const unsubISlots   = canEdit ? subscribeInterviewSlots(setInterviewSlots) : () => {};
     const unsubIInvites = canEdit ? subscribeInterviewInvites(setInterviewInvites) : () => {};
-    return () => { unsubEvents(); unsubTasks(); unsubGrants(); unsubISlots(); unsubIInvites(); };
+    return () => { unsubEvents(); unsubTasks(); unsubISlots(); unsubIInvites(); };
   }, [canEdit]);
 
   // Close popup when clicking outside of it.
@@ -211,19 +207,6 @@ export default function CalendarPage() {
           description: `${t.assignedTo} · ${t.status}`,
           isTask:      true,
         })),
-      // Grant deadlines (everyone, upcoming statuses only)
-      ...grants
-        .filter(g => g.deadline && !["Awarded", "Rejected", "Cycle Closed"].includes(g.status))
-        .map((g): DisplayEvent => ({
-          id:          `grant-${g.id}`,
-          title:       `Grant: ${g.name}`,
-          color:       "#F59E0B",
-          kind:        "grant",
-          dateStr:     g.deadline,
-          time:        undefined,
-          description: `${g.funder} · ${g.status}`,
-          isTask:      false,
-        })),
       // Booked interview slots (admin + project_lead)
       ...(canEdit ? interviewSlots
         .filter(s => !!s.bookedBy)
@@ -246,7 +229,7 @@ export default function CalendarPage() {
           };
         }) : []),
     ],
-    [calEvents, tasks, grants, canEdit, interviewSlots, inviteMap]
+    [calEvents, tasks, canEdit, interviewSlots, inviteMap]
   );
 
   const filteredDisplayEvents = useMemo(
@@ -401,7 +384,6 @@ export default function CalendarPage() {
         {[
           { key: "event", label: "Events", color: "#85CC17" },
           { key: "task", label: "Tasks", color: "#60A5FA" },
-          { key: "grant", label: "Grants", color: "#F59E0B" },
           ...(canEdit ? [{ key: "interview", label: "Interviews", color: "#8B5CF6" }] : []),
         ].map((item) => {
           const eventType = item.key as DisplayEvent["kind"];
@@ -511,9 +493,6 @@ export default function CalendarPage() {
                     year: "numeric",
                   })}
                 </p>
-                <span className="text-[11px] text-white/35 font-body">
-                  {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}
-                </span>
               </div>
               {dayEvents.length === 0 ? (
                 <p className="text-xs text-white/35 font-body">No events</p>
@@ -541,9 +520,6 @@ export default function CalendarPage() {
       <div className="mt-4 flex flex-wrap gap-4 text-xs text-white/40 font-body">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />Task deadlines
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Grant deadlines
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events

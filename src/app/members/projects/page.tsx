@@ -16,31 +16,20 @@ import { useAuth } from "@/lib/members/authContext";
 const STATUSES  = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
 const DIVISIONS = ["Tech", "Marketing", "Finance"];
 const SERVICES  = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
-const PRIORITIES = ["High", "Medium", "Low"];
 const LANGUAGES  = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
 const SORT_OPTIONS = [
-  { value: "custom", label: "Custom Order" },
+  { value: "status", label: "Status" },
   { value: "name", label: "Name" },
-  { value: "date_added", label: "Date Added" },
 ] as const;
 type ProjectSortMode = (typeof SORT_OPTIONS)[number]["value"];
 
-function getDateValue(value: string | undefined): number {
-  if (!value) return 0;
-  const parsed = new Date(value).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function customBusinessCompare(a: Business, b: Business): number {
-  const aSort = a.sortIndex ?? Number.MAX_SAFE_INTEGER;
-  const bSort = b.sortIndex ?? Number.MAX_SAFE_INTEGER;
-  if (aSort !== bSort) return aSort - bSort;
-
-  const aCreated = getDateValue(a.createdAt);
-  const bCreated = getDateValue(b.createdAt);
-  if (aCreated !== bCreated) return aCreated - bCreated;
-  return a.name.localeCompare(b.name);
-}
+const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
+  Active: 0,
+  "Not Started": 1,
+  Discovery: 2,
+  "On Hold": 3,
+  Complete: 4,
+};
 
 function nextSortIndex(items: Business[]): number {
   const max = items.reduce((best, item) => {
@@ -51,13 +40,11 @@ function nextSortIndex(items: Business[]): number {
 }
 
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
-  name: "", bidId: "", ownerName: "", ownerEmail: "", phone: "", address: "", website: "",
-  businessType: "", activeServices: [], projectStatus: "Not Started", teamLead: "",
-  slackChannel: "", languages: [], priority: "Medium", firstContactDate: "",
-  grantEligible: false, notes: "",
+  name: "", bidId: "", ownerName: "", ownerEmail: "", ownerAlternateEmail: "", phone: "", alternatePhone: "", address: "", website: "",
+  activeServices: [], projectStatus: "Not Started", teamLead: "",
+  languages: [], firstContactDate: "", notes: "",
   division: "Tech", teamMembers: [],
-  startDate: "", targetEndDate: "", actualEndDate: "",
-  nextStep: "", nextStepDeadline: "", githubUrl: "", driveFolderUrl: "", clientNotes: "",
+  githubUrl: "", driveFolderUrl: "", clientNotes: "",
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
@@ -67,12 +54,11 @@ export default function BusinessesPage() {
   const [team, setTeam]                       = useState<TeamMember[]>([]);
   const [search, setSearch]                   = useState("");
   const [filterDiv, setFilterDiv]             = useState("");
-  const [sortMode, setSortMode]               = useState<ProjectSortMode>("custom");
+  const [sortMode, setSortMode]               = useState<ProjectSortMode>("status");
   const [statusPage, setStatusPage]           = useState<"active_planning" | "completed" | "scouting">("active_planning");
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
-  const [draggingBusinessId, setDraggingBusinessId] = useState<string | null>(null);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -89,23 +75,16 @@ export default function BusinessesPage() {
   const openEdit = (b: Business) => {
     setForm({
       name: b.name, bidId: b.bidId, ownerName: b.ownerName, ownerEmail: b.ownerEmail,
-      phone: b.phone, address: b.address, website: b.website, businessType: b.businessType,
+      ownerAlternateEmail: b.ownerAlternateEmail ?? "",
+      phone: b.phone, alternatePhone: b.alternatePhone ?? "", address: b.address, website: b.website,
       activeServices: b.activeServices  ?? [],
       projectStatus:  b.projectStatus,
       teamLead:       b.teamLead,
-      slackChannel:   b.slackChannel,
       languages:      b.languages       ?? [],
-      priority:       b.priority,
       firstContactDate: b.firstContactDate,
-      grantEligible:  b.grantEligible,
       notes:          b.notes,
       division:       b.division        ?? "Tech",
       teamMembers:    b.teamMembers     ?? [],
-      startDate:      b.startDate       ?? "",
-      targetEndDate:  b.targetEndDate   ?? "",
-      actualEndDate:  b.actualEndDate   ?? "",
-      nextStep:         b.nextStep         ?? "",
-      nextStepDeadline: b.nextStepDeadline ?? "",
       githubUrl:        b.githubUrl        ?? "",
       driveFolderUrl:   b.driveFolderUrl   ?? "",
       clientNotes:      b.clientNotes      ?? "",
@@ -138,7 +117,7 @@ export default function BusinessesPage() {
     if (!query) return true;
     return project.name.toLowerCase().includes(query)
       || project.ownerName.toLowerCase().includes(query)
-      || project.businessType.toLowerCase().includes(query)
+      || project.ownerEmail.toLowerCase().includes(query)
       || (project.teamLead ?? "").toLowerCase().includes(query);
   };
 
@@ -146,49 +125,16 @@ export default function BusinessesPage() {
     if (sortMode === "name") {
       return [...list].sort((a, b) => a.name.localeCompare(b.name));
     }
-    if (sortMode === "date_added") {
-      return [...list].sort((a, b) => getDateValue(b.createdAt) - getDateValue(a.createdAt));
-    }
-    return [...list].sort(customBusinessCompare);
+    return [...list].sort((a, b) => {
+      const statusDelta = PROJECT_STATUS_SORT_ORDER[a.projectStatus] - PROJECT_STATUS_SORT_ORDER[b.projectStatus];
+      if (statusDelta !== 0) return statusDelta;
+      return a.name.localeCompare(b.name);
+    });
   };
 
   const statusScoped = businesses.filter((business) => statusMatchesPage(business.projectStatus));
   const divisionScoped = statusScoped.filter((business) => !filterDiv || business.division === filterDiv);
   const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
-  const customScoped = [...divisionScoped].sort(customBusinessCompare);
-
-  const persistCustomOrder = async (ordered: Business[]) => {
-    const updates: Promise<void>[] = [];
-    ordered.forEach((business, index) => {
-      const nextSort = (index + 1) * 1000;
-      if (business.sortIndex !== nextSort) {
-        updates.push(updateBusiness(business.id, { sortIndex: nextSort }));
-      }
-    });
-    if (updates.length > 0) await Promise.all(updates);
-  };
-
-  const moveBusinessBefore = async (dragId: string, targetId: string) => {
-    if (dragId === targetId || sortMode !== "custom") return;
-    const ordered = [...customScoped];
-    const fromIndex = ordered.findIndex((business) => business.id === dragId);
-    const targetIndex = ordered.findIndex((business) => business.id === targetId);
-    if (fromIndex < 0 || targetIndex < 0) return;
-    const [dragged] = ordered.splice(fromIndex, 1);
-    const insertAt = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
-    ordered.splice(insertAt, 0, dragged);
-    await persistCustomOrder(ordered);
-  };
-
-  const moveBusinessToEnd = async (dragId: string) => {
-    if (sortMode !== "custom") return;
-    const ordered = [...customScoped];
-    const fromIndex = ordered.findIndex((business) => business.id === dragId);
-    if (fromIndex < 0) return;
-    const [dragged] = ordered.splice(fromIndex, 1);
-    ordered.push(dragged);
-    await persistCustomOrder(ordered);
-  };
 
   const teamNameCounts = new Map<string, number>();
   team.forEach((member) => {
@@ -236,35 +182,16 @@ export default function BusinessesPage() {
   const isNonAdminMember = authRole !== "admin";
   const myProjects = isNonAdminMember ? filtered.filter(isProjectMine) : [];
   const otherProjects = isNonAdminMember ? filtered.filter((p) => !isProjectMine(p)) : filtered;
-  const canCustomReorder = canEdit && sortMode === "custom";
-
   const renderProjectCard = (b: Business) => (
     <div
       key={b.id}
-      draggable={canCustomReorder}
-      onDragStart={() => setDraggingBusinessId(b.id)}
-      onDragEnd={() => setDraggingBusinessId(null)}
-      onDragOver={(e) => {
-        if (!canCustomReorder) return;
-        e.preventDefault();
-      }}
-      onDrop={async (e) => {
-        if (!canCustomReorder || !draggingBusinessId) return;
-        e.preventDefault();
-        e.stopPropagation();
-        await moveBusinessBefore(draggingBusinessId, b.id);
-        setDraggingBusinessId(null);
-      }}
-      className={`bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col gap-3
-        ${canCustomReorder ? "cursor-grab active:cursor-grabbing" : ""}
-        ${draggingBusinessId === b.id ? "opacity-40 scale-95" : ""}`}
+      className="bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col gap-3"
     >
 
       {/* Name + badges */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold text-base leading-tight">{b.name}</p>
-          {b.businessType && <p className="text-white/40 text-xs mt-0.5">{b.businessType}</p>}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           <Badge label={b.projectStatus} />
@@ -275,7 +202,7 @@ export default function BusinessesPage() {
       </div>
 
       {/* Contact info */}
-      {(b.ownerName || b.ownerEmail || b.phone || b.website) && (
+      {(b.ownerName || b.ownerEmail || b.ownerAlternateEmail || b.phone || b.alternatePhone || b.website) && (
         <div className="bg-white/4 rounded-lg px-3 py-2 space-y-1">
           {b.ownerName && (
             <p className="text-white/70 text-xs font-medium">{b.ownerName}</p>
@@ -284,8 +211,14 @@ export default function BusinessesPage() {
             {b.ownerEmail && (
               <a href={`mailto:${b.ownerEmail}`} className="text-[#85CC17]/70 hover:text-[#85CC17] text-xs font-mono transition-colors">{b.ownerEmail}</a>
             )}
+            {b.ownerAlternateEmail && (
+              <a href={`mailto:${b.ownerAlternateEmail}`} className="text-[#85CC17]/55 hover:text-[#85CC17]/80 text-xs font-mono transition-colors">{b.ownerAlternateEmail}</a>
+            )}
             {b.phone && (
               <span className="text-white/40 text-xs">{b.phone}</span>
+            )}
+            {b.alternatePhone && (
+              <span className="text-white/35 text-xs">{b.alternatePhone}</span>
             )}
           </div>
           {b.website && (
@@ -310,35 +243,6 @@ export default function BusinessesPage() {
           </svg>
           <span className="truncate">Drive Folder</span>
         </a>
-      )}
-
-      {/* Dates */}
-      {(b.startDate || b.targetEndDate) && (
-        <div className="flex gap-4 text-xs">
-          {b.startDate && (
-            <div>
-              <span className="text-white/30 block">Start</span>
-              <span className="text-white/60">{b.startDate}</span>
-            </div>
-          )}
-          {b.targetEndDate && (
-            <div>
-              <span className="text-white/30 block">Target End</span>
-              <span className="text-white/60">{b.targetEndDate}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Next step */}
-      {(b.nextStep || b.nextStepDeadline) && (
-        <div className="border-l-2 border-[#85CC17]/40 pl-3">
-          <p className="text-white/30 text-[10px] uppercase tracking-wider mb-0.5">Next Step</p>
-          {b.nextStep && <p className="text-white/70 text-xs">{b.nextStep}</p>}
-          {b.nextStepDeadline && (
-            <p className="text-[#85CC17]/60 text-[10px] mt-0.5">Due {b.nextStepDeadline}</p>
-          )}
-        </div>
       )}
 
       {/* Assigned members */}
@@ -385,7 +289,7 @@ export default function BusinessesPage() {
         <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length}   color="text-green-400" />
         <StatCard label="Planning"  value={businesses.filter(b => b.projectStatus === "Not Started").length} color="text-purple-400" />
         <StatCard label="Complete"  value={businesses.filter(b => b.projectStatus === "Complete").length} color="text-blue-400" />
-        <StatCard label="Grant Eligible" value={businesses.filter(b => b.grantEligible).length}          color="text-yellow-400" />
+        <StatCard label="Scouting"  value={businesses.filter(b => b.projectStatus === "Discovery" || b.projectStatus === "On Hold").length} color="text-orange-400" />
       </div>
 
       <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-4 w-fit">
@@ -432,19 +336,7 @@ export default function BusinessesPage() {
       {isNonAdminMember && myProjects.length > 0 && (
         <div className="mb-6">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-3">My Projects</h2>
-          <div
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            onDragOver={(e) => {
-              if (!canCustomReorder) return;
-              e.preventDefault();
-            }}
-            onDrop={async (e) => {
-              if (!canCustomReorder || !draggingBusinessId) return;
-              e.preventDefault();
-              await moveBusinessToEnd(draggingBusinessId);
-              setDraggingBusinessId(null);
-            }}
-          >
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {myProjects.map(renderProjectCard)}
           </div>
         </div>
@@ -454,19 +346,7 @@ export default function BusinessesPage() {
       {isNonAdminMember && myProjects.length > 0 && (
         <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-3">Other Projects</h2>
       )}
-      <div
-        className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
-        onDragOver={(e) => {
-          if (!canCustomReorder) return;
-          e.preventDefault();
-        }}
-        onDrop={async (e) => {
-          if (!canCustomReorder || !draggingBusinessId) return;
-          e.preventDefault();
-          await moveBusinessToEnd(draggingBusinessId);
-          setDraggingBusinessId(null);
-        }}
-      >
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {otherProjects.map(renderProjectCard)}
         {filtered.length === 0 && (
           <div className="col-span-3">
@@ -489,29 +369,26 @@ export default function BusinessesPage() {
           <Field label="Business Name" required>
             <Input value={form.name} onChange={e => setField("name", e.target.value)} />
           </Field>
-          <Field label="Business Type">
-            <Input value={form.businessType} onChange={e => setField("businessType", e.target.value)} placeholder="e.g. Restaurant" />
-          </Field>
           <Field label="Owner Name">
             <Input value={form.ownerName} onChange={e => setField("ownerName", e.target.value)} />
           </Field>
           <Field label="Owner Email">
             <Input type="email" value={form.ownerEmail} onChange={e => setField("ownerEmail", e.target.value)} />
           </Field>
+          <Field label="Alternate Email">
+            <Input type="email" value={form.ownerAlternateEmail ?? ""} onChange={e => setField("ownerAlternateEmail", e.target.value)} />
+          </Field>
           <Field label="Phone">
             <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
+          </Field>
+          <Field label="Alternate Phone">
+            <Input value={form.alternatePhone ?? ""} onChange={e => setField("alternatePhone", e.target.value)} />
           </Field>
           <Field label="Website">
             <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
           </Field>
           <Field label="First Contact Date">
             <Input type="date" value={form.firstContactDate} onChange={e => setField("firstContactDate", e.target.value)} />
-          </Field>
-          <Field label="Grant Eligible">
-            <div className="flex items-center gap-2 mt-2">
-              <input type="checkbox" checked={form.grantEligible} onChange={e => setField("grantEligible", e.target.checked)} className="accent-[#85CC17] w-4 h-4" />
-              <span className="text-sm text-white/60">Yes</span>
-            </div>
           </Field>
           <div className="col-span-2">
             <Field label="Address">
@@ -539,9 +416,6 @@ export default function BusinessesPage() {
           <Field label="Division">
             <Select options={DIVISIONS} value={form.division ?? "Tech"} onChange={e => setField("division", e.target.value)} />
           </Field>
-          <Field label="Priority">
-            <Select options={PRIORITIES} value={form.priority} onChange={e => setField("priority", e.target.value)} />
-          </Field>
           <Field label="Team Lead">
             <AutocompleteInput
               value={form.teamLead}
@@ -549,26 +423,6 @@ export default function BusinessesPage() {
               options={teamNameOptions}
               placeholder="Start typing a member name"
             />
-          </Field>
-          <Field label="Start Date">
-            <Input type="date" value={form.startDate ?? ""} onChange={e => setField("startDate", e.target.value)} />
-          </Field>
-          <Field label="Target End Date">
-            <Input type="date" value={form.targetEndDate ?? ""} onChange={e => setField("targetEndDate", e.target.value)} />
-          </Field>
-          <Field label="Slack Channel">
-            <Input value={form.slackChannel} onChange={e => setField("slackChannel", e.target.value)} placeholder="#channel" />
-          </Field>
-          <Field label="Actual End Date">
-            <Input type="date" value={form.actualEndDate ?? ""} onChange={e => setField("actualEndDate", e.target.value)} />
-          </Field>
-          <div className="col-span-2">
-            <Field label="Next Step">
-              <Input value={form.nextStep ?? ""} onChange={e => setField("nextStep", e.target.value)} placeholder="What needs to happen next?" />
-            </Field>
-          </div>
-          <Field label="Next Step Deadline">
-            <Input type="date" value={form.nextStepDeadline ?? ""} onChange={e => setField("nextStepDeadline", e.target.value)} />
           </Field>
           <div className="col-span-2">
             <Field label="Assigned Members">

@@ -162,25 +162,3 @@ export async function verifyCaller(
     },
   };
 }
-
-export async function writeAuditLog(
-  entry: {
-    action: string;
-    collection: string;
-    recordId: string;
-    actorUid: string;
-    actorEmail: string;
-    actorName?: string;
-    details?: Record<string, unknown>;
-  },
-  idToken?: string
-): Promise<void> {
-  await dbPush(
-    "auditLogs",
-    {
-      timestamp: new Date().toISOString(),
-      ...entry,
-    },
-    idToken
-  );
-}

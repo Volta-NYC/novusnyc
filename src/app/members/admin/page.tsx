@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInviteCodes, createInviteCode, deleteInviteCode,
   subscribeUserProfiles, updateUserProfile, deletePortalUserAccount,
-  getAuditLogsList, getUserProfilesList, getTeamMembersList, createTeamMember, updateTeamMember,
-  type InviteCode, type UserProfile, type AuthRole, type AuditLogEntry, type TeamMember,
+  getUserProfilesList, getTeamMembersList, createTeamMember, updateTeamMember,
+  type InviteCode, type UserProfile, type AuthRole, type TeamMember,
 } from "@/lib/members/storage";
 import { Btn, Badge, Table, Field, Select, useConfirm } from "@/components/members/ui";
 import { useRouter } from "next/navigation";
@@ -415,120 +415,12 @@ function DataTab() {
   );
 }
 
-// ── TAB: AUDIT LOG ────────────────────────────────────────────────────────────
-
-function AuditLogTab() {
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
-  const { user } = useAuth();
-
-  useEffect(() => {
-    let cancelled = false;
-    let intervalId: ReturnType<typeof setInterval> | null = null;
-
-    const loadLogs = async () => {
-      if (!user) return;
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch("/api/members/admin/audit?limit=250", {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        if (!res.ok) {
-          let apiError = "load_failed";
-          try {
-            const data = await res.json() as { error?: string };
-            if (typeof data.error === "string" && data.error.trim()) {
-              apiError = data.error.trim();
-            }
-          } catch {
-            // ignore json parse error
-          }
-          throw new Error(apiError);
-        }
-        const data = await res.json() as { logs?: AuditLogEntry[] };
-        if (cancelled) return;
-        setLogs(Array.isArray(data.logs) ? data.logs : []);
-        setErrorMessage("");
-      } catch (apiErr) {
-        if (cancelled) return;
-        try {
-          const fallbackLogs = await getAuditLogsList();
-          if (cancelled) return;
-          setLogs(fallbackLogs);
-          setErrorMessage("");
-        } catch {
-          if (cancelled) return;
-          setErrorMessage(
-            `Could not load audit logs (${apiErr instanceof Error ? apiErr.message : "unknown_error"}).`
-          );
-        }
-      } finally {
-        if (cancelled) return;
-        setLoadingLogs(false);
-      }
-    };
-
-    void loadLogs();
-    intervalId = setInterval(() => {
-      void loadLogs();
-    }, 10000);
-
-    return () => {
-      cancelled = true;
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [user]);
-
-  const sortedLogs = [...logs]
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .slice(0, 250);
-
-  return (
-    <div className="space-y-4">
-      <p className="text-white/45 text-sm font-body">
-        Latest 250 database changes with actor attribution.
-      </p>
-      {errorMessage && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-300 text-sm font-body">
-          {errorMessage}
-        </div>
-      )}
-      {loadingLogs && (
-        <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-6 text-center text-white/40 text-sm font-body">
-          Loading audit logs…
-        </div>
-      )}
-      <Table
-        cols={["Time", "Action", "Collection", "Record", "Actor", "Details"]}
-        rows={sortedLogs.map((log) => [
-          <span key="time" className="text-white/40 text-xs">{log.timestamp.replace("T", " ").slice(0, 19)}</span>,
-          <Badge key="action" label={log.action} />,
-          <span key="collection" className="text-white/70 text-xs">{log.collection}</span>,
-          <span key="record" className="text-white/40 text-xs font-mono">{log.recordId || "—"}</span>,
-          <div key="actor" className="text-xs">
-            <p className="text-white/60 font-mono">{log.actorEmail || "unknown"}</p>
-            <p className="text-white/30">{log.actorUid || "unknown"}</p>
-          </div>,
-          <span key="details" className="text-white/35 text-xs">
-            {log.details ? JSON.stringify(log.details) : "—"}
-          </span>,
-        ])}
-      />
-      {sortedLogs.length === 0 && (
-        <p className="text-white/30 text-sm text-center py-6 font-body">No audit entries yet.</p>
-      )}
-    </div>
-  );
-}
-
 // ── ADMIN CONTENT (inside AuthProvider via MembersLayout) ─────────────────────
 // useAuth() must be called from inside MembersLayout's AuthProvider — not from
 // the page root, which is outside it.
 
 function AdminContent() {
-  const [activeTab, setActiveTab] = useState<"codes" | "users" | "data" | "audit">("codes");
+  const [activeTab, setActiveTab] = useState<"codes" | "users" | "data">("codes");
   const { user, authRole, loading } = useAuth();
   const router = useRouter();
 
@@ -550,7 +442,6 @@ function AdminContent() {
   const TABS: { key: typeof activeTab; label: string }[] = [
     { key: "codes", label: "Access Codes" },
     { key: "users", label: "Users" },
-    { key: "audit", label: "Audit Log" },
     { key: "data",  label: "Data" },
   ];
 
@@ -578,7 +469,6 @@ function AdminContent() {
 
       {activeTab === "codes" && <AccessCodesTab uid={user?.uid ?? ""} />}
       {activeTab === "users" && <UsersTab />}
-      {activeTab === "audit" && <AuditLogTab />}
       {activeTab === "data"  && <DataTab />}
     </>
   );

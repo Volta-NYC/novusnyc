@@ -15,31 +15,22 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES   = ["Active Partner", "In Conversation", "Materials Sent", "Cold Outreach", "Paused", "Dead"];
+const STATUSES   = ["Active Partner", "In Conversation", "Outreach", "Paused", "Dead"];
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
 const PRIORITIES = ["High", "Medium", "Low"];
 const SORT_OPTIONS = [
-  { value: "custom", label: "Custom Order" },
+  { value: "status", label: "Status" },
   { value: "name", label: "Name" },
-  { value: "date_added", label: "Date Added" },
 ] as const;
 type SortMode = (typeof SORT_OPTIONS)[number]["value"];
 
-function getDateValue(value: string | undefined): number {
-  if (!value) return 0;
-  const parsed = new Date(value).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function customBidCompare(a: BID, b: BID): number {
-  const aSort = a.sortIndex ?? Number.MAX_SAFE_INTEGER;
-  const bSort = b.sortIndex ?? Number.MAX_SAFE_INTEGER;
-  if (aSort !== bSort) return aSort - bSort;
-  const aCreated = getDateValue(a.createdAt);
-  const bCreated = getDateValue(b.createdAt);
-  if (aCreated !== bCreated) return aCreated - bCreated;
-  return a.name.localeCompare(b.name);
-}
+const BID_STATUS_SORT_ORDER: Record<BID["status"], number> = {
+  "Active Partner": 0,
+  "In Conversation": 1,
+  Outreach: 2,
+  Paused: 3,
+  Dead: 4,
+};
 
 function nextSortIndex(items: BID[]): number {
   const max = items.reduce((best, item) => {
@@ -51,7 +42,7 @@ function nextSortIndex(items: BID[]): number {
 
 // Blank form values for creating a new BID record.
 const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
-  name: "", status: "Cold Outreach", contactName: "", contactEmail: "", phone: "",
+  name: "", status: "Outreach", contactName: "", contactEmail: "", phone: "",
   borough: "", nextAction: "", notes: "", priority: "Medium",
 };
 
@@ -60,11 +51,10 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
 export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
   const [search, setSearch]           = useState("");
-  const [sortMode, setSortMode]       = useState<SortMode>("custom");
+  const [sortMode, setSortMode]       = useState<SortMode>("status");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
-  const [draggingBidId, setDraggingBidId] = useState<string | null>(null);
   const [timelineDrafts, setTimelineDrafts] = useState<
     Record<string, { date: string; action: string; saving: boolean }>
   >({});
@@ -172,54 +162,20 @@ export default function BIDTrackerPage() {
     if (sortMode === "name") {
       return [...list].sort((a, b) => a.name.localeCompare(b.name));
     }
-    if (sortMode === "date_added") {
-      return [...list].sort((a, b) => getDateValue(b.createdAt) - getDateValue(a.createdAt));
-    }
-    return [...list].sort(customBidCompare);
+    return [...list].sort((a, b) => {
+      const statusDelta = BID_STATUS_SORT_ORDER[a.status] - BID_STATUS_SORT_ORDER[b.status];
+      if (statusDelta !== 0) return statusDelta;
+      return a.name.localeCompare(b.name);
+    });
   };
 
   const filtered = bids.filter(matchesSearch);
   const sorted = sortBids(filtered);
-  const customOrdered = [...bids].sort(customBidCompare);
-  const canCustomReorder = canEdit && sortMode === "custom";
-
-  const persistCustomOrder = async (ordered: BID[]) => {
-    const updates: Promise<void>[] = [];
-    ordered.forEach((bid, index) => {
-      const nextSort = (index + 1) * 1000;
-      if (bid.sortIndex !== nextSort) {
-        updates.push(updateBID(bid.id, { sortIndex: nextSort }));
-      }
-    });
-    if (updates.length > 0) await Promise.all(updates);
-  };
-
-  const moveBidBefore = async (dragId: string, targetId: string) => {
-    if (sortMode !== "custom" || dragId === targetId) return;
-    const ordered = [...customOrdered];
-    const fromIndex = ordered.findIndex((bid) => bid.id === dragId);
-    const targetIndex = ordered.findIndex((bid) => bid.id === targetId);
-    if (fromIndex < 0 || targetIndex < 0) return;
-    const [dragged] = ordered.splice(fromIndex, 1);
-    const insertAt = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
-    ordered.splice(insertAt, 0, dragged);
-    await persistCustomOrder(ordered);
-  };
-
-  const moveBidToEnd = async (dragId: string) => {
-    if (sortMode !== "custom") return;
-    const ordered = [...customOrdered];
-    const fromIndex = ordered.findIndex((bid) => bid.id === dragId);
-    if (fromIndex < 0) return;
-    const [dragged] = ordered.splice(fromIndex, 1);
-    ordered.push(dragged);
-    await persistCustomOrder(ordered);
-  };
 
   const stats = {
     total:    bids.length,
     active:   bids.filter(b => b.status === "Active Partner").length,
-    pipeline: bids.filter(b => ["Materials Sent", "In Conversation"].includes(b.status)).length,
+    pipeline: bids.filter(b => ["Outreach", "In Conversation"].includes(b.status)).length,
   };
 
   return (
@@ -254,48 +210,19 @@ export default function BIDTrackerPage() {
       </div>
 
       {/* BID cards with inline timeline */}
-      <div
-        className="space-y-4"
-        onDragOver={(e) => {
-          if (!canCustomReorder) return;
-          e.preventDefault();
-        }}
-        onDrop={async (e) => {
-          if (!canCustomReorder || !draggingBidId) return;
-          e.preventDefault();
-          await moveBidToEnd(draggingBidId);
-          setDraggingBidId(null);
-        }}
-      >
+      <div className="space-y-4">
         {sorted.map((bid) => {
           const timeline = getTimeline(bid);
           const draft = getTimelineDraft(bid.id);
           return (
             <div
               key={bid.id}
-              draggable={canCustomReorder}
-              onDragStart={() => setDraggingBidId(bid.id)}
-              onDragEnd={() => setDraggingBidId(null)}
-              onDragOver={(e) => {
-                if (!canCustomReorder) return;
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onDrop={async (e) => {
-                if (!canCustomReorder || !draggingBidId) return;
-                e.preventDefault();
-                e.stopPropagation();
-                await moveBidBefore(draggingBidId, bid.id);
-                setDraggingBidId(null);
-              }}
-              className={`bg-[#1C1F26] border border-white/8 rounded-xl p-4
-                ${canCustomReorder ? "cursor-grab active:cursor-grabbing" : ""}
-                ${draggingBidId === bid.id ? "opacity-40 scale-[0.99]" : ""}`}
+              className="bg-[#1C1F26] border border-white/8 rounded-xl p-3 sm:p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1 min-w-0">
                   <p className="text-white font-semibold truncate">{bid.name}</p>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-white/45">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
                     <span>{bid.borough || "No borough"}</span>
                     <span>•</span>
                     <span>{bid.contactName || "No contact"}</span>
@@ -309,11 +236,11 @@ export default function BIDTrackerPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <Badge label={bid.status} />
                   <Badge label={bid.priority} />
-                  {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>}
-                  {canEdit && <Btn size="sm" variant="danger" onClick={() => handleDelete(bid.id)}>Delete</Btn>}
+                  {canEdit && <Btn size="sm" variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openEdit(bid)}>Edit</Btn>}
+                  {canEdit && <Btn size="sm" variant="danger" className="px-2.5 py-1 text-xs" onClick={() => handleDelete(bid.id)}>Delete</Btn>}
                 </div>
               </div>
 
@@ -330,15 +257,15 @@ export default function BIDTrackerPage() {
                   <span className="text-[11px] text-white/35">{timeline.length} entries</span>
                 </div>
 
-                <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
                   {timeline.length === 0 ? (
                     <p className="text-xs text-white/30">No activity logged yet.</p>
                   ) : (
                     timeline.map((entry) => (
-                      <div key={entry.id} className="flex items-start gap-3 rounded-lg border border-white/7 bg-[#0F1014] px-3 py-2.5">
+                      <div key={entry.id} className="flex items-start gap-2 rounded-lg border border-white/7 bg-[#0F1014] px-2.5 py-2">
                         <div className="flex-1 min-w-0">
-                          <span className="text-[11px] text-white/30 block mb-1">{entry.date}</span>
-                          <p className="text-sm text-white/70">{entry.action ?? entry.note ?? ""}</p>
+                          <span className="text-[10px] text-white/30 block mb-0.5">{entry.date}</span>
+                          <p className="text-xs sm:text-sm text-white/70 leading-snug">{entry.action ?? entry.note ?? ""}</p>
                         </div>
                         {canEdit && (
                           <button
@@ -358,28 +285,32 @@ export default function BIDTrackerPage() {
                 </div>
 
                 {canEdit && (
-                  <div className="mt-3 rounded-xl border border-white/8 bg-[#141821] p-3 space-y-2">
-                    <p className="text-xs text-white/45">Log activity</p>
-                    <input
-                      type="date"
-                      value={draft.date}
-                      onChange={(e) => setTimelineDraft(bid.id, { date: e.target.value })}
-                      className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none"
-                    />
-                    <textarea
-                      value={draft.action}
-                      onChange={(e) => setTimelineDraft(bid.id, { action: e.target.value })}
-                      placeholder="Action"
-                      rows={2}
-                      className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none resize-none font-body"
-                    />
-                    <Btn
-                      variant="primary"
-                      onClick={() => handleAddTimeline(bid.id)}
-                      disabled={draft.saving || !draft.action.trim()}
-                    >
-                      {draft.saving ? "Saving…" : "+ Log Entry"}
-                    </Btn>
+                  <div className="mt-2.5 rounded-lg border border-white/8 bg-[#141821] p-2.5 space-y-2">
+                    <p className="text-[11px] text-white/45">Log activity</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
+                      <input
+                        type="date"
+                        value={draft.date}
+                        onChange={(e) => setTimelineDraft(bid.id, { date: e.target.value })}
+                        className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-white focus:outline-none"
+                      />
+                      <textarea
+                        value={draft.action}
+                        onChange={(e) => setTimelineDraft(bid.id, { action: e.target.value })}
+                        placeholder="Action"
+                        rows={1}
+                        className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-white placeholder-white/25 focus:outline-none resize-none font-body"
+                      />
+                      <Btn
+                        variant="primary"
+                        size="sm"
+                        className="w-full sm:w-auto justify-center"
+                        onClick={() => handleAddTimeline(bid.id)}
+                        disabled={draft.saving || !draft.action.trim()}
+                      >
+                        {draft.saving ? "Saving…" : "+ Add"}
+                      </Btn>
+                    </div>
                   </div>
                 )}
               </div>

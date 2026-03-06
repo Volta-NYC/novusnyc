@@ -14,7 +14,7 @@ import { getDB, getAuth } from "@/lib/firebase";
 export interface BID {
   id: string;
   name: string;
-  status: "Cold Outreach" | "Materials Sent" | "In Conversation" | "Active Partner" | "Paused" | "Dead";
+  status: "Active Partner" | "In Conversation" | "Outreach" | "Paused" | "Dead";
   contactName: string;
   contactEmail: string;
   phone: string;
@@ -41,29 +41,22 @@ export interface Business {
   bidId: string;
   ownerName: string;
   ownerEmail: string;
+  ownerAlternateEmail: string;
   phone: string;
+  alternatePhone: string;
   address: string;
   website: string;
-  businessType: string;
   activeServices: string[];   // may be undefined if Firebase omitted empty array
   projectStatus: "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
   teamLead: string;
-  slackChannel: string;
   languages: string[];        // may be undefined if Firebase omitted empty array
-  priority: "High" | "Medium" | "Low";
   firstContactDate: string;
-  grantEligible: boolean;
   notes: string;
   createdAt: string;
   updatedAt: string;
   // Project-level fields (merged from Projects tab)
   division?: "Tech" | "Marketing" | "Finance";
   teamMembers?: string[];     // may be undefined if Firebase omitted empty array
-  startDate?: string;
-  targetEndDate?: string;
-  actualEndDate?: string;
-  nextStep?: string;          // replaces deliverable fields
-  nextStepDeadline?: string;
   githubUrl?: string;
   driveFolderUrl?: string;
   clientNotes?: string;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dbPatch, dbRead, verifyCaller, writeAuditLog } from "@/lib/server/adminApi";
+import { dbPatch, dbRead, verifyCaller } from "@/lib/server/adminApi";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 
 export const dynamic = "force-dynamic";
@@ -60,15 +60,6 @@ export async function POST(req: NextRequest) {
       // Route access is still role-gated by verifyCaller above.
       await dbPatch("interviewSettings", payload);
     }
-    await writeAuditLog({
-      action: "update",
-      collection: "interviewSettings",
-      recordId: "singleton",
-      actorUid: caller.uid,
-      actorEmail: caller.email || "unknown",
-      actorName: caller.name || "",
-      details: { fields: Object.keys(payload) },
-    }, caller.idToken).catch(() => {});
   } catch {
     return NextResponse.json({ error: "save_failed", reason: "db_patch_failed" }, { status: 500 });
   }
