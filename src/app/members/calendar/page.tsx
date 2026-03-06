@@ -588,7 +588,7 @@ export default function CalendarPage() {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setPopup({
       event: ev,
-      pos: { top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX },
+      pos: { top: rect.bottom + 6, left: rect.left },
     });
   };
 
