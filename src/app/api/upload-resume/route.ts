@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { request as undiciRequest } from "undici";
 
 // Receives a resume file upload, converts to base64, and forwards to
 // Google Apps Script which saves it to Drive and returns a shareable link.
 //
-// Why undici instead of fetch: Apps Script responds with a 302 redirect to a
-// googleusercontent.com URL that serves the actual JSON response. Node's native
-// fetch (WhatWG spec) returns an opaque redirect on redirect:"manual" and hides
-// the Location header. undici.request with maxRedirections:0 stops at the 302
-// and exposes the Location header so we can follow it manually to read the JSON.
+// Apps Script responds with a 302 redirect to a googleusercontent.com URL
+// that serves the actual JSON response. We use redirect:"manual" to stop
+// at the 302 and read the Location header, then follow it manually.
 export async function POST(req: Request) {
   const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
   if (!url) {
@@ -27,7 +24,7 @@ export async function POST(req: Request) {
 
   try {
     // POST to Apps Script; stop before following the redirect.
-    const { statusCode, headers } = await undiciRequest(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -36,18 +33,16 @@ export async function POST(req: Request) {
         mimeType: file.type || "application/octet-stream",
         fileData: base64,
       }),
-      maxRedirections: 0,
+      redirect: "manual",
     });
 
     // Apps Script returns 302 → googleusercontent.com URL that serves the JSON.
-    if (statusCode === 301 || statusCode === 302) {
-      const location = Array.isArray(headers.location)
-        ? headers.location[0]
-        : headers.location;
+    if (response.status === 301 || response.status === 302) {
+      const location = response.headers.get("location");
 
       if (location) {
-        const { body } = await undiciRequest(location);
-        const text = await body.text();
+        const redirected = await fetch(location);
+        const text = await redirected.text();
         try {
           const json = JSON.parse(text);
           if (json.url) return NextResponse.json({ url: json.url });
