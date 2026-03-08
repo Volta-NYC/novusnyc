@@ -167,46 +167,6 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
   });
 }
 
-export async function sendInterviewReminderEmail(input: BookingEmailInput): Promise<void> {
-  const timeText = formatTime(input.datetimeIso);
-  const googleCalendarUrl = buildGoogleCalendarUrl(input);
-  const ics = buildIcs(input);
-
-  await sendInterviewEmail({
-    to: input.to,
-    subject: "Reminder: Your Volta NYC interview starts in 30 minutes",
-    text: [
-      `Hi ${input.bookerName || "there"},`,
-      "",
-      "Reminder: your Volta NYC interview starts in about 30 minutes.",
-      `Time: ${timeText}`,
-      input.zoomLink ? `Zoom: ${input.zoomLink}` : "Zoom: (will be provided separately)",
-      "",
-      `Google Calendar: ${googleCalendarUrl}`,
-      "A calendar invite (.ics) is attached again for convenience.",
-      "",
-      "- Volta NYC",
-    ].join("\n"),
-    html: `
-      <p>Hi ${input.bookerName || "there"},</p>
-      <p><strong>Reminder:</strong> your Volta NYC interview starts in about 30 minutes.</p>
-      <p>
-        <strong>Time:</strong> ${timeText}<br/>
-        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
-      </p>
-      <p>
-        <a href="${googleCalendarUrl}">Open in Google Calendar</a><br/>
-        A calendar invite (<code>.ics</code>) is attached again for convenience.
-      </p>
-      <p>- Volta NYC</p>
-    `,
-    ics: {
-      filename: "volta-nyc-interview-reminder.ics",
-      content: ics,
-    },
-  });
-}
-
 export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
   previousDatetimeIso: string;
 }): Promise<void> {
