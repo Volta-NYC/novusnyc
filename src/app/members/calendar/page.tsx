@@ -338,6 +338,7 @@ export default function CalendarPage() {
   // Popup for viewing event details when a pill is clicked.
   const [popup, setPopup] = useState<{ event: DisplayEvent; pos: PopupPosition } | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const popupAnchorRef = useRef<HTMLElement | null>(null);
 
   const { ask, Dialog } = useConfirm();
 
@@ -359,6 +360,34 @@ export default function CalendarPage() {
     };
     if (popup) document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [popup]);
+
+  // Keep popup anchored to its event pill while scrolling/resizing.
+  useEffect(() => {
+    if (!popup) return;
+
+    const reposition = () => {
+      const anchor = popupAnchorRef.current;
+      if (!anchor || !anchor.isConnected) {
+        setPopup(null);
+        return;
+      }
+      const rect = anchor.getBoundingClientRect();
+      setPopup((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          pos: { top: rect.bottom + 6, left: rect.left },
+        };
+      });
+    };
+
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
   }, [popup]);
 
   // ── Build merged display events ───────────────────────────────────────────
@@ -585,7 +614,9 @@ export default function CalendarPage() {
   // Show a detail popup anchored below the clicked event pill.
   const handleEventPillClick = (ev: DisplayEvent, e: React.MouseEvent) => {
     e.stopPropagation();
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const target = e.currentTarget as HTMLElement;
+    popupAnchorRef.current = target;
+    const rect = target.getBoundingClientRect();
     setPopup({
       event: ev,
       pos: { top: rect.bottom + 6, left: rect.left },
