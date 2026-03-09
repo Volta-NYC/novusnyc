@@ -11,6 +11,7 @@ type BookingEmailInput = {
 };
 
 const ET_TIMEZONE = "America/New_York";
+const ISO_NO_TZ_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 
 function utcStamp(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
@@ -31,8 +32,75 @@ function sanitizeEmailAddress(value: string): string {
   return (match?.[1] ?? trimmed).trim();
 }
 
+type DateParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
+
+function parseIsoWithoutTimezone(value: string): DateParts | null {
+  const m = value.match(ISO_NO_TZ_RE);
+  if (!m) return null;
+  return {
+    year: Number(m[1]),
+    month: Number(m[2]),
+    day: Number(m[3]),
+    hour: Number(m[4]),
+    minute: Number(m[5]),
+    second: Number(m[6] ?? "0"),
+  };
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const parts = dtf.formatToParts(date);
+  const val = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
+  const asUTC = Date.UTC(
+    val("year"),
+    val("month") - 1,
+    val("day"),
+    val("hour"),
+    val("minute"),
+    val("second"),
+  );
+  return asUTC - date.getTime();
+}
+
+// Converts a wall-clock ET datetime (without timezone) into a real UTC instant.
+function etWallClockToUtc(parts: DateParts): Date {
+  const targetUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  let guess = new Date(targetUTC);
+  for (let i = 0; i < 3; i += 1) {
+    const offset = getTimeZoneOffsetMs(guess, ET_TIMEZONE);
+    const next = new Date(targetUTC - offset);
+    if (next.getTime() === guess.getTime()) break;
+    guess = next;
+  }
+  return guess;
+}
+
+function getInterviewInstant(datetimeIso: string): Date {
+  const trimmed = datetimeIso.trim();
+  const naive = parseIsoWithoutTimezone(trimmed);
+  if (naive) return etWallClockToUtc(naive);
+  const d = new Date(trimmed);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
 function buildIcs(input: BookingEmailInput): string {
-  const start = new Date(input.datetimeIso);
+  const start = getInterviewInstant(input.datetimeIso);
   const end = new Date(start.getTime() + input.durationMinutes * 60_000);
   const descParts: string[] = [];
   if (input.zoomLink) descParts.push(`Join Zoom: ${input.zoomLink}`);
@@ -52,7 +120,7 @@ function buildIcs(input: BookingEmailInput): string {
     `DTSTAMP:${utcStamp(new Date())}`,
     `DTSTART:${utcStamp(start)}`,
     `DTEND:${utcStamp(end)}`,
-    `SUMMARY:${escapeIcs("Volta NYC Interview")}`,
+    `SUMMARY:${escapeIcs("Volta Interview")}`,
     `DESCRIPTION:${escapeIcs(descParts.join("\n"))}`,
     organizerEmail
       ? `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:${escapeIcs(organizerEmail)}`
@@ -62,7 +130,7 @@ function buildIcs(input: BookingEmailInput): string {
     "BEGIN:VALARM",
     "TRIGGER:-PT30M",
     "ACTION:DISPLAY",
-    `DESCRIPTION:${escapeIcs("Volta NYC interview starts in 30 minutes.")}`,
+    `DESCRIPTION:${escapeIcs("Volta Interview starts in 30 minutes.")}`,
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
@@ -72,7 +140,7 @@ function buildIcs(input: BookingEmailInput): string {
 }
 
 function buildGoogleCalendarUrl(input: BookingEmailInput): string {
-  const start = new Date(input.datetimeIso);
+  const start = getInterviewInstant(input.datetimeIso);
   const end = new Date(start.getTime() + input.durationMinutes * 60_000);
   const dates = `${utcStamp(start)}/${utcStamp(end)}`;
   const details = input.zoomLink
@@ -80,7 +148,7 @@ function buildGoogleCalendarUrl(input: BookingEmailInput): string {
     : "Organized by Volta NYC";
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: "Volta NYC Interview",
+    text: "Volta Interview",
     dates,
     details,
     location: input.location ?? "",
@@ -130,7 +198,7 @@ async function sendInterviewEmail(input: {
 }
 
 function formatTime(datetimeIso: string): string {
-  const start = new Date(datetimeIso);
+  const start = getInterviewInstant(datetimeIso);
   return start.toLocaleString("en-US", {
     weekday: "long",
     month: "long",
@@ -149,11 +217,11 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
 
   await sendInterviewEmail({
     to: input.to,
-    subject: "Volta NYC Interview Confirmation",
+    subject: "Volta Interview Confirmation",
     text: [
       `Hi ${input.bookerName || "there"},`,
       "",
-      "Your Volta interview is confirmed.",
+      "Your Volta Interview is confirmed.",
       `Time: ${timeText}`,
       input.zoomLink ? `Zoom: ${input.zoomLink}` : "Zoom: (will be provided separately)",
       "",
@@ -169,7 +237,7 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
     ].join("\n"),
     html: `
       <p>Hi ${input.bookerName || "there"},</p>
-      <p>Your Volta interview is confirmed.</p>
+      <p>Your Volta Interview is confirmed.</p>
       <p>
         <strong>Time:</strong> ${timeText}<br/>
         <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
@@ -198,11 +266,11 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
 
   await sendInterviewEmail({
     to: input.to,
-    subject: "Volta NYC Interview Rescheduled",
+    subject: "Volta Interview Rescheduled",
     text: [
       `Hi ${input.bookerName || "there"},`,
       "",
-      "Your Volta NYC interview has been rescheduled.",
+      "Your Volta Interview has been rescheduled.",
       `Previous time: ${oldTimeText}`,
       `New time: ${newTimeText}`,
       input.zoomLink ? `Zoom: ${input.zoomLink}` : "Zoom: (will be provided separately)",
@@ -219,7 +287,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
     ].join("\n"),
     html: `
       <p>Hi ${input.bookerName || "there"},</p>
-      <p>Your <strong>Volta NYC interview</strong> has been rescheduled.</p>
+      <p>Your <strong>Volta Interview</strong> has been rescheduled.</p>
       <p>
         <strong>Previous time:</strong> ${oldTimeText}<br/>
         <strong>New time:</strong> ${newTimeText}<br/>
