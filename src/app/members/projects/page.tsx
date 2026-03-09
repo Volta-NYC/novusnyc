@@ -191,7 +191,7 @@ export default function BusinessesPage() {
       {/* Name + badges */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-white font-bold text-base leading-tight">{b.name}</p>
+          <p className="text-white font-bold text-base leading-tight break-words">{b.name}</p>
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           <Badge label={b.projectStatus} />
