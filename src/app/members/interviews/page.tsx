@@ -90,6 +90,30 @@ function toDateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function toLocalSlotDateTime(input: Date | number): string {
+  const d = input instanceof Date ? input : new Date(input);
+  const dateISO = toDateString(d);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${dateISO}T${hh}:${mm}:00`;
+}
+
+function slotDateISOFromDateTime(datetime: string): string {
+  const naive = datetime.match(/^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}/);
+  if (naive) return naive[1];
+  const parsed = new Date(datetime);
+  if (Number.isNaN(parsed.getTime())) return datetime.slice(0, 10);
+  return toDateString(parsed);
+}
+
+function slotDateTimeKeyFromDateTime(datetime: string): string {
+  const naive = datetime.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+  if (naive) return `${naive[1]}T${naive[2]}:${naive[3]}`;
+  const parsed = new Date(datetime);
+  if (Number.isNaN(parsed.getTime())) return datetime.slice(0, 16);
+  return `${toDateString(parsed)}T${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+}
+
 function slotKey(dateISO: string, hour: number, minute: number): string {
   const h = String(hour).padStart(2, "0");
   const m = String(minute).padStart(2, "0");
@@ -350,12 +374,10 @@ function InterviewsContent() {
     const nowTs = Date.now();
     const endTs = planningWindowEnd(windowAnchor).getTime();
     const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const existingDateTimes = new Set(slots.map((slot) => slot.datetime));
+    const existingDateTimes = new Set(slots.map((slot) => slotDateTimeKeyFromDateTime(slot.datetime)));
     const recurring = slots.filter((slot) =>
       !!slot.recurringWeekly
       && !!slot.recurringSeriesId
-      && slot.available
-      && !slot.bookedBy
       && new Date(slot.datetime).getTime() >= nowTs
     );
     if (recurring.length === 0) return;
@@ -375,16 +397,19 @@ function InterviewsContent() {
       if (!latestInWindow) return;
 
       const template = latestInWindow;
+      const templateInterviewerIds = normalizeInterviewerMemberIds(template.interviewerMemberIds ?? []);
+      if (templateInterviewerIds.length === 0) return;
       let cursor = new Date(template.datetime).getTime() + weekMs;
       while (cursor <= endTs) {
-        const dt = new Date(cursor).toISOString();
-        if (!existingDateTimes.has(dt)) {
-          existingDateTimes.add(dt);
+        const dt = toLocalSlotDateTime(cursor);
+        const slotKeyValue = slotDateTimeKeyFromDateTime(dt);
+        if (!existingDateTimes.has(slotKeyValue)) {
+          existingDateTimes.add(slotKeyValue);
           missing.push({
             datetime: dt,
             durationMinutes: template.durationMinutes || 15,
             available: true,
-            interviewerMemberIds: normalizeInterviewerMemberIds(template.interviewerMemberIds ?? []),
+            interviewerMemberIds: templateInterviewerIds,
             recurringWeekly: true,
             recurringSeriesId: template.recurringSeriesId,
             location: template.location ?? "",
@@ -498,7 +523,7 @@ function InterviewsContent() {
   const slotMap = useMemo(() => {
     const next: Record<string, InterviewSlot> = {};
     for (const slot of slots) {
-      const key = slot.datetime.slice(0, 16);
+      const key = slotDateTimeKeyFromDateTime(slot.datetime);
       next[key] = slot;
     }
     return next;
@@ -597,7 +622,7 @@ function InterviewsContent() {
   const upcomingBookedByDate = useMemo(() => {
     const byDate: Record<string, InterviewSlot[]> = {};
     upcomingBookedSlots.forEach((slot) => {
-      const day = slot.datetime.slice(0, 10);
+      const day = slotDateISOFromDateTime(slot.datetime);
       if (!byDate[day]) byDate[day] = [];
       byDate[day].push(slot);
     });
@@ -612,7 +637,7 @@ function InterviewsContent() {
   const pastBookedByDate = useMemo(() => {
     const byDate: Record<string, InterviewSlot[]> = {};
     pastBookedSlots.forEach((slot) => {
-      const day = slot.datetime.slice(0, 10);
+      const day = slotDateISOFromDateTime(slot.datetime);
       if (!byDate[day]) byDate[day] = [];
       byDate[day].push(slot);
     });
@@ -628,7 +653,7 @@ function InterviewsContent() {
   const availableFutureByDate = useMemo(() => {
     const byDate: Record<string, InterviewSlot[]> = {};
     availableFutureSlots.forEach((slot) => {
-      const day = slot.datetime.slice(0, 10);
+      const day = slotDateISOFromDateTime(slot.datetime);
       if (!byDate[day]) byDate[day] = [];
       byDate[day].push(slot);
     });
@@ -788,14 +813,15 @@ function InterviewsContent() {
 
       const endTs = planningWindowEnd(windowAnchor).getTime();
       const weekMs = 7 * 24 * 60 * 60 * 1000;
-      const existing = new Set(slots.map((s) => s.datetime));
-      existing.add(slot.datetime);
+      const existing = new Set(slots.map((s) => slotDateTimeKeyFromDateTime(s.datetime)));
+      existing.add(slotDateTimeKeyFromDateTime(slot.datetime));
       let created = 0;
       let cursor = new Date(slot.datetime).getTime() + weekMs;
       while (cursor <= endTs) {
-        const dt = new Date(cursor).toISOString();
-        if (!existing.has(dt)) {
-          existing.add(dt);
+        const dt = toLocalSlotDateTime(cursor);
+        const keyValue = slotDateTimeKeyFromDateTime(dt);
+        if (!existing.has(keyValue)) {
+          existing.add(keyValue);
           // eslint-disable-next-line no-await-in-loop
           await createInterviewSlot({
             datetime: dt,
@@ -842,8 +868,6 @@ function InterviewsContent() {
         const nowTs = Date.now();
         const targets = slots.filter((slot) =>
           slot.recurringSeriesId === editingAvailableSlot.recurringSeriesId
-          && slot.available
-          && !slot.bookedBy
           && new Date(slot.datetime).getTime() >= nowTs
         );
         for (const target of targets) {
@@ -1320,7 +1344,7 @@ function InterviewsContent() {
     const d = toDateString(date);
     let visible = 0;
     slots.forEach((slot) => {
-      if (!slot.datetime.startsWith(d) || new Date(slot.datetime).getTime() < now) return;
+      if (slotDateISOFromDateTime(slot.datetime) !== d || new Date(slot.datetime).getTime() < now) return;
       if (slot.available && !slot.bookedBy) visible += 1;
     });
     return visible;
