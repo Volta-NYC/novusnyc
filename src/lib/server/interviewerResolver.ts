@@ -24,15 +24,14 @@ function normalizeEmail(value: string): string {
 function parseInterviewerNames(slot: Record<string, unknown>): string[] {
   const list = slot.interviewerNames;
   if (Array.isArray(list)) {
-    return list.map(toTrimmedString).filter(Boolean);
+    const expanded = list
+      .flatMap((value) => toTrimmedString(value).split(","))
+      .map((name) => name.trim())
+      .filter(Boolean);
+    return Array.from(new Set(expanded.map((name) => normalizeName(name))))
+      .map((normalized) => expanded.find((name) => normalizeName(name) === normalized) ?? normalized);
   }
-
-  const single = toTrimmedString(slot.interviewerName);
-  if (!single) return [];
-  return single
-    .split(",")
-    .map((name) => name.trim())
-    .filter(Boolean);
+  return [];
 }
 
 export function resolveInterviewerContacts(

@@ -93,6 +93,11 @@ type ExistingBooking = {
   datetime: string;
 };
 
+function hasInterviewerNames(slot: Record<string, unknown>): boolean {
+  const names = slot.interviewerNames;
+  return Array.isArray(names) && names.some((name) => typeof name === "string" && name.trim().length > 0);
+}
+
 async function findExistingBookingsByEmail(email: string, excludeSlotId: string): Promise<ExistingBooking[]> {
   if (!email) return [];
   const slotsData = await dbGet("interviewSlots");
@@ -178,7 +183,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const slots: RawSlot[] = slotsData
     ? (Object.entries(slotsData as Record<string, Record<string, unknown>>)
         .map(([id, data]): RawSlot => ({ ...data, id }))
-        .filter((s) => s["available"] && !s["bookedBy"] && new Date(s["datetime"] as string).getTime() > now)
+        .filter((s) => s["available"] && !s["bookedBy"] && hasInterviewerNames(s) && new Date(s["datetime"] as string).getTime() > now)
         .sort((a, b) => new Date(a["datetime"] as string).getTime() - new Date(b["datetime"] as string).getTime()))
     : [];
 
@@ -236,7 +241,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
   const slot = slotData as Record<string, unknown>;
   const startsAt = new Date((slot.datetime as string) ?? "").getTime();
-  if (!slot.available || slot.bookedBy || Number.isNaN(startsAt) || startsAt <= Date.now()) {
+  if (!slot.available || slot.bookedBy || !hasInterviewerNames(slot) || Number.isNaN(startsAt) || startsAt <= Date.now()) {
     return NextResponse.json({ error: "slot_unavailable" }, { status: 409 });
   }
 

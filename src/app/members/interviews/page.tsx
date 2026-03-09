@@ -191,13 +191,9 @@ function normalizeInterviewerNames(values: string[]): string[] {
 }
 
 function getSlotInterviewerNames(slot: InterviewSlot): string[] {
-  if (Array.isArray(slot.interviewerNames) && slot.interviewerNames.length > 0) {
-    return slot.interviewerNames
-      .map((name) => String(name ?? "").trim())
-      .filter(Boolean);
-  }
-  const fallback = String(slot.interviewerName ?? "").trim();
-  return fallback ? [fallback] : [];
+  return Array.isArray(slot.interviewerNames)
+    ? slot.interviewerNames.map((name) => String(name ?? "").trim()).filter(Boolean)
+    : [];
 }
 
 function weekOffsetFromDate(date: Date, referenceDate: Date): number {
@@ -216,7 +212,7 @@ function InterviewsContent() {
   const router = useRouter();
   const { ask, Dialog } = useConfirm();
 
-  const [activeTab, setActiveTab] = useState<"upcoming" | "availability">("upcoming");
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "availability">("upcoming");
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
@@ -360,7 +356,6 @@ function InterviewsContent() {
             datetime: dt,
             durationMinutes: template.durationMinutes || 15,
             available: true,
-            interviewerName: (template.interviewerNames?.[0] ?? template.interviewerName ?? "").trim(),
             interviewerNames: normalizeInterviewerNames(template.interviewerNames ?? []),
             recurringWeekly: true,
             recurringSeriesId: template.recurringSeriesId,
@@ -531,6 +526,21 @@ function InterviewsContent() {
     return Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
   }, [upcomingBookedSlots]);
 
+  const pastBookedSlots = useMemo(
+    () => sortedSlots.filter((s) => !!s.bookedBy && new Date(s.datetime).getTime() < now),
+    [sortedSlots, now]
+  );
+
+  const pastBookedByDate = useMemo(() => {
+    const byDate: Record<string, InterviewSlot[]> = {};
+    pastBookedSlots.forEach((slot) => {
+      const day = slot.datetime.slice(0, 10);
+      if (!byDate[day]) byDate[day] = [];
+      byDate[day].push(slot);
+    });
+    return Object.entries(byDate).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [pastBookedSlots]);
+
   const availableFutureSlots = useMemo(
     () =>
       sortedSlots.filter((s) => s.available && !s.bookedBy && new Date(s.datetime).getTime() > now),
@@ -679,6 +689,12 @@ function InterviewsContent() {
   const makeAvailabilityWeekly = (slot: InterviewSlot) => {
     if (!canDeleteInterviews) return;
     if (!slot.available || !!slot.bookedBy) return;
+    const slotInterviewers = normalizeInterviewerNames(slot.interviewerNames ?? []);
+    if (slotInterviewers.length === 0) {
+      setAvailableMessage("At least one interviewer is required.");
+      setTimeout(() => setAvailableMessage(null), 2200);
+      return;
+    }
     ask(async () => {
       const seriesId = slot.recurringSeriesId || buildRecurringSeriesId();
       await updateInterviewSlot(slot.id, { recurringWeekly: true, recurringSeriesId: seriesId });
@@ -698,8 +714,7 @@ function InterviewsContent() {
             datetime: dt,
             durationMinutes: slot.durationMinutes || 15,
             available: true,
-            interviewerName: (slot.interviewerNames?.[0] ?? slot.interviewerName ?? "").trim(),
-            interviewerNames: normalizeInterviewerNames(slot.interviewerNames ?? []),
+            interviewerNames: slotInterviewers,
             recurringWeekly: true,
             recurringSeriesId: seriesId,
             location: slot.location ?? "",
@@ -729,7 +744,11 @@ function InterviewsContent() {
   const saveAvailableInterviewerEdit = async () => {
     if (!editingAvailableSlot || !canDeleteInterviews) return;
     const names = normalizeInterviewerNames(editingAvailableInterviewers);
-    const legacy = names[0] ?? "";
+    if (names.length === 0) {
+      setAvailableMessage("At least one interviewer is required.");
+      setTimeout(() => setAvailableMessage(null), 2200);
+      return;
+    }
     setSavingAvailableEdit(true);
     try {
       if (applyAvailableEditWeekly && editingAvailableSlot.recurringWeekly && editingAvailableSlot.recurringSeriesId) {
@@ -744,14 +763,12 @@ function InterviewsContent() {
           // eslint-disable-next-line no-await-in-loop
           await updateInterviewSlot(target.id, {
             interviewerNames: names,
-            interviewerName: legacy,
           });
         }
         setAvailableMessage(`Updated interviewer(s) on ${targets.length} weekly slot(s).`);
       } else {
         await updateInterviewSlot(editingAvailableSlot.id, {
           interviewerNames: names,
-          interviewerName: legacy,
         });
         setAvailableMessage("Updated interviewer(s).");
       }
@@ -773,7 +790,6 @@ function InterviewsContent() {
     const key = slotKey(dateISO, hour, minute);
     const slot = slotMap[key];
     const interviewerNames = normalizeInterviewerNames(interviewerNamesInput ?? []);
-    const legacyInterviewer = interviewerNames[0] ?? "";
 
     if (mode === "remove") {
       if (!canDeleteInterviews || !slot || !slot.available || slot.bookedBy) return;
@@ -784,7 +800,10 @@ function InterviewsContent() {
     if (slot) {
       if (slot.bookedBy) return;
       const patch: Partial<InterviewSlot> = {};
-      if (!slot.available) patch.available = true;
+      if (!slot.available) {
+        if (interviewerNames.length === 0) return;
+        patch.available = true;
+      }
       const currentNames = getSlotInterviewerNames(slot);
       if (interviewerNames.length > 0) {
         const same =
@@ -792,7 +811,6 @@ function InterviewsContent() {
           && currentNames.every((value, idx) => value === interviewerNames[idx]);
         if (!same) {
           patch.interviewerNames = interviewerNames;
-          patch.interviewerName = legacyInterviewer;
         }
       }
       if (recurring?.enabled) {
@@ -805,12 +823,12 @@ function InterviewsContent() {
       return;
     }
 
+    if (interviewerNames.length === 0) return;
     await createInterviewSlot({
       datetime: `${key}:00`,
       durationMinutes: 15,
       available: true,
       location: "",
-      interviewerName: legacyInterviewer,
       interviewerNames,
       recurringWeekly: !!recurring?.enabled,
       recurringSeriesId: recurring?.enabled ? (recurring.seriesId || buildRecurringSeriesId()) : undefined,
@@ -828,6 +846,11 @@ function InterviewsContent() {
       })
     );
     const mode: DragMode = hasVisible && canDeleteInterviews ? "remove" : "add";
+    if (mode === "add") {
+      setAvailableMessage("Use Add Availability with interviewer name(s) to create new visible slots.");
+      setTimeout(() => setAvailableMessage(null), 2400);
+      return;
+    }
     for (const hour of GRID_HOURS) {
       for (const minute of QUARTER_MINUTES) {
         const slotTs = new Date(`${dateISO}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`).getTime();
@@ -852,6 +875,11 @@ function InterviewsContent() {
       });
     });
     const mode: DragMode = hasVisible && canDeleteInterviews ? "remove" : "add";
+    if (mode === "add") {
+      setAvailableMessage("Use Add Availability with interviewer name(s) to create new visible slots.");
+      setTimeout(() => setAvailableMessage(null), 2400);
+      return;
+    }
     for (const date of futureDays) {
       const dateISO = toDateString(date);
       for (const minute of QUARTER_MINUTES) {
@@ -873,6 +901,10 @@ function InterviewsContent() {
     }
     if (!startTime || !endTime) {
       setManualAddMessage("Enter valid start and end times in 15-minute increments.");
+      return;
+    }
+    if (normalizeInterviewerNames(manualInterviewers).length === 0) {
+      setManualAddMessage("At least one interviewer is required.");
       return;
     }
 
@@ -1050,6 +1082,11 @@ function InterviewsContent() {
     }
 
     const shouldRepeatWeekly = dragMode === "remove" ? removeWeekly : repeatWeekly;
+    if (dragMode === "add" && normalizeInterviewerNames(batchInterviewers).length === 0) {
+      setAvailableMessage("At least one interviewer is required.");
+      setTimeout(() => setAvailableMessage(null), 2200);
+      return;
+    }
     const planningEndTs = planningWindowEnd(windowAnchor).getTime();
     const seriesId = dragMode === "add" && shouldRepeatWeekly ? buildRecurringSeriesId() : "";
     const uniqueTargets: Record<string, DragCell> = {};
@@ -1093,7 +1130,11 @@ function InterviewsContent() {
     if (!canDeleteInterviews) return;
     if (dragMode !== "remove") return;
     const names = normalizeInterviewerNames(selectedInterviewers);
-    const legacy = names[0] ?? "";
+    if (names.length === 0) {
+      setAvailableMessage("At least one interviewer is required.");
+      setTimeout(() => setAvailableMessage(null), 2200);
+      return;
+    }
     const shouldApplyWeekly = removeWeekly;
     const repeatCount = shouldApplyWeekly ? MAX_WEEK_OFFSET + 1 : 1;
     const planningWindowEnd = new Date();
@@ -1128,7 +1169,6 @@ function InterviewsContent() {
         // eslint-disable-next-line no-await-in-loop
         await updateInterviewSlot(slot.id, {
           interviewerNames: names,
-          interviewerName: legacy,
         });
       }
     } finally {
@@ -1205,8 +1245,9 @@ function InterviewsContent() {
     return visible;
   };
 
-  const TABS: { key: "upcoming" | "availability"; label: string }[] = [
+  const TABS: { key: "upcoming" | "past" | "availability"; label: string }[] = [
     { key: "upcoming", label: "Upcoming Interviews" },
+    { key: "past", label: "Past Interviews" },
     { key: "availability", label: "Availability" },
   ];
 
@@ -1385,6 +1426,42 @@ function InterviewsContent() {
         </div>
       )}
 
+      {activeTab === "past" && (
+        <div className="space-y-5">
+          {pastBookedByDate.length === 0 && (
+            <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-8 text-center text-white/30 text-sm font-body">
+              No past interviews found.
+            </div>
+          )}
+          {pastBookedByDate.map(([day, daySlots]) => (
+            <div key={day}>
+              <h3 className="text-white/60 text-sm font-semibold font-body mb-2">{formatDateHeading(day)}</h3>
+              <div className="space-y-2">
+                {daySlots.map((slot) => {
+                  const displayName = slot.bookerName?.trim() || "Interviewee";
+                  const slotInterviewers = getSlotInterviewerNames(slot);
+                  return (
+                    <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-4 py-3 flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-white/30 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold">{displayName}</p>
+                        <p className="text-white/45 text-xs font-body mt-0.5">
+                          {formatDateTime(slot.datetime)}
+                          {slot.bookerEmail ? ` · ${slot.bookerEmail}` : ""}
+                          {slotInterviewers.length > 0
+                            ? ` · Interviewer${slotInterviewers.length > 1 ? "s" : ""}: ${slotInterviewers.join(", ")}`
+                            : ""}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {activeTab === "availability" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-end">
@@ -1454,63 +1531,6 @@ function InterviewsContent() {
               Interviewer role can add hours but cannot remove existing visible times.
             </p>
           )}
-
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
-            <div>
-              <p className="text-white/85 text-sm font-semibold">Available Slots</p>
-              <p className="text-white/40 text-xs mt-1 font-body">
-                Upcoming availability in the booking window. Edit interviewer names, remove one slot, or manage weekly recurrence.
-              </p>
-            </div>
-            {availableFutureByDate.length === 0 && (
-              <p className="text-white/35 text-sm font-body">No available slots in the current window.</p>
-            )}
-            {availableFutureByDate.map(([day, daySlots]) => (
-              <div key={day}>
-                <h3 className="text-white/55 text-xs font-semibold font-body mb-2 uppercase tracking-wide">{formatDateHeading(day)}</h3>
-                <div className="space-y-2">
-                  {daySlots.map((slot) => {
-                    const interviewerText = (() => {
-                      const names = getSlotInterviewerNames(slot);
-                      return names.length > 0 ? names.join(", ") : "Not set";
-                    })();
-                    return (
-                      <div key={slot.id} className="bg-[#12141B] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#85CC17] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white/90 text-sm font-medium">{formatDateTime(slot.datetime)}</p>
-                          <p className="text-white/45 text-xs mt-0.5">
-                            Interviewer{interviewerText.includes(",") ? "s" : ""}: {interviewerText}
-                            {slot.recurringWeekly ? " · Weekly" : ""}
-                          </p>
-                        </div>
-                        {canDeleteInterviews && (
-                          <div className="flex items-center gap-2 flex-wrap justify-end">
-                            <Btn size="sm" variant="secondary" onClick={() => openEditAvailableSlot(slot)}>
-                              Edit
-                            </Btn>
-                            {!slot.recurringWeekly && (
-                              <Btn size="sm" variant="secondary" onClick={() => makeAvailabilityWeekly(slot)}>
-                                Make Weekly
-                              </Btn>
-                            )}
-                            {slot.recurringWeekly && slot.recurringSeriesId && (
-                              <Btn size="sm" variant="secondary" onClick={() => removeWeeklyAvailabilitySeries(slot)}>
-                                Remove Weekly
-                              </Btn>
-                            )}
-                            <Btn size="sm" variant="danger" onClick={() => removeSingleAvailability(slot)}>
-                              Remove
-                            </Btn>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
 
           <div className="flex items-center gap-4 flex-wrap">
             <button
@@ -1674,6 +1694,63 @@ function InterviewsContent() {
                 ? "Click or drag to select 15-minute slots, then apply changes in the popup"
                 : "Click or drag hidden 15-minute slots to select, then apply additions in the popup"}
             </span>
+          </div>
+
+          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
+            <div>
+              <p className="text-white/85 text-sm font-semibold">Available Slots</p>
+              <p className="text-white/40 text-xs mt-1 font-body">
+                Upcoming availability in the booking window. Edit interviewer names, remove one slot, or manage weekly recurrence.
+              </p>
+            </div>
+            {availableFutureByDate.length === 0 && (
+              <p className="text-white/35 text-sm font-body">No available slots in the current window.</p>
+            )}
+            {availableFutureByDate.map(([day, daySlots]) => (
+              <div key={day}>
+                <h3 className="text-white/55 text-xs font-semibold font-body mb-2 uppercase tracking-wide">{formatDateHeading(day)}</h3>
+                <div className="space-y-2">
+                  {daySlots.map((slot) => {
+                    const interviewerText = (() => {
+                      const names = getSlotInterviewerNames(slot);
+                      return names.length > 0 ? names.join(", ") : "Not set";
+                    })();
+                    return (
+                      <div key={slot.id} className="bg-[#12141B] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#85CC17] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white/90 text-sm font-medium">{formatDateTime(slot.datetime)}</p>
+                          <p className="text-white/45 text-xs mt-0.5">
+                            Interviewer{interviewerText.includes(",") ? "s" : ""}: {interviewerText}
+                            {slot.recurringWeekly ? " · Weekly" : ""}
+                          </p>
+                        </div>
+                        {canDeleteInterviews && (
+                          <div className="flex items-center gap-2 flex-wrap justify-end">
+                            <Btn size="sm" variant="secondary" onClick={() => openEditAvailableSlot(slot)}>
+                              Edit
+                            </Btn>
+                            {!slot.recurringWeekly && (
+                              <Btn size="sm" variant="secondary" onClick={() => makeAvailabilityWeekly(slot)}>
+                                Make Weekly
+                              </Btn>
+                            )}
+                            {slot.recurringWeekly && slot.recurringSeriesId && (
+                              <Btn size="sm" variant="secondary" onClick={() => removeWeeklyAvailabilitySeries(slot)}>
+                                Remove Weekly
+                              </Btn>
+                            )}
+                            <Btn size="sm" variant="danger" onClick={() => removeSingleAvailability(slot)}>
+                              Remove
+                            </Btn>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
