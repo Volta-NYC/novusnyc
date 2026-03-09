@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { updateProfile } from "firebase/auth";
 import { signUp } from "@/lib/members/firebaseAuth";
 import {
   getInviteCodeByValue, updateInviteCode, setUserProfileRecord, type AuthRole,
@@ -103,6 +104,9 @@ export default function SignupPage() {
     try {
       const cred = await signUp(email.trim().toLowerCase(), password);
       uid = cred.user.uid;
+      if (name.trim()) {
+        await updateProfile(cred.user, { displayName: name.trim() });
+      }
       idToken = await cred.user.getIdToken();
     } catch (err: unknown) {
       const errCode = (err as { code?: string })?.code;

@@ -579,12 +579,14 @@ export async function setUserProfileRecord(uid: string, data: Omit<UserProfile, 
   if (!db) return;
   const profileRef = ref(db, `userProfiles/${uid}`);
   const before = await get(profileRef);
-  await set(profileRef, data);
+  const beforeData = before.exists() ? (before.val() as Omit<UserProfile, "id">) : null;
+  const merged = beforeData ? { ...beforeData, ...data } : data;
+  await set(profileRef, merged);
   await writeAuditLog(db, {
     action: before.exists() ? "update" : "create",
     collection: "userProfiles",
     recordId: uid,
-    details: { fields: Object.keys(data) },
+    details: { fields: Object.keys(merged) },
   });
 }
 

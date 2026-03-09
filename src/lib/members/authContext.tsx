@@ -54,12 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const newProfile: UserProfile = {
                 id:        firebaseUser.uid,
                 email:     firebaseUser.email ?? "",
+                name:      firebaseUser.displayName ?? "",
                 authRole:  "member",
                 active:    true,
                 createdAt: new Date().toISOString(),
               };
               await setUserProfileRecord(firebaseUser.uid, {
                 email:     newProfile.email,
+                name:      newProfile.name,
                 authRole:  newProfile.authRole,
                 active:    newProfile.active,
                 createdAt: newProfile.createdAt,

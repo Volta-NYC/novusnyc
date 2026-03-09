@@ -862,9 +862,31 @@ function InterviewsContent() {
     if (dragMode !== "remove") return;
     const names = normalizeInterviewerNames(selectedInterviewers);
     const legacy = names[0] ?? "";
+    const shouldApplyWeekly = removeWeekly;
+    const repeatCount = shouldApplyWeekly ? MAX_WEEK_OFFSET + 1 : 1;
+    const planningWindowEnd = new Date();
+    planningWindowEnd.setDate(planningWindowEnd.getDate() + MAX_WEEK_OFFSET * 7 + 6);
+    const uniqueTargets: Record<string, DragCell> = {};
+
+    Object.values(dragSelection).forEach((cell) => {
+      for (let week = 0; week < repeatCount; week += 1) {
+        const date = new Date(`${cell.dateISO}T00:00:00`);
+        date.setDate(date.getDate() + week * 7);
+        if (date.getTime() > planningWindowEnd.getTime()) break;
+        const dateISO = toDateString(date);
+        const targetKey = `${dateISO}|${cell.hour}|${cell.minute}`;
+        uniqueTargets[targetKey] = {
+          dateISO,
+          hour: cell.hour,
+          minute: cell.minute,
+          rowIndex: cell.rowIndex,
+        };
+      }
+    });
+
     setApplyingBatch(true);
     try {
-      for (const cell of Object.values(dragSelection)) {
+      for (const cell of Object.values(uniqueTargets)) {
         const key = slotKey(cell.dateISO, cell.hour, cell.minute);
         const slot = slotMap[key];
         if (!slot || !slot.available || slot.bookedBy) continue;
