@@ -236,11 +236,17 @@ export default function BIDTrackerPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge label={bid.status} />
-                  <Badge label={bid.priority} />
-                  {canEdit && <Btn size="sm" variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openEdit(bid)}>Edit</Btn>}
-                  {canEdit && <Btn size="sm" variant="danger" className="px-2.5 py-1 text-xs" onClick={() => handleDelete(bid.id)}>Delete</Btn>}
+                <div className="flex flex-col items-end gap-2">
+                  {canEdit && (
+                    <div className="flex items-center gap-1.5">
+                      <Btn size="sm" variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openEdit(bid)}>Edit</Btn>
+                      <Btn size="sm" variant="danger" className="px-2.5 py-1 text-xs" onClick={() => handleDelete(bid.id)}>Delete</Btn>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
+                    <Badge label={bid.status} />
+                    <Badge label={bid.priority} />
+                  </div>
                 </div>
               </div>
 
