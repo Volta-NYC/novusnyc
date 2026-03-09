@@ -38,7 +38,7 @@ export interface BID {
 export interface Business {
   id: string;
   name: string;
-  bidId: string;
+  bidId?: string;
   ownerName: string;
   ownerEmail: string;
   ownerAlternateEmail: string;
@@ -46,10 +46,10 @@ export interface Business {
   alternatePhone: string;
   address: string;
   website: string;
-  activeServices: string[];   // may be undefined if Firebase omitted empty array
+  activeServices?: string[];   // legacy field
   projectStatus: "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
   teamLead: string;
-  languages: string[];        // may be undefined if Firebase omitted empty array
+  languages?: string[];        // legacy field
   firstContactDate: string;
   notes: string;
   createdAt: string;
@@ -57,9 +57,9 @@ export interface Business {
   // Project-level fields (merged from Projects tab)
   division?: "Tech" | "Marketing" | "Finance";
   teamMembers?: string[];     // may be undefined if Firebase omitted empty array
-  githubUrl?: string;
-  driveFolderUrl?: string;
-  clientNotes?: string;
+  githubUrl?: string;         // legacy field
+  driveFolderUrl?: string;    // legacy field
+  clientNotes?: string;       // legacy field
   sortIndex?: number;
 }
 

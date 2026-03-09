@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
-  Empty, StatCard, AutocompleteInput, AutocompleteTagInput, useConfirm,
+  Empty, StatCard, AutocompleteInput, useConfirm,
 } from "@/components/members/ui";
 import {
   subscribeBusinesses, subscribeTeam, createBusiness, updateBusiness, deleteBusiness, type Business, type TeamMember,
@@ -15,8 +15,6 @@ import { useAuth } from "@/lib/members/authContext";
 
 const STATUSES  = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
 const DIVISIONS = ["Tech", "Marketing", "Finance"];
-const SERVICES  = ["Website", "Social Media", "Grant Writing", "SEO", "Financial Analysis", "Digital Payments"];
-const LANGUAGES  = ["English", "Spanish", "Chinese", "Korean", "Arabic", "French", "Other"];
 const SORT_OPTIONS = [
   { value: "status", label: "Status" },
   { value: "name", label: "Name" },
@@ -40,11 +38,20 @@ function nextSortIndex(items: Business[]): number {
 }
 
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
-  name: "", bidId: "", ownerName: "", ownerEmail: "", ownerAlternateEmail: "", phone: "", alternatePhone: "", address: "", website: "",
-  activeServices: [], projectStatus: "Not Started", teamLead: "",
-  languages: [], firstContactDate: "", notes: "",
-  division: "Tech", teamMembers: [],
-  githubUrl: "", driveFolderUrl: "", clientNotes: "",
+  name: "",
+  ownerName: "",
+  ownerEmail: "",
+  ownerAlternateEmail: "",
+  phone: "",
+  alternatePhone: "",
+  address: "",
+  website: "",
+  projectStatus: "Not Started",
+  teamLead: "",
+  firstContactDate: "",
+  notes: "",
+  division: "Tech",
+  teamMembers: [],
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
@@ -59,6 +66,9 @@ export default function BusinessesPage() {
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
+  const [showOwnerAltEmail, setShowOwnerAltEmail] = useState(false);
+  const [showAlternatePhone, setShowAlternatePhone] = useState(false);
+  const [memberInput, setMemberInput] = useState("");
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -70,36 +80,85 @@ export default function BusinessesPage() {
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  const openCreate = () => { setForm(BLANK_FORM); setEditingBusiness(null); setModal("create"); };
+  const openCreate = () => {
+    setForm(BLANK_FORM);
+    setEditingBusiness(null);
+    setShowOwnerAltEmail(false);
+    setShowAlternatePhone(false);
+    setMemberInput("");
+    setModal("create");
+  };
 
   const openEdit = (b: Business) => {
     setForm({
-      name: b.name, bidId: b.bidId, ownerName: b.ownerName, ownerEmail: b.ownerEmail,
+      name: b.name,
+      ownerName: b.ownerName,
+      ownerEmail: b.ownerEmail,
       ownerAlternateEmail: b.ownerAlternateEmail ?? "",
       phone: b.phone, alternatePhone: b.alternatePhone ?? "", address: b.address, website: b.website,
-      activeServices: b.activeServices  ?? [],
       projectStatus:  b.projectStatus,
       teamLead:       b.teamLead,
-      languages:      b.languages       ?? [],
       firstContactDate: b.firstContactDate,
       notes:          b.notes,
       division:       b.division        ?? "Tech",
       teamMembers:    b.teamMembers     ?? [],
-      githubUrl:        b.githubUrl        ?? "",
-      driveFolderUrl:   b.driveFolderUrl   ?? "",
-      clientNotes:      b.clientNotes      ?? "",
     });
     setEditingBusiness(b);
+    setShowOwnerAltEmail(!!(b.ownerAlternateEmail ?? "").trim());
+    setShowAlternatePhone(!!(b.alternatePhone ?? "").trim());
+    setMemberInput("");
     setModal("edit");
+  };
+
+  const addTeamMember = (raw: string) => {
+    const value = raw.trim();
+    if (!value) return;
+    const current = form.teamMembers ?? [];
+    if (current.includes(value)) {
+      setMemberInput("");
+      return;
+    }
+    setField("teamMembers", [...current, value]);
+    setMemberInput("");
+  };
+
+  const removeTeamMember = (name: string) => {
+    const current = form.teamMembers ?? [];
+    setField("teamMembers", current.filter((member) => member !== name));
   };
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
+    const payload: Partial<Business> = {
+      name: form.name.trim(),
+      ownerName: form.ownerName.trim(),
+      ownerEmail: form.ownerEmail.trim(),
+      ownerAlternateEmail: (form.ownerAlternateEmail ?? "").trim(),
+      phone: form.phone.trim(),
+      alternatePhone: (form.alternatePhone ?? "").trim(),
+      address: form.address.trim(),
+      website: form.website.trim(),
+      projectStatus: form.projectStatus,
+      teamLead: form.teamLead.trim(),
+      teamMembers: (form.teamMembers ?? []).map((member) => member.trim()).filter(Boolean),
+      firstContactDate: form.firstContactDate,
+      division: form.division ?? "Tech",
+      notes: form.notes,
+    };
+
     if (editingBusiness) {
-      await updateBusiness(editingBusiness.id, form as Partial<Business>);
+      await updateBusiness(editingBusiness.id, {
+        ...payload,
+        // Remove deprecated keys from legacy entries.
+        activeServices: null as unknown as string[],
+        languages: null as unknown as string[],
+        githubUrl: null as unknown as string,
+        driveFolderUrl: null as unknown as string,
+        clientNotes: null as unknown as string,
+      });
     } else {
       await createBusiness({
-        ...form,
+        ...payload,
         sortIndex: nextSortIndex(businesses),
       } as Omit<Business, "id" | "createdAt" | "updatedAt">);
     }
@@ -239,24 +298,6 @@ export default function BusinessesPage() {
         </div>
       )}
 
-      {/* GitHub / Drive link */}
-      {b.division === "Tech" && b.githubUrl && (
-        <a href={b.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
-          <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.15-1.11-1.46-1.11-1.46-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.58 9.58 0 0 1 12 6.8c.85 0 1.71.11 2.51.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10.01 10.01 0 0 0 22 12c0-5.52-4.48-10-10-10z"/>
-          </svg>
-          <span className="truncate">GitHub</span>
-        </a>
-      )}
-      {b.division !== "Tech" && b.driveFolderUrl && (
-        <a href={b.driveFolderUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
-          <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span className="truncate">Drive Folder</span>
-        </a>
-      )}
-
       {/* Assigned members */}
       <div className="border-t border-white/5 pt-2">
         <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Assigned Members</p>
@@ -372,65 +413,8 @@ export default function BusinessesPage() {
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>
         <div className="grid grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2">
-
-          {/* ── Business Info ── */}
-          <div className="col-span-2">
-            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Business Info</p>
-          </div>
-          <Field label="Business Name" required>
-            <Input value={form.name} onChange={e => setField("name", e.target.value)} />
-          </Field>
-          <Field label="Owner Name">
-            <Input value={form.ownerName} onChange={e => setField("ownerName", e.target.value)} />
-          </Field>
-          <Field label="Owner Email">
-            <Input type="email" value={form.ownerEmail} onChange={e => setField("ownerEmail", e.target.value)} />
-          </Field>
-          <Field label="Alternate Email">
-            <Input type="email" value={form.ownerAlternateEmail ?? ""} onChange={e => setField("ownerAlternateEmail", e.target.value)} />
-          </Field>
-          <Field label="Phone">
-            <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
-          </Field>
-          <Field label="Alternate Phone">
-            <Input value={form.alternatePhone ?? ""} onChange={e => setField("alternatePhone", e.target.value)} />
-          </Field>
-          <Field label="Website">
-            <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
-          </Field>
-          <Field label="First Contact Date">
-            <Input type="date" value={form.firstContactDate} onChange={e => setField("firstContactDate", e.target.value)} />
-          </Field>
-          <div className="col-span-2">
-            <Field label="Address">
-              <Input value={form.address} onChange={e => setField("address", e.target.value)} />
-            </Field>
-          </div>
-          <div className="col-span-2">
-            <Field label="Active Services">
-              <AutocompleteTagInput
-                values={form.activeServices}
-                onChange={v => setField("activeServices", v)}
-                options={SERVICES}
-                commitOnBlur
-                placeholder="Type a service, then Enter/comma"
-              />
-            </Field>
-          </div>
-          <div className="col-span-2">
-            <Field label="Languages Spoken">
-              <AutocompleteTagInput
-                values={form.languages}
-                onChange={v => setField("languages", v)}
-                options={LANGUAGES}
-                commitOnBlur
-                placeholder="Type a language, then Enter/comma"
-              />
-            </Field>
-          </div>
-
           {/* ── Project Info ── */}
-          <div className="col-span-2 mt-2">
+          <div className="col-span-2">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Project Info</p>
           </div>
           <Field label="Status">
@@ -449,28 +433,131 @@ export default function BusinessesPage() {
           </Field>
           <div className="col-span-2">
             <Field label="Assigned Members">
-              <AutocompleteTagInput
-                values={form.teamMembers ?? []}
-                onChange={v => setField("teamMembers", v)}
-                options={teamNameOptions}
-                commitOnBlur
-                placeholder="Type a member name, then Enter"
-              />
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <AutocompleteInput
+                    value={memberInput}
+                    onChange={setMemberInput}
+                    options={teamNameOptions}
+                    placeholder="Type a member name"
+                  />
+                  <Btn size="sm" variant="secondary" onClick={() => addTeamMember(memberInput)}>Add</Btn>
+                </div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {(form.teamMembers ?? []).length === 0 ? (
+                    <p className="text-xs text-white/35">No members assigned yet.</p>
+                  ) : (
+                    (form.teamMembers ?? []).map((member) => (
+                      <div key={member} className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2">
+                        <span className="text-sm text-white/80">{member}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeTeamMember(member)}
+                          className="text-white/30 hover:text-red-400 transition-colors"
+                          aria-label={`Remove ${member}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </Field>
           </div>
-          <div className="col-span-2">
-            <Field label="GitHub Repo URL">
-              <Input value={form.githubUrl ?? ""} onChange={e => setField("githubUrl", e.target.value)} placeholder="https://github.com/…" />
-            </Field>
-          </div>
-          <div className="col-span-2">
-            <Field label="Drive Folder URL">
-              <Input value={form.driveFolderUrl ?? ""} onChange={e => setField("driveFolderUrl", e.target.value)} placeholder="https://drive.google.com/…" />
-            </Field>
-          </div>
+
           <div className="col-span-2">
             <Field label="Notes">
               <TextArea rows={3} value={form.notes} onChange={e => setField("notes", e.target.value)} />
+            </Field>
+          </div>
+
+          {/* ── Business Info ── */}
+          <div className="col-span-2">
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Business Info</p>
+          </div>
+          <Field label="Business Name" required>
+            <Input value={form.name} onChange={e => setField("name", e.target.value)} />
+          </Field>
+          <Field label="Owner Name">
+            <Input value={form.ownerName} onChange={e => setField("ownerName", e.target.value)} />
+          </Field>
+          <Field label="Owner Email">
+            <Input type="email" value={form.ownerEmail} onChange={e => setField("ownerEmail", e.target.value)} />
+          </Field>
+          <div className="col-span-2">
+            {showOwnerAltEmail ? (
+              <div className="space-y-1.5">
+                <Field label="Alternate Email">
+                  <Input
+                    type="email"
+                    value={form.ownerAlternateEmail ?? ""}
+                    onChange={e => setField("ownerAlternateEmail", e.target.value)}
+                  />
+                </Field>
+                <button
+                  type="button"
+                  className="text-xs text-white/45 hover:text-white/70 transition-colors"
+                  onClick={() => {
+                    setField("ownerAlternateEmail", "");
+                    setShowOwnerAltEmail(false);
+                  }}
+                >
+                  Remove alternate email
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="text-xs text-[#85CC17] hover:text-[#A5E236] transition-colors"
+                onClick={() => setShowOwnerAltEmail(true)}
+              >
+                + Add alternate email
+              </button>
+            )}
+          </div>
+          <Field label="Phone">
+            <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
+          </Field>
+          <div className="col-span-2">
+            {showAlternatePhone ? (
+              <div className="space-y-1.5">
+                <Field label="Alternate Phone">
+                  <Input
+                    value={form.alternatePhone ?? ""}
+                    onChange={e => setField("alternatePhone", e.target.value)}
+                  />
+                </Field>
+                <button
+                  type="button"
+                  className="text-xs text-white/45 hover:text-white/70 transition-colors"
+                  onClick={() => {
+                    setField("alternatePhone", "");
+                    setShowAlternatePhone(false);
+                  }}
+                >
+                  Remove alternate phone
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="text-xs text-[#85CC17] hover:text-[#A5E236] transition-colors"
+                onClick={() => setShowAlternatePhone(true)}
+              >
+                + Add alternate phone
+              </button>
+            )}
+          </div>
+          <Field label="Website">
+            <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
+          </Field>
+          <Field label="First Contact Date">
+            <Input type="date" value={form.firstContactDate} onChange={e => setField("firstContactDate", e.target.value)} />
+          </Field>
+          <div className="col-span-2">
+            <Field label="Address">
+              <Input value={form.address} onChange={e => setField("address", e.target.value)} />
             </Field>
           </div>
         </div>
