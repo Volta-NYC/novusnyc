@@ -68,6 +68,17 @@ const QUARTER_MINUTES = [0, 15, 30, 45] as const;
 const GRID_ROWS = GRID_HOURS.length * QUARTER_MINUTES.length;
 const MAX_WEEK_OFFSET = 2; // current week + next 2 weeks
 
+function planningWindowEnd(referenceDate: Date): Date {
+  const weekDates = getWeekDates(MAX_WEEK_OFFSET, referenceDate);
+  const end = new Date(weekDates[6]);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
+function buildRecurringSeriesId(): string {
+  return `weekly-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function toDateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -245,9 +256,15 @@ function InterviewsContent() {
   const [manualInterviewers, setManualInterviewers] = useState<string[]>([]);
   const [manualAddMessage, setManualAddMessage] = useState<string | null>(null);
   const [addingManualAvailability, setAddingManualAvailability] = useState(false);
+  const [availableMessage, setAvailableMessage] = useState<string | null>(null);
+  const [editingAvailableSlot, setEditingAvailableSlot] = useState<InterviewSlot | null>(null);
+  const [editingAvailableInterviewers, setEditingAvailableInterviewers] = useState<string[]>([]);
+  const [applyAvailableEditWeekly, setApplyAvailableEditWeekly] = useState(false);
+  const [savingAvailableEdit, setSavingAvailableEdit] = useState(false);
   const dragSelectionRef = useRef<Record<string, DragCell>>({});
   const dragModeRef = useRef<DragMode | null>(null);
   const dragAnchorRef = useRef<DragAnchor | null>(null);
+  const recurringSyncInFlightRef = useRef(false);
 
   const canAccessInterviews = authRole === "admin" || authRole === "project_lead" || authRole === "interviewer";
   const canDeleteInterviews = authRole === "admin" || authRole === "project_lead";
@@ -301,6 +318,75 @@ function InterviewsContent() {
     }, 12 * 60 * 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!canAccessInterviews || !user?.uid) return;
+    if (recurringSyncInFlightRef.current) return;
+
+    const nowTs = Date.now();
+    const endTs = planningWindowEnd(windowAnchor).getTime();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const existingDateTimes = new Set(slots.map((slot) => slot.datetime));
+    const recurring = slots.filter((slot) =>
+      !!slot.recurringWeekly
+      && !!slot.recurringSeriesId
+      && slot.available
+      && !slot.bookedBy
+      && new Date(slot.datetime).getTime() >= nowTs
+    );
+    if (recurring.length === 0) return;
+
+    const bySeries: Record<string, InterviewSlot[]> = {};
+    recurring.forEach((slot) => {
+      const seriesId = slot.recurringSeriesId;
+      if (!seriesId) return;
+      if (!bySeries[seriesId]) bySeries[seriesId] = [];
+      bySeries[seriesId].push(slot);
+    });
+
+    const missing: Omit<InterviewSlot, "id">[] = [];
+    Object.values(bySeries).forEach((seriesSlots) => {
+      const sorted = [...seriesSlots].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+      const latestInWindow = [...sorted].reverse().find((slot) => new Date(slot.datetime).getTime() <= endTs);
+      if (!latestInWindow) return;
+
+      const template = latestInWindow;
+      let cursor = new Date(template.datetime).getTime() + weekMs;
+      while (cursor <= endTs) {
+        const dt = new Date(cursor).toISOString();
+        if (!existingDateTimes.has(dt)) {
+          existingDateTimes.add(dt);
+          missing.push({
+            datetime: dt,
+            durationMinutes: template.durationMinutes || 15,
+            available: true,
+            interviewerName: (template.interviewerNames?.[0] ?? template.interviewerName ?? "").trim(),
+            interviewerNames: normalizeInterviewerNames(template.interviewerNames ?? []),
+            recurringWeekly: true,
+            recurringSeriesId: template.recurringSeriesId,
+            location: template.location ?? "",
+            createdBy: user.uid,
+            createdAt: Date.now(),
+          });
+        }
+        cursor += weekMs;
+      }
+    });
+
+    if (missing.length === 0) return;
+
+    recurringSyncInFlightRef.current = true;
+    void (async () => {
+      try {
+        for (const slot of missing) {
+          // eslint-disable-next-line no-await-in-loop
+          await createInterviewSlot(slot);
+        }
+      } finally {
+        recurringSyncInFlightRef.current = false;
+      }
+    })();
+  }, [canAccessInterviews, slots, user?.uid, windowAnchor]);
 
   const saveZoomSettings = async () => {
     if (!canEditZoom) return;
@@ -386,11 +472,14 @@ function InterviewsContent() {
   const now = Date.now();
   const weekDates = useMemo(() => getWeekDates(slotWeek, windowAnchor), [slotWeek, windowAnchor]);
 
-  const slotMap: Record<string, InterviewSlot> = {};
-  for (const slot of slots) {
-    const key = slot.datetime.slice(0, 16);
-    slotMap[key] = slot;
-  }
+  const slotMap = useMemo(() => {
+    const next: Record<string, InterviewSlot> = {};
+    for (const slot of slots) {
+      const key = slot.datetime.slice(0, 16);
+      next[key] = slot;
+    }
+    return next;
+  }, [slots]);
 
   const sortedSlots = useMemo(
     () => [...slots].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()),
@@ -447,6 +536,16 @@ function InterviewsContent() {
       sortedSlots.filter((s) => s.available && !s.bookedBy && new Date(s.datetime).getTime() > now),
     [sortedSlots, now]
   );
+
+  const availableFutureByDate = useMemo(() => {
+    const byDate: Record<string, InterviewSlot[]> = {};
+    availableFutureSlots.forEach((slot) => {
+      const day = slot.datetime.slice(0, 10);
+      if (!byDate[day]) byDate[day] = [];
+      byDate[day].push(slot);
+    });
+    return Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [availableFutureSlots]);
 
   const singleSelectedCell = useMemo(() => {
     const entries = Object.values(dragSelection);
@@ -548,12 +647,128 @@ function InterviewsContent() {
     }
   };
 
+  const removeSingleAvailability = (slot: InterviewSlot) => {
+    if (!canDeleteInterviews) return;
+    ask(async () => {
+      await deleteInterviewSlot(slot.id);
+      setAvailableMessage("Availability removed.");
+      setTimeout(() => setAvailableMessage(null), 2200);
+    }, "Remove this availability slot?");
+  };
+
+  const removeWeeklyAvailabilitySeries = (slot: InterviewSlot) => {
+    if (!canDeleteInterviews) return;
+    if (!slot.recurringWeekly || !slot.recurringSeriesId) return;
+    ask(async () => {
+      const nowTs = Date.now();
+      const targets = slots.filter((candidate) =>
+        candidate.recurringSeriesId === slot.recurringSeriesId
+        && candidate.available
+        && !candidate.bookedBy
+        && new Date(candidate.datetime).getTime() >= nowTs
+      );
+      for (const target of targets) {
+        // eslint-disable-next-line no-await-in-loop
+        await deleteInterviewSlot(target.id);
+      }
+      setAvailableMessage(`Removed ${targets.length} weekly availability slot(s).`);
+      setTimeout(() => setAvailableMessage(null), 2400);
+    }, "Remove this slot and all upcoming weekly availabilities in this series?");
+  };
+
+  const makeAvailabilityWeekly = (slot: InterviewSlot) => {
+    if (!canDeleteInterviews) return;
+    if (!slot.available || !!slot.bookedBy) return;
+    ask(async () => {
+      const seriesId = slot.recurringSeriesId || buildRecurringSeriesId();
+      await updateInterviewSlot(slot.id, { recurringWeekly: true, recurringSeriesId: seriesId });
+
+      const endTs = planningWindowEnd(windowAnchor).getTime();
+      const weekMs = 7 * 24 * 60 * 60 * 1000;
+      const existing = new Set(slots.map((s) => s.datetime));
+      existing.add(slot.datetime);
+      let created = 0;
+      let cursor = new Date(slot.datetime).getTime() + weekMs;
+      while (cursor <= endTs) {
+        const dt = new Date(cursor).toISOString();
+        if (!existing.has(dt)) {
+          existing.add(dt);
+          // eslint-disable-next-line no-await-in-loop
+          await createInterviewSlot({
+            datetime: dt,
+            durationMinutes: slot.durationMinutes || 15,
+            available: true,
+            interviewerName: (slot.interviewerNames?.[0] ?? slot.interviewerName ?? "").trim(),
+            interviewerNames: normalizeInterviewerNames(slot.interviewerNames ?? []),
+            recurringWeekly: true,
+            recurringSeriesId: seriesId,
+            location: slot.location ?? "",
+            createdBy: user?.uid ?? "",
+            createdAt: Date.now(),
+          });
+          created += 1;
+        }
+        cursor += weekMs;
+      }
+
+      setAvailableMessage(
+        created > 0
+          ? `Marked weekly and added ${created} recurring slot(s).`
+          : "Marked as weekly recurring."
+      );
+      setTimeout(() => setAvailableMessage(null), 2400);
+    }, "Extend this slot as a weekly recurring availability?");
+  };
+
+  const openEditAvailableSlot = (slot: InterviewSlot) => {
+    setEditingAvailableSlot(slot);
+    setEditingAvailableInterviewers(getSlotInterviewerNames(slot));
+    setApplyAvailableEditWeekly(!!slot.recurringWeekly && !!slot.recurringSeriesId);
+  };
+
+  const saveAvailableInterviewerEdit = async () => {
+    if (!editingAvailableSlot || !canDeleteInterviews) return;
+    const names = normalizeInterviewerNames(editingAvailableInterviewers);
+    const legacy = names[0] ?? "";
+    setSavingAvailableEdit(true);
+    try {
+      if (applyAvailableEditWeekly && editingAvailableSlot.recurringWeekly && editingAvailableSlot.recurringSeriesId) {
+        const nowTs = Date.now();
+        const targets = slots.filter((slot) =>
+          slot.recurringSeriesId === editingAvailableSlot.recurringSeriesId
+          && slot.available
+          && !slot.bookedBy
+          && new Date(slot.datetime).getTime() >= nowTs
+        );
+        for (const target of targets) {
+          // eslint-disable-next-line no-await-in-loop
+          await updateInterviewSlot(target.id, {
+            interviewerNames: names,
+            interviewerName: legacy,
+          });
+        }
+        setAvailableMessage(`Updated interviewer(s) on ${targets.length} weekly slot(s).`);
+      } else {
+        await updateInterviewSlot(editingAvailableSlot.id, {
+          interviewerNames: names,
+          interviewerName: legacy,
+        });
+        setAvailableMessage("Updated interviewer(s).");
+      }
+      setEditingAvailableSlot(null);
+      setTimeout(() => setAvailableMessage(null), 2200);
+    } finally {
+      setSavingAvailableEdit(false);
+    }
+  };
+
   const applySlotAction = async (
     dateISO: string,
     hour: number,
     minute: number,
     mode: DragMode,
-    interviewerNamesInput?: string[]
+    interviewerNamesInput?: string[],
+    recurring?: { enabled: boolean; seriesId?: string }
   ) => {
     const key = slotKey(dateISO, hour, minute);
     const slot = slotMap[key];
@@ -580,6 +795,10 @@ function InterviewsContent() {
           patch.interviewerName = legacyInterviewer;
         }
       }
+      if (recurring?.enabled) {
+        patch.recurringWeekly = true;
+        patch.recurringSeriesId = recurring.seriesId || slot.recurringSeriesId || buildRecurringSeriesId();
+      }
       if (Object.keys(patch).length > 0) {
         await updateInterviewSlot(slot.id, patch);
       }
@@ -593,6 +812,8 @@ function InterviewsContent() {
       location: "",
       interviewerName: legacyInterviewer,
       interviewerNames,
+      recurringWeekly: !!recurring?.enabled,
+      recurringSeriesId: recurring?.enabled ? (recurring.seriesId || buildRecurringSeriesId()) : undefined,
       createdBy: user?.uid ?? "",
       createdAt: Date.now(),
     });
@@ -674,12 +895,15 @@ function InterviewsContent() {
       baseDates.push(toDateString(d));
     }
 
-    const repeatCount = manualRepeatWeekly ? 3 : 1;
+    const endTs = planningWindowEnd(windowAnchor).getTime();
+    const seriesId = manualRepeatWeekly ? buildRecurringSeriesId() : "";
     const uniqueTargets: Record<string, DragCell> = {};
     baseDates.forEach((baseDate) => {
-      for (let week = 0; week < repeatCount; week += 1) {
+      for (let week = 0; week < 60; week += 1) {
         const date = new Date(`${baseDate}T00:00:00`);
         date.setDate(date.getDate() + week * 7);
+        if (!manualRepeatWeekly && week > 0) break;
+        if (date.getTime() > endTs) break;
         const dateISO = toDateString(date);
         for (let t = startMinutes; t < endMinutes; t += 15) {
           const hour = Math.floor(t / 60);
@@ -703,7 +927,14 @@ function InterviewsContent() {
         if (slotTs < Date.now()) continue;
 
         // eslint-disable-next-line no-await-in-loop
-        await applySlotAction(cell.dateISO, cell.hour, cell.minute, "add", manualInterviewers);
+        await applySlotAction(
+          cell.dateISO,
+          cell.hour,
+          cell.minute,
+          "add",
+          manualInterviewers,
+          manualRepeatWeekly ? { enabled: true, seriesId } : undefined
+        );
         applied += 1;
       }
 
@@ -819,16 +1050,16 @@ function InterviewsContent() {
     }
 
     const shouldRepeatWeekly = dragMode === "remove" ? removeWeekly : repeatWeekly;
-    const repeatCount = shouldRepeatWeekly ? MAX_WEEK_OFFSET + 1 : 1;
-    const planningWindowEnd = new Date();
-    planningWindowEnd.setDate(planningWindowEnd.getDate() + MAX_WEEK_OFFSET * 7 + 6);
+    const planningEndTs = planningWindowEnd(windowAnchor).getTime();
+    const seriesId = dragMode === "add" && shouldRepeatWeekly ? buildRecurringSeriesId() : "";
     const uniqueTargets: Record<string, DragCell> = {};
 
     Object.values(dragSelection).forEach((cell) => {
-      for (let week = 0; week < repeatCount; week += 1) {
+      for (let week = 0; week < 60; week += 1) {
         const date = new Date(`${cell.dateISO}T00:00:00`);
         date.setDate(date.getDate() + week * 7);
-        if (date.getTime() > planningWindowEnd.getTime()) break;
+        if (!shouldRepeatWeekly && week > 0) break;
+        if (date.getTime() > planningEndTs) break;
         const dateISO = toDateString(date);
         const key = `${dateISO}|${cell.hour}|${cell.minute}`;
         uniqueTargets[key] = { dateISO, hour: cell.hour, minute: cell.minute, rowIndex: cell.rowIndex };
@@ -848,7 +1079,8 @@ function InterviewsContent() {
           cell.hour,
           cell.minute,
           dragMode,
-          dragMode === "add" ? batchInterviewers : []
+          dragMode === "add" ? batchInterviewers : [],
+          dragMode === "add" && shouldRepeatWeekly ? { enabled: true, seriesId } : undefined
         );
       }
     } finally {
@@ -1216,11 +1448,69 @@ function InterviewsContent() {
             Repeat weekly (same time range for future weeks)
           </label>
           {manualAddMessage && <p className="text-xs text-white/55">{manualAddMessage}</p>}
+          {availableMessage && <p className="text-xs text-white/55">{availableMessage}</p>}
           {!canDeleteInterviews && (
             <p className="text-white/35 text-xs font-body">
               Interviewer role can add hours but cannot remove existing visible times.
             </p>
           )}
+
+          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
+            <div>
+              <p className="text-white/85 text-sm font-semibold">Available Slots</p>
+              <p className="text-white/40 text-xs mt-1 font-body">
+                Upcoming availability in the booking window. Edit interviewer names, remove one slot, or manage weekly recurrence.
+              </p>
+            </div>
+            {availableFutureByDate.length === 0 && (
+              <p className="text-white/35 text-sm font-body">No available slots in the current window.</p>
+            )}
+            {availableFutureByDate.map(([day, daySlots]) => (
+              <div key={day}>
+                <h3 className="text-white/55 text-xs font-semibold font-body mb-2 uppercase tracking-wide">{formatDateHeading(day)}</h3>
+                <div className="space-y-2">
+                  {daySlots.map((slot) => {
+                    const interviewerText = (() => {
+                      const names = getSlotInterviewerNames(slot);
+                      return names.length > 0 ? names.join(", ") : "Not set";
+                    })();
+                    return (
+                      <div key={slot.id} className="bg-[#12141B] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#85CC17] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white/90 text-sm font-medium">{formatDateTime(slot.datetime)}</p>
+                          <p className="text-white/45 text-xs mt-0.5">
+                            Interviewer{interviewerText.includes(",") ? "s" : ""}: {interviewerText}
+                            {slot.recurringWeekly ? " · Weekly" : ""}
+                          </p>
+                        </div>
+                        {canDeleteInterviews && (
+                          <div className="flex items-center gap-2 flex-wrap justify-end">
+                            <Btn size="sm" variant="secondary" onClick={() => openEditAvailableSlot(slot)}>
+                              Edit
+                            </Btn>
+                            {!slot.recurringWeekly && (
+                              <Btn size="sm" variant="secondary" onClick={() => makeAvailabilityWeekly(slot)}>
+                                Make Weekly
+                              </Btn>
+                            )}
+                            {slot.recurringWeekly && slot.recurringSeriesId && (
+                              <Btn size="sm" variant="secondary" onClick={() => removeWeeklyAvailabilitySeries(slot)}>
+                                Remove Weekly
+                              </Btn>
+                            )}
+                            <Btn size="sm" variant="danger" onClick={() => removeSingleAvailability(slot)}>
+                              Remove
+                            </Btn>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
 
           <div className="flex items-center gap-4 flex-wrap">
             <button
@@ -1387,6 +1677,57 @@ function InterviewsContent() {
           </div>
         </div>
       )}
+
+      <Modal
+        open={!!editingAvailableSlot}
+        onClose={() => {
+          if (savingAvailableEdit) return;
+          setEditingAvailableSlot(null);
+        }}
+        title="Edit Available Slot"
+      >
+        {editingAvailableSlot && (
+          <div className="space-y-4">
+            <p className="text-white/60 text-sm font-body">{formatDateTime(editingAvailableSlot.datetime)}</p>
+            <Field label="Interviewer(s)">
+              <AutocompleteTagInput
+                values={editingAvailableInterviewers}
+                onChange={setEditingAvailableInterviewers}
+                options={interviewerOptions}
+                commitOnBlur
+                placeholder="Type a name, then Enter/comma"
+              />
+            </Field>
+            {editingAvailableSlot.recurringWeekly && editingAvailableSlot.recurringSeriesId && (
+              <label className="inline-flex items-center gap-2 text-sm text-white/70 font-body select-none">
+                <input
+                  type="checkbox"
+                  checked={applyAvailableEditWeekly}
+                  onChange={(e) => setApplyAvailableEditWeekly(e.target.checked)}
+                  className="accent-[#85CC17] w-4 h-4"
+                />
+                Apply to all upcoming weekly slots in this series
+              </label>
+            )}
+          </div>
+        )}
+        <div className="flex justify-end gap-2 mt-5">
+          <Btn
+            variant="ghost"
+            onClick={() => setEditingAvailableSlot(null)}
+            disabled={savingAvailableEdit}
+          >
+            Cancel
+          </Btn>
+          <Btn
+            variant="primary"
+            onClick={() => void saveAvailableInterviewerEdit()}
+            disabled={savingAvailableEdit}
+          >
+            {savingAvailableEdit ? "Saving..." : "Save"}
+          </Btn>
+        </div>
+      </Modal>
 
       <Modal
         open={showBatchModal}

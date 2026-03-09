@@ -431,7 +431,11 @@ export default function TeamPage() {
   const sorted = [...filtered].sort((a, b) => {
     let cmp = 0;
     switch (sortCol) {
-      case 0: cmp = getMemberTrack(a).localeCompare(getMemberTrack(b)); break;
+      case 0: {
+        const trackCmp = getMemberTrack(a).localeCompare(getMemberTrack(b));
+        cmp = trackCmp !== 0 ? trackCmp : a.name.localeCompare(b.name);
+        break;
+      }
       case 1: cmp = a.name.localeCompare(b.name); break;
       case 2: cmp = (a.email || "").localeCompare(b.email || ""); break;
       case 3: cmp = (a.school || "").localeCompare(b.school || ""); break;

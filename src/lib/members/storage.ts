@@ -209,6 +209,8 @@ export interface InterviewSlot {
   bookerEmail?: string;   // email entered by applicant at booking time
   interviewerName?: string;
   interviewerNames?: string[];
+  recurringWeekly?: boolean;
+  recurringSeriesId?: string;
   location?: string;
   createdBy: string;      // uid
   createdAt: number;      // Unix ms timestamp
