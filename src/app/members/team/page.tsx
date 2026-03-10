@@ -173,6 +173,7 @@ export default function TeamPage() {
   const [draggingSelect, setDraggingSelect] = useState(false);
   const [selectionRect, setSelectionRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [copiedEmails, setCopiedEmails] = useState(false);
+  const [emailSelectMode, setEmailSelectMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const tableWrapRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -459,16 +460,12 @@ export default function TeamPage() {
     const seen = new Set<string>();
     sorted.forEach((member) => {
       if (!selectedSet.has(member.id)) return;
-      const emails = [member.email, member.alternateEmail ?? ""];
-      emails
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .forEach((email) => {
-          const key = email.toLowerCase();
-          if (seen.has(key)) return;
-          seen.add(key);
-          deduped.push(email);
-        });
+      const email = (member.email ?? "").trim();
+      if (!email) return;
+      const key = email.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      deduped.push(email);
     });
     return deduped;
   })();
@@ -477,6 +474,12 @@ export default function TeamPage() {
     if (selectedEmailList.length === 0) return;
     await navigator.clipboard.writeText(selectedEmailList.join(", "));
     setCopiedEmails(true);
+    setEmailSelectMode(false);
+    setSelectionRect(null);
+    setSelectedMemberIds([]);
+    dragStartRef.current = null;
+    dragPointerIdRef.current = null;
+    setDraggingSelect(false);
     setTimeout(() => setCopiedEmails(false), 1600);
   };
 
@@ -484,9 +487,11 @@ export default function TeamPage() {
     setSelectedMemberIds([]);
     setSelectionRect(null);
     setDraggingSelect(false);
+    setEmailSelectMode(false);
   };
 
   const handleTablePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!emailSelectMode) return;
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (target.closest("button, a, input, textarea, select, label")) return;
@@ -505,6 +510,7 @@ export default function TeamPage() {
   };
 
   const handleTablePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!emailSelectMode) return;
     if (!draggingSelect || dragPointerIdRef.current !== e.pointerId) return;
     const start = dragStartRef.current;
     const container = tableWrapRef.current;
@@ -543,6 +549,7 @@ export default function TeamPage() {
   };
 
   const handleTablePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!emailSelectMode) return;
     if (!draggingSelect || dragPointerIdRef.current !== e.pointerId) return;
     const container = tableWrapRef.current;
     if (container) container.releasePointerCapture(e.pointerId);
@@ -591,14 +598,28 @@ export default function TeamPage() {
       {/* Search controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
-        <Btn
-          variant="secondary"
-          onClick={copySelectedEmails}
-          disabled={selectedEmailList.length === 0}
-        >
-          {copiedEmails ? "Copied" : `Copy selected emails${selectedEmailList.length > 0 ? ` (${selectedEmailList.length})` : ""}`}
-        </Btn>
-        {selectedMemberIds.length > 0 && (
+        {!emailSelectMode ? (
+          <Btn
+            variant="secondary"
+            onClick={() => {
+              setEmailSelectMode(true);
+              setSelectedMemberIds([]);
+              setSelectionRect(null);
+              setDraggingSelect(false);
+            }}
+          >
+            Select Emails
+          </Btn>
+        ) : (
+          <Btn
+            variant="secondary"
+            onClick={copySelectedEmails}
+            disabled={selectedEmailList.length === 0}
+          >
+            {copiedEmails ? "Copied" : `Copy selected emails${selectedEmailList.length > 0 ? ` (${selectedEmailList.length})` : ""}`}
+          </Btn>
+        )}
+        {emailSelectMode && (
           <Btn variant="ghost" onClick={clearSelection}>Clear Selection</Btn>
         )}
       </div>
@@ -612,7 +633,7 @@ export default function TeamPage() {
         onPointerUp={handleTablePointerUp}
         onPointerCancel={handleTablePointerUp}
       >
-        {selectionRect && (
+        {emailSelectMode && selectionRect && (
           <div
             className="absolute z-20 border border-[#85CC17]/70 bg-[#85CC17]/20 pointer-events-none"
             style={{
