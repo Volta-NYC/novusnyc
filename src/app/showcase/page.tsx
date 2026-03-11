@@ -124,7 +124,7 @@ export default function Showcase() {
                 <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
                   <div className={`${p.color} h-2`} />
                   <div className="mx-7 mt-7 rounded-xl border border-v-border bg-v-bg h-40 flex items-center justify-center">
-                    <span className="font-body text-xs text-v-muted uppercase tracking-wider">Image placeholder</span>
+                    <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                   </div>
                   <div className="p-7 flex-1 flex flex-col">
                     <div className="flex items-start justify-between mb-4">

@@ -108,92 +108,10 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ── WHAT YOU GET + WHY IT'S FREE ─────────────────────── */}
-      <section className="py-20 bg-white border-b border-v-border">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <div className="grid md:grid-cols-2 gap-16 items-start">
-            <AnimatedSection direction="left">
-              <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-5">
-                What your business gets
-              </p>
-              <ul className="space-y-4">
-                {[
-                  "A custom website, built and deployed",
-                  "Social media strategy and account management",
-                  "Grant research and full application writing",
-                  "Google Maps, Yelp, and SEO optimization",
-                  "POS and sales data analysis",
-                  "Digital payment and online ordering setup",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 font-body text-v-ink text-base">
-                    <span className="w-1.5 h-1.5 rounded-full bg-v-green flex-shrink-0 mt-2" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </AnimatedSection>
-            <AnimatedSection direction="right">
-              <div className="bg-v-bg border border-v-border rounded-2xl p-8">
-                <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
-                  Why is this free?
-                </p>
-                <p className="font-body text-v-ink text-lg leading-relaxed mb-4">
-                  Our students want hands-on experience they can put on a resume
-                  and in their portfolio. Working with real businesses gives them that.
-                </p>
-                <p className="font-body text-v-muted leading-relaxed">
-                  Your business gets the work done, they get the skills and credentials.
-                  This is the mutual benefit we want to create.
-                </p>
-              </div>
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
-
-      {/* ── PROCESS ──────────────────────────────────────────── */}
-      <section className="py-16 bg-white border-b border-v-border">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
-              How it works
-            </p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
-              Three steps.
-            </h2>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              {
-                n: "1",
-                title: "Tell us what you need",
-                desc: "Fill out the form below or get referred by your local BID. We respond within a few days.",
-              },
-              {
-                n: "2",
-                title: "We scope the work",
-                desc: "A quick call or in-person visit to understand your business, your challenges, and what's realistic.",
-              },
-              {
-                n: "3",
-                title: "Your team gets to work",
-                desc: "A dedicated student pod is assigned to your project. One point of contact throughout.",
-              },
-            ].map((s, i) => (
-              <AnimatedSection key={s.n} delay={i * 0.1} className="text-center">
-                <p className="font-display font-bold text-v-green text-5xl leading-none mb-4">{s.n}</p>
-                <h3 className="font-display font-bold text-v-ink text-lg mb-2">{s.title}</h3>
-                <p className="font-body text-sm text-v-muted leading-relaxed">{s.desc}</p>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── SERVICES ─────────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-14 bg-v-bg border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
+          <AnimatedSection className="mb-8">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
               What we deliver
             </p>
@@ -201,15 +119,15 @@ export default function Partners() {
               Six service areas.
             </h2>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {partnerServices.map((s, i) => (
               <AnimatedSection key={s.title} delay={i * 0.07}>
-                <div className="bg-white border border-v-border rounded-2xl p-7 project-card h-full">
-                  <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center mb-4`}>
-                    <s.icon className={`w-5 h-5 ${s.color}`} />
+                <div className="bg-white border border-v-border rounded-2xl p-5 project-card h-full">
+                  <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+                    <s.icon className={`w-4 h-4 ${s.color}`} />
                   </div>
-                  <h3 className="font-display font-bold text-v-ink mb-2">{s.title}</h3>
-                  <p className="font-body text-sm text-v-muted leading-relaxed">{s.desc}</p>
+                  <h3 className="font-display font-bold text-v-ink text-base mb-1.5">{s.title}</h3>
+                  <p className="font-body text-xs text-v-muted leading-relaxed">{s.desc}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -218,7 +136,7 @@ export default function Partners() {
       </section>
 
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg" id="contact">
+      <section className="py-16 bg-v-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
@@ -230,7 +148,7 @@ export default function Partners() {
             <p className="font-body text-v-muted max-w-xl">
               Tell us about your business and what you need. Switch the form to your
               preferred language using the toggle below. If you were referred by a BID,
-              mention that in your message.
+              mention that in your message. We&apos;re also open to a quick Zoom chat.
             </p>
           </AnimatedSection>
           <AnimatedSection>
@@ -254,7 +172,7 @@ export default function Partners() {
                 We partner with Business Improvement Districts to coordinate
                 neighborhood-level operations — identifying businesses that need
                 support, making introductions, and ensuring follow-through on every
-                project.
+                project. We&apos;re also open to a quick Zoom chat to discuss fit.
               </p>
               <a
                 href="mailto:info@voltanyc.org"

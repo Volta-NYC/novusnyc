@@ -6,12 +6,28 @@
 - CSI High School for International Studies
 - Staten Island Technical High School
 - Marvin Ridge High School
-- Manhattan / Hunter Science High School
+- Manhattan Hunter Science High School
 - Manhattan Center for Science and Mathematics
 - Staten Island Academy
 - Brooklyn Technical High School
 - Great Neck South High School
 - New Explorations into Science, Technology and Math (NEST+m)
+- Marriott's Ridge High School
+- Skyline High School
+- Seminole High School
+- South Brunswick High School
+- Virtual Virginia Academy
+- Seattle VocTech
+- Spain Park High School
+- Burlingame High School
+- Academy of Greatness and Excellence
+- Rouse High School
+- The Brooklyn Latin School
+- North Forsyth High School
+- Prosper High School
+- Bard High School Early College
+- Garnet Valley High School
+- Academy for Mathematics, Science, and Engineering
 
 ## Colleges & Universities
 - Binghamton University

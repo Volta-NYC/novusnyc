@@ -93,7 +93,22 @@ type ExistingBooking = {
   datetime: string;
 };
 
+type ApplicationEntry = {
+  id: string;
+  row: Record<string, unknown>;
+};
+
 const THREE_WEEKS_MS = 21 * 24 * 60 * 60 * 1000;
+const TERMINAL_APPLICATION_STATUSES = new Set(["accepted", "waitlisted", "not accepted"]);
+
+function normalizeKey(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function toTimestamp(value: unknown): number {
+  const ms = Date.parse(String(value ?? ""));
+  return Number.isNaN(ms) ? 0 : ms;
+}
 
 function hasInterviewerMembers(slot: Record<string, unknown>): boolean {
   const ids = slot.interviewerMemberIds;
@@ -188,6 +203,78 @@ async function clearExistingBooking(slotId: string): Promise<void> {
     bookerEmail: "",
     reminderSentAt: "",
   });
+}
+
+function pickApplicationByEmailAndName(
+  entries: ApplicationEntry[],
+  email: string,
+  name: string,
+): ApplicationEntry | null {
+  const targetEmail = normalizeKey(email);
+  const targetName = normalizeKey(name);
+  const emailMatches = entries.filter(({ row }) => normalizeKey(row.email) === targetEmail);
+  if (emailMatches.length === 0) return null;
+
+  const nameMatches = targetName
+    ? emailMatches.filter(({ row }) => normalizeKey(row.fullName) === targetName)
+    : [];
+  const pool = nameMatches.length > 0 ? nameMatches : emailMatches;
+  pool.sort((a, b) => {
+    const aTime = Math.max(toTimestamp(a.row.updatedAt), toTimestamp(a.row.createdAt));
+    const bTime = Math.max(toTimestamp(b.row.updatedAt), toTimestamp(b.row.createdAt));
+    return bTime - aTime;
+  });
+  return pool[0] ?? null;
+}
+
+async function syncApplicationInterviewScheduled(params: {
+  bookingEmail: string;
+  bookingName: string;
+  newSlotId: string;
+  newDatetimeIso: string;
+  inviteToken?: string;
+  previousSlotIds?: string[];
+}): Promise<void> {
+  const email = normalizeKey(params.bookingEmail);
+  if (!email || !params.newSlotId || !params.newDatetimeIso) return;
+
+  const applicationsData = await dbGet("applications");
+  if (!applicationsData || typeof applicationsData !== "object") return;
+
+  const entries = Object.entries(applicationsData as Record<string, Record<string, unknown>>)
+    .map(([id, row]) => ({ id, row: row ?? {} }));
+
+  let target: ApplicationEntry | null = null;
+  const inviteToken = normalizeKey(params.inviteToken);
+  if (inviteToken) {
+    target = entries.find(({ row }) => normalizeKey(row.interviewInviteToken) === inviteToken) ?? null;
+  }
+
+  if (!target && params.previousSlotIds?.length) {
+    const previousIds = new Set(params.previousSlotIds.map((value) => normalizeKey(value)));
+    target = entries.find(({ row }) => (
+      normalizeKey(row.email) === email
+      && previousIds.has(normalizeKey(row.interviewSlotId))
+    )) ?? null;
+  }
+
+  if (!target) {
+    target = pickApplicationByEmailAndName(entries, email, params.bookingName);
+  }
+  if (!target) return;
+
+  const status = normalizeKey(target.row.status);
+  const patch: Record<string, unknown> = {
+    interviewSlotId: params.newSlotId,
+    interviewScheduledAt: params.newDatetimeIso,
+    updatedAt: new Date().toISOString(),
+    interviewInviteToken: params.inviteToken ?? target.row.interviewInviteToken ?? "",
+  };
+  if (!TERMINAL_APPLICATION_STATUSES.has(status)) {
+    patch.status = "Interview Scheduled";
+  }
+
+  await dbPatch(`applications/${target.id}`, patch);
 }
 
 // ── GET /api/booking/[token] ──────────────────────────────────────────────────
@@ -367,6 +454,15 @@ export async function POST(req: NextRequest, { params }: Params) {
   const durationMinutes = Number(slot.durationMinutes ?? 30);
   const datetimeIso = typeof slot.datetime === "string" ? slot.datetime : "";
   const location = typeof slot.location === "string" ? slot.location : "";
+  await syncApplicationInterviewScheduled({
+    bookingEmail: cleanEmail,
+    bookingName: cleanName,
+    newSlotId: slotId,
+    newDatetimeIso: datetimeIso,
+    inviteToken: token,
+    previousSlotIds: replacedBookings.map((booking) => booking.id),
+  }).catch(() => {});
+
   if (cleanEmail && datetimeIso) {
     let settingsData: unknown = null;
     let teamData: unknown = null;

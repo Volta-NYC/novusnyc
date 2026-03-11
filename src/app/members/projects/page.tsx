@@ -262,7 +262,12 @@ export default function BusinessesPage() {
       {/* Name + badges */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-white font-bold text-base leading-tight break-words">{b.name}</p>
+          <p className="text-white font-bold text-base leading-tight break-words">
+            {b.name}
+            {b.intakeSource === "website_form" && (
+              <span className="text-amber-300 ml-1" title="Submitted via website form">★</span>
+            )}
+          </p>
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           <Badge label={b.projectStatus} />
@@ -335,6 +340,9 @@ export default function BusinessesPage() {
         subtitle={`${filtered.length} shown · ${businesses.length} total projects`}
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Project</Btn> : undefined}
       />
+      <p className="text-xs text-white/45 mb-4">
+        <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
+      </p>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-5">

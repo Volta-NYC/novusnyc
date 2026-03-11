@@ -8,13 +8,15 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const links = [
   { href: "/showcase", label: "Our Work" },
+  { href: "/guides", label: "Guides" },
+  { href: "/updates", label: "Updates" },
   { href: "/about", label: "About" },
   { href: "/partners", label: "For Businesses" },
 ];
 
 const studentsLinks = [
-  { href: "/students", label: "For Students" },
-  { href: "/join", label: "Join the Team" },
+  { href: "/join", label: "For Students" },
+  { href: "/apply", label: "Apply" },
 ];
 
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */

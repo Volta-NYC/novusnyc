@@ -83,12 +83,24 @@ export const homeTracks = [
 
 export const marqueeSchools = [
   "Stuyvesant High School",
-  "Brooklyn Tech",
-  "Bronx Science",
-  "Staten Island Tech",
+  "Brooklyn Technical High School",
+  "The Brooklyn Latin School",
+  "Manhattan Hunter Science High School",
+  "Staten Island Technical High School",
+  "Marriott's Ridge High School",
+  "Skyline High School",
+  "Seminole High School",
+  "South Brunswick High School",
+  "Virtual Virginia Academy",
+  "Seattle VocTech",
+  "Spain Park High School",
+  "Burlingame High School",
+  "Rouse High School",
+  "North Forsyth High School",
+  "Prosper High School",
+  "Bard High School Early College",
   "Binghamton University",
   "Hunter College",
-  "Stony Brook University",
   "Baruch College",
 ];
 

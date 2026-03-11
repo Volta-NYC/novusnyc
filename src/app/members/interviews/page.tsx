@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
@@ -587,14 +587,14 @@ function InterviewsContent() {
         .filter(Boolean)
     );
 
-  const interviewerDisplaysFromSlot = (slot: InterviewSlot): string[] => {
+  const interviewerDisplaysFromSlot = useCallback((slot: InterviewSlot): string[] => {
     const ids = Array.isArray(slot.interviewerMemberIds)
       ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
       : [];
     return ids
       .map((id) => interviewerDisplayOptions.find((option) => option.id === id)?.display ?? "")
       .filter(Boolean);
-  };
+  }, [interviewerDisplayOptions]);
 
   const typedDateOptions = useMemo(() => {
     const start = new Date(windowAnchor);
@@ -1370,7 +1370,7 @@ function InterviewsContent() {
     };
     window.addEventListener("pointerup", handlePointerUp);
     return () => window.removeEventListener("pointerup", handlePointerUp);
-  }, [draggingSelection, slotMap]);
+  }, [draggingSelection, slotMap, interviewerDisplaysFromSlot]);
 
   const onJumpDateChange = (nextDate: string) => {
     setJumpToDate(nextDate);

@@ -12,9 +12,88 @@ export const revalidate = 0;
 export const runtime = "nodejs";
 
 type SlotRecord = Record<string, unknown>;
+type ApplicationEntry = { id: string; row: Record<string, unknown> };
+const TERMINAL_APPLICATION_STATUSES = new Set(["accepted", "waitlisted", "not accepted"]);
 
 function normalizeId(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeKey(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function toTimestamp(value: unknown): number {
+  const ms = Date.parse(String(value ?? ""));
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
+function pickApplicationByEmailAndName(
+  entries: ApplicationEntry[],
+  email: string,
+  name: string,
+): ApplicationEntry | null {
+  const targetEmail = normalizeKey(email);
+  const targetName = normalizeKey(name);
+  const emailMatches = entries.filter(({ row }) => normalizeKey(row.email) === targetEmail);
+  if (emailMatches.length === 0) return null;
+
+  const nameMatches = targetName
+    ? emailMatches.filter(({ row }) => normalizeKey(row.fullName) === targetName)
+    : [];
+  const pool = nameMatches.length > 0 ? nameMatches : emailMatches;
+  pool.sort((a, b) => {
+    const aTime = Math.max(toTimestamp(a.row.updatedAt), toTimestamp(a.row.createdAt));
+    const bTime = Math.max(toTimestamp(b.row.updatedAt), toTimestamp(b.row.createdAt));
+    return bTime - aTime;
+  });
+  return pool[0] ?? null;
+}
+
+async function syncApplicationAfterReschedule(params: {
+  fromSlotId: string;
+  toSlotId: string;
+  toDatetime: string;
+  bookedBy: string;
+  bookerEmail: string;
+  bookerName: string;
+  idToken: string;
+}): Promise<void> {
+  const applications = await dbRead("applications", params.idToken);
+  if (!applications || typeof applications !== "object") return;
+
+  const entries = Object.entries(applications as Record<string, Record<string, unknown>>)
+    .map(([id, row]) => ({ id, row: row ?? {} }));
+
+  let target: ApplicationEntry | null = null;
+  const bookedBy = normalizeKey(params.bookedBy);
+  if (bookedBy && bookedBy !== "public-booking") {
+    target = entries.find(({ row }) => normalizeKey(row.interviewInviteToken) === bookedBy) ?? null;
+  }
+  if (!target) {
+    target = entries.find(({ row }) => (
+      normalizeKey(row.interviewSlotId) === normalizeKey(params.fromSlotId)
+      && normalizeKey(row.email) === normalizeKey(params.bookerEmail)
+    )) ?? null;
+  }
+  if (!target) {
+    target = pickApplicationByEmailAndName(entries, params.bookerEmail, params.bookerName);
+  }
+  if (!target) return;
+
+  const status = normalizeKey(target.row.status);
+  const patch: Record<string, unknown> = {
+    interviewSlotId: params.toSlotId,
+    interviewScheduledAt: params.toDatetime,
+    updatedAt: new Date().toISOString(),
+  };
+  if (bookedBy && bookedBy !== "public-booking") {
+    patch.interviewInviteToken = params.bookedBy;
+  }
+  if (!TERMINAL_APPLICATION_STATUSES.has(status)) {
+    patch.status = "Interview Scheduled";
+  }
+  await dbPatch(`applications/${target.id}`, patch, params.idToken);
 }
 
 export async function POST(req: NextRequest) {
@@ -72,6 +151,16 @@ export async function POST(req: NextRequest) {
     bookerEmail: "",
     reminderSentAt: "",
   }, verified.caller.idToken);
+
+  await syncApplicationAfterReschedule({
+    fromSlotId,
+    toSlotId,
+    toDatetime,
+    bookedBy: fromBookedBy,
+    bookerEmail: fromEmail,
+    bookerName: fromName,
+    idToken: verified.caller.idToken,
+  }).catch(() => {});
 
   const actorName = verified.caller.name || verified.caller.email;
   await dbPush("auditLogs", {

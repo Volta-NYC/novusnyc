@@ -61,6 +61,7 @@ export interface Business {
   driveFolderUrl?: string;    // legacy field
   clientNotes?: string;       // legacy field
   sortIndex?: number;
+  intakeSource?: "website_form";
 }
 
 export interface Task {
@@ -116,6 +117,39 @@ export interface TeamMember {
   joinDate: string;
   notes: string;
   createdAt: string;
+}
+
+export type ApplicationStatus =
+  | "New"
+  | "Reviewing"
+  | "Interview Pending"
+  | "Interview Scheduled"
+  | "Accepted"
+  | "Waitlisted"
+  | "Not Accepted";
+
+export interface ApplicationRecord {
+  id: string;
+  fullName: string;
+  email: string;
+  schoolName: string;
+  grade?: string;
+  cityState?: string;
+  referral?: string;
+  tracksSelected?: string;
+  hasResume?: string;
+  resumeUrl?: string;
+  toolsSoftware?: string;
+  accomplishment?: string;
+  status: ApplicationStatus;
+  notes?: string;
+  interviewInviteToken?: string;
+  interviewSlotId?: string;
+  interviewScheduledAt?: string;
+  source?: "website_form" | "csv_import" | "manual";
+  sourceTimestampRaw?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Project {
@@ -294,6 +328,67 @@ function makeSubscriber<T>(path: string) {
   };
 }
 
+function readLegacyText(row: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function normalizeTimestamp(value: unknown, fallbackIso?: string): string {
+  if (typeof value === "string" && value.trim()) {
+    const ms = Date.parse(value.trim());
+    if (!Number.isNaN(ms)) return new Date(ms).toISOString();
+    return value.trim();
+  }
+  return fallbackIso ?? nowISO();
+}
+
+function normalizeApplicationStatus(raw: string, hasScheduledInterview: boolean): ApplicationStatus {
+  const key = raw.trim().toLowerCase();
+  if (key === "reviewing") return "Reviewing";
+  if (key === "interview pending") return "Interview Pending";
+  if (key === "interview scheduled") return "Interview Scheduled";
+  if (key === "accepted") return "Accepted";
+  if (key === "waitlisted") return "Waitlisted";
+  if (key === "not accepted" || key === "rejected") return "Not Accepted";
+  if (hasScheduledInterview) return "Interview Scheduled";
+  return "New";
+}
+
+function normalizeApplicationRecord(id: string, row: Record<string, unknown>): ApplicationRecord {
+  const createdAt = normalizeTimestamp(row.createdAt ?? row.Timestamp);
+  const updatedAt = normalizeTimestamp(row.updatedAt, createdAt);
+  const interviewSlotId = readLegacyText(row, ["interviewSlotId"]);
+  const interviewScheduledAt = readLegacyText(row, ["interviewScheduledAt"]);
+  const hasScheduledInterview = !!(interviewSlotId || interviewScheduledAt);
+
+  return {
+    id,
+    fullName: readLegacyText(row, ["fullName", "Full Name", "name"]),
+    email: readLegacyText(row, ["email", "Email"]).toLowerCase(),
+    schoolName: readLegacyText(row, ["schoolName", "School Name", "Education", "school"]),
+    grade: readLegacyText(row, ["grade", "Grade"]),
+    cityState: readLegacyText(row, ["cityState", "City, State", "City"]),
+    referral: readLegacyText(row, ["referral", "How They Heard"]),
+    tracksSelected: readLegacyText(row, ["tracksSelected", "Tracks Selected"]),
+    hasResume: readLegacyText(row, ["hasResume", "Has Resume"]),
+    resumeUrl: readLegacyText(row, ["resumeUrl", "Resume URL"]),
+    toolsSoftware: readLegacyText(row, ["toolsSoftware", "Tools/Software"]),
+    accomplishment: readLegacyText(row, ["accomplishment", "Accomplishment"]),
+    status: normalizeApplicationStatus(readLegacyText(row, ["status"]), hasScheduledInterview),
+    notes: readLegacyText(row, ["notes", "Notes"]),
+    interviewInviteToken: readLegacyText(row, ["interviewInviteToken"]),
+    interviewSlotId,
+    interviewScheduledAt,
+    source: (readLegacyText(row, ["source"]) as ApplicationRecord["source"]) || undefined,
+    sourceTimestampRaw: readLegacyText(row, ["sourceTimestampRaw", "Timestamp"]),
+    createdAt,
+    updatedAt,
+  };
+}
+
 // ── REAL-TIME SUBSCRIBERS ─────────────────────────────────────────────────────
 
 export const subscribeBIDs        = makeSubscriber<BID>("bids");
@@ -303,6 +398,25 @@ export const subscribeGrants      = makeSubscriber<Grant>("grants");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
 export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
+
+export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
+  const database = getDB();
+  if (!database) {
+    callback([]);
+    return () => {};
+  }
+  const dbRef = ref(database, "applications");
+  const handler = onValue(dbRef, (snap) => {
+    const val = snap.val() as Record<string, Record<string, unknown>> | null;
+    if (!val) {
+      callback([]);
+      return;
+    }
+    const list = Object.entries(val).map(([id, row]) => normalizeApplicationRecord(id, row ?? {}));
+    callback(list);
+  });
+  return () => off(dbRef, "value", handler);
+}
 
 // ── BIDs ──────────────────────────────────────────────────────────────────────
 
@@ -494,6 +608,39 @@ export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt"
     action: "create",
     collection: "team",
     recordId: memberRef.key ?? "",
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function createApplicationRecord(
+  data: Omit<ApplicationRecord, "id" | "createdAt" | "updatedAt">
+    & Partial<Pick<ApplicationRecord, "createdAt" | "updatedAt">>
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const appRef = push(ref(db, "applications"));
+  const createdAt = data.createdAt ?? nowISO();
+  const updatedAt = data.updatedAt ?? createdAt;
+  await set(appRef, { ...data, createdAt, updatedAt });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "applications",
+    recordId: appRef.key ?? "",
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function updateApplicationRecord(
+  id: string,
+  data: Partial<ApplicationRecord>
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `applications/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "applications",
+    recordId: id,
     details: { fields: Object.keys(data) },
   });
 }
@@ -830,6 +977,52 @@ export async function deleteBookedInterview(slotId: string): Promise<void> {
     bookerEmail: "",
     reminderSentAt: "",
   });
+
+  const bookedEmail = String(slot.bookerEmail ?? "").trim().toLowerCase();
+  const bookedName = String(slot.bookerName ?? "").trim().toLowerCase();
+  const bookedBy = String(slot.bookedBy ?? "").trim();
+  if (bookedEmail) {
+    const appsSnap = await get(ref(db, "applications"));
+    if (appsSnap.exists()) {
+      const entries = appsSnap.val() as Record<string, Record<string, unknown>>;
+      const appEntries = Object.entries(entries).map(([id, row]) => ({ id, row: row ?? {} }));
+      const now = nowISO();
+      const terminal = new Set(["accepted", "waitlisted", "not accepted"]);
+      let target = appEntries.find(({ row }) => {
+        const token = String(row.interviewInviteToken ?? "").trim();
+        return bookedBy && bookedBy !== "public-booking" && token === bookedBy;
+      });
+      if (!target) {
+        target = appEntries.find(({ row }) => (
+          String(row.interviewSlotId ?? "").trim() === slotId
+          && String(row.email ?? "").trim().toLowerCase() === bookedEmail
+        ));
+      }
+      if (!target) {
+        const candidates = appEntries
+          .filter(({ row }) => String(row.email ?? "").trim().toLowerCase() === bookedEmail)
+          .sort((a, b) => {
+            const aTime = Date.parse(String(a.row.updatedAt ?? a.row.createdAt ?? ""));
+            const bTime = Date.parse(String(b.row.updatedAt ?? b.row.createdAt ?? ""));
+            return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+          });
+        target = candidates.find(({ row }) => String(row.fullName ?? "").trim().toLowerCase() === bookedName) ?? candidates[0];
+      }
+      if (target) {
+        const currentStatus = String(target.row.status ?? "").trim().toLowerCase();
+        const patch: Record<string, unknown> = {
+          interviewSlotId: "",
+          interviewScheduledAt: "",
+          updatedAt: now,
+        };
+        if (!terminal.has(currentStatus)) {
+          patch.status = "Interview Pending";
+        }
+        await update(ref(db, `applications/${target.id}`), patch);
+      }
+    }
+  }
+
   await writeAuditLog(db, {
     action: "delete",
     collection: "interviewBookings",

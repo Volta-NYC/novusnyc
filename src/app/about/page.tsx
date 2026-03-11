@@ -173,22 +173,22 @@ export default function About() {
               A team of students from Stuyvesant High School, CUNY institutions, and other NYC schools.
             </p>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
-                <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
-                  <div className="aspect-[3/4] bg-v-border flex items-center justify-center overflow-hidden">
+                <div className="bg-white border border-v-border rounded-xl overflow-hidden project-card h-full flex flex-col">
+                  <div className="aspect-[4/5] bg-v-border flex items-center justify-center overflow-hidden">
                     {m.photo ? (
                       <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-top" />
                     ) : (
                       <span className="font-display font-bold text-v-muted/40 text-6xl">{m.initial}</span>
                     )}
                   </div>
-                  <div className="p-6 flex flex-col flex-1">
-                    <h3 className="font-display font-bold text-v-ink text-lg leading-tight">{m.name}</h3>
-                    <p className="font-body text-sm text-v-muted mt-1">{m.role}</p>
-                    {m.desc && <p className="font-body text-sm text-v-muted/60 italic mt-3 leading-relaxed flex-1">{m.desc}</p>}
-                    <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-4 font-body text-sm text-v-blue hover:underline break-all">
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="font-display font-bold text-v-ink text-base leading-tight">{m.name}</h3>
+                    <p className="font-body text-xs text-v-muted mt-1">{m.role}</p>
+                    {m.desc && <p className="font-body text-xs text-v-muted/60 italic mt-2 leading-relaxed flex-1">{m.desc}</p>}
+                    <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-3 font-body text-xs text-v-blue hover:underline break-all">
                       <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
                     </a>
                   </div>
@@ -209,8 +209,8 @@ export default function About() {
             </h2>
             <p className="font-body text-white/50 max-w-2xl mx-auto mb-10">
               Our Florida branch has partnered with 30+ businesses including OPA Behavioral Health,
-              Persis Indian Grill, Sun City Sustenance, and 30+ food trucks and local stores.
-              Volta now has operations across six cities.
+              Persis Indian Grill, Sun City Sustenance, and other local stores.
+              Volta now has operations across six states.
             </p>
           </AnimatedSection>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">

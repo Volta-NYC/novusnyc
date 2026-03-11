@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { MailIcon, LinkedInIcon, InstagramIcon } from "@/components/Icons";
 
 export default function Footer() {
   return (
@@ -21,7 +22,8 @@ export default function Footer() {
               {[
                 { href: "/", label: "Home" },
                 { href: "/showcase", label: "Our Work" },
-                { href: "/students", label: "For Students" },
+                { href: "/guides", label: "Business Guides" },
+                { href: "/updates", label: "Progress Updates" },
                 { href: "/join", label: "Join Volta" },
                 { href: "/apply", label: "Apply" },
                 { href: "/partners", label: "For Businesses" },
@@ -39,19 +41,31 @@ export default function Footer() {
             <div className="flex flex-col gap-3">
               <a
                 href="mailto:info@voltanyc.org"
-                className="font-body text-sm hover:text-white transition-colors"
+                className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"
               >
-                <span className="text-white/50">Email: </span>
+                <MailIcon className="w-4 h-4 text-white/50" />
+                <span className="text-white/50">Email:</span>
                 <span className="text-v-green">info@voltanyc.org</span>
               </a>
               <a
                 href="https://www.linkedin.com/company/volta-nyc/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-sm hover:text-white transition-colors"
+                className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"
               >
-                <span className="text-white/50">LinkedIn: </span>
-                <span className="text-v-green">volta-nyc</span>
+                <LinkedInIcon className="w-4 h-4 text-white/50" />
+                <span className="text-white/50">LinkedIn:</span>
+                <span className="text-v-green">Volta NYC</span>
+              </a>
+              <a
+                href="https://www.instagram.com/voltanyc/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"
+              >
+                <InstagramIcon className="w-4 h-4 text-white/50" />
+                <span className="text-white/50">Instagram:</span>
+                <span className="text-v-green">Volta NYC</span>
               </a>
             </div>
           </div>

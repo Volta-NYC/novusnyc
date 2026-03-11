@@ -1,73 +1,109 @@
 import type { Metadata } from "next";
+import fs from "fs";
+import path from "path";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
-import { joinGains, joinTracks, joinFaqs } from "@/data";
-import { VOLTA_STATS, formatStat } from "@/data/stats";
+import { joinTracks, joinFaqs } from "@/data";
 
 export const metadata: Metadata = {
   title: "Get Involved | Volta NYC",
   description:
-    "High school and college students: join Volta NYC and work on real consulting projects for NYC small businesses. Build a portfolio, earn mentorship, and lead real teams.",
+    "Join Volta NYC to work on real projects for real businesses. All experience levels welcome. 5-minute application and rolling admissions.",
   openGraph: {
     title: "Get Involved | Volta NYC",
-    description: "Real projects. Real clients. Mentorship from day one.",
+    description: "Real projects. Real clients. All experience levels welcome.",
   },
 };
 
+interface SchoolGroup {
+  category: string;
+  schools: string[];
+}
+
+function dedupeSchools(schools: string[]): string[] {
+  const seen = new Set<string>();
+  return schools.filter((school) => {
+    const key = school.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function parseSchools(markdown: string): SchoolGroup[] {
+  const sections: SchoolGroup[] = [];
+  let current: SchoolGroup | null = null;
+  for (const line of markdown.split("\n")) {
+    const t = line.trim();
+    if (t.startsWith("## ")) {
+      if (current) {
+        sections.push({ ...current, schools: dedupeSchools(current.schools) });
+      }
+      current = { category: t.slice(3), schools: [] };
+    } else if (t.startsWith("- ") && current) {
+      current.schools.push(t.slice(2));
+    }
+  }
+  if (current) sections.push({ ...current, schools: dedupeSchools(current.schools) });
+  return sections;
+}
+
+const leadershipSteps = [
+  {
+    role: "Analyst",
+    desc: "Contribute on live projects and ship your first client-facing deliverables.",
+  },
+  {
+    role: "Senior Analyst",
+    desc: "Take ownership of workstreams and mentor newer analysts on execution quality.",
+  },
+  {
+    role: "Associate",
+    desc: "Manage core project pieces, coordinate with teammates, and keep client progress on track.",
+  },
+  {
+    role: "Senior Associate",
+    desc: "Lead larger initiatives across teams and help drive standards across active projects.",
+  },
+  {
+    role: "Project Lead",
+    desc: "Run projects end to end, lead pods, and serve as the main client-facing owner.",
+  },
+];
+
+const otherRoles = [
+  {
+    role: "Neighborhood Liaison",
+    desc: "Coordinate between project teams and neighborhood business owners, including BID tours and on-the-ground merchant outreach.",
+  },
+  {
+    role: "School Ambassador",
+    desc: "Represent Volta at your school, expand student outreach, and help build a reliable pipeline of project teams.",
+  },
+  {
+    role: "Head of City Expansion",
+    desc: "Launch Volta in a new city, build local partnerships, and set up the first student teams and operating structure.",
+  },
+];
+
 export default function Join() {
+  const schoolsRaw = fs.readFileSync(
+    path.join(process.cwd(), "src/data/schools.md"),
+    "utf-8"
+  );
+  const schoolGroups = parseSchools(schoolsRaw);
+
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "Is Volta NYC a good extracurricular for high school students?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. Volta NYC places high school students on real consulting projects for NYC small businesses, giving you a tangible portfolio piece, mentorship, and leadership experience — all of which stand out on college applications.",
-        },
+    mainEntity: joinFaqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: f.a,
       },
-      {
-        "@type": "Question",
-        name: "Is this paid?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "No — Volta is a nonprofit and all positions are volunteer. You gain experience, portfolio work, mentorship, references, and leadership opportunities.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Do I need prior experience to join Volta NYC?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "It depends on the track. The Digital & Tech track requires some coding experience. Finance and Marketing are more open to students still developing their skills.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Can high school students join Volta NYC?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. Volta NYC was founded by high school students and actively recruits from NYC high schools. College students are also welcome and often move into team lead roles.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Is the work remote?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. All work is remote-friendly. Some NYC members may choose to do in-person client visits, but it is not required.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How much time does Volta NYC take each week?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "2–4 hours per week, depending on the project phase. Some weeks are lighter, some are heavier around deliverable deadlines.",
-        },
-      },
-    ],
+    })),
   };
 
   return (
@@ -77,99 +113,66 @@ export default function Join() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="bg-v-ink pt-32 pb-24 relative overflow-hidden">
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-12 items-center">
+      <section className="bg-v-ink pt-32 pb-20">
+        <div className="max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-10 items-start">
           <AnimatedSection direction="left">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
               Join Volta NYC
             </p>
-            <h1
-              className="font-display font-bold text-white leading-none tracking-tight mb-6"
-              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-            >
-              Real clients.<br />
-              <span className="text-v-green">Real work.</span>
+            <h1 className="font-display font-bold text-white leading-none tracking-tight mb-5" style={{ fontSize: "clamp(2.4rem, 7vw, 4.6rem)" }}>
+              Student teams on
+              <br />
+              <span className="text-v-green">real client work.</span>
             </h1>
-            <p className="font-body text-white/70 text-lg leading-relaxed mb-8">
-              Volta places student teams on real consulting projects for NYC small
-              businesses. You work with an actual client, deliver something they depend
-              on, and walk away with a portfolio piece you can point to anywhere.
+            <p className="font-body text-white/80 text-lg mb-3">
+              All levels of experience welcome.
             </p>
-            <div className="flex flex-wrap items-center gap-4">
+            <p className="font-body text-white/65 text-base leading-relaxed mb-7 max-w-2xl">
+              You&apos;ll work on websites, marketing, or finance projects that local businesses actually use.
+              It&apos;s practical, fast-moving, and built to help you ship real work.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 mb-3">
               <Link
                 href="/apply"
                 className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-colors"
               >
                 Apply Now →
               </Link>
-              <span className="font-body text-sm text-white/40">
-                Spring 2026 · Rolling admissions
-              </span>
             </div>
+            <p className="font-body text-sm text-white/50">
+              Takes 5 minutes · Rolling admissions · We usually get back to you within 3 days.
+            </p>
           </AnimatedSection>
+
           <AnimatedSection direction="right">
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { value: formatStat(VOLTA_STATS.studentMembers), label: "Student members" },
-                { value: formatStat(VOLTA_STATS.businessesServed), label: "Businesses served" },
-                { value: formatStat(VOLTA_STATS.nycNeighborhoods), label: "NYC neighborhoods" },
-                { value: formatStat(VOLTA_STATS.serviceTracks), label: "Service tracks" },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center"
-                >
-                  <p className="font-display font-bold text-v-green text-4xl leading-none mb-2">
-                    {s.value}
-                  </p>
-                  <p className="font-body text-xs text-white/40 uppercase tracking-widest">
-                    {s.label}
-                  </p>
-                </div>
-              ))}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-7">
+              <p className="font-body text-xs uppercase tracking-widest text-v-green font-semibold mb-4">Tracks</p>
+              <ul className="space-y-3 mb-5">
+                {joinTracks.map((track) => (
+                  <li key={track.name} className="font-body text-sm text-white/80 flex items-start gap-2.5">
+                    <span className="text-v-green mt-0.5">•</span>
+                    <span>
+                      <span className="font-semibold text-white">{track.name}:</span>{" "}
+                      {track.doWhat.slice(0, 2).join("; ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="font-body text-sm text-white/60">
+                You can start in one track and move across tracks as you grow.
+              </p>
             </div>
           </AnimatedSection>
         </div>
       </section>
 
-      {/* ── WHAT YOU WALK AWAY WITH ──────────────────────────── */}
-      <section className="py-20 bg-v-bg border-b border-v-border">
+      <section className="py-20 bg-white border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
-              This is unpaid. Here&apos;s what you get instead.
-            </p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
-              What you walk away with
-            </h2>
-          </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {joinGains.map((g, i) => (
-              <AnimatedSection key={g.title} delay={i * 0.07}>
-                <div className="bg-white border border-v-border rounded-2xl p-6 h-full hover:border-v-green/40 transition-colors project-card">
-                  <div className={`w-11 h-11 rounded-xl ${g.bg} flex items-center justify-center mb-4`}>
-                    <g.icon className={`w-5 h-5 ${g.color}`} />
-                  </div>
-                  <h3 className="font-display font-bold text-v-ink text-base mb-2">{g.title}</h3>
-                  <p className="font-body text-v-muted text-sm leading-relaxed">{g.desc}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TRACKS ───────────────────────────────────────────── */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
-              Pick your path
-            </p>
+            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Pick your path</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Three tracks</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
-              You&apos;ll work with a team lead throughout. Many members contribute across tracks over time.
+              Three tracks, one goal: ship something real for a real business.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
@@ -189,9 +192,7 @@ export default function Join() {
                       </li>
                     ))}
                   </ul>
-                  <h3 className="font-display font-bold text-v-ink text-sm mb-3 uppercase tracking-wide">
-                    We look for
-                  </h3>
+                  <h3 className="font-display font-bold text-v-ink text-sm mb-3 uppercase tracking-wide">We look for</h3>
                   <ul className="space-y-2">
                     {t.skills.map((s) => (
                       <li key={s} className="font-body text-xs text-v-muted flex items-start gap-2">
@@ -207,80 +208,70 @@ export default function Join() {
         </div>
       </section>
 
-      {/* ── EXPECTATIONS ─────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg border-y border-v-border">
+      <section className="py-20 bg-v-bg border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
-              Before you apply
-            </p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
-              What we expect
-            </h2>
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Our members</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where we come from</h2>
           </AnimatedSection>
-          <div className="grid md:grid-cols-2 gap-8">
-            <AnimatedSection direction="left">
-              <div className="space-y-6">
-                {[
-                  {
-                    title: "Show up for your client",
-                    desc: "You're working with a real business owner who is counting on your team. Missed deadlines have real consequences for them.",
-                  },
-                  {
-                    title: "Communicate when things come up",
-                    desc: "Life happens. If you're swamped with exams or can't meet a deadline, tell your team lead early — don't go quiet.",
-                  },
-                  {
-                    title: "Put in the work, not just the hours",
-                    desc: "2–4 hours a week is a rough guide. What matters is whether the deliverable is done and done well.",
-                  },
-                  {
-                    title: "Be open to feedback",
-                    desc: "You'll get notes from team leads and directors. Taking that feedback seriously is how you move up.",
-                  },
-                ].map((item, i) => (
-                  <div key={item.title} className="flex gap-4">
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-v-green flex items-center justify-center mt-0.5">
-                      <span className="font-display font-bold text-v-ink text-xs">{i + 1}</span>
-                    </div>
-                    <div>
-                      <h3 className="font-display font-bold text-v-ink mb-1">{item.title}</h3>
-                      <p className="font-body text-sm text-v-muted leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </AnimatedSection>
-            <AnimatedSection direction="right">
-              <div className="bg-white border border-v-border rounded-2xl p-8 h-full">
-                <h3 className="font-display font-bold text-v-ink text-lg mb-6">Logistics at a glance</h3>
-                <div className="space-y-1">
-                  {[
-                    { label: "Time commitment", value: "2–4 hrs / week", note: "Varies by project phase" },
-                    { label: "Location", value: "Remote-first", note: "Optional in-person visits for NYC members" },
-                    { label: "Team size", value: "3–5 students", note: "Small, focused pods per project" },
-                    { label: "Structure", value: "Project-based", note: "No fixed semester or contract" },
-                    { label: "Admissions", value: "Rolling", note: "We review applications year-round" },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex justify-between items-start gap-4 py-4 border-b border-v-border last:border-0"
-                    >
-                      <p className="font-body text-xs text-v-muted uppercase tracking-wide">{item.label}</p>
-                      <div className="text-right">
-                        <p className="font-display font-bold text-v-ink text-sm">{item.value}</p>
-                        <p className="font-body text-xs text-v-muted">{item.note}</p>
-                      </div>
-                    </div>
-                  ))}
+          <div className="space-y-10">
+            {schoolGroups.map((group, gi) => (
+              <AnimatedSection key={group.category} delay={gi * 0.08}>
+                <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">{group.category}</h3>
+                <div className="bg-white border border-v-border rounded-2xl px-5 py-5 md:px-6 md:py-6">
+                  <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2 list-disc pl-5">
+                    {group.schools.map((school) => (
+                      <li key={school} className="font-body text-sm text-v-ink marker:text-v-green">
+                        {school}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
-            </AnimatedSection>
+              </AnimatedSection>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── FAQ ──────────────────────────────────────────────── */}
+      <section className="py-20 bg-white border-b border-v-border">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-12">
+            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">How you grow</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
+            <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
+              There&apos;s no ceiling. Strong contributors move up fast because we always need more leaders.
+            </p>
+          </AnimatedSection>
+          <div className="relative">
+            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-px bg-v-border" />
+            <div className="grid md:grid-cols-5 gap-6">
+              {leadershipSteps.map((step, i) => (
+                <AnimatedSection key={step.role} delay={i * 0.1}>
+                  <div className="relative flex flex-col items-start md:items-center">
+                    <div className="w-10 h-10 rounded-full bg-v-green flex items-center justify-center mb-4 z-10 flex-shrink-0">
+                      <span className="font-display font-bold text-v-ink text-sm">{i + 1}</span>
+                    </div>
+                    <h3 className="font-display font-bold text-v-ink text-base mb-2 md:text-center">{step.role}</h3>
+                    <p className="font-body text-sm text-v-muted leading-relaxed md:text-center">{step.desc}</p>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </div>
+          <AnimatedSection className="mt-10">
+            <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">Other roles</h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              {otherRoles.map((role) => (
+                <div key={role.role} className="bg-v-bg border border-v-border rounded-2xl p-5">
+                  <h4 className="font-display font-bold text-v-ink text-base mb-2">{role.role}</h4>
+                  <p className="font-body text-sm text-v-muted leading-relaxed">{role.desc}</p>
+                </div>
+              ))}
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
       <section className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
@@ -296,30 +287,6 @@ export default function Join() {
               </AnimatedSection>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── FINAL CTA ────────────────────────────────────────── */}
-      <section className="py-20 bg-v-green">
-        <div className="max-w-3xl mx-auto px-5 text-center">
-          <AnimatedSection>
-            <h2 className="font-display font-bold text-v-ink text-4xl md:text-5xl mb-5">
-              Ready to apply?
-            </h2>
-            <p className="font-body text-v-ink/70 text-lg mb-8">
-              Answer two short prompts and optionally share your resume. We&apos;ll
-              reach out to schedule a conversation and match you with a project.
-            </p>
-            <Link
-              href="/apply"
-              className="inline-block bg-v-ink text-white font-display font-bold text-lg px-10 py-5 rounded-full hover:bg-v-ink/80 transition-colors"
-            >
-              Apply Now →
-            </Link>
-            <p className="font-body text-sm text-v-ink/50 mt-5">
-              Takes 5 minutes · Rolling admissions
-            </p>
-          </AnimatedSection>
         </div>
       </section>
     </>
