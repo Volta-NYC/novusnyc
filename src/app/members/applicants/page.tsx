@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  Btn, Empty, PageHeader, SearchBar,
+  Btn, Empty, PageHeader, SearchBar, useConfirm,
 } from "@/components/members/ui";
 import {
   type ApplicationRecord,
@@ -158,8 +158,10 @@ export default function ApplicantsPage() {
   const [bulkPromoting, setBulkPromoting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
+  const canDelete = authRole === "admin";
   const canManageStatus = authRole === "admin" || authRole === "interviewer";
   const canView = canEdit || authRole === "interviewer";
 
@@ -455,6 +457,25 @@ export default function ApplicantsPage() {
     }
   };
 
+  const deleteApplicant = async (app: ApplicationRecord) => {
+    if (!user || !canDelete) return;
+    const token = await user.getIdToken();
+    const res = await fetch("/api/members/applicants/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: app.id }),
+    });
+    if (!res.ok) {
+      setStatusMessage(`Could not delete ${app.fullName}.`);
+      return;
+    }
+    setStatusMessage(`Deleted ${app.fullName}.`);
+    await fetchApplicantsData();
+  };
+
   const importCsv = async (file: File) => {
     setImporting(true);
     setStatusMessage("Importing...");
@@ -566,6 +587,7 @@ export default function ApplicantsPage() {
 
   return (
     <MembersLayout>
+      <Dialog />
       <input
         ref={fileInputRef}
         type="file"
@@ -773,6 +795,22 @@ export default function ApplicantsPage() {
                           >
                             Accept
                           </Btn>
+                          {canDelete && (
+                            <Btn
+                              size="sm"
+                              variant="danger"
+                              onClick={() => {
+                                void ask(
+                                  async () => {
+                                    await deleteApplicant(app);
+                                  },
+                                  `Delete ${app.fullName}? This will permanently remove them from /members/applicants.`
+                                );
+                              }}
+                            >
+                              Delete
+                            </Btn>
+                          )}
                         </>
                       )}
                     </div>

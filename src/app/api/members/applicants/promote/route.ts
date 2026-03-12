@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
     }
     if (!String(existing.school ?? "").trim() && schoolName) patch.school = schoolName;
     if (!String(existing.grade ?? "").trim() && grade) patch.grade = grade;
+    if (!String(existing.acceptedDate ?? "").trim()) patch.acceptedDate = nowIso.slice(0, 10);
     patch.role = role;
     if (!String(existing.notes ?? "").trim()) patch.notes = "Synced from accepted applicant";
     if (Object.keys(patch).length > 0) await db.ref(`team/${targetId}`).update(patch);
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
     status: "Active",
     skills: [],
     joinDate: nowIso.slice(0, 10),
+    acceptedDate: nowIso.slice(0, 10),
     notes: "Synced from accepted applicant",
     createdAt: nowIso,
   });

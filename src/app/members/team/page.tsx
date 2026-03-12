@@ -15,6 +15,7 @@ import { useAuth } from "@/lib/members/authContext";
 // Blank form values for creating a new team member.
 const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
   grade: "",
+  acceptedDate: "",
   name: "", school: "", divisions: [], pod: "", role: "Member", slackHandle: "",
   email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "", notes: "",
 };
@@ -376,6 +377,7 @@ export default function TeamPage() {
           alternateEmail: "",
           school: entry.school,
           grade: entry.grade,
+          acceptedDate: "",
           divisions: entry.track === "—" ? [] : [entry.track],
           pod: "",
           role: "Member",
@@ -420,6 +422,7 @@ export default function TeamPage() {
       status:      member.status,
       skills:      member.skills ?? [],
       joinDate:    member.joinDate,
+      acceptedDate: member.acceptedDate ?? "",
       notes:       member.notes,
     });
     setEditingMember(member);
@@ -463,6 +466,7 @@ export default function TeamPage() {
       case 2: cmp = (a.email || "").localeCompare(b.email || ""); break;
       case 3: cmp = (a.school || "").localeCompare(b.school || ""); break;
       case 4: cmp = (a.grade || "").localeCompare(b.grade || ""); break;
+      case 5: cmp = (a.acceptedDate || "").localeCompare(b.acceptedDate || ""); break;
       default: return 0;
     }
     return sortDir === "asc" ? cmp : -cmp;
@@ -620,11 +624,11 @@ export default function TeamPage() {
       <div
         className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text"
       >
-        <table className="w-full min-w-[760px]">
+        <table className="w-full min-w-[900px]">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
-              {["Track", "Name", "Email", "School", "Grade", "Actions"].map((col, idx) => {
-                const sortable = [0, 1, 2, 3, 4].includes(idx);
+              {["Track", "Name", "Email", "School", "Grade", "Date Accepted", "Actions"].map((col, idx) => {
+                const sortable = [0, 1, 2, 3, 4, 5].includes(idx);
                 const active = sortCol === idx;
                 return (
                   <th
@@ -674,6 +678,9 @@ export default function TeamPage() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-white/50">{member.grade || "—"}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-white/50">{member.acceptedDate || "—"}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex gap-2">
@@ -842,6 +849,13 @@ export default function TeamPage() {
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
+          </Field>
+          <Field label="Date Accepted">
+            <Input
+              type="date"
+              value={form.acceptedDate ?? ""}
+              onChange={e => setField("acceptedDate", e.target.value)}
+            />
           </Field>
           <Field label="Track">
             <select

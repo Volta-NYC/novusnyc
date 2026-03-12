@@ -130,6 +130,7 @@ async function upsertTeamMember(params: {
     else if (normalize(row.email) !== emailKey && !String(row.alternateEmail ?? "").trim()) patch.alternateEmail = emailKey;
     if (!String(row.school ?? "").trim() && params.schoolName) patch.school = params.schoolName;
     if (!String(row.grade ?? "").trim() && params.grade) patch.grade = params.grade;
+    if (!String(row.acceptedDate ?? "").trim()) patch.acceptedDate = nowIso.slice(0, 10);
     patch.role = params.role;
     await dbPatch(`team/${targetId}`, patch, params.idToken);
     return targetId;
@@ -150,6 +151,7 @@ async function upsertTeamMember(params: {
       status: "Active",
       skills: [],
       joinDate: nowIso.slice(0, 10),
+      acceptedDate: nowIso.slice(0, 10),
       notes: "Synced from interviewed applicant",
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -170,6 +172,7 @@ async function upsertTeamMember(params: {
     status: "Active",
     skills: [],
     joinDate: nowIso.slice(0, 10),
+    acceptedDate: nowIso.slice(0, 10),
     notes: "Synced from interviewed applicant",
     createdAt: nowIso,
     updatedAt: nowIso,
