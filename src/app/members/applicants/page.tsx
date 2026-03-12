@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   Btn, Empty, Field, Input, Modal, PageHeader, SearchBar, TextArea,
 } from "@/components/members/ui";
 import {
-  createInterviewInvite,
-  subscribeApplications,
-  subscribeInterviewSlots,
   type ApplicationRecord,
   type ApplicationStatus,
   type InterviewSlot,
-  updateApplicationRecord,
 } from "@/lib/members/storage";
-import { generateToken } from "@/lib/interviews";
 import { useAuth } from "@/lib/members/authContext";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
@@ -150,10 +145,15 @@ function formatDateTime(value: string): string {
 export default function ApplicantsPage() {
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState("");
+  const [showPipelineOnly, setShowPipelineOnly] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkRole, setBulkRole] = useState("Member");
   const [importing, setImporting] = useState(false);
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
+  const [bulkPromoting, setBulkPromoting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [editing, setEditing] = useState<ApplicationRecord | null>(null);
   const [editStatus, setEditStatus] = useState<ApplicationStatus>("New");
@@ -163,9 +163,42 @@ export default function ApplicantsPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
+  const canView = canEdit || authRole === "interviewer";
 
-  useEffect(() => subscribeApplications(setApplications), []);
-  useEffect(() => subscribeInterviewSlots(setSlots), []);
+  const fetchApplicantsData = useCallback(async () => {
+    if (!user || !canView) {
+      setLoadingData(false);
+      return;
+    }
+    setLoadingData(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/applicants/list", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("load_failed");
+      const payload = await res.json() as {
+        applications?: ApplicationRecord[];
+        slots?: Record<string, InterviewSlot>;
+      };
+      setApplications(Array.isArray(payload.applications) ? payload.applications : []);
+      const slotRows = payload.slots && typeof payload.slots === "object"
+        ? Object.entries(payload.slots).map(([id, row]) => ({ ...(row as InterviewSlot), id }))
+        : [];
+      setSlots(slotRows);
+    } catch {
+      setStatusMessage("Could not load applicants from server.");
+    } finally {
+      setLoadingData(false);
+    }
+  }, [user, canView]);
+
+  useEffect(() => {
+    void fetchApplicantsData();
+    if (!canView) return;
+    const timer = setInterval(() => void fetchApplicantsData(), 15000);
+    return () => clearInterval(timer);
+  }, [fetchApplicantsData, canView]);
 
   const bookedSlots = useMemo(
     () => [...slots]
@@ -195,6 +228,12 @@ export default function ApplicantsPage() {
     const q = normalize(search);
     return [...applications]
       .filter((app) => {
+        if (showPipelineOnly) {
+          const invited = !!app.interviewInviteSentAt;
+          const inLaterStage = ["interview pending", "interview scheduled", "accepted", "waitlisted", "not accepted"]
+            .includes(normalize(app.status));
+          if (invited || inLaterStage) return false;
+        }
         if (!q) return true;
         return normalize(app.fullName).includes(q)
           || normalize(app.email).includes(q)
@@ -202,7 +241,17 @@ export default function ApplicantsPage() {
           || normalize(app.status).includes(q);
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [applications, search]);
+  }, [applications, search, showPipelineOnly]);
+
+  const uninvitedApplicantIds = useMemo(
+    () =>
+      applications
+        .filter((app) => !app.interviewInviteSentAt && !["accepted", "waitlisted", "not accepted"].includes(normalize(app.status)))
+        .map((app) => app.id),
+    [applications]
+  );
+
+  const selectableFilteredIds = useMemo(() => filtered.map((app) => app.id), [filtered]);
 
   const openEdit = (app: ApplicationRecord) => {
     setEditing(app);
@@ -212,28 +261,21 @@ export default function ApplicantsPage() {
     setStatusMessage(null);
   };
 
-  const createInterviewLink = async (app: ApplicationRecord) => {
-    if (!user) return;
-    const token = generateToken(16);
-    const expiresAt = Date.now() + 120 * 24 * 60 * 60 * 1000;
-    await createInterviewInvite(token, {
-      applicantName: app.fullName,
-      applicantEmail: app.email,
-      role: "applicant",
-      expiresAt,
-      status: "pending",
-      createdAt: Date.now(),
-      createdBy: user.uid,
-      multiUse: false,
-      note: "Generated from applicants pipeline",
+  const updateApplicantServer = async (id: string, patch: Record<string, unknown>) => {
+    if (!user) throw new Error("not_authenticated");
+    const token = await user.getIdToken();
+    const res = await fetch("/api/members/applicants/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id, patch }),
     });
-    await updateApplicationRecord(app.id, {
-      interviewInviteToken: token,
-      status: "Interview Pending",
-    });
-    const url = `${window.location.origin}/book/${token}`;
-    await navigator.clipboard.writeText(url);
-    setStatusMessage("Interview link created and copied.");
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(typeof payload?.error === "string" ? payload.error : "update_failed");
+    }
   };
 
   const sendInterviewInviteEmails = async (ids: string[], mode: "initial" | "reminder") => {
@@ -269,10 +311,110 @@ export default function ApplicantsPage() {
     try {
       const result = await sendInterviewInviteEmails([app.id], "initial");
       setStatusMessage(`Invite email result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
+      await fetchApplicantsData();
     } catch {
       setStatusMessage("Could not send interview invite email.");
     } finally {
       setSendingInvites(false);
+    }
+  };
+
+  const inviteAllUninvited = async () => {
+    if (!canEdit || uninvitedApplicantIds.length === 0) {
+      setStatusMessage("No uninvited applicants found.");
+      return;
+    }
+    setSendingInvites(true);
+    try {
+      const result = await sendInterviewInviteEmails(uninvitedApplicantIds, "initial");
+      setStatusMessage(`Invite all result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
+      await fetchApplicantsData();
+    } catch {
+      setStatusMessage("Could not send invite emails to all uninvited applicants.");
+    } finally {
+      setSendingInvites(false);
+    }
+  };
+
+  const inviteSelected = async () => {
+    if (!canEdit || selectedIds.length === 0) {
+      setStatusMessage("Select at least one applicant.");
+      return;
+    }
+    setSendingInvites(true);
+    try {
+      const result = await sendInterviewInviteEmails(selectedIds, "initial");
+      setStatusMessage(`Invite selected result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
+      await fetchApplicantsData();
+    } catch {
+      setStatusMessage("Could not send invite emails to selected applicants.");
+    } finally {
+      setSendingInvites(false);
+    }
+  };
+
+  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, roleOverride?: string) => {
+    if (!user) throw new Error("not_authenticated");
+    const token = await user.getIdToken();
+    await updateApplicantServer(app.id, {
+      status: "Accepted",
+      finalDecisionRole: roleOverride || bulkRole,
+    });
+    await fetch("/api/members/applicants/promote", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        fullName: app.fullName,
+        email: app.email,
+        schoolName: app.schoolName,
+        grade: app.grade,
+        role: roleOverride || bulkRole,
+      }),
+    });
+    if (shouldEmail) {
+      await fetch("/api/members/applicants/decision-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          applicantName: app.fullName,
+          applicantEmail: app.email,
+          decision: "Accepted",
+          notes: "",
+        }),
+      });
+    }
+  };
+
+  const skipInterviewForSelected = async () => {
+    if (!canEdit || selectedIds.length === 0) {
+      setStatusMessage("Select at least one applicant.");
+      return;
+    }
+    setBulkPromoting(true);
+    try {
+      const selectedApps = applications.filter((app) => selectedIds.includes(app.id));
+      let ok = 0;
+      let failed = 0;
+      for (const app of selectedApps) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await promoteApplicant(app, true);
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      setSelectedIds([]);
+      setStatusMessage(`Skip interview + accept complete — ${ok} succeeded, ${failed} failed.`);
+      await fetchApplicantsData();
+    } finally {
+      setBulkPromoting(false);
     }
   };
 
@@ -299,6 +441,7 @@ export default function ApplicantsPage() {
     try {
       const result = await sendInterviewInviteEmails(targetIds, "reminder");
       setStatusMessage(`Reminder result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
+      await fetchApplicantsData();
     } catch {
       setStatusMessage("Could not send reminder emails.");
     } finally {
@@ -312,7 +455,7 @@ export default function ApplicantsPage() {
     try {
       let decisionEmailFailed = false;
       let promoteFailed = false;
-      await updateApplicationRecord(editing.id, {
+      await updateApplicantServer(editing.id, {
         status: editStatus,
         notes: editNotes.trim(),
       });
@@ -331,6 +474,7 @@ export default function ApplicantsPage() {
               email: editing.email,
               schoolName: editing.schoolName,
               grade: editing.grade,
+              role: bulkRole,
             }),
           });
           if (!promoteResponse.ok) promoteFailed = true;
@@ -365,6 +509,7 @@ export default function ApplicantsPage() {
       }
 
       setEditing(null);
+      await fetchApplicantsData();
       setStatusMessage(
         [decisionEmailFailed ? "decision email could not be sent" : "", promoteFailed ? "accepted applicant could not be synced to Team Directory" : ""]
           .filter(Boolean)
@@ -470,6 +615,7 @@ export default function ApplicantsPage() {
 
       const result = await response.json() as { added?: number; updated?: number; skipped?: number };
       setStatusMessage(`Import complete: ${result.added ?? 0} added, ${result.updated ?? 0} updated, ${result.skipped ?? 0} skipped.`);
+      await fetchApplicantsData();
     } catch (err) {
       const message = err instanceof Error && err.message ? err.message : "unknown_error";
       setStatusMessage(`Could not import CSV (${message}).`);
@@ -501,6 +647,13 @@ export default function ApplicantsPage() {
         action={
           canEdit ? (
             <div className="flex gap-2">
+              <Btn
+                variant="secondary"
+                onClick={inviteAllUninvited}
+                disabled={sendingInvites || uninvitedApplicantIds.length === 0}
+              >
+                {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
+              </Btn>
               <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites}>
                 {sendingReminders ? "Sending reminders..." : "Remind Unbooked (2+ days)"}
               </Btn>
@@ -514,14 +667,65 @@ export default function ApplicantsPage() {
 
       {statusMessage && <p className="text-xs text-white/55 mb-4">{statusMessage}</p>}
 
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search applicants, schools, status..." />
+        <label className="inline-flex items-center gap-2 text-xs text-white/65">
+          <input
+            type="checkbox"
+            checked={showPipelineOnly}
+            onChange={(e) => setShowPipelineOnly(e.target.checked)}
+            className="accent-[#85CC17]"
+          />
+          Show only pre-invite queue
+        </label>
+        {canEdit && (
+          <>
+            <select
+              value={bulkRole}
+              onChange={(e) => setBulkRole(e.target.value)}
+              className="bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
+            >
+              {["Member", "Analyst", "Senior Analyst", "Associate", "Senior Associate", "Project Lead"].map((role) => (
+                <option key={role} value={role}>{role}</option>
+              ))}
+            </select>
+            <Btn
+              size="sm"
+              variant="secondary"
+              onClick={inviteSelected}
+              disabled={sendingInvites || selectedIds.length === 0}
+            >
+              Invite Selected ({selectedIds.length})
+            </Btn>
+            <Btn
+              size="sm"
+              variant="primary"
+              onClick={skipInterviewForSelected}
+              disabled={bulkPromoting || selectedIds.length === 0}
+            >
+              {bulkPromoting ? "Processing..." : "Skip Interview + Accept Selected"}
+            </Btn>
+          </>
+        )}
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
         <table className="w-full min-w-[980px]">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
+              {canEdit && (
+                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/45">
+                  <input
+                    type="checkbox"
+                    className="accent-[#85CC17]"
+                    checked={selectableFilteredIds.length > 0 && selectableFilteredIds.every((id) => selectedIds.includes(id))}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(selectableFilteredIds);
+                      else setSelectedIds([]);
+                    }}
+                  />
+                </th>
+              )}
               {["Name", "Email", "School", "Applied", "Invite Email", "Interview", "Status", "Actions"].map((col) => (
                 <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/45">{col}</th>
               ))}
@@ -533,8 +737,22 @@ export default function ApplicantsPage() {
               const inviteSentAt = app.interviewInviteSentAt ? Date.parse(app.interviewInviteSentAt) : NaN;
               const bookedAt = latestInterview ? Date.parse(latestInterview.datetime) : NaN;
               const bookedAfterInvite = Number.isFinite(inviteSentAt) && Number.isFinite(bookedAt) && bookedAt >= inviteSentAt;
+              const evalCount = Object.keys((app.interviewEvaluations ?? {}) as Record<string, unknown>).length;
               return (
                 <tr key={app.id} className="hover:bg-white/3 transition-colors">
+                  {canEdit && (
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        className="accent-[#85CC17]"
+                        checked={selectedIds.includes(app.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedIds((prev) => Array.from(new Set([...prev, app.id])));
+                          else setSelectedIds((prev) => prev.filter((id) => id !== app.id));
+                        }}
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-white/85">{app.fullName}</td>
                   <td className="px-4 py-3 text-white/60 font-mono text-xs">{app.email}</td>
                   <td className="px-4 py-3 text-white/55 text-sm">{app.schoolName || "—"}</td>
@@ -558,12 +776,20 @@ export default function ApplicantsPage() {
                         {bookedAfterInvite ? (
                           <div className="text-[11px] text-emerald-300 mt-1">Booked after invite</div>
                         ) : null}
+                        {evalCount > 0 ? (
+                          <div className="text-[11px] text-white/40 mt-1">{evalCount} evaluation{evalCount > 1 ? "s" : ""}</div>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="text-white/30">Not booked</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-white/70">{app.status}</td>
+                  <td className="px-4 py-3 text-xs text-white/70">
+                    <div>{app.status}</div>
+                    {app.finalDecisionRole ? (
+                      <div className="text-[11px] text-white/40 mt-0.5">Role: {app.finalDecisionRole}</div>
+                    ) : null}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       {canEdit && (
@@ -576,7 +802,25 @@ export default function ApplicantsPage() {
                           >
                             {app.interviewInviteSentAt ? "Resend Invite" : "Send Invite"}
                           </Btn>
-                          <Btn size="sm" variant="secondary" onClick={() => createInterviewLink(app)}>Interview Link</Btn>
+                          <Btn
+                            size="sm"
+                            variant="primary"
+                            onClick={async () => {
+                              setBulkPromoting(true);
+                              try {
+                                await promoteApplicant(app, true);
+                                setStatusMessage(`Accepted and added ${app.fullName} to member directory.`);
+                                await fetchApplicantsData();
+                              } catch {
+                                setStatusMessage(`Could not promote ${app.fullName}.`);
+                              } finally {
+                                setBulkPromoting(false);
+                              }
+                            }}
+                            disabled={bulkPromoting}
+                          >
+                            Skip Interview + Accept
+                          </Btn>
                           <Btn size="sm" variant="secondary" onClick={() => openEdit(app)}>Edit</Btn>
                         </>
                       )}
@@ -589,7 +833,8 @@ export default function ApplicantsPage() {
         </table>
       </div>
 
-      {filtered.length === 0 && <Empty message="No applicants yet." />}
+      {loadingData ? <p className="text-xs text-white/40 mt-3">Loading applicants...</p> : null}
+      {!loadingData && filtered.length === 0 && <Empty message="No applicants yet." />}
 
       <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit Applicant">
         <div className="grid grid-cols-2 gap-4">

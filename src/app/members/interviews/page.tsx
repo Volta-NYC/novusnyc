@@ -17,7 +17,7 @@ import {
   type InterviewSlot,
   type ApplicationRecord,
 } from "@/lib/members/storage";
-import { Btn, Field, Modal, AutocompleteInput, AutocompleteTagInput, useConfirm } from "@/components/members/ui";
+import { Btn, Field, Input, Modal, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm } from "@/components/members/ui";
 import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
 
 const ET_TIMEZONE = "America/New_York";
@@ -318,6 +318,16 @@ function InterviewsContent() {
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [resendingSlotId, setResendingSlotId] = useState("");
   const [pastMessage, setPastMessage] = useState<string | null>(null);
+  const [evaluationSlot, setEvaluationSlot] = useState<InterviewSlot | null>(null);
+  const [evaluationRating, setEvaluationRating] = useState<"Extremely Qualified" | "Qualified" | "Decent" | "Unqualified">("Qualified");
+  const [evaluationComments, setEvaluationComments] = useState("");
+  const [evaluationRole, setEvaluationRole] = useState("");
+  const [savingEvaluation, setSavingEvaluation] = useState(false);
+  const [evaluationMessage, setEvaluationMessage] = useState<string | null>(null);
+  const [finalizeSlot, setFinalizeSlot] = useState<InterviewSlot | null>(null);
+  const [finalizeRole, setFinalizeRole] = useState("Member");
+  const [finalizeSendEmail, setFinalizeSendEmail] = useState(true);
+  const [finalizing, setFinalizing] = useState(false);
 
   const [slotWeek, setSlotWeek] = useState(0);
   const [windowAnchor, setWindowAnchor] = useState(() => new Date());
@@ -705,6 +715,22 @@ function InterviewsContent() {
     return "";
   }, [applications]);
 
+  const findApplicationForSlot = useCallback((slot: InterviewSlot): ApplicationRecord | null => {
+    const token = normalizeString(slot.bookedBy ?? "");
+    const slotEmail = normalizeString(slot.bookerEmail ?? "");
+    const slotCanonical = canonicalEmail(slotEmail);
+    const slotName = slot.bookerName ?? "";
+    for (const app of applications) {
+      const appToken = normalizeString(app.interviewInviteToken ?? "");
+      if (token && appToken && token === appToken) return app;
+      const appEmail = normalizeString(app.email ?? "");
+      const appCanonical = canonicalEmail(appEmail);
+      if (slotEmail && appEmail && (slotEmail === appEmail || slotCanonical === appCanonical)) return app;
+      if (slotName && app.fullName && namesLikelyMatch(slotName, app.fullName)) return app;
+    }
+    return null;
+  }, [applications]);
+
   const availableFutureByDate = useMemo(() => {
     const byDate: Record<string, InterviewSlot[]> = {};
     availableFutureSlots.forEach((slot) => {
@@ -812,6 +838,80 @@ function InterviewsContent() {
     } finally {
       setResendingSlotId("");
       setTimeout(() => setResendMessage(null), 2200);
+    }
+  };
+
+  const openEvaluation = (slot: InterviewSlot) => {
+    setEvaluationSlot(slot);
+    setEvaluationRating("Qualified");
+    setEvaluationComments("");
+    setEvaluationRole(authRole === "interviewer" ? "Interviewer" : "Admin Reviewer");
+    setEvaluationMessage(null);
+  };
+
+  const saveEvaluation = async () => {
+    if (!evaluationSlot || !user) return;
+    setSavingEvaluation(true);
+    setEvaluationMessage(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/interviews/evaluate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          slotId: evaluationSlot.id,
+          interviewerRole: evaluationRole,
+          rating: evaluationRating,
+          comments: evaluationComments,
+        }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({} as { error?: string }));
+        throw new Error(payload.error || "save_failed");
+      }
+      setEvaluationMessage("Evaluation saved.");
+      setTimeout(() => setEvaluationMessage(null), 2200);
+      setEvaluationSlot(null);
+    } catch {
+      setEvaluationMessage("Could not save evaluation.");
+      setTimeout(() => setEvaluationMessage(null), 2200);
+    } finally {
+      setSavingEvaluation(false);
+    }
+  };
+
+  const finalizeAcceptedFromSlot = async () => {
+    if (!finalizeSlot || !user) return;
+    setFinalizing(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/interviews/finalize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          slotIds: [finalizeSlot.id],
+          teamRole: finalizeRole,
+          sendAcceptanceEmail: finalizeSendEmail,
+        }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({} as { error?: string }));
+        throw new Error(payload.error || "finalize_failed");
+      }
+      setPastMessage("Accepted, synced to member directory, and application updated.");
+      setFinalizeSlot(null);
+      setTimeout(() => setPastMessage(null), 2600);
+    } catch {
+      setPastMessage("Could not finalize accepted applicant for this interview.");
+      setTimeout(() => setPastMessage(null), 2600);
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -1603,6 +1703,8 @@ function InterviewsContent() {
                   const displayName = slot.bookerName?.trim() || "Interviewee";
                   const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
                   const resumeUrl = findResumeUrlForSlot(slot);
+                  const matchedApp = findApplicationForSlot(slot);
+                  const evalCount = Object.keys((matchedApp?.interviewEvaluations ?? {}) as Record<string, unknown>).length;
                   return (
                     <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-4 py-3 flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
@@ -1615,6 +1717,9 @@ function InterviewsContent() {
                             ? ` · Interviewer${slotInterviewers.length > 1 ? "s" : ""}: ${slotInterviewers.join(", ")}`
                             : ""}
                         </p>
+                        {evalCount > 0 && (
+                          <p className="text-[11px] text-white/45 mt-0.5">{evalCount} evaluation{evalCount > 1 ? "s" : ""} submitted</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {canDeleteInterviews ? (
@@ -1629,6 +1734,9 @@ function InterviewsContent() {
                             </Btn>
                             <Btn size="sm" variant="secondary" onClick={() => startReschedule(slot)}>
                               Move
+                            </Btn>
+                            <Btn size="sm" variant="secondary" onClick={() => openEvaluation(slot)}>
+                              Evaluate
                             </Btn>
                             {resumeUrl && (
                               <a
@@ -1646,6 +1754,9 @@ function InterviewsContent() {
                           </>
                         ) : (
                           <div className="flex items-center gap-2">
+                            <Btn size="sm" variant="secondary" onClick={() => openEvaluation(slot)}>
+                              Evaluate
+                            </Btn>
                             {resumeUrl && (
                               <a
                                 href={resumeUrl}
@@ -1685,6 +1796,8 @@ function InterviewsContent() {
                   const displayName = slot.bookerName?.trim() || "Interviewee";
                   const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
                   const resumeUrl = findResumeUrlForSlot(slot);
+                  const matchedApp = findApplicationForSlot(slot);
+                  const evalCount = Object.keys((matchedApp?.interviewEvaluations ?? {}) as Record<string, unknown>).length;
                   return (
                     <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-4 py-3 flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-white/30 flex-shrink-0" />
@@ -1697,8 +1810,19 @@ function InterviewsContent() {
                             ? ` · Interviewer${slotInterviewers.length > 1 ? "s" : ""}: ${slotInterviewers.join(", ")}`
                             : ""}
                         </p>
+                        {evalCount > 0 && (
+                          <p className="text-[11px] text-white/45 mt-0.5">{evalCount} evaluation{evalCount > 1 ? "s" : ""} submitted</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        <Btn size="sm" variant="secondary" onClick={() => openEvaluation(slot)}>
+                          Evaluate
+                        </Btn>
+                        {canDeleteInterviews && (
+                          <Btn size="sm" variant="primary" onClick={() => setFinalizeSlot(slot)}>
+                            Accept + Add to Team
+                          </Btn>
+                        )}
                         {resumeUrl && (
                           <a
                             href={resumeUrl}
@@ -2274,6 +2398,95 @@ function InterviewsContent() {
             disabled={rescheduling || !rescheduleTargetSlotId}
           >
             {rescheduling ? "Moving..." : "Move Interview"}
+          </Btn>
+        </div>
+      </Modal>
+
+      <Modal
+        open={!!evaluationSlot}
+        onClose={() => {
+          if (savingEvaluation) return;
+          setEvaluationSlot(null);
+        }}
+        title="Interview Evaluation"
+      >
+        <div className="space-y-3">
+          <p className="text-white/60 text-sm font-body">
+            {evaluationSlot ? `${evaluationSlot.bookerName || "Interviewee"} · ${formatDateTime(evaluationSlot.datetime)}` : ""}
+          </p>
+          <Field label="Evaluation">
+            <select
+              value={evaluationRating}
+              onChange={(e) => setEvaluationRating(e.target.value as "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified")}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              {["Extremely Qualified", "Qualified", "Decent", "Unqualified"].map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Your Role">
+            <Input
+              value={evaluationRole}
+              onChange={(e) => setEvaluationRole(e.target.value)}
+              placeholder="e.g. Interviewer, Project Lead"
+            />
+          </Field>
+          <Field label="Comments">
+            <TextArea
+              rows={5}
+              value={evaluationComments}
+              onChange={(e) => setEvaluationComments(e.target.value)}
+              placeholder="Add interview notes, concerns, strengths..."
+            />
+          </Field>
+          {evaluationMessage && <p className="text-xs text-white/55">{evaluationMessage}</p>}
+        </div>
+        <div className="flex justify-end gap-2 mt-5">
+          <Btn variant="ghost" onClick={() => setEvaluationSlot(null)} disabled={savingEvaluation}>Cancel</Btn>
+          <Btn variant="primary" onClick={() => void saveEvaluation()} disabled={savingEvaluation}>
+            {savingEvaluation ? "Saving..." : "Save Evaluation"}
+          </Btn>
+        </div>
+      </Modal>
+
+      <Modal
+        open={!!finalizeSlot}
+        onClose={() => {
+          if (finalizing) return;
+          setFinalizeSlot(null);
+        }}
+        title="Finalize Accepted Applicant"
+      >
+        <div className="space-y-3">
+          <p className="text-white/60 text-sm font-body">
+            {finalizeSlot ? `${finalizeSlot.bookerName || "Interviewee"} · ${formatDateTime(finalizeSlot.datetime)}` : ""}
+          </p>
+          <Field label="Team Role">
+            <select
+              value={finalizeRole}
+              onChange={(e) => setFinalizeRole(e.target.value)}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              {["Member", "Analyst", "Senior Analyst", "Associate", "Senior Associate", "Project Lead"].map((role) => (
+                <option key={role} value={role}>{role}</option>
+              ))}
+            </select>
+          </Field>
+          <label className="inline-flex items-center gap-2 text-sm text-white/65">
+            <input
+              type="checkbox"
+              checked={finalizeSendEmail}
+              onChange={(e) => setFinalizeSendEmail(e.target.checked)}
+              className="accent-[#85CC17]"
+            />
+            Send acceptance email automatically
+          </label>
+        </div>
+        <div className="flex justify-end gap-2 mt-5">
+          <Btn variant="ghost" onClick={() => setFinalizeSlot(null)} disabled={finalizing}>Cancel</Btn>
+          <Btn variant="primary" onClick={() => void finalizeAcceptedFromSlot()} disabled={finalizing}>
+            {finalizing ? "Finalizing..." : "Accept + Add to Team"}
           </Btn>
         </div>
       </Modal>

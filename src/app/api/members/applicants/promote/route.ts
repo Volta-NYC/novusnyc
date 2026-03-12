@@ -7,6 +7,7 @@ type PromoteBody = {
   email?: string;
   schoolName?: string;
   grade?: string;
+  role?: string;
 };
 
 function normalize(value: string): string {
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
   const email = normalize(body.email ?? "");
   const schoolName = (body.schoolName ?? "").trim();
   const grade = (body.grade ?? "").trim();
+  const role = (body.role ?? "").trim() || "Member";
 
   if (!fullName || !email) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest) {
     }
     if (!String(existing.school ?? "").trim() && schoolName) patch.school = schoolName;
     if (!String(existing.grade ?? "").trim() && grade) patch.grade = grade;
+    patch.role = role;
     if (!String(existing.notes ?? "").trim()) patch.notes = "Synced from accepted applicant";
     if (Object.keys(patch).length > 0) await db.ref(`team/${targetId}`).update(patch);
     return NextResponse.json({ success: true, action: "updated", memberId: targetId });
@@ -79,7 +82,7 @@ export async function POST(req: NextRequest) {
     grade,
     divisions: [],
     pod: "",
-    role: "Member",
+    role,
     slackHandle: "",
     email,
     alternateEmail: "",
@@ -92,4 +95,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, action: "created", memberId: newRef.key });
 }
-

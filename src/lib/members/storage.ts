@@ -161,6 +161,17 @@ export interface ApplicationRecord {
   interviewReminderSentAt?: string;
   interviewSlotId?: string;
   interviewScheduledAt?: string;
+  interviewEvaluations?: Record<string, {
+    interviewerUid?: string;
+    interviewerEmail?: string;
+    interviewerName?: string;
+    interviewerRole?: string;
+    rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
+    comments?: string;
+    updatedAt?: string;
+    slotId?: string;
+  }>;
+  finalDecisionRole?: string;
   source?: "website_form" | "csv_import" | "manual" | "legacy_sheet_import";
   sourceTimestampRaw?: string;
   createdAt: string;
@@ -257,6 +268,15 @@ export interface InterviewSlot {
   bookerName?: string;    // name entered by applicant at booking time
   bookerEmail?: string;   // email entered by applicant at booking time
   interviewerMemberIds: string[];
+  evaluationByUid?: Record<string, {
+    interviewerUid?: string;
+    interviewerEmail?: string;
+    interviewerName?: string;
+    interviewerRole?: string;
+    rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
+    comments?: string;
+    updatedAt?: string;
+  }>;
   recurringWeekly?: boolean;
   recurringSeriesId?: string;
   location?: string;
@@ -399,6 +419,10 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
     interviewReminderSentAt: readLegacyText(row, ["interviewReminderSentAt"]),
     interviewSlotId,
     interviewScheduledAt,
+    interviewEvaluations: (row.interviewEvaluations && typeof row.interviewEvaluations === "object")
+      ? (row.interviewEvaluations as ApplicationRecord["interviewEvaluations"])
+      : {},
+    finalDecisionRole: readLegacyText(row, ["finalDecisionRole"]),
     source: (readLegacyText(row, ["source"]) as ApplicationRecord["source"]) || undefined,
     sourceTimestampRaw: readLegacyText(row, ["sourceTimestampRaw", "Timestamp"]),
     createdAt,
