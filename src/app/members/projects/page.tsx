@@ -586,21 +586,21 @@ export default function BusinessesPage() {
     return (
       <div
         key={b.id}
-        className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 md:grid-cols-[minmax(220px,2fr)_120px_120px_minmax(220px,2fr)_minmax(220px,2fr)_auto] gap-2 md:gap-3 items-start"
+        className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-[minmax(240px,2fr)_120px_130px_minmax(240px,2fr)_minmax(240px,2fr)_auto] gap-2 sm:gap-3 items-center"
       >
         <div className="min-w-0">
-          <p className="text-white font-semibold text-sm leading-tight break-words">
+          <p className="text-white font-semibold text-sm leading-tight truncate" title={b.name}>
             {b.name}
             {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
             {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
           </p>
         </div>
-        <div className="text-xs text-white/70">{b.division || "—"}</div>
-        <div className="text-xs"><Badge label={b.projectStatus} /></div>
-        <div className="text-xs text-white/55 break-words">{ownerSummary || "—"}</div>
-        <div className="text-xs text-white/55 break-words">{teamSummary || "No team assigned"}</div>
+        <div className="text-xs text-white/70 min-w-0 truncate" title={b.division || "—"}>{b.division || "—"}</div>
+        <div className="text-xs min-w-0"><Badge label={b.projectStatus} /></div>
+        <div className="text-xs text-white/55 min-w-0 truncate" title={ownerSummary || "—"}>{ownerSummary || "—"}</div>
+        <div className="text-xs text-white/55 min-w-0 truncate" title={teamSummary || "No team assigned"}>{teamSummary || "No team assigned"}</div>
         {canEdit ? (
-          <div className="md:justify-self-end">
+          <div className="sm:justify-self-end">
             <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
           </div>
         ) : <div />}
@@ -675,8 +675,8 @@ export default function BusinessesPage() {
         <select
           value={filterDiv}
           onChange={e => setFilterDiv(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-9 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff66' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-11 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
+          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff66' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center" }}
         >
           <option value="">All divisions</option>
           {DIVISIONS.map(d => <option key={d}>{d}</option>)}

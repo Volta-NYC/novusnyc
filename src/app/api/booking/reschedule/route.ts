@@ -91,7 +91,7 @@ async function syncApplicationAfterReschedule(params: {
   if (bookedBy && bookedBy !== "public-booking") {
     patch.interviewInviteToken = params.bookedBy;
   }
-  if (!TERMINAL_APPLICATION_STATUSES.has(status)) {
+  if (!target.row.statusManualOverride && !TERMINAL_APPLICATION_STATUSES.has(status)) {
     patch.status = "Interview Scheduled";
   }
   await dbPatch(`applications/${target.id}`, patch, params.idToken);

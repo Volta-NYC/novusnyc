@@ -1059,7 +1059,7 @@ export async function deleteBookedInterview(slotId: string): Promise<void> {
           interviewScheduledAt: "",
           updatedAt: now,
         };
-        if (!terminal.has(currentStatus)) {
+        if (!target.row.statusManualOverride && !terminal.has(currentStatus)) {
           patch.status = "Invited for Interview";
         }
         await update(ref(db, `applications/${target.id}`), patch);

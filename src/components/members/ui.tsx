@@ -137,14 +137,14 @@ export function Select({ options, className = "", ...props }: SelectProps) {
     <div className="relative w-full">
       <select
         {...props}
-        className={`w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg pl-3 pr-9 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+        className={`w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
       >
         <option value="">— Select —</option>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
       {/* Custom chevron — positioned well inside the border */}
       <svg
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
         viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
         strokeLinecap="round" strokeLinejoin="round"
       >

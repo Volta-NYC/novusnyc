@@ -59,8 +59,16 @@ function normalizeStatus(raw: string, flags: {
   hasScheduledInterview: boolean;
   hasInviteSent: boolean;
   isAccepted: boolean;
+  manualOverride: boolean;
 }): string {
   const key = raw.trim().toLowerCase();
+  if (flags.manualOverride) {
+    if (key === "accepted") return "Accepted";
+    if (key === "interview scheduled") return "Interview Scheduled";
+    if (key === "invited for interview" || key === "interview pending") return "Invited for Interview";
+    if (key === "not accepted" || key === "rejected") return "Not Accepted";
+    return "New";
+  }
   if (key === "not accepted" || key === "rejected") return "Not Accepted";
   if (flags.isAccepted) return "Accepted";
   if (flags.hasScheduledInterview) return "Interview Scheduled";
@@ -78,6 +86,7 @@ function normalizeApplication(
     hasScheduledInterview: boolean;
     hasInviteSent: boolean;
     isAccepted: boolean;
+    manualOverride: boolean;
   },
 ) {
   const createdAt = normalizeTimestamp(row.createdAt ?? row.Timestamp);
@@ -165,6 +174,7 @@ export async function GET(req: NextRequest) {
         hasScheduledInterview: !!(rowSlotId || rowScheduledAt || hasMatchedBookedSlot),
         hasInviteSent,
         isAccepted: isAcceptedFromTeam,
+        manualOverride: !!safeRow.statusManualOverride,
       });
     })
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));

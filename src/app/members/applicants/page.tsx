@@ -160,6 +160,7 @@ export default function ApplicantsPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
+  const canManageStatus = authRole === "admin" || authRole === "interviewer";
   const canView = canEdit || authRole === "interviewer";
 
   const fetchApplicantsData = useCallback(async () => {
@@ -444,9 +445,9 @@ export default function ApplicantsPage() {
   };
 
   const updateRowStatus = async (app: ApplicationRecord, nextStatus: ApplicationStatus) => {
-    if (!canEdit) return;
+    if (!canManageStatus) return;
     try {
-      await updateApplicantServer(app.id, { status: nextStatus });
+      await updateApplicantServer(app.id, { status: nextStatus, statusManualOverride: true });
       setStatusMessage(`Updated ${app.fullName} to ${nextStatus}.`);
       await fetchApplicantsData();
     } catch {
@@ -677,7 +678,7 @@ export default function ApplicantsPage() {
                     </td>
                   )}
                   <td className="px-4 py-3 text-xs">
-                    {canEdit ? (
+                    {canManageStatus ? (
                       <select
                         value={STATUS_OPTIONS.includes(app.status) ? app.status : "New"}
                         onChange={(e) => void updateRowStatus(app, e.target.value as ApplicationStatus)}

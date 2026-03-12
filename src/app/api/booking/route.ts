@@ -254,7 +254,7 @@ async function syncApplicationInterviewScheduled(params: {
     updatedAt: new Date().toISOString(),
   };
   if (inviteToken) patch.interviewInviteToken = params.inviteToken;
-  if (!TERMINAL_APPLICATION_STATUSES.has(status)) {
+  if (!target.row.statusManualOverride && !TERMINAL_APPLICATION_STATUSES.has(status)) {
     patch.status = "Interview Scheduled";
   }
 

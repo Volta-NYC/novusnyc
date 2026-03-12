@@ -18,6 +18,7 @@ type ApplicationRow = {
   fullName?: string;
   email?: string;
   status?: string;
+  statusManualOverride?: boolean;
   interviewInviteToken?: string;
   interviewInviteSentAt?: string;
 };
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest) {
       };
       if (mode === "reminder") patch.interviewReminderSentAt = nowIso;
       else patch.interviewInviteSentAt = nowIso;
-      if (!nextStatus || nextStatus === "new" || nextStatus === "reviewing" || nextStatus === "interview pending") {
+      if (!row.statusManualOverride && (!nextStatus || nextStatus === "new" || nextStatus === "reviewing" || nextStatus === "interview pending")) {
         patch.status = "Invited for Interview";
       }
       await dbPatch(`applications/${appId}`, patch, verified.caller.idToken);
