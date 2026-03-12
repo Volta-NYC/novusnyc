@@ -133,15 +133,27 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
   });
 }
 
-// Server-side proxy to Google Apps Script.
-// The browser POSTs to /api/submit (same origin — no CORS).
-// This route forwards it to Apps Script server-to-server (no CORS restrictions).
-export async function POST(request: Request) {
-  const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
-  if (!url) {
-    return NextResponse.json({ error: "Apps Script URL not configured" }, { status: 500 });
-  }
+async function upsertInquiryFromForm(data: Record<string, unknown>): Promise<void> {
+  const db = getAdminDB();
+  if (!db) return;
 
+  const name = asText(data.name);
+  const email = asText(data.email).toLowerCase();
+  const inquiry = asText(data.inquiry);
+  if (!name || !email || !inquiry) return;
+
+  const createdAt = new Date().toISOString();
+  await db.ref("inquiries").push({
+    name,
+    email,
+    inquiry,
+    source: "website_form",
+    createdAt,
+    updatedAt: createdAt,
+  });
+}
+
+export async function POST(request: Request) {
   const data = await request.json() as Record<string, unknown>;
   const ip = getClientIp(request.headers);
 
@@ -197,18 +209,12 @@ export async function POST(request: Request) {
     }
   }
 
-  try {
-    const upstream = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-      redirect: "follow",
-    });
-    if (!upstream.ok) {
-      return NextResponse.json({ error: "upstream_failed" }, { status: 502 });
+  if (data.formType === "inquiry") {
+    try {
+      await upsertInquiryFromForm(data);
+    } catch {
+      return NextResponse.json({ error: "db_write_failed" }, { status: 502 });
     }
-  } catch {
-    return NextResponse.json({ error: "upstream_unreachable" }, { status: 502 });
   }
 
   return NextResponse.json({ success: true });

@@ -157,9 +157,11 @@ export interface ApplicationRecord {
   status: ApplicationStatus;
   notes?: string;
   interviewInviteToken?: string;
+  interviewInviteSentAt?: string;
+  interviewReminderSentAt?: string;
   interviewSlotId?: string;
   interviewScheduledAt?: string;
-  source?: "website_form" | "csv_import" | "manual";
+  source?: "website_form" | "csv_import" | "manual" | "legacy_sheet_import";
   sourceTimestampRaw?: string;
   createdAt: string;
   updatedAt: string;
@@ -393,6 +395,8 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
     status: normalizeApplicationStatus(readLegacyText(row, ["status"]), hasScheduledInterview),
     notes: readLegacyText(row, ["notes", "Notes"]),
     interviewInviteToken: readLegacyText(row, ["interviewInviteToken"]),
+    interviewInviteSentAt: readLegacyText(row, ["interviewInviteSentAt"]),
+    interviewReminderSentAt: readLegacyText(row, ["interviewReminderSentAt"]),
     interviewSlotId,
     interviewScheduledAt,
     source: (readLegacyText(row, ["source"]) as ApplicationRecord["source"]) || undefined,

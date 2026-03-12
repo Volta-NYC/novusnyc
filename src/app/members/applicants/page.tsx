@@ -118,6 +118,7 @@ function findHeaderIndex(headers: string[], aliases: string[]): number {
 
 function coerceStatus(raw: string): ApplicationStatus {
   const key = normalize(raw);
+  if (key.includes("invite")) return "Interview Pending";
   if (key.includes("review")) return "Reviewing";
   if (key.includes("interview") && key.includes("schedule")) return "Interview Scheduled";
   if (key.includes("interview")) return "Interview Pending";
@@ -125,6 +126,35 @@ function coerceStatus(raw: string): ApplicationStatus {
   if (key.includes("wait")) return "Waitlisted";
   if (key.includes("reject") || key.includes("not accepted")) return "Not Accepted";
   return "New";
+}
+
+function normalizeName(value: string): string {
+  return normalize(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function canonicalEmail(value: string): string {
+  const email = normalize(value);
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return email;
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    const base = local.split("+")[0].replace(/\./g, "");
+    return `${base}@gmail.com`;
+  }
+  return `${local}@${domain}`;
+}
+
+function namesLikelyMatch(leftRaw: string, rightRaw: string): boolean {
+  const left = normalizeName(leftRaw);
+  const right = normalizeName(rightRaw);
+  if (!left || !right) return false;
+  if (left === right || left.includes(right) || right.includes(left)) return true;
+  const leftTokens = new Set(left.split(" ").filter(Boolean));
+  const rightTokens = new Set(right.split(" ").filter(Boolean));
+  let overlap = 0;
+  leftTokens.forEach((token) => {
+    if (rightTokens.has(token)) overlap += 1;
+  });
+  return overlap >= 2;
 }
 
 function formatDateTime(value: string): string {
@@ -146,6 +176,8 @@ export default function ApplicantsPage() {
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
   const [search, setSearch] = useState("");
   const [importing, setImporting] = useState(false);
+  const [sendingInvites, setSendingInvites] = useState(false);
+  const [sendingReminders, setSendingReminders] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [editing, setEditing] = useState<ApplicationRecord | null>(null);
   const [editStatus, setEditStatus] = useState<ApplicationStatus>("New");
@@ -159,17 +191,29 @@ export default function ApplicantsPage() {
   useEffect(() => subscribeApplications(setApplications), []);
   useEffect(() => subscribeInterviewSlots(setSlots), []);
 
-  const interviewByEmail = useMemo(() => {
-    const map = new Map<string, InterviewSlot>();
-    const booked = slots
-      .filter((slot) => !slot.available && (slot.bookerEmail ?? "").trim())
-      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
-    booked.forEach((slot) => {
-      const email = normalize(slot.bookerEmail ?? "");
-      if (!map.has(email)) map.set(email, slot);
+  const bookedSlots = useMemo(
+    () => [...slots]
+      .filter((slot) => !slot.available)
+      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()),
+    [slots],
+  );
+
+  const matchBookedSlot = (app: ApplicationRecord): InterviewSlot | undefined => {
+    const appEmail = normalize(app.email);
+    const appCanonical = canonicalEmail(appEmail);
+    const appName = app.fullName;
+    const token = normalize(app.interviewInviteToken ?? "");
+    return bookedSlots.find((slot) => {
+      const slotEmail = normalize(slot.bookerEmail ?? "");
+      const slotCanonical = canonicalEmail(slotEmail);
+      const slotName = slot.bookerName ?? "";
+      const slotToken = normalize(slot.bookedBy ?? "");
+      if (token && slotToken && token === slotToken) return true;
+      if (appEmail && slotEmail && (appEmail === slotEmail || appCanonical === slotCanonical)) return true;
+      if (appName && slotName && namesLikelyMatch(appName, slotName)) return true;
+      return false;
     });
-    return map;
-  }, [slots]);
+  };
 
   const filtered = useMemo(() => {
     const q = normalize(search);
@@ -214,6 +258,76 @@ export default function ApplicantsPage() {
     const url = `${window.location.origin}/book/${token}`;
     await navigator.clipboard.writeText(url);
     setStatusMessage("Interview link created and copied.");
+  };
+
+  const sendInterviewInviteEmails = async (ids: string[], mode: "initial" | "reminder") => {
+    if (!user || ids.length === 0) return { sent: 0, skipped: 0, failed: 0 };
+    const token = await user.getIdToken();
+    if (!token) return { sent: 0, skipped: 0, failed: ids.length };
+    const response = await fetch("/api/members/applicants/interview-invite-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        mode,
+        applicationIds: ids,
+      }),
+    });
+    if (!response.ok) throw new Error("send_invite_failed");
+    const json = await response.json() as {
+      sent?: number;
+      skipped?: number;
+      failed?: number;
+    };
+    return {
+      sent: json.sent ?? 0,
+      skipped: json.skipped ?? 0,
+      failed: json.failed ?? 0,
+    };
+  };
+
+  const sendInviteForApplicant = async (app: ApplicationRecord) => {
+    setSendingInvites(true);
+    try {
+      const result = await sendInterviewInviteEmails([app.id], "initial");
+      setStatusMessage(`Invite email result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
+    } catch {
+      setStatusMessage("Could not send interview invite email.");
+    } finally {
+      setSendingInvites(false);
+    }
+  };
+
+  const remindUnbookedAfterTwoDays = async () => {
+    const now = Date.now();
+    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+    const targetIds = applications
+      .filter((app) => {
+        const sentAt = Date.parse(app.interviewInviteSentAt ?? "");
+        if (!sentAt || now - sentAt < twoDaysMs) return false;
+        const bookedSlot = matchBookedSlot(app);
+        if (bookedSlot) return false;
+        const remindedAt = Date.parse(app.interviewReminderSentAt ?? "");
+        return !remindedAt || remindedAt < sentAt;
+      })
+      .map((app) => app.id);
+
+    if (targetIds.length === 0) {
+      setStatusMessage("No unbooked applicants need reminders right now.");
+      return;
+    }
+
+    setSendingReminders(true);
+    try {
+      const result = await sendInterviewInviteEmails(targetIds, "reminder");
+      setStatusMessage(`Reminder result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
+    } catch {
+      setStatusMessage("Could not send reminder emails.");
+    } finally {
+      setSendingReminders(false);
+    }
   };
 
   const saveApplicant = async () => {
@@ -278,46 +392,71 @@ export default function ApplicantsPage() {
       const emailIdx = findHeaderIndex(headers, ["email", "email address"]);
       const schoolIdx = findHeaderIndex(headers, ["school name", "education", "school", "high school"]);
       const gradeIdx = findHeaderIndex(headers, ["grade", "class year", "year"]);
-      const cityIdx = findHeaderIndex(headers, ["city state", "city, state", "city"]);
+      const cityStateIdx = findHeaderIndex(headers, ["city state", "city, state"]);
+      const cityIdx = findHeaderIndex(headers, ["city"]);
+      const stateIdx = findHeaderIndex(headers, ["state"]);
       const referralIdx = findHeaderIndex(headers, ["how they heard", "referral", "heard about", "source"]);
       const tracksIdx = findHeaderIndex(headers, ["tracks selected", "tracks", "track"]);
-      const statusIdx = findHeaderIndex(headers, ["status", "application status"]);
+      const statusIdx = findHeaderIndex(headers, ["status", "application status", "progress"]);
       const notesIdx = findHeaderIndex(headers, ["notes", "note"]);
       const timestampIdx = findHeaderIndex(headers, ["timestamp", "created at", "date"]);
+      const resumeIdx = findHeaderIndex(headers, ["resume url", "resume"]);
+      const sentInviteIdx = findHeaderIndex(headers, ["send invite to interview"]);
 
-      if (nameIdx === -1 || emailIdx === -1) {
-        setStatusMessage("CSV must include Name and Email headers.");
+      if (nameIdx === -1 && emailIdx === -1) {
+        setStatusMessage("CSV must include at least Name or Email headers.");
         return;
       }
 
       const existingByKey = new Map<string, ApplicationRecord>();
+      const existingByEmail = new Map<string, ApplicationRecord>();
+      const existingByName = new Map<string, ApplicationRecord[]>();
       applications.forEach((app) => {
-        const key = `${normalize(app.fullName)}|${normalize(app.email)}`;
+        const nameKey = normalize(app.fullName);
+        const emailKey = normalize(app.email);
+        const key = `${nameKey}|${emailKey}`;
         existingByKey.set(key, app);
+        if (emailKey) existingByEmail.set(emailKey, app);
+        if (nameKey) {
+          const arr = existingByName.get(nameKey) ?? [];
+          arr.push(app);
+          existingByName.set(nameKey, arr);
+        }
       });
 
       let added = 0;
       let updated = 0;
       for (const row of rows.slice(1)) {
-        const fullName = (row[nameIdx] ?? "").trim();
-        const email = (row[emailIdx] ?? "").trim().toLowerCase();
-        if (!fullName || !email) continue;
+        const fullName = nameIdx === -1 ? "" : (row[nameIdx] ?? "").trim();
+        const email = emailIdx === -1 ? "" : (row[emailIdx] ?? "").trim().toLowerCase();
+        if (!fullName && !email) continue;
         const key = `${normalize(fullName)}|${normalize(email)}`;
-        const existing = existingByKey.get(key);
+        let existing = existingByKey.get(key);
+        if (!existing && email) existing = existingByEmail.get(normalize(email));
+        if (!existing && fullName) {
+          const candidates = existingByName.get(normalize(fullName)) ?? [];
+          if (candidates.length === 1) [existing] = candidates;
+        }
         const importedCreatedAt = timestampIdx !== -1 ? parseTimestamp(row[timestampIdx] ?? "") : new Date().toISOString();
         const parsedSchool = schoolIdx === -1 ? "" : (row[schoolIdx] ?? "").trim();
         const parsedGrade = gradeIdx === -1 ? "" : (row[gradeIdx] ?? "").trim();
-        const parsedCity = cityIdx === -1 ? "" : (row[cityIdx] ?? "").trim();
+        const parsedCity = cityStateIdx !== -1
+          ? (row[cityStateIdx] ?? "").trim()
+          : [cityIdx === -1 ? "" : String(row[cityIdx] ?? "").trim(), stateIdx === -1 ? "" : String(row[stateIdx] ?? "").trim()]
+            .filter(Boolean)
+            .join(", ");
         const parsedReferral = referralIdx === -1 ? "" : (row[referralIdx] ?? "").trim();
         const parsedTracks = tracksIdx === -1 ? "" : (row[tracksIdx] ?? "").trim();
         const parsedStatusRaw = statusIdx === -1 ? "" : (row[statusIdx] ?? "").trim();
         const parsedNotes = notesIdx === -1 ? "" : (row[notesIdx] ?? "").trim();
         const parsedTimestampRaw = timestampIdx === -1 ? "" : (row[timestampIdx] ?? "").trim();
+        const parsedResumeUrl = resumeIdx === -1 ? "" : (row[resumeIdx] ?? "").trim();
+        const parsedInviteFlag = sentInviteIdx === -1 ? "" : (row[sentInviteIdx] ?? "").trim().toLowerCase();
 
         const patch: Partial<ApplicationRecord> = {
-          fullName,
-          email,
-          source: "csv_import",
+          fullName: fullName || (existing?.fullName ?? ""),
+          email: email || (existing?.email ?? ""),
+          source: "legacy_sheet_import",
         };
         if (parsedSchool) patch.schoolName = parsedSchool;
         if (parsedGrade) patch.grade = parsedGrade;
@@ -327,12 +466,25 @@ export default function ApplicantsPage() {
         if (parsedStatusRaw) patch.status = coerceStatus(parsedStatusRaw);
         if (parsedNotes) patch.notes = parsedNotes;
         if (parsedTimestampRaw) patch.sourceTimestampRaw = parsedTimestampRaw;
+        if (parsedResumeUrl) {
+          patch.resumeUrl = parsedResumeUrl;
+          patch.hasResume = "Yes";
+        }
+        if (parsedInviteFlag === "true" || parsedInviteFlag === "yes") {
+          patch.interviewInviteSentAt = importedCreatedAt;
+        }
 
         if (existing) {
+          if (!patch.fullName && !patch.email) {
+            continue;
+          }
           // eslint-disable-next-line no-await-in-loop
           await updateApplicationRecord(existing.id, patch);
           updated += 1;
         } else {
+          if (!fullName || !email) {
+            continue;
+          }
           // eslint-disable-next-line no-await-in-loop
           await createApplicationRecord({
             fullName: patch.fullName ?? fullName,
@@ -343,13 +495,14 @@ export default function ApplicantsPage() {
             referral: parsedReferral,
             tracksSelected: parsedTracks,
             hasResume: "",
-            resumeUrl: "",
+            resumeUrl: parsedResumeUrl,
             toolsSoftware: "",
             accomplishment: "",
             status: parsedStatusRaw ? coerceStatus(parsedStatusRaw) : "New",
             notes: parsedNotes,
-            source: "csv_import",
+            source: "legacy_sheet_import",
             sourceTimestampRaw: parsedTimestampRaw,
+            interviewInviteSentAt: parsedInviteFlag === "true" || parsedInviteFlag === "yes" ? importedCreatedAt : "",
             createdAt: importedCreatedAt,
             updatedAt: importedCreatedAt,
           });
@@ -387,6 +540,9 @@ export default function ApplicantsPage() {
         action={
           canEdit ? (
             <div className="flex gap-2">
+              <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites}>
+                {sendingReminders ? "Sending reminders..." : "Remind Unbooked (2+ days)"}
+              </Btn>
               <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
                 {importing ? "Importing..." : "Import CSV"}
               </Btn>
@@ -405,14 +561,17 @@ export default function ApplicantsPage() {
         <table className="w-full min-w-[980px]">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
-              {["Name", "Email", "School", "Applied", "Interview", "Status", "Actions"].map((col) => (
+              {["Name", "Email", "School", "Applied", "Invite Email", "Interview", "Status", "Actions"].map((col) => (
                 <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/45">{col}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {filtered.map((app) => {
-              const latestInterview = interviewByEmail.get(normalize(app.email));
+              const latestInterview = matchBookedSlot(app);
+              const inviteSentAt = app.interviewInviteSentAt ? Date.parse(app.interviewInviteSentAt) : NaN;
+              const bookedAt = latestInterview ? Date.parse(latestInterview.datetime) : NaN;
+              const bookedAfterInvite = Number.isFinite(inviteSentAt) && Number.isFinite(bookedAt) && bookedAt >= inviteSentAt;
               return (
                 <tr key={app.id} className="hover:bg-white/3 transition-colors">
                   <td className="px-4 py-3 text-white/85">{app.fullName}</td>
@@ -420,8 +579,25 @@ export default function ApplicantsPage() {
                   <td className="px-4 py-3 text-white/55 text-sm">{app.schoolName || "—"}</td>
                   <td className="px-4 py-3 text-white/45 text-xs">{formatDateTime(app.createdAt)}</td>
                   <td className="px-4 py-3 text-xs">
+                    {app.interviewInviteSentAt ? (
+                      <div className="text-white/65">
+                        <div>{formatDateTime(app.interviewInviteSentAt)}</div>
+                        {app.interviewReminderSentAt ? (
+                          <div className="text-[11px] text-white/40 mt-1">Reminder: {formatDateTime(app.interviewReminderSentAt)}</div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="text-white/30">Not sent</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
                     {latestInterview ? (
-                      <span className="text-white/65">{formatDateTime(latestInterview.datetime)}</span>
+                      <div className="text-white/65">
+                        <div>{formatDateTime(latestInterview.datetime)}</div>
+                        {bookedAfterInvite ? (
+                          <div className="text-[11px] text-emerald-300 mt-1">Booked after invite</div>
+                        ) : null}
+                      </div>
                     ) : (
                       <span className="text-white/30">Not booked</span>
                     )}
@@ -431,6 +607,14 @@ export default function ApplicantsPage() {
                     <div className="flex gap-2">
                       {canEdit && (
                         <>
+                          <Btn
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => sendInviteForApplicant(app)}
+                            disabled={sendingInvites || sendingReminders}
+                          >
+                            {app.interviewInviteSentAt ? "Resend Invite" : "Send Invite"}
+                          </Btn>
                           <Btn size="sm" variant="secondary" onClick={() => createInterviewLink(app)}>Interview Link</Btn>
                           <Btn size="sm" variant="secondary" onClick={() => openEdit(app)}>Edit</Btn>
                         </>

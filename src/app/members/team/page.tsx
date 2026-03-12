@@ -47,6 +47,14 @@ function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
   }
 }
 
+const TRACK_SORT_ORDER: Record<TrackKey, number> = {
+  Finance: 0,
+  Marketing: 1,
+  Outreach: 2,
+  Tech: 3,
+  "—": 4,
+};
+
 type ImportedMember = {
   name: string;
   email: string;
@@ -447,7 +455,7 @@ export default function TeamPage() {
     let cmp = 0;
     switch (sortCol) {
       case 0: {
-        const trackCmp = getMemberTrack(a).localeCompare(getMemberTrack(b));
+        const trackCmp = TRACK_SORT_ORDER[getMemberTrack(a)] - TRACK_SORT_ORDER[getMemberTrack(b)];
         cmp = trackCmp !== 0 ? trackCmp : a.name.localeCompare(b.name);
         break;
       }

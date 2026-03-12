@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInterviewSlots,
   subscribeTeam,
+  subscribeApplications,
   createInterviewSlot,
   updateInterviewSlot,
   updateInterviewSettings,
@@ -14,6 +15,7 @@ import {
   deleteInterviewSlot,
   type TeamMember,
   type InterviewSlot,
+  type ApplicationRecord,
 } from "@/lib/members/storage";
 import { Btn, Field, Modal, AutocompleteInput, AutocompleteTagInput, useConfirm } from "@/components/members/ui";
 import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
@@ -237,6 +239,39 @@ function normalizeInterviewerMemberIds(values: string[]): string[] {
   );
 }
 
+function normalizeString(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function normalizeName(value: string): string {
+  return normalizeString(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function canonicalEmail(value: string): string {
+  const raw = normalizeString(value);
+  const [local, domain] = raw.split("@");
+  if (!local || !domain) return raw;
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    const base = local.split("+")[0].replace(/\./g, "");
+    return `${base}@gmail.com`;
+  }
+  return `${local}@${domain}`;
+}
+
+function namesLikelyMatch(a: string, b: string): boolean {
+  const left = normalizeName(a);
+  const right = normalizeName(b);
+  if (!left || !right) return false;
+  if (left === right || left.includes(right) || right.includes(left)) return true;
+  const lt = new Set(left.split(" ").filter(Boolean));
+  const rt = new Set(right.split(" ").filter(Boolean));
+  let overlap = 0;
+  lt.forEach((token) => {
+    if (rt.has(token)) overlap += 1;
+  });
+  return overlap >= 2;
+}
+
 function getSlotInterviewerNames(slot: InterviewSlot, memberNameById: Record<string, string>): string[] {
   const ids = Array.isArray(slot.interviewerMemberIds)
     ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
@@ -266,6 +301,7 @@ function InterviewsContent() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "availability">("upcoming");
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
 
   const [copiedBookingLink, setCopiedBookingLink] = useState(false);
   const [bookingLink, setBookingLink] = useState(FALLBACK_BOOKING_URL);
@@ -326,6 +362,7 @@ function InterviewsContent() {
 
   useEffect(() => subscribeInterviewSlots(setSlots), []);
   useEffect(() => subscribeTeam(setTeamMembers), []);
+  useEffect(() => subscribeApplications(setApplications), []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -649,6 +686,24 @@ function InterviewsContent() {
       sortedSlots.filter((s) => s.available && !s.bookedBy && new Date(s.datetime).getTime() > now),
     [sortedSlots, now]
   );
+
+  const findResumeUrlForSlot = useCallback((slot: InterviewSlot): string => {
+    const token = normalizeString(slot.bookedBy ?? "");
+    const slotEmail = normalizeString(slot.bookerEmail ?? "");
+    const slotCanonical = canonicalEmail(slotEmail);
+    const slotName = slot.bookerName ?? "";
+    for (const app of applications) {
+      const appResume = (app.resumeUrl ?? "").trim();
+      if (!appResume) continue;
+      const appToken = normalizeString(app.interviewInviteToken ?? "");
+      if (token && appToken && token === appToken) return appResume;
+      const appEmail = normalizeString(app.email ?? "");
+      const appCanonical = canonicalEmail(appEmail);
+      if (slotEmail && appEmail && (slotEmail === appEmail || slotCanonical === appCanonical)) return appResume;
+      if (slotName && app.fullName && namesLikelyMatch(slotName, app.fullName)) return appResume;
+    }
+    return "";
+  }, [applications]);
 
   const availableFutureByDate = useMemo(() => {
     const byDate: Record<string, InterviewSlot[]> = {};
@@ -1547,6 +1602,7 @@ function InterviewsContent() {
                 {daySlots.map((slot) => {
                   const displayName = slot.bookerName?.trim() || "Interviewee";
                   const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
+                  const resumeUrl = findResumeUrlForSlot(slot);
                   return (
                     <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-4 py-3 flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
@@ -1574,12 +1630,34 @@ function InterviewsContent() {
                             <Btn size="sm" variant="secondary" onClick={() => startReschedule(slot)}>
                               Move
                             </Btn>
+                            {resumeUrl && (
+                              <a
+                                href={resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/8 border border-white/12 text-white/80 hover:bg-white/12 transition-colors"
+                              >
+                                Resume
+                              </a>
+                            )}
                             <Btn size="sm" variant="danger" onClick={() => cancelBookedInterview(slot)}>
                               Cancel
                             </Btn>
                           </>
                         ) : (
-                          <span className="text-white/30 text-xs font-body">View only</span>
+                          <div className="flex items-center gap-2">
+                            {resumeUrl && (
+                              <a
+                                href={resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/8 border border-white/12 text-white/80 hover:bg-white/12 transition-colors"
+                              >
+                                Resume
+                              </a>
+                            )}
+                            <span className="text-white/30 text-xs font-body">View only</span>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1606,6 +1684,7 @@ function InterviewsContent() {
                 {daySlots.map((slot) => {
                   const displayName = slot.bookerName?.trim() || "Interviewee";
                   const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
+                  const resumeUrl = findResumeUrlForSlot(slot);
                   return (
                     <div key={slot.id} className="bg-[#1C1F26] border border-white/8 rounded-xl px-4 py-3 flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-white/30 flex-shrink-0" />
@@ -1619,13 +1698,23 @@ function InterviewsContent() {
                             : ""}
                         </p>
                       </div>
-                      {canDeleteInterviews && (
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {resumeUrl && (
+                          <a
+                            href={resumeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/8 border border-white/12 text-white/80 hover:bg-white/12 transition-colors"
+                          >
+                            Resume
+                          </a>
+                        )}
+                        {canDeleteInterviews && (
                           <Btn size="sm" variant="danger" onClick={() => deletePastInterviewEntry(slot)}>
                             Delete Entry
                           </Btn>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -2091,6 +2180,21 @@ function InterviewsContent() {
       >
         {bookedSlotDetails && (
           <div className="space-y-3">
+            {(() => {
+              const resumeUrl = findResumeUrlForSlot(bookedSlotDetails);
+              return resumeUrl ? (
+                <div className="flex justify-start">
+                  <a
+                    href={resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/8 border border-white/12 text-white/80 hover:bg-white/12 transition-colors"
+                  >
+                    Open Resume
+                  </a>
+                </div>
+              ) : null;
+            })()}
             <p className="text-white/60 text-sm font-body">{formatDateTime(bookedSlotDetails.datetime)}</p>
             <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-1">
               <p className="text-xs text-white/45 uppercase tracking-wide">Interviewee</p>

@@ -403,3 +403,83 @@ export async function sendInterviewerRescheduledNotificationEmail(input: {
     `,
   });
 }
+
+function getSiteBaseUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL
+    || process.env.VERCEL_PROJECT_PRODUCTION_URL
+    || process.env.VERCEL_URL
+    || ""
+  ).replace(/\/+$/, "");
+}
+
+function bookingPortalUrl(token: string, fallbackOrigin?: string): string {
+  const base = getSiteBaseUrl() || (fallbackOrigin ?? "").replace(/\/+$/, "");
+  if (!base) return `/book/${token}`;
+  const withProtocol = /^https?:\/\//i.test(base) ? base : `https://${base}`;
+  return `${withProtocol}/book/${token}`;
+}
+
+export async function sendInterviewInviteLinkEmail(input: {
+  to: string;
+  applicantName: string;
+  bookingToken: string;
+  fallbackOrigin?: string;
+}): Promise<void> {
+  const link = bookingPortalUrl(input.bookingToken, input.fallbackOrigin);
+  await sendInterviewEmail({
+    to: input.to,
+    subject: "Book your Volta interview",
+    text: [
+      `Hi ${input.applicantName || "there"},`,
+      "",
+      "Thanks for applying to Volta.",
+      "Use the link below to choose your interview time:",
+      link,
+      "",
+      "Please book within 2 days if possible.",
+      "",
+      "Best,",
+      "Ethan Zhang",
+    ].join("\n"),
+    html: `
+      <p>Hi ${input.applicantName || "there"},</p>
+      <p>Thanks for applying to Volta.</p>
+      <p>Use the link below to choose your interview time:</p>
+      <p><a href="${link}">${link}</a></p>
+      <p>Please book within 2 days if possible.</p>
+      <p>Best,<br/>Ethan Zhang</p>
+    `,
+  });
+}
+
+export async function sendInterviewInviteReminderEmail(input: {
+  to: string;
+  applicantName: string;
+  bookingToken: string;
+  fallbackOrigin?: string;
+}): Promise<void> {
+  const link = bookingPortalUrl(input.bookingToken, input.fallbackOrigin);
+  await sendInterviewEmail({
+    to: input.to,
+    subject: "Reminder: book your Volta interview",
+    text: [
+      `Hi ${input.applicantName || "there"},`,
+      "",
+      "Quick reminder to book your Volta interview slot:",
+      link,
+      "",
+      "Please use the same name and email you used in your application.",
+      "",
+      "Best,",
+      "Ethan Zhang",
+    ].join("\n"),
+    html: `
+      <p>Hi ${input.applicantName || "there"},</p>
+      <p>Quick reminder to book your Volta interview slot:</p>
+      <p><a href="${link}">${link}</a></p>
+      <p>Please use the same name and email you used in your application.</p>
+      <p>Best,<br/>Ethan Zhang</p>
+    `,
+  });
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
@@ -56,6 +56,51 @@ function nextSortIndex(items: Business[]): number {
   return max + 1000;
 }
 
+function normalizeHeader(raw: string): string {
+  return raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function findHeaderIndex(headers: string[], aliases: string[]): number {
+  const normalized = headers.map(normalizeHeader);
+  for (const alias of aliases) {
+    const index = normalized.indexOf(alias);
+    if (index !== -1) return index;
+  }
+  return -1;
+}
+
+function parseCsv(text: string): string[][] {
+  return text
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim() !== "")
+    .map((line) => {
+      const out: string[] = [];
+      let current = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i += 1) {
+        const ch = line[i];
+        if (ch === "\"") {
+          if (inQuotes && line[i + 1] === "\"") {
+            current += "\"";
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+          continue;
+        }
+        if (ch === "," && !inQuotes) {
+          out.push(current.trim());
+          current = "";
+          continue;
+        }
+        current += ch;
+      }
+      out.push(current.trim());
+      return out;
+    });
+}
+
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   ownerName: "",
@@ -100,6 +145,9 @@ export default function BusinessesPage() {
   const [showOwnerAltEmail, setShowOwnerAltEmail] = useState(false);
   const [showAlternatePhone, setShowAlternatePhone] = useState(false);
   const [memberInput, setMemberInput] = useState("");
+  const [importingBusinessCsv, setImportingBusinessCsv] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const businessCsvInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -257,6 +305,113 @@ export default function BusinessesPage() {
       },
       `Delete "${name}"? This permanently removes the project from the tracker.`,
     );
+  };
+
+  const importBusinessInquiriesCsv = async (file: File) => {
+    setImportingBusinessCsv(true);
+    setImportMessage("Importing business inquiries...");
+    try {
+      const rows = parseCsv(await file.text());
+      if (rows.length < 2) {
+        setImportMessage("CSV must include headers and at least one row.");
+        return;
+      }
+      const headers = rows[0];
+      const timestampIdx = findHeaderIndex(headers, ["timestamp", "created at", "date"]);
+      const businessNameIdx = findHeaderIndex(headers, ["business name", "name"]);
+      const ownerNameIdx = findHeaderIndex(headers, ["owner name", "your name", "contact name"]);
+      const ownerEmailIdx = findHeaderIndex(headers, ["email", "owner email"]);
+      const neighborhoodIdx = findHeaderIndex(headers, ["neighborhood", "borough", "city"]);
+      const servicesIdx = findHeaderIndex(headers, ["services requested", "services"]);
+      const messageIdx = findHeaderIndex(headers, ["message", "notes"]);
+      const languageIdx = findHeaderIndex(headers, ["language"]);
+
+      if (businessNameIdx === -1 || ownerNameIdx === -1 || ownerEmailIdx === -1) {
+        setImportMessage("CSV must include Business Name, Owner Name, and Email headers.");
+        return;
+      }
+
+      const existing = new Set(
+        businesses.map((b) => `${b.name.trim().toLowerCase()}|${b.ownerName.trim().toLowerCase()}|${b.ownerEmail.trim().toLowerCase()}`)
+      );
+      let sortCursor = nextSortIndex(businesses);
+
+      let added = 0;
+      let skipped = 0;
+      for (const row of rows.slice(1)) {
+        const businessName = (row[businessNameIdx] ?? "").trim();
+        const ownerName = (row[ownerNameIdx] ?? "").trim();
+        const ownerEmail = (row[ownerEmailIdx] ?? "").trim().toLowerCase();
+        if (!businessName || !ownerName || !ownerEmail) {
+          skipped += 1;
+          continue;
+        }
+        const key = `${businessName.toLowerCase()}|${ownerName.toLowerCase()}|${ownerEmail}`;
+        if (existing.has(key)) {
+          skipped += 1;
+          continue;
+        }
+        const neighborhood = neighborhoodIdx === -1 ? "" : (row[neighborhoodIdx] ?? "").trim();
+        const services = servicesIdx === -1 ? "" : (row[servicesIdx] ?? "").trim();
+        const message = messageIdx === -1 ? "" : (row[messageIdx] ?? "").trim();
+        const language = languageIdx === -1 ? "" : (row[languageIdx] ?? "").trim();
+        const rawTimestamp = timestampIdx === -1 ? "" : String(row[timestampIdx] ?? "").trim();
+        const parsed = rawTimestamp ? Date.parse(rawTimestamp) : NaN;
+        const iso = Number.isNaN(parsed) ? new Date().toISOString() : new Date(parsed).toISOString();
+        await createBusiness({
+          name: businessName,
+          bidId: "",
+          ownerName,
+          ownerEmail,
+          ownerAlternateEmail: "",
+          phone: "",
+          alternatePhone: "",
+          address: neighborhood,
+          website: "",
+          projectStatus: "Discovery",
+          teamLead: "",
+          firstContactDate: iso.slice(0, 10),
+          notes: [
+            "Imported from Business Inquiries CSV",
+            neighborhood ? `Neighborhood: ${neighborhood}` : "",
+            services ? `Services Requested: ${services}` : "",
+            language ? `Language: ${language}` : "",
+            message ? `Message: ${message}` : "",
+          ].filter(Boolean).join("\n"),
+          division: "Marketing",
+          teamMembers: [],
+          sortIndex: sortCursor,
+          intakeSource: "website_form",
+          showcaseEnabled: false,
+          showcaseFeaturedOnHome: false,
+          showcaseOrder: 1000,
+          showcaseName: "",
+          showcaseType: "",
+          showcaseNeighborhood: "",
+          showcaseServices: [],
+          showcaseStatus: "In Progress",
+          showcaseDescription: "",
+          showcaseUrl: "",
+          showcaseImageUrl: "",
+          showcaseColor: "green",
+        });
+        sortCursor += 1000;
+        existing.add(key);
+        added += 1;
+      }
+      setImportMessage(`Business import complete: ${added} added, ${skipped} skipped.`);
+    } catch {
+      setImportMessage("Could not import business inquiries CSV.");
+    } finally {
+      setImportingBusinessCsv(false);
+    }
+  };
+
+  const onBusinessCsvInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await importBusinessInquiriesCsv(file);
+    event.target.value = "";
   };
 
   const statusMatchesPage = (status: Business["projectStatus"]) => {
@@ -417,12 +572,33 @@ export default function BusinessesPage() {
   return (
     <MembersLayout>
       <Dialog />
+      <input
+        ref={businessCsvInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={onBusinessCsvInput}
+      />
 
       <PageHeader
         title="Projects"
         subtitle={`${filtered.length} shown · ${businesses.length} total projects`}
-        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Project</Btn> : undefined}
+        action={
+          canEdit ? (
+            <div className="flex gap-2">
+              <Btn
+                variant="secondary"
+                onClick={() => businessCsvInputRef.current?.click()}
+                disabled={importingBusinessCsv}
+              >
+                {importingBusinessCsv ? "Importing..." : "Import Business Inquiries CSV"}
+              </Btn>
+              <Btn variant="primary" onClick={openCreate}>+ New Project</Btn>
+            </div>
+          ) : undefined
+        }
       />
+      {importMessage && <p className="text-xs text-white/55 mb-3">{importMessage}</p>}
       <p className="text-xs text-white/45 mb-4">
         <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
         <span className="mx-2">·</span>
@@ -432,8 +608,8 @@ export default function BusinessesPage() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length}   color="text-green-400" />
-        <StatCard label="Planning"  value={businesses.filter(b => b.projectStatus === "Not Started").length} color="text-purple-400" />
-        <StatCard label="Complete"  value={businesses.filter(b => b.projectStatus === "Complete").length} color="text-blue-400" />
+        <StatCard label="Discovery" value={businesses.filter(b => b.projectStatus === "Discovery").length} color="text-blue-400" />
+        <StatCard label="Not Started" value={businesses.filter(b => b.projectStatus === "Not Started").length} color="text-purple-400" />
         <StatCard label="On Hold"   value={businesses.filter(b => b.projectStatus === "On Hold").length} color="text-orange-400" />
       </div>
 
