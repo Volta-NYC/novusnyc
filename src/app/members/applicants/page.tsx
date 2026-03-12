@@ -18,6 +18,7 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
   "Interview Pending",
   "Interview Scheduled",
   "Accepted",
+  "Not Accepted",
 ];
 
 const DECISION_STATUSES = new Set<ApplicationStatus>(["Accepted"]);
@@ -865,8 +866,9 @@ export default function ApplicantsPage() {
               checked={sendDecisionEmail}
               onChange={(e) => setSendDecisionEmail(e.target.checked)}
               className="accent-[#85CC17]"
+              disabled={editStatus !== "Accepted"}
             />
-            Send decision email now (or resend one)
+            Send acceptance email now (or resend one)
           </label>
         </div>
         <div className="flex justify-end gap-2 mt-5">

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
   if (decision !== "Accepted") {
-    return NextResponse.json({ error: "unsupported_decision" }, { status: 400 });
+    return NextResponse.json({ success: true, skipped: true, reason: "non_acceptance_no_email" });
   }
   if (!/\S+@\S+\.\S+/.test(applicantEmail)) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });
