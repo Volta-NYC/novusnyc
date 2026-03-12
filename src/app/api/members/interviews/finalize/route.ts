@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbPatch, dbPush, dbRead, verifyCaller } from "@/lib/server/adminApi";
 import { createTransportForFrom } from "@/lib/server/smtp";
 import { getAdminDB } from "@/lib/firebaseAdmin";
+import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
 
 type FinalizeBody = {
   slotIds?: string[];
@@ -54,6 +55,8 @@ async function sendAcceptanceEmail(input: {
   to: string;
   applicantName: string;
   notes?: string;
+  role: string;
+  tracks?: string;
 }) {
   const allowedFrom = Array.from(
     new Set(
@@ -68,16 +71,20 @@ async function sendAcceptanceEmail(input: {
   if (!from || !allowedFrom.includes(from)) return;
   const transporter = createTransportForFrom(from).transporter;
   const replyTo = process.env.INTERVIEW_EMAIL_REPLY_TO ?? from;
-  const cleanNotes = (input.notes ?? "").trim();
-  const notesText = cleanNotes ? `\n\nAdditional note:\n${cleanNotes}` : "";
-  const notesHtml = cleanNotes ? `<p><strong>Additional note:</strong><br/>${cleanNotes.replace(/\n/g, "<br/>")}</p>` : "";
+  const signupLink = process.env.MEMBER_SIGNUP_LINK || "https://voltanyc.org/members/signup?code=VOLTA-8J3UMP";
+  const tpl = buildAcceptanceTemplate({
+    name: input.applicantName,
+    role: input.role,
+    tracks: input.tracks ?? "",
+    signupLink,
+  });
   await transporter.sendMail({
     from,
     replyTo,
     to: input.to,
-    subject: "Volta application update",
-    text: `Hi ${input.applicantName},\n\nWe're excited to let you know you've been accepted to Volta.${notesText}\n\nBest,\nVolta NYC`,
-    html: `<p>Hi ${input.applicantName},</p><p>We're excited to let you know you've been accepted to Volta.</p>${notesHtml}<p>Best,<br/>Volta NYC</p>`,
+    subject: tpl.subject,
+    text: tpl.text,
+    html: tpl.html,
   });
 }
 
@@ -223,12 +230,14 @@ export async function POST(req: NextRequest) {
     let email = String(slot.bookerEmail ?? "").trim().toLowerCase();
     let schoolName = "";
     let grade = "";
+    let tracks = "";
     if (target) {
       appId = target.id;
       fullName = String(target.row.fullName ?? "").trim() || fullName;
       email = String(target.row.email ?? "").trim().toLowerCase() || email;
       schoolName = String(target.row.schoolName ?? "").trim();
       grade = String(target.row.grade ?? "").trim();
+      tracks = String(target.row.tracksSelected ?? "").trim();
     } else {
       const createdAt = new Date().toISOString();
       const adminDb = getAdminDB();
@@ -291,6 +300,8 @@ export async function POST(req: NextRequest) {
           to: email,
           applicantName: fullName,
           notes,
+          role: teamRole,
+          tracks,
         });
       } catch {
         // continue pipeline even if email fails

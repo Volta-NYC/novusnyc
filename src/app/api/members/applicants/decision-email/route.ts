@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { createTransportForFrom } from "@/lib/server/smtp";
+import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
 
 type Decision = "Accepted" | "Waitlisted" | "Not Accepted";
 
@@ -10,16 +11,26 @@ type DecisionEmailBody = {
   decision?: Decision;
   notes?: string;
   fromAddress?: string;
+  role?: string;
+  tracks?: string;
 };
 
-function buildMessage(name: string, decision: Decision, notes: string): { subject: string; text: string; html: string } {
+function buildMessage(name: string, decision: Decision, notes: string, role?: string, tracks?: string): { subject: string; text: string; html: string } {
   const subject = `Volta application update`;
   const cleanNotes = notes.trim();
 
+  if (decision === "Accepted") {
+    const signupLink = process.env.MEMBER_SIGNUP_LINK || "https://voltanyc.org/members/signup?code=VOLTA-8J3UMP";
+    return buildAcceptanceTemplate({
+      name,
+      role: role ?? "Analyst",
+      tracks: tracks ?? "",
+      signupLink,
+    });
+  }
+
   const opening =
-    decision === "Accepted"
-      ? "We're excited to let you know you've been accepted to Volta."
-      : decision === "Waitlisted"
+    decision === "Waitlisted"
       ? "Thank you again for your interest in Volta. We are placing your application on our waitlist for now."
       : "Thank you for your interest in Volta. After review, we are not moving forward with your application at this time.";
 
@@ -47,6 +58,8 @@ export async function POST(req: NextRequest) {
   const decision = body.decision;
   const notes = (body.notes ?? "").trim();
   const requestedFrom = (body.fromAddress ?? "").trim().toLowerCase();
+  const role = (body.role ?? "").trim();
+  const tracks = (body.tracks ?? "").trim();
 
   if (!applicantName || !applicantEmail || !decision) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
@@ -75,7 +88,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
   }
   const replyTo = process.env.INTERVIEW_EMAIL_REPLY_TO ?? from;
-  const content = buildMessage(applicantName, decision, notes);
+  const content = buildMessage(applicantName, decision, notes, role, tracks);
 
   await transporter.sendMail({
     from,

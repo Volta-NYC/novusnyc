@@ -1,4 +1,5 @@
 import { createTransportForFrom } from "@/lib/server/smtp";
+import { buildInterviewInviteTemplate } from "@/lib/server/applicantEmails";
 
 type BookingEmailInput = {
   to: string;
@@ -421,30 +422,16 @@ export async function sendInterviewInviteLinkEmail(input: {
   bookingToken: string;
   fallbackOrigin?: string;
 }): Promise<void> {
-  const link = bookingPortalUrl(input.bookingToken, input.fallbackOrigin);
+  const link = `${(process.env.NEXT_PUBLIC_SITE_URL || input.fallbackOrigin || "https://voltanyc.org").replace(/\/+$/, "")}/book`;
+  const msg = buildInterviewInviteTemplate({
+    name: input.applicantName || "there",
+    bookingLink: link,
+  });
   await sendInterviewEmail({
     to: input.to,
-    subject: "Book your Volta interview",
-    text: [
-      `Hi ${input.applicantName || "there"},`,
-      "",
-      "Thanks for applying to Volta.",
-      "Use the link below to choose your interview time:",
-      link,
-      "",
-      "Please book within 2 days if possible.",
-      "",
-      "Best,",
-      "Ethan Zhang",
-    ].join("\n"),
-    html: `
-      <p>Hi ${input.applicantName || "there"},</p>
-      <p>Thanks for applying to Volta.</p>
-      <p>Use the link below to choose your interview time:</p>
-      <p><a href="${link}">${link}</a></p>
-      <p>Please book within 2 days if possible.</p>
-      <p>Best,<br/>Ethan Zhang</p>
-    `,
+    subject: msg.subject,
+    text: msg.text,
+    html: msg.html,
   });
 }
 

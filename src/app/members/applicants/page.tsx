@@ -393,6 +393,8 @@ export default function ApplicantsPage() {
           applicantEmail: app.email,
           decision: "Accepted",
           notes: "",
+          role: app.finalDecisionRole || "Analyst",
+          tracks: app.tracksSelected || "",
         }),
       });
     }
@@ -506,6 +508,8 @@ export default function ApplicantsPage() {
               applicantEmail: editing.email,
               decision: editStatus,
               notes: editNotes.trim(),
+              role: editing.finalDecisionRole || "Analyst",
+              tracks: editing.tracksSelected || "",
             }),
           });
           if (!response.ok) decisionEmailFailed = true;
