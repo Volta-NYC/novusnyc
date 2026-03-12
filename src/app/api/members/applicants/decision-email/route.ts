@@ -3,7 +3,7 @@ import { verifyCaller } from "@/lib/server/adminApi";
 import { createTransportForFrom } from "@/lib/server/smtp";
 import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
 
-type Decision = "Accepted" | "Waitlisted" | "Not Accepted";
+type Decision = "Accepted";
 
 type DecisionEmailBody = {
   applicantName?: string;
@@ -16,32 +16,13 @@ type DecisionEmailBody = {
 };
 
 function buildMessage(name: string, decision: Decision, notes: string, role?: string, tracks?: string): { subject: string; text: string; html: string } {
-  const subject = `Volta application update`;
-  const cleanNotes = notes.trim();
-
-  if (decision === "Accepted") {
-    const signupLink = process.env.MEMBER_SIGNUP_LINK || "https://voltanyc.org/members/signup?code=VOLTA-8J3UMP";
-    return buildAcceptanceTemplate({
-      name,
-      role: role ?? "Analyst",
-      tracks: tracks ?? "",
-      signupLink,
-    });
-  }
-
-  const opening =
-    decision === "Waitlisted"
-      ? "Thank you again for your interest in Volta. We are placing your application on our waitlist for now."
-      : "Thank you for your interest in Volta. After review, we are not moving forward with your application at this time.";
-
-  const notesText = cleanNotes ? `\n\nAdditional note:\n${cleanNotes}` : "";
-  const notesHtml = cleanNotes ? `<p><strong>Additional note:</strong><br/>${cleanNotes.replace(/\n/g, "<br/>")}</p>` : "";
-
-  return {
-    subject,
-    text: `Hi ${name},\n\n${opening}${notesText}\n\nBest,\nVolta NYC`,
-    html: `<p>Hi ${name},</p><p>${opening}</p>${notesHtml}<p>Best,<br/>Volta NYC</p>`,
-  };
+  const signupLink = process.env.MEMBER_SIGNUP_LINK || "https://voltanyc.org/members/signup?code=VOLTA-8J3UMP";
+  return buildAcceptanceTemplate({
+    name,
+    role: role ?? "Analyst",
+    tracks: tracks ?? "",
+    signupLink,
+  });
 }
 
 function normalizeEmail(email: string): string {
@@ -63,6 +44,9 @@ export async function POST(req: NextRequest) {
 
   if (!applicantName || !applicantEmail || !decision) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
+  }
+  if (decision !== "Accepted") {
+    return NextResponse.json({ error: "unsupported_decision" }, { status: 400 });
   }
   if (!/\S+@\S+\.\S+/.test(applicantEmail)) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });

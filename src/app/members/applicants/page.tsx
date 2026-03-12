@@ -18,11 +18,9 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
   "Interview Pending",
   "Interview Scheduled",
   "Accepted",
-  "Waitlisted",
-  "Not Accepted",
 ];
 
-const DECISION_STATUSES = new Set<ApplicationStatus>(["Accepted", "Waitlisted", "Not Accepted"]);
+const DECISION_STATUSES = new Set<ApplicationStatus>(["Accepted"]);
 
 function normalize(v: string): string {
   return v.trim().toLowerCase();
