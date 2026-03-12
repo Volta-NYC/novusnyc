@@ -311,10 +311,33 @@ export default function ApplicantsPage() {
     setSaving(true);
     try {
       let decisionEmailFailed = false;
+      let promoteFailed = false;
       await updateApplicationRecord(editing.id, {
         status: editStatus,
         notes: editNotes.trim(),
       });
+
+      if (editStatus === "Accepted") {
+        const token = await user?.getIdToken();
+        if (token) {
+          const promoteResponse = await fetch("/api/members/applicants/promote", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              fullName: editing.fullName,
+              email: editing.email,
+              schoolName: editing.schoolName,
+              grade: editing.grade,
+            }),
+          });
+          if (!promoteResponse.ok) promoteFailed = true;
+        } else {
+          promoteFailed = true;
+        }
+      }
 
       const transitionedToDecision =
         editing.status !== editStatus && DECISION_STATUSES.has(editStatus);
@@ -343,8 +366,10 @@ export default function ApplicantsPage() {
 
       setEditing(null);
       setStatusMessage(
-        decisionEmailFailed
-          ? "Applicant updated, but decision email could not be sent."
+        [decisionEmailFailed ? "decision email could not be sent" : "", promoteFailed ? "accepted applicant could not be synced to Team Directory" : ""]
+          .filter(Boolean)
+          .join(" and ")
+          ? `Applicant updated, but ${[decisionEmailFailed ? "decision email could not be sent" : "", promoteFailed ? "accepted applicant could not be synced to Team Directory" : ""].filter(Boolean).join(" and ")}.`
           : "Applicant updated."
       );
     } finally {
