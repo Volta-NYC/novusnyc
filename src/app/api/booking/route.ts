@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDB } from "@/lib/firebaseAdmin";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
+import { formatInterviewInET, toInterviewTimestamp } from "@/lib/interviews/datetime";
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
 import {
   sendInterviewerBookingNotificationEmail,
@@ -115,18 +116,14 @@ function getInterviewerMemberIds(slot: Record<string, unknown>): string[] {
 }
 
 function formatEtShort(datetimeIso: string): string {
-  const date = new Date(datetimeIso);
-  if (Number.isNaN(date.getTime())) return datetimeIso;
-  const datePart = date.toLocaleDateString("en-US", {
+  const datePart = formatInterviewInET(datetimeIso, {
     weekday: "short",
     month: "short",
     day: "numeric",
-    timeZone: "America/New_York",
   });
-  const timePart = date.toLocaleTimeString("en-US", {
+  const timePart = formatInterviewInET(datetimeIso, {
     hour: "numeric",
     minute: "2-digit",
-    timeZone: "America/New_York",
   });
   return `${datePart}, ${timePart} ET`;
 }
@@ -144,12 +141,12 @@ function buildInterviewerUpcomingSummary(
       if (!slot || typeof slot !== "object") return false;
       const row = slot as Record<string, unknown>;
       if (!row.bookedBy || row.available) return false;
-      const startsAt = new Date(String(row.datetime ?? "")).getTime();
+      const startsAt = toInterviewTimestamp(String(row.datetime ?? ""));
       if (Number.isNaN(startsAt) || startsAt < nowMs || startsAt > windowEnd) return false;
       const ids = getInterviewerMemberIds(row);
       return ids.includes(interviewerMemberId);
     })
-    .sort((a, b) => new Date(String(a.datetime ?? "")).getTime() - new Date(String(b.datetime ?? "")).getTime());
+    .sort((a, b) => toInterviewTimestamp(String(a.datetime ?? "")) - toInterviewTimestamp(String(b.datetime ?? "")));
 
   const lines = entries.map((slot) => {
     const row = slot as Record<string, unknown>;
@@ -172,14 +169,14 @@ async function findExistingBookingsByEmail(email: string, excludeSlotId: string)
     .filter(({ id, slot }) => {
       if (id === excludeSlotId) return false;
       const slotEmail = String(slot.bookerEmail ?? "").trim().toLowerCase();
-      const startsAt = new Date(String(slot.datetime ?? "")).getTime();
+      const startsAt = toInterviewTimestamp(String(slot.datetime ?? ""));
       return !!slot.bookedBy && !slot.available && slotEmail === target && startsAt > now;
     })
     .map(({ id, slot }) => ({
       id,
       datetime: String(slot.datetime ?? ""),
     }))
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+    .sort((a, b) => toInterviewTimestamp(a.datetime) - toInterviewTimestamp(b.datetime));
 }
 
 async function clearExistingBooking(slotId: string): Promise<void> {
@@ -277,8 +274,8 @@ export async function GET() {
   const slots: RawSlot[] = slotsData
     ? Object.entries(slotsData as Record<string, Record<string, unknown>>)
       .map(([id, data]): RawSlot => ({ ...data, id }))
-      .filter((s) => !!s["available"] && !s["bookedBy"] && hasInterviewerMembers(s) && new Date(s["datetime"] as string).getTime() > now)
-      .sort((a, b) => new Date(a["datetime"] as string).getTime() - new Date(b["datetime"] as string).getTime())
+      .filter((s) => !!s["available"] && !s["bookedBy"] && hasInterviewerMembers(s) && toInterviewTimestamp(s["datetime"] as string) > now)
+      .sort((a, b) => toInterviewTimestamp(a["datetime"] as string) - toInterviewTimestamp(b["datetime"] as string))
     : [];
 
   let settingsData: unknown = null;
@@ -327,7 +324,7 @@ export async function POST(req: NextRequest) {
   const slot = slotData as Record<string, unknown>;
   const isAvailable = !!slot.available;
   const alreadyBooked = !!slot.bookedBy;
-  const startsAt = new Date((slot.datetime as string) ?? "").getTime();
+  const startsAt = toInterviewTimestamp((slot.datetime as string) ?? "");
   const hasInterviewers = hasInterviewerMembers(slot);
 
   if (!isAvailable || alreadyBooked || !hasInterviewers || Number.isNaN(startsAt) || startsAt <= Date.now()) {

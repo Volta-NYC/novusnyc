@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbPatch, dbPush, dbRead, verifyCaller } from "@/lib/server/adminApi";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
+import { toInterviewTimestamp } from "@/lib/interviews/datetime";
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
 import {
   sendInterviewerRescheduledNotificationEmail,
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
   const fromDatetime = String(fromSlot.datetime ?? "");
   const toDatetime = String(toSlot.datetime ?? "");
 
-  const toStartsAt = new Date(toDatetime).getTime();
+  const toStartsAt = toInterviewTimestamp(toDatetime);
   if (!fromBookedBy || !fromEmail) {
     return NextResponse.json({ error: "source_not_booked" }, { status: 409 });
   }

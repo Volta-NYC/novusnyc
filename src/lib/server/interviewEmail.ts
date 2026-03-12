@@ -1,5 +1,6 @@
 import { createTransportForFrom } from "@/lib/server/smtp";
 import { buildInterviewInviteTemplate } from "@/lib/server/applicantEmails";
+import { formatInterviewInET, parseInterviewDateTime } from "@/lib/interviews/datetime";
 
 type BookingEmailInput = {
   to: string;
@@ -12,9 +13,6 @@ type BookingEmailInput = {
   organizerName?: string;
   organizerEmail?: string;
 };
-
-const ET_TIMEZONE = "America/New_York";
-const ISO_NO_TZ_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 
 function utcStamp(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
@@ -35,71 +33,9 @@ function sanitizeEmailAddress(value: string): string {
   return (match?.[1] ?? trimmed).trim();
 }
 
-type DateParts = {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-};
-
-function parseIsoWithoutTimezone(value: string): DateParts | null {
-  const m = value.match(ISO_NO_TZ_RE);
-  if (!m) return null;
-  return {
-    year: Number(m[1]),
-    month: Number(m[2]),
-    day: Number(m[3]),
-    hour: Number(m[4]),
-    minute: Number(m[5]),
-    second: Number(m[6] ?? "0"),
-  };
-}
-
-function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const parts = dtf.formatToParts(date);
-  const val = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
-  const asUTC = Date.UTC(
-    val("year"),
-    val("month") - 1,
-    val("day"),
-    val("hour"),
-    val("minute"),
-    val("second"),
-  );
-  return asUTC - date.getTime();
-}
-
-// Converts a wall-clock ET datetime (without timezone) into a real UTC instant.
-function etWallClockToUtc(parts: DateParts): Date {
-  const targetUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
-  let guess = new Date(targetUTC);
-  for (let i = 0; i < 3; i += 1) {
-    const offset = getTimeZoneOffsetMs(guess, ET_TIMEZONE);
-    const next = new Date(targetUTC - offset);
-    if (next.getTime() === guess.getTime()) break;
-    guess = next;
-  }
-  return guess;
-}
-
 function getInterviewInstant(datetimeIso: string): Date {
-  const trimmed = datetimeIso.trim();
-  const naive = parseIsoWithoutTimezone(trimmed);
-  if (naive) return etWallClockToUtc(naive);
-  const d = new Date(trimmed);
-  return Number.isNaN(d.getTime()) ? new Date() : d;
+  const parsed = parseInterviewDateTime(datetimeIso);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 function buildIcs(input: BookingEmailInput): string {
@@ -194,14 +130,12 @@ async function sendInterviewEmail(input: {
 }
 
 function formatTime(datetimeIso: string): string {
-  const start = getInterviewInstant(datetimeIso);
-  return start.toLocaleString("en-US", {
+  return formatInterviewInET(datetimeIso, {
     weekday: "long",
     month: "long",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    timeZone: ET_TIMEZONE,
     timeZoneName: "short",
   });
 }

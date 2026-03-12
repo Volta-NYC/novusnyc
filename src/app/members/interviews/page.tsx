@@ -19,19 +19,21 @@ import {
 } from "@/lib/members/storage";
 import { Btn, Field, Input, Modal, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm } from "@/components/members/ui";
 import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
-
-const ET_TIMEZONE = "America/New_York";
+import {
+  formatInterviewInET,
+  toInterviewDateString,
+  toInterviewDateTimeKey,
+  toInterviewTimestamp,
+} from "@/lib/interviews/datetime";
 
 function formatDateTime(isoString: string): string {
-  const d = new Date(isoString);
-  return d.toLocaleString("en-US", {
+  return formatInterviewInET(isoString, {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    timeZone: ET_TIMEZONE,
     timeZoneName: "short",
   });
 }
@@ -46,7 +48,7 @@ function formatDateHeading(isoDate: string): string {
 }
 
 function getSlotEndTimeMs(slot: InterviewSlot): number {
-  const startMs = new Date(slot.datetime).getTime();
+  const startMs = toInterviewTimestamp(slot.datetime);
   const rawDuration = Number(slot.durationMinutes ?? 30);
   const duration = Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : 30;
   return startMs + duration * 60_000;
@@ -101,19 +103,11 @@ function toLocalSlotDateTime(input: Date | number): string {
 }
 
 function slotDateISOFromDateTime(datetime: string): string {
-  const naive = datetime.match(/^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}/);
-  if (naive) return naive[1];
-  const parsed = new Date(datetime);
-  if (Number.isNaN(parsed.getTime())) return datetime.slice(0, 10);
-  return toDateString(parsed);
+  return toInterviewDateString(datetime);
 }
 
 function slotDateTimeKeyFromDateTime(datetime: string): string {
-  const naive = datetime.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
-  if (naive) return `${naive[1]}T${naive[2]}:${naive[3]}`;
-  const parsed = new Date(datetime);
-  if (Number.isNaN(parsed.getTime())) return datetime.slice(0, 16);
-  return `${toDateString(parsed)}T${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+  return toInterviewDateTimeKey(datetime);
 }
 
 function slotKey(dateISO: string, hour: number, minute: number): string {
@@ -425,7 +419,7 @@ function InterviewsContent() {
     const recurring = slots.filter((slot) =>
       !!slot.recurringWeekly
       && !!slot.recurringSeriesId
-      && new Date(slot.datetime).getTime() >= nowTs
+      && toInterviewTimestamp(slot.datetime) >= nowTs
     );
     if (recurring.length === 0) return;
 
@@ -439,14 +433,14 @@ function InterviewsContent() {
 
     const missing: Omit<InterviewSlot, "id">[] = [];
     Object.values(bySeries).forEach((seriesSlots) => {
-      const sorted = [...seriesSlots].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
-      const latestInWindow = [...sorted].reverse().find((slot) => new Date(slot.datetime).getTime() <= endTs);
+      const sorted = [...seriesSlots].sort((a, b) => toInterviewTimestamp(a.datetime) - toInterviewTimestamp(b.datetime));
+      const latestInWindow = [...sorted].reverse().find((slot) => toInterviewTimestamp(slot.datetime) <= endTs);
       if (!latestInWindow) return;
 
       const template = latestInWindow;
       const templateInterviewerIds = normalizeInterviewerMemberIds(template.interviewerMemberIds ?? []);
       if (templateInterviewerIds.length === 0) return;
-      let cursor = new Date(template.datetime).getTime() + weekMs;
+      let cursor = toInterviewTimestamp(template.datetime) + weekMs;
       while (cursor <= endTs) {
         const dt = toLocalSlotDateTime(cursor);
         const slotKeyValue = slotDateTimeKeyFromDateTime(dt);
@@ -577,7 +571,7 @@ function InterviewsContent() {
   }, [slots]);
 
   const sortedSlots = useMemo(
-    () => [...slots].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()),
+    () => [...slots].sort((a, b) => toInterviewTimestamp(a.datetime) - toInterviewTimestamp(b.datetime)),
     [slots]
   );
 
@@ -693,7 +687,7 @@ function InterviewsContent() {
 
   const availableFutureSlots = useMemo(
     () =>
-      sortedSlots.filter((s) => s.available && !s.bookedBy && new Date(s.datetime).getTime() > now),
+      sortedSlots.filter((s) => s.available && !s.bookedBy && toInterviewTimestamp(s.datetime) > now),
     [sortedSlots, now]
   );
 
@@ -942,7 +936,7 @@ function InterviewsContent() {
         candidate.recurringSeriesId === slot.recurringSeriesId
         && candidate.available
         && !candidate.bookedBy
-        && new Date(candidate.datetime).getTime() >= nowTs
+        && toInterviewTimestamp(candidate.datetime) >= nowTs
       );
       for (const target of targets) {
         // eslint-disable-next-line no-await-in-loop
@@ -971,7 +965,7 @@ function InterviewsContent() {
       const existing = new Set(slots.map((s) => slotDateTimeKeyFromDateTime(s.datetime)));
       existing.add(slotDateTimeKeyFromDateTime(slot.datetime));
       let created = 0;
-      let cursor = new Date(slot.datetime).getTime() + weekMs;
+      let cursor = toInterviewTimestamp(slot.datetime) + weekMs;
       while (cursor <= endTs) {
         const dt = toLocalSlotDateTime(cursor);
         const keyValue = slotDateTimeKeyFromDateTime(dt);
@@ -1023,7 +1017,7 @@ function InterviewsContent() {
         const nowTs = Date.now();
         const targets = slots.filter((slot) =>
           slot.recurringSeriesId === editingAvailableSlot.recurringSeriesId
-          && new Date(slot.datetime).getTime() >= nowTs
+          && toInterviewTimestamp(slot.datetime) >= nowTs
         );
         for (const target of targets) {
           // eslint-disable-next-line no-await-in-loop
@@ -1389,7 +1383,7 @@ function InterviewsContent() {
           // If this slot belongs to a weekly series, delete all future available slots in that series.
           if (selected?.recurringWeekly && selected.recurringSeriesId) {
             slots.forEach((candidate) => {
-              const ts = new Date(candidate.datetime).getTime();
+              const ts = toInterviewTimestamp(candidate.datetime);
               if (ts < nowTs) return;
               if (candidate.recurringSeriesId !== selected.recurringSeriesId) return;
               if (!candidate.available || !!candidate.bookedBy) return;
@@ -1407,7 +1401,7 @@ function InterviewsContent() {
             const candidate = slotMap[slotKey(dateISO, cell.hour, cell.minute)];
             if (!candidate) continue;
             if (!candidate.available || !!candidate.bookedBy) continue;
-            if (new Date(candidate.datetime).getTime() < nowTs) continue;
+            if (toInterviewTimestamp(candidate.datetime) < nowTs) continue;
             idsToDelete.add(candidate.id);
           }
         });
@@ -1545,7 +1539,7 @@ function InterviewsContent() {
     const d = toDateString(date);
     let visible = 0;
     slots.forEach((slot) => {
-      if (slotDateISOFromDateTime(slot.datetime) !== d || new Date(slot.datetime).getTime() < now) return;
+      if (slotDateISOFromDateTime(slot.datetime) !== d || toInterviewTimestamp(slot.datetime) < now) return;
       if (slot.available && !slot.bookedBy) visible += 1;
     });
     return visible;
@@ -1558,7 +1552,7 @@ function InterviewsContent() {
       for (const minute of QUARTER_MINUTES) {
         const slot = slotMap[slotKey(d, hour, minute)];
         if (!slot) continue;
-        if (new Date(slot.datetime).getTime() < now) continue;
+        if (toInterviewTimestamp(slot.datetime) < now) continue;
         if (slot.available && !slot.bookedBy) visible += 1;
       }
     }

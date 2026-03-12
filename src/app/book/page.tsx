@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import type { InterviewSlot } from "@/lib/members/storage";
-
-const ET_TIMEZONE = "America/New_York";
+import { formatInterviewInET, parseInterviewDateTime } from "@/lib/interviews/datetime";
 
 function downloadICS(slot: InterviewSlot, zoomLink: string) {
-  const start = new Date(slot.datetime);
+  const start = parseInterviewDateTime(slot.datetime);
+  if (Number.isNaN(start.getTime())) return;
   const end = new Date(start.getTime() + (slot.durationMinutes ?? 30) * 60000);
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
@@ -63,24 +63,20 @@ function formatDayHeading(isoDate: string): string {
 }
 
 function formatTime(isoDatetime: string): string {
-  const d = new Date(isoDatetime);
-  return d.toLocaleTimeString("en-US", {
+  return formatInterviewInET(isoDatetime, {
     hour: "numeric",
     minute: "2-digit",
-    timeZone: ET_TIMEZONE,
     timeZoneName: "short",
   });
 }
 
 function formatConfirmed(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString("en-US", {
+  return formatInterviewInET(iso, {
     weekday: "long",
     month: "long",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    timeZone: ET_TIMEZONE,
     timeZoneName: "short",
   });
 }
