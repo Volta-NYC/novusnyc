@@ -134,12 +134,14 @@ export interface TeamMember {
 
 export type ApplicationStatus =
   | "New"
-  | "Reviewing"
-  | "Interview Pending"
+  | "Invited for Interview"
   | "Interview Scheduled"
   | "Accepted"
-  | "Waitlisted"
-  | "Not Accepted";
+  | "Not Accepted"
+  // Legacy values retained for backwards compatibility in older rows.
+  | "Reviewing"
+  | "Interview Pending"
+  | "Waitlisted";
 
 export interface ApplicationRecord {
   id: string;
@@ -382,6 +384,7 @@ function normalizeTimestamp(value: unknown, fallbackIso?: string): string {
 
 function normalizeApplicationStatus(raw: string, hasScheduledInterview: boolean): ApplicationStatus {
   const key = raw.trim().toLowerCase();
+  if (key === "invited for interview") return "Invited for Interview";
   if (key === "reviewing") return "Reviewing";
   if (key === "interview pending") return "Interview Pending";
   if (key === "interview scheduled") return "Interview Scheduled";
@@ -1057,7 +1060,7 @@ export async function deleteBookedInterview(slotId: string): Promise<void> {
           updatedAt: now,
         };
         if (!terminal.has(currentStatus)) {
-          patch.status = "Interview Pending";
+          patch.status = "Invited for Interview";
         }
         await update(ref(db, `applications/${target.id}`), patch);
       }

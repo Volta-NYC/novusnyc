@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  Btn, Empty, Field, Input, Modal, PageHeader, SearchBar, TextArea,
+  Btn, Empty, PageHeader, SearchBar,
 } from "@/components/members/ui";
 import {
   type ApplicationRecord,
@@ -14,14 +14,18 @@ import { useAuth } from "@/lib/members/authContext";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "New",
-  "Reviewing",
-  "Interview Pending",
+  "Invited for Interview",
   "Interview Scheduled",
   "Accepted",
-  "Not Accepted",
 ];
 
-const DECISION_STATUSES = new Set<ApplicationStatus>(["Accepted"]);
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  "New": "bg-white/10 text-white/75 border border-white/20",
+  "Invited for Interview": "bg-[#85CC17]/20 text-[#C4F135] border border-[#85CC17]/35",
+  "Interview Scheduled": "bg-blue-500/20 text-blue-200 border border-blue-400/35",
+  "Accepted": "bg-emerald-500/20 text-emerald-200 border border-emerald-400/35",
+  "Not Accepted": "bg-red-500/20 text-red-200 border border-red-400/35",
+};
 
 function normalize(v: string): string {
   return v.trim().toLowerCase();
@@ -153,11 +157,6 @@ export default function ApplicantsPage() {
   const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [editing, setEditing] = useState<ApplicationRecord | null>(null);
-  const [editStatus, setEditStatus] = useState<ApplicationStatus>("New");
-  const [editNotes, setEditNotes] = useState("");
-  const [sendDecisionEmail, setSendDecisionEmail] = useState(false);
-  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
@@ -233,12 +232,7 @@ export default function ApplicantsPage() {
           || normalize(app.schoolName ?? "").includes(q)
           || normalize(app.status).includes(q);
       })
-      .sort((a, b) => {
-        const aInvited = !!a.interviewInviteSentAt;
-        const bInvited = !!b.interviewInviteSentAt;
-        if (aInvited !== bInvited) return aInvited ? 1 : -1; // uninvited first
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); // newest first
-      });
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [applications, search, showAcceptedApplicants]);
 
   const uninvitedApplicantIds = useMemo(
@@ -255,14 +249,6 @@ export default function ApplicantsPage() {
   );
 
   const selectableFilteredIds = useMemo(() => filtered.map((app) => app.id), [filtered]);
-
-  const openEdit = (app: ApplicationRecord) => {
-    setEditing(app);
-    setEditStatus(app.status || "New");
-    setEditNotes(app.notes ?? "");
-    setSendDecisionEmail(false);
-    setStatusMessage(null);
-  };
 
   const updateApplicantServer = async (id: string, patch: Record<string, unknown>) => {
     if (!user) throw new Error("not_authenticated");
@@ -419,7 +405,7 @@ export default function ApplicantsPage() {
         }
       }
       setSelectedIds([]);
-      setStatusMessage(`Skip interview + accept complete — ${ok} succeeded, ${failed} failed.`);
+      setStatusMessage(`Accept selected complete — ${ok} succeeded, ${failed} failed.`);
       await fetchApplicantsData();
     } finally {
       setBulkPromoting(false);
@@ -457,77 +443,14 @@ export default function ApplicantsPage() {
     }
   };
 
-  const saveApplicant = async () => {
-    if (!editing || !canEdit) return;
-    setSaving(true);
+  const updateRowStatus = async (app: ApplicationRecord, nextStatus: ApplicationStatus) => {
+    if (!canEdit) return;
     try {
-      let decisionEmailFailed = false;
-      let promoteFailed = false;
-      await updateApplicantServer(editing.id, {
-        status: editStatus,
-        notes: editNotes.trim(),
-      });
-
-      if (editStatus === "Accepted") {
-        const token = await user?.getIdToken();
-        if (token) {
-          const promoteResponse = await fetch("/api/members/applicants/promote", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              fullName: editing.fullName,
-              email: editing.email,
-              schoolName: editing.schoolName,
-              grade: editing.grade,
-            }),
-          });
-          if (!promoteResponse.ok) promoteFailed = true;
-        } else {
-          promoteFailed = true;
-        }
-      }
-
-      const transitionedToDecision =
-        editing.status !== editStatus && DECISION_STATUSES.has(editStatus);
-      const shouldSendDecision = DECISION_STATUSES.has(editStatus) && (sendDecisionEmail || transitionedToDecision);
-      if (shouldSendDecision) {
-        const token = await user?.getIdToken();
-        if (token) {
-          const response = await fetch("/api/members/applicants/decision-email", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              applicantName: editing.fullName,
-              applicantEmail: editing.email,
-              decision: editStatus,
-              notes: editNotes.trim(),
-              role: editing.finalDecisionRole || "Analyst",
-              tracks: editing.tracksSelected || "",
-            }),
-          });
-          if (!response.ok) decisionEmailFailed = true;
-        } else {
-          decisionEmailFailed = true;
-        }
-      }
-
-      setEditing(null);
+      await updateApplicantServer(app.id, { status: nextStatus });
+      setStatusMessage(`Updated ${app.fullName} to ${nextStatus}.`);
       await fetchApplicantsData();
-      setStatusMessage(
-        [decisionEmailFailed ? "decision email could not be sent" : "", promoteFailed ? "accepted applicant could not be synced to Team Directory" : ""]
-          .filter(Boolean)
-          .join(" and ")
-          ? `Applicant updated, but ${[decisionEmailFailed ? "decision email could not be sent" : "", promoteFailed ? "accepted applicant could not be synced to Team Directory" : ""].filter(Boolean).join(" and ")}.`
-          : "Applicant updated."
-      );
-    } finally {
-      setSaving(false);
+    } catch {
+      setStatusMessage(`Could not update status for ${app.fullName}.`);
     }
   };
 
@@ -703,14 +626,14 @@ export default function ApplicantsPage() {
               onClick={skipInterviewForSelected}
               disabled={bulkPromoting || selectedIds.length === 0}
             >
-              {bulkPromoting ? "Processing..." : "Skip Interview + Accept Selected"}
+              {bulkPromoting ? "Processing..." : "Accept Selected"}
             </Btn>
           </>
         )}
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-        <table className="w-full min-w-[980px]">
+        <table className="w-full min-w-[1500px]">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {canEdit && (
@@ -726,7 +649,7 @@ export default function ApplicantsPage() {
                   />
                 </th>
               )}
-              {["Name", "Email", "School", "Applied", "Invite Email", "Interview", "Status", "Actions"].map((col) => (
+              {["Status", "Name", "Email", "School Name", "City, State", "How They Heard", "Tracks", "Resume URL", "Applied", "Invite", "Interview", "Actions"].map((col) => (
                 <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/45">{col}</th>
               ))}
             </tr>
@@ -753,9 +676,43 @@ export default function ApplicantsPage() {
                       />
                     </td>
                   )}
+                  <td className="px-4 py-3 text-xs">
+                    {canEdit ? (
+                      <select
+                        value={STATUS_OPTIONS.includes(app.status) ? app.status : "New"}
+                        onChange={(e) => void updateRowStatus(app, e.target.value as ApplicationStatus)}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold focus:outline-none ${STATUS_BADGE_CLASS[app.status] ?? STATUS_BADGE_CLASS["New"]}`}
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_BADGE_CLASS[app.status] ?? STATUS_BADGE_CLASS["New"]}`}>
+                        {app.status}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-white/85">{app.fullName}</td>
                   <td className="px-4 py-3 text-white/60 font-mono text-xs">{app.email}</td>
                   <td className="px-4 py-3 text-white/55 text-sm">{app.schoolName || "—"}</td>
+                  <td className="px-4 py-3 text-white/50 text-xs">{app.cityState || "—"}</td>
+                  <td className="px-4 py-3 text-white/50 text-xs">{app.referral || "—"}</td>
+                  <td className="px-4 py-3 text-white/50 text-xs">{app.tracksSelected || "—"}</td>
+                  <td className="px-4 py-3 text-xs">
+                    {app.resumeUrl ? (
+                      <a
+                        href={app.resumeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#85CC17]/80 hover:text-[#85CC17] underline"
+                      >
+                        Open
+                      </a>
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-white/45 text-xs">{formatDateTime(app.createdAt)}</td>
                   <td className="px-4 py-3 text-xs">
                     {app.interviewInviteSentAt ? (
@@ -783,9 +740,6 @@ export default function ApplicantsPage() {
                     ) : (
                       <span className="text-white/30">Not booked</span>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-white/70">
-                    <div>{app.status}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
@@ -816,9 +770,8 @@ export default function ApplicantsPage() {
                             }}
                             disabled={bulkPromoting}
                           >
-                            Skip Interview + Accept
+                            Accept
                           </Btn>
-                          <Btn size="sm" variant="secondary" onClick={() => openEdit(app)}>Edit</Btn>
                         </>
                       )}
                     </div>
@@ -832,52 +785,6 @@ export default function ApplicantsPage() {
 
       {loadingData ? <p className="text-xs text-white/40 mt-3">Loading applicants...</p> : null}
       {!loadingData && filtered.length === 0 && <Empty message="No applicants yet." />}
-
-      <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit Applicant">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Name">
-            <Input value={editing?.fullName ?? ""} disabled />
-          </Field>
-          <Field label="Email">
-            <Input value={editing?.email ?? ""} disabled />
-          </Field>
-          <Field label="Status">
-            <select
-              value={editStatus}
-              onChange={(e) => setEditStatus(e.target.value as ApplicationStatus)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-            >
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Interview Link">
-            <Input value={editing?.interviewInviteToken ? `/book/${editing.interviewInviteToken}` : "Not created"} disabled />
-          </Field>
-          <div className="col-span-2">
-            <Field label="Notes">
-              <TextArea rows={6} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
-            </Field>
-          </div>
-          <label className="col-span-2 inline-flex items-center gap-2 text-sm text-white/65">
-            <input
-              type="checkbox"
-              checked={sendDecisionEmail}
-              onChange={(e) => setSendDecisionEmail(e.target.checked)}
-              className="accent-[#85CC17]"
-              disabled={editStatus !== "Accepted"}
-            />
-            Send acceptance email now (or resend one)
-          </label>
-        </div>
-        <div className="flex justify-end gap-2 mt-5">
-          <Btn variant="ghost" onClick={() => setEditing(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={saveApplicant} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
-          </Btn>
-        </div>
-      </Modal>
     </MembersLayout>
   );
 }

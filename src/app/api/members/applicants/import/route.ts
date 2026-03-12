@@ -38,12 +38,11 @@ function parseTimestamp(value: string): string {
 
 function coerceStatus(raw: string): string {
   const key = normalize(raw);
-  if (key.includes("invite")) return "Interview Pending";
-  if (key.includes("review")) return "Reviewing";
+  if (key.includes("invite")) return "Invited for Interview";
+  if (key.includes("review")) return "New";
   if (key.includes("interview") && key.includes("schedule")) return "Interview Scheduled";
-  if (key.includes("interview")) return "Interview Pending";
+  if (key.includes("interview")) return "Invited for Interview";
   if (key.includes("accept")) return "Accepted";
-  if (key.includes("wait")) return "Waitlisted";
   if (key.includes("reject") || key.includes("not accepted")) return "Not Accepted";
   return "New";
 }
@@ -162,4 +161,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, added, updated, skipped });
 }
-

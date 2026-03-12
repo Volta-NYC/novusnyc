@@ -183,8 +183,8 @@ export async function POST(req: NextRequest) {
       };
       if (mode === "reminder") patch.interviewReminderSentAt = nowIso;
       else patch.interviewInviteSentAt = nowIso;
-      if (!nextStatus || nextStatus === "new" || nextStatus === "reviewing") {
-        patch.status = "Interview Pending";
+      if (!nextStatus || nextStatus === "new" || nextStatus === "reviewing" || nextStatus === "interview pending") {
+        patch.status = "Invited for Interview";
       }
       await dbPatch(`applications/${appId}`, patch, verified.caller.idToken);
       sent += 1;

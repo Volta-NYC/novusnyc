@@ -23,6 +23,7 @@ const SORT_OPTIONS = [
   { value: "name", label: "Name" },
 ] as const;
 type SortMode = (typeof SORT_OPTIONS)[number]["value"];
+type BidViewMode = "cards" | "compact";
 
 const BID_STATUS_SORT_ORDER: Record<BID["status"], number> = {
   "Active Partner": 0,
@@ -52,6 +53,7 @@ export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
   const [search, setSearch]           = useState("");
   const [sortMode, setSortMode]       = useState<SortMode>("status");
+  const [viewMode, setViewMode]       = useState<BidViewMode>("cards");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
@@ -217,9 +219,24 @@ export default function BIDTrackerPage() {
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </select>
+        <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
+          <button
+            onClick={() => setViewMode("cards")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "cards" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setViewMode("compact")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "compact" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
+          >
+            Compact
+          </button>
+        </div>
       </div>
 
       {/* BID cards with inline timeline */}
+      {viewMode === "cards" && (
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {sorted.map((bid) => {
           const timeline = getTimeline(bid);
@@ -339,6 +356,38 @@ export default function BIDTrackerPage() {
           </div>
         )}
       </div>
+      )}
+      {viewMode === "compact" && (
+        <div className="space-y-2 mb-6">
+          {sorted.map((bid) => (
+            <div
+              key={bid.id}
+              className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 md:grid-cols-[minmax(220px,2fr)_130px_minmax(220px,2fr)_120px_minmax(220px,2fr)_auto] gap-2 md:gap-3 items-start"
+            >
+              <div className="min-w-0">
+                <p className="text-white font-semibold text-sm leading-tight break-words">{bid.name}</p>
+              </div>
+              <div className="text-xs"><Badge label={bid.status} /></div>
+              <div className="text-xs text-white/55 break-words">
+                {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
+              </div>
+              <div className="text-xs text-white/65">{bid.borough || "—"}</div>
+              <div className="text-xs text-white/55 break-words">{bid.nextAction || bid.notes || "—"}</div>
+              {canEdit ? (
+                <div className="md:justify-self-end">
+                  <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
+                </div>
+              ) : <div />}
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <Empty
+              message="No BIDs match your filters."
+              action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first BID</Btn> : undefined}
+            />
+          )}
+        </div>
+      )}
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === "create" ? "New BID" : "Edit BID"}>

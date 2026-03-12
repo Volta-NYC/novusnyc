@@ -39,6 +39,7 @@ const SORT_OPTIONS = [
   { value: "name", label: "Name" },
 ] as const;
 type ProjectSortMode = (typeof SORT_OPTIONS)[number]["value"];
+type ProjectViewMode = "cards" | "compact";
 
 const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
   Active: 0,
@@ -139,6 +140,7 @@ export default function BusinessesPage() {
   const [filterDiv, setFilterDiv]             = useState("");
   const [sortMode, setSortMode]               = useState<ProjectSortMode>("status");
   const [statusPage, setStatusPage]           = useState<"active_planning" | "completed">("active_planning");
+  const [viewMode, setViewMode]               = useState<ProjectViewMode>("cards");
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -569,6 +571,43 @@ export default function BusinessesPage() {
     </div>
   );
 
+  const renderProjectCompactRow = (b: Business) => {
+    const memberList = (b.teamMembers ?? []).filter(Boolean);
+    const teamSummary = [
+      b.teamLead ? `Lead: ${b.teamLead}` : "",
+      memberList.length > 0 ? `${memberList.slice(0, 3).join(", ")}${memberList.length > 3 ? ` +${memberList.length - 3}` : ""}` : "",
+    ].filter(Boolean).join(" · ");
+    const ownerSummary = [
+      b.ownerName || "",
+      b.ownerEmail || "",
+      b.phone || "",
+    ].filter(Boolean).join(" · ");
+
+    return (
+      <div
+        key={b.id}
+        className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 md:grid-cols-[minmax(220px,2fr)_120px_120px_minmax(220px,2fr)_minmax(220px,2fr)_auto] gap-2 md:gap-3 items-start"
+      >
+        <div className="min-w-0">
+          <p className="text-white font-semibold text-sm leading-tight break-words">
+            {b.name}
+            {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
+            {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
+          </p>
+        </div>
+        <div className="text-xs text-white/70">{b.division || "—"}</div>
+        <div className="text-xs"><Badge label={b.projectStatus} /></div>
+        <div className="text-xs text-white/55 break-words">{ownerSummary || "—"}</div>
+        <div className="text-xs text-white/55 break-words">{teamSummary || "No team assigned"}</div>
+        {canEdit ? (
+          <div className="md:justify-self-end">
+            <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
+          </div>
+        ) : <div />}
+      </div>
+    );
+  };
+
   return (
     <MembersLayout>
       <Dialog />
@@ -651,14 +690,34 @@ export default function BusinessesPage() {
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </select>
+        <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
+          <button
+            onClick={() => setViewMode("cards")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "cards" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setViewMode("compact")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "compact" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
+          >
+            Compact
+          </button>
+        </div>
       </div>
 
       {isNonAdminMember && myProjects.length > 0 && (
         <div className="mb-6">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-3">My Projects</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {myProjects.map(renderProjectCard)}
-          </div>
+          {viewMode === "cards" ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myProjects.map(renderProjectCard)}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {myProjects.map(renderProjectCompactRow)}
+            </div>
+          )}
         </div>
       )}
 
@@ -666,17 +725,29 @@ export default function BusinessesPage() {
       {isNonAdminMember && myProjects.length > 0 && (
         <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-3">Other Projects</h2>
       )}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {otherProjects.map(renderProjectCard)}
-        {filtered.length === 0 && (
-          <div className="col-span-3">
+      {viewMode === "cards" ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {otherProjects.map(renderProjectCard)}
+          {filtered.length === 0 && (
+            <div className="col-span-3">
+              <Empty
+                message="No projects found in this section."
+                action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first project</Btn> : undefined}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2 mb-6">
+          {otherProjects.map(renderProjectCompactRow)}
+          {filtered.length === 0 && (
             <Empty
               message="No projects found in this section."
               action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first project</Btn> : undefined}
             />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>

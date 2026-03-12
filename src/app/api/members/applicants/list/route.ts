@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbRead, verifyCaller } from "@/lib/server/adminApi";
 
 type ApplicationRow = Record<string, unknown>;
+type InterviewSlotRow = Record<string, unknown>;
+type TeamRow = Record<string, unknown>;
 
 function readText(row: ApplicationRow, keys: string[]): string {
   for (const key of keys) {
@@ -20,24 +22,68 @@ function normalizeTimestamp(value: unknown, fallbackIso?: string): string {
   return fallbackIso ?? new Date().toISOString();
 }
 
-function normalizeStatus(raw: string, hasScheduledInterview: boolean): string {
+function normalize(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function normalizeName(value: string): string {
+  return normalize(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function canonicalEmail(value: string): string {
+  const raw = normalize(value);
+  const [local, domain] = raw.split("@");
+  if (!local || !domain) return raw;
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    const base = local.split("+")[0].replace(/\./g, "");
+    return `${base}@gmail.com`;
+  }
+  return `${local}@${domain}`;
+}
+
+function namesLikelyMatch(aRaw: string, bRaw: string): boolean {
+  const a = normalizeName(aRaw);
+  const b = normalizeName(bRaw);
+  if (!a || !b) return false;
+  if (a === b || a.includes(b) || b.includes(a)) return true;
+  const left = new Set(a.split(" ").filter(Boolean));
+  const right = new Set(b.split(" ").filter(Boolean));
+  let overlap = 0;
+  left.forEach((token) => {
+    if (right.has(token)) overlap += 1;
+  });
+  return overlap >= 2;
+}
+
+function normalizeStatus(raw: string, flags: {
+  hasScheduledInterview: boolean;
+  hasInviteSent: boolean;
+  isAccepted: boolean;
+}): string {
   const key = raw.trim().toLowerCase();
-  if (key === "reviewing") return "Reviewing";
-  if (key === "interview pending") return "Interview Pending";
+  if (key === "not accepted" || key === "rejected") return "Not Accepted";
+  if (flags.isAccepted) return "Accepted";
+  if (flags.hasScheduledInterview) return "Interview Scheduled";
+  if (flags.hasInviteSent) return "Invited for Interview";
+  if (key === "invited for interview" || key === "interview pending") return "Invited for Interview";
   if (key === "interview scheduled") return "Interview Scheduled";
   if (key === "accepted") return "Accepted";
-  if (key === "waitlisted") return "Waitlisted";
-  if (key === "not accepted" || key === "rejected") return "Not Accepted";
-  if (hasScheduledInterview) return "Interview Scheduled";
   return "New";
 }
 
-function normalizeApplication(id: string, row: ApplicationRow) {
+function normalizeApplication(
+  id: string,
+  row: ApplicationRow,
+  options: {
+    hasScheduledInterview: boolean;
+    hasInviteSent: boolean;
+    isAccepted: boolean;
+  },
+) {
   const createdAt = normalizeTimestamp(row.createdAt ?? row.Timestamp);
   const updatedAt = normalizeTimestamp(row.updatedAt, createdAt);
   const interviewSlotId = readText(row, ["interviewSlotId"]);
   const interviewScheduledAt = readText(row, ["interviewScheduledAt"]);
-  const hasScheduledInterview = !!(interviewSlotId || interviewScheduledAt);
   return {
     id,
     fullName: readText(row, ["fullName", "Full Name", "name"]),
@@ -51,7 +97,7 @@ function normalizeApplication(id: string, row: ApplicationRow) {
     resumeUrl: readText(row, ["resumeUrl", "Resume URL"]),
     toolsSoftware: readText(row, ["toolsSoftware", "Tools/Software"]),
     accomplishment: readText(row, ["accomplishment", "Accomplishment"]),
-    status: normalizeStatus(readText(row, ["status"]), hasScheduledInterview),
+    status: normalizeStatus(readText(row, ["status"]), options),
     notes: readText(row, ["notes", "Notes"]),
     interviewInviteToken: readText(row, ["interviewInviteToken"]),
     interviewInviteSentAt: readText(row, ["interviewInviteSentAt"]),
@@ -73,13 +119,54 @@ export async function GET(req: NextRequest) {
   const verified = await verifyCaller(req, ["admin", "project_lead", "interviewer"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
-  const [applicationsData, slotsData] = await Promise.all([
+  const [applicationsData, slotsData, teamData] = await Promise.all([
     dbRead("applications", verified.caller.idToken),
     dbRead("interviewSlots", verified.caller.idToken),
+    dbRead("team", verified.caller.idToken),
   ]);
 
+  const slots = (slotsData ?? {}) as Record<string, InterviewSlotRow>;
+  const team = (teamData ?? {}) as Record<string, TeamRow>;
+
   const applications = Object.entries((applicationsData ?? {}) as Record<string, ApplicationRow>)
-    .map(([id, row]) => normalizeApplication(id, row ?? {}))
+    .map(([id, row]) => {
+      const safeRow = row ?? {};
+      const appEmail = readText(safeRow, ["email", "Email"]);
+      const appName = readText(safeRow, ["fullName", "Full Name", "name"]);
+      const appToken = readText(safeRow, ["interviewInviteToken"]);
+      const appCanonicalEmail = canonicalEmail(appEmail);
+      const hasInviteSent = !!readText(safeRow, ["interviewInviteSentAt"]);
+      const rowSlotId = readText(safeRow, ["interviewSlotId"]);
+      const rowScheduledAt = readText(safeRow, ["interviewScheduledAt"]);
+
+      const hasMatchedBookedSlot = Object.values(slots).some((slot) => {
+        const available = !!slot.available;
+        if (available) return false;
+        const bookedBy = String(slot.bookedBy ?? "").trim();
+        const slotEmail = String(slot.bookerEmail ?? "").trim();
+        const slotCanonical = canonicalEmail(slotEmail);
+        const slotName = String(slot.bookerName ?? "").trim();
+        if (appToken && bookedBy && appToken === bookedBy) return true;
+        if (appEmail && slotEmail && (normalize(appEmail) === normalize(slotEmail) || appCanonicalEmail === slotCanonical)) return true;
+        if (appName && slotName && namesLikelyMatch(appName, slotName)) return true;
+        return false;
+      });
+
+      const isAcceptedFromTeam = Object.values(team).some((member) => {
+        const email = String(member.email ?? "").trim();
+        const alternateEmail = String(member.alternateEmail ?? "").trim();
+        const name = String(member.name ?? "").trim();
+        if (appEmail && email && (normalize(appEmail) === normalize(email) || appCanonicalEmail === canonicalEmail(email))) return true;
+        if (appEmail && alternateEmail && (normalize(appEmail) === normalize(alternateEmail) || appCanonicalEmail === canonicalEmail(alternateEmail))) return true;
+        return !!(appName && name && namesLikelyMatch(appName, name));
+      });
+
+      return normalizeApplication(id, safeRow, {
+        hasScheduledInterview: !!(rowSlotId || rowScheduledAt || hasMatchedBookedSlot),
+        hasInviteSent,
+        isAccepted: isAcceptedFromTeam,
+      });
+    })
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
   return NextResponse.json({
@@ -88,4 +175,3 @@ export async function GET(req: NextRequest) {
     slots: slotsData ?? {},
   });
 }
-
