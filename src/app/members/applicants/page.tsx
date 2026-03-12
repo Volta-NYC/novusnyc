@@ -6,7 +6,6 @@ import {
   Btn, Empty, Field, Input, Modal, PageHeader, SearchBar, TextArea,
 } from "@/components/members/ui";
 import {
-  createApplicationRecord,
   createInterviewInvite,
   subscribeApplications,
   subscribeInterviewSlots,
@@ -34,17 +33,6 @@ function normalize(v: string): string {
   return v.trim().toLowerCase();
 }
 
-function parseTimestamp(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return new Date().toISOString();
-  const asDate = new Date(trimmed);
-  if (!Number.isNaN(asDate.getTime())) return asDate.toISOString();
-
-  // Common legacy format: M/D/YYYY h:mm:ss AM/PM
-  const maybe = Date.parse(trimmed.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, "$3-$1-$2"));
-  if (!Number.isNaN(maybe)) return new Date(maybe).toISOString();
-  return new Date().toISOString();
-}
 
 function parseDelimitedLine(line: string, delimiter: string): string[] {
   const cells: string[] = [];
@@ -114,18 +102,6 @@ function findHeaderIndex(headers: string[], aliases: string[]): number {
     if (idx !== -1) return idx;
   }
   return -1;
-}
-
-function coerceStatus(raw: string): ApplicationStatus {
-  const key = normalize(raw);
-  if (key.includes("invite")) return "Interview Pending";
-  if (key.includes("review")) return "Reviewing";
-  if (key.includes("interview") && key.includes("schedule")) return "Interview Scheduled";
-  if (key.includes("interview")) return "Interview Pending";
-  if (key.includes("accept")) return "Accepted";
-  if (key.includes("wait")) return "Waitlisted";
-  if (key.includes("reject") || key.includes("not accepted")) return "Not Accepted";
-  return "New";
 }
 
 function normalizeName(value: string): string {
@@ -408,36 +384,9 @@ export default function ApplicantsPage() {
         return;
       }
 
-      const existingByKey = new Map<string, ApplicationRecord>();
-      const existingByEmail = new Map<string, ApplicationRecord>();
-      const existingByName = new Map<string, ApplicationRecord[]>();
-      applications.forEach((app) => {
-        const nameKey = normalize(app.fullName);
-        const emailKey = normalize(app.email);
-        const key = `${nameKey}|${emailKey}`;
-        existingByKey.set(key, app);
-        if (emailKey) existingByEmail.set(emailKey, app);
-        if (nameKey) {
-          const arr = existingByName.get(nameKey) ?? [];
-          arr.push(app);
-          existingByName.set(nameKey, arr);
-        }
-      });
-
-      let added = 0;
-      let updated = 0;
-      for (const row of rows.slice(1)) {
+      const importRows = rows.slice(1).map((row) => {
         const fullName = nameIdx === -1 ? "" : (row[nameIdx] ?? "").trim();
         const email = emailIdx === -1 ? "" : (row[emailIdx] ?? "").trim().toLowerCase();
-        if (!fullName && !email) continue;
-        const key = `${normalize(fullName)}|${normalize(email)}`;
-        let existing = existingByKey.get(key);
-        if (!existing && email) existing = existingByEmail.get(normalize(email));
-        if (!existing && fullName) {
-          const candidates = existingByName.get(normalize(fullName)) ?? [];
-          if (candidates.length === 1) [existing] = candidates;
-        }
-        const importedCreatedAt = timestampIdx !== -1 ? parseTimestamp(row[timestampIdx] ?? "") : new Date().toISOString();
         const parsedSchool = schoolIdx === -1 ? "" : (row[schoolIdx] ?? "").trim();
         const parsedGrade = gradeIdx === -1 ? "" : (row[gradeIdx] ?? "").trim();
         const parsedCity = cityStateIdx !== -1
@@ -453,63 +402,49 @@ export default function ApplicantsPage() {
         const parsedResumeUrl = resumeIdx === -1 ? "" : (row[resumeIdx] ?? "").trim();
         const parsedInviteFlag = sentInviteIdx === -1 ? "" : (row[sentInviteIdx] ?? "").trim().toLowerCase();
 
-        const patch: Partial<ApplicationRecord> = {
-          fullName: fullName || (existing?.fullName ?? ""),
-          email: email || (existing?.email ?? ""),
-          source: "csv_import",
+        return {
+          fullName,
+          email,
+          schoolName: parsedSchool,
+          grade: parsedGrade,
+          cityState: parsedCity,
+          referral: parsedReferral,
+          tracksSelected: parsedTracks,
+          statusRaw: parsedStatusRaw,
+          notes: parsedNotes,
+          timestampRaw: parsedTimestampRaw,
+          resumeUrl: parsedResumeUrl,
+          inviteSent: parsedInviteFlag === "true" || parsedInviteFlag === "yes",
         };
-        if (parsedSchool) patch.schoolName = parsedSchool;
-        if (parsedGrade) patch.grade = parsedGrade;
-        if (parsedCity) patch.cityState = parsedCity;
-        if (parsedReferral) patch.referral = parsedReferral;
-        if (parsedTracks) patch.tracksSelected = parsedTracks;
-        if (parsedStatusRaw) patch.status = coerceStatus(parsedStatusRaw);
-        if (parsedNotes) patch.notes = parsedNotes;
-        if (parsedTimestampRaw) patch.sourceTimestampRaw = parsedTimestampRaw;
-        if (parsedResumeUrl) {
-          patch.resumeUrl = parsedResumeUrl;
-          patch.hasResume = "Yes";
-        }
-        if (parsedInviteFlag === "true" || parsedInviteFlag === "yes") {
-          patch.interviewInviteSentAt = importedCreatedAt;
-        }
+      }).filter((entry) => entry.fullName || entry.email);
 
-        if (existing) {
-          if (!patch.fullName && !patch.email) {
-            continue;
-          }
-          // eslint-disable-next-line no-await-in-loop
-          await updateApplicationRecord(existing.id, patch);
-          updated += 1;
-        } else {
-          if (!fullName || !email) {
-            continue;
-          }
-          // eslint-disable-next-line no-await-in-loop
-          await createApplicationRecord({
-            fullName: patch.fullName ?? fullName,
-            email: patch.email ?? email,
-            schoolName: parsedSchool,
-            grade: parsedGrade,
-            cityState: parsedCity,
-            referral: parsedReferral,
-            tracksSelected: parsedTracks,
-            hasResume: "",
-            resumeUrl: parsedResumeUrl,
-            toolsSoftware: "",
-            accomplishment: "",
-            status: parsedStatusRaw ? coerceStatus(parsedStatusRaw) : "New",
-            notes: parsedNotes,
-            source: "csv_import",
-            sourceTimestampRaw: parsedTimestampRaw,
-            interviewInviteSentAt: parsedInviteFlag === "true" || parsedInviteFlag === "yes" ? importedCreatedAt : "",
-            createdAt: importedCreatedAt,
-            updatedAt: importedCreatedAt,
-          });
-          added += 1;
-        }
+      if (importRows.length === 0) {
+        setStatusMessage("CSV has no usable rows.");
+        return;
       }
-      setStatusMessage(`Import complete: ${added} added, ${updated} updated.`);
+
+      const token = await user?.getIdToken();
+      if (!token) {
+        setStatusMessage("You are not authenticated. Please sign in again.");
+        return;
+      }
+
+      const response = await fetch("/api/members/applicants/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rows: importRows }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const code = typeof payload?.error === "string" ? payload.error : "import_failed";
+        throw new Error(code);
+      }
+
+      const result = await response.json() as { added?: number; updated?: number; skipped?: number };
+      setStatusMessage(`Import complete: ${result.added ?? 0} added, ${result.updated ?? 0} updated, ${result.skipped ?? 0} skipped.`);
     } catch (err) {
       const message = err instanceof Error && err.message ? err.message : "unknown_error";
       setStatusMessage(`Could not import CSV (${message}).`);

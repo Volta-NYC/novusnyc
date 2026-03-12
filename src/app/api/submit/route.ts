@@ -136,6 +136,24 @@ async function upsertInquiryFromForm(data: Record<string, unknown>): Promise<voi
   });
 }
 
+async function forwardToAppsScriptBackup(data: Record<string, unknown>): Promise<void> {
+  const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
+  if (!url) return;
+  try {
+    const upstream = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      redirect: "follow",
+    });
+    if (!upstream.ok) {
+      console.error("apps_script_backup_failed", upstream.status);
+    }
+  } catch (err) {
+    console.error("apps_script_backup_unreachable", err);
+  }
+}
+
 export async function POST(request: Request) {
   const data = await request.json() as Record<string, unknown>;
   const ip = getClientIp(request.headers);
@@ -198,6 +216,12 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json({ error: "db_write_failed" }, { status: 502 });
     }
+  }
+
+  // Keep legacy Google Sheets logging as best-effort backup only.
+  // Primary source of truth is Firebase.
+  if (data.formType === "application" || data.formType === "contact" || data.formType === "inquiry") {
+    await forwardToAppsScriptBackup(data);
   }
 
   return NextResponse.json({ success: true });
