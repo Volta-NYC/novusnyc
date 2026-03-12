@@ -114,19 +114,18 @@ export default function Join() {
       />
 
       <section className="bg-v-ink pt-32 pb-20">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
-              Join Volta NYC
-            </p>
+        <div className="max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-10 items-start">
+          <AnimatedSection direction="left">
             <h1 className="font-display font-bold text-white leading-none tracking-tight mb-5" style={{ fontSize: "clamp(2.4rem, 7vw, 4.6rem)" }}>
-              Student teams on
+              Join a team and work on
               <br />
-              <span className="text-v-green">real client work.</span>
+              <span className="text-v-green">hands-on projects for local businesses.</span>
             </h1>
             <p className="font-body text-white/80 text-lg mb-3">
               All levels of experience welcome.
             </p>
+          </AnimatedSection>
+          <AnimatedSection direction="right" className="pt-2 md:pt-6">
             <p className="font-body text-white/65 text-base leading-relaxed mb-7 max-w-2xl">
               You&apos;ll work on websites, marketing, or finance projects that local businesses actually use.
               It&apos;s practical, fast-moving, and built to help you ship real work.

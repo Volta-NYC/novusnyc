@@ -93,7 +93,7 @@ export default function BusinessesPage() {
   const [search, setSearch]                   = useState("");
   const [filterDiv, setFilterDiv]             = useState("");
   const [sortMode, setSortMode]               = useState<ProjectSortMode>("status");
-  const [statusPage, setStatusPage]           = useState<"active_planning" | "completed" | "scouting">("active_planning");
+  const [statusPage, setStatusPage]           = useState<"active_planning" | "completed">("active_planning");
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -181,6 +181,7 @@ export default function BusinessesPage() {
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
+    if (!form.projectStatus) return;
     const showcaseEnabled = !!form.showcaseEnabled;
     const showcaseServices = (form.showcaseServices ?? []).map((service) => service.trim()).filter(Boolean);
     const payload: Partial<Business> = {
@@ -259,9 +260,8 @@ export default function BusinessesPage() {
   };
 
   const statusMatchesPage = (status: Business["projectStatus"]) => {
-    if (statusPage === "active_planning") return status === "Active" || status === "Not Started";
-    if (statusPage === "completed") return status === "Complete";
-    return status === "Discovery" || status === "On Hold";
+    if (statusPage === "active_planning") return status === "Active" || status === "Not Started" || status === "Discovery";
+    return status === "Complete";
   };
 
   const matchesSearch = (project: Business) => {
@@ -311,9 +311,8 @@ export default function BusinessesPage() {
     )
   ).sort((a, b) => a.localeCompare(b));
 
-  const activePlanningCount = businesses.filter((b) => b.projectStatus === "Active" || b.projectStatus === "Not Started").length;
+  const activePlanningCount = businesses.filter((b) => b.projectStatus === "Active" || b.projectStatus === "Not Started" || b.projectStatus === "Discovery").length;
   const completedCount = businesses.filter((b) => b.projectStatus === "Complete").length;
-  const scoutingCount = businesses.filter((b) => b.projectStatus === "Discovery" || b.projectStatus === "On Hold").length;
 
   const normalize = (v: string) => v.trim().toLowerCase();
   const myEmail = normalize(userProfile?.email ?? user?.email ?? "");
@@ -435,14 +434,13 @@ export default function BusinessesPage() {
         <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length}   color="text-green-400" />
         <StatCard label="Planning"  value={businesses.filter(b => b.projectStatus === "Not Started").length} color="text-purple-400" />
         <StatCard label="Complete"  value={businesses.filter(b => b.projectStatus === "Complete").length} color="text-blue-400" />
-        <StatCard label="Scouting"  value={businesses.filter(b => b.projectStatus === "Discovery" || b.projectStatus === "On Hold").length} color="text-orange-400" />
+        <StatCard label="On Hold"   value={businesses.filter(b => b.projectStatus === "On Hold").length} color="text-orange-400" />
       </div>
 
       <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-4 w-fit">
         {[
           { key: "active_planning" as const, label: "Active / Planning", count: activePlanningCount },
           { key: "completed" as const, label: "Completed", count: completedCount },
-          { key: "scouting" as const, label: "Scouting", count: scoutingCount },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -511,7 +509,7 @@ export default function BusinessesPage() {
           <div className="col-span-2">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Project Info</p>
           </div>
-          <Field label="Status">
+          <Field label="Status" required>
             <Select options={STATUSES} value={form.projectStatus} onChange={e => setField("projectStatus", e.target.value)} />
           </Field>
           <Field label="Division">
@@ -579,7 +577,7 @@ export default function BusinessesPage() {
           <Field label="Owner Email">
             <Input type="email" value={form.ownerEmail} onChange={e => setField("ownerEmail", e.target.value)} />
           </Field>
-          <div className="col-span-2">
+          <div>
             {showOwnerAltEmail ? (
               <div className="space-y-1.5">
                 <Field label="Alternate Email">
@@ -601,19 +599,19 @@ export default function BusinessesPage() {
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                className="text-xs text-[#85CC17] hover:text-[#A5E236] transition-colors"
-                onClick={() => setShowOwnerAltEmail(true)}
-              >
-                + Add alternate email
-              </button>
+                <button
+                  type="button"
+                  className="text-xs text-[#85CC17] hover:text-[#A5E236] transition-colors"
+                  onClick={() => setShowOwnerAltEmail(true)}
+                >
+                  + Add alternate email
+                </button>
             )}
           </div>
           <Field label="Phone">
             <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
           </Field>
-          <div className="col-span-2">
+          <div>
             {showAlternatePhone ? (
               <div className="space-y-1.5">
                 <Field label="Alternate Phone">

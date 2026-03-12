@@ -135,7 +135,11 @@ export default function Navbar() {
                           key={l.href}
                           href={l.href}
                           className={`block px-4 py-2.5 font-body text-sm transition-colors hover:bg-v-bg ${
-                            pathname === l.href ? "text-v-green font-semibold" : "text-v-ink"
+                            l.href === "/members/login"
+                              ? "text-v-green font-semibold"
+                              : pathname === l.href
+                              ? "text-v-green font-semibold"
+                              : "text-v-ink"
                           }`}
                         >
                           {l.label}
@@ -195,7 +199,9 @@ export default function Navbar() {
                   <Link
                     key={l.href}
                     href={l.href}
-                    className="font-body text-base text-v-muted hover:text-v-ink transition-colors"
+                    className={`font-body text-base transition-colors ${
+                      l.href === "/members/login" ? "text-v-green" : "text-v-muted hover:text-v-ink"
+                    }`}
                   >
                     {l.label}
                   </Link>
