@@ -843,7 +843,6 @@ function InterviewsContent() {
         },
         body: JSON.stringify({
           slotId: evaluationSlot.id,
-          interviewerRole: evaluationRole,
           rating: evaluationRating,
           comments: evaluationComments,
         }),
@@ -2403,13 +2402,7 @@ function InterviewsContent() {
               ))}
             </select>
           </Field>
-          <Field label="Your Role">
-            <Input
-              value={evaluationRole}
-              onChange={(e) => setEvaluationRole(e.target.value)}
-              placeholder="e.g. Interviewer, Project Lead"
-            />
-          </Field>
+
           <Field label="Comments">
             <TextArea
               rows={5}

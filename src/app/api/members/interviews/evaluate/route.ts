@@ -5,7 +5,6 @@ type Rating = "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
 
 type EvaluateBody = {
   slotId?: string;
-  interviewerRole?: string;
   rating?: Rating;
   comments?: string;
 };
@@ -80,7 +79,6 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as EvaluateBody;
   const slotId = (body.slotId ?? "").trim();
-  const interviewerRole = (body.interviewerRole ?? "").trim();
   const rating = (body.rating ?? "").trim() as Rating;
   const comments = (body.comments ?? "").trim();
 
@@ -102,7 +100,6 @@ export async function POST(req: NextRequest) {
     interviewerUid: verified.caller.uid,
     interviewerEmail: verified.caller.email,
     interviewerName: verified.caller.name || verified.caller.email,
-    interviewerRole,
     rating,
     comments,
     updatedAt: new Date().toISOString(),

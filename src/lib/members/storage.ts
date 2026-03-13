@@ -165,7 +165,6 @@ export interface ApplicationRecord {
     interviewerUid?: string;
     interviewerEmail?: string;
     interviewerName?: string;
-    interviewerRole?: string;
     rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
     comments?: string;
     updatedAt?: string;
