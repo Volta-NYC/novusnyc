@@ -164,7 +164,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "tracks", label: "Tracks" },
   { key: "resume", label: "Resume URL" },
   { key: "applied", label: "Applied" },
-  { key: "evals", label: "Evals" },
+  { key: "evals", label: "Eval" },
   { key: "interview", label: "Interview" },
   { key: "invite", label: "Invite" },
   { key: "actions", label: "Actions" },
@@ -1089,7 +1089,7 @@ export default function ApplicantsPage() {
                                 rel="noopener noreferrer"
                                 className="text-[#85CC17]/80 hover:text-[#85CC17] underline whitespace-nowrap"
                               >
-                                Open
+                                Resume
                               </a>
                             ) : (
                               <span className="text-white/30">N/A</span>
@@ -1097,16 +1097,16 @@ export default function ApplicantsPage() {
                           </td>
                         );
                       case "evals": {
-                        const evalEntries = Object.values(app.interviewEvaluations || {});
+                        const hasEval = Object.keys(app.interviewEvaluations || {}).length > 0;
                         return (
-                          <td key={col.key} className="px-2 py-1.5 text-white/45">
-                            {evalEntries.length > 0 ? (
+                          <td key={col.key} className="px-2 py-1.5">
+                            {hasEval ? (
                               <button
                                 onClick={() => setViewingEvaluationsApp(app)}
-                                className="hover:text-[#C4F135] transition-colors underline decoration-dotted text-sm"
-                                title="Click to view interview evaluations"
+                                className="text-[#85CC17] font-bold text-base leading-none hover:text-[#C4F135] transition-colors"
+                                title="Click to view evaluation"
                               >
-                                {evalEntries.length}
+                                ✓
                               </button>
                             ) : (
                               <span className="text-white/20">—</span>
