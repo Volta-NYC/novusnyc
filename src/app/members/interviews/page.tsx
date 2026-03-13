@@ -695,28 +695,9 @@ function InterviewsContent() {
 
   const findResumeUrlForSlot = useCallback((slot: InterviewSlot): string => {
     if (!canViewResumeForSlot(slot)) return "";
-    const slotId = (slot.id ?? "").trim();
-    const token = normalizeString(slot.bookedBy ?? "");
-    const slotEmail = normalizeString(slot.bookerEmail ?? "");
-    const slotCanonical = canonicalEmail(slotEmail);
-    const slotName = slot.bookerName ?? "";
-    for (const app of applications) {
-      const appResume = (app.resumeUrl ?? "").trim();
-      if (!appResume) continue;
-      // Strongest match: slot ID directly linked on the application
-      if (slotId && app.interviewSlotId && app.interviewSlotId === slotId) return appResume;
-      // Token match
-      const appToken = normalizeString(app.interviewInviteToken ?? "");
-      if (token && appToken && token === appToken) return appResume;
-      // Email match
-      const appEmail = normalizeString(app.email ?? "");
-      const appCanonical = canonicalEmail(appEmail);
-      if (slotEmail && appEmail && (slotEmail === appEmail || slotCanonical === appCanonical)) return appResume;
-      // Name match (weakest)
-      if (slotName && app.fullName && namesLikelyMatch(slotName, app.fullName)) return appResume;
-    }
-    return "";
-  }, [applications, canViewResumeForSlot]);
+    const app = findApplicationForSlot(slot);
+    return (app?.resumeUrl ?? "").trim();
+  }, [canViewResumeForSlot, findApplicationForSlot]);
 
   const findApplicationForSlot = useCallback((slot: InterviewSlot): ApplicationRecord | null => {
     const slotId = (slot.id ?? "").trim();
