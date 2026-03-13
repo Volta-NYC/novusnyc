@@ -200,6 +200,7 @@ export default function ApplicantsPage() {
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
+  const [clearingEvals, setClearingEvals] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
   // Accept modal state
@@ -633,6 +634,29 @@ export default function ApplicantsPage() {
     }
   };
 
+  const clearBadEvals = async () => {
+    if (!user || !canDelete) return;
+    setClearingEvals(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/applicants/clear-evals", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json() as { success?: boolean; results?: string[] };
+      if (data.success) {
+        setStatusMessage(`Cleared: ${(data.results ?? []).join("; ") || "nothing to clear"}.`);
+        await fetchApplicantsData();
+      } else {
+        setStatusMessage("Clear evals failed.");
+      }
+    } catch {
+      setStatusMessage("Could not run eval cleanup.");
+    } finally {
+      setClearingEvals(false);
+    }
+  };
+
   const updateRowStatus = async (app: ApplicationRecord, nextStatus: ApplicationStatus) => {
     if (!canManageStatus) return;
     try {
@@ -882,6 +906,16 @@ export default function ApplicantsPage() {
           <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
             {importing ? "Importing..." : "Import CSV"}
           </Btn>
+          {canDelete && (
+            <Btn
+              variant="secondary"
+              onClick={() => void clearBadEvals()}
+              disabled={clearingEvals}
+              className="opacity-60 hover:opacity-100"
+            >
+              {clearingEvals ? "Clearing..." : "Clear Evals (Aryan/Sarah)"}
+            </Btn>
+          )}
         </div>
       )}
 
