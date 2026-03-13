@@ -576,6 +576,35 @@ function InterviewsContent() {
     return map;
   }, [teamMembers]);
 
+  const currentInterviewerMemberIds = useMemo(() => {
+    if (!user) return [] as string[];
+    const email = normalizeString(user.email ?? "");
+    const canonical = canonicalEmail(user.email ?? "");
+    const displayName = normalizeName(user.displayName ?? "");
+    return teamMembers
+      .filter((member) => {
+        const memberEmail = normalizeString(member.email ?? "");
+        const memberAltEmail = normalizeString(member.alternateEmail ?? "");
+        const memberCanonical = canonicalEmail(member.email ?? "");
+        const memberAltCanonical = canonicalEmail(member.alternateEmail ?? "");
+        if (email && (memberEmail === email || memberAltEmail === email || memberCanonical === canonical || memberAltCanonical === canonical)) return true;
+        if (displayName && namesLikelyMatch(displayName, member.name ?? "")) return true;
+        return false;
+      })
+      .map((member) => String(member.id ?? "").trim())
+      .filter(Boolean);
+  }, [teamMembers, user]);
+
+  const canViewResumeForSlot = useCallback((slot: InterviewSlot): boolean => {
+    if (canDeleteInterviews) return true;
+    if (authRole !== "interviewer") return false;
+    const slotIds = Array.isArray(slot.interviewerMemberIds)
+      ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
+      : [];
+    if (slotIds.length === 0 || currentInterviewerMemberIds.length === 0) return false;
+    return slotIds.some((id) => currentInterviewerMemberIds.includes(id));
+  }, [authRole, canDeleteInterviews, currentInterviewerMemberIds]);
+
   const interviewerDisplayOptions = useMemo(() => {
     const nameCounts = new Map<string, number>();
     teamMembers.forEach((member) => {
@@ -682,6 +711,7 @@ function InterviewsContent() {
   );
 
   const findResumeUrlForSlot = useCallback((slot: InterviewSlot): string => {
+    if (!canViewResumeForSlot(slot)) return "";
     const token = normalizeString(slot.bookedBy ?? "");
     const slotEmail = normalizeString(slot.bookerEmail ?? "");
     const slotCanonical = canonicalEmail(slotEmail);
@@ -697,7 +727,7 @@ function InterviewsContent() {
       if (slotName && app.fullName && namesLikelyMatch(slotName, app.fullName)) return appResume;
     }
     return "";
-  }, [applications]);
+  }, [applications, canViewResumeForSlot]);
 
   const findApplicationForSlot = useCallback((slot: InterviewSlot): ApplicationRecord | null => {
     const token = normalizeString(slot.bookedBy ?? "");
