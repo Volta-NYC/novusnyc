@@ -148,34 +148,23 @@ function formatDateTime(value: string): string {
   });
 }
 
-// ── Sort arrow component ───────────────────────────────────────────────────────
-
-function SortArrows({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  return (
-    <span className="inline-flex flex-col ml-1 -space-y-[3px] leading-none align-middle">
-      <span className={`text-[8px] ${active && dir === "asc" ? "text-white/80" : "text-white/20"}`}>▲</span>
-      <span className={`text-[8px] ${active && dir === "desc" ? "text-white/80" : "text-white/20"}`}>▼</span>
-    </span>
-  );
-}
-
 // ── Column definitions ─────────────────────────────────────────────────────────
 
 type ColumnKey = "status" | "name" | "email" | "school" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "actions";
 
-const ALL_COLUMNS: { key: ColumnKey; label: string; sortable: boolean }[] = [
-  { key: "status", label: "Status", sortable: true },
-  { key: "name", label: "Name", sortable: true },
-  { key: "email", label: "Email", sortable: true },
-  { key: "school", label: "School Name", sortable: false },
-  { key: "cityState", label: "City, State", sortable: false },
-  { key: "referral", label: "How They Heard", sortable: false },
-  { key: "tracks", label: "Tracks", sortable: false },
-  { key: "resume", label: "Resume URL", sortable: false },
-  { key: "applied", label: "Applied", sortable: true },
-  { key: "invite", label: "Invite", sortable: false },
-  { key: "interview", label: "Interview", sortable: false },
-  { key: "actions", label: "Actions", sortable: false },
+const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
+  { key: "status", label: "Status" },
+  { key: "name", label: "Name" },
+  { key: "email", label: "Email" },
+  { key: "school", label: "School Name" },
+  { key: "cityState", label: "City, State" },
+  { key: "referral", label: "How They Heard" },
+  { key: "tracks", label: "Tracks" },
+  { key: "resume", label: "Resume URL" },
+  { key: "applied", label: "Applied" },
+  { key: "invite", label: "Invite" },
+  { key: "interview", label: "Interview" },
+  { key: "actions", label: "Actions" },
 ];
 
 // ── Column widths (tailwind-compatible) ────────────────────────────────────────
@@ -195,7 +184,6 @@ const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
   actions: "w-[160px]",
 };
 
-type SortKey = "status" | "name" | "email" | "applied";
 
 export default function ApplicantsPage() {
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
@@ -211,8 +199,6 @@ export default function ApplicantsPage() {
   const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("applied");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
   // Accept modal state
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
@@ -327,15 +313,6 @@ export default function ApplicantsPage() {
     return false;
   }, [canEdit, isInterviewerOnly, matchBookedSlot, currentInterviewerMemberIds]);
 
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
-
   const filtered = useMemo(() => {
     const q = normalize(search);
     const base = [...applications]
@@ -347,29 +324,10 @@ export default function ApplicantsPage() {
           || normalize(app.schoolName ?? "").includes(q)
           || normalize(app.status).includes(q);
       });
-    // Sort
-    base.sort((a, b) => {
-      let cmp = 0;
-      switch (sortKey) {
-        case "status":
-          cmp = a.status.localeCompare(b.status);
-          break;
-        case "name":
-          cmp = a.fullName.localeCompare(b.fullName);
-          break;
-        case "email":
-          cmp = a.email.localeCompare(b.email);
-          break;
-        case "applied":
-          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          break;
-        default:
-          cmp = 0;
-      }
-      return sortDir === "asc" ? cmp : -cmp;
-    });
+    // Always sort by most recent application first
+    base.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return base;
-  }, [applications, search, showAcceptedApplicants, sortKey, sortDir]);
+  }, [applications, search, showAcceptedApplicants]);
 
   const uninvitedApplicantIds = useMemo(
     () =>
@@ -383,6 +341,20 @@ export default function ApplicantsPage() {
         .map((app) => app.id),
     [applications, matchBookedSlot]
   );
+
+  const unbookedReminderIds = useMemo(() => {
+    const now = Date.now();
+    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+    return applications
+      .filter((app) => {
+        const sentAt = Date.parse(app.interviewInviteSentAt ?? "");
+        if (!sentAt || now - sentAt < twoDaysMs) return false;
+        if (matchBookedSlot(app)) return false;
+        const remindedAt = Date.parse(app.interviewReminderSentAt ?? "");
+        return !remindedAt || remindedAt < sentAt;
+      })
+      .map((app) => app.id);
+  }, [applications, matchBookedSlot]);
 
   const selectableFilteredIds = useMemo(() => filtered.map((app) => app.id), [filtered]);
 
@@ -882,33 +854,32 @@ export default function ApplicantsPage() {
       <PageHeader
         title="Applicants"
         subtitle={`${filtered.length} shown · ${applications.length} total`}
-        action={
-          canEdit ? (
-            <div className="flex gap-2">
-              <Btn
-                variant="secondary"
-                onClick={inviteAllUninvited}
-                disabled={sendingInvites || uninvitedApplicantIds.length === 0}
-              >
-                {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
-              </Btn>
-              <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites}>
-                {sendingReminders ? "Sending reminders..." : "Remind Unbooked (2+ days)"}
-              </Btn>
-              <Btn
-                variant="secondary"
-                onClick={emailAllNotBooked}
-                disabled={sendingInvites || sendingReminders || allNotBookedApplicantIds.length === 0}
-              >
-                {sendingInvites || sendingReminders ? "Sending..." : `Email All Not Booked (${allNotBookedApplicantIds.length})`}
-              </Btn>
-              <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
-                {importing ? "Importing..." : "Import CSV"}
-              </Btn>
-            </div>
-          ) : undefined
-        }
       />
+
+      {canEdit && (
+        <div className="flex gap-2 mb-4 flex-wrap">
+          <Btn
+            variant="secondary"
+            onClick={inviteAllUninvited}
+            disabled={sendingInvites || uninvitedApplicantIds.length === 0}
+          >
+            {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
+          </Btn>
+          <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites}>
+            {sendingReminders ? "Sending reminders..." : `Remind Unbooked (${unbookedReminderIds.length})`}
+          </Btn>
+          <Btn
+            variant="secondary"
+            onClick={emailAllNotBooked}
+            disabled={sendingInvites || sendingReminders || allNotBookedApplicantIds.length === 0}
+          >
+            {sendingInvites || sendingReminders ? "Sending..." : `Email All Not Booked (${allNotBookedApplicantIds.length})`}
+          </Btn>
+          <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+            {importing ? "Importing..." : "Import CSV"}
+          </Btn>
+        </div>
+      )}
 
       {statusMessage && <p className="text-xs text-white/55 mb-4">{statusMessage}</p>}
 
@@ -969,27 +940,6 @@ export default function ApplicantsPage() {
             </Btn>
           </>
         )}
-        {hiddenColumns.size > 0 && (
-          <div className="relative group">
-            <Btn size="sm" variant="ghost">
-              Show Columns ({hiddenColumns.size})
-            </Btn>
-            <div className="absolute top-full left-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 py-1 hidden group-hover:block min-w-[140px]">
-              {Array.from(hiddenColumns).map((key) => {
-                const col = ALL_COLUMNS.find((c) => c.key === key);
-                return (
-                  <button
-                    key={key}
-                    onClick={() => showColumn(key)}
-                    className="w-full text-left px-3 py-1.5 text-xs text-white/65 hover:bg-white/8 hover:text-white transition-colors"
-                  >
-                    + {col?.label ?? key}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
@@ -1009,31 +959,39 @@ export default function ApplicantsPage() {
                   />
                 </th>
               )}
-              {visibleColumns.map((col) => {
-                const isSortable = col.sortable;
-                const isActive = sortKey === col.key;
+              {visibleColumns.map((col) => (
+                <th
+                  key={col.key}
+                  className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${COLUMN_WIDTH[col.key] ?? ""} group/col`}
+                >
+                  <span className="inline-flex items-center gap-0.5">
+                    {col.label}
+                    {col.key !== "actions" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          hideColumn(col.key);
+                        }}
+                        className="ml-1 text-[9px] text-white/0 group-hover/col:text-white/30 hover:!text-white/60 transition-colors"
+                        title={`Hide ${col.label}`}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </span>
+                </th>
+              ))}
+              {/* Inline + buttons for hidden columns */}
+              {Array.from(hiddenColumns).map((key) => {
+                const col = ALL_COLUMNS.find((c) => c.key === key);
                 return (
                   <th
-                    key={col.key}
-                    className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${COLUMN_WIDTH[col.key] ?? ""} ${isSortable ? "cursor-pointer select-none hover:text-white/65" : ""} group/col`}
-                    onClick={() => isSortable && handleSort(col.key as SortKey)}
+                    key={`hidden-${key}`}
+                    className="px-1 py-2 text-center w-[28px] cursor-pointer"
+                    title={`Show ${col?.label ?? key}`}
+                    onClick={() => showColumn(key)}
                   >
-                    <span className="inline-flex items-center gap-0.5">
-                      {col.label}
-                      {isSortable && <SortArrows active={isActive} dir={sortDir} />}
-                      {col.key !== "actions" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            hideColumn(col.key);
-                          }}
-                          className="ml-1 text-[9px] text-white/0 group-hover/col:text-white/30 hover:!text-white/60 transition-colors"
-                          title={`Hide ${col.label}`}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </span>
+                    <span className="text-[10px] text-white/30 hover:text-white/60 transition-colors">+</span>
                   </th>
                 );
               })}

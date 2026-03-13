@@ -1668,7 +1668,7 @@ function InterviewsContent() {
                         <span className="inline-flex items-center gap-0.5">
                           {col}
                           {col === "Time" && (
-                            <span className="inline-flex flex-col ml-1 -space-y-[3px] leading-none align-middle">
+                            <span className="inline-flex flex-col ml-1 leading-none align-middle">
                               <span className="text-[8px] text-white/80">▲</span>
                               <span className="text-[8px] text-white/20">▼</span>
                             </span>
@@ -1741,7 +1741,7 @@ function InterviewsContent() {
                         <span className="inline-flex items-center gap-0.5">
                           {col}
                           {col === "Time" && (
-                            <span className="inline-flex flex-col ml-1 -space-y-[3px] leading-none align-middle">
+                            <span className="inline-flex flex-col ml-1 leading-none align-middle">
                               <span className="text-[8px] text-white/20">▲</span>
                               <span className="text-[8px] text-white/80">▼</span>
                             </span>

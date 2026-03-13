@@ -783,7 +783,7 @@ export default function TeamPage() {
                     <span className="inline-flex items-center gap-0.5">
                       {col}
                       {sortable && (
-                        <span className="inline-flex flex-col ml-0.5 -space-y-[3px] leading-none align-middle">
+                        <span className="inline-flex flex-col ml-0.5 leading-none align-middle">
                           <span className={`text-[8px] ${isActive && dir === "asc" ? "text-white/80" : "text-white/20"}`}>▲</span>
                           <span className={`text-[8px] ${isActive && dir === "desc" ? "text-white/80" : "text-white/20"}`}>▼</span>
                         </span>
