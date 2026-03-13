@@ -303,7 +303,7 @@ function InterviewsContent() {
   const [rescheduling, setRescheduling] = useState(false);
   const [pastMessage, setPastMessage] = useState<string | null>(null);
   const [evaluationSlot, setEvaluationSlot] = useState<InterviewSlot | null>(null);
-  const [evaluationRating, setEvaluationRating] = useState<"Extremely Qualified" | "Qualified" | "Decent" | "Unqualified">("Qualified");
+  const [evaluationRating, setEvaluationRating] = useState<"Extremely Qualified" | "Qualified" | "Decent" | "Unqualified" | "">("");
   const [evaluationComments, setEvaluationComments] = useState("");
   const [savingEvaluation, setSavingEvaluation] = useState(false);
   const [evaluationMessage, setEvaluationMessage] = useState<string | null>(null);
@@ -845,13 +845,17 @@ function InterviewsContent() {
     // Pre-populate from any existing eval by the current user
     const existingEval = user?.uid ? slot.evaluationByUid?.[user.uid] : undefined;
     setEvaluationSlot(slot);
-    setEvaluationRating(existingEval?.rating ?? "Qualified");
+    setEvaluationRating(existingEval?.rating ?? "");
     setEvaluationComments(existingEval?.comments ?? "");
     setEvaluationMessage(null);
   };
 
   const saveEvaluation = async () => {
     if (!evaluationSlot || !user) return;
+    if (!evaluationRating) {
+      setEvaluationMessage("Please select a rating.");
+      return;
+    }
     setSavingEvaluation(true);
     setEvaluationMessage(null);
     try {
@@ -2462,9 +2466,10 @@ function InterviewsContent() {
           <Field label="Evaluation">
             <select
               value={evaluationRating}
-              onChange={(e) => setEvaluationRating(e.target.value as "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified")}
+              onChange={(e) => setEvaluationRating(e.target.value as "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified" | "")}
               className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
+              <option value="" disabled>Select a rating...</option>
               {["Extremely Qualified", "Qualified", "Decent", "Unqualified"].map((value) => (
                 <option key={value} value={value}>{value}</option>
               ))}
