@@ -693,12 +693,6 @@ function InterviewsContent() {
     [sortedSlots, now]
   );
 
-  const findResumeUrlForSlot = useCallback((slot: InterviewSlot): string => {
-    if (!canViewResumeForSlot(slot)) return "";
-    const app = findApplicationForSlot(slot);
-    return (app?.resumeUrl ?? "").trim();
-  }, [canViewResumeForSlot, findApplicationForSlot]);
-
   const findApplicationForSlot = useCallback((slot: InterviewSlot): ApplicationRecord | null => {
     const slotId = (slot.id ?? "").trim();
     const token = normalizeString(slot.bookedBy ?? "");
@@ -720,6 +714,12 @@ function InterviewsContent() {
     }
     return null;
   }, [applications]);
+
+  const findResumeUrlForSlot = useCallback((slot: InterviewSlot): string => {
+    if (!canViewResumeForSlot(slot)) return "";
+    const app = findApplicationForSlot(slot);
+    return (app?.resumeUrl ?? "").trim();
+  }, [canViewResumeForSlot, findApplicationForSlot]);
 
   const recurringAvailableGroups = useMemo(() => {
     const grouped: Record<string, InterviewSlot[]> = {};
