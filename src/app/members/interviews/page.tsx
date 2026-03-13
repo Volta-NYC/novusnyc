@@ -306,7 +306,6 @@ function InterviewsContent() {
   const [evaluationSlot, setEvaluationSlot] = useState<InterviewSlot | null>(null);
   const [evaluationRating, setEvaluationRating] = useState<"Extremely Qualified" | "Qualified" | "Decent" | "Unqualified">("Qualified");
   const [evaluationComments, setEvaluationComments] = useState("");
-  const [evaluationRole, setEvaluationRole] = useState("");
   const [savingEvaluation, setSavingEvaluation] = useState(false);
   const [evaluationMessage, setEvaluationMessage] = useState<string | null>(null);
   const [finalizeSlot, setFinalizeSlot] = useState<InterviewSlot | null>(null);
@@ -825,7 +824,6 @@ function InterviewsContent() {
     setEvaluationSlot(slot);
     setEvaluationRating("Qualified");
     setEvaluationComments("");
-    setEvaluationRole(authRole === "interviewer" ? "Interviewer" : "Admin Reviewer");
     setEvaluationMessage(null);
   };
 
