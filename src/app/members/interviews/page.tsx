@@ -17,7 +17,7 @@ import {
   type InterviewSlot,
   type ApplicationRecord,
 } from "@/lib/members/storage";
-import { Btn, Field, Input, Modal, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm } from "@/components/members/ui";
+import { Btn, Field, Modal, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm } from "@/components/members/ui";
 import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
 import {
   formatInterviewInET,
@@ -1701,7 +1701,7 @@ function InterviewsContent() {
                               Resume
                             </a>
                           ) : (
-                            <span className="text-white/20">—</span>
+                            <span className="text-white/20">N/A</span>
                           )}
                         </td>
                         <td className="px-2 py-1.5 whitespace-nowrap">
@@ -1791,7 +1791,7 @@ function InterviewsContent() {
                               Resume
                             </a>
                           ) : (
-                            <span className="text-white/20">—</span>
+                            <span className="text-white/20">N/A</span>
                           )}
                         </td>
                         <td className="px-2 py-1.5 whitespace-nowrap">
@@ -2520,7 +2520,7 @@ function InterviewsContent() {
                     </div>
                     {ev.comments && (
                       <div className="text-sm text-white/70 whitespace-pre-wrap font-body bg-black/20 p-2 rounded border border-white/5 italic">
-                        "{ev.comments}"
+                        &quot;{ev.comments}&quot;
                       </div>
                     )}
                   </div>

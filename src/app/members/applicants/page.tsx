@@ -1090,7 +1090,7 @@ export default function ApplicantsPage() {
                                 Open
                               </a>
                             ) : (
-                              <span className="text-white/30">—</span>
+                              <span className="text-white/30">N/A</span>
                             )}
                           </td>
                         );

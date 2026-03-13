@@ -70,7 +70,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, results });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message });
+  } catch (err: unknown) {
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
 }
