@@ -867,15 +867,16 @@ export default function ApplicantsPage() {
           >
             {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
           </Btn>
-          <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites}>
+          <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites || unbookedReminderIds.length === 0} className={unbookedReminderIds.length === 0 ? "opacity-50" : ""}>
             {sendingReminders ? "Sending reminders..." : `Remind Unbooked (${unbookedReminderIds.length})`}
           </Btn>
           <Btn
             variant="secondary"
             onClick={emailAllNotBooked}
             disabled={sendingInvites || sendingReminders || allNotBookedApplicantIds.length === 0}
+            className={allNotBookedApplicantIds.length === 0 ? "opacity-50" : ""}
           >
-            {sendingInvites || sendingReminders ? "Sending..." : `Email All Not Booked (${allNotBookedApplicantIds.length})`}
+            {sendingInvites || sendingReminders ? "Sending..." : `Email All Unbooked (${allNotBookedApplicantIds.length})`}
           </Btn>
           <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
             {importing ? "Importing..." : "Import CSV"}
@@ -892,7 +893,7 @@ export default function ApplicantsPage() {
             type="checkbox"
             checked={showAcceptedApplicants}
             onChange={(e) => setShowAcceptedApplicants(e.target.checked)}
-            className="accent-[#85CC17]"
+            className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-1 after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
           />
           Show accepted applicants
         </label>
