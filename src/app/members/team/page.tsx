@@ -50,26 +50,26 @@ function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
 
 const TEAM_CODE_BY_EMAIL: Record<string, string> = {
   // Finance sub-teams
-  "iamalvinjiang@gmail.com": "FA",
-  "shafeen873@gmail.com": "FA",
-  "bruceweng374@gmail.com": "FA",
-  "tsundrukn@gmail.com": "FA",
-  "yubabhatta1@gmail.com": "FA",
-  "peytonsyuen@gmail.com": "FA",
+  "iamalvinjiang@gmail.com": "Reports",
+  "shafeen873@gmail.com": "Reports",
+  "bruceweng374@gmail.com": "Reports",
+  "tsundrukn@gmail.com": "Reports",
+  "yubabhatta1@gmail.com": "Reports",
+  "peytonsyuen@gmail.com": "Reports",
 
-  "nafismahimofficial@gmail.com": "FB",
-  "tylert4645@gmail.com": "FB",
-  "joseph.long.nyc@gmail.com": "FB",
-  "walterrz1230@gmail.com": "FB",
-  "madaniremichaela@gmail.com": "FB",
-  "ash28mui@gmail.com": "FB",
-  "thakkar.jay2009@gmail.com": "FB",
+  "nafismahimofficial@gmail.com": "Grants",
+  "tylert4645@gmail.com": "Grants",
+  "joseph.long.nyc@gmail.com": "Grants",
+  "walterrz1230@gmail.com": "Grants",
+  "madaniremichaela@gmail.com": "Grants",
+  "ash28mui@gmail.com": "Grants",
+  "thakkar.jay2009@gmail.com": "Grants",
 
-  "linkevin246@gmail.com": "FC",
-  "jackywang397@gmail.com": "FC",
-  "angelinec085@gmail.com": "FC",
-  "tiffanyxu1294@gmail.com": "FC",
-  "ryanliu.contact@gmail.com": "FC",
+  "linkevin246@gmail.com": "Outreach",
+  "jackywang397@gmail.com": "Outreach",
+  "angelinec085@gmail.com": "Outreach",
+  "tiffanyxu1294@gmail.com": "Outreach",
+  "ryanliu.contact@gmail.com": "Outreach",
 };
 
 const TEAM_CODE_BY_NAME: Record<string, string> = {
