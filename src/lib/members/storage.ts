@@ -139,11 +139,7 @@ export type ApplicationStatus =
   | "Interview Scheduled"
   | "Interview Completed"
   | "Accepted"
-  | "Not Accepted"
-  // Legacy values retained for backwards compatibility in older rows.
-  | "Reviewing"
-  | "Interview Pending"
-  | "Waitlisted";
+  | "Not Accepted";
 
 export interface ApplicationRecord {
   id: string;
@@ -386,12 +382,11 @@ function normalizeTimestamp(value: unknown, fallbackIso?: string): string {
 
 function normalizeApplicationStatus(raw: string, hasScheduledInterview: boolean): ApplicationStatus {
   const key = raw.trim().toLowerCase();
+  if (key === "new") return "New";
   if (key === "invited for interview") return "Invited for Interview";
-  if (key === "reviewing") return "Reviewing";
-  if (key === "interview pending") return "Interview Pending";
   if (key === "interview scheduled") return "Interview Scheduled";
+  if (key === "interview completed") return "Interview Completed";
   if (key === "accepted") return "Accepted";
-  if (key === "waitlisted") return "Waitlisted";
   if (key === "not accepted" || key === "rejected") return "Not Accepted";
   if (hasScheduledInterview) return "Interview Scheduled";
   return "New";
