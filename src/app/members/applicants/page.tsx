@@ -152,7 +152,7 @@ function formatDateTime(value: string): string {
 
 // ── Column definitions ─────────────────────────────────────────────────────────
 
-type ColumnKey = "status" | "name" | "email" | "school" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "actions";
+type ColumnKey = "status" | "name" | "email" | "school" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals" | "actions";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "status", label: "Status" },
@@ -164,6 +164,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "tracks", label: "Tracks" },
   { key: "resume", label: "Resume URL" },
   { key: "applied", label: "Applied" },
+  { key: "evals", label: "Evals" },
   { key: "interview", label: "Interview" },
   { key: "invite", label: "Invite" },
   { key: "actions", label: "Actions" },
@@ -206,6 +207,7 @@ export default function ApplicantsPage() {
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
   const [acceptRole, setAcceptRole] = useState("Analyst");
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
+  const [viewingEvaluationsApp, setViewingEvaluationsApp] = useState<ApplicationRecord | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
@@ -1094,6 +1096,24 @@ export default function ApplicantsPage() {
                             )}
                           </td>
                         );
+                      case "evals": {
+                        const evalEntries = Object.values(app.interviewEvaluations || {});
+                        return (
+                          <td key={col.key} className="px-2 py-1.5 text-white/45">
+                            {evalEntries.length > 0 ? (
+                              <button
+                                onClick={() => setViewingEvaluationsApp(app)}
+                                className="hover:text-[#C4F135] transition-colors underline decoration-dotted text-sm"
+                                title="Click to view interview evaluations"
+                              >
+                                {evalEntries.length}
+                              </button>
+                            ) : (
+                              <span className="text-white/20">—</span>
+                            )}
+                          </td>
+                        );
+                      }
                       case "applied":
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/45 whitespace-nowrap">{formatDateTime(app.createdAt)}</td>
@@ -1188,6 +1208,53 @@ export default function ApplicantsPage() {
 
       {loadingData ? <p className="text-xs text-white/40 mt-3">Loading applicants...</p> : null}
       {!loadingData && filtered.length === 0 && <Empty message="No applicants yet." />}
+
+      {/* Evaluation viewer modal */}
+      <Modal
+        open={!!viewingEvaluationsApp}
+        onClose={() => setViewingEvaluationsApp(null)}
+        title="Interview Evaluations"
+      >
+        <div className="space-y-4">
+          <p className="text-white/60 text-sm font-body">
+            Evaluations for <span className="text-white font-semibold">{viewingEvaluationsApp?.fullName}</span>
+          </p>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+            {viewingEvaluationsApp && Object.values(viewingEvaluationsApp.interviewEvaluations || {}).length > 0 ? (
+              Object.values(viewingEvaluationsApp.interviewEvaluations || {})
+                .sort((a, b) => new Date(b?.updatedAt || 0).getTime() - new Date(a?.updatedAt || 0).getTime())
+                .map((ev, idx) => (
+                  <div key={idx} className="bg-white/3 border border-white/5 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <div className="text-xs font-semibold text-white/90">{ev?.interviewerName || "Unknown"}</div>
+                        <div className="text-[10px] text-white/40">{ev?.updatedAt ? new Date(ev.updatedAt).toLocaleString() : ""}</div>
+                      </div>
+                      <div className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                        ev?.rating === "Extremely Qualified" ? "bg-[#85CC17]/20 text-[#C4F135]" :
+                        ev?.rating === "Qualified" ? "bg-blue-500/20 text-blue-400" :
+                        ev?.rating === "Decent" ? "bg-yellow-500/20 text-yellow-400" :
+                        "bg-red-500/20 text-red-400"
+                      }`}>
+                        {ev?.rating || "No Rating"}
+                      </div>
+                    </div>
+                    {ev?.comments && (
+                      <div className="text-sm text-white/70 whitespace-pre-wrap font-body bg-black/20 p-2 rounded border border-white/5 italic">
+                        &quot;{ev.comments}&quot;
+                      </div>
+                    )}
+                  </div>
+                ))
+            ) : (
+              <div className="text-center py-8 text-white/20 italic text-sm">No evaluations yet.</div>
+            )}
+          </div>
+          <div className="flex justify-end pt-2">
+            <Btn variant="secondary" onClick={() => setViewingEvaluationsApp(null)}>Close</Btn>
+          </div>
+        </div>
+      </Modal>
     </MembersLayout>
   );
 }
