@@ -212,6 +212,7 @@ function UsersTab() {
 function DataTab() {
   const [statusMessage, setStatusMessage] = useState("");
   const [syncingAccounts, setSyncingAccounts] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
   const { user } = useAuth();
 
   const normalizeKey = (v?: string) => (v ?? "").trim().toLowerCase();
@@ -247,6 +248,31 @@ function DataTab() {
       setStatusMessage("Export complete.");
     } catch {
       setStatusMessage("Export failed. Check admin access and try again.");
+    }
+  };
+
+  const handleBackfillGrades = async () => {
+    if (!user) {
+      setStatusMessage("You must be signed in as admin to backfill.");
+      return;
+    }
+
+    setBackfilling(true);
+    setStatusMessage("Backfilling legacy member grades...");
+
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/admin/backfill-grades", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json() as { patched?: number };
+      setStatusMessage(`Backfill complete. ${data.patched || 0} missing grades updated.`);
+    } catch {
+      setStatusMessage("Backfill failed. Check console or permissions.");
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -411,6 +437,19 @@ function DataTab() {
           className="bg-[#85CC17] text-[#0D0D0D] font-display font-bold px-5 py-2.5 rounded-xl hover:bg-[#72b314] transition-colors text-sm disabled:opacity-60"
         >
           {syncingAccounts ? "Syncing..." : "Sync Now"}
+        </button>
+      </div>
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
+        <h2 className="font-display font-bold text-white mb-1">Backfill Legacy Grades</h2>
+        <p className="text-white/40 text-sm mb-4">
+          Scan historical applications to fill in missing grade information for existing team members.
+        </p>
+        <button
+          onClick={handleBackfillGrades}
+          disabled={backfilling}
+          className="bg-white/10 text-white font-display font-bold px-5 py-2.5 rounded-xl hover:bg-white/15 transition-colors text-sm disabled:opacity-60"
+        >
+          {backfilling ? "Backfilling..." : "Run Backfill"}
         </button>
       </div>
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
