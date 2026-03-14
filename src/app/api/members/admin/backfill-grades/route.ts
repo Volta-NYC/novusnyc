@@ -10,15 +10,14 @@ export async function POST(req: NextRequest) {
   if (!db) return NextResponse.json({ error: "admin_not_configured" }, { status: 500 });
 
   const teamSnap = await db.ref("team").get();
-  const team = teamSnap.val() || {};
+  const team = (teamSnap.val() || {}) as Record<string, Record<string, unknown>>;
 
   const appsSnap = await db.ref("applications").get();
-  const apps = appsSnap.val() || {};
+  const apps = (appsSnap.val() || {}) as Record<string, Record<string, unknown>>;
 
   let patched = 0;
 
-  for (const [teamId, memberRaw] of Object.entries(team)) {
-    const member = memberRaw as Record<string, unknown>;
+  for (const [teamId, member] of Object.entries(team)) {
     const memberGrade = String(member.grade || "");
     if (memberGrade && memberGrade.trim() !== "") continue;
 
@@ -27,8 +26,7 @@ export async function POST(req: NextRequest) {
     let grade = "";
 
     // 1. match by email
-    for (const appRaw of Object.values(apps)) {
-      const app = appRaw as Record<string, unknown>;
+    for (const app of Object.values(apps)) {
       const appEmail = String(app.email || "").trim().toLowerCase();
       if ((email && appEmail === email) || (alt && appEmail === alt)) {
         const appGrade = String(app.grade || "");
@@ -41,8 +39,7 @@ export async function POST(req: NextRequest) {
 
     // 2. match by name
     if (!grade) {
-      for (const appRaw of Object.values(apps)) {
-        const app = appRaw as Record<string, unknown>;
+      for (const app of Object.values(apps)) {
         const appName = String(app.fullName || "");
         const memberName = String(member.name || "");
         
