@@ -87,26 +87,23 @@ export async function POST(req: NextRequest) {
     ? message
     : message.replace(/\n/g, "<br/>");
 
-  const failed: string[] = [];
-  for (const recipient of deduped) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await transporter.sendMail({
-        from,
-        replyTo,
-        to: recipient,
-        subject,
-        text: textBody,
-        html: htmlBody,
-      });
-    } catch {
-      failed.push(recipient);
-    }
+  try {
+    await transporter.sendMail({
+      from,
+      replyTo,
+      bcc: deduped, // Using BCC for privacy so 65+ people don't get reply-all chained or see each other's emails
+      subject,
+      text: textBody,
+      html: htmlBody,
+    });
+  } catch (err) {
+    console.error("Bulk email error:", err);
+    return NextResponse.json({ error: "send_failed" }, { status: 500 });
   }
 
   return NextResponse.json({
     success: true,
-    sent: deduped.length - failed.length,
-    failed,
+    sent: deduped.length,
+    failed: [],
   });
 }
