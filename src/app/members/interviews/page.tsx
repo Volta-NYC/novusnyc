@@ -1401,7 +1401,6 @@ function InterviewsContent() {
   const closeBatchModal = () => {
     setShowBatchModal(false);
     setRepeatWeekly(true);
-    setRemoveWeekly(false);
     setBatchInterviewers([]);
     setSelectedInterviewers([]);
     resetDragSelection();
