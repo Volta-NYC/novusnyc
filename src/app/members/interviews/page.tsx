@@ -1553,7 +1553,6 @@ function InterviewsContent() {
       const selectionCount = Object.keys(dragSelectionRef.current).length;
       if (selectionCount >= 1 && dragModeRef.current) {
         setRepeatWeekly(dragModeRef.current === "add");
-        setRemoveWeekly(false);
         if (dragModeRef.current === "add") {
           setBatchInterviewers([]);
         } else {
