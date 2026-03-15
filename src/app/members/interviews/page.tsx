@@ -320,7 +320,6 @@ function InterviewsContent() {
   const [draggingSelection, setDraggingSelection] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [repeatWeekly, setRepeatWeekly] = useState(true);
-  const [removeWeekly, setRemoveWeekly] = useState(false);
   const [batchInterviewers, setBatchInterviewers] = useState<string[]>([]);
   const [bookedSlotDetails, setBookedSlotDetails] = useState<InterviewSlot | null>(null);
   const [selectedInterviewers, setSelectedInterviewers] = useState<string[]>([]);
@@ -1010,26 +1009,6 @@ function InterviewsContent() {
       setAvailableMessage(isWeekly ? `Removed ${count} weekly availability slot(s).` : "Availability removed.");
       setTimeout(() => setAvailableMessage(null), 2400);
     }, isWeekly ? "Remove this slot and all upcoming unbooked availabilities in this weekly series?" : "Remove this availability slot?");
-  };
-
-  const removeWeeklyAvailabilitySeries = (slot: InterviewSlot) => {
-    if (!canDeleteInterviews) return;
-    if (!slot.recurringWeekly || !slot.recurringSeriesId) return;
-    ask(async () => {
-      const nowTs = Date.now();
-      const targets = slots.filter((candidate) =>
-        candidate.recurringSeriesId === slot.recurringSeriesId
-        && candidate.available
-        && !candidate.bookedBy
-        && toInterviewTimestamp(candidate.datetime) >= nowTs
-      );
-      for (const target of targets) {
-        // eslint-disable-next-line no-await-in-loop
-        await deleteInterviewSlot(target.id);
-      }
-      setAvailableMessage(`Removed ${targets.length} weekly availability slot(s).`);
-      setTimeout(() => setAvailableMessage(null), 2400);
-    }, "Remove this slot and all upcoming weekly availabilities in this series?");
   };
 
   const makeAvailabilityWeekly = (slot: InterviewSlot) => {
