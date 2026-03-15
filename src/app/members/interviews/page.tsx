@@ -981,13 +981,35 @@ function InterviewsContent() {
     }, "Delete this past interview entry permanently?");
   };
 
-  const removeSingleAvailability = (slot: InterviewSlot) => {
-    if (!canDeleteInterviews) return;
-    ask(async () => {
+  const deleteInterviewAvailability = async (slot: InterviewSlot): Promise<number> => {
+    const nowTs = Date.now();
+    if (slot.recurringWeekly && slot.recurringSeriesId) {
+      const targets = slots.filter((candidate) =>
+        candidate.recurringSeriesId === slot.recurringSeriesId
+        && candidate.available
+        && !candidate.bookedBy
+        && toInterviewTimestamp(candidate.datetime) >= nowTs
+      );
+      for (const target of targets) {
+        // eslint-disable-next-line no-await-in-loop
+        await deleteInterviewSlot(target.id);
+      }
+      return targets.length;
+    } else {
+      if (toInterviewTimestamp(slot.datetime) < nowTs || !slot.available || slot.bookedBy) return 0;
       await deleteInterviewSlot(slot.id);
-      setAvailableMessage("Availability removed.");
-      setTimeout(() => setAvailableMessage(null), 2200);
-    }, "Remove this availability slot?");
+      return 1;
+    }
+  };
+
+  const removeAvailability = (slot: InterviewSlot) => {
+    if (!canDeleteInterviews) return;
+    const isWeekly = slot.recurringWeekly && slot.recurringSeriesId;
+    ask(async () => {
+      const count = await deleteInterviewAvailability(slot);
+      setAvailableMessage(isWeekly ? `Removed ${count} weekly availability slot(s).` : "Availability removed.");
+      setTimeout(() => setAvailableMessage(null), 2400);
+    }, isWeekly ? "Remove this slot and all upcoming unbooked availabilities in this weekly series?" : "Remove this availability slot?");
   };
 
   const removeWeeklyAvailabilitySeries = (slot: InterviewSlot) => {
@@ -1116,7 +1138,7 @@ function InterviewsContent() {
 
     if (mode === "remove") {
       if (!canDeleteInterviews || !slot || !slot.available || slot.bookedBy) return;
-      await deleteInterviewSlot(slot.id);
+      await deleteInterviewAvailability(slot);
       return;
     }
 
@@ -1412,7 +1434,7 @@ function InterviewsContent() {
       return;
     }
 
-    const shouldRepeatWeekly = dragMode === "remove" ? removeWeekly : repeatWeekly;
+    const shouldRepeatWeekly = dragMode === "add" ? repeatWeekly : false;
     if (dragMode === "add" && interviewerIdsFromDisplays(batchInterviewers).length === 0) {
       setAvailableMessage("At least one interviewer is required.");
       setTimeout(() => setAvailableMessage(null), 2200);
@@ -1436,15 +1458,17 @@ function InterviewsContent() {
 
     setApplyingBatch(true);
     try {
-      if (dragMode === "remove" && shouldRepeatWeekly) {
+      if (dragMode === "remove") {
         const idsToDelete = new Set<string>();
         const nowTs = Date.now();
         const selectedCells = Object.values(dragSelection);
 
         selectedCells.forEach((cell) => {
           const selected = slotMap[slotKey(cell.dateISO, cell.hour, cell.minute)];
-          // If this slot belongs to a weekly series, delete all future available slots in that series.
-          if (selected?.recurringWeekly && selected.recurringSeriesId) {
+          if (!selected) return;
+
+          if (selected.recurringWeekly && selected.recurringSeriesId) {
+            // Add entire series to deletion set without mutating slots directly
             slots.forEach((candidate) => {
               const ts = toInterviewTimestamp(candidate.datetime);
               if (ts < nowTs) return;
@@ -1452,20 +1476,11 @@ function InterviewsContent() {
               if (!candidate.available || !!candidate.bookedBy) return;
               idsToDelete.add(candidate.id);
             });
-            return;
-          }
-
-          // Fallback: remove same weekday/time through planning window.
-          for (let week = 0; week < 60; week += 1) {
-            const date = new Date(`${cell.dateISO}T00:00:00`);
-            date.setDate(date.getDate() + week * 7);
-            if (date.getTime() > planningEndTs) break;
-            const dateISO = toDateString(date);
-            const candidate = slotMap[slotKey(dateISO, cell.hour, cell.minute)];
-            if (!candidate) continue;
-            if (!candidate.available || !!candidate.bookedBy) continue;
-            if (toInterviewTimestamp(candidate.datetime) < nowTs) continue;
-            idsToDelete.add(candidate.id);
+          } else {
+            // Delete only this standalone slot
+            if (toInterviewTimestamp(selected.datetime) < nowTs) return;
+            if (!selected.available || !!selected.bookedBy) return;
+            idsToDelete.add(selected.id);
           }
         });
 
@@ -1475,8 +1490,8 @@ function InterviewsContent() {
         }
         setAvailableMessage(
           idsToDelete.size > 0
-            ? `Removed ${idsToDelete.size} recurring availability slot(s).`
-            : "No recurring availability slots to remove."
+            ? `Removed ${idsToDelete.size} availability slot(s).`
+            : "No availability slots to remove."
         );
         setTimeout(() => setAvailableMessage(null), 2400);
         return;
@@ -1512,8 +1527,7 @@ function InterviewsContent() {
       setTimeout(() => setAvailableMessage(null), 2200);
       return;
     }
-    const shouldApplyWeekly = removeWeekly;
-    const repeatCount = shouldApplyWeekly ? MAX_WEEK_OFFSET + 1 : 1;
+    const repeatCount = 1; // Drag-edit interviewers now inherently only applies to the explicitly selected cells
     const planningWindowEnd = new Date();
     planningWindowEnd.setDate(planningWindowEnd.getDate() + MAX_WEEK_OFFSET * 7 + 6);
     const uniqueTargets: Record<string, DragCell> = {};
@@ -2185,16 +2199,9 @@ function InterviewsContent() {
                             <Btn size="sm" variant="secondary" onClick={() => openEditAvailableSlot(representative)}>
                               Edit
                             </Btn>
-                            {representative.recurringSeriesId && (
-                              <Btn size="sm" variant="secondary" onClick={() => removeWeeklyAvailabilitySeries(representative)}>
-                                Remove Weekly
-                              </Btn>
-                            )}
-                            {!representative.recurringSeriesId && (
-                              <Btn size="sm" variant="danger" onClick={() => removeSingleAvailability(representative)}>
-                                Remove
-                              </Btn>
-                            )}
+                            <Btn size="sm" variant="danger" onClick={() => removeAvailability(representative)}>
+                              Remove
+                            </Btn>
                           </div>
                         )}
                       </div>
@@ -2234,7 +2241,7 @@ function InterviewsContent() {
                                   <Btn size="sm" variant="secondary" onClick={() => makeAvailabilityWeekly(slot)}>
                                     Make Weekly
                                   </Btn>
-                                  <Btn size="sm" variant="danger" onClick={() => removeSingleAvailability(slot)}>
+                                  <Btn size="sm" variant="danger" onClick={() => removeAvailability(slot)}>
                                     Remove
                                   </Btn>
                                 </div>
@@ -2355,29 +2362,6 @@ function InterviewsContent() {
                   placeholder="Type a name, then Enter/comma"
                 />
               </Field>
-              <div className="space-y-2">
-                <p className="text-sm text-white/65 font-body">How should this apply?</p>
-                <label className="flex items-center gap-2 text-sm text-white/70 font-body cursor-pointer">
-                  <input
-                    type="radio"
-                    name="remove-scope"
-                    checked={!removeWeekly}
-                    onChange={() => setRemoveWeekly(false)}
-                    className="accent-[#85CC17] w-4 h-4"
-                  />
-                  Selected slot(s) only
-                </label>
-                <label className="flex items-center gap-2 text-sm text-white/70 font-body cursor-pointer">
-                  <input
-                    type="radio"
-                    name="remove-scope"
-                    checked={removeWeekly}
-                    onChange={() => setRemoveWeekly(true)}
-                    className="accent-[#85CC17] w-4 h-4"
-                  />
-                  Recurring weekly
-                </label>
-              </div>
             </>
           )}
         </div>
@@ -2387,7 +2371,7 @@ function InterviewsContent() {
           </Btn>
           {dragMode === "remove" && canDeleteInterviews && (
             <Btn variant="secondary" onClick={saveSelectedInterviewers} disabled={applyingBatch}>
-              {applyingBatch ? "Saving..." : removeWeekly ? "Save Weekly Interviewers" : "Save Interviewers"}
+              {applyingBatch ? "Saving..." : "Save Interviewers"}
             </Btn>
           )}
           <Btn
@@ -2398,7 +2382,7 @@ function InterviewsContent() {
             {applyingBatch
               ? "Applying..."
               : dragMode === "remove"
-                ? (removeWeekly ? "Remove Weekly Availability" : "Remove Availability")
+                ? "Remove Availability"
                 : (repeatWeekly ? "Add Weekly Availability" : "Add Availability")}
           </Btn>
         </div>

@@ -3,18 +3,21 @@
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-interface BusinessMarker {
+export interface MapProject {
   name: string;
   type: string;
-  services: string;
-  lat: number;
-  lng: number;
+  services: string[];
   neighborhood: string;
   status: "Active" | "In Progress" | "Upcoming";
-  url?: string; // link to live website or social account — add when available
+  url?: string;
+  colorClass: string;
 }
 
-const neighborhoods = [
+interface NeighborhoodMapProps {
+  projects: MapProject[];
+}
+
+export const neighborhoods = [
   { name: "Park Slope", borough: "Brooklyn", lat: 40.6710, lng: -73.9769 },
   { name: "Sunnyside", borough: "Queens", lat: 40.7440, lng: -73.9213 },
   { name: "Chinatown", borough: "Manhattan", lat: 40.7158, lng: -73.9970 },
@@ -26,76 +29,28 @@ const neighborhoods = [
   { name: "Forest Avenue", borough: "Staten Island", lat: 40.6320, lng: -74.1190 },
 ];
 
-const businesses: BusinessMarker[] = [
-  {
-    name: "Petite Dumpling",
-    type: "Restaurant",
-    services: "Website, Social Media",
-    lat: 40.6707,
-    lng: -73.9793,
-    neighborhood: "Park Slope, Brooklyn",
-    status: "In Progress",
-  },
-  {
-    name: "Higher Learning",
-    type: "Tutoring Center",
-    services: "Website, SEO",
-    lat: 40.7158,
-    lng: -73.9970,
-    neighborhood: "Chinatown, Manhattan",
-    status: "In Progress",
-  },
-  {
-    name: "Anatolico",
-    type: "Turkish Home Goods",
-    services: "Social Media",
-    lat: 40.6720,
-    lng: -73.9775,
-    neighborhood: "Park Slope, Brooklyn",
-    status: "Active",
-  },
-  {
-    name: "The Painted Pot",
-    type: "Pottery Studio",
-    services: "SEO, Google Maps",
-    lat: 40.6700,
-    lng: -73.9785,
-    neighborhood: "Park Slope, Brooklyn",
-    status: "Active",
-  },
-  {
-    name: "Juliette Floral Design",
-    type: "Flower Shop",
-    services: "Website",
-    lat: 40.6735,
-    lng: -73.9760,
-    neighborhood: "Park Slope, Brooklyn",
-    status: "Upcoming",
-  },
-  {
-    name: "Bayaal",
-    type: "African Home Goods",
-    services: "Website, Social Media",
-    lat: 40.6695,
-    lng: -73.9790,
-    neighborhood: "Park Slope, Brooklyn",
-    status: "Upcoming",
-  },
-];
-
-const statusColor: Record<BusinessMarker["status"], string> = {
-  Active: "#85CC17",
-  "In Progress": "#3B74ED",
-  Upcoming: "#9CA3AF",
+// Derive precise map hex colors from Tailwind classes
+const getColorHex = (colorClass: string): string => {
+  if (colorClass.includes("green")) return "#85CC17";
+  if (colorClass.includes("blue")) return "#3B82F6";
+  if (colorClass.includes("orange")) return "#FB923C";
+  if (colorClass.includes("amber")) return "#FBBF24";
+  if (colorClass.includes("pink")) return "#F472B6";
+  if (colorClass.includes("purple")) return "#C084FC";
+  return "#85CC17"; // fallback
 };
 
-const statusLabel: Record<BusinessMarker["status"], string> = {
-  Active: "Active",
-  "In Progress": "In Progress",
-  Upcoming: "Upcoming",
-};
-
-export default function NeighborhoodMap() {
+export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
+  // Map string neighborhood names to their known coordinates
+  const markers = projects.map((p) => {
+    const coords = neighborhoods.find(n => p.neighborhood.includes(n.name)) || neighborhoods.find(n => p.neighborhood.includes(n.borough));
+    return {
+      ...p,
+      lat: coords ? coords.lat + (Math.random() - 0.5) * 0.005 : 40.7128, // slight jitter to prevent exact overlap
+      lng: coords ? coords.lng + (Math.random() - 0.5) * 0.005 : -74.0060,
+      hex: getColorHex(p.colorClass),
+    };
+  });
   return (
     <div className="relative w-full h-full">
       <MapContainer
@@ -132,15 +87,15 @@ export default function NeighborhoodMap() {
         ))}
 
         {/* Business dots */}
-        {businesses.map((b) => (
+        {markers.map((b, i) => (
           <CircleMarker
-            key={b.name}
+            key={`${b.name}-${i}`}
             center={[b.lat, b.lng]}
             radius={9}
-            fillColor={statusColor[b.status]}
-            fillOpacity={b.status === "Upcoming" ? 0.5 : 0.9}
-            color={statusColor[b.status]}
-            weight={2}
+            fillColor={b.hex}
+            fillOpacity={0.9}
+            color={b.hex}
+            weight={1.5}
           >
             <Popup>
               <div style={{ fontFamily: "sans-serif", fontSize: 13, lineHeight: 1.6, minWidth: 160 }}>
@@ -148,18 +103,18 @@ export default function NeighborhoodMap() {
                 <span style={{ color: "#6B7280", fontSize: 11 }}>{b.type}</span><br />
                 <span style={{ color: "#6B7280", fontSize: 11 }}>{b.neighborhood}</span><br />
                 <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: statusColor[b.status] }}>
-                    {statusLabel[b.status]}
+                  <span style={{ fontSize: 11, fontWeight: 600, color: b.hex }}>
+                    {b.status}
                   </span>
                   <span style={{ fontSize: 11, color: "#374151" }}>·</span>
-                  <span style={{ fontSize: 11, color: "#374151" }}>{b.services}</span>
+                  <span style={{ fontSize: 11, color: "#374151" }}>{b.services.join(", ")}</span>
                 </div>
                 {b.url && (
                   <a
                     href={b.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: "#3B74ED", textDecoration: "none" }}
+                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: b.hex, textDecoration: "none" }}
                   >
                     View →
                   </a>
@@ -170,36 +125,6 @@ export default function NeighborhoodMap() {
         ))}
       </MapContainer>
 
-      {/* Legend */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 24,
-          left: 16,
-          zIndex: 1000,
-          background: "rgba(255,255,255,0.95)",
-          border: "1px solid #E5E5DF",
-          borderRadius: 12,
-          padding: "10px 14px",
-          fontSize: 11,
-          lineHeight: 1.7,
-          fontFamily: "sans-serif",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#85CC17", display: "inline-block" }} />
-          <span style={{ color: "#374151" }}>Active</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#3B74ED", display: "inline-block" }} />
-          <span style={{ color: "#374151" }}>In Progress</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#9CA3AF", display: "inline-block" }} />
-          <span style={{ color: "#374151" }}>Upcoming</span>
-        </div>
-      </div>
     </div>
   );
 }

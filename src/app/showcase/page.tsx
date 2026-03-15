@@ -4,6 +4,7 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MapPinIcon } from "@/components/Icons";
 import { projects as fallbackProjects, joinTracks } from "@/data";
+import { neighborhoods } from "@/components/NeighborhoodMap";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 
@@ -36,18 +37,6 @@ const NeighborhoodMap = dynamic(() => import("@/components/NeighborhoodMap"), {
     </div>
   ),
 });
-
-const neighborhoods = [
-  { name: "Park Slope", borough: "Brooklyn" },
-  { name: "Sunnyside", borough: "Queens" },
-  { name: "Chinatown", borough: "Manhattan" },
-  { name: "Long Island City", borough: "Queens" },
-  { name: "Cypress Hills", borough: "Brooklyn" },
-  { name: "Flatbush", borough: "Brooklyn" },
-  { name: "The Hub", borough: "Bronx" },
-  { name: "Bayside", borough: "Queens" },
-  { name: "Forest Avenue", borough: "Staten Island" },
-];
 
 export default async function Showcase() {
   const publicShowcase = await getPublicShowcaseCards();
@@ -126,7 +115,15 @@ export default async function Showcase() {
 
         {/* ── MAP ───────────────────────────────────────────────── */}
         <div className="w-full h-[520px] md:h-[600px] relative border-t border-white/10">
-          <NeighborhoodMap />
+          <NeighborhoodMap projects={projects.map(p => ({
+            name: p.name,
+            type: p.type,
+            services: p.services,
+            neighborhood: p.neighborhood,
+            status: p.status,
+            url: p.url,
+            colorClass: p.colorClass
+          }))} />
         </div>
       </section>
 
