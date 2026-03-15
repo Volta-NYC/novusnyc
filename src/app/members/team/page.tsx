@@ -22,53 +22,6 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 
 const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
 
-const HARDCODED_TEAMS: Record<string, string> = {
-  // Reports
-  "alvin jiang": "Reports",
-  "joseph long": "Reports",
-  "shafeen basher": "Reports",
-  "bruce weng": "Reports",
-  "tsundruk norbu": "Reports",
-  "yuba bhatta": "Reports",
-  "peyton yuen": "Reports",
-
-  // Outreach
-  "nafis mahim": "Outreach",
-  "tyler tong": "Outreach",
-  "walter zhu": "Outreach",
-  "michaela madanire": "Outreach",
-  "ashley mui": "Outreach",
-  "jay thakkar": "Outreach",
-  "emily zhao": "Outreach",
-
-  // Grants
-  "kevin lin": "Grants",
-  "jacky wang": "Grants",
-  "angeline chan": "Grants",
-  "tiffany xu": "Grants",
-  "ryan liu": "Grants",
-
-  // T1
-  "eddie shah": "T1",
-  "maahika chitagi": "T1",
-  "shokhjakhon samiev": "T1",
-
-  // T2
-  "aarav sharma": "T2",
-  "arnob paul": "T2",
-  "batuhan sekeroglu": "T2",
-
-  // T3
-  "ronghe guo": "T3",
-  "peter predolac": "T3",
-  "xiang li": "T3",
-
-  // T4
-  "akhil rao": "T4",
-  "mohammad ehan khan": "T4",
-  "nelson guo": "T4",
-};
-
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
 function getMemberTrack(member: TeamMember): TrackKey {
@@ -248,15 +201,8 @@ export default function TeamPage() {
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
 
-  // Subscribe to real-time team updates with hardcoded pod overrides.
-  useEffect(() => {
-    return subscribeTeam((data) => {
-      setTeam(data.map((member) => {
-        const hardcoded = HARDCODED_TEAMS[normalizeKey(member.name || "")];
-        return { ...member, pod: hardcoded || member.pod || "—" };
-      }));
-    });
-  }, []);
+  // Subscribe to real-time team updates; unsubscribe on unmount.
+  useEffect(() => subscribeTeam(setTeam), []);
 
   // Generic field updater used by all form inputs.
   const setField = (key: string, value: unknown) =>

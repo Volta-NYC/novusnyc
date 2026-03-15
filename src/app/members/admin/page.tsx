@@ -251,6 +251,46 @@ function DataTab() {
     }
   };
 
+  const handleBackfillTeams = async () => {
+    if (!user) {
+      setStatusMessage("You must be signed in as admin.");
+      return;
+    }
+
+    if (!window.confirm("Run a one-time backfill to assign specific hardcoded teams to existing members?")) {
+      return;
+    }
+
+    setStatusMessage("Running team backfill...");
+    setBackfilling(true);
+
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/admin/backfill-teams", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        throw new Error("backfill_failed");
+      }
+
+      const raw = await res.json();
+      const data = raw as { updatedCount?: number, error?: string };
+      
+      if (data.error) {
+         setStatusMessage(`Backfill failed: ${data.error}`);
+         return;
+      }
+
+      setStatusMessage(`Team backfill complete: ${data.updatedCount ?? 0} members updated.`);
+    } catch {
+      setStatusMessage("Team backfill failed. Check admin access and try again.");
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
   const handleBackfillGrades = async () => {
     if (!user) {
       setStatusMessage("You must be signed in as admin to backfill.");
@@ -449,7 +489,20 @@ function DataTab() {
           disabled={backfilling}
           className="bg-white/10 text-white font-display font-bold px-5 py-2.5 rounded-xl hover:bg-white/15 transition-colors text-sm disabled:opacity-60"
         >
-          {backfilling ? "Backfilling..." : "Run Backfill"}
+          {backfilling ? "Backfilling..." : "Run Grade Backfill"}
+        </button>
+      </div>
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
+        <h2 className="font-display font-bold text-white mb-1">Backfill Specific Teams</h2>
+        <p className="text-white/40 text-sm mb-4">
+          One-time migration to assign specific members to predetermined Pods in the database.
+        </p>
+        <button
+          onClick={handleBackfillTeams}
+          disabled={backfilling}
+          className="bg-white/10 text-white font-display font-bold px-5 py-2.5 rounded-xl hover:bg-white/15 transition-colors text-sm disabled:opacity-60"
+        >
+          {backfilling ? "Backfilling..." : "Run Team Backfill"}
         </button>
       </div>
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
