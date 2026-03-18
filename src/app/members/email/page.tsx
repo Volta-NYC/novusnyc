@@ -22,6 +22,7 @@ export default function MemberEmailPage() {
   const [schools, setSchools] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
   const [teams, setTeams] = useState<string[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [subject, setSubject] = useState("");
@@ -46,6 +47,8 @@ export default function MemberEmailPage() {
     [team],
   );
 
+  const normalizedSearch = memberSearch.trim().toLowerCase();
+
   const filteredMembers = useMemo(
     () =>
       team.filter((member) => {
@@ -54,9 +57,23 @@ export default function MemberEmailPage() {
         const schoolMatch = schools.length === 0 || schools.includes((member.school ?? "").trim());
         const roleMatch = roles.length === 0 || roles.includes((member.role ?? "").trim());
         const teamMatch = teams.length === 0 || teams.includes((member.pod ?? "").trim());
-        return divisionMatch && schoolMatch && roleMatch && teamMatch;
+        const searchable = [
+          member.name,
+          member.email,
+          member.alternateEmail,
+          member.school,
+          member.grade,
+          member.role,
+          member.pod,
+          member.status,
+          ...(member.divisions ?? []),
+        ]
+          .map((value) => String(value ?? "").toLowerCase())
+          .join(" ");
+        const textMatch = !normalizedSearch || searchable.includes(normalizedSearch);
+        return divisionMatch && schoolMatch && roleMatch && teamMatch && textMatch;
       }),
-    [team, divisions, schools, roles, teams],
+    [team, divisions, schools, roles, teams, normalizedSearch],
   );
 
   const selectedEmails = useMemo(
@@ -90,6 +107,17 @@ export default function MemberEmailPage() {
   const clearFiltered = () => {
     const removeSet = new Set(filteredMembers.map((member) => member.id));
     setSelectedIds((prev) => prev.filter((id) => !removeSet.has(id)));
+  };
+
+  const allVisibleSelected = filteredMembers.length > 0
+    && filteredMembers.every((member) => selectedIds.includes(member.id));
+
+  const toggleAllVisible = (checked: boolean) => {
+    if (checked) {
+      selectAllFiltered();
+    } else {
+      clearFiltered();
+    }
   };
 
   const sendEmail = async () => {
@@ -127,13 +155,13 @@ export default function MemberEmailPage() {
         setStatus("Could not send email.");
         return;
       }
-      const payload = await response.json() as { sent?: number; failed?: string[] };
+      const payload = await response.json() as { sent?: number; failed?: string[]; from?: string };
       const sentCount = payload.sent ?? 0;
       const failedCount = payload.failed?.length ?? 0;
       setStatus(
         failedCount > 0
-          ? `Sent to ${sentCount}. Failed: ${failedCount}.`
-          : `Sent to ${sentCount} members.`,
+          ? `Sent from ${payload.from ?? fromAddress} to ${sentCount}. Failed: ${failedCount}.`
+          : `Sent from ${payload.from ?? fromAddress} to ${sentCount} members.`,
       );
     } catch {
       setStatus("Could not send email.");
@@ -191,6 +219,14 @@ export default function MemberEmailPage() {
           </Field>
         </div>
 
+        <Field label="Search Members">
+          <Input
+            value={memberSearch}
+            onChange={(e) => setMemberSearch(e.target.value)}
+            placeholder="Search name, email, school, team, role, track, grade..."
+          />
+        </Field>
+
         <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-3">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <p className="text-xs text-white/55">
@@ -205,17 +241,25 @@ export default function MemberEmailPage() {
             <table className="w-full text-xs">
               <thead className="bg-[#141821] sticky top-0">
                 <tr>
-                  <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
+                  <th className="text-left px-3 py-2 text-white/45 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={(e) => toggleAllVisible(e.target.checked)}
+                      className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
+                    />
+                  </th>
                   <th className="text-left px-3 py-2 text-white/45">Name</th>
                   <th className="text-left px-3 py-2 text-white/45">Primary Email</th>
                   <th className="text-left px-3 py-2 text-white/45">School</th>
+                  <th className="text-left px-3 py-2 text-white/45">Team</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filteredMembers.map((member) => {
                   const checked = selectedIds.includes(member.id);
                   return (
-                    <tr key={member.id} className="hover:bg-white/5">
+                    <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""}`}>
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
@@ -227,12 +271,13 @@ export default function MemberEmailPage() {
                       <td className="px-3 py-2 text-white/75">{member.name}</td>
                       <td className="px-3 py-2 text-white/65 font-mono">{member.email || "—"}</td>
                       <td className="px-3 py-2 text-white/45">{member.school || "—"}</td>
+                      <td className="px-3 py-2 text-white/45">{member.pod || "—"}</td>
                     </tr>
                   );
                 })}
                 {filteredMembers.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-4 text-center text-white/35">No members in this filter.</td>
+                    <td colSpan={5} className="px-3 py-4 text-center text-white/35">No members in this filter/search.</td>
                   </tr>
                 )}
               </tbody>

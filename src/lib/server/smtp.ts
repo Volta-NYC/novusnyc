@@ -191,5 +191,9 @@ export function resolveFromWithName(rawFrom: string): string {
   const legacyName = (process.env.TEAM_EMAIL_FROM_NAME ?? "").trim();
   if (legacyName) return `${legacyName} <${email}>`;
 
+  // Practical defaults for Volta sender aliases.
+  if (email === "info@voltanyc.org") return `Volta NYC <${email}>`;
+  if (email === "ethan@voltanyc.org") return `Ethan Zhang <${email}>`;
+
   return email;
 }

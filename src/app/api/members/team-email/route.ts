@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
   try {
     await transporter.sendMail({
       from,
+      sender: selectedFrom,
       replyTo,
       bcc: deduped, // Using BCC for privacy so 65+ people don't get reply-all chained or see each other's emails
       subject,
@@ -105,5 +106,6 @@ export async function POST(req: NextRequest) {
     success: true,
     sent: deduped.length,
     failed: [],
+    from: selectedFrom,
   });
 }
