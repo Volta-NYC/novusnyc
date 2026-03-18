@@ -113,30 +113,39 @@ export default function Join() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <section className="bg-v-ink pt-32 pb-20">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 grid md:grid-cols-2 gap-10 items-start">
-          <AnimatedSection direction="left">
-            <h1 className="font-display font-bold text-white leading-none tracking-tight mb-5" style={{ fontSize: "clamp(2.4rem, 7vw, 4.6rem)" }}>
+      <section className="bg-v-dark pt-32 pb-24 relative overflow-hidden">
+        <div className="absolute inset-0 dot-grid opacity-[0.06]" />
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+          <AnimatedSection>
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
+              For Students
+            </p>
+            <h1
+              className="font-display font-bold text-white leading-none tracking-tight mb-6"
+              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
+            >
               Join a team and work on
               <br />
               <span className="text-v-green">hands-on projects for local businesses.</span>
             </h1>
-            <p className="font-body text-white/80 text-lg mb-3">
-              All levels of experience welcome.
-            </p>
-          </AnimatedSection>
-          <AnimatedSection direction="right" className="pt-2 md:pt-6">
-            <p className="font-body text-white/65 text-base leading-relaxed mb-7 max-w-2xl">
+            <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
               You&apos;ll work on websites, marketing, or finance projects that local businesses actually use.
               It&apos;s practical, fast-moving, and built to help you ship real work.
+              All levels of experience welcome.
             </p>
-            <div className="flex flex-wrap items-center gap-4 mb-3">
+            <div className="flex gap-4 flex-wrap mb-3">
               <Link
                 href="/apply"
                 className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-colors"
               >
                 Apply Now →
               </Link>
+              <a
+                href="#tracks"
+                className="border border-white/20 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:border-white/50 transition-colors"
+              >
+                See tracks
+              </a>
             </div>
             <p className="font-body text-sm text-white/50">
               Takes 5 minutes · Rolling admissions.
@@ -145,7 +154,7 @@ export default function Join() {
         </div>
       </section>
 
-      <section className="py-20 bg-white border-b border-v-border">
+      <section id="tracks" className="py-20 bg-white border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Pick your path</p>
