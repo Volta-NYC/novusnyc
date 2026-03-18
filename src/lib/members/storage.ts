@@ -73,7 +73,22 @@ export interface Business {
   showcaseDescription?: string;
   showcaseUrl?: string;
   showcaseImageUrl?: string;
-  showcaseColor?: "green" | "blue" | "orange" | "amber" | "pink" | "purple";
+  showcaseColor?:
+    | "green"
+    | "blue"
+    | "orange"
+    | "amber"
+    | "pink"
+    | "purple"
+    | "blue-soft"
+    | "blue-mid"
+    | "blue-deep"
+    | "green-soft"
+    | "green-mid"
+    | "green-deep"
+    | "amber-soft"
+    | "amber-mid"
+    | "amber-deep";
 }
 
 export interface Task {

@@ -27,6 +27,15 @@ const SHOWCASE_COLOR_CLASS: Record<string, string> = {
   amber: "bg-amber-400",
   pink: "bg-pink-400",
   purple: "bg-purple-400",
+  "blue-soft": "bg-blue-300",
+  "blue-mid": "bg-blue-500",
+  "blue-deep": "bg-blue-700",
+  "green-soft": "bg-lime-300",
+  "green-mid": "bg-lime-500",
+  "green-deep": "bg-lime-700",
+  "amber-soft": "bg-amber-300",
+  "amber-mid": "bg-amber-500",
+  "amber-deep": "bg-amber-700",
 };
 
 export default async function Home() {

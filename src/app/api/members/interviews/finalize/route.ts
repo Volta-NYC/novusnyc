@@ -8,6 +8,11 @@ import {
 } from "@/lib/server/smtp";
 import { getAdminDB } from "@/lib/firebaseAdmin";
 import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
+import {
+  pickPrimaryTrack,
+  suggestTeamForTrack,
+  trackToDivisions,
+} from "@/lib/server/memberPlacement";
 
 type FinalizeBody = {
   slotIds?: string[];
@@ -99,12 +104,15 @@ async function upsertTeamMember(params: {
   email: string;
   schoolName?: string;
   grade?: string;
+  tracksSelected?: string;
   role: string;
 }) {
   const teamData = await dbRead("team", params.idToken);
   const team = (teamData ?? {}) as Record<string, Record<string, unknown>>;
   const emailKey = normalize(params.email);
   const nameKey = normalize(params.fullName);
+  const track = pickPrimaryTrack(params.tracksSelected ?? "");
+  const suggestedPod = suggestTeamForTrack(track, team);
   let targetId = "";
 
   for (const [id, row] of Object.entries(team)) {
@@ -136,6 +144,10 @@ async function upsertTeamMember(params: {
     if (!String(row.school ?? "").trim() && params.schoolName) patch.school = params.schoolName;
     if (!String(row.grade ?? "").trim() && params.grade) patch.grade = params.grade;
     if (!String(row.acceptedDate ?? "").trim()) patch.acceptedDate = nowIso.slice(0, 10);
+    if (track !== "Other") {
+      patch.divisions = trackToDivisions(track);
+      if (!String(row.pod ?? "").trim() && suggestedPod) patch.pod = suggestedPod;
+    }
     patch.role = params.role;
     await dbPatch(`team/${targetId}`, patch, params.idToken);
     return targetId;
@@ -147,8 +159,8 @@ async function upsertTeamMember(params: {
       name: params.fullName,
       school: params.schoolName ?? "",
       grade: params.grade ?? "",
-      divisions: [],
-      pod: "",
+      divisions: trackToDivisions(track),
+      pod: suggestedPod,
       role: params.role,
       slackHandle: "",
       email: emailKey,
@@ -168,8 +180,8 @@ async function upsertTeamMember(params: {
     name: params.fullName,
     school: params.schoolName ?? "",
     grade: params.grade ?? "",
-    divisions: [],
-    pod: "",
+    divisions: trackToDivisions(track),
+    pod: suggestedPod,
     role: params.role,
     slackHandle: "",
     email: emailKey,
@@ -297,6 +309,7 @@ export async function POST(req: NextRequest) {
       email,
       schoolName,
       grade,
+      tracksSelected: tracks,
       role: teamRole,
     });
 

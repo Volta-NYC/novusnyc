@@ -60,10 +60,20 @@ function normalizeStatus(raw: string, flags: {
   hasScheduledInterview: boolean;
   hasInviteSent: boolean;
   isAccepted: boolean;
+  statusManualOverride: boolean;
 }): string {
   const key = raw.trim().toLowerCase();
+  const normalizedStored =
+    key === "new" ? "New"
+      : key === "invited for interview" ? "Invited for Interview"
+        : key === "interview scheduled" ? "Interview Scheduled"
+          : key === "interview completed" ? "Interview Completed"
+            : key === "accepted" ? "Accepted"
+              : "";
   // Accepted is always terminal — accept button or team membership wins
   if (flags.isAccepted || key === "accepted") return "Accepted";
+  // Manual overrides should win over auto-status inference.
+  if (flags.statusManualOverride && normalizedStored) return normalizedStored;
   // Interview time passed or eval submitted → Completed
   if (flags.hasCompletedInterview) return "Interview Completed";
   // Slot booked → Scheduled
@@ -85,6 +95,7 @@ function normalizeApplication(
     hasScheduledInterview: boolean;
     hasInviteSent: boolean;
     isAccepted: boolean;
+    statusManualOverride: boolean;
   },
 ) {
   const createdAt = normalizeTimestamp(row.createdAt ?? row.Timestamp);
@@ -184,6 +195,7 @@ export async function GET(req: NextRequest) {
         hasScheduledInterview: !!(rowSlotId || rowScheduledAt || hasMatchedBookedSlot),
         hasInviteSent,
         isAccepted: isAcceptedFromTeam || normalize(readText(safeRow, ["status"])) === "accepted",
+        statusManualOverride: !!safeRow.statusManualOverride,
       });
     })
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));

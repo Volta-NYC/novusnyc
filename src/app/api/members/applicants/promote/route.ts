@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { getAdminDB } from "@/lib/firebaseAdmin";
+import {
+  pickPrimaryTrack,
+  suggestTeamForTrack,
+  trackToDivisions,
+} from "@/lib/server/memberPlacement";
 
 type PromoteBody = {
   fullName?: string;
@@ -8,6 +13,7 @@ type PromoteBody = {
   schoolName?: string;
   grade?: string;
   role?: string;
+  tracksSelected?: string;
 };
 
 function normalize(value: string): string {
@@ -27,6 +33,7 @@ export async function POST(req: NextRequest) {
   const schoolName = (body.schoolName ?? "").trim();
   const grade = (body.grade ?? "").trim();
   const role = (body.role ?? "").trim() || "Member";
+  const track = pickPrimaryTrack(body.tracksSelected ?? "");
 
   if (!fullName || !email) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
@@ -34,6 +41,7 @@ export async function POST(req: NextRequest) {
 
   const teamSnap = await db.ref("team").get();
   const team = (teamSnap.exists() ? (teamSnap.val() as Record<string, Record<string, unknown>>) : {}) ?? {};
+  const suggestedPod = suggestTeamForTrack(track, team);
   let targetId = "";
 
   for (const [id, raw] of Object.entries(team)) {
@@ -70,6 +78,10 @@ export async function POST(req: NextRequest) {
     if (!String(existing.school ?? "").trim() && schoolName) patch.school = schoolName;
     if (!String(existing.grade ?? "").trim() && grade) patch.grade = grade;
     if (!String(existing.acceptedDate ?? "").trim()) patch.acceptedDate = nowIso.slice(0, 10);
+    if (track !== "Other") {
+      patch.divisions = trackToDivisions(track);
+      if (!String(existing.pod ?? "").trim() && suggestedPod) patch.pod = suggestedPod;
+    }
     patch.role = role;
     if (!String(existing.notes ?? "").trim()) patch.notes = "Synced from accepted applicant";
     if (Object.keys(patch).length > 0) await db.ref(`team/${targetId}`).update(patch);
@@ -81,8 +93,8 @@ export async function POST(req: NextRequest) {
     name: fullName,
     school: schoolName,
     grade,
-    divisions: [],
-    pod: "",
+    divisions: trackToDivisions(track),
+    pod: suggestedPod,
     role,
     slackHandle: "",
     email,

@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, TextArea, Empty, useConfirm, AutocompleteTagInput,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, TextArea, Empty, useConfirm, AutocompleteInput, AutocompleteTagInput,
 } from "@/components/members/ui";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, type TeamMember,
@@ -21,6 +21,9 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 };
 
 const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
+const TECH_TEAM_SEED = ["T1", "T2", "T3"];
+const MARKETING_TEAM_SEED = ["M1", "M2", "M3"];
+const FINANCE_TEAM_OPTIONS = ["Outreach/Fundraising", "Grant Writing", "Report Writing"];
 
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
@@ -49,10 +52,10 @@ function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
 }
 
 const TRACK_SORT_ORDER: Record<TrackKey, number> = {
-  Finance: 0,
+  Tech: 0,
   Marketing: 1,
-  Other: 2,
-  Tech: 3,
+  Finance: 2,
+  Other: 3,
   "—": 4,
 };
 
@@ -179,6 +182,7 @@ export default function TeamPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
+  const [showAlternateEmail, setShowAlternateEmail] = useState(false);
   const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>([{ col: 0, dir: "asc" }]);
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [importingCsv, setImportingCsv] = useState(false);
@@ -211,6 +215,7 @@ export default function TeamPage() {
   const openCreate = () => {
     setForm(BLANK_FORM);
     setEditingMember(null);
+    setShowAlternateEmail(false);
     setModal("create");
   };
 
@@ -428,6 +433,7 @@ export default function TeamPage() {
       notes:       member.notes,
     });
     setEditingMember(member);
+    setShowAlternateEmail(!!(member.alternateEmail ?? "").trim());
     setModal("edit");
   };
 
@@ -521,6 +527,14 @@ export default function TeamPage() {
   ).sort((a, b) => a.localeCompare(b));
   const commsTeamOptions = Array.from(
     new Set(team.map((member) => member.pod).filter((value) => value && value !== "—"))
+  ).sort((a, b) => a.localeCompare(b));
+  const formTeamOptions = Array.from(
+    new Set([
+      ...TECH_TEAM_SEED,
+      ...MARKETING_TEAM_SEED,
+      ...FINANCE_TEAM_OPTIONS,
+      ...team.map((member) => (member.pod ?? "").trim()).filter(Boolean),
+    ])
   ).sort((a, b) => a.localeCompare(b));
 
   const commsFilteredMembers = team.filter((member) => {
@@ -765,13 +779,22 @@ export default function TeamPage() {
                     </div>
                   </td>
                   <td className="px-2 py-1.5 whitespace-nowrap">
-                    <span
-                      className="font-mono text-white/50 block truncate"
-                      title={member.alternateEmail ? `${member.email || "—"}, ${member.alternateEmail}` : (member.email || "—")}
-                    >
-                      {member.email || "—"}
-                      {member.alternateEmail ? `, ${member.alternateEmail}` : ""}
-                    </span>
+                    <div className="font-mono">
+                      <span
+                        className="text-white/55 block truncate"
+                        title={member.email || "—"}
+                      >
+                        {member.email || "—"}
+                      </span>
+                      {member.alternateEmail && (
+                        <span
+                          className="text-white/35 block truncate mt-0.5"
+                          title={member.alternateEmail}
+                        >
+                          {member.alternateEmail}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-2 py-1.5 whitespace-nowrap">
                     <span className="text-white/50 block truncate" title={member.school || ""}>{member.school || "—"}</span>
@@ -940,21 +963,46 @@ export default function TeamPage() {
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingMember ? "Edit Member" : "New Member"}>
-        <div className="grid grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2">
+        <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2">
           <Field label="Full Name" required>
             <Input value={form.name} onChange={e => setField("name", e.target.value)} />
           </Field>
           <Field label="Email">
-            <Input type="email" value={form.email} onChange={e => setField("email", e.target.value)} />
+            <div className="flex items-center gap-2">
+              <Input type="email" value={form.email} onChange={e => setField("email", e.target.value)} />
+              {!showAlternateEmail ? (
+                <button
+                  type="button"
+                  className="h-8 w-8 rounded-md border border-white/15 text-white/65 hover:text-white hover:border-white/30 transition-colors flex items-center justify-center text-base leading-none"
+                  aria-label="Add alternate email"
+                  title="Add alternate email"
+                  onClick={() => setShowAlternateEmail(true)}
+                >
+                  +
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="h-8 w-8 rounded-md border border-white/15 text-white/40 hover:text-red-300 hover:border-red-300/40 transition-colors flex items-center justify-center text-base leading-none"
+                  aria-label="Remove alternate email"
+                  title="Remove alternate email"
+                  onClick={() => {
+                    setField("alternateEmail", "");
+                    setShowAlternateEmail(false);
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </Field>
-          <Field label="Alternate Email">
-            <Input type="email" value={form.alternateEmail ?? ""} onChange={e => setField("alternateEmail", e.target.value)} />
-          </Field>
+          {showAlternateEmail && (
+            <Field label="Alternate Email">
+              <Input type="email" value={form.alternateEmail ?? ""} onChange={e => setField("alternateEmail", e.target.value)} />
+            </Field>
+          )}
           <Field label="School">
             <Input value={form.school} onChange={e => setField("school", e.target.value)} />
-          </Field>
-          <Field label="Team (Pod)">
-            <Input value={form.pod ?? ""} onChange={e => setField("pod", e.target.value)} placeholder="e.g. T1, Outreach" />
           </Field>
           <Field label="Grade">
             <select
@@ -968,13 +1016,6 @@ export default function TeamPage() {
               ))}
             </select>
           </Field>
-          <Field label="Date Accepted">
-            <Input
-              type="date"
-              value={form.acceptedDate ?? ""}
-              onChange={e => setField("acceptedDate", e.target.value)}
-            />
-          </Field>
           <Field label="Track">
             <select
               value={getMemberTrack({ ...(form as TeamMember), id: "", createdAt: "" })}
@@ -987,6 +1028,21 @@ export default function TeamPage() {
               <option value="Finance">Finance</option>
               <option value="Other">Other</option>
             </select>
+          </Field>
+          <Field label="Team">
+            <AutocompleteInput
+              value={form.pod ?? ""}
+              onChange={(value) => setField("pod", value)}
+              options={formTeamOptions}
+              placeholder="Type team code (e.g. T1, M1, Grant Writing)"
+            />
+          </Field>
+          <Field label="Date Accepted">
+            <Input
+              type="date"
+              value={form.acceptedDate ?? ""}
+              onChange={e => setField("acceptedDate", e.target.value)}
+            />
           </Field>
         </div>
         <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">

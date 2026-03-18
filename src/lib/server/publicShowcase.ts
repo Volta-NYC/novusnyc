@@ -3,7 +3,22 @@ import "server-only";
 import { getAdminDB } from "@/lib/firebaseAdmin";
 
 export type PublicShowcaseStatus = "In Progress" | "Active" | "Upcoming";
-export type PublicShowcaseColor = "green" | "blue" | "orange" | "amber" | "pink" | "purple";
+export type PublicShowcaseColor =
+  | "green"
+  | "blue"
+  | "orange"
+  | "amber"
+  | "pink"
+  | "purple"
+  | "blue-soft"
+  | "blue-mid"
+  | "blue-deep"
+  | "green-soft"
+  | "green-mid"
+  | "green-deep"
+  | "amber-soft"
+  | "amber-mid"
+  | "amber-deep";
 
 export interface PublicShowcaseCard {
   id: string;
@@ -50,17 +65,33 @@ function asStringArray(value: unknown): string[] {
 
 function normalizeColor(value: unknown): PublicShowcaseColor {
   const key = asText(value).toLowerCase();
-  if (key === "green" || key === "blue" || key === "orange" || key === "amber" || key === "pink" || key === "purple") {
+  if (
+    key === "green"
+    || key === "blue"
+    || key === "orange"
+    || key === "amber"
+    || key === "pink"
+    || key === "purple"
+    || key === "blue-soft"
+    || key === "blue-mid"
+    || key === "blue-deep"
+    || key === "green-soft"
+    || key === "green-mid"
+    || key === "green-deep"
+    || key === "amber-soft"
+    || key === "amber-mid"
+    || key === "amber-deep"
+  ) {
     return key;
   }
-  return "green";
+  return "green-mid";
 }
 
 function defaultColorFromDivision(value: unknown): PublicShowcaseColor {
   const key = asText(value);
-  if (key === "Tech") return "blue";
-  if (key === "Finance") return "amber";
-  return "green";
+  if (key === "Tech") return "blue-mid";
+  if (key === "Finance") return "amber-mid";
+  return "green-mid";
 }
 
 function normalizeStatusFromShowcase(value: unknown): PublicShowcaseStatus | null {
@@ -89,9 +120,9 @@ function inferDivision(value: unknown, row: Record<string, unknown>): "Tech" | "
   if (direct === "Tech" || direct === "Marketing" || direct === "Finance") return direct;
 
   const color = asText(row.showcaseColor).toLowerCase();
-  if (color === "blue") return "Tech";
-  if (color === "amber" || color === "orange") return "Finance";
-  if (color === "green") return "Marketing";
+  if (color.includes("blue")) return "Tech";
+  if (color.includes("amber") || color === "orange") return "Finance";
+  if (color.includes("green")) return "Marketing";
 
   const services = asStringArray(row.showcaseServices).map((item) => item.toLowerCase());
   if (services.some((item) => item.includes("grant") || item.includes("finance") || item.includes("ops"))) return "Finance";
@@ -116,9 +147,9 @@ function normalizeNeighborhood(value: unknown, row: Record<string, unknown>): st
   return parts[0];
 }
 
-function normalizeDescription(value: unknown, fallback: string): string {
-  const text = asText(value) || fallback;
-  if (!text) return "Client project supported by Volta student teams.";
+function normalizeDescription(value: unknown): string {
+  const text = asText(value);
+  if (!text) return "";
   return text.length > 240 ? `${text.slice(0, 237)}...` : text;
 }
 
@@ -147,7 +178,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     const services = asStringArray(row.showcaseServices);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
     const status = normalizeStatusFromShowcase(row.showcaseStatus) ?? mapBusinessStatusToShowcase(row.projectStatus);
-    const desc = normalizeDescription(row.showcaseDescription, asText(row.notes));
+    const desc = normalizeDescription(row.showcaseDescription);
     const url = asText(row.showcaseUrl) || asText(row.website) || "";
     const imageUrl = asText(row.showcaseImageUrl);
     const color = asText(row.showcaseColor)

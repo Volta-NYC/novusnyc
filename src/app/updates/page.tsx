@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { progressUpdates } from "@/data/publishing";
 
@@ -121,23 +120,6 @@ export default function ProgressUpdatesPage() {
               );
             })}
           </div>
-        </div>
-      </section>
-
-      <section className="py-14 bg-v-dark">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="bg-white/5 border border-white/10 rounded-2xl p-7 md:p-8">
-            <h3 className="font-display font-bold text-white text-2xl mb-3">Need practical owner guidance?</h3>
-            <p className="font-body text-white/70 mb-5">
-              We publish focused guides for business owners on cost, prioritization, and digital execution decisions.
-            </p>
-            <Link
-              href="/guides"
-              className="inline-block bg-v-green text-v-ink font-display font-bold px-6 py-3 rounded-full hover:bg-v-green-dark transition-colors"
-            >
-              View Business Guides →
-            </Link>
-          </AnimatedSection>
         </div>
       </section>
     </>

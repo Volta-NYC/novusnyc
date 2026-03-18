@@ -151,10 +151,11 @@ function formatDateTime(value: string): string {
 
 // ── Column definitions ─────────────────────────────────────────────────────────
 
-type ColumnKey = "status" | "name" | "email" | "school" | "grade" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals" | "actions";
+type ColumnKey = "status" | "actions" | "name" | "email" | "school" | "grade" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "status", label: "Status" },
+  { key: "actions", label: "Actions" },
   { key: "name", label: "Name" },
   { key: "email", label: "Email" },
   { key: "school", label: "School Name" },
@@ -167,13 +168,13 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "evals", label: "Eval" },
   { key: "interview", label: "Interview" },
   { key: "invite", label: "Invite" },
-  { key: "actions", label: "Actions" },
 ];
 
 // ── Column widths (tailwind-compatible) ────────────────────────────────────────
 
 const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
   status: "w-[130px]",
+  actions: "w-[200px]",
   name: "w-[120px]",
   email: "min-w-[260px]",
   school: "w-[140px]",
@@ -185,7 +186,6 @@ const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
   applied: "w-[110px]",
   invite: "w-[130px]",
   interview: "w-[130px]",
-  actions: "w-[160px]",
 };
 
 
@@ -202,6 +202,7 @@ export default function ApplicantsPage() {
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
+  const [backfillingTracks, setBackfillingTracks] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
@@ -215,7 +216,7 @@ export default function ApplicantsPage() {
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
   const canDelete = authRole === "admin";
-  const canManageStatus = canEdit;
+  const canManageStatus = authRole === "admin" || authRole === "interviewer" || authRole === "project_lead";
   const canView = canEdit || authRole === "interviewer";
   const isInterviewerOnly = authRole === "interviewer" && !canEdit;
 
@@ -488,6 +489,8 @@ export default function ApplicantsPage() {
         email: app.email,
         schoolName: app.schoolName,
         grade: app.grade,
+        role,
+        tracksSelected: app.tracksSelected,
       }),
     });
     if (shouldEmail) {
@@ -567,6 +570,28 @@ export default function ApplicantsPage() {
       setStatusMessage("Could not send reminder emails.");
     } finally {
       setSendingReminders(false);
+    }
+  };
+
+  const backfillAcceptedTracks = async () => {
+    if (!canEdit || !user) return;
+    setBackfillingTracks(true);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/members/admin/backfill-accepted-tracks", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error("backfill_failed");
+      const payload = await response.json() as { updated?: number; skipped?: number };
+      setStatusMessage(`Track/team backfill complete — updated: ${payload.updated ?? 0}, skipped: ${payload.skipped ?? 0}.`);
+      await fetchApplicantsData();
+    } catch {
+      setStatusMessage("Could not backfill accepted tracks.");
+    } finally {
+      setBackfillingTracks(false);
     }
   };
 
@@ -805,6 +830,13 @@ export default function ApplicantsPage() {
             disabled={sendingInvites || uninvitedApplicantIds.length === 0}
           >
             {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
+          </Btn>
+          <Btn
+            variant="secondary"
+            onClick={backfillAcceptedTracks}
+            disabled={backfillingTracks}
+          >
+            {backfillingTracks ? "Backfilling..." : "Backfill Accepted Tracks"}
           </Btn>
           <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites || unbookedReminderIds.length === 0} className={unbookedReminderIds.length === 0 ? "opacity-50" : ""}>
             {sendingReminders ? "Sending reminders..." : `Remind Unbooked (${unbookedReminderIds.length})`}

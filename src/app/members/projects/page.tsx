@@ -20,12 +20,47 @@ const DIVISION_PUBLIC_LABEL: Record<string, string> = {
   Marketing: "Marketing & Strategy",
   Finance: "Finance & Operations",
 };
-const DIVISION_SHOWCASE_COLOR: Record<string, "blue" | "green" | "amber"> = {
-  Tech: "blue",
-  Marketing: "green",
-  Finance: "amber",
+type ShowcaseColorValue =
+  | "green"
+  | "blue"
+  | "orange"
+  | "amber"
+  | "pink"
+  | "purple"
+  | "blue-soft"
+  | "blue-mid"
+  | "blue-deep"
+  | "green-soft"
+  | "green-mid"
+  | "green-deep"
+  | "amber-soft"
+  | "amber-mid"
+  | "amber-deep";
+
+const DIVISION_SHOWCASE_COLOR: Record<string, ShowcaseColorValue> = {
+  Tech: "blue-mid",
+  Marketing: "green-mid",
+  Finance: "amber-mid",
 };
 const SHOWCASE_STATUSES = ["In Progress", "Active", "Upcoming"];
+const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; swatch: string }> = [
+  { value: "blue-soft", label: "Tech · Soft", swatch: "#93C5FD" },
+  { value: "blue-mid", label: "Tech · Mid", swatch: "#3B82F6" },
+  { value: "blue-deep", label: "Tech · Deep", swatch: "#1D4ED8" },
+  { value: "green-soft", label: "Marketing · Soft", swatch: "#BEF264" },
+  { value: "green-mid", label: "Marketing · Mid", swatch: "#84CC16" },
+  { value: "green-deep", label: "Marketing · Deep", swatch: "#3F6212" },
+  { value: "amber-soft", label: "Finance · Soft", swatch: "#FCD34D" },
+  { value: "amber-mid", label: "Finance · Mid", swatch: "#F59E0B" },
+  { value: "amber-deep", label: "Finance · Deep", swatch: "#B45309" },
+  // Legacy palette kept for backwards compatibility.
+  { value: "green", label: "Legacy Green", swatch: "#85CC17" },
+  { value: "blue", label: "Legacy Blue", swatch: "#3B82F6" },
+  { value: "amber", label: "Legacy Amber", swatch: "#FBBF24" },
+  { value: "orange", label: "Legacy Orange", swatch: "#FB923C" },
+  { value: "pink", label: "Legacy Pink", swatch: "#F472B6" },
+  { value: "purple", label: "Legacy Purple", swatch: "#C084FC" },
+];
 const SHOWCASE_SERVICE_OPTIONS = [
   { label: "Website", track: "tech" },
   { label: "SEO", track: "tech" },
@@ -127,7 +162,7 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   showcaseDescription: "",
   showcaseUrl: "",
   showcaseImageUrl: "",
-  showcaseColor: "green",
+  showcaseColor: "green-mid",
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
@@ -192,7 +227,7 @@ export default function BusinessesPage() {
       showcaseDescription: b.showcaseDescription ?? "",
       showcaseUrl: b.showcaseUrl ?? "",
       showcaseImageUrl: b.showcaseImageUrl ?? "",
-      showcaseColor: b.showcaseColor ?? "green",
+      showcaseColor: (b.showcaseColor as ShowcaseColorValue) ?? "green-mid",
     });
     setEditingBusiness(b);
     setShowOwnerAltEmail(!!(b.ownerAlternateEmail ?? "").trim());
@@ -390,7 +425,7 @@ export default function BusinessesPage() {
           showcaseDescription: "",
           showcaseUrl: "",
           showcaseImageUrl: "",
-          showcaseColor: "green",
+          showcaseColor: "green-mid",
         });
         sortCursor += 1000;
         existing.add(key);
@@ -817,72 +852,84 @@ export default function BusinessesPage() {
             <Input value={form.ownerName} onChange={e => setField("ownerName", e.target.value)} />
           </Field>
           <Field label="Owner Email">
-            <Input type="email" value={form.ownerEmail} onChange={e => setField("ownerEmail", e.target.value)} />
-          </Field>
-          <div>
-            {showOwnerAltEmail ? (
-              <div className="space-y-1.5">
-                <Field label="Alternate Email">
-                  <Input
-                    type="email"
-                    value={form.ownerAlternateEmail ?? ""}
-                    onChange={e => setField("ownerAlternateEmail", e.target.value)}
-                  />
-                </Field>
+            <div className="flex items-center gap-2">
+              <Input type="email" value={form.ownerEmail} onChange={e => setField("ownerEmail", e.target.value)} />
+              {!showOwnerAltEmail ? (
                 <button
                   type="button"
-                  className="text-xs text-white/45 hover:text-white/70 transition-colors"
+                  className="h-8 w-8 rounded-md border border-white/15 text-white/65 hover:text-white hover:border-white/30 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  onClick={() => setShowOwnerAltEmail(true)}
+                  aria-label="Add alternate email"
+                  title="Add alternate email"
+                >
+                  +
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="h-8 w-8 rounded-md border border-white/15 text-white/40 hover:text-red-300 hover:border-red-300/40 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
                   onClick={() => {
                     setField("ownerAlternateEmail", "");
                     setShowOwnerAltEmail(false);
                   }}
+                  aria-label="Remove alternate email"
+                  title="Remove alternate email"
                 >
-                  Remove alternate email
+                  ×
                 </button>
-              </div>
-            ) : (
-                <button
-                  type="button"
-                  className="text-xs text-[#85CC17] hover:text-[#A5E236] transition-colors"
-                  onClick={() => setShowOwnerAltEmail(true)}
-                >
-                  + Add alternate email
-                </button>
-            )}
-          </div>
-          <Field label="Phone">
-            <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
+              )}
+            </div>
           </Field>
-          <div>
-            {showAlternatePhone ? (
-              <div className="space-y-1.5">
-                <Field label="Alternate Phone">
-                  <Input
-                    value={form.alternatePhone ?? ""}
-                    onChange={e => setField("alternatePhone", e.target.value)}
-                  />
-                </Field>
+          {showOwnerAltEmail && (
+            <div>
+              <Field label="Alternate Email">
+                <Input
+                  type="email"
+                  value={form.ownerAlternateEmail ?? ""}
+                  onChange={e => setField("ownerAlternateEmail", e.target.value)}
+                />
+              </Field>
+            </div>
+          )}
+          <Field label="Phone">
+            <div className="flex items-center gap-2">
+              <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
+              {!showAlternatePhone ? (
                 <button
                   type="button"
-                  className="text-xs text-white/45 hover:text-white/70 transition-colors"
+                  className="h-8 w-8 rounded-md border border-white/15 text-white/65 hover:text-white hover:border-white/30 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  onClick={() => setShowAlternatePhone(true)}
+                  aria-label="Add alternate phone"
+                  title="Add alternate phone"
+                >
+                  +
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="h-8 w-8 rounded-md border border-white/15 text-white/40 hover:text-red-300 hover:border-red-300/40 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
                   onClick={() => {
                     setField("alternatePhone", "");
                     setShowAlternatePhone(false);
                   }}
+                  aria-label="Remove alternate phone"
+                  title="Remove alternate phone"
                 >
-                  Remove alternate phone
+                  ×
                 </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="text-xs text-[#85CC17] hover:text-[#A5E236] transition-colors"
-                onClick={() => setShowAlternatePhone(true)}
-              >
-                + Add alternate phone
-              </button>
-            )}
-          </div>
+              )}
+            </div>
+          </Field>
+          {showAlternatePhone && (
+            <div>
+              <Field label="Alternate Phone">
+                <Input
+                  value={form.alternatePhone ?? ""}
+                  onChange={e => setField("alternatePhone", e.target.value)}
+                />
+              </Field>
+            </div>
+          )}
           <Field label="Website">
             <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
           </Field>
@@ -931,11 +978,30 @@ export default function BusinessesPage() {
                 <Select options={SHOWCASE_STATUSES} value={form.showcaseStatus ?? "In Progress"} onChange={e => setField("showcaseStatus", e.target.value)} />
               </Field>
               <Field label="Card Color">
-                <Select
-                  options={["green", "blue", "orange", "amber", "pink", "purple"]}
-                  value={form.showcaseColor ?? "green"}
-                  onChange={e => setField("showcaseColor", e.target.value)}
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  {SHOWCASE_COLOR_OPTIONS.map((option) => {
+                    const selected = (form.showcaseColor ?? "green-mid") === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setField("showcaseColor", option.value)}
+                        className={`w-full rounded-lg border px-2 py-1.5 text-xs text-left transition-colors ${
+                          selected ? "border-white/55 bg-white/10 text-white" : "border-white/15 bg-[#0F1014] text-white/70 hover:border-white/30"
+                        }`}
+                        title={option.label}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className="inline-block h-3 w-3 rounded-full border border-black/25"
+                            style={{ backgroundColor: option.swatch }}
+                          />
+                          <span className="truncate">{option.label}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </Field>
               <Field label="Image Link">
                 <Input value={form.showcaseImageUrl ?? ""} onChange={e => setField("showcaseImageUrl", e.target.value)} placeholder="https://..." />

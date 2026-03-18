@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { businessGuides } from "@/data/publishing";
 
@@ -67,23 +66,6 @@ export default function BusinessGuidesPage() {
               </article>
             </AnimatedSection>
           ))}
-        </div>
-      </section>
-
-      <section className="py-14 bg-v-dark">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="bg-white/5 border border-white/10 rounded-2xl p-7 md:p-8">
-            <h3 className="font-display font-bold text-white text-2xl mb-3">Want project updates too?</h3>
-            <p className="font-body text-white/70 mb-5">
-              We also publish timestamped updates showing what we are shipping and learning in real projects.
-            </p>
-            <Link
-              href="/updates"
-              className="inline-block bg-v-green text-v-ink font-display font-bold px-6 py-3 rounded-full hover:bg-v-green-dark transition-colors"
-            >
-              View Progress Updates →
-            </Link>
-          </AnimatedSection>
         </div>
       </section>
     </>
