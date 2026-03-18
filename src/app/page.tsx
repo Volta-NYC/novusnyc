@@ -224,7 +224,7 @@ export default async function Home() {
                 <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                   <div className={`${p.colorClass} h-2`} />
                   <div
-                    className="mx-6 mt-6 rounded-xl border border-v-border h-36 flex items-center justify-center bg-white bg-cover bg-center"
+                    className="mx-6 mt-6 rounded-xl border border-v-border aspect-[6/5] flex items-center justify-center bg-white bg-cover bg-center"
                     style={p.imageUrl ? { backgroundImage: `url("${p.imageUrl.replace(/"/g, "%22")}")` } : undefined}
                   >
                     {!p.imageUrl && (

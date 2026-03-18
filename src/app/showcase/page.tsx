@@ -163,7 +163,7 @@ export default async function Showcase() {
                 <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
                   <div className={`${p.colorClass} h-2`} />
                   <div
-                    className="mx-7 mt-7 rounded-xl border border-v-border bg-v-bg h-40 flex items-center justify-center bg-cover bg-center"
+                    className="mx-7 mt-7 rounded-xl border border-v-border bg-v-bg aspect-[6/5] flex items-center justify-center bg-cover bg-center"
                     style={p.imageUrl ? { backgroundImage: `url("${p.imageUrl.replace(/"/g, "%22")}")` } : undefined}
                   >
                     {!p.imageUrl && (
