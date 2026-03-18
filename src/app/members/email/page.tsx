@@ -13,6 +13,10 @@ const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ];
 
+function normalizeToken(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
   const canUseEmail = authRole === "admin" || authRole === "project_lead";
@@ -52,11 +56,15 @@ export default function MemberEmailPage() {
   const filteredMembers = useMemo(
     () =>
       team.filter((member) => {
-        const memberDivisions = member.divisions ?? [];
-        const divisionMatch = divisions.length === 0 || memberDivisions.some((d) => divisions.includes(d));
-        const schoolMatch = schools.length === 0 || schools.includes((member.school ?? "").trim());
-        const roleMatch = roles.length === 0 || roles.includes((member.role ?? "").trim());
-        const teamMatch = teams.length === 0 || teams.includes((member.pod ?? "").trim());
+        const memberDivisions = (member.divisions ?? []).map((d) => normalizeToken(d));
+        const selectedDivisions = divisions.map((d) => normalizeToken(d));
+        const selectedSchools = schools.map((s) => normalizeToken(s));
+        const selectedRoles = roles.map((r) => normalizeToken(r));
+        const selectedTeams = teams.map((t) => normalizeToken(t));
+        const divisionMatch = selectedDivisions.length === 0 || memberDivisions.some((d) => selectedDivisions.includes(d));
+        const schoolMatch = selectedSchools.length === 0 || selectedSchools.includes(normalizeToken(member.school ?? ""));
+        const roleMatch = selectedRoles.length === 0 || selectedRoles.includes(normalizeToken(member.role ?? ""));
+        const teamMatch = selectedTeams.length === 0 || selectedTeams.includes(normalizeToken(member.pod ?? ""));
         const searchable = [
           member.name,
           member.email,
@@ -107,17 +115,6 @@ export default function MemberEmailPage() {
   const clearFiltered = () => {
     const removeSet = new Set(filteredMembers.map((member) => member.id));
     setSelectedIds((prev) => prev.filter((id) => !removeSet.has(id)));
-  };
-
-  const allVisibleSelected = filteredMembers.length > 0
-    && filteredMembers.every((member) => selectedIds.includes(member.id));
-
-  const toggleAllVisible = (checked: boolean) => {
-    if (checked) {
-      selectAllFiltered();
-    } else {
-      clearFiltered();
-    }
   };
 
   const sendEmail = async () => {
@@ -241,14 +238,7 @@ export default function MemberEmailPage() {
             <table className="w-full text-xs">
               <thead className="bg-[#141821] sticky top-0">
                 <tr>
-                  <th className="text-left px-3 py-2 text-white/45 w-10">
-                    <input
-                      type="checkbox"
-                      checked={allVisibleSelected}
-                      onChange={(e) => toggleAllVisible(e.target.checked)}
-                      className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
-                    />
-                  </th>
+                  <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
                   <th className="text-left px-3 py-2 text-white/45">Name</th>
                   <th className="text-left px-3 py-2 text-white/45">Primary Email</th>
                   <th className="text-left px-3 py-2 text-white/45">School</th>
