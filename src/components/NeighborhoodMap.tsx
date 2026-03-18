@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect, useMemo } from "react";
+import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { neighborhoods } from "@/data/neighborhoods";
 
@@ -21,6 +23,19 @@ export interface MapProject {
 
 interface NeighborhoodMapProps {
   projects: MapProject[];
+}
+
+function FitMapToPoints({ points }: { points: [number, number][] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (points.length === 0) return;
+    map.fitBounds(points, { padding: [28, 28], animate: false });
+    // Tighten one step after fit so the map feels a little closer while keeping padding.
+    map.setZoom(Math.min(map.getZoom() + 0.5, 13));
+  }, [map, points]);
+
+  return null;
 }
 
 // Derive precise map hex colors from Tailwind classes
@@ -44,25 +59,43 @@ const getColorHex = (colorClass: string): string => {
 };
 
 export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
-  // Map string neighborhood names to their known coordinates
-  const markers = projects.map((p) => {
-    const coords = neighborhoods.find(n => p.neighborhood.includes(n.name)) || neighborhoods.find(n => p.neighborhood.includes(n.borough));
-    return {
-      ...p,
-      lat: coords ? coords.lat + (Math.random() - 0.5) * 0.005 : 40.7128, // slight jitter to prevent exact overlap
-      lng: coords ? coords.lng + (Math.random() - 0.5) * 0.005 : -74.0060,
-      hex: getColorHex(p.colorClass),
-    };
-  });
+  // Map string neighborhood names to their known coordinates.
+  const markers = useMemo(
+    () =>
+      projects.map((p) => {
+        const coords = neighborhoods.find((n) => p.neighborhood.includes(n.name))
+          || neighborhoods.find((n) => p.neighborhood.includes(n.borough));
+        const baseLat = coords ? coords.lat : 40.7128;
+        const baseLng = coords ? coords.lng : -74.0060;
+        return {
+          ...p,
+          baseLat,
+          baseLng,
+          lat: baseLat + (Math.random() - 0.5) * 0.005, // slight jitter to prevent exact overlap
+          lng: baseLng + (Math.random() - 0.5) * 0.005,
+          hex: getColorHex(p.colorClass),
+        };
+      }),
+    [projects],
+  );
+
+  const fitPoints = useMemo<[number, number][]>(() => {
+    const neighborhoodPoints = neighborhoods.map((n) => [n.lat, n.lng] as [number, number]);
+    const markerPoints = markers.map((m) => [m.baseLat, m.baseLng] as [number, number]);
+    return [...neighborhoodPoints, ...markerPoints];
+  }, [markers]);
+
   return (
     <div className="relative w-full h-full z-0">
       <MapContainer
         center={[40.700, -73.940]}
         zoom={11}
+        zoomSnap={0.25}
         style={{ height: "100%", width: "100%" }}
         scrollWheelZoom={false}
         zoomControl={true}
       >
+        <FitMapToPoints points={fitPoints} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
