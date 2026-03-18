@@ -342,6 +342,7 @@ export default function BusinessesPage() {
     if (!form.name.trim()) return;
     if (!form.projectStatus) return;
     const showcaseEnabled = !!form.showcaseEnabled;
+    const showcaseColor = normalizeColorToken((form.showcaseColor as string) ?? "");
     const showcaseServices = (form.showcaseServices ?? []).map((service) => service.trim()).filter(Boolean);
     const payload: Partial<Business> = {
       name: form.name.trim(),
@@ -359,6 +360,7 @@ export default function BusinessesPage() {
       division: form.division ?? "Tech",
       notes: form.notes,
       showcaseEnabled,
+      showcaseColor,
     };
 
     if (showcaseEnabled) {
@@ -371,7 +373,6 @@ export default function BusinessesPage() {
       payload.showcaseDescription = (form.showcaseDescription ?? "").trim();
       payload.showcaseUrl = (form.showcaseUrl ?? "").trim();
       payload.showcaseImageUrl = (form.showcaseImageUrl ?? "").trim();
-      payload.showcaseColor = normalizeColorToken((form.showcaseColor as string) ?? "");
     } else {
       payload.showcaseFeaturedOnHome = false;
     }
@@ -393,7 +394,6 @@ export default function BusinessesPage() {
         showcaseDescription: showcaseEnabled ? payload.showcaseDescription : (null as unknown as string),
         showcaseUrl: showcaseEnabled ? payload.showcaseUrl : (null as unknown as string),
         showcaseImageUrl: showcaseEnabled ? payload.showcaseImageUrl : (null as unknown as string),
-        showcaseColor: showcaseEnabled ? payload.showcaseColor : (null as unknown as Business["showcaseColor"]),
       });
     } else {
       await createBusiness({
@@ -1220,6 +1220,32 @@ export default function BusinessesPage() {
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Public Showcase</p>
             <p className="text-white/45 text-xs font-body">Controls what appears on the public home/showcase cards.</p>
           </div>
+          <Field label="Card/Map Color">
+            <div className="grid grid-cols-2 gap-2">
+              {SHOWCASE_COLOR_OPTIONS.map((option) => {
+                const selected = normalizeColorToken((form.showcaseColor as string) ?? "") === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setField("showcaseColor", option.value)}
+                    className={`w-full rounded-lg border px-2 py-1.5 text-xs text-left transition-colors ${
+                      selected ? "border-white/55 bg-white/10 text-white" : "border-white/15 bg-[#0F1014] text-white/70 hover:border-white/30"
+                    }`}
+                    title={option.label}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        className="inline-block h-3 w-3 rounded-full border border-black/25"
+                        style={{ backgroundColor: option.swatch }}
+                      />
+                      <span className="truncate">{option.label}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
           <div className="col-span-2">
             <label className="inline-flex items-center gap-2 text-sm text-white/80 font-body">
               <input
@@ -1259,32 +1285,6 @@ export default function BusinessesPage() {
               </Field>
               <Field label="Card Status">
                 <Select options={SHOWCASE_STATUSES} value={form.showcaseStatus ?? "In Progress"} onChange={e => setField("showcaseStatus", e.target.value)} />
-              </Field>
-              <Field label="Card Color">
-                <div className="grid grid-cols-2 gap-2">
-                  {SHOWCASE_COLOR_OPTIONS.map((option) => {
-                    const selected = normalizeColorToken((form.showcaseColor as string) ?? "") === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setField("showcaseColor", option.value)}
-                        className={`w-full rounded-lg border px-2 py-1.5 text-xs text-left transition-colors ${
-                          selected ? "border-white/55 bg-white/10 text-white" : "border-white/15 bg-[#0F1014] text-white/70 hover:border-white/30"
-                        }`}
-                        title={option.label}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            className="inline-block h-3 w-3 rounded-full border border-black/25"
-                            style={{ backgroundColor: option.swatch }}
-                          />
-                          <span className="truncate">{option.label}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
               </Field>
               <Field label="Image Link">
                 <Input value={form.showcaseImageUrl ?? ""} onChange={e => setField("showcaseImageUrl", e.target.value)} placeholder="https://..." />

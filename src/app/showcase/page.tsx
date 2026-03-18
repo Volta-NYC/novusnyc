@@ -6,7 +6,7 @@ import { MapPinIcon } from "@/components/Icons";
 import { projects as fallbackProjects, joinTracks } from "@/data";
 import { neighborhoods } from "@/data/neighborhoods";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
-import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
+import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 
 export const revalidate = 300;
 
@@ -59,6 +59,7 @@ const NeighborhoodMap = dynamic(() => import("@/components/NeighborhoodMap"), {
 
 export default async function Showcase() {
   const publicShowcase = await getPublicShowcaseCards();
+  const publicMapEntries = await getPublicMapEntries();
   const projects = publicShowcase.length > 0
     ? publicShowcase.map((card) => ({
       name: card.name,
@@ -83,6 +84,25 @@ export default async function Showcase() {
       url: project.url,
       imageUrl: undefined as string | undefined,
       quote: project.quote,
+    }));
+  const mapProjects = publicMapEntries.length > 0
+    ? publicMapEntries.map((entry) => ({
+      name: entry.name,
+      type: entry.type,
+      services: entry.services,
+      neighborhood: entry.neighborhood,
+      status: entry.status,
+      url: entry.url,
+      colorClass: SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-blue-500",
+    }))
+    : projects.map((p) => ({
+      name: p.name,
+      type: p.type,
+      services: p.services,
+      neighborhood: p.neighborhood,
+      status: p.status,
+      url: p.url,
+      colorClass: p.colorClass,
     }));
 
   const getServiceTagClass = (service: string) => {
@@ -134,15 +154,7 @@ export default async function Showcase() {
 
         {/* ── MAP ───────────────────────────────────────────────── */}
         <div className="w-full h-[520px] md:h-[600px] relative z-0 border-t border-white/10">
-          <NeighborhoodMap projects={projects.map(p => ({
-            name: p.name,
-            type: p.type,
-            services: p.services,
-            neighborhood: p.neighborhood,
-            status: p.status,
-            url: p.url,
-            colorClass: p.colorClass
-          }))} />
+          <NeighborhoodMap projects={mapProjects} />
         </div>
       </section>
 

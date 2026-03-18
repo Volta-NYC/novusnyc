@@ -34,6 +34,18 @@ export interface PublicShowcaseCard {
   featuredOnHome: boolean;
 }
 
+export interface PublicMapEntry {
+  id: string;
+  name: string;
+  type: string;
+  neighborhood: string;
+  services: string[];
+  status: PublicShowcaseStatus;
+  color: PublicShowcaseColor;
+  url?: string;
+  source: "business" | "bid";
+}
+
 function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -166,6 +178,17 @@ function compareCards(a: PublicShowcaseCard, b: PublicShowcaseCard): number {
   return a.name.localeCompare(b.name);
 }
 
+function compareMapEntries(a: PublicMapEntry, b: PublicMapEntry): number {
+  return a.name.localeCompare(b.name);
+}
+
+function mapBidStatusToShowcase(value: unknown): PublicShowcaseStatus {
+  const key = asText(value);
+  if (key === "Active Partner") return "Active";
+  if (key === "In Conversation" || key === "Outreach") return "In Progress";
+  return "Upcoming";
+}
+
 export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
   const db = getAdminDB();
   if (!db) return [];
@@ -224,4 +247,71 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     .filter((card) => card.status !== "Upcoming")
     .sort(compareCards)
     .slice(0, 12);
+}
+
+export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
+  const db = getAdminDB();
+  if (!db) return [];
+
+  const [businessesSnap, bidsSnap] = await Promise.all([
+    db.ref("businesses").get(),
+    db.ref("bids").get(),
+  ]);
+
+  const entries: PublicMapEntry[] = [];
+
+  if (businessesSnap.exists()) {
+    const businesses = businessesSnap.val() as Record<string, Record<string, unknown>>;
+    for (const [id, row] of Object.entries(businesses)) {
+      const name = asText(row.showcaseName) || asText(row.name);
+      if (!name) continue;
+
+      const division = inferDivision(row.division, row);
+      const type = divisionLabel(division);
+      const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
+      const services = asStringArray(row.showcaseServices);
+      const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
+      const status = normalizeStatusFromShowcase(row.showcaseStatus) ?? mapBusinessStatusToShowcase(row.projectStatus);
+      const url = asText(row.showcaseUrl) || asText(row.website) || "";
+      const color = asText(row.showcaseColor)
+        ? normalizeColor(row.showcaseColor)
+        : defaultShowcaseColor();
+
+      entries.push({
+        id: `business:${id}`,
+        name,
+        type,
+        neighborhood,
+        services: mergedServices,
+        status,
+        color,
+        url: url || undefined,
+        source: "business",
+      });
+    }
+  }
+
+  if (bidsSnap.exists()) {
+    const bids = bidsSnap.val() as Record<string, Record<string, unknown>>;
+    for (const [id, row] of Object.entries(bids)) {
+      const name = asText(row.name);
+      if (!name) continue;
+
+      const borough = asText(row.borough);
+      const status = mapBidStatusToShowcase(row.status);
+
+      entries.push({
+        id: `bid:${id}`,
+        name,
+        type: "BID Partnership",
+        neighborhood: borough || "New York City",
+        services: ["District Partnership"],
+        status,
+        color: "pink-mid",
+        source: "bid",
+      });
+    }
+  }
+
+  return entries.sort(compareMapEntries);
 }
