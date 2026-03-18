@@ -1230,6 +1230,16 @@ export default function BusinessesPage() {
               />
               Show this project on the public site
             </label>
+            <label className={`inline-flex items-center gap-2 text-sm font-body mt-2 ${form.showcaseEnabled ? "text-white/75" : "text-white/35"}`}>
+              <input
+                type="checkbox"
+                className="accent-[#85CC17] w-4 h-4"
+                checked={!!form.showcaseFeaturedOnHome}
+                onChange={(e) => setField("showcaseFeaturedOnHome", e.target.checked)}
+                disabled={!form.showcaseEnabled}
+              />
+              Feature this card on the homepage
+            </label>
           </div>
 
           {form.showcaseEnabled && (
@@ -1312,17 +1322,6 @@ export default function BusinessesPage() {
                 <Field label="Public Link (optional)">
                   <Input value={form.showcaseUrl ?? ""} onChange={e => setField("showcaseUrl", e.target.value)} placeholder="https://" />
                 </Field>
-              </div>
-              <div className="col-span-2">
-                <label className="inline-flex items-center gap-2 text-sm text-white/80 font-body">
-                  <input
-                    type="checkbox"
-                    className="accent-[#85CC17] w-4 h-4"
-                    checked={!!form.showcaseFeaturedOnHome}
-                    onChange={(e) => setField("showcaseFeaturedOnHome", e.target.checked)}
-                  />
-                  Feature this card on the homepage
-                </label>
               </div>
             </>
           )}
