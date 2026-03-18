@@ -16,6 +16,7 @@ export type PublicShowcaseColor =
   | "pink-soft"
   | "pink-mid"
   | "pink-deep"
+  | "purple-mid"
   | "red-soft"
   | "red-mid"
   | "red-deep";
@@ -90,6 +91,7 @@ function normalizeColor(value: unknown): PublicShowcaseColor {
     case "pink-soft":
     case "pink-mid":
     case "pink-deep":
+    case "purple-mid":
     case "red-soft":
     case "red-mid":
     case "red-deep":
@@ -110,7 +112,7 @@ function normalizeColor(value: unknown): PublicShowcaseColor {
     case "pink":
       return "pink-mid";
     case "purple":
-      return "pink-deep";
+      return "purple-mid";
     default:
       return "blue-mid";
   }

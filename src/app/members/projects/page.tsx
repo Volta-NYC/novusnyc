@@ -33,6 +33,7 @@ type ShowcaseColorValue =
   | "pink-soft"
   | "pink-mid"
   | "pink-deep"
+  | "purple-mid"
   | "red-soft"
   | "red-mid"
   | "red-deep";
@@ -50,6 +51,7 @@ const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; 
   { value: "pink-soft", label: "Pink · Soft", swatch: "#F9A8D4" },
   { value: "pink-mid", label: "Pink · Mid", swatch: "#EC4899" },
   { value: "pink-deep", label: "Pink · Deep", swatch: "#9D174D" },
+  { value: "purple-mid", label: "Purple · Mid", swatch: "#8B5CF6" },
   { value: "red-soft", label: "Red · Soft", swatch: "#FCA5A5" },
   { value: "red-mid", label: "Red · Mid", swatch: "#EF4444" },
   { value: "red-deep", label: "Red · Deep", swatch: "#991B1B" },
@@ -96,6 +98,7 @@ function normalizeColorToken(raw: string): ShowcaseColorValue {
     case "pink-soft":
     case "pink-mid":
     case "pink-deep":
+    case "purple-mid":
     case "red-soft":
     case "red-mid":
     case "red-deep":
@@ -116,7 +119,7 @@ function normalizeColorToken(raw: string): ShowcaseColorValue {
     case "pink":
       return "pink-mid";
     case "purple":
-      return "pink-deep";
+      return "purple-mid";
     default:
       return "blue-mid";
   }

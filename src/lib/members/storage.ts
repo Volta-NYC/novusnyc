@@ -95,6 +95,7 @@ export interface Business {
     | "pink-soft"
     | "pink-mid"
     | "pink-deep"
+    | "purple-mid"
     | "red-soft"
     | "red-mid"
     | "red-deep";

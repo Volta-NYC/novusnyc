@@ -52,6 +52,7 @@ const getColorHex = (colorClass: string): string => {
   if (colorClass.includes("pink-300")) return "#F9A8D4";
   if (colorClass.includes("pink-500")) return "#EC4899";
   if (colorClass.includes("pink-700")) return "#9D174D";
+  if (colorClass.includes("purple-500")) return "#8B5CF6";
   if (colorClass.includes("red-300")) return "#FCA5A5";
   if (colorClass.includes("red-500")) return "#EF4444";
   if (colorClass.includes("red-700")) return "#991B1B";
