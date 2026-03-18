@@ -11,6 +11,7 @@ import {
   subscribeBusinesses, subscribeTeam, type Business, type TeamMember,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { useRouter } from "next/navigation";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,7 @@ export default function GrantsPage() {
 
   const { ask, Dialog } = useConfirm();
   const { authRole, userProfile } = useAuth();
+  const router = useRouter();
 
   const canManageAll = authRole === "admin" || authRole === "project_lead";
   const isContributorRole = authRole === "member" || authRole === "interviewer";
@@ -55,6 +57,12 @@ export default function GrantsPage() {
   const canEditGrant = (grant: Grant) =>
     canManageAll ||
     (isContributorRole && myName !== "" && grant.assignedResearcher.toLowerCase() === myName.toLowerCase());
+
+  useEffect(() => {
+    if (authRole && authRole !== "admin" && authRole !== "project_lead") {
+      router.replace("/members/projects");
+    }
+  }, [authRole, router]);
 
   // Subscribe to real-time grant updates; unsubscribe on unmount.
   useEffect(() => {

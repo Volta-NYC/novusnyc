@@ -173,7 +173,7 @@ export default function About() {
               A team of students from Stuyvesant High School, CUNY institutions, and other NYC schools.
             </p>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
                 <div className="bg-white border border-v-border rounded-xl overflow-hidden project-card h-full flex flex-col">

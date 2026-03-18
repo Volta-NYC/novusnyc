@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { neighborhoods } from "@/data/neighborhoods";
 
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
@@ -17,6 +16,8 @@ export interface MapProject {
   services: string[];
   neighborhood: string;
   borough?: string;
+  lat?: number;
+  lng?: number;
   status: "Active" | "In Progress" | "Upcoming";
   url?: string;
   colorClass: string;
@@ -81,16 +82,12 @@ const BOROUGH_HEX: Record<string, string> = {
 };
 
 export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
-  // Map string neighborhood names to their known coordinates.
   const markers = useMemo(
     () =>
-      projects.map((p) => {
+      projects
+        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+        .map((p) => {
         const borough = normalizeBorough(p.borough ?? p.neighborhood);
-        const coords = (borough ? neighborhoods.find((n) => normalizeBorough(n.borough) === borough) : undefined)
-          || neighborhoods.find((n) => p.neighborhood.includes(n.name))
-          || neighborhoods.find((n) => p.neighborhood.includes(n.borough));
-        const baseLat = coords ? coords.lat : 40.7128;
-        const baseLng = coords ? coords.lng : -74.0060;
         const isBid = p.source === "bid";
         const hex = isBid
           ? (BOROUGH_HEX[borough] ?? "#94A3B8")
@@ -99,10 +96,8 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
           ...p,
           borough,
           isBid,
-          baseLat,
-          baseLng,
-          lat: baseLat + (Math.random() - 0.5) * 0.005, // slight jitter to prevent exact overlap
-          lng: baseLng + (Math.random() - 0.5) * 0.005,
+          lat: Number(p.lat),
+          lng: Number(p.lng),
           hex,
         };
       }),
@@ -110,9 +105,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
   );
 
   const fitPoints = useMemo<[number, number][]>(() => {
-    const neighborhoodPoints = neighborhoods.map((n) => [n.lat, n.lng] as [number, number]);
-    const markerPoints = markers.map((m) => [m.baseLat, m.baseLng] as [number, number]);
-    return [...neighborhoodPoints, ...markerPoints];
+    return markers.map((m) => [m.lat, m.lng] as [number, number]);
   }, [markers]);
 
   return (
@@ -130,27 +123,6 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
-
-        {/* Neighborhood coverage rings */}
-        {neighborhoods.map((n) => (
-          <CircleMarker
-            key={n.name}
-            center={[n.lat, n.lng]}
-            radius={12}
-            fillColor="#85CC17"
-            fillOpacity={0.08}
-            color="#85CC17"
-            weight={1.5}
-            opacity={0.3}
-          >
-            <Popup>
-              <div style={{ fontFamily: "sans-serif", fontSize: 13, lineHeight: 1.5 }}>
-                <strong>{n.name}</strong><br />
-                <span style={{ color: "#6B7280", fontSize: 11 }}>{n.borough}</span>
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
 
         {/* BID dots (larger, lower opacity, borough-colored) */}
         {markers.filter((m) => m.isBid).map((b, i) => (

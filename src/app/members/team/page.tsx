@@ -188,6 +188,7 @@ export default function TeamPage() {
   const { ask, Dialog } = useConfirm();
   const { authRole } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
+  const isMemberRestricted = authRole === "member";
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
@@ -567,147 +568,198 @@ export default function TeamPage() {
       {/* Search controls */}
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
-        <div className="relative">
-          <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
-            Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
-          </Btn>
-          {showSortPanel && (
-            <div className="absolute top-full left-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 min-w-[320px]">
-              <p className="text-[10px] text-white/40 uppercase tracking-wide mb-2">Sort Rules</p>
-              {sortRules.map((rule, idx) => (
-                <div key={idx} className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] text-white/40 w-[48px]">{idx === 0 ? "Sort by" : "Then by"}</span>
-                  <select
-                    value={rule.col}
-                    onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
-                    className="flex-1 bg-[#0F1014] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
-                  >
-                    {SORT_COLUMNS.map((name, i) => (
-                      <option key={i} value={i}>{name}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={rule.dir}
-                    onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
-                    className="bg-[#0F1014] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[60px]"
-                  >
-                    <option value="asc">A→Z</option>
-                    <option value="desc">Z→A</option>
-                  </select>
-                  {sortRules.length > 1 && (
-                    <button onClick={() => removeSortRule(idx)} className="text-white/30 hover:text-white/60 text-xs">✕</button>
-                  )}
-                </div>
-              ))}
-              {sortRules.length < SORT_COLUMNS.length && (
-                <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/70 hover:text-[#85CC17] transition-colors">
-                  + Add sort level
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        {!isMemberRestricted && (
+          <div className="relative">
+            <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
+              Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
+            </Btn>
+            {showSortPanel && (
+              <div className="absolute top-full left-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 min-w-[320px]">
+                <p className="text-[10px] text-white/40 uppercase tracking-wide mb-2">Sort Rules</p>
+                {sortRules.map((rule, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] text-white/40 w-[48px]">{idx === 0 ? "Sort by" : "Then by"}</span>
+                    <select
+                      value={rule.col}
+                      onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
+                      className="flex-1 bg-[#0F1014] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                    >
+                      {SORT_COLUMNS.map((name, i) => (
+                        <option key={i} value={i}>{name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={rule.dir}
+                      onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
+                      className="bg-[#0F1014] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[60px]"
+                    >
+                      <option value="asc">A→Z</option>
+                      <option value="desc">Z→A</option>
+                    </select>
+                    {sortRules.length > 1 && (
+                      <button onClick={() => removeSortRule(idx)} className="text-white/30 hover:text-white/60 text-xs">✕</button>
+                    )}
+                  </div>
+                ))}
+                {sortRules.length < SORT_COLUMNS.length && (
+                  <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/70 hover:text-[#85CC17] transition-colors">
+                    + Add sort level
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Team member list */}
-      <div
-        className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text"
-      >
-        <table className="w-full min-w-[1060px] text-[11px] leading-4 table-fixed">
-          <thead className="bg-[#0F1014] border-b border-white/8">
-            <tr>
-              {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
-                const sortable = [0, 1, 2, 3, 4, 5, 6, 7].includes(idx);
-                const primaryRule = sortRules[0];
-                const isActive = primaryRule?.col === idx;
-                const dir = isActive ? primaryRule.dir : "asc";
-                return (
+      {isMemberRestricted ? (
+        <div className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text">
+          <table className="w-full min-w-[720px] text-[11px] leading-4 table-fixed">
+            <thead className="bg-[#0F1014] border-b border-white/8">
+              <tr>
+                {["Track", "Team", "Name", "School", "Grade"].map((col) => (
                   <th
                     key={col}
-                    className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${col === "Track" || col === "Team" ? "w-[56px]" : ""} ${col === "Actions" ? "w-[120px]" : ""}`}
-                    onClick={() => sortable && handleSort(idx)}
+                    className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${col === "Track" || col === "Team" ? "w-[56px]" : ""}`}
                   >
-                    <span className="inline-flex items-center gap-0.5">
-                      {col}
-                      {sortable && (
-                        <span className="inline-flex flex-col ml-0.5 leading-none align-middle">
-                          <span className={`text-[8px] ${isActive && dir === "asc" ? "text-white/80" : "text-white/20"}`}>▲</span>
-                          <span className={`text-[8px] ${isActive && dir === "desc" ? "text-white/80" : "text-white/20"}`}>▼</span>
-                        </span>
-                      )}
-                    </span>
+                    {col}
                   </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {sorted.map((member) => {
+                const track = getMemberTrack(member);
+                const avatar = getTrackAvatarStyles(track);
+                return (
+                  <tr key={member.id} className="hover:bg-white/3 transition-colors align-top">
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/65 text-[10px] font-semibold">{member.pod || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                          <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
+                        </div>
+                        <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{member.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/50 block truncate" title={member.school || ""}>{member.school || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/50">{member.grade || "—"}</span>
+                    </td>
+                  </tr>
                 );
               })}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {sorted.map((member) => {
-              const track = getMemberTrack(member);
-              const avatar = getTrackAvatarStyles(track);
-              const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
-              const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
-              return (
-                <tr
-                  key={member.id}
-                  className="hover:bg-white/3 transition-colors align-top"
-                >
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <span className="text-white/65 text-[10px] font-semibold">{track}</span>
-                  </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <span className="text-white/65 text-[10px] font-semibold">{member.pod || "—"}</span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                        <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
-                      </div>
-                      <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{member.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <div className="font-mono">
-                      <span
-                        className="text-white/55 block truncate"
-                        title={member.email || "—"}
-                      >
-                        {member.email || "—"}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div
+          className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text"
+        >
+          <table className="w-full min-w-[1060px] text-[11px] leading-4 table-fixed">
+            <thead className="bg-[#0F1014] border-b border-white/8">
+              <tr>
+                {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
+                  const sortable = [0, 1, 2, 3, 4, 5, 6, 7].includes(idx);
+                  const primaryRule = sortRules[0];
+                  const isActive = primaryRule?.col === idx;
+                  const dir = isActive ? primaryRule.dir : "asc";
+                  return (
+                    <th
+                      key={col}
+                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${col === "Track" || col === "Team" ? "w-[56px]" : ""} ${col === "Actions" ? "w-[120px]" : ""}`}
+                      onClick={() => sortable && handleSort(idx)}
+                    >
+                      <span className="inline-flex items-center gap-0.5">
+                        {col}
+                        {sortable && (
+                          <span className="inline-flex flex-col ml-0.5 leading-none align-middle">
+                            <span className={`text-[8px] ${isActive && dir === "asc" ? "text-white/80" : "text-white/20"}`}>▲</span>
+                            <span className={`text-[8px] ${isActive && dir === "desc" ? "text-white/80" : "text-white/20"}`}>▼</span>
+                          </span>
+                        )}
                       </span>
-                      {member.alternateEmail && (
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {sorted.map((member) => {
+                const track = getMemberTrack(member);
+                const avatar = getTrackAvatarStyles(track);
+                const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
+                const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
+                return (
+                  <tr
+                    key={member.id}
+                    className="hover:bg-white/3 transition-colors align-top"
+                  >
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/65 text-[10px] font-semibold">{member.pod || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                          <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
+                        </div>
+                        <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{member.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <div className="font-mono">
                         <span
-                          className="text-white/35 block truncate mt-0.5"
-                          title={member.alternateEmail}
+                          className="text-white/55 block truncate"
+                          title={member.email || "—"}
                         >
-                          {member.alternateEmail}
+                          {member.email || "—"}
                         </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <span className="text-white/50 block truncate" title={member.school || ""}>{member.school || "—"}</span>
-                  </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <span className="text-white/50">{member.grade || "—"}</span>
-                  </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <span className="text-white/50">{member.acceptedDate || "—"}</span>
-                  </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <span className="text-white/50">{accountCreated}</span>
-                  </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">
-                    <div className="flex gap-1 flex-nowrap">
-                      {canEdit && <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
-                      {canEdit && <Btn size="sm" variant="danger" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => ask(async () => deleteTeamMember(member.id))}>Delete</Btn>}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                        {member.alternateEmail && (
+                          <span
+                            className="text-white/35 block truncate mt-0.5"
+                            title={member.alternateEmail}
+                          >
+                            {member.alternateEmail}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/50 block truncate" title={member.school || ""}>{member.school || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/50">{member.grade || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/50">{member.acceptedDate || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <span className="text-white/50">{accountCreated}</span>
+                    </td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">
+                      <div className="flex gap-1 flex-nowrap">
+                        {canEdit && <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
+                        {canEdit && <Btn size="sm" variant="danger" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => ask(async () => deleteTeamMember(member.id))}>Delete</Btn>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
       {filtered.length === 0 && (
         <Empty
           message="No team members."

@@ -62,8 +62,9 @@ export default function BIDTrackerPage() {
   >({});
 
   const { ask, Dialog } = useConfirm();
-  const { authRole }    = useAuth();
+  const { authRole, user }    = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
+  const isMemberRestricted = authRole === "member";
 
   // Subscribe to real-time BID updates; unsubscribe on unmount.
   useEffect(() => subscribeBIDs(setBids), []);
@@ -96,13 +97,50 @@ export default function BIDTrackerPage() {
     setModal("edit");
   };
 
+  const geocodeBidLocation = async (input: {
+    address: string;
+    zipCode: string;
+    borough: string;
+  }): Promise<{ lat: number; lng: number } | null> => {
+    if (!user) return null;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/bids/geocode", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) return null;
+      const data = await res.json() as { lat?: number; lng?: number };
+      if (typeof data.lat !== "number" || typeof data.lng !== "number") return null;
+      return { lat: data.lat, lng: data.lng };
+    } catch {
+      return null;
+    }
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) return;
+    const address = (form.address ?? "").trim();
+    const zipCode = (form.zipCode ?? "").trim();
+    const borough = (form.borough ?? "").trim();
+
+    const geocoded = (address || zipCode)
+      ? await geocodeBidLocation({ address, zipCode, borough })
+      : null;
+    const geocodePatch = (address || zipCode)
+      ? (geocoded ? { lat: geocoded.lat, lng: geocoded.lng } : {})
+      : ({ lat: null as unknown as number, lng: null as unknown as number });
+
     if (editingBID) {
-      await updateBID(editingBID.id, form as Partial<BID>);
+      await updateBID(editingBID.id, { ...(form as Partial<BID>), ...geocodePatch });
     } else {
       await createBID({
         ...form,
+        ...geocodePatch,
         sortIndex: nextSortIndex(bids),
       } as Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline">);
     }
@@ -213,7 +251,7 @@ export default function BIDTrackerPage() {
 
       {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search BIDs, boroughs…" />
+        <SearchBar value={search} onChange={setSearch} placeholder={isMemberRestricted ? "Search BID names…" : "Search BIDs, boroughs…"} />
         <select
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value as SortMode)}
@@ -253,22 +291,28 @@ export default function BIDTrackerPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-2 min-w-0 flex-1">
                   <p className="text-white font-semibold leading-snug break-words">{bid.name}</p>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
-                    <span>{[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "No borough"}</span>
-                    <span>•</span>
-                    <span>{bid.contactName || "No contact"}</span>
-                    {bid.contactEmail && (
-                      <>
-                        <span>•</span>
-                        <a href={`mailto:${bid.contactEmail}`} className="text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
-                          {bid.contactEmail}
-                        </a>
-                      </>
-                    )}
-                  </div>
+                  {!isMemberRestricted ? (
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
+                      <span>{[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "No borough"}</span>
+                      <span>•</span>
+                      <span>{bid.contactName || "No contact"}</span>
+                      {bid.contactEmail && (
+                        <>
+                          <span>•</span>
+                          <a href={`mailto:${bid.contactEmail}`} className="text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+                            {bid.contactEmail}
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-white/45">
+                      {[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "No borough"}
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge label={bid.status} />
-                    <Badge label={bid.priority} />
+                    {!isMemberRestricted && <Badge label={bid.priority} />}
                   </div>
                 </div>
                 {canEdit && (
@@ -278,76 +322,78 @@ export default function BIDTrackerPage() {
                 )}
               </div>
 
-              {(bid.nextAction || bid.notes) && (
+              {!isMemberRestricted && (bid.nextAction || bid.notes) && (
                 <div className="mt-3 bg-white/4 border border-white/6 rounded-lg px-3 py-2">
                   <p className="text-[10px] uppercase tracking-wider text-white/35 mb-1">Notes / Next Action</p>
                   <p className="text-sm text-white/70">{bid.nextAction || bid.notes}</p>
                 </div>
               )}
 
-              <div className="mt-3 border-t border-white/8 pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs uppercase tracking-wider text-white/40 font-semibold">Activity Timeline</h3>
-                  <span className="text-[11px] text-white/35">{timeline.length} entries</span>
-                </div>
+              {!isMemberRestricted && (
+                <div className="mt-3 border-t border-white/8 pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs uppercase tracking-wider text-white/40 font-semibold">Activity Timeline</h3>
+                    <span className="text-[11px] text-white/35">{timeline.length} entries</span>
+                  </div>
 
-                <div className="space-y-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
-                  {timeline.length === 0 ? (
-                    <p className="text-xs text-white/30">No activity logged yet.</p>
-                  ) : (
-                    timeline.map((entry) => (
-                      <div key={entry.id} className="flex items-start gap-2 rounded-lg border border-white/7 bg-[#0F1014] px-2.5 py-2">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[10px] text-white/30 block mb-0.5">{entry.date}</span>
-                          <p className="text-xs sm:text-sm text-white/70 leading-snug">{entry.action ?? entry.note ?? ""}</p>
+                  <div className="space-y-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
+                    {timeline.length === 0 ? (
+                      <p className="text-xs text-white/30">No activity logged yet.</p>
+                    ) : (
+                      timeline.map((entry) => (
+                        <div key={entry.id} className="flex items-start gap-2 rounded-lg border border-white/7 bg-[#0F1014] px-2.5 py-2">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[10px] text-white/30 block mb-0.5">{entry.date}</span>
+                            <p className="text-xs sm:text-sm text-white/70 leading-snug">{entry.action ?? entry.note ?? ""}</p>
+                          </div>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleDeleteTimeline(bid.id, entry.id)}
+                              className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5"
+                              aria-label="Delete timeline entry"
+                            >
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleDeleteTimeline(bid.id, entry.id)}
-                            className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5"
-                            aria-label="Delete timeline entry"
-                          >
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        )}
+                      ))
+                    )}
+                  </div>
+
+                  {canEdit && (
+                    <div className="mt-2.5 rounded-lg border border-white/8 bg-[#141821] p-2.5 space-y-2">
+                      <p className="text-[11px] text-white/45">Log activity</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
+                        <input
+                          type="date"
+                          value={draft.date}
+                          onChange={(e) => setTimelineDraft(bid.id, { date: e.target.value })}
+                          className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-white focus:outline-none"
+                        />
+                        <textarea
+                          value={draft.action}
+                          onChange={(e) => setTimelineDraft(bid.id, { action: e.target.value })}
+                          placeholder="Action"
+                          rows={1}
+                          className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-white placeholder-white/25 focus:outline-none resize-none font-body"
+                        />
+                        <Btn
+                          variant="primary"
+                          size="sm"
+                          className="w-full sm:w-auto justify-center"
+                          onClick={() => handleAddTimeline(bid.id)}
+                          disabled={draft.saving || !draft.action.trim()}
+                        >
+                          {draft.saving ? "Saving…" : "+ Add"}
+                        </Btn>
                       </div>
-                    ))
+                    </div>
                   )}
                 </div>
-
-                {canEdit && (
-                  <div className="mt-2.5 rounded-lg border border-white/8 bg-[#141821] p-2.5 space-y-2">
-                    <p className="text-[11px] text-white/45">Log activity</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
-                      <input
-                        type="date"
-                        value={draft.date}
-                        onChange={(e) => setTimelineDraft(bid.id, { date: e.target.value })}
-                        className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-white focus:outline-none"
-                      />
-                      <textarea
-                        value={draft.action}
-                        onChange={(e) => setTimelineDraft(bid.id, { action: e.target.value })}
-                        placeholder="Action"
-                        rows={1}
-                        className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-white placeholder-white/25 focus:outline-none resize-none font-body"
-                      />
-                      <Btn
-                        variant="primary"
-                        size="sm"
-                        className="w-full sm:w-auto justify-center"
-                        onClick={() => handleAddTimeline(bid.id)}
-                        disabled={draft.saving || !draft.action.trim()}
-                      >
-                        {draft.saving ? "Saving…" : "+ Add"}
-                      </Btn>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           );
         })}
@@ -366,22 +412,30 @@ export default function BIDTrackerPage() {
           {sorted.map((bid) => (
             <div
               key={bid.id}
-              className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 md:grid-cols-[minmax(220px,2fr)_130px_minmax(220px,2fr)_120px_minmax(220px,2fr)_auto] gap-2 md:gap-3 items-start"
+              className={`bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid gap-2 md:gap-3 items-start ${
+                isMemberRestricted
+                  ? "grid-cols-1 md:grid-cols-[minmax(220px,2fr)_130px_140px]"
+                  : "grid-cols-1 md:grid-cols-[minmax(220px,2fr)_130px_minmax(220px,2fr)_120px_minmax(220px,2fr)_auto]"
+              }`}
             >
               <div className="min-w-0">
                 <p className="text-white font-semibold text-sm leading-tight break-words">{bid.name}</p>
               </div>
               <div className="text-xs"><Badge label={bid.status} /></div>
-              <div className="text-xs text-white/55 break-words">
-                {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
-              </div>
+              {!isMemberRestricted && (
+                <div className="text-xs text-white/55 break-words">
+                  {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
+                </div>
+              )}
               <div className="text-xs text-white/65">{[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}</div>
-              <div className="text-xs text-white/55 break-words">{bid.nextAction || bid.notes || "—"}</div>
+              {!isMemberRestricted && (
+                <div className="text-xs text-white/55 break-words">{bid.nextAction || bid.notes || "—"}</div>
+              )}
               {canEdit ? (
                 <div className="md:justify-self-end">
                   <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
                 </div>
-              ) : <div />}
+              ) : (!isMemberRestricted ? <div /> : null)}
             </div>
           ))}
           {filtered.length === 0 && (

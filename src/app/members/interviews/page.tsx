@@ -265,6 +265,57 @@ function namesLikelyMatch(a: string, b: string): boolean {
   return overlap >= 2;
 }
 
+type EvaluationEntry = {
+  interviewerUid?: string;
+  interviewerEmail?: string;
+  interviewerName?: string;
+  interviewerRole?: string;
+  rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
+  comments?: string;
+  updatedAt?: string;
+  slotId?: string;
+};
+
+const VALID_EVALUATION_RATINGS: Array<EvaluationEntry["rating"]> = [
+  "Extremely Qualified",
+  "Qualified",
+  "Decent",
+  "Unqualified",
+];
+
+function isValidEvaluationEntry(value: unknown): value is EvaluationEntry {
+  if (!value || typeof value !== "object") return false;
+  const row = value as EvaluationEntry;
+  const rating = String(row.rating ?? "").trim() as EvaluationEntry["rating"];
+  if (!VALID_EVALUATION_RATINGS.includes(rating)) return false;
+  const interviewerUid = String(row.interviewerUid ?? "").trim();
+  const interviewerEmail = String(row.interviewerEmail ?? "").trim();
+  const interviewerName = String(row.interviewerName ?? "").trim();
+  return !!(interviewerUid || interviewerEmail || interviewerName);
+}
+
+function getValidEvaluationEntries(value: unknown): EvaluationEntry[] {
+  if (!value || typeof value !== "object") return [];
+  return Object.values(value as Record<string, unknown>).filter((entry): entry is EvaluationEntry => isValidEvaluationEntry(entry));
+}
+
+function getValidEvaluationCount(value: unknown): number {
+  return getValidEvaluationEntries(value).length;
+}
+
+function getLatestValidEvaluation(value: unknown): EvaluationEntry | null {
+  const entries = getValidEvaluationEntries(value);
+  if (entries.length === 0) return null;
+  const sorted = [...entries].sort((a, b) => {
+    const aMs = Date.parse(String(a.updatedAt ?? ""));
+    const bMs = Date.parse(String(b.updatedAt ?? ""));
+    const aTs = Number.isFinite(aMs) ? aMs : 0;
+    const bTs = Number.isFinite(bMs) ? bMs : 0;
+    return bTs - aTs;
+  });
+  return sorted[0] ?? null;
+}
+
 function getSlotInterviewerNames(slot: InterviewSlot, memberNameById: Record<string, string>): string[] {
   const ids = Array.isArray(slot.interviewerMemberIds)
     ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
@@ -341,6 +392,7 @@ function InterviewsContent() {
   const dragModeRef = useRef<DragMode | null>(null);
   const dragAnchorRef = useRef<DragAnchor | null>(null);
   const recurringSyncInFlightRef = useRef(false);
+  const evalCleanupTriggeredRef = useRef(false);
 
   const canAccessInterviews = authRole === "admin" || authRole === "project_lead" || authRole === "interviewer";
   const canDeleteInterviews = authRole === "admin" || authRole === "project_lead";
@@ -351,6 +403,23 @@ function InterviewsContent() {
       router.replace("/members/projects");
     }
   }, [canAccessInterviews, loading, router]);
+
+  useEffect(() => {
+    if (!canDeleteInterviews || !user || evalCleanupTriggeredRef.current) return;
+    evalCleanupTriggeredRef.current = true;
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        await fetch("/api/members/interviews/cleanup-evaluations", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+      } catch {
+        // ignore; this is best-effort cleanup for legacy malformed eval records
+      }
+    })();
+  }, [canDeleteInterviews, user]);
 
   useEffect(() => subscribeInterviewSlots(setSlots), []);
   useEffect(() => subscribeTeam(setTeamMembers), []);
@@ -841,8 +910,8 @@ function InterviewsContent() {
   };
 
   const openEvaluation = (slot: InterviewSlot) => {
-    // Pre-populate from any existing eval by the current user
-    const existingEval = user?.uid ? slot.evaluationByUid?.[user.uid] : undefined;
+    // Pre-populate only from a valid existing eval; legacy blank entries are ignored.
+    const existingEval = getLatestValidEvaluation(slot.evaluationByUid);
     setEvaluationSlot(slot);
     setEvaluationRating(existingEval?.rating ?? "");
     setEvaluationComments(existingEval?.comments ?? "");
@@ -1756,8 +1825,8 @@ function InterviewsContent() {
                     const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
                     const resumeUrl = findResumeUrlForSlot(slot);
                     const matchedApp = findApplicationForSlot(slot);
-                    const evalCount = Object.keys(slot.evaluationByUid ?? {}).length
-                      || Object.keys((matchedApp?.interviewEvaluations ?? {}) as Record<string, unknown>).length;
+                    const evalCount = getValidEvaluationCount(slot.evaluationByUid)
+                      || getValidEvaluationCount(matchedApp?.interviewEvaluations);
                     return (
                       <tr key={slot.id} className="hover:bg-white/3 transition-colors">
                         <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap">{displayName}</td>
@@ -1850,8 +1919,8 @@ function InterviewsContent() {
                     const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
                     const resumeUrl = findResumeUrlForSlot(slot);
                     const matchedApp = findApplicationForSlot(slot);
-                    const evalCount = Object.keys(slot.evaluationByUid ?? {}).length
-                      || Object.keys((matchedApp?.interviewEvaluations ?? {}) as Record<string, unknown>).length;
+                    const evalCount = getValidEvaluationCount(slot.evaluationByUid)
+                      || getValidEvaluationCount(matchedApp?.interviewEvaluations);
                     return (
                       <tr key={slot.id} className="hover:bg-white/3 transition-colors">
                         <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap">{displayName}</td>
@@ -2509,7 +2578,7 @@ function InterviewsContent() {
         </div>
         <div className="flex justify-between items-center mt-5">
           <div>
-            {evaluationSlot && user?.uid && evaluationSlot.evaluationByUid?.[user.uid] && (
+            {evaluationSlot && getValidEvaluationCount(evaluationSlot.evaluationByUid) > 0 && (
               <Btn variant="danger" onClick={() => void deleteEvaluation()} disabled={savingEvaluation}>
                 Delete
               </Btn>
@@ -2575,8 +2644,8 @@ function InterviewsContent() {
             Evaluations for <span className="text-white font-semibold">{viewingEvaluationsApp?.fullName}</span>
           </p>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-            {viewingEvaluationsApp && Object.values(viewingEvaluationsApp.interviewEvaluations || {}).length > 0 ? (
-              Object.values(viewingEvaluationsApp.interviewEvaluations || {})
+            {viewingEvaluationsApp && getValidEvaluationEntries(viewingEvaluationsApp.interviewEvaluations).length > 0 ? (
+              getValidEvaluationEntries(viewingEvaluationsApp.interviewEvaluations)
                 .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
                 .map((ev, idx) => (
                   <div key={idx} className="bg-white/3 border border-white/5 rounded-lg p-3 space-y-2">

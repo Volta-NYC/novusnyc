@@ -239,10 +239,12 @@ export const aboutTimeline = [
 ];
 
 export const teamMembers = [
-  { name: "Ethan Zhang", role: "Founder", email: "ethan@voltanyc.org", initial: "E", desc: "", photo: "/team/ethan.png" },
-  { name: "Andrew Chin", role: "Director", email: "andrew@voltanyc.org", initial: "A", desc: "", photo: "/team/andrew.jpeg" },
-  { name: "Joseph Long", role: "Director of Outreach", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "", photo: "/team/joseph.jpg" },
-  { name: "Tahmid Islam", role: "Tech Lead", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
+  { name: "Ethan Zhang", role: "Executive Director & Founder", email: "ethan@voltanyc.org", initial: "E", desc: "", photo: "/team/ethan.png" },
+  { name: "Andrew Chin", role: "Executive Director", email: "andrew@voltanyc.org", initial: "A", desc: "", photo: "/team/andrew.jpeg" },
+  { name: "Tahmid Islam", role: "Director of Tech", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
+  { name: "Joseph Long", role: "Co-Director of Outreach", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "", photo: "/team/joseph.jpg" },
+  { name: "Jean-Pierre Proulx", role: "Co-Director of Marketing", email: "jppfinster@gmail.com", initial: "JP", desc: "", photo: "" },
+  { name: "Kaia Talathi", role: "Co-Director of Marketing", email: "31kaia.talathi@gmail.com", initial: "K", desc: "", photo: "" },
 ];
 
 export const branches = [

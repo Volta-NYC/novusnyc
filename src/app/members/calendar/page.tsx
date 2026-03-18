@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
+import { useRouter } from "next/navigation";
 import {
   subscribeCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
   subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites,
@@ -313,7 +314,14 @@ interface PopupPosition { top: number; left: number; }
 
 export default function CalendarPage() {
   const { user, authRole } = useAuth();
+  const router = useRouter();
   const canEdit = authRole === "admin" || authRole === "project_lead";
+
+  useEffect(() => {
+    if (authRole && authRole !== "admin" && authRole !== "project_lead") {
+      router.replace("/members/projects");
+    }
+  }, [authRole, router]);
 
   const today = new Date();
   const [viewYear, setViewYear]   = useState(today.getFullYear());

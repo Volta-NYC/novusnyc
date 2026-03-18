@@ -21,6 +21,8 @@ export interface BID {
   borough: string;
   address?: string;
   zipCode?: string;
+  lat?: number;
+  lng?: number;
   nextAction: string;
   notes: string;
   priority: "High" | "Medium" | "Low";

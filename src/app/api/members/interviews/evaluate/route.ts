@@ -12,6 +12,10 @@ type EvaluateBody = {
 
 type SlotRecord = Record<string, unknown>;
 type ApplicationEntry = { id: string; row: Record<string, unknown> };
+type EvalRecord = Record<string, unknown>;
+type EvalMap = Record<string, EvalRecord>;
+
+const VALID_RATINGS: Rating[] = ["Extremely Qualified", "Qualified", "Decent", "Unqualified"];
 
 function normalize(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
@@ -43,6 +47,22 @@ function namesLikelyMatch(a: unknown, b: unknown): boolean {
     if (rt.has(token)) overlap += 1;
   });
   return overlap >= 2;
+}
+
+function asEvalMap(value: unknown): EvalMap {
+  if (!value || typeof value !== "object") return {};
+  return value as EvalMap;
+}
+
+function isValidEvalRecord(value: unknown): value is EvalRecord {
+  if (!value || typeof value !== "object") return false;
+  const row = value as EvalRecord;
+  const rating = String(row.rating ?? "").trim() as Rating;
+  if (!VALID_RATINGS.includes(rating)) return false;
+  const interviewerUid = String(row.interviewerUid ?? "").trim();
+  const interviewerEmail = String(row.interviewerEmail ?? "").trim();
+  const interviewerName = String(row.interviewerName ?? "").trim();
+  return !!(interviewerUid || interviewerEmail || interviewerName);
 }
 
 function pickApplicationBySlot(
@@ -95,9 +115,14 @@ export async function POST(req: NextRequest) {
   const slot: SlotRecord = { ...(slotData as SlotRecord), id: slotId };
 
   if (action === "delete") {
-    await dbPatch(`interviewSlots/${slotId}`, {
-      [`evaluationByUid/${verified.caller.uid}`]: null
-    }, verified.caller.idToken);
+    const slotEvalMap = asEvalMap(slot.evaluationByUid);
+    const slotDeletePatch: Record<string, unknown> = {};
+    for (const uid of Object.keys(slotEvalMap)) {
+      slotDeletePatch[`evaluationByUid/${uid}`] = null;
+    }
+    if (Object.keys(slotDeletePatch).length > 0) {
+      await dbPatch(`interviewSlots/${slotId}`, slotDeletePatch, verified.caller.idToken);
+    }
 
     const appsData = await dbRead("applications", verified.caller.idToken);
     const entries = Object.entries((appsData ?? {}) as Record<string, Record<string, unknown>>)
@@ -105,16 +130,20 @@ export async function POST(req: NextRequest) {
     const target = pickApplicationBySlot(slot, entries);
     
     if (target) {
-      await dbPatch(`applications/${target.id}`, {
-        [`interviewEvaluations/${verified.caller.uid}`]: null
-      }, verified.caller.idToken);
+      const appEvalMap = asEvalMap(target.row.interviewEvaluations);
+      const appDeletePatch: Record<string, unknown> = {};
+      for (const uid of Object.keys(appEvalMap)) {
+        appDeletePatch[`interviewEvaluations/${uid}`] = null;
+      }
+      if (Object.keys(appDeletePatch).length > 0) {
+        await dbPatch(`applications/${target.id}`, appDeletePatch, verified.caller.idToken);
+      }
     }
     
     return NextResponse.json({ success: true, deleted: true });
   }
 
-  const validRatings: Rating[] = ["Extremely Qualified", "Qualified", "Decent", "Unqualified"];
-  if (!rating || !validRatings.includes(rating)) {
+  if (!rating || !VALID_RATINGS.includes(rating)) {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
   }
 
@@ -131,21 +160,36 @@ export async function POST(req: NextRequest) {
     updatedAt: new Date().toISOString(),
   };
 
-  await dbPatch(`interviewSlots/${slotId}/evaluationByUid/${verified.caller.uid}`, evalEntry, verified.caller.idToken);
+  // Strict normalization: keep only one evaluation record per slot.
+  const slotEvalMap = asEvalMap(slot.evaluationByUid);
+  const slotPatch: Record<string, unknown> = {};
+  for (const uid of Object.keys(slotEvalMap)) {
+    if (uid !== verified.caller.uid) {
+      slotPatch[`evaluationByUid/${uid}`] = null;
+    }
+  }
+  slotPatch[`evaluationByUid/${verified.caller.uid}`] = evalEntry;
+  await dbPatch(`interviewSlots/${slotId}`, slotPatch, verified.caller.idToken);
 
   const appsData = await dbRead("applications", verified.caller.idToken);
   const entries = Object.entries((appsData ?? {}) as Record<string, Record<string, unknown>>)
     .map(([id, row]) => ({ id, row: row ?? {} }));
   const target = pickApplicationBySlot(slot, entries);
   if (target) {
-    await dbPatch(`applications/${target.id}/interviewEvaluations/${verified.caller.uid}`, {
+    const appEvalMap = asEvalMap(target.row.interviewEvaluations);
+    const appPatch: Record<string, unknown> = {};
+    for (const uid of Object.keys(appEvalMap)) {
+      if (uid !== verified.caller.uid) {
+        appPatch[`interviewEvaluations/${uid}`] = null;
+      }
+    }
+    appPatch[`interviewEvaluations/${verified.caller.uid}`] = {
       ...evalEntry,
       slotId,
-    }, verified.caller.idToken);
-    await dbPatch(`applications/${target.id}`, { 
-      status: "Interview Completed",
-      updatedAt: new Date().toISOString() 
-    }, verified.caller.idToken);
+    };
+    appPatch.status = "Interview Completed";
+    appPatch.updatedAt = new Date().toISOString();
+    await dbPatch(`applications/${target.id}`, appPatch, verified.caller.idToken);
   }
 
   return NextResponse.json({ success: true, applicationId: target?.id ?? "" });

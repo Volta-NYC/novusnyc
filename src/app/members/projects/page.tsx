@@ -710,6 +710,7 @@ export default function BusinessesPage() {
   };
 
   const isNonAdminMember = authRole !== "admin";
+  const isMemberRestricted = authRole === "member";
   const myProjects = isNonAdminMember ? filtered.filter(isProjectMine) : [];
   const otherProjects = isNonAdminMember ? filtered.filter((p) => !isProjectMine(p)) : filtered;
   const renderProjectCard = (b: Business) => (
@@ -739,8 +740,8 @@ export default function BusinessesPage() {
         </div>
       </div>
 
-      {/* Contact info */}
-      {(b.ownerName || b.ownerEmail || b.ownerAlternateEmail || b.phone || b.alternatePhone || b.website) && (
+      {/* Contact info (hidden for member role) */}
+      {!isMemberRestricted && (b.ownerName || b.ownerEmail || b.ownerAlternateEmail || b.phone || b.alternatePhone || b.website) && (
         <div className="bg-white/4 rounded-lg px-3 py-2 space-y-1">
           {b.ownerName && (
             <p className="text-white/70 text-xs font-medium">{b.ownerName}</p>
@@ -765,24 +766,26 @@ export default function BusinessesPage() {
         </div>
       )}
 
-      {/* Assigned members */}
-      <div className="border-t border-white/5 pt-2">
-        <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Assigned Members</p>
-        {(b.teamMembers ?? []).length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {(b.teamMembers ?? []).map((member) => (
-              <span
-                key={member}
-                className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border bg-[#85CC17]/15 text-[#85CC17] border-[#85CC17]/25"
-              >
-                {member}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-white/35 text-xs">No members assigned yet.</p>
-        )}
-      </div>
+      {/* Assigned members (hidden for member role) */}
+      {!isMemberRestricted && (
+        <div className="border-t border-white/5 pt-2">
+          <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Assigned Members</p>
+          {(b.teamMembers ?? []).length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {(b.teamMembers ?? []).map((member) => (
+                <span
+                  key={member}
+                  className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border bg-[#85CC17]/15 text-[#85CC17] border-[#85CC17]/25"
+                >
+                  {member}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-white/35 text-xs">No members assigned yet.</p>
+          )}
+        </div>
+      )}
 
       {/* Actions */}
       {canEdit && (
@@ -803,6 +806,27 @@ export default function BusinessesPage() {
   );
 
   const renderProjectCompactRow = (b: Business) => {
+    if (isMemberRestricted) {
+      return (
+        <div
+          key={b.id}
+          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 sm:grid-cols-[minmax(220px,2fr)_140px_140px] gap-2 sm:gap-3 items-center"
+        >
+          <div className="min-w-0">
+            <p className="text-white font-semibold text-sm leading-tight truncate" title={b.name}>
+              {b.name}
+              {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
+              {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
+            </p>
+          </div>
+          <div className="text-xs"><Badge label={b.projectStatus} /></div>
+          <div className="text-xs text-white/70 min-w-0 truncate" title={b.division || "—"}>
+            {b.division || "—"}
+          </div>
+        </div>
+      );
+    }
+
     const memberList = (b.teamMembers ?? []).filter(Boolean);
     const teamSummary = [
       b.teamLead ? `Lead: ${b.teamLead}` : "",
@@ -910,7 +934,7 @@ export default function BusinessesPage() {
 
       {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search projects, owners, leads…" />
+        <SearchBar value={search} onChange={setSearch} placeholder={isMemberRestricted ? "Search project names…" : "Search projects, owners, leads…"} />
         <select
           value={filterDiv}
           onChange={e => setFilterDiv(e.target.value)}
