@@ -204,6 +204,7 @@ export default function ApplicantsPage() {
   const [bulkPromoting, setBulkPromoting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
+  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
   // Accept modal state
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
   const [acceptRole, setAcceptRole] = useState("Analyst");
@@ -876,6 +877,40 @@ export default function ApplicantsPage() {
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
+        <div className="relative group">
+          <div className="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <button
+              type="button"
+              className="h-7 px-2 rounded-md border border-white/15 bg-[#0F1014]/95 text-[11px] text-white/70 hover:text-white hover:border-white/30 transition-colors"
+              onClick={() => setColumnsMenuOpen((prev) => !prev)}
+            >
+              Columns
+            </button>
+            {columnsMenuOpen && (
+              <div className="absolute right-0 mt-1 w-52 rounded-lg border border-white/15 bg-[#0F1014] p-2 shadow-xl">
+                <p className="px-1 pb-1 text-[10px] uppercase tracking-wide text-white/45">Show Columns</p>
+                <div className="max-h-56 overflow-y-auto space-y-1">
+                  {ALL_COLUMNS.filter((col) => col.key !== "actions").map((col) => {
+                    const checked = !hiddenColumns.has(col.key);
+                    return (
+                      <label key={col.key} className="flex items-center gap-2 px-1 py-0.5 text-[11px] text-white/80">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) showColumn(col.key);
+                            else hideColumn(col.key);
+                          }}
+                          className="accent-[#85CC17]"
+                        />
+                        <span className="truncate">{col.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         <table className="w-full text-[11px] leading-4">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
@@ -914,20 +949,6 @@ export default function ApplicantsPage() {
                   </span>
                 </th>
               ))}
-              {/* Inline + buttons for hidden columns */}
-              {Array.from(hiddenColumns).map((key) => {
-                const col = ALL_COLUMNS.find((c) => c.key === key);
-                return (
-                  <th
-                    key={`hidden-${key}`}
-                    className="px-1 py-2 text-center w-[28px] cursor-pointer"
-                    title={`Show ${col?.label ?? key}`}
-                    onClick={() => showColumn(key)}
-                  >
-                    <span className="text-[10px] text-white/30 hover:text-white/60 transition-colors">+</span>
-                  </th>
-                );
-              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -1135,6 +1156,7 @@ export default function ApplicantsPage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {loadingData ? <p className="text-xs text-white/40 mt-3">Loading applicants...</p> : null}

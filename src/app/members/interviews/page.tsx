@@ -1934,6 +1934,7 @@ function InterviewsContent() {
                 onChange={setManualStartTimeInput}
                 options={typedTimeOptions}
                 placeholder="e.g. 9:00 AM"
+                className="appearance-none"
               />
             </Field>
             <Field label="End Time">
@@ -1942,6 +1943,7 @@ function InterviewsContent() {
                 onChange={setManualEndTimeInput}
                 options={typedTimeOptions}
                 placeholder="e.g. 10:00 AM"
+                className="appearance-none"
               />
             </Field>
               <Field label="Interviewer(s)">
@@ -2434,7 +2436,7 @@ function InterviewsContent() {
             <select
               value={rescheduleTargetSlotId}
               onChange={(e) => setRescheduleTargetSlotId(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+              className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               {availableFutureSlots.length === 0 && (
                 <option value="">No available interview times</option>

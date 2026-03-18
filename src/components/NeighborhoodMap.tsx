@@ -64,7 +64,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
           <CircleMarker
             key={n.name}
             center={[n.lat, n.lng]}
-            radius={22}
+            radius={16}
             fillColor="#85CC17"
             fillOpacity={0.08}
             color="#85CC17"
@@ -85,7 +85,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
           <CircleMarker
             key={`${b.name}-${i}`}
             center={[b.lat, b.lng]}
-            radius={9}
+            radius={6}
             fillColor={b.hex}
             fillOpacity={0.9}
             color={b.hex}
