@@ -83,12 +83,21 @@ export interface Business {
     | "blue-soft"
     | "blue-mid"
     | "blue-deep"
+    | "lime-soft"
+    | "lime-mid"
+    | "lime-deep"
     | "green-soft"
     | "green-mid"
     | "green-deep"
     | "amber-soft"
     | "amber-mid"
-    | "amber-deep";
+    | "amber-deep"
+    | "pink-soft"
+    | "pink-mid"
+    | "pink-deep"
+    | "red-soft"
+    | "red-mid"
+    | "red-deep";
 }
 
 export interface Task {

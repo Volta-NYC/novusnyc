@@ -128,3 +128,14 @@ main {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #F7F7F2; }
 ::-webkit-scrollbar-thumb { background: #d1d1cc; border-radius: 3px; }
+
+/* Keep Leaflet map layers beneath nav/dropdowns on mobile and desktop */
+.leaflet-container {
+  z-index: 0;
+}
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+  z-index: 1 !important;
+}

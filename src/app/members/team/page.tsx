@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, TextArea, Empty, useConfirm, AutocompleteInput, AutocompleteTagInput,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm, AutocompleteInput,
 } from "@/components/members/ui";
 import {
-  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, type TeamMember,
+  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, type TeamMember, type UserProfile,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -66,11 +66,6 @@ type ImportedMember = {
   grade: string;
   track: TrackKey;
 };
-
-const TEAM_EMAIL_FROM_OPTIONS = [
-  { value: "info@voltanyc.org", label: "info@voltanyc.org" },
-  { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
-];
 
 function normalizeText(v: string): string {
   return v.trim().replace(/\s+/g, " ");
@@ -178,6 +173,7 @@ function parseTrack(raw: string): TrackKey {
 
 export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
+  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -187,26 +183,15 @@ export default function TeamPage() {
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
-  const [commsOpen, setCommsOpen] = useState(false);
-  const [commsDivisions, setCommsDivisions] = useState<string[]>([]);
-  const [commsSchools, setCommsSchools] = useState<string[]>([]);
-  const [commsRoles, setCommsRoles] = useState<string[]>([]);
-  const [commsTeams, setCommsTeams] = useState<string[]>([]);
-  const [commsFrom, setCommsFrom] = useState<string>("info@voltanyc.org");
-  const [commsSelectedIds, setCommsSelectedIds] = useState<string[]>([]);
-  const [commsSubject, setCommsSubject] = useState("");
-  const [commsMessage, setCommsMessage] = useState("");
-  const [commsContentMode, setCommsContentMode] = useState<"plain" | "html">("plain");
-  const [commsSending, setCommsSending] = useState(false);
-  const [commsStatus, setCommsStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ask, Dialog } = useConfirm();
-  const { authRole, user } = useAuth();
+  const { authRole } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeUserProfiles(setUserProfiles), []);
 
   // Generic field updater used by all form inputs.
   const setField = (key: string, value: unknown) =>
@@ -458,7 +443,17 @@ export default function TeamPage() {
     return matchesSearch;
   });
 
-  const SORT_COLUMNS = ["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted"];
+  const profileByEmail = useMemo(() => {
+    const map = new Map<string, UserProfile>();
+    for (const profile of userProfiles) {
+      const key = normalizeKey(profile.email ?? "");
+      if (!key) continue;
+      map.set(key, profile);
+    }
+    return map;
+  }, [userProfiles]);
+
+  const SORT_COLUMNS = ["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
 
   const compareMemberByCol = (a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
@@ -474,6 +469,11 @@ export default function TeamPage() {
       case 4: return (a.school || "").localeCompare(b.school || "");
       case 5: return (a.grade || "").localeCompare(b.grade || "");
       case 6: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
+      case 7: {
+        const aProfile = profileByEmail.get(normalizeKey(a.email ?? "")) ?? profileByEmail.get(normalizeKey(a.alternateEmail ?? ""));
+        const bProfile = profileByEmail.get(normalizeKey(b.email ?? "")) ?? profileByEmail.get(normalizeKey(b.alternateEmail ?? ""));
+        return (aProfile?.createdAt || "").localeCompare(bProfile?.createdAt || "");
+      }
       default: return 0;
     }
   };
@@ -518,16 +518,6 @@ export default function TeamPage() {
     return 0;
   });
 
-  const commsDivisionOptions = ["Tech", "Marketing", "Finance", "Other"];
-  const commsSchoolOptions = Array.from(
-    new Set(team.map((member) => (member.school ?? "").trim()).filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b));
-  const commsRoleOptions = Array.from(
-    new Set(team.map((member) => (member.role ?? "").trim()).filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b));
-  const commsTeamOptions = Array.from(
-    new Set(team.map((member) => member.pod).filter((value) => value && value !== "—"))
-  ).sort((a, b) => a.localeCompare(b));
   const formTeamOptions = Array.from(
     new Set([
       ...TECH_TEAM_SEED,
@@ -536,109 +526,6 @@ export default function TeamPage() {
       ...team.map((member) => (member.pod ?? "").trim()).filter(Boolean),
     ])
   ).sort((a, b) => a.localeCompare(b));
-
-  const commsFilteredMembers = team.filter((member) => {
-    const divisions = member.divisions ?? [];
-    const teamCode = member.pod || "—";
-    const divisionMatch = commsDivisions.length === 0 || divisions.some((d) => commsDivisions.includes(d));
-    const schoolMatch = commsSchools.length === 0 || commsSchools.includes((member.school ?? "").trim());
-    const roleMatch = commsRoles.length === 0 || commsRoles.includes((member.role ?? "").trim());
-    const teamMatch = commsTeams.length === 0 || commsTeams.includes(teamCode);
-    return divisionMatch && schoolMatch && roleMatch && teamMatch;
-  });
-
-  const commsSelectedEmails = Array.from(
-    new Set(
-      commsFilteredMembers
-        .filter((member) => commsSelectedIds.includes(member.id))
-        .map((member) => (member.email ?? "").trim().toLowerCase())
-        .filter(Boolean)
-    )
-  );
-
-  const openCommsModal = () => {
-    setCommsOpen(true);
-    setCommsDivisions([]);
-    setCommsSchools([]);
-    setCommsRoles([]);
-    setCommsTeams([]);
-    setCommsFrom("info@voltanyc.org");
-    setCommsContentMode("plain");
-    setCommsSelectedIds(team.map((member) => member.id));
-    setCommsSubject("");
-    setCommsMessage("");
-    setCommsStatus(null);
-  };
-
-  const toggleCommsMember = (id: string, checked: boolean) => {
-    setCommsSelectedIds((prev) => {
-      if (checked) return prev.includes(id) ? prev : [...prev, id];
-      return prev.filter((value) => value !== id);
-    });
-  };
-
-  const selectAllCommsFiltered = () => {
-    setCommsSelectedIds((prev) => {
-      const set = new Set(prev);
-      commsFilteredMembers.forEach((member) => set.add(member.id));
-      return Array.from(set);
-    });
-  };
-
-  const clearCommsFiltered = () => {
-    const removeSet = new Set(commsFilteredMembers.map((member) => member.id));
-    setCommsSelectedIds((prev) => prev.filter((id) => !removeSet.has(id)));
-  };
-
-  const sendCommsEmail = async () => {
-    if (!commsSubject.trim() || !commsMessage.trim()) {
-      setCommsStatus("Please add a subject and message.");
-      return;
-    }
-    if (commsSelectedEmails.length === 0) {
-      setCommsStatus("No recipients selected.");
-      return;
-    }
-    setCommsSending(true);
-    setCommsStatus("Sending…");
-    try {
-      if (!user) {
-        setCommsStatus("Not authenticated.");
-        return;
-      }
-      const token = await user.getIdToken();
-      const res = await fetch("/api/members/team-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fromAddress: commsFrom,
-          subject: commsSubject.trim(),
-          message: commsMessage.trim(),
-          contentMode: commsContentMode,
-          recipients: commsSelectedEmails,
-        }),
-      });
-      if (!res.ok) {
-        setCommsStatus("Could not send email.");
-        return;
-      }
-      const payload = await res.json() as { sent?: number; failed?: string[] };
-      const sentCount = payload.sent ?? 0;
-      const failedCount = payload.failed?.length ?? 0;
-      setCommsStatus(
-        failedCount > 0
-          ? `Sent to ${sentCount}. Failed: ${failedCount}.`
-          : `Sent to ${sentCount} members.`
-      );
-    } catch {
-      setCommsStatus("Could not send email.");
-    } finally {
-      setCommsSending(false);
-    }
-  };
 
   const setTrack = (track: TrackKey) => {
     if (track === "—") {
@@ -680,7 +567,6 @@ export default function TeamPage() {
       {/* Search controls */}
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
-        {canEdit && <Btn variant="primary" onClick={openCommsModal}>Send Emails</Btn>}
         <div className="relative">
           <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
             Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
@@ -730,8 +616,8 @@ export default function TeamPage() {
         <table className="w-full min-w-[1060px] text-[11px] leading-4 table-fixed">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
-              {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Actions"].map((col, idx) => {
-                const sortable = [0, 1, 2, 3, 4, 5, 6].includes(idx);
+              {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
+                const sortable = [0, 1, 2, 3, 4, 5, 6, 7].includes(idx);
                 const primaryRule = sortRules[0];
                 const isActive = primaryRule?.col === idx;
                 const dir = isActive ? primaryRule.dir : "asc";
@@ -759,6 +645,8 @@ export default function TeamPage() {
             {sorted.map((member) => {
               const track = getMemberTrack(member);
               const avatar = getTrackAvatarStyles(track);
+              const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
+              const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
               return (
                 <tr
                   key={member.id}
@@ -806,6 +694,9 @@ export default function TeamPage() {
                     <span className="text-white/50">{member.acceptedDate || "—"}</span>
                   </td>
                   <td className="px-2 py-1.5 whitespace-nowrap">
+                    <span className="text-white/50">{accountCreated}</span>
+                  </td>
+                  <td className="px-2 py-1.5 whitespace-nowrap">
                     <div className="flex gap-1 flex-nowrap">
                       {canEdit && <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
                       {canEdit && <Btn size="sm" variant="danger" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => ask(async () => deleteTeamMember(member.id))}>Delete</Btn>}
@@ -823,143 +714,6 @@ export default function TeamPage() {
           action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first member</Btn> : undefined}
         />
       )}
-
-      <Modal open={commsOpen} onClose={() => setCommsOpen(false)} title="Send Member Email">
-        <div className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-3">
-            <Field label="Division">
-              <AutocompleteTagInput
-                values={commsDivisions}
-                onChange={setCommsDivisions}
-                options={commsDivisionOptions}
-                placeholder="Type division…"
-              />
-            </Field>
-            <Field label="School">
-              <AutocompleteTagInput
-                values={commsSchools}
-                onChange={setCommsSchools}
-                options={commsSchoolOptions}
-                placeholder="Type school…"
-              />
-            </Field>
-            <Field label="Role">
-              <AutocompleteTagInput
-                values={commsRoles}
-                onChange={setCommsRoles}
-                options={commsRoleOptions}
-                placeholder="Type role…"
-              />
-            </Field>
-            <Field label="Team">
-              <AutocompleteTagInput
-                values={commsTeams}
-                onChange={setCommsTeams}
-                options={commsTeamOptions}
-                placeholder="Type team code…"
-              />
-            </Field>
-          </div>
-
-          <div className="bg-[#0F1014] border border-white/10 rounded-xl p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <p className="text-xs text-white/55">
-                {commsSelectedEmails.length} selected · {commsFilteredMembers.length} in current filter
-              </p>
-              <div className="flex gap-2">
-                <Btn size="sm" variant="secondary" onClick={selectAllCommsFiltered}>Select filtered</Btn>
-                <Btn size="sm" variant="ghost" onClick={clearCommsFiltered}>Clear filtered</Btn>
-              </div>
-            </div>
-            <div className="max-h-44 overflow-y-auto border border-white/8 rounded-lg">
-              <table className="w-full text-xs">
-                <thead className="bg-[#141821] sticky top-0">
-                  <tr>
-                    <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
-                    <th className="text-left px-3 py-2 text-white/45">Name</th>
-                    <th className="text-left px-3 py-2 text-white/45">Primary Email</th>
-                    <th className="text-left px-3 py-2 text-white/45">School</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {commsFilteredMembers.map((member) => {
-                    const checked = commsSelectedIds.includes(member.id);
-                    return (
-                      <tr key={member.id} className="hover:bg-white/5">
-                        <td className="px-3 py-2">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => toggleCommsMember(member.id, e.target.checked)}
-                            className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-white/75">{member.name}</td>
-                        <td className="px-3 py-2 text-white/65 font-mono">{member.email || "—"}</td>
-                        <td className="px-3 py-2 text-white/45">{member.school || "—"}</td>
-                      </tr>
-                    );
-                  })}
-                  {commsFilteredMembers.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-white/35">No members in this filter.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <Field label="Subject" required>
-            <Input value={commsSubject} onChange={(e) => setCommsSubject(e.target.value)} />
-          </Field>
-          <Field label="Send from" required>
-            <select
-              value={commsFrom}
-              onChange={(e) => setCommsFrom(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-            >
-              {TEAM_EMAIL_FROM_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Message Format" required>
-            <select
-              value={commsContentMode}
-              onChange={(e) => setCommsContentMode(e.target.value === "html" ? "html" : "plain")}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-            >
-              <option value="plain">Plain Text</option>
-              <option value="html">HTML (links/images supported)</option>
-            </select>
-          </Field>
-          <Field label="Message" required>
-            <TextArea
-              rows={9}
-              value={commsMessage}
-              onChange={(e) => setCommsMessage(e.target.value)}
-              placeholder={
-                commsContentMode === "html"
-                  ? "<p>Hi team,</p><p>Update with <a href=\"https://...\">link</a>.</p><img src=\"https://...\" alt=\"\" />"
-                  : "Write your email..."
-              }
-            />
-          </Field>
-          {commsStatus && <p className="text-xs text-white/60">{commsStatus}</p>}
-
-          <div className="flex justify-end gap-2">
-            <Btn variant="ghost" onClick={() => setCommsOpen(false)}>Close</Btn>
-            <Btn
-              variant="primary"
-              onClick={sendCommsEmail}
-              disabled={commsSending || commsSelectedEmails.length === 0}
-            >
-              {commsSending ? "Sending..." : `Send Emails (${commsSelectedEmails.length})`}
-            </Btn>
-          </div>
-        </div>
-      </Modal>
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingMember ? "Edit Member" : "New Member"}>

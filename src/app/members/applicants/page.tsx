@@ -987,6 +987,11 @@ export default function ApplicantsPage() {
             {filtered.map((app) => {
               const latestInterview = matchBookedSlot(app);
               const showResume = canViewResumeForApp(app);
+              const statusKey = normalize(app.status);
+              const isAccepted = statusKey === "accepted";
+              const hasBookedInterview = !!latestInterview || statusKey === "interview scheduled" || statusKey === "interview completed";
+              const canSendInviteAction = !isAccepted && !hasBookedInterview;
+              const canAcceptAction = !isAccepted;
               return (
                 <tr key={app.id} className="hover:bg-white/3 transition-colors">
                   {selectionMode !== "none" && (
@@ -1138,22 +1143,22 @@ export default function ApplicantsPage() {
                                   <Btn
                                     size="sm"
                                     variant="secondary"
-                                    className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap"
+                                    className={`!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap ${!canSendInviteAction ? "opacity-50" : ""}`}
                                     onClick={() => sendInviteForApplicant(app)}
-                                    disabled={sendingInvites || sendingReminders}
+                                    disabled={sendingInvites || sendingReminders || !canSendInviteAction}
                                   >
                                     {app.interviewInviteSentAt ? "Resend Invite" : "Send Invite"}
                                   </Btn>
                                   <Btn
                                     size="sm"
                                     variant="primary"
-                                    className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap"
+                                    className={`!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap ${!canAcceptAction ? "opacity-50" : ""}`}
                                     onClick={() => {
                                       setAcceptRole(app.finalDecisionRole || "Analyst");
                                       setAcceptSendEmail(true);
                                       setAcceptModalApp(app);
                                     }}
-                                    disabled={bulkPromoting}
+                                    disabled={bulkPromoting || !canAcceptAction}
                                   >
                                     Accept
                                   </Btn>

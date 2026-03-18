@@ -8,12 +8,21 @@ const config: Config = {
     "./src/data/**/*.{js,ts}",
   ],
   safelist: [
-    "bg-v-green",
-    "bg-v-blue",
-    "bg-orange-400",
-    "bg-amber-400",
-    "bg-pink-400",
-    "bg-purple-400"
+    "bg-blue-300",
+    "bg-blue-500",
+    "bg-blue-700",
+    "bg-lime-300",
+    "bg-lime-500",
+    "bg-lime-700",
+    "bg-amber-300",
+    "bg-amber-500",
+    "bg-amber-700",
+    "bg-pink-300",
+    "bg-pink-500",
+    "bg-pink-700",
+    "bg-red-300",
+    "bg-red-500",
+    "bg-red-700",
   ],
   theme: {
     extend: {

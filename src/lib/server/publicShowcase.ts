@@ -4,21 +4,21 @@ import { getAdminDB } from "@/lib/firebaseAdmin";
 
 export type PublicShowcaseStatus = "In Progress" | "Active" | "Upcoming";
 export type PublicShowcaseColor =
-  | "green"
-  | "blue"
-  | "orange"
-  | "amber"
-  | "pink"
-  | "purple"
   | "blue-soft"
   | "blue-mid"
   | "blue-deep"
-  | "green-soft"
-  | "green-mid"
-  | "green-deep"
+  | "lime-soft"
+  | "lime-mid"
+  | "lime-deep"
   | "amber-soft"
   | "amber-mid"
-  | "amber-deep";
+  | "amber-deep"
+  | "pink-soft"
+  | "pink-mid"
+  | "pink-deep"
+  | "red-soft"
+  | "red-mid"
+  | "red-deep";
 
 export interface PublicShowcaseCard {
   id: string;
@@ -65,33 +65,47 @@ function asStringArray(value: unknown): string[] {
 
 function normalizeColor(value: unknown): PublicShowcaseColor {
   const key = asText(value).toLowerCase();
-  if (
-    key === "green"
-    || key === "blue"
-    || key === "orange"
-    || key === "amber"
-    || key === "pink"
-    || key === "purple"
-    || key === "blue-soft"
-    || key === "blue-mid"
-    || key === "blue-deep"
-    || key === "green-soft"
-    || key === "green-mid"
-    || key === "green-deep"
-    || key === "amber-soft"
-    || key === "amber-mid"
-    || key === "amber-deep"
-  ) {
-    return key;
+  switch (key) {
+    case "blue-soft":
+    case "blue-mid":
+    case "blue-deep":
+    case "lime-soft":
+    case "lime-mid":
+    case "lime-deep":
+    case "amber-soft":
+    case "amber-mid":
+    case "amber-deep":
+    case "pink-soft":
+    case "pink-mid":
+    case "pink-deep":
+    case "red-soft":
+    case "red-mid":
+    case "red-deep":
+      return key;
+    // Legacy mappings
+    case "green":
+    case "green-mid":
+    case "green-soft":
+      return "lime-mid";
+    case "green-deep":
+      return "lime-deep";
+    case "blue":
+      return "blue-mid";
+    case "amber":
+      return "amber-mid";
+    case "orange":
+      return "red-mid";
+    case "pink":
+      return "pink-mid";
+    case "purple":
+      return "pink-deep";
+    default:
+      return "blue-mid";
   }
-  return "green-mid";
 }
 
-function defaultColorFromDivision(value: unknown): PublicShowcaseColor {
-  const key = asText(value);
-  if (key === "Tech") return "blue-mid";
-  if (key === "Finance") return "amber-mid";
-  return "green-mid";
+function defaultShowcaseColor(): PublicShowcaseColor {
+  return "blue-mid";
 }
 
 function normalizeStatusFromShowcase(value: unknown): PublicShowcaseStatus | null {
@@ -118,11 +132,6 @@ function defaultServicesFromDivision(value: unknown): string[] {
 function inferDivision(value: unknown, row: Record<string, unknown>): "Tech" | "Marketing" | "Finance" {
   const direct = asText(value);
   if (direct === "Tech" || direct === "Marketing" || direct === "Finance") return direct;
-
-  const color = asText(row.showcaseColor).toLowerCase();
-  if (color.includes("blue")) return "Tech";
-  if (color.includes("amber") || color === "orange") return "Finance";
-  if (color.includes("green")) return "Marketing";
 
   const services = asStringArray(row.showcaseServices).map((item) => item.toLowerCase());
   if (services.some((item) => item.includes("grant") || item.includes("finance") || item.includes("ops"))) return "Finance";
@@ -183,7 +192,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     const imageUrl = asText(row.showcaseImageUrl);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
-      : defaultColorFromDivision(division);
+      : defaultShowcaseColor();
     const featuredOnHome = asBool(row.showcaseFeaturedOnHome, status !== "Upcoming");
 
     const card: PublicShowcaseCard = {

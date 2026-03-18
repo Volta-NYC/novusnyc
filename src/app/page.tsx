@@ -21,21 +21,31 @@ export const metadata: Metadata = {
 };
 
 const SHOWCASE_COLOR_CLASS: Record<string, string> = {
-  green: "bg-v-green",
-  blue: "bg-v-blue",
-  orange: "bg-orange-400",
-  amber: "bg-amber-400",
-  pink: "bg-pink-400",
-  purple: "bg-purple-400",
   "blue-soft": "bg-blue-300",
   "blue-mid": "bg-blue-500",
   "blue-deep": "bg-blue-700",
-  "green-soft": "bg-lime-300",
-  "green-mid": "bg-lime-500",
-  "green-deep": "bg-lime-700",
+  "lime-soft": "bg-lime-300",
+  "lime-mid": "bg-lime-500",
+  "lime-deep": "bg-lime-700",
   "amber-soft": "bg-amber-300",
   "amber-mid": "bg-amber-500",
   "amber-deep": "bg-amber-700",
+  "pink-soft": "bg-pink-300",
+  "pink-mid": "bg-pink-500",
+  "pink-deep": "bg-pink-700",
+  "red-soft": "bg-red-300",
+  "red-mid": "bg-red-500",
+  "red-deep": "bg-red-700",
+  // Safety mapping for older entries.
+  green: "bg-lime-500",
+  blue: "bg-blue-500",
+  orange: "bg-red-500",
+  amber: "bg-amber-500",
+  pink: "bg-pink-500",
+  purple: "bg-pink-700",
+  "green-soft": "bg-lime-300",
+  "green-mid": "bg-lime-500",
+  "green-deep": "bg-lime-700",
 };
 
 export default async function Home() {
@@ -48,7 +58,7 @@ export default async function Home() {
       type: card.type,
       neighborhood: card.neighborhood,
       services: card.services,
-      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-v-green",
+      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
       desc: card.desc,
       url: card.url,
       imageUrl: card.imageUrl,
@@ -233,7 +243,7 @@ export default async function Home() {
                 <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                   <div className={`${p.colorClass} h-2`} />
                   <div
-                    className="mx-6 mt-6 rounded-xl border border-v-border aspect-[6/5] flex items-center justify-center bg-white bg-cover bg-center"
+                    className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border aspect-[11/10] sm:aspect-[6/5] flex items-center justify-center bg-white bg-cover bg-center"
                     style={p.imageUrl ? { backgroundImage: `url("${p.imageUrl.replace(/"/g, "%22")}")` } : undefined}
                   >
                     {!p.imageUrl && (

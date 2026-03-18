@@ -21,21 +21,31 @@ export const metadata: Metadata = {
 };
 
 const SHOWCASE_COLOR_CLASS: Record<string, string> = {
-  green: "bg-v-green",
-  blue: "bg-v-blue",
-  orange: "bg-orange-400",
-  amber: "bg-amber-400",
-  pink: "bg-pink-400",
-  purple: "bg-purple-400",
   "blue-soft": "bg-blue-300",
   "blue-mid": "bg-blue-500",
   "blue-deep": "bg-blue-700",
-  "green-soft": "bg-lime-300",
-  "green-mid": "bg-lime-500",
-  "green-deep": "bg-lime-700",
+  "lime-soft": "bg-lime-300",
+  "lime-mid": "bg-lime-500",
+  "lime-deep": "bg-lime-700",
   "amber-soft": "bg-amber-300",
   "amber-mid": "bg-amber-500",
   "amber-deep": "bg-amber-700",
+  "pink-soft": "bg-pink-300",
+  "pink-mid": "bg-pink-500",
+  "pink-deep": "bg-pink-700",
+  "red-soft": "bg-red-300",
+  "red-mid": "bg-red-500",
+  "red-deep": "bg-red-700",
+  // Safety mapping for older entries.
+  green: "bg-lime-500",
+  blue: "bg-blue-500",
+  orange: "bg-red-500",
+  amber: "bg-amber-500",
+  pink: "bg-pink-500",
+  purple: "bg-pink-700",
+  "green-soft": "bg-lime-300",
+  "green-mid": "bg-lime-500",
+  "green-deep": "bg-lime-700",
 };
 
 const NeighborhoodMap = dynamic(() => import("@/components/NeighborhoodMap"), {
@@ -56,7 +66,7 @@ export default async function Showcase() {
       neighborhood: card.neighborhood,
       services: card.services,
       status: card.status,
-      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-v-green",
+      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
       desc: card.desc,
       url: card.url,
       imageUrl: card.imageUrl,
@@ -123,7 +133,7 @@ export default async function Showcase() {
         </div>
 
         {/* ── MAP ───────────────────────────────────────────────── */}
-        <div className="w-full h-[520px] md:h-[600px] relative border-t border-white/10">
+        <div className="w-full h-[520px] md:h-[600px] relative z-0 border-t border-white/10">
           <NeighborhoodMap projects={projects.map(p => ({
             name: p.name,
             type: p.type,
@@ -137,7 +147,7 @@ export default async function Showcase() {
       </section>
 
       {/* ── NEIGHBORHOOD STRIP ───────────────────────────────── */}
-      <section className="bg-white border-b border-v-border py-6 overflow-hidden">
+      <section className="relative z-10 bg-white border-b border-v-border py-6 overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
             Active neighborhoods
@@ -172,7 +182,7 @@ export default async function Showcase() {
                 <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
                   <div className={`${p.colorClass} h-2`} />
                   <div
-                    className="mx-7 mt-7 rounded-xl border border-v-border bg-v-bg aspect-[6/5] flex items-center justify-center bg-cover bg-center"
+                    className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg aspect-[11/10] sm:aspect-[6/5] flex items-center justify-center bg-cover bg-center"
                     style={p.imageUrl ? { backgroundImage: `url("${p.imageUrl.replace(/"/g, "%22")}")` } : undefined}
                   >
                     {!p.imageUrl && (

@@ -14,8 +14,8 @@ const links = [
 ];
 
 const moreLinks = [
-  { href: "/guides", label: "Guides" },
-  { href: "/updates", label: "Updates" },
+  { href: "/guides", label: "Guides for Businesses" },
+  { href: "/updates", label: "Progress Updates" },
   { href: "/members/login", label: "Member Login" },
 ];
 

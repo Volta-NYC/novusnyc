@@ -21,45 +21,38 @@ const DIVISION_PUBLIC_LABEL: Record<string, string> = {
   Finance: "Finance & Operations",
 };
 type ShowcaseColorValue =
-  | "green"
-  | "blue"
-  | "orange"
-  | "amber"
-  | "pink"
-  | "purple"
   | "blue-soft"
   | "blue-mid"
   | "blue-deep"
-  | "green-soft"
-  | "green-mid"
-  | "green-deep"
+  | "lime-soft"
+  | "lime-mid"
+  | "lime-deep"
   | "amber-soft"
   | "amber-mid"
-  | "amber-deep";
-
-const DIVISION_SHOWCASE_COLOR: Record<string, ShowcaseColorValue> = {
-  Tech: "blue-mid",
-  Marketing: "green-mid",
-  Finance: "amber-mid",
-};
+  | "amber-deep"
+  | "pink-soft"
+  | "pink-mid"
+  | "pink-deep"
+  | "red-soft"
+  | "red-mid"
+  | "red-deep";
 const SHOWCASE_STATUSES = ["In Progress", "Active", "Upcoming"];
 const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; swatch: string }> = [
-  { value: "blue-soft", label: "Tech · Soft", swatch: "#93C5FD" },
-  { value: "blue-mid", label: "Tech · Mid", swatch: "#3B82F6" },
-  { value: "blue-deep", label: "Tech · Deep", swatch: "#1D4ED8" },
-  { value: "green-soft", label: "Marketing · Soft", swatch: "#BEF264" },
-  { value: "green-mid", label: "Marketing · Mid", swatch: "#84CC16" },
-  { value: "green-deep", label: "Marketing · Deep", swatch: "#3F6212" },
-  { value: "amber-soft", label: "Finance · Soft", swatch: "#FCD34D" },
-  { value: "amber-mid", label: "Finance · Mid", swatch: "#F59E0B" },
-  { value: "amber-deep", label: "Finance · Deep", swatch: "#B45309" },
-  // Legacy palette kept for backwards compatibility.
-  { value: "green", label: "Legacy Green", swatch: "#85CC17" },
-  { value: "blue", label: "Legacy Blue", swatch: "#3B82F6" },
-  { value: "amber", label: "Legacy Amber", swatch: "#FBBF24" },
-  { value: "orange", label: "Legacy Orange", swatch: "#FB923C" },
-  { value: "pink", label: "Legacy Pink", swatch: "#F472B6" },
-  { value: "purple", label: "Legacy Purple", swatch: "#C084FC" },
+  { value: "blue-soft", label: "Blue · Soft", swatch: "#93C5FD" },
+  { value: "blue-mid", label: "Blue · Mid", swatch: "#3B82F6" },
+  { value: "blue-deep", label: "Blue · Deep", swatch: "#1D4ED8" },
+  { value: "lime-soft", label: "Lime · Soft", swatch: "#BEF264" },
+  { value: "lime-mid", label: "Lime · Mid", swatch: "#84CC16" },
+  { value: "lime-deep", label: "Lime · Deep", swatch: "#3F6212" },
+  { value: "amber-soft", label: "Amber · Soft", swatch: "#FCD34D" },
+  { value: "amber-mid", label: "Amber · Mid", swatch: "#F59E0B" },
+  { value: "amber-deep", label: "Amber · Deep", swatch: "#B45309" },
+  { value: "pink-soft", label: "Pink · Soft", swatch: "#F9A8D4" },
+  { value: "pink-mid", label: "Pink · Mid", swatch: "#EC4899" },
+  { value: "pink-deep", label: "Pink · Deep", swatch: "#9D174D" },
+  { value: "red-soft", label: "Red · Soft", swatch: "#FCA5A5" },
+  { value: "red-mid", label: "Red · Mid", swatch: "#EF4444" },
+  { value: "red-deep", label: "Red · Deep", swatch: "#991B1B" },
 ];
 const SHOWCASE_SERVICE_OPTIONS = [
   { label: "Website", track: "tech" },
@@ -69,6 +62,10 @@ const SHOWCASE_SERVICE_OPTIONS = [
   { label: "Grants", track: "finance" },
   { label: "Finance", track: "finance" },
 ] as const;
+const TEAM_EMAIL_FROM_OPTIONS = [
+  { value: "info@voltanyc.org", label: "info@voltanyc.org" },
+  { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
+];
 const SORT_OPTIONS = [
   { value: "status", label: "Status" },
   { value: "name", label: "Name" },
@@ -83,6 +80,47 @@ const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
   "On Hold": 3,
   Complete: 4,
 };
+
+function normalizeColorToken(raw: string): ShowcaseColorValue {
+  const key = raw.trim().toLowerCase();
+  switch (key) {
+    case "blue-soft":
+    case "blue-mid":
+    case "blue-deep":
+    case "lime-soft":
+    case "lime-mid":
+    case "lime-deep":
+    case "amber-soft":
+    case "amber-mid":
+    case "amber-deep":
+    case "pink-soft":
+    case "pink-mid":
+    case "pink-deep":
+    case "red-soft":
+    case "red-mid":
+    case "red-deep":
+      return key;
+    // Legacy values mapped to closest new palette value.
+    case "green":
+    case "green-mid":
+    case "green-soft":
+      return "lime-mid";
+    case "green-deep":
+      return "lime-deep";
+    case "blue":
+      return "blue-mid";
+    case "amber":
+      return "amber-mid";
+    case "orange":
+      return "red-mid";
+    case "pink":
+      return "pink-mid";
+    case "purple":
+      return "pink-deep";
+    default:
+      return "blue-mid";
+  }
+}
 
 function nextSortIndex(items: Business[]): number {
   const max = items.reduce((best, item) => {
@@ -103,6 +141,19 @@ function findHeaderIndex(headers: string[], aliases: string[]): number {
     if (index !== -1) return index;
   }
   return -1;
+}
+
+function normalizeKey(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function parseEmailFromDecoratedName(value: string): string {
+  const match = value.match(/\(([^()]*@[^()]+)\)\s*$/);
+  return match ? match[1].trim().toLowerCase() : "";
+}
+
+function stripDecoratedName(value: string): string {
+  return value.replace(/\s*\([^()]*\)\s*$/, "").trim();
 }
 
 function parseCsv(text: string): string[][] {
@@ -162,7 +213,7 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   showcaseDescription: "",
   showcaseUrl: "",
   showcaseImageUrl: "",
-  showcaseColor: "green-mid",
+  showcaseColor: "blue-mid",
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
@@ -183,7 +234,15 @@ export default function BusinessesPage() {
   const [memberInput, setMemberInput] = useState("");
   const [importingBusinessCsv, setImportingBusinessCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [emailModalProject, setEmailModalProject] = useState<Business | null>(null);
+  const [projectEmailSubject, setProjectEmailSubject] = useState("");
+  const [projectEmailMessage, setProjectEmailMessage] = useState("");
+  const [projectEmailFrom, setProjectEmailFrom] = useState("info@voltanyc.org");
+  const [projectEmailMode, setProjectEmailMode] = useState<"plain" | "html">("plain");
+  const [projectEmailSending, setProjectEmailSending] = useState(false);
+  const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const businessCsvInputRef = useRef<HTMLInputElement | null>(null);
+  const normalizedLegacyColorsRef = useRef(false);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -191,6 +250,23 @@ export default function BusinessesPage() {
 
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => {
+    if (normalizedLegacyColorsRef.current) return;
+    if (!canEdit || businesses.length === 0) return;
+    normalizedLegacyColorsRef.current = true;
+    void (async () => {
+      for (const business of businesses) {
+        const raw = String(business.showcaseColor ?? "").trim();
+        if (!raw) continue;
+        const normalized = normalizeColorToken(raw);
+        if (normalized !== raw) {
+          // Normalize legacy color values once so all cards/map dots use the same palette.
+          // eslint-disable-next-line no-await-in-loop
+          await updateBusiness(business.id, { showcaseColor: normalized });
+        }
+      }
+    })();
+  }, [businesses, canEdit]);
 
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -227,7 +303,7 @@ export default function BusinessesPage() {
       showcaseDescription: b.showcaseDescription ?? "",
       showcaseUrl: b.showcaseUrl ?? "",
       showcaseImageUrl: b.showcaseImageUrl ?? "",
-      showcaseColor: (b.showcaseColor as ShowcaseColorValue) ?? "green-mid",
+      showcaseColor: normalizeColorToken((b.showcaseColor as string) ?? ""),
     });
     setEditingBusiness(b);
     setShowOwnerAltEmail(!!(b.ownerAlternateEmail ?? "").trim());
@@ -295,7 +371,7 @@ export default function BusinessesPage() {
       payload.showcaseDescription = (form.showcaseDescription ?? "").trim();
       payload.showcaseUrl = (form.showcaseUrl ?? "").trim();
       payload.showcaseImageUrl = (form.showcaseImageUrl ?? "").trim();
-      payload.showcaseColor = form.showcaseColor ?? DIVISION_SHOWCASE_COLOR[form.division ?? "Tech"];
+      payload.showcaseColor = normalizeColorToken((form.showcaseColor as string) ?? "");
     } else {
       payload.showcaseFeaturedOnHome = false;
     }
@@ -425,7 +501,7 @@ export default function BusinessesPage() {
           showcaseDescription: "",
           showcaseUrl: "",
           showcaseImageUrl: "",
-          showcaseColor: "green-mid",
+          showcaseColor: "blue-mid",
         });
         sortCursor += 1000;
         existing.add(key);
@@ -497,6 +573,119 @@ export default function BusinessesPage() {
         .filter(Boolean)
     )
   ).sort((a, b) => a.localeCompare(b));
+
+  const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
+    const unresolved: string[] = [];
+    const emailSet = new Set<string>();
+    const availableByEmail = new Map<string, TeamMember>();
+    const availableByName = new Map<string, TeamMember[]>();
+
+    for (const member of team) {
+      const emailKey = normalizeKey(member.email ?? "");
+      if (emailKey) availableByEmail.set(emailKey, member);
+      const nameKey = normalizeKey(member.name ?? "");
+      if (!nameKey) continue;
+      const list = availableByName.get(nameKey) ?? [];
+      list.push(member);
+      availableByName.set(nameKey, list);
+    }
+
+    const assigned = [
+      ...(project.teamLead ? [project.teamLead] : []),
+      ...(project.teamMembers ?? []),
+    ].map((value) => value.trim()).filter(Boolean);
+
+    for (const raw of assigned) {
+      const decoratedEmail = normalizeKey(parseEmailFromDecoratedName(raw));
+      if (decoratedEmail) {
+        const exact = availableByEmail.get(decoratedEmail);
+        if (exact?.email?.trim()) {
+          emailSet.add(exact.email.trim().toLowerCase());
+          continue;
+        }
+        emailSet.add(decoratedEmail);
+        continue;
+      }
+      const key = normalizeKey(stripDecoratedName(raw));
+      const matches = availableByName.get(key) ?? [];
+      if (matches.length > 0) {
+        matches.forEach((member) => {
+          const email = member.email?.trim().toLowerCase();
+          if (email) emailSet.add(email);
+        });
+      } else {
+        unresolved.push(raw);
+      }
+    }
+
+    return {
+      emails: Array.from(emailSet),
+      unresolved: Array.from(new Set(unresolved)),
+    };
+  };
+
+  const projectEmailRecipients = emailModalProject ? resolveProjectRecipients(emailModalProject) : { emails: [], unresolved: [] };
+
+  const openProjectEmailModal = (project: Business) => {
+    setEmailModalProject(project);
+    setProjectEmailFrom("info@voltanyc.org");
+    setProjectEmailMode("plain");
+    setProjectEmailSubject(`${project.name} — Project Update`);
+    setProjectEmailMessage("");
+    setProjectEmailStatus(null);
+  };
+
+  const sendProjectEmail = async () => {
+    if (!emailModalProject) return;
+    if (!projectEmailSubject.trim() || !projectEmailMessage.trim()) {
+      setProjectEmailStatus("Please add a subject and message.");
+      return;
+    }
+    if (projectEmailRecipients.emails.length === 0) {
+      setProjectEmailStatus("No assigned members with email addresses were found.");
+      return;
+    }
+    if (!user) {
+      setProjectEmailStatus("Not authenticated.");
+      return;
+    }
+
+    setProjectEmailSending(true);
+    setProjectEmailStatus("Sending…");
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/team-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fromAddress: projectEmailFrom,
+          subject: projectEmailSubject.trim(),
+          message: projectEmailMessage.trim(),
+          contentMode: projectEmailMode,
+          recipients: projectEmailRecipients.emails,
+        }),
+      });
+      if (!res.ok) {
+        setProjectEmailStatus("Could not send email.");
+        return;
+      }
+      const payload = await res.json() as { sent?: number; failed?: string[] };
+      const sentCount = payload.sent ?? 0;
+      const failedCount = payload.failed?.length ?? 0;
+      setProjectEmailStatus(
+        failedCount > 0
+          ? `Sent to ${sentCount}. Failed: ${failedCount}.`
+          : `Sent to ${sentCount} members.`,
+      );
+    } catch {
+      setProjectEmailStatus("Could not send email.");
+    } finally {
+      setProjectEmailSending(false);
+    }
+  };
 
   const activePlanningCount = businesses.filter((b) => b.projectStatus === "Active" || b.projectStatus === "Not Started" || b.projectStatus === "Discovery").length;
   const completedCount = businesses.filter((b) => b.projectStatus === "Complete").length;
@@ -595,6 +784,15 @@ export default function BusinessesPage() {
       {/* Actions */}
       {canEdit && (
         <div className="flex gap-2 pt-2 border-t border-white/5 mt-auto">
+          <Btn
+            size="sm"
+            variant="secondary"
+            className="w-full justify-center"
+            onClick={() => openProjectEmailModal(b)}
+            disabled={resolveProjectRecipients(b).emails.length === 0}
+          >
+            Email Team
+          </Btn>
           <Btn size="sm" variant="secondary" className="w-full justify-center" onClick={() => openEdit(b)}>Edit</Btn>
         </div>
       )}
@@ -630,7 +828,15 @@ export default function BusinessesPage() {
         <div className="text-xs text-white/55 min-w-0 truncate" title={ownerSummary || "—"}>{ownerSummary || "—"}</div>
         <div className="text-xs text-white/55 min-w-0 truncate" title={teamSummary || "No team assigned"}>{teamSummary || "No team assigned"}</div>
         {canEdit ? (
-          <div className="sm:justify-self-end">
+          <div className="sm:justify-self-end flex gap-2">
+            <Btn
+              size="sm"
+              variant="secondary"
+              onClick={() => openProjectEmailModal(b)}
+              disabled={resolveProjectRecipients(b).emails.length === 0}
+            >
+              Email Team
+            </Btn>
             <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
           </div>
         ) : <div />}
@@ -778,6 +984,73 @@ export default function BusinessesPage() {
           )}
         </div>
       )}
+
+      <Modal
+        open={!!emailModalProject}
+        onClose={() => setEmailModalProject(null)}
+        title={`Email Team${emailModalProject ? ` · ${emailModalProject.name}` : ""}`}
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-white/55">
+            {projectEmailRecipients.emails.length} recipients
+            {projectEmailRecipients.unresolved.length > 0 ? ` · ${projectEmailRecipients.unresolved.length} unresolved assignments` : ""}
+          </p>
+          {projectEmailRecipients.unresolved.length > 0 && (
+            <div className="bg-[#0F1014] border border-white/10 rounded-lg p-3">
+              <p className="text-[11px] text-white/70 mb-1">Unresolved assigned names:</p>
+              <p className="text-[11px] text-white/45 break-words">{projectEmailRecipients.unresolved.join(", ")}</p>
+            </div>
+          )}
+          <Field label="Subject" required>
+            <Input value={projectEmailSubject} onChange={(e) => setProjectEmailSubject(e.target.value)} />
+          </Field>
+          <Field label="Send from" required>
+            <select
+              value={projectEmailFrom}
+              onChange={(e) => setProjectEmailFrom(e.target.value)}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              {TEAM_EMAIL_FROM_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Message Format" required>
+            <select
+              value={projectEmailMode}
+              onChange={(e) => setProjectEmailMode(e.target.value === "html" ? "html" : "plain")}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              <option value="plain">Plain Text</option>
+              <option value="html">HTML (links/images supported)</option>
+            </select>
+          </Field>
+          <Field label="Message" required>
+            <TextArea
+              rows={8}
+              value={projectEmailMessage}
+              onChange={(e) => setProjectEmailMessage(e.target.value)}
+              placeholder={
+                projectEmailMode === "html"
+                  ? "<p>Team update…</p>"
+                  : "Write your email..."
+              }
+            />
+          </Field>
+          {projectEmailStatus && <p className="text-xs text-white/60">{projectEmailStatus}</p>}
+
+          <div className="flex justify-end gap-2">
+            <Btn variant="ghost" onClick={() => setEmailModalProject(null)}>Close</Btn>
+            <Btn
+              variant="primary"
+              onClick={sendProjectEmail}
+              disabled={projectEmailSending || projectEmailRecipients.emails.length === 0}
+            >
+              {projectEmailSending ? "Sending..." : `Send Email (${projectEmailRecipients.emails.length})`}
+            </Btn>
+          </div>
+        </div>
+      </Modal>
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>
@@ -980,7 +1253,7 @@ export default function BusinessesPage() {
               <Field label="Card Color">
                 <div className="grid grid-cols-2 gap-2">
                   {SHOWCASE_COLOR_OPTIONS.map((option) => {
-                    const selected = (form.showcaseColor ?? "green-mid") === option.value;
+                    const selected = normalizeColorToken((form.showcaseColor as string) ?? "") === option.value;
                     return (
                       <button
                         key={option.value}
