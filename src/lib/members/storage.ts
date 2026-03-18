@@ -19,6 +19,8 @@ export interface BID {
   contactEmail: string;
   phone: string;
   borough: string;
+  address?: string;
+  zipCode?: string;
   nextAction: string;
   notes: string;
   priority: "High" | "Medium" | "Low";

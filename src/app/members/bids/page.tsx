@@ -44,7 +44,7 @@ function nextSortIndex(items: BID[]): number {
 // Blank form values for creating a new BID record.
 const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
   name: "", status: "Outreach", contactName: "", contactEmail: "", phone: "",
-  borough: "", nextAction: "", notes: "", priority: "Medium",
+  borough: "", address: "", zipCode: "", nextAction: "", notes: "", priority: "Medium",
 };
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
@@ -86,6 +86,8 @@ export default function BIDTrackerPage() {
       contactEmail: bid.contactEmail,
       phone:        bid.phone,
       borough:      bid.borough,
+      address:      bid.address ?? "",
+      zipCode:      bid.zipCode ?? "",
       nextAction:   bid.nextAction,
       notes:        bid.notes,
       priority:     bid.priority as BID["priority"],
@@ -167,7 +169,9 @@ export default function BIDTrackerPage() {
     if (!query) return true;
     return bid.name.toLowerCase().includes(query)
       || bid.borough.toLowerCase().includes(query)
-      || bid.contactName.toLowerCase().includes(query);
+      || bid.contactName.toLowerCase().includes(query)
+      || (bid.address ?? "").toLowerCase().includes(query)
+      || (bid.zipCode ?? "").toLowerCase().includes(query);
   };
 
   const sortBids = (list: BID[]) => {
@@ -250,7 +254,7 @@ export default function BIDTrackerPage() {
                 <div className="space-y-2 min-w-0 flex-1">
                   <p className="text-white font-semibold leading-snug break-words">{bid.name}</p>
                   <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
-                    <span>{bid.borough || "No borough"}</span>
+                    <span>{[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "No borough"}</span>
                     <span>•</span>
                     <span>{bid.contactName || "No contact"}</span>
                     {bid.contactEmail && (
@@ -371,7 +375,7 @@ export default function BIDTrackerPage() {
               <div className="text-xs text-white/55 break-words">
                 {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
               </div>
-              <div className="text-xs text-white/65">{bid.borough || "—"}</div>
+              <div className="text-xs text-white/65">{[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}</div>
               <div className="text-xs text-white/55 break-words">{bid.nextAction || bid.notes || "—"}</div>
               {canEdit ? (
                 <div className="md:justify-self-end">
@@ -416,7 +420,14 @@ export default function BIDTrackerPage() {
             <Field label="Borough">
               <Select options={["", ...BOROUGHS]} value={form.borough} onChange={e => setField("borough", e.target.value)} />
             </Field>
-            <div />
+            <Field label="ZIP Code">
+              <Input value={form.zipCode ?? ""} onChange={e => setField("zipCode", e.target.value)} placeholder="e.g. 11215" />
+            </Field>
+            <div className="col-span-2">
+              <Field label="Address">
+                <Input value={form.address ?? ""} onChange={e => setField("address", e.target.value)} placeholder="Street address (optional)" />
+              </Field>
+            </div>
             <div className="col-span-2">
               <Field label="Notes / Next Action">
                 <TextArea rows={3} value={form.nextAction} onChange={e => setField("nextAction", e.target.value)} placeholder="Next steps, context, notes…" />

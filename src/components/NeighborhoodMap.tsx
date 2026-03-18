@@ -16,9 +16,11 @@ export interface MapProject {
   type: string;
   services: string[];
   neighborhood: string;
+  borough?: string;
   status: "Active" | "In Progress" | "Upcoming";
   url?: string;
   colorClass: string;
+  source?: "business" | "bid";
 }
 
 interface NeighborhoodMapProps {
@@ -59,22 +61,49 @@ const getColorHex = (colorClass: string): string => {
   return "#3B82F6"; // fallback
 };
 
+function normalizeBorough(value?: string): "Brooklyn" | "Queens" | "Manhattan" | "Bronx" | "Staten Island" | "" {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) return "";
+  if (raw.includes("brooklyn")) return "Brooklyn";
+  if (raw.includes("queens")) return "Queens";
+  if (raw.includes("manhattan")) return "Manhattan";
+  if (raw.includes("bronx")) return "Bronx";
+  if (raw.includes("staten")) return "Staten Island";
+  return "";
+}
+
+const BOROUGH_HEX: Record<string, string> = {
+  Brooklyn: "#A3E635", // lime-400
+  Queens: "#93C5FD", // blue-300
+  Manhattan: "#FBBF24", // amber-400
+  Bronx: "#C084FC", // purple-400
+  "Staten Island": "#FB7185", // rose-400
+};
+
 export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
   // Map string neighborhood names to their known coordinates.
   const markers = useMemo(
     () =>
       projects.map((p) => {
-        const coords = neighborhoods.find((n) => p.neighborhood.includes(n.name))
+        const borough = normalizeBorough(p.borough ?? p.neighborhood);
+        const coords = (borough ? neighborhoods.find((n) => normalizeBorough(n.borough) === borough) : undefined)
+          || neighborhoods.find((n) => p.neighborhood.includes(n.name))
           || neighborhoods.find((n) => p.neighborhood.includes(n.borough));
         const baseLat = coords ? coords.lat : 40.7128;
         const baseLng = coords ? coords.lng : -74.0060;
+        const isBid = p.source === "bid";
+        const hex = isBid
+          ? (BOROUGH_HEX[borough] ?? "#94A3B8")
+          : getColorHex(p.colorClass);
         return {
           ...p,
+          borough,
+          isBid,
           baseLat,
           baseLng,
           lat: baseLat + (Math.random() - 0.5) * 0.005, // slight jitter to prevent exact overlap
           lng: baseLng + (Math.random() - 0.5) * 0.005,
-          hex: getColorHex(p.colorClass),
+          hex,
         };
       }),
     [projects],
@@ -123,16 +152,55 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
           </CircleMarker>
         ))}
 
-        {/* Business dots */}
-        {markers.map((b, i) => (
+        {/* BID dots (larger, lower opacity, borough-colored) */}
+        {markers.filter((m) => m.isBid).map((b, i) => (
           <CircleMarker
             key={`${b.name}-${i}`}
             center={[b.lat, b.lng]}
-            radius={4.5}
+            radius={8}
             fillColor={b.hex}
-            fillOpacity={0.9}
+            fillOpacity={0.2}
             color={b.hex}
-            weight={1.5}
+            opacity={0.55}
+            weight={2}
+          >
+            <Popup>
+              <div style={{ fontFamily: "sans-serif", fontSize: 13, lineHeight: 1.6, minWidth: 160 }}>
+                <strong style={{ fontSize: 14 }}>{b.name}</strong><br />
+                <span style={{ color: "#6B7280", fontSize: 11 }}>{b.type}</span><br />
+                <span style={{ color: "#6B7280", fontSize: 11 }}>{b.neighborhood}</span><br />
+                <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: b.hex }}>
+                    {b.status}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#374151" }}>·</span>
+                  <span style={{ fontSize: 11, color: "#374151" }}>{b.services.join(", ")}</span>
+                </div>
+                {b.url && (
+                  <a
+                    href={b.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: b.hex, textDecoration: "none" }}
+                  >
+                    View →
+                  </a>
+                )}
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
+
+        {/* Business dots (smaller, solid) */}
+        {markers.filter((m) => !m.isBid).map((b, i) => (
+          <CircleMarker
+            key={`${b.name}-${i}`}
+            center={[b.lat, b.lng]}
+            radius={3.5}
+            fillColor={b.hex}
+            fillOpacity={0.95}
+            color={b.hex}
+            weight={1.25}
           >
             <Popup>
               <div style={{ fontFamily: "sans-serif", fontSize: 13, lineHeight: 1.6, minWidth: 160 }}>

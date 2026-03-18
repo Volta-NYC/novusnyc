@@ -40,6 +40,7 @@ export interface PublicMapEntry {
   name: string;
   type: string;
   neighborhood: string;
+  borough?: string;
   services: string[];
   status: PublicShowcaseStatus;
   color: PublicShowcaseColor;
@@ -191,6 +192,41 @@ function mapBidStatusToShowcase(value: unknown): PublicShowcaseStatus {
   return "Upcoming";
 }
 
+function normalizeBoroughName(value: string): string {
+  const raw = value.trim().toLowerCase();
+  if (!raw) return "";
+  if (raw.includes("brooklyn")) return "Brooklyn";
+  if (raw.includes("queens")) return "Queens";
+  if (raw.includes("manhattan")) return "Manhattan";
+  if (raw.includes("bronx")) return "Bronx";
+  if (raw.includes("staten")) return "Staten Island";
+  return "";
+}
+
+function inferBoroughFromZip(value: unknown): string {
+  const zip = asText(value).replace(/\D/g, "").slice(0, 5);
+  if (!zip) return "";
+  if (zip.startsWith("112")) return "Brooklyn";
+  if (zip.startsWith("104")) return "Bronx";
+  if (zip.startsWith("103")) return "Staten Island";
+  if (zip.startsWith("111") || zip.startsWith("113") || zip.startsWith("114") || zip.startsWith("116") || zip === "11004" || zip === "11005") {
+    return "Queens";
+  }
+  if (zip.startsWith("100") || zip.startsWith("101") || zip.startsWith("102")) return "Manhattan";
+  return "";
+}
+
+function inferBidBorough(row: Record<string, unknown>): string {
+  const explicit = normalizeBoroughName(asText(row.borough));
+  if (explicit) return explicit;
+
+  const address = asText(row.address);
+  const fromAddress = normalizeBoroughName(address);
+  if (fromAddress) return fromAddress;
+
+  return inferBoroughFromZip(row.zipCode ?? row.zipcode ?? row.zip);
+}
+
 export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
   const db = getAdminDB();
   if (!db) return [];
@@ -284,6 +320,7 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
         name,
         type,
         neighborhood,
+        borough: normalizeBoroughName(neighborhood),
         services: mergedServices,
         status,
         color,
@@ -299,17 +336,21 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
       const name = asText(row.name);
       if (!name) continue;
 
-      const borough = asText(row.borough);
+      const borough = inferBidBorough(row);
+      const address = asText(row.address);
+      const zipCode = asText(row.zipCode ?? row.zipcode ?? row.zip);
+      const locationLabel = [address, zipCode].filter(Boolean).join(" · ");
       const status = mapBidStatusToShowcase(row.status);
 
       entries.push({
         id: `bid:${id}`,
         name,
         type: "BID Partnership",
-        neighborhood: borough || "New York City",
+        neighborhood: locationLabel || borough || "New York City",
+        borough: borough || undefined,
         services: ["District Partnership"],
         status,
-        color: "pink-mid",
+        color: "blue-mid",
         source: "bid",
       });
     }

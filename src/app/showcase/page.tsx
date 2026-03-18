@@ -92,18 +92,22 @@ export default async function Showcase() {
       type: entry.type,
       services: entry.services,
       neighborhood: entry.neighborhood,
+      borough: entry.borough,
       status: entry.status,
       url: entry.url,
       colorClass: SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-blue-500",
+      source: entry.source,
     }))
     : projects.map((p) => ({
       name: p.name,
       type: p.type,
       services: p.services,
       neighborhood: p.neighborhood,
+      borough: undefined as string | undefined,
       status: p.status,
       url: p.url,
       colorClass: p.colorClass,
+      source: "business" as const,
     }));
 
   const getServiceTagClass = (service: string) => {
