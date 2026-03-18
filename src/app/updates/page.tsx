@@ -18,12 +18,29 @@ function prettyDate(value: string): string {
   });
 }
 
-function toLinkedInEmbedUrl(entry: { linkedinUrl?: string; linkedinUrn?: string }): string | null {
+type EmbedInfo = {
+  url: string;
+  kind: "LinkedIn" | "Instagram";
+};
+
+function toEmbedInfo(entry: { linkedinUrl?: string; linkedinUrn?: string; instagramEmbedUrl?: string }): EmbedInfo | null {
   if (entry.linkedinUrl && entry.linkedinUrl.includes("/feed/update/")) {
-    return entry.linkedinUrl.replace("://www.linkedin.com/feed/update/", "://www.linkedin.com/embed/feed/update/");
+    return {
+      url: entry.linkedinUrl.replace("://www.linkedin.com/feed/update/", "://www.linkedin.com/embed/feed/update/"),
+      kind: "LinkedIn",
+    };
   }
   if (entry.linkedinUrn) {
-    return `https://www.linkedin.com/embed/feed/update/${entry.linkedinUrn}`;
+    return {
+      url: `https://www.linkedin.com/embed/feed/update/${entry.linkedinUrn}`,
+      kind: "LinkedIn",
+    };
+  }
+  if (entry.instagramEmbedUrl) {
+    return {
+      url: entry.instagramEmbedUrl,
+      kind: "Instagram",
+    };
   }
   return null;
 }
@@ -52,23 +69,25 @@ export default function ProgressUpdatesPage() {
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="space-y-6">
             {progressUpdates.map((entry, idx) => {
-              const embedUrl = toLinkedInEmbedUrl(entry);
+              const embed = toEmbedInfo(entry);
               return (
                 <AnimatedSection key={entry.id} delay={idx * 0.06}>
                   <article className="bg-v-bg border border-v-border rounded-2xl p-6 md:p-7">
                     <p className="font-body text-xs text-v-muted mb-2">{prettyDate(entry.date)}</p>
-                    {embedUrl && (
-                      <div className="mt-4">
+                    {embed && (
+                      <div className={`mt-4 ${embed.kind === "Instagram" ? "flex justify-center" : ""}`}>
                         <iframe
-                          src={embedUrl}
-                          title={`${entry.title} LinkedIn post`}
-                          className="w-full rounded-xl border border-v-border bg-white"
-                          style={{ minHeight: 520 }}
+                          src={embed.url}
+                          title={`${entry.title} ${embed.kind} post`}
+                          className={embed.kind === "Instagram"
+                            ? "w-full max-w-[420px] rounded-xl border border-v-border bg-white"
+                            : "w-full rounded-xl border border-v-border bg-white"}
+                          style={embed.kind === "Instagram" ? { minHeight: 560 } : { minHeight: 520 }}
                           loading="lazy"
                         />
                       </div>
                     )}
-                    {!embedUrl && (
+                    {!embed && (
                       <>
                         <h2 className="font-display font-bold text-v-ink text-2xl mb-3">{entry.title}</h2>
                         <p className="font-body text-v-muted mb-4">{entry.summary}</p>

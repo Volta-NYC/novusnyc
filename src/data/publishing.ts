@@ -15,6 +15,7 @@ export interface UpdateEntry {
   highlights: string[];
   linkedinUrl?: string;
   linkedinUrn?: string;
+  instagramEmbedUrl?: string;
   links?: Array<{ label: string; href: string }>;
 }
 
@@ -61,6 +62,33 @@ export const businessGuides: GuideEntry[] = [
 ];
 
 export const progressUpdates: UpdateEntry[] = [
+  {
+    id: "instagram-dvbs-6ldvk9",
+    title: "Instagram Project Update",
+    date: "2026-03-17",
+    summary:
+      "Instagram update from the Volta NYC feed.",
+    highlights: [
+      "Instagram publication",
+      "Public progress update",
+      "Cross-platform visibility",
+    ],
+    instagramEmbedUrl: "https://www.instagram.com/p/DVBS-6LDvk9/embed/",
+  },
+  {
+    id: "linkedin-7439282826857873408",
+    title: "Apply to Volta NYC",
+    date: "2026-03-16",
+    summary:
+      "LinkedIn update from the Volta NYC team.",
+    highlights: [
+      "Application announcement",
+      "LinkedIn publication",
+      "Student recruiting update",
+    ],
+    linkedinUrl: "https://www.linkedin.com/feed/update/urn:li:activity:7439282826857873408",
+    linkedinUrn: "urn:li:activity:7439282826857873408",
+  },
   {
     id: "linkedin-7436758651316547585",
     title: "HUB Third Avenue BID Tour + New Jacksonville Partnerships",
