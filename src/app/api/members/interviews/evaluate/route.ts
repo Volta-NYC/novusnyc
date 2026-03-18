@@ -54,17 +54,6 @@ function asEvalMap(value: unknown): EvalMap {
   return value as EvalMap;
 }
 
-function isValidEvalRecord(value: unknown): value is EvalRecord {
-  if (!value || typeof value !== "object") return false;
-  const row = value as EvalRecord;
-  const rating = String(row.rating ?? "").trim() as Rating;
-  if (!VALID_RATINGS.includes(rating)) return false;
-  const interviewerUid = String(row.interviewerUid ?? "").trim();
-  const interviewerEmail = String(row.interviewerEmail ?? "").trim();
-  const interviewerName = String(row.interviewerName ?? "").trim();
-  return !!(interviewerUid || interviewerEmail || interviewerName);
-}
-
 function pickApplicationBySlot(
   slot: SlotRecord,
   entries: ApplicationEntry[],
