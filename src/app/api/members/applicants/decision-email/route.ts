@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller, dbRead, dbPatch } from "@/lib/server/adminApi";
-import { createTransportForFrom, resolveFromWithName } from "@/lib/server/smtp";
+import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
 
 type Decision = "Accepted";
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         .filter(Boolean)
     )
   );
-  const defaultFrom = normalizeEmail(process.env.EMAIL_FROM ?? "");
+  const defaultFrom = normalizeEmail(getDefaultFromAddress());
   const from = requestedFrom || defaultFrom || allowedFrom[0] || "";
   if (!from || !allowedFrom.includes(from)) {
     return NextResponse.json({ error: "from_not_allowed" }, { status: 400 });
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
   }
-  const replyTo = process.env.EMAIL_REPLY_TO ?? from;
+  const replyTo = getDefaultReplyToAddress(from);
   const content = buildMessage(applicantName, decision, notes, role, tracks);
 
   await transporter.sendMail({

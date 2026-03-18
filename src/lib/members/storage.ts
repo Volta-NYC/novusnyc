@@ -1047,7 +1047,7 @@ export async function deleteBookedInterview(slotId: string): Promise<void> {
       const entries = appsSnap.val() as Record<string, Record<string, unknown>>;
       const appEntries = Object.entries(entries).map(([id, row]) => ({ id, row: row ?? {} }));
       const now = nowISO();
-      const terminal = new Set(["accepted", "waitlisted", "not accepted"]);
+      const terminal = new Set(["accepted", "not accepted", "rejected"]);
       let target = appEntries.find(({ row }) => {
         const token = String(row.interviewInviteToken ?? "").trim();
         return bookedBy && bookedBy !== "public-booking" && token === bookedBy;

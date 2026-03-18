@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
-import { createTransportForFrom, resolveFromWithName } from "@/lib/server/smtp";
+import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 
 type SendBody = {
   fromAddress?: string;
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         .filter((value) => value && isValidEmail(value))
     )
   );
-  const defaultFrom = normalizeEmail(process.env.EMAIL_FROM ?? "");
+  const defaultFrom = normalizeEmail(getDefaultFromAddress());
   const selectedFrom = requestedFrom || defaultFrom || allowedFrom[0] || "";
   if (!allowedFrom.includes(selectedFrom)) {
     return NextResponse.json({ error: "from_not_allowed" }, { status: 400 });
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   }
 
   const from = resolveFromWithName(selectedFrom);
-  const replyTo = selectedFrom;
+  const replyTo = getDefaultReplyToAddress(selectedFrom);
   const textBody = contentMode === "html"
     ? stripHtml(message)
     : message;

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbPatch, dbPush, dbRead, verifyCaller } from "@/lib/server/adminApi";
-import { createTransportForFrom, resolveFromWithName } from "@/lib/server/smtp";
+import {
+  createTransportForFrom,
+  getDefaultFromAddress,
+  getDefaultReplyToAddress,
+  resolveFromWithName,
+} from "@/lib/server/smtp";
 import { getAdminDB } from "@/lib/firebaseAdmin";
 import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
 
@@ -66,11 +71,11 @@ async function sendAcceptanceEmail(input: {
         .filter(Boolean)
     )
   );
-  const defaultFrom = normalizeEmail(process.env.EMAIL_FROM ?? "");
+  const defaultFrom = normalizeEmail(getDefaultFromAddress());
   const from = normalizeEmail(input.fromAddress ?? "") || defaultFrom || allowedFrom[0] || "";
   if (!from || !allowedFrom.includes(from)) return;
   const transporter = createTransportForFrom(from).transporter;
-  const replyTo = process.env.EMAIL_REPLY_TO ?? from;
+  const replyTo = getDefaultReplyToAddress(from);
   const signupLink = process.env.MEMBER_SIGNUP_LINK || "https://voltanyc.org/members/signup?code=VOLTA-8J3UMP";
   const tpl = buildAcceptanceTemplate({
     name: input.applicantName,

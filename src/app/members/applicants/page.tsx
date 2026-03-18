@@ -340,7 +340,7 @@ export default function ApplicantsPage() {
       applications
         .filter((app) => {
           if (app.interviewInviteSentAt) return false;
-          if (["accepted", "waitlisted", "not accepted", "interview scheduled"].includes(normalize(app.status))) return false;
+          if (["accepted", "not accepted", "rejected", "interview scheduled"].includes(normalize(app.status))) return false;
           if (matchBookedSlot(app)) return false;
           return true;
         })

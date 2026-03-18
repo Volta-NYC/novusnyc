@@ -3,6 +3,7 @@ import { dbPatch, dbPush, dbRead, verifyCaller } from "@/lib/server/adminApi";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 import { toInterviewTimestamp } from "@/lib/interviews/datetime";
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
+import { getDefaultFromAddress } from "@/lib/server/smtp";
 import {
   sendInterviewerRescheduledNotificationEmail,
   sendInterviewRescheduledEmail,
@@ -14,7 +15,7 @@ export const runtime = "nodejs";
 
 type SlotRecord = Record<string, unknown>;
 type ApplicationEntry = { id: string; row: Record<string, unknown> };
-const TERMINAL_APPLICATION_STATUSES = new Set(["accepted", "waitlisted", "not accepted"]);
+const TERMINAL_APPLICATION_STATUSES = new Set(["accepted", "not accepted", "rejected"]);
 
 function normalizeId(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -188,7 +189,7 @@ export async function POST(req: NextRequest) {
 
   const zoom = resolveInterviewZoomSettings(settingsData, process.env.INTERVIEW_ZOOM_LINK ?? "");
   const interviewerContacts = resolveInterviewerContacts(toSlot, teamData);
-  const organizer = pickIcsOrganizer(interviewerContacts, process.env.EMAIL_FROM ?? "");
+  const organizer = pickIcsOrganizer(interviewerContacts, getDefaultFromAddress());
   const durationMinutes = Number(toSlot.durationMinutes ?? 30);
   const location = typeof toSlot.location === "string" ? toSlot.location : "";
   if (fromEmail && fromDatetime && toDatetime) {

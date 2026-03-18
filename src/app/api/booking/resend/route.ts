@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbRead, verifyCaller } from "@/lib/server/adminApi";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
+import { getDefaultFromAddress } from "@/lib/server/smtp";
 import { sendInterviewBookingEmail } from "@/lib/server/interviewEmail";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
   const location = typeof slot.location === "string" ? slot.location : "";
   const zoom = resolveInterviewZoomSettings(settingsData, process.env.INTERVIEW_ZOOM_LINK ?? "");
   const interviewerContacts = resolveInterviewerContacts(slot, teamData);
-  const organizer = pickIcsOrganizer(interviewerContacts, process.env.EMAIL_FROM ?? "");
+  const organizer = pickIcsOrganizer(interviewerContacts, getDefaultFromAddress());
 
   await sendInterviewBookingEmail({
     to: bookerEmail,

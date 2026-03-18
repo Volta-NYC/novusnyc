@@ -17,8 +17,39 @@ function parsePort(value: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+function pickFirst(...values: Array<string | undefined>): string {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+export function getDefaultFromAddress(): string {
+  return normalizeEmail(
+    pickFirst(
+      process.env.EMAIL_FROM,
+      process.env.INTERVIEW_FROM_EMAIL,
+      "info@voltanyc.org",
+    ),
+  );
+}
+
+export function getDefaultReplyToAddress(fromAddress: string): string {
+  const from = normalizeEmail(fromAddress);
+  return normalizeEmail(
+    pickFirst(
+      process.env.EMAIL_REPLY_TO,
+      process.env.INTERVIEW_EMAIL_REPLY_TO,
+      from,
+    ),
+  );
+}
+
 function getSecondaryFromSet(): Set<string> {
-  const raw = process.env.SMTP_SECONDARY_FROM_ADDRESSES ?? "";
+  const raw = pickFirst(
+    process.env.SMTP_SECONDARY_FROM_ADDRESSES,
+    process.env.INTERVIEW_EMAIL_SECONDARY_FROM_ADDRESSES,
+  );
   return new Set(
     raw
       .split(",")
@@ -36,26 +67,47 @@ export function resolveSmtpProfile(fromAddress?: string): {
   usingSecondary: boolean;
 } {
   const normalizedFrom = normalizeEmail(fromAddress ?? "");
-  const primaryFrom = normalizeEmail(process.env.EMAIL_FROM ?? "info@voltanyc.org");
+  const primaryFrom = getDefaultFromAddress();
   const secondaryFromSet = getSecondaryFromSet();
   
-  const hasSecondaryCreds = !!process.env.SMTP_USER_SECONDARY && !!process.env.SMTP_PASS_SECONDARY;
+  const secondaryUser = pickFirst(process.env.SMTP_USER_SECONDARY, process.env.INTERVIEW_EMAIL_SMTP_USER_SECONDARY);
+  const secondaryPass = pickFirst(process.env.SMTP_PASS_SECONDARY, process.env.INTERVIEW_EMAIL_SMTP_PASS_SECONDARY);
+  const hasSecondaryCreds = !!secondaryUser && !!secondaryPass;
   const isExplicitSecondary = normalizedFrom && secondaryFromSet.has(normalizedFrom);
   const isImplicitSecondary = normalizedFrom && normalizedFrom !== primaryFrom && hasSecondaryCreds;
   
   const wantsSecondary = isExplicitSecondary || isImplicitSecondary;
 
   if (wantsSecondary) {
-    const user = process.env.SMTP_USER_SECONDARY ?? "";
-    const pass = process.env.SMTP_PASS_SECONDARY ?? "";
+    const user = secondaryUser;
+    const pass = secondaryPass;
     if (!user || !pass) {
       throw new Error("secondary_smtp_not_configured");
     }
     return {
-      host: process.env.SMTP_HOST_SECONDARY ?? process.env.SMTP_HOST ?? "smtp.gmail.com",
-      port: parsePort(process.env.SMTP_PORT_SECONDARY ?? process.env.SMTP_PORT, 465),
+      host: pickFirst(
+        process.env.SMTP_HOST_SECONDARY,
+        process.env.INTERVIEW_EMAIL_SMTP_HOST_SECONDARY,
+        process.env.SMTP_HOST,
+        process.env.INTERVIEW_EMAIL_SMTP_HOST,
+        "smtp.gmail.com",
+      ),
+      port: parsePort(
+        pickFirst(
+          process.env.SMTP_PORT_SECONDARY,
+          process.env.INTERVIEW_EMAIL_SMTP_PORT_SECONDARY,
+          process.env.SMTP_PORT,
+          process.env.INTERVIEW_EMAIL_SMTP_PORT,
+        ),
+        465,
+      ),
       secure: parseBool(
-        process.env.SMTP_SECURE_SECONDARY ?? process.env.SMTP_SECURE,
+        pickFirst(
+          process.env.SMTP_SECURE_SECONDARY,
+          process.env.INTERVIEW_EMAIL_SMTP_SECURE_SECONDARY,
+          process.env.SMTP_SECURE,
+          process.env.INTERVIEW_EMAIL_SMTP_SECURE,
+        ),
         true,
       ),
       user,
@@ -64,15 +116,33 @@ export function resolveSmtpProfile(fromAddress?: string): {
     };
   }
 
-  const user = process.env.SMTP_USER ?? "";
-  const pass = process.env.SMTP_PASS ?? "";
+  const user = pickFirst(
+    process.env.SMTP_USER,
+    process.env.INTERVIEW_EMAIL_SMTP_USER,
+    process.env.GMAIL_USER,
+  );
+  const pass = pickFirst(
+    process.env.SMTP_PASS,
+    process.env.INTERVIEW_EMAIL_SMTP_PASS,
+    process.env.GMAIL_APP_PASSWORD,
+  );
   if (!user || !pass) {
     throw new Error("primary_smtp_not_configured");
   }
   return {
-    host: process.env.SMTP_HOST ?? "smtp.gmail.com",
-    port: parsePort(process.env.SMTP_PORT, 465),
-    secure: parseBool(process.env.SMTP_SECURE, true),
+    host: pickFirst(
+      process.env.SMTP_HOST,
+      process.env.INTERVIEW_EMAIL_SMTP_HOST,
+      "smtp.gmail.com",
+    ),
+    port: parsePort(
+      pickFirst(process.env.SMTP_PORT, process.env.INTERVIEW_EMAIL_SMTP_PORT),
+      465,
+    ),
+    secure: parseBool(
+      pickFirst(process.env.SMTP_SECURE, process.env.INTERVIEW_EMAIL_SMTP_SECURE),
+      true,
+    ),
     user,
     pass,
     usingSecondary: false,
@@ -123,4 +193,3 @@ export function resolveFromWithName(rawFrom: string): string {
 
   return email;
 }
-

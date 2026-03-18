@@ -3,6 +3,7 @@ import { getAdminDB } from "@/lib/firebaseAdmin";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 import { formatInterviewInET, toInterviewTimestamp } from "@/lib/interviews/datetime";
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
+import { getDefaultFromAddress } from "@/lib/server/smtp";
 import {
   sendInterviewerBookingNotificationEmail,
   sendInterviewerRescheduledNotificationEmail,
@@ -87,7 +88,7 @@ type ApplicationEntry = {
 };
 
 const THREE_WEEKS_MS = 21 * 24 * 60 * 60 * 1000;
-const TERMINAL_APPLICATION_STATUSES = new Set(["accepted", "waitlisted", "not accepted"]);
+const TERMINAL_APPLICATION_STATUSES = new Set(["accepted", "not accepted", "rejected"]);
 
 function normalizeKey(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
@@ -396,7 +397,7 @@ export async function POST(req: NextRequest) {
     }
     const zoom = resolveInterviewZoomSettings(settingsData, process.env.INTERVIEW_ZOOM_LINK ?? "");
     const interviewerContacts = resolveInterviewerContacts(slot, teamData);
-    const organizer = pickIcsOrganizer(interviewerContacts, process.env.EMAIL_FROM ?? "");
+    const organizer = pickIcsOrganizer(interviewerContacts, getDefaultFromAddress());
     const payload = {
       to: cleanEmail,
       bookerName: cleanName,

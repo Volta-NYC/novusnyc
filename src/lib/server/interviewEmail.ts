@@ -1,4 +1,9 @@
-import { createTransportForFrom, resolveFromWithName } from "@/lib/server/smtp";
+import {
+  createTransportForFrom,
+  getDefaultFromAddress,
+  getDefaultReplyToAddress,
+  resolveFromWithName,
+} from "@/lib/server/smtp";
 import { buildInterviewInviteTemplate } from "@/lib/server/applicantEmails";
 import { formatInterviewInET, parseInterviewDateTime } from "@/lib/interviews/datetime";
 
@@ -44,7 +49,7 @@ function buildIcs(input: BookingEmailInput): string {
   const descParts: string[] = [];
   if (input.zoomLink) descParts.push(`Join Zoom: ${input.zoomLink}`);
   const organizerName = (input.organizerName || "Volta NYC").trim();
-  const organizerEmail = sanitizeEmailAddress(input.organizerEmail || process.env.EMAIL_FROM || "");
+  const organizerEmail = sanitizeEmailAddress(input.organizerEmail || getDefaultFromAddress() || "");
   descParts.push(`Interviewer: ${organizerName}`);
   descParts.push("Organized by Volta NYC");
 
@@ -102,13 +107,13 @@ async function sendInterviewEmail(input: {
   html: string;
   ics?: { filename: string; content: string };
 }): Promise<void> {
-  const configuredFrom = process.env.EMAIL_FROM ?? "";
+  const configuredFrom = getDefaultFromAddress();
   if (!configuredFrom.trim()) {
     throw new Error("interview_email_from_not_configured");
   }
   const { transporter } = createTransportForFrom(configuredFrom);
   const from = resolveFromWithName(configuredFrom);
-  const replyTo = process.env.EMAIL_REPLY_TO ?? configuredFrom;
+  const replyTo = getDefaultReplyToAddress(configuredFrom);
 
   await transporter.sendMail({
     from,
