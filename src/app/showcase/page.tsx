@@ -4,7 +4,6 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MapPinIcon } from "@/components/Icons";
 import { projects as fallbackProjects, joinTracks } from "@/data";
-import { neighborhoods } from "@/data/neighborhoods";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 
@@ -99,6 +98,15 @@ export default async function Showcase() {
     colorClass: SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-blue-500",
     source: entry.source,
   }));
+  const bidPartners = publicMapEntries
+    .filter((entry) => entry.source === "bid")
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      borough: entry.borough || "",
+      status: entry.status,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const getServiceTagClass = (service: string) => {
     const key = service.trim().toLowerCase();
@@ -153,22 +161,30 @@ export default async function Showcase() {
         </div>
       </section>
 
-      {/* ── NEIGHBORHOOD STRIP ───────────────────────────────── */}
+      {/* ── BID PARTNER STRIP (LIVE FROM BID TRACKER) ───────── */}
       <section className="relative z-10 bg-white border-b border-v-border py-6 overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
-            Active neighborhoods
+            BID partners on this map
           </p>
-          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 divide-x divide-v-border border border-v-border rounded-xl overflow-hidden">
-            {neighborhoods.map((n) => (
-              <div key={n.name} className="px-3 py-3 text-center">
-                <p className="font-display font-bold text-v-ink text-xs uppercase tracking-wide leading-tight">
-                  {n.name}
-                </p>
-                <p className="font-body text-[10px] text-v-muted mt-0.5">{n.borough}</p>
-              </div>
-            ))}
-          </div>
+          {bidPartners.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {bidPartners.map((bid) => (
+                <div key={bid.id} className="px-3 py-2.5 border border-v-border rounded-xl bg-v-bg/55">
+                  <p className="font-display font-bold text-v-ink text-xs uppercase tracking-wide leading-tight">
+                    {bid.name}
+                  </p>
+                  <p className="font-body text-[11px] text-v-muted mt-1">
+                    {[bid.borough, bid.status].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-v-border rounded-xl px-3 py-3 bg-v-bg/55">
+              <p className="font-body text-sm text-v-muted">No BID records yet in the tracker.</p>
+            </div>
+          )}
         </div>
       </section>
 

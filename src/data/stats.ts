@@ -4,12 +4,12 @@ export interface VoltaStat {
 }
 
 export const VOLTA_STATS = {
-  businessesServed: { value: 30, suffix: "+" } satisfies VoltaStat,
+  businessesServed: { value: 35, suffix: "+" } satisfies VoltaStat,
   nycNeighborhoods: { value: 9, suffix: "" } satisfies VoltaStat,
-  studentMembers: { value: 100, suffix: "+" } satisfies VoltaStat,
+  studentMembers: { value: 150, suffix: "+" } satisfies VoltaStat,
   serviceTracks: { value: 3, suffix: "" } satisfies VoltaStat,
-  bidPartners: { value: 9, suffix: "" } satisfies VoltaStat,
-  floridaBusinessesServed: { value: 30, suffix: "+" } satisfies VoltaStat,
+  bidPartners: { value: 12, suffix: "" } satisfies VoltaStat,
+  floridaBusinessesServed: { value: 35, suffix: "+" } satisfies VoltaStat,
   operatingCities: { value: 6, suffix: "" } satisfies VoltaStat,
 } as const;
 
