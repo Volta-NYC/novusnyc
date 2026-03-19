@@ -46,9 +46,9 @@ export const homeTracks = [
     iconBg: "bg-amber-100",
     items: [
       "Grant research & writing",
-      "Revenue & sales analysis",
-      "POS & payment optimization",
-      "Operational consulting",
+      "Sales & revenue analysis",
+      "Competitor benchmarking",
+      "Owner-facing report writing (see /guides)",
     ],
   },
   {
@@ -60,9 +60,10 @@ export const homeTracks = [
     iconBg: "bg-blue-100",
     items: [
       "Website design & development",
+      "Backend workflows (forms, DB, auth)",
       "SEO & Google Maps visibility",
       "Web accessibility (ADA)",
-      "Cloud & security basics",
+      "Production deployment & iteration",
     ],
   },
   {
@@ -309,6 +310,7 @@ export const trackHighlights = [
     tagColor: "bg-blue-100 text-blue-800",
     outputs: [
       "Built and launched websites for NYC businesses from scratch",
+      "Implemented backend features for forms, scheduling, and database sync",
       "Implemented bilingual support for Chinese-speaking communities",
       "Optimized Google Maps and Yelp listings for search visibility",
       "Deployed production code across multiple active client repos",
@@ -329,8 +331,9 @@ export const trackHighlights = [
     tagColor: "bg-amber-100 text-amber-800",
     outputs: [
       "Researched grant opportunities for NYC nonprofits and small businesses",
-      "Analyzed POS systems and identified transaction fee savings",
-      "Supported financial documentation and nonprofit reporting",
+      "Analyzed sales and revenue data to identify growth opportunities",
+      "Ran competitor analysis and market benchmarking",
+      "Wrote practical owner reports on execution priorities and operating costs",
       "Drafted full grant applications on behalf of client businesses",
     ],
   },
@@ -346,13 +349,15 @@ export const joinTracks = [
     iconBg: "bg-amber-100",
     skills: [
       "Comfort reading financial and tax documents",
+      "Strong spreadsheet and structured-analysis skills",
       "Grant writing or research experience (preferred, not required)",
       "Interest in finance, accounting, or nonprofit work",
     ],
     doWhat: [
       "Research and write grant applications for small businesses",
-      "Analyze sales data and POS systems",
-      "Help businesses reduce transaction fees and optimize operations",
+      "Analyze sales and revenue data",
+      "Run competitor analysis and market benchmarking",
+      "Write practical business reports for owners (see /guides)",
       "Support nonprofit financial filings and documentation",
     ],
   },
@@ -364,12 +369,13 @@ export const joinTracks = [
     iconColor: "text-v-blue",
     iconBg: "bg-blue-100",
     skills: [
-      "React.js and/or TypeScript experience",
-      "Familiarity with GitHub",
-      "Interest in full-stack or frontend development",
+      "React.js/TypeScript with some backend or API experience",
+      "Familiarity with GitHub and deployment workflows",
+      "Interest in full-stack development and production systems",
     ],
     doWhat: [
       "Build and launch websites for client businesses",
+      "Build backend workflows (forms, databases, auth, automations)",
       "Set up and optimize Google Maps and Yelp listings",
       "Implement SEO improvements and web accessibility",
       "Deploy and manage code in a shared GitHub repo",
@@ -457,7 +463,7 @@ export const partnerServices = [
   {
     icon: TrendingUpIcon,
     title: "Sales & Financial Analysis",
-    desc: "POS evaluation, transaction fee reduction, menu pricing, and inventory analysis.",
+    desc: "Sales and revenue analysis, competitor benchmarking, pricing strategy, and owner-facing reporting.",
     color: "text-v-green",
     bg: "bg-lime-50",
   },

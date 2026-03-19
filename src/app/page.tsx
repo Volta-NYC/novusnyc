@@ -117,8 +117,8 @@ export default async function Home() {
             <p className="font-body text-sm font-semibold text-v-muted uppercase tracking-widest mb-3">How Volta works</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Students build real deliverables for local businesses.</h2>
             <p className="font-body text-v-muted text-lg mt-4 max-w-4xl">
-              Volta connects student teams with business owners who need support in websites, social media, and grant work.
-              The model is simple: businesses get high-quality execution at no cost, and students gain real project experience.
+              Volta is fast-paced and execution-focused: student teams ship work that goes live immediately for real businesses.
+              That means measurable outcomes for owners and stronger portfolio proof for students than isolated practice projects.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-2 gap-6">
@@ -127,14 +127,14 @@ export default async function Home() {
                 <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">Join a project team</p>
                 <h3 className="font-display font-bold text-v-ink text-2xl leading-tight mb-3">Student application</h3>
                 <p className="font-body text-sm text-v-muted leading-relaxed mb-5">
-                  5-minute application, rolling admissions, and real client work across three tracks.
+                  5-minute application, rolling admissions, and fast-moving client work across three tracks.
                   We usually respond within 3 days.
                 </p>
                 <ul className="space-y-2.5 mb-6">
                   {[
-                    "Digital & Tech: websites, SEO, and platform setup",
+                    "Digital & Tech: full-stack websites (frontend + backend), SEO, and platform setup",
                     "Marketing & Strategy: social media, content, and growth analytics",
-                    "Finance & Operations: grants, reporting, and operational analysis",
+                    "Finance & Operations: grants, sales/revenue analysis, competitor analysis, and report writing",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
                       <span className="w-1.5 h-1.5 rounded-full bg-v-green flex-shrink-0 mt-1.5" />
@@ -190,7 +190,7 @@ export default async function Home() {
               Three tracks.
             </h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-3xl">
-              Each track has clear deliverables and hands-on skill development. Teams collaborate across tracks to ship complete outcomes for business owners.
+              Each track has clear deliverables and real ownership. Teams collaborate across tracks to ship live outcomes with measurable business impact.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-5">

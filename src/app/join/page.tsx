@@ -98,7 +98,8 @@ export default async function Join() {
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
               You&apos;ll work on websites, marketing, or finance projects that local businesses actually use.
-              It&apos;s practical, fast-moving, and built to help you ship real work.
+              It&apos;s practical, fast-moving, and built to help you ship work with visible outcomes quickly.
+              In Tech, that includes backend workflows and production integrations, not just static pages.
               All levels of experience welcome.
             </p>
             <div className="flex gap-4 flex-wrap mb-3">
@@ -128,7 +129,7 @@ export default async function Join() {
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Pick your path</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Three tracks</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
-              Three tracks, one goal: ship something real for a real business.
+              Three tracks, one goal: ship real systems and campaigns that go live for real businesses.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
@@ -168,7 +169,7 @@ export default async function Join() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Our members</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where we come from</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where our members and applicants come from</h2>
           </AnimatedSection>
           <div className="space-y-10">
             {schoolGroups.map((group, gi) => (

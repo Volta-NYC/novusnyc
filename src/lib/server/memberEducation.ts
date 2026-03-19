@@ -20,6 +20,7 @@ type SchoolGroup = {
 };
 
 const SCHOOL_NORMALIZATION: Record<string, string> = {
+  cornell: "Cornell University",
   "brooklyn technical highschool": "Brooklyn Technical High School",
   "brooklyn technical high school": "Brooklyn Technical High School",
   "csi high school": "CSI High School for International Studies",
@@ -37,12 +38,16 @@ const SCHOOL_NORMALIZATION: Record<string, string> = {
 
 const EXPLICIT_COLLEGES = new Set<string>([
   "bard college",
+  "cornell university",
   "new jersey institute of technology",
 ]);
 
 const EXPLICIT_HIGH_SCHOOLS = new Set<string>([
   "brighton college abu dhabi",
+  "bard high school early college",
+  "bard highschool early college",
   "daly college",
+  "high school of american studies at lehman college",
   "international academy east",
   "ps 184 shuang wen",
   "seattle voctech",
@@ -53,6 +58,7 @@ const EXPLICIT_HIGH_SCHOOLS = new Set<string>([
 const SCHOOL_STATE: Record<string, string> = {
   "Academy of Greatness and Excellence": "NJ",
   "Bard College": "NY",
+  "Cornell University": "NY",
   "Briar Woods High School": "VA",
   "Bronx High School of Science": "NY",
   "Brooklyn Technical High School": "NY",
@@ -235,12 +241,21 @@ export async function getMemberEducationSnapshot(): Promise<EducationSnapshot> {
   if (!db) return fallbackSnapshot();
 
   try {
-    const snap = await db.ref("team").get();
-    if (!snap.exists()) return fallbackSnapshot();
+    const [teamSnap, applicationSnap] = await Promise.all([
+      db.ref("team").get(),
+      db.ref("applications").get(),
+    ]);
+    if (!teamSnap.exists() && !applicationSnap.exists()) return fallbackSnapshot();
 
-    const rows = Object.values((snap.val() ?? {}) as Record<string, Record<string, unknown>>);
-    const schools = rows.map((row) => asText(row.school));
-    return buildSnapshot(rows.length, schools);
+    const teamRows = Object.values((teamSnap.val() ?? {}) as Record<string, Record<string, unknown>>);
+    const applicationRows = Object.values((applicationSnap.val() ?? {}) as Record<string, Record<string, unknown>>);
+
+    const schools = [
+      ...teamRows.map((row) => asText(row.school)),
+      ...applicationRows.map((row) => asText(row.schoolName) || asText(row.school)),
+    ];
+
+    return buildSnapshot(teamRows.length, schools);
   } catch {
     return fallbackSnapshot();
   }

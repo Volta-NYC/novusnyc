@@ -265,7 +265,7 @@ export default async function Showcase() {
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
-              Every project is staffed by students from one or more of our three service tracks. Here&apos;s what each track does and who fits in.
+              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems in addition to frontend execution.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">

@@ -213,7 +213,7 @@ export default async function About() {
               Our member network at a glance.
             </h2>
             <p className="font-body text-white/50 max-w-2xl mx-auto mb-10">
-              Based on the current team directory, Volta members come from a wide range of schools and regions.
+              Based on the current team directory plus active applicants, Volta&apos;s pipeline spans a wide range of schools and regions.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-4">
