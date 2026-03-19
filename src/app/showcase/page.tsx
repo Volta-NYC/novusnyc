@@ -183,19 +183,30 @@ export default async function Showcase() {
               See progress updates →
             </Link>
           </AnimatedSection>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="columns-1 md:columns-2 lg:columns-3 [column-gap:1.5rem]">
             {projects.map((p, i) => (
-              <AnimatedSection key={p.name} delay={i * 0.07}>
-                <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
+              <AnimatedSection
+                key={p.name}
+                delay={i * 0.07}
+                className="inline-block w-full break-inside-avoid mb-6 align-top"
+              >
+                <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                   <div className={`${p.colorClass} h-2`} />
-                  <div
-                    className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg aspect-[11/10] sm:aspect-[6/5] flex items-center justify-center bg-cover bg-center"
-                    style={p.imageUrl ? { backgroundImage: `url("${p.imageUrl.replace(/"/g, "%22")}")` } : undefined}
-                  >
-                    {!p.imageUrl && (
+                  {p.imageUrl ? (
+                    <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg overflow-hidden">
+                      <img
+                        src={p.imageUrl}
+                        alt={`${p.name} project`}
+                        className="block w-full h-auto"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                  ) : (
+                    <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg h-40 flex items-center justify-center">
                       <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <div className="p-7 flex-1 flex flex-col">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex gap-2 flex-wrap">
