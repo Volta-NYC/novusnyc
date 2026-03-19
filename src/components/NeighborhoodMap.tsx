@@ -115,7 +115,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
         zoom={11}
         zoomSnap={0.25}
         style={{ height: "100%", width: "100%" }}
-        scrollWheelZoom={false}
+        scrollWheelZoom={true}
         zoomControl={true}
       >
         <FitMapToPoints points={fitPoints} />

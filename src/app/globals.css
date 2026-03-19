@@ -70,6 +70,40 @@ main {
   mix-blend-mode: multiply;
 }
 
+/* Home hero: skyline image + green wash + grid */
+.hero-photo {
+  background-image: url("/hero-nyc-skyline.jpg");
+  background-size: cover;
+  background-position: center center;
+  transform: scale(1.03);
+}
+
+.hero-photo-wash {
+  background:
+    linear-gradient(rgba(174, 214, 110, 0.52), rgba(145, 191, 76, 0.48)),
+    radial-gradient(120% 85% at 50% -8%, rgba(242, 250, 230, 0.5) 0%, rgba(242, 250, 230, 0) 68%);
+  mix-blend-mode: screen;
+}
+
+.hero-grid-overlay {
+  background-image:
+    linear-gradient(rgba(243, 252, 231, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(243, 252, 231, 0.25) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+}
+
+@media (max-width: 768px) {
+  .hero-photo {
+    background-position: 58% center;
+    transform: scale(1.07);
+  }
+
+  .hero-grid-overlay {
+    background-size: 28px 28px;
+  }
+}
+
 /* Card hover */
 .project-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
