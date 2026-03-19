@@ -20,7 +20,7 @@ const moreLinks = [
 ];
 
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */
-const darkHeroPages = ["/partners", "/showcase", "/join"];
+const darkHeroPages = ["/", "/partners", "/showcase", "/join"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -52,6 +52,9 @@ export default function Navbar() {
   }, [pathname]);
 
   const darkHero = !scrolled && !open && darkHeroPages.includes(pathname);
+  const navTextClass = darkHero
+    ? "text-white/80 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
+    : "text-v-muted hover:text-v-ink";
   const moreActive = moreLinks.some((l) => pathname === l.href) || pathname.startsWith("/members");
 
   return (
@@ -72,7 +75,7 @@ export default function Navbar() {
               height={32}
               className="object-contain"
             />
-            <span className={`font-display font-bold text-xl tracking-tight transition-colors ${darkHero ? "text-white" : "text-v-ink"}`}>
+            <span className={`font-display font-bold text-xl tracking-tight transition-colors ${darkHero ? "text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]" : "text-v-ink"}`}>
               VOLTA NYC
             </span>
           </Link>
@@ -85,9 +88,7 @@ export default function Navbar() {
                 className={`font-body text-sm font-semibold transition-colors ${
                   pathname === l.href
                     ? "text-v-green"
-                    : darkHero
-                    ? "text-white/70 hover:text-white"
-                    : "text-v-muted hover:text-v-ink"
+                    : navTextClass
                 }`}
               >
                 {l.label}
@@ -104,9 +105,7 @@ export default function Navbar() {
                 className={`font-body text-sm font-semibold transition-colors flex items-center gap-1 ${
                   moreActive
                     ? "text-v-green"
-                    : darkHero
-                    ? "text-white/70 hover:text-white"
-                    : "text-v-muted hover:text-v-ink"
+                    : navTextClass
                 }`}
               >
                 More
@@ -164,9 +163,9 @@ export default function Navbar() {
             className="md:hidden flex flex-col gap-1.5 p-2"
             aria-label="Menu"
           >
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white" : "bg-v-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white" : "bg-v-ink"} ${open ? "opacity-0" : ""}`} />
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white" : "bg-v-ink"} ${open ? "-rotate-45 -translate-y-2" : ""}`} />
+            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
+            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "opacity-0" : ""}`} />
+            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "-rotate-45 -translate-y-2" : ""}`} />
           </button>
         </div>
       </header>

@@ -35,7 +35,7 @@ export default function HeroSection() {
           <h1
             className="font-display font-bold text-white leading-none tracking-tight"
             style={{
-              fontSize: "clamp(3.9rem, 11vw, 7.8rem)",
+              fontSize: "clamp(4.4rem, 12.8vw, 8.6rem)",
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
@@ -48,8 +48,8 @@ export default function HeroSection() {
                 className="object-contain flex-shrink-0"
                 style={{
                   /* Slightly larger lockup to fit new hero composition */
-                  width: "clamp(7.8rem, 21vw, 15.5rem)",
-                  height: "clamp(7.8rem, 21vw, 15.5rem)",
+                  width: "clamp(8.4rem, 22.8vw, 16.8rem)",
+                  height: "clamp(8.4rem, 22.8vw, 16.8rem)",
                 }}
                 priority
               />
