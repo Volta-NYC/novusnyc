@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
-import { aboutValues, aboutTimeline, teamMembers, branches } from "@/data";
+import { aboutValues, aboutTimeline, teamMembers } from "@/data";
+import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
+
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "About Us | Volta NYC",
@@ -14,7 +17,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function About() {
+export default async function About() {
+  const education = await getMemberEducationSnapshot();
+
   return (
     <>
       <section className="bg-v-bg pt-32 pb-20 relative overflow-hidden">
@@ -199,26 +204,28 @@ export default function About() {
         </div>
       </section>
 
-      {/* National reach */}
+      {/* Member Reach */}
       <section className="py-20 bg-v-dark">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10 text-center">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">National reach</p>
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Member Reach</p>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-              Volta operates across the country.
+              Our member network at a glance.
             </h2>
             <p className="font-body text-white/50 max-w-2xl mx-auto mb-10">
-              Our Florida branch has partnered with 30+ businesses including OPA Behavioral Health,
-              Persis Indian Grill, Sun City Sustenance, and other local stores.
-              Volta now has operations across six states.
+              Based on the current team directory, Volta members come from a wide range of schools and regions.
             </p>
           </AnimatedSection>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {branches.map((b, i) => (
-              <AnimatedSection key={b.city} delay={i * 0.07}>
-                <div className={`rounded-xl border p-4 text-center ${b.state === "NY" ? "border-v-green/50 bg-v-green/10" : "border-white/10 bg-white/5"}`}>
-                  <p className="font-display font-bold text-white text-base leading-tight">{b.city}</p>
-                  <p className="font-body text-xs text-white/40 mt-1">{b.state}</p>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { label: "High Schools", value: education.highSchoolCount },
+              { label: "Colleges", value: education.collegeCount },
+              { label: "States Represented", value: education.stateCount },
+            ].map((stat, i) => (
+              <AnimatedSection key={stat.label} delay={i * 0.08}>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-8 text-center">
+                  <p className="font-display font-bold text-v-green text-5xl leading-none">{stat.value}</p>
+                  <p className="font-body text-xs text-white/60 uppercase tracking-[0.18em] mt-3">{stat.label}</p>
                 </div>
               </AnimatedSection>
             ))}

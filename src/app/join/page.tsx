@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import fs from "fs";
-import path from "path";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { joinTracks, joinFaqs } from "@/data";
+import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 
 export const metadata: Metadata = {
   title: "Get Involved | Volta NYC",
@@ -14,39 +13,6 @@ export const metadata: Metadata = {
     description: "Real projects. Real clients. All experience levels welcome.",
   },
 };
-
-interface SchoolGroup {
-  category: string;
-  schools: string[];
-}
-
-function dedupeSchools(schools: string[]): string[] {
-  const seen = new Set<string>();
-  return schools.filter((school) => {
-    const key = school.trim().toLowerCase();
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function parseSchools(markdown: string): SchoolGroup[] {
-  const sections: SchoolGroup[] = [];
-  let current: SchoolGroup | null = null;
-  for (const line of markdown.split("\n")) {
-    const t = line.trim();
-    if (t.startsWith("## ")) {
-      if (current) {
-        sections.push({ ...current, schools: dedupeSchools(current.schools) });
-      }
-      current = { category: t.slice(3), schools: [] };
-    } else if (t.startsWith("- ") && current) {
-      current.schools.push(t.slice(2));
-    }
-  }
-  if (current) sections.push({ ...current, schools: dedupeSchools(current.schools) });
-  return sections;
-}
 
 const leadershipSteps = [
   {
@@ -86,12 +52,14 @@ const otherRoles = [
   },
 ];
 
-export default function Join() {
-  const schoolsRaw = fs.readFileSync(
-    path.join(process.cwd(), "src/data/schools.md"),
-    "utf-8"
-  );
-  const schoolGroups = parseSchools(schoolsRaw);
+export const revalidate = 3600;
+
+export default async function Join() {
+  const education = await getMemberEducationSnapshot();
+  const schoolGroups = [
+    { category: "High Schools", schools: education.highSchools },
+    { category: "Colleges & Universities", schools: education.colleges },
+  ];
 
   const faqSchema = {
     "@context": "https://schema.org",
