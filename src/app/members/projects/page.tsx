@@ -216,6 +216,7 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   showcaseDescription: "",
   showcaseUrl: "",
   showcaseImageUrl: "",
+  showcaseImageData: "",
   showcaseColor: "blue-mid",
 };
 
@@ -234,6 +235,12 @@ export default function BusinessesPage() {
   const [form, setForm]                       = useState(BLANK_FORM);
   const [showOwnerAltEmail, setShowOwnerAltEmail] = useState(false);
   const [showAlternatePhone, setShowAlternatePhone] = useState(false);
+  const [showcaseImageSource, setShowcaseImageSource] = useState<"link" | "upload">("link");
+  const [uploadImageData, setUploadImageData] = useState("");
+  const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [cropDragStart, setCropDragStart] = useState<{ x: number; y: number } | null>(null);
+  const showcaseImageInputRef = useRef<HTMLInputElement | null>(null);
+  const showcaseImagePreviewRef = useRef<HTMLImageElement | null>(null);
   const [memberInput, setMemberInput] = useState("");
   const [importingBusinessCsv, setImportingBusinessCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -279,6 +286,10 @@ export default function BusinessesPage() {
     setEditingBusiness(null);
     setShowOwnerAltEmail(false);
     setShowAlternatePhone(false);
+    setShowcaseImageSource("link");
+    setUploadImageData("");
+    setCropRect(null);
+    setCropDragStart(null);
     setMemberInput("");
     setModal("create");
   };
@@ -306,11 +317,17 @@ export default function BusinessesPage() {
       showcaseDescription: b.showcaseDescription ?? "",
       showcaseUrl: b.showcaseUrl ?? "",
       showcaseImageUrl: b.showcaseImageUrl ?? "",
+      showcaseImageData: b.showcaseImageData ?? "",
       showcaseColor: normalizeColorToken((b.showcaseColor as string) ?? ""),
     });
     setEditingBusiness(b);
     setShowOwnerAltEmail(!!(b.ownerAlternateEmail ?? "").trim());
     setShowAlternatePhone(!!(b.alternatePhone ?? "").trim());
+    const savedImageData = (b.showcaseImageData ?? "").trim();
+    setShowcaseImageSource(savedImageData ? "upload" : "link");
+    setUploadImageData(savedImageData);
+    setCropRect(null);
+    setCropDragStart(null);
     setMemberInput("");
     setModal("edit");
   };
@@ -341,12 +358,152 @@ export default function BusinessesPage() {
     setField("showcaseServices", [...current, label]);
   };
 
+  const geocodeProjectLocation = async (input: {
+    address: string;
+    zipCode: string;
+    borough: string;
+  }): Promise<{ lat: number; lng: number } | null> => {
+    if (!user) return null;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/bids/geocode", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) return null;
+      const data = await res.json() as { lat?: number; lng?: number };
+      if (typeof data.lat !== "number" || typeof data.lng !== "number") return null;
+      return { lat: data.lat, lng: data.lng };
+    } catch {
+      return null;
+    }
+  };
+
+  const resetImageCrop = () => {
+    setCropRect(null);
+    setCropDragStart(null);
+  };
+
+  const handleShowcaseImageFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("read_failed"));
+      reader.readAsDataURL(file);
+    });
+    setShowcaseImageSource("upload");
+    setUploadImageData(dataUrl);
+    setField("showcaseImageData", dataUrl);
+    setField("showcaseImageUrl", "");
+    resetImageCrop();
+  };
+
+  const onShowcaseDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    await handleShowcaseImageFile(file);
+  };
+
+  const getRelativePoint = (event: React.PointerEvent<HTMLDivElement>) => {
+    const img = showcaseImagePreviewRef.current;
+    if (!img) return null;
+    const rect = img.getBoundingClientRect();
+    const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+    const y = Math.max(0, Math.min(event.clientY - rect.top, rect.height));
+    return { x, y };
+  };
+
+  const onCropPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!uploadImageData) return;
+    const point = getRelativePoint(event);
+    if (!point) return;
+    setCropDragStart(point);
+    setCropRect({ x: point.x, y: point.y, width: 0, height: 0 });
+  };
+
+  const onCropPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!cropDragStart) return;
+    const point = getRelativePoint(event);
+    if (!point) return;
+    const x = Math.min(cropDragStart.x, point.x);
+    const y = Math.min(cropDragStart.y, point.y);
+    const width = Math.abs(point.x - cropDragStart.x);
+    const height = Math.abs(point.y - cropDragStart.y);
+    setCropRect({ x, y, width, height });
+  };
+
+  const onCropPointerUp = () => {
+    setCropDragStart(null);
+  };
+
+  const applyCropToShowcaseImage = () => {
+    const img = showcaseImagePreviewRef.current;
+    if (!img || !uploadImageData) return;
+    if (!cropRect || cropRect.width < 4 || cropRect.height < 4) {
+      setField("showcaseImageData", uploadImageData);
+      return;
+    }
+
+    const displayWidth = img.clientWidth;
+    const displayHeight = img.clientHeight;
+    if (displayWidth <= 0 || displayHeight <= 0 || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
+      return;
+    }
+
+    const sx = (cropRect.x / displayWidth) * img.naturalWidth;
+    const sy = (cropRect.y / displayHeight) * img.naturalHeight;
+    const sw = (cropRect.width / displayWidth) * img.naturalWidth;
+    const sh = (cropRect.height / displayHeight) * img.naturalHeight;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(sw));
+    canvas.height = Math.max(1, Math.round(sh));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(
+      img,
+      Math.max(0, sx),
+      Math.max(0, sy),
+      Math.max(1, sw),
+      Math.max(1, sh),
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+    // Preserve source format when possible so cropped images keep full quality.
+    const sourceMime = uploadImageData.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/)?.[1] ?? "image/png";
+    const outputMime = sourceMime === "image/png" || sourceMime === "image/webp" || sourceMime === "image/jpeg" || sourceMime === "image/jpg"
+      ? sourceMime.replace("image/jpg", "image/jpeg")
+      : "image/png";
+    const cropped = outputMime === "image/png"
+      ? canvas.toDataURL(outputMime)
+      : canvas.toDataURL(outputMime, 1.0);
+    setField("showcaseImageData", cropped);
+    setUploadImageData(cropped);
+    setField("showcaseImageUrl", "");
+    resetImageCrop();
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) return;
     if (!form.projectStatus) return;
     const showcaseEnabled = !!form.showcaseEnabled;
     const showcaseColor = normalizeColorToken((form.showcaseColor as string) ?? "");
     const showcaseServices = (form.showcaseServices ?? []).map((service) => service.trim()).filter(Boolean);
+    const showcaseImageData = showcaseImageSource === "upload"
+      ? (form.showcaseImageData ?? "").trim()
+      : "";
+    const geocodeAddress = (form.address ?? "").trim() || (form.showcaseNeighborhood ?? "").trim();
+    const geocoded = geocodeAddress
+      ? await geocodeProjectLocation({ address: geocodeAddress, zipCode: "", borough: "" })
+      : null;
     const payload: Partial<Business> = {
       name: form.name.trim(),
       ownerName: form.ownerName.trim(),
@@ -364,6 +521,8 @@ export default function BusinessesPage() {
       notes: form.notes,
       showcaseEnabled,
       showcaseColor,
+      ...(geocoded ? { lat: geocoded.lat, lng: geocoded.lng } : {}),
+      ...(!geocodeAddress ? { lat: null as unknown as number, lng: null as unknown as number } : {}),
     };
 
     if (showcaseEnabled) {
@@ -376,6 +535,7 @@ export default function BusinessesPage() {
       payload.showcaseDescription = (form.showcaseDescription ?? "").trim();
       payload.showcaseUrl = (form.showcaseUrl ?? "").trim();
       payload.showcaseImageUrl = (form.showcaseImageUrl ?? "").trim();
+      payload.showcaseImageData = showcaseImageData;
     } else {
       payload.showcaseFeaturedOnHome = false;
     }
@@ -397,6 +557,7 @@ export default function BusinessesPage() {
         showcaseDescription: showcaseEnabled ? payload.showcaseDescription : (null as unknown as string),
         showcaseUrl: showcaseEnabled ? payload.showcaseUrl : (null as unknown as string),
         showcaseImageUrl: showcaseEnabled ? payload.showcaseImageUrl : (null as unknown as string),
+        showcaseImageData: showcaseEnabled ? payload.showcaseImageData : (null as unknown as string),
       });
     } else {
       await createBusiness({
@@ -504,6 +665,7 @@ export default function BusinessesPage() {
           showcaseDescription: "",
           showcaseUrl: "",
           showcaseImageUrl: "",
+          showcaseImageData: "",
           showcaseColor: "blue-mid",
         });
         sortCursor += 1000;
@@ -1313,9 +1475,133 @@ export default function BusinessesPage() {
               <Field label="Card Status">
                 <Select options={SHOWCASE_STATUSES} value={form.showcaseStatus ?? "In Progress"} onChange={e => setField("showcaseStatus", e.target.value)} />
               </Field>
-              <Field label="Image Link">
-                <Input value={form.showcaseImageUrl ?? ""} onChange={e => setField("showcaseImageUrl", e.target.value)} placeholder="https://..." />
-              </Field>
+              <div className="col-span-2">
+                <Field label="Image">
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowcaseImageSource("link")}
+                        className={`px-3 py-1.5 rounded-lg border text-xs transition-colors ${
+                          showcaseImageSource === "link"
+                            ? "bg-white/10 border-white/35 text-white"
+                            : "bg-[#0F1014] border-white/15 text-white/65 hover:border-white/30"
+                        }`}
+                      >
+                        Use Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowcaseImageSource("upload")}
+                        className={`px-3 py-1.5 rounded-lg border text-xs transition-colors ${
+                          showcaseImageSource === "upload"
+                            ? "bg-white/10 border-white/35 text-white"
+                            : "bg-[#0F1014] border-white/15 text-white/65 hover:border-white/30"
+                        }`}
+                      >
+                        Upload + Crop
+                      </button>
+                    </div>
+
+                    {showcaseImageSource === "link" ? (
+                      <Input
+                        value={form.showcaseImageUrl ?? ""}
+                        onChange={e => {
+                          setField("showcaseImageUrl", e.target.value);
+                          setField("showcaseImageData", "");
+                        }}
+                        placeholder="https://..."
+                      />
+                    ) : (
+                      <div className="space-y-3">
+                        <div
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={onShowcaseDrop}
+                          className="rounded-lg border border-dashed border-white/25 bg-[#0F1014] p-4 text-center"
+                        >
+                          <p className="text-xs text-white/65">Drag an image here, or</p>
+                          <Btn
+                            size="sm"
+                            variant="secondary"
+                            className="mt-2"
+                            onClick={() => showcaseImageInputRef.current?.click()}
+                          >
+                            Choose Image
+                          </Btn>
+                          <input
+                            ref={showcaseImageInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (event) => {
+                              const file = event.target.files?.[0];
+                              if (file) await handleShowcaseImageFile(file);
+                              event.target.value = "";
+                            }}
+                          />
+                        </div>
+
+                        {(uploadImageData || form.showcaseImageData) && (
+                          <div className="rounded-lg border border-white/15 bg-[#0F1014] p-3 space-y-2">
+                            <p className="text-[11px] text-white/60">Drag across the image to crop, then click Apply Crop.</p>
+                            <div
+                              className="relative w-full overflow-hidden rounded-md border border-white/10"
+                              onPointerDown={onCropPointerDown}
+                              onPointerMove={onCropPointerMove}
+                              onPointerUp={onCropPointerUp}
+                              onPointerLeave={onCropPointerUp}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                ref={showcaseImagePreviewRef}
+                                src={uploadImageData || form.showcaseImageData || ""}
+                                alt="Showcase crop preview"
+                                className="block w-full h-auto select-none"
+                                draggable={false}
+                              />
+                              {cropRect && cropRect.width > 0 && cropRect.height > 0 && (
+                                <div
+                                  className="absolute border-2 border-[#85CC17] bg-[#85CC17]/20 pointer-events-none"
+                                  style={{
+                                    left: cropRect.x,
+                                    top: cropRect.y,
+                                    width: cropRect.width,
+                                    height: cropRect.height,
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Btn size="sm" variant="secondary" onClick={applyCropToShowcaseImage}>Apply Crop</Btn>
+                              <Btn
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setField("showcaseImageData", uploadImageData || "");
+                                  resetImageCrop();
+                                }}
+                              >
+                                Use Full Image
+                              </Btn>
+                              <Btn
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setUploadImageData("");
+                                  setField("showcaseImageData", "");
+                                  resetImageCrop();
+                                }}
+                              >
+                                Clear
+                              </Btn>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Field>
+              </div>
               <div className="col-span-2">
                 <Field label="What we do">
                   <div className="flex flex-wrap gap-2">

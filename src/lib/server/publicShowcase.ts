@@ -237,7 +237,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     const status = normalizeStatusFromShowcase(row.showcaseStatus) ?? mapBusinessStatusToShowcase(row.projectStatus);
     const desc = normalizeDescription(row.showcaseDescription);
     const url = asText(row.showcaseUrl) || asText(row.website) || "";
-    const imageUrl = asText(row.showcaseImageUrl);
+    const imageUrl = asText(row.showcaseImageData) || asText(row.showcaseImageUrl);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();

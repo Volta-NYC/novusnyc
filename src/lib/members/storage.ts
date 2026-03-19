@@ -49,6 +49,8 @@ export interface Business {
   phone: string;
   alternatePhone: string;
   address: string;
+  lat?: number;
+  lng?: number;
   website: string;
   activeServices?: string[];   // legacy field
   projectStatus: "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
@@ -77,6 +79,7 @@ export interface Business {
   showcaseDescription?: string;
   showcaseUrl?: string;
   showcaseImageUrl?: string;
+  showcaseImageData?: string;
   showcaseColor?:
     | "green"
     | "blue"
