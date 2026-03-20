@@ -201,31 +201,16 @@ export default async function About() {
               </AnimatedSection>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Member Reach */}
-      <section className="py-20 bg-v-dark">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10 text-center">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Member Reach</p>
-            <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-              Our member network at a glance.
-            </h2>
-            <p className="font-body text-white/50 max-w-2xl mx-auto mb-10">
-              Based on the current team directory plus active applicants, Volta&apos;s pipeline spans a wide range of schools and regions.
-            </p>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 gap-4 mt-8">
             {[
               { label: "High Schools", value: education.highSchoolCount },
               { label: "Colleges", value: education.collegeCount },
               { label: "States Represented", value: education.stateCount },
             ].map((stat, i) => (
               <AnimatedSection key={stat.label} delay={i * 0.08}>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-8 text-center">
-                  <p className="font-display font-bold text-v-green text-5xl leading-none">{stat.value}</p>
-                  <p className="font-body text-xs text-white/60 uppercase tracking-[0.18em] mt-3">{stat.label}</p>
+                <div className="rounded-xl border border-v-border bg-white px-6 py-7 text-center">
+                  <p className="font-display font-bold text-v-green text-4xl leading-none">{stat.value}</p>
+                  <p className="font-body text-xs text-v-muted uppercase tracking-[0.16em] mt-3">{stat.label}</p>
                 </div>
               </AnimatedSection>
             ))}

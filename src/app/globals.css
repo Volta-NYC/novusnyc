@@ -17,10 +17,12 @@
 
 html {
   scroll-behavior: smooth;
+  background-color: #0f1418;
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
   overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -35,6 +37,7 @@ body {
   /* Lock horizontal overflow on mobile Safari/Chrome to remove right-side dead space */
   overflow-x: hidden;
   overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
 }
 
 main {

@@ -104,9 +104,18 @@ export default async function Showcase() {
       id: entry.id,
       name: entry.name,
       borough: entry.borough || "",
-      status: entry.status,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  const boroughCardClass = (borough: string) => {
+    const key = borough.trim().toLowerCase();
+    if (key.includes("brooklyn")) return "bg-lime-500/10 border-lime-500/30 text-lime-900";
+    if (key.includes("queens")) return "bg-blue-400/10 border-blue-400/30 text-blue-900";
+    if (key.includes("manhattan")) return "bg-amber-400/12 border-amber-400/35 text-amber-900";
+    if (key.includes("bronx")) return "bg-purple-400/10 border-purple-400/30 text-purple-900";
+    if (key.includes("staten")) return "bg-rose-400/10 border-rose-400/30 text-rose-900";
+    return "bg-v-bg border-v-border text-v-ink";
+  };
 
   const getServiceTagClass = (service: string) => {
     const key = service.trim().toLowerCase();
@@ -170,12 +179,12 @@ export default async function Showcase() {
           {bidPartners.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {bidPartners.map((bid) => (
-                <div key={bid.id} className="px-3 py-2.5 border border-v-border rounded-xl bg-v-bg/55">
-                  <p className="font-display font-bold text-v-ink text-xs uppercase tracking-wide leading-tight">
+                <div key={bid.id} className={`px-3 py-2.5 border rounded-xl ${boroughCardClass(bid.borough)}`}>
+                  <p className="font-display font-bold text-xs uppercase tracking-wide leading-tight">
                     {bid.name}
                   </p>
-                  <p className="font-body text-[11px] text-v-muted mt-1">
-                    {[bid.borough, bid.status].filter(Boolean).join(" · ")}
+                  <p className="font-body text-[11px] mt-1 opacity-85">
+                    {bid.borough}
                   </p>
                 </div>
               ))}

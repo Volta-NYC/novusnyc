@@ -51,29 +51,20 @@ const SHOWCASE_COLOR_CLASS: Record<string, string> = {
 
 export default async function Home() {
   const publicShowcase = await getPublicShowcaseCards();
-  const publicHomeCards = publicShowcase
-    .filter((card) => card.featuredOnHome)
-    .slice(0, 3)
-    .map((card) => ({
+  const homeCarouselCards = publicShowcase.length > 0
+    ? publicShowcase.map((card) => ({
       name: card.name,
-      type: card.type,
       neighborhood: card.neighborhood,
       services: card.services,
       colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
-      desc: card.desc,
       url: card.url,
       imageUrl: card.imageUrl,
-    }));
-
-  const currentProjects = publicHomeCards.length > 0
-    ? publicHomeCards
+    }))
     : fallbackCurrentProjects.map((project) => ({
       name: project.name,
-      type: project.type,
       neighborhood: project.neighborhood,
       services: project.services,
       colorClass: project.color,
-      desc: project.desc,
       url: project.url,
       imageUrl: undefined as string | undefined,
     }));
@@ -238,30 +229,42 @@ export default async function Home() {
               See all work →
             </Link>
           </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-5">
-            {currentProjects.map((p, i) => (
-              <AnimatedSection key={p.name} delay={i * 0.1}>
-                <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
-                  <div className={`${p.colorClass} h-2`} />
-                  <div
-                    className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border aspect-[11/10] sm:aspect-[6/5] flex items-center justify-center bg-white bg-cover bg-center"
-                    style={p.imageUrl ? { backgroundImage: `url("${p.imageUrl.replace(/"/g, "%22")}")` } : undefined}
-                  >
-                    {!p.imageUrl && (
-                      <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+          <div className="overflow-hidden">
+            <div className="marquee-track gap-5">
+              {[...homeCarouselCards, ...homeCarouselCards].map((p, i) => (
+                <AnimatedSection key={`${p.name}-${i}`} delay={i < homeCarouselCards.length ? i * 0.05 : 0}>
+                  <div className="w-[320px] md:w-[360px] border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
+                    <div className={`${p.colorClass} h-2`} />
+                    {p.imageUrl ? (
+                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
+                        <img
+                          src={p.imageUrl}
+                          alt={`${p.name} project`}
+                          className="block w-full h-auto"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-white">
+                        <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                      </div>
                     )}
+                    <div className="p-6">
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {p.services.map((service) => (
+                          <span key={`${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                        ))}
+                      </div>
+                      <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
+                      <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
+                        <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-6">
-                    <span className={`tag border mb-4 inline-block ${getServiceTagClass(p.services[0])}`}>{p.services[0]}</span>
-                    <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                    <p className="font-body text-sm text-v-muted">{p.type}</p>
-                    <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
-                      <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                    </p>
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
+                </AnimatedSection>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -275,7 +278,7 @@ export default async function Home() {
               Across all five boroughs.
             </h2>
             <p className="font-body text-white/50 text-lg max-w-xl mx-auto">
-              {formatStat(VOLTA_STATS.nycNeighborhoods)} active neighborhoods and growing — we go where NYC&apos;s small businesses are.
+              We operate through trusted neighborhood partners and place teams where businesses are ready to launch and improve quickly.
             </p>
           </AnimatedSection>
           <div className="flex flex-wrap justify-center gap-3 mt-8">

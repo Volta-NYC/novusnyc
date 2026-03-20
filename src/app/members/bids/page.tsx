@@ -127,12 +127,21 @@ export default function BIDTrackerPage() {
     const address = (form.address ?? "").trim();
     const zipCode = (form.zipCode ?? "").trim();
     const borough = (form.borough ?? "").trim();
+    const prevAddress = (editingBID?.address ?? "").trim();
+    const prevZipCode = (editingBID?.zipCode ?? "").trim();
+    const prevBorough = (editingBID?.borough ?? "").trim();
+    const locationChanged = !editingBID
+      || address !== prevAddress
+      || zipCode !== prevZipCode
+      || borough !== prevBorough;
 
     const geocoded = (address || zipCode)
       ? await geocodeBidLocation({ address, zipCode, borough })
       : null;
     const geocodePatch = (address || zipCode)
-      ? (geocoded ? { lat: geocoded.lat, lng: geocoded.lng } : {})
+      ? (geocoded
+          ? { lat: geocoded.lat, lng: geocoded.lng }
+          : (locationChanged ? { lat: null as unknown as number, lng: null as unknown as number } : {}))
       : ({ lat: null as unknown as number, lng: null as unknown as number });
 
     if (editingBID) {

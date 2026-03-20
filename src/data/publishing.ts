@@ -65,7 +65,7 @@ export const progressUpdates: UpdateEntry[] = [
   {
     id: "instagram-dvbs-6ldvk9",
     title: "Instagram Project Update",
-    date: "2026-03-17",
+    date: "2026-02-21",
     summary:
       "Instagram update from the Volta NYC feed.",
     highlights: [

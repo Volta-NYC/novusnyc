@@ -207,7 +207,7 @@ export default function Partners() {
                 project. We&apos;re also open to a quick Zoom chat to discuss fit.
               </p>
               <a
-                href="mailto:info@voltanyc.org"
+                href="mailto:ethan@voltanyc.org"
                 className="inline-block bg-v-ink text-white font-display font-bold text-sm px-7 py-3 rounded-full hover:bg-v-ink/80 transition-colors"
               >
                 Contact us directly
@@ -222,7 +222,7 @@ export default function Partners() {
                 <p className="font-body text-v-muted mb-6">BID partnerships across NYC</p>
                 <div className="pt-6 border-t border-v-border">
                   <p className="font-body text-sm text-v-muted">
-                    Active across {formatStat(VOLTA_STATS.nycNeighborhoods)} neighborhoods in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
+                    Active across {formatStat(VOLTA_STATS.bidPartners)} neighborhoods in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
                   </p>
                 </div>
               </div>
