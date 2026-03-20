@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Our Work | Volta NYC",
     description: `${formatStat(VOLTA_STATS.businessesServed)} businesses across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods. See every project.`,
-    images: ["/logo.png"],
+    images: ["/hero-nyc-skyline.jpg"],
   },
 };
 

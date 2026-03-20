@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Business Guides | Volta NYC",
     description: "Practical, no-fluff guides for small business owners on websites, hosting, marketing spend, and digital operations.",
-    images: ["/logo.png"],
+    images: ["/hero-nyc-skyline.jpg"],
   },
 };
 

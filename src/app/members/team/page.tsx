@@ -698,6 +698,7 @@ export default function TeamPage() {
                 const avatar = getTrackAvatarStyles(track);
                 const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
                 const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
+                const directEmail = (member.email ?? member.alternateEmail ?? "").trim();
                 return (
                   <tr
                     key={member.id}
@@ -749,6 +750,16 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1.5 whitespace-nowrap">
                       <div className="flex gap-1 flex-nowrap">
+                        {directEmail && (
+                          <Btn
+                            size="sm"
+                            variant="secondary"
+                            className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap"
+                            onClick={() => { window.location.href = `mailto:${directEmail}`; }}
+                          >
+                            Email
+                          </Btn>
+                        )}
                         {canEdit && <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
                         {canEdit && <Btn size="sm" variant="danger" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => ask(async () => deleteTeamMember(member.id))}>Delete</Btn>}
                       </div>

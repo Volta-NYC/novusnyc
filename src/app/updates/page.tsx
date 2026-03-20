@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Progress Updates | Volta NYC",
     description: "Timestamped Volta progress updates covering projects, systems, and team growth.",
-    images: ["/logo.png"],
+    images: ["/hero-nyc-skyline.jpg"],
   },
 };
 

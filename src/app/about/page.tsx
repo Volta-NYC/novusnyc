@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "About Volta NYC",
     description: "A student-run nonprofit built on the belief that digital equity is economic equity.",
-    images: ["/logo.png"],
+    images: ["/hero-nyc-skyline.jpg"],
   },
 };
 
