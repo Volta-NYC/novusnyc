@@ -304,20 +304,23 @@ export default async function Showcase() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────── */}
-      <section className="py-16 bg-v-green text-center">
-        <div className="max-w-2xl mx-auto px-5">
+      <section className="py-20 bg-v-dark text-center">
+        <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
+            <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">
+              For business owners
+            </p>
+            <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
               Your business could be next.
             </h2>
-            <p className="font-body text-v-ink/70 mb-8">
+            <p className="font-body text-white/65 text-base md:text-lg mb-8">
               We&apos;re actively taking on projects in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
             </p>
             <Link
               href="/partners#contact"
-              className="inline-block bg-v-ink text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-ink/80 transition-colors"
+              className="inline-flex items-center justify-center rounded-full bg-v-green px-8 py-3.5 font-display text-base font-bold text-v-ink transition-colors hover:bg-[#9EDC2F]"
             >
-              Work with us →
+              Work with us
             </Link>
           </AnimatedSection>
         </div>
