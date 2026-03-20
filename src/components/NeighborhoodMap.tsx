@@ -35,7 +35,8 @@ function FitMapToPoints({ points }: { points: [number, number][] }) {
     if (points.length === 0) return;
     map.fitBounds(points, { padding: [42, 42], animate: false });
     // Slightly zoom in from fit for a tighter default showcase view.
-    map.setZoom(Math.min(map.getZoom() + 0.4, 15));
+    // Tuned down so initial view is a bit wider.
+    map.setZoom(Math.min(map.getZoom() + 0.3, 15));
   }, [map, points]);
 
   return null;
