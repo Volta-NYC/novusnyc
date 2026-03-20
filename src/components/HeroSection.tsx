@@ -8,19 +8,13 @@ import { motion, useScroll, useTransform } from "framer-motion";
 export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
-  const bgScale = useTransform(scrollYProgress, [0, 1], [1.02, 1.12]);
-  const bgY = useTransform(scrollYProgress, [0, 1], [0, -42]);
   const titleScale = useTransform(scrollYProgress, [0, 0.75], [1, 1.34]);
   const titleY = useTransform(scrollYProgress, [0, 0.75], [0, -118]);
   const ctaOpacity = useTransform(scrollYProgress, [0, 0.35], [1, 0]);
   const ctaY = useTransform(scrollYProgress, [0, 0.35], [0, -16]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen md:min-h-[108vh] flex flex-col items-center justify-center overflow-hidden bg-v-bg pt-16">
-      <motion.div className="absolute inset-0 hero-photo" style={{ scale: bgScale, y: bgY }} />
-      <div className="absolute inset-0 hero-photo-wash" />
-      <div className="absolute inset-0 hero-vignette pointer-events-none" />
-
+    <section ref={sectionRef} className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center overflow-hidden pt-16">
       {/* Logo + Title parallax group */}
       <motion.div
         className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"

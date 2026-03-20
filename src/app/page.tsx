@@ -91,28 +91,32 @@ export default async function Home() {
 
   return (
     <>
-      <HeroSection />
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 home-shared-bg" />
+        <div className="absolute inset-0 home-shared-wash" />
+        <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
+        <div className="relative">
+          <HeroSection />
 
-      {/* ── STATS ─────────────────────────────────────────────── */}
-      <section data-home-dark-end="true" className="relative py-14 bg-v-dark border-b border-white/10 overflow-hidden">
-        <div className="absolute inset-0 stats-photo opacity-35" />
-        <div className="absolute inset-0 stats-photo-wash opacity-85" />
-        <div className="absolute inset-0 hero-vignette opacity-70" />
-        <div className="relative max-w-6xl mx-auto px-5 md:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {homeStats.map((s) => (
-              <AnimatedSection key={s.label}>
-                <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-4 py-5 md:px-6 md:py-6 text-center shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
-                  <div className="font-display font-bold text-3xl md:text-4xl text-v-green mb-1.5">
-                    <CountUp end={s.value} suffix={s.suffix} />
-                  </div>
-                  <div className="font-body text-[10px] md:text-xs uppercase tracking-[0.14em] text-white/75">
-                    {s.label}
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+          {/* ── STATS ─────────────────────────────────────────────── */}
+          <section data-home-dark-end="true" className="relative py-14 border-b border-white/10">
+            <div className="max-w-6xl mx-auto px-5 md:px-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                {homeStats.map((s) => (
+                  <AnimatedSection key={s.label}>
+                    <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-4 py-5 md:px-6 md:py-6 text-center shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+                      <div className="font-display font-bold text-3xl md:text-4xl text-v-green mb-1.5">
+                        <CountUp end={s.value} suffix={s.suffix} />
+                      </div>
+                      <div className="font-body text-[10px] md:text-xs uppercase tracking-[0.14em] text-white/75">
+                        {s.label}
+                      </div>
+                    </div>
+                  </AnimatedSection>
+                ))}
+              </div>
+            </div>
+          </section>
         </div>
       </section>
 
