@@ -38,7 +38,7 @@ export default function HeroSection() {
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
-            <span className="flex items-center gap-2.5 md:gap-3.5">
+            <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-2 sm:gap-2.5 md:gap-3.5">
               <Image
                 src="/logo.png"
                 alt="Volta"
@@ -46,8 +46,8 @@ export default function HeroSection() {
                 height={200}
                 className="object-contain flex-shrink-0"
                 style={{
-                  width: "clamp(8.4rem, 22.8vw, 16.8rem)",
-                  height: "clamp(8.4rem, 22.8vw, 16.8rem)",
+                  width: "clamp(7.6rem, 20vw, 16.8rem)",
+                  height: "clamp(7.6rem, 20vw, 16.8rem)",
                 }}
                 priority
               />

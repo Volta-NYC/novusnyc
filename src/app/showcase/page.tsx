@@ -86,7 +86,14 @@ export default async function Showcase() {
       imageUrl: undefined as string | undefined,
       quote: project.quote,
     }));
-  const mapProjects = publicMapEntries.map((entry) => ({
+  const showcasedBusinessIds = new Set(publicShowcase.map((card) => `business:${card.id}`));
+  const mapProjects = publicMapEntries
+    .filter((entry) => (
+      entry.source === "bid" ||
+      publicShowcase.length === 0 ||
+      showcasedBusinessIds.has(entry.id)
+    ))
+    .map((entry) => ({
     name: entry.name,
     type: entry.type,
     services: entry.services,

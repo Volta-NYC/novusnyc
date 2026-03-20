@@ -22,7 +22,7 @@ html {
   max-width: 100%;
   overflow-x: hidden;
   overscroll-behavior-x: none;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
 }
 
 body {
@@ -37,7 +37,7 @@ body {
   /* Lock horizontal overflow on mobile Safari/Chrome to remove right-side dead space */
   overflow-x: hidden;
   overscroll-behavior-x: none;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
 }
 
 main {
