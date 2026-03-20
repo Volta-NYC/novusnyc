@@ -207,7 +207,7 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   division: "Tech",
   teamMembers: [],
   showcaseEnabled: false,
-  showcaseFeaturedOnHome: true,
+  showcaseFeaturedOnHome: false,
   showcaseName: "",
   showcaseType: "",
   showcaseNeighborhood: "",
@@ -308,7 +308,7 @@ export default function BusinessesPage() {
       division:       b.division        ?? "Tech",
       teamMembers:    b.teamMembers     ?? [],
       showcaseEnabled: !!b.showcaseEnabled,
-      showcaseFeaturedOnHome: b.showcaseFeaturedOnHome ?? true,
+      showcaseFeaturedOnHome: b.showcaseFeaturedOnHome ?? false,
       showcaseName: b.showcaseName ?? "",
       showcaseType: b.showcaseType ?? "",
       showcaseNeighborhood: b.showcaseNeighborhood ?? "",
@@ -1441,7 +1441,11 @@ export default function BusinessesPage() {
                 type="checkbox"
                 className="accent-[#85CC17] w-4 h-4"
                 checked={!!form.showcaseEnabled}
-                onChange={(e) => setField("showcaseEnabled", e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setField("showcaseEnabled", checked);
+                  if (!checked) setField("showcaseFeaturedOnHome", false);
+                }}
               />
               Show this project on the public site
             </label>
