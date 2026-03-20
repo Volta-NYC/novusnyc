@@ -45,6 +45,8 @@ function toEmbedInfo(entry: { linkedinUrl?: string; linkedinUrn?: string; instag
 }
 
 export default function ProgressUpdatesPage() {
+  const sortedUpdates = [...progressUpdates].sort((a, b) => b.date.localeCompare(a.date));
+
   return (
     <>
       <section className="bg-v-bg pt-32 pb-16 border-b border-v-border">
@@ -67,7 +69,7 @@ export default function ProgressUpdatesPage() {
       <section className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="space-y-6">
-            {progressUpdates.map((entry, idx) => {
+            {sortedUpdates.map((entry, idx) => {
               const embed = toEmbedInfo(entry);
               return (
                 <AnimatedSection key={entry.id} delay={idx * 0.06}>
