@@ -75,19 +75,19 @@ main {
 
 /* Home hero: skyline image + green wash + grid */
 .hero-photo {
-  background-image: url("/home-bg.jpg");
+  background-image: url("/hero-nyc-skyline.jpg");
   background-size: cover;
   background-position: center center;
 }
 
 .stats-photo {
-  background-image: url("/home-bg.jpg");
+  background-image: url("/stats-bg.jpg");
   background-size: cover;
   background-position: center center;
 }
 
 .home-shared-bg {
-  background-image: url("/home-bg.jpg");
+  background-image: url("/hero-nyc-skyline.jpg");
   background-size: cover;
   background-position: center center;
 }
