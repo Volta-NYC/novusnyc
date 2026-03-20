@@ -5,9 +5,9 @@ type TeamRow = Record<string, unknown>;
 export type MemberTrack = "Tech" | "Marketing" | "Finance" | "Other";
 
 const FINANCE_GROUPS = [
-  "Outreach/Fundraising",
-  "Grant Writing",
-  "Report Writing",
+  "Outreach",
+  "Grants",
+  "Reports",
 ] as const;
 
 function normalize(value: unknown): string {
@@ -63,39 +63,9 @@ function countPods(team: Record<string, TeamRow>, filterTrack: MemberTrack): Map
   return counts;
 }
 
-function nextNumberedTeamPod(
-  counts: Map<string, number>,
-  prefix: "T" | "M",
-  capPerTeam = 3
-): string {
-  const numbered = Array.from(counts.keys())
-    .map((pod) => {
-      const match = pod.match(new RegExp(`^${prefix}(\\d+)$`, "i"));
-      if (!match) return null;
-      return Number(match[1]);
-    })
-    .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
-    .sort((a, b) => a - b);
-
-  if (numbered.length === 0) return `${prefix}1`;
-
-  const max = numbered[numbered.length - 1];
-  for (let i = 1; i <= max; i += 1) {
-    const key = `${prefix}${i}`;
-    if ((counts.get(key) ?? 0) < capPerTeam) return key;
-  }
-  return `${prefix}${max + 1}`;
-}
-
 export function suggestTeamForTrack(track: MemberTrack, team: Record<string, TeamRow>): string {
-  if (track === "Tech") {
-    const counts = countPods(team, "Tech");
-    return nextNumberedTeamPod(counts, "T", 3);
-  }
-  if (track === "Marketing") {
-    const counts = countPods(team, "Marketing");
-    return nextNumberedTeamPod(counts, "M", 3);
-  }
+  if (track === "Tech") return "";
+  if (track === "Marketing") return "";
   if (track === "Finance") {
     const counts = countPods(team, "Finance");
     let selected: (typeof FINANCE_GROUPS)[number] = FINANCE_GROUPS[0];

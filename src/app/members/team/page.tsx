@@ -21,9 +21,9 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 };
 
 const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
-const TECH_TEAM_SEED = ["T1", "T2", "T3"];
-const MARKETING_TEAM_SEED = ["M1", "M2", "M3"];
-const FINANCE_TEAM_OPTIONS = ["Outreach/Fundraising", "Grant Writing", "Report Writing"];
+const TECH_TEAM_SEED: string[] = [];
+const MARKETING_TEAM_SEED: string[] = [];
+const FINANCE_TEAM_OPTIONS = ["Outreach", "Grants", "Reports"];
 
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
@@ -851,7 +851,7 @@ export default function TeamPage() {
               value={form.pod ?? ""}
               onChange={(value) => setField("pod", value)}
               options={formTeamOptions}
-              placeholder="Type team code (e.g. T1, M1, Grant Writing)"
+              placeholder="Type team name (e.g. Outreach, Grants, Reports)"
             />
           </Field>
           <Field label="Date Accepted">
