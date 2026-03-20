@@ -93,16 +93,20 @@ export default async function Home() {
     <>
       <HeroSection />
 
-      {/* ── STATS OVERLAY (ON HERO) ─────────────────────────── */}
-      <section className="relative -mt-24 z-20 pb-10">
-        <div className="max-w-5xl mx-auto px-5">
-          <div className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-md shadow-[0_18px_48px_rgba(0,0,0,0.38)] px-6 py-7 md:px-10 md:py-9 grid grid-cols-2 md:grid-cols-4 gap-8">
+      {/* ── STATS ─────────────────────────────────────────────── */}
+      <section className="py-14 bg-v-bg border-b border-v-border">
+        <div className="max-w-6xl mx-auto px-5 md:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {homeStats.map((s) => (
-              <AnimatedSection key={s.label} className="text-center">
-                <div className="font-display font-bold text-4xl md:text-5xl text-v-green mb-2">
-                  <CountUp end={s.value} suffix={s.suffix} />
+              <AnimatedSection key={s.label}>
+                <div className="rounded-2xl border border-v-border bg-white px-4 py-5 md:px-6 md:py-6 text-center shadow-[0_8px_22px_rgba(2,8,23,0.05)]">
+                  <div className="font-display font-bold text-3xl md:text-4xl text-v-green mb-1.5">
+                    <CountUp end={s.value} suffix={s.suffix} />
+                  </div>
+                  <div className="font-body text-[10px] md:text-xs uppercase tracking-[0.14em] text-v-muted">
+                    {s.label}
+                  </div>
                 </div>
-                <div className="font-body text-[11px] md:text-xs uppercase tracking-widest text-white/75">{s.label}</div>
               </AnimatedSection>
             ))}
           </div>
@@ -110,20 +114,22 @@ export default async function Home() {
       </section>
 
       {/* ── HOW VOLTA WORKS ──────────────────────────────────── */}
-      <section className="pt-14 pb-20 bg-white border-b border-v-border">
+      <section className="py-20 bg-white border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-muted uppercase tracking-widest mb-3">How Volta works</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Students build real deliverables for local businesses.</h2>
-            <p className="font-body text-v-muted text-lg mt-4 max-w-4xl">
+          <AnimatedSection className="mb-10 md:mb-12">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How Volta works</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+              Students build real deliverables for local businesses.
+            </h2>
+            <p className="font-body text-v-muted text-lg mt-4 max-w-4xl leading-relaxed">
               Volta is fast-paced and execution-focused: student teams ship work that goes live immediately for real businesses.
               That means measurable outcomes for owners and stronger portfolio proof for students than isolated practice projects.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-2 gap-6">
             <AnimatedSection direction="left">
-              <div className="bg-v-bg border border-v-border rounded-2xl p-8 h-full">
-                <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">Join a project team</p>
+              <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-lime-50 p-8 md:p-9 h-full shadow-[0_16px_36px_rgba(37,99,235,0.09)]">
+                <p className="font-body text-xs font-semibold text-blue-700 uppercase tracking-widest mb-3">Join a project team</p>
                 <h3 className="font-display font-bold text-v-ink text-2xl leading-tight mb-3">Student application</h3>
                 <p className="font-body text-sm text-v-muted leading-relaxed mb-5">
                   5-minute application, rolling admissions, and fast-moving client work across three tracks.
@@ -136,24 +142,24 @@ export default async function Home() {
                     "Finance & Operations: grants, sales/revenue analysis, competitor analysis, and report writing",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                      <span className="w-1.5 h-1.5 rounded-full bg-v-green flex-shrink-0 mt-1.5" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 flex-shrink-0 mt-1.5" />
                       {item}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/join"
-                  className="inline-block bg-v-ink text-white font-display font-bold text-sm px-7 py-3.5 rounded-full hover:bg-v-ink/80 transition-colors"
+                  className="inline-block bg-blue-700 text-white font-display font-bold text-sm px-7 py-3.5 rounded-full hover:bg-blue-800 transition-colors"
                 >
                   Learn More & Apply →
                 </Link>
               </div>
             </AnimatedSection>
             <AnimatedSection direction="right">
-              <div className="bg-v-dark border border-white/5 rounded-2xl p-8 h-full">
-                <p className="font-body text-xs font-semibold text-v-blue uppercase tracking-widest mb-3">Request support</p>
+              <div className="rounded-3xl border border-v-ink/15 bg-v-dark p-8 md:p-9 h-full shadow-[0_20px_48px_rgba(2,8,23,0.36)]">
+                <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">Request support</p>
                 <h3 className="font-display font-bold text-white text-2xl leading-tight mb-3">Business interest form</h3>
-                <p className="font-body text-sm text-white/70 leading-relaxed mb-5">
+                <p className="font-body text-sm text-white/75 leading-relaxed mb-5">
                   Tell us what your business needs and we&apos;ll follow up quickly. Teams can support websites, social media, grant applications, and visibility improvements.
                 </p>
                 <ul className="space-y-2.5 mb-6">
@@ -162,15 +168,15 @@ export default async function Home() {
                     "Fast follow-up to scope the highest-impact work",
                     "Work tracked and delivered through dedicated student teams",
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 font-body text-sm text-white/60">
-                      <span className="w-1.5 h-1.5 rounded-full bg-v-blue flex-shrink-0 mt-1.5" />
+                    <li key={item} className="flex items-start gap-2.5 font-body text-sm text-white/65">
+                      <span className="w-1.5 h-1.5 rounded-full bg-v-green flex-shrink-0 mt-1.5" />
                       {item}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/partners#contact"
-                  className="inline-block bg-v-blue text-white font-display font-bold text-sm px-7 py-3.5 rounded-full hover:bg-v-blue-dark transition-colors"
+                  className="inline-block bg-v-green text-v-ink font-display font-bold text-sm px-7 py-3.5 rounded-full hover:bg-v-green-dark transition-colors"
                 >
                   Open Interest Form →
                 </Link>

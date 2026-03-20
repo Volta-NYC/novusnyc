@@ -29,17 +29,7 @@ export default function Navbar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const onScroll = () => {
-      if (pathname === "/") {
-        const hero = document.querySelector<HTMLElement>('[data-home-hero="true"]');
-        if (hero) {
-          const heroBottom = hero.getBoundingClientRect().bottom;
-          setScrolled(heroBottom <= 72);
-          return;
-        }
-      }
-      setScrolled(window.scrollY > 20);
-    };
+    const onScroll = () => setScrolled(window.scrollY > 20);
     // Sync immediately on mount so deep-links (e.g. /partners#contact) use the
     // correct navbar contrast before any manual scroll happens.
     onScroll();
@@ -54,7 +44,7 @@ export default function Navbar() {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timeout);
     };
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     setOpen(false);

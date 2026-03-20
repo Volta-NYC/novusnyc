@@ -16,11 +16,7 @@ export default function HeroSection() {
   const ctaY = useTransform(scrollYProgress, [0, 0.35], [0, -16]);
 
   return (
-    <section
-      ref={sectionRef}
-      data-home-hero="true"
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-v-bg pt-16"
-    >
+    <section ref={sectionRef} className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-v-bg pt-16">
       <motion.div className="absolute inset-0 hero-photo" style={{ scale: bgScale, y: bgY }} />
       <div className="absolute inset-0 hero-photo-wash" />
       <div className="absolute inset-0 hero-vignette pointer-events-none" />
