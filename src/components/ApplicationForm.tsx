@@ -116,6 +116,9 @@ export default function ApplicationForm() {
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">Email Address *</label>
+        <p className="text-xs text-v-muted/80 mt-1 mb-2 font-body">
+          Please use your personal email address, not a school email.
+        </p>
         <input
           type="email"
           value={form.email}
@@ -123,9 +126,6 @@ export default function ApplicationForm() {
           className={`volta-input ${errors.email ? "border-red-400" : ""}`}
           placeholder="you@email.com"
         />
-        <p className="text-xs text-v-muted/80 mt-1 font-body">
-          Please use your personal email address, not a school email.
-        </p>
         {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
       </div>
 
