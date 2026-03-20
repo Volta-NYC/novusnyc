@@ -31,6 +31,7 @@ const SCHOOL_NORMALIZATION: Record<string, string> = {
   "marriotts ridge high school": "Marriott's Ridge High School",
   "round rock highschool": "Round Rock High School",
   "spain park": "Spain Park High School",
+  "staten island academy": "Staten Island Academy",
   "staten island technical highschool": "Staten Island Technical High School",
   stuyvesant: "Stuyvesant High School",
   "virtual virginia academy": "Virtual Virginia Academy",
