@@ -87,25 +87,40 @@ export default async function Showcase() {
       quote: project.quote,
     }));
   const showcasedBusinessIds = new Set(publicShowcase.map((card) => `business:${card.id}`));
-  const mapProjects = publicMapEntries
-    .filter((entry) => (
-      entry.source === "bid" ||
-      publicShowcase.length === 0 ||
-      showcasedBusinessIds.has(entry.id)
-    ))
-    .map((entry) => ({
-    name: entry.name,
-    type: entry.type,
-    services: entry.services,
-    neighborhood: entry.neighborhood,
-    borough: entry.borough,
-    lat: entry.lat,
-    lng: entry.lng,
-    status: entry.status,
-    url: entry.url,
-    colorClass: SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-blue-500",
-    source: entry.source,
-  }));
+  const colorOptions = Object.values(SHOWCASE_COLOR_CLASS);
+  const pickPseudoRandomColor = (seed: string): string => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    const idx = Math.abs(hash) % colorOptions.length;
+    return colorOptions[idx] ?? "bg-blue-500";
+  };
+
+  const mapProjects = publicMapEntries.map((entry) => {
+    const isBusinessWithoutCard =
+      entry.source === "business" &&
+      publicShowcase.length > 0 &&
+      !showcasedBusinessIds.has(entry.id);
+    const colorClass = isBusinessWithoutCard
+      ? pickPseudoRandomColor(entry.id || entry.name)
+      : (SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-blue-500");
+
+    return {
+      name: entry.name,
+      type: entry.type,
+      services: entry.services,
+      neighborhood: entry.neighborhood,
+      borough: entry.borough,
+      lat: entry.lat,
+      lng: entry.lng,
+      status: entry.status,
+      url: entry.url,
+      colorClass,
+      source: entry.source,
+    };
+  });
   const bidPartners = publicMapEntries
     .filter((entry) => entry.source === "bid")
     .map((entry) => ({
