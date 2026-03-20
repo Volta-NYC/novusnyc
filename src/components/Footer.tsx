@@ -20,14 +20,14 @@ export default function Footer() {
             <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Navigate</p>
             <div className="flex flex-col gap-3">
               {[
-                { href: "/", label: "Home" },
                 { href: "/showcase", label: "Our Work" },
-                { href: "/guides", label: "Business Guides" },
-                { href: "/updates", label: "Progress Updates" },
-                { href: "/join", label: "Join Volta" },
-                { href: "/apply", label: "Apply" },
-                { href: "/partners", label: "For Businesses" },
                 { href: "/about", label: "About" },
+                { href: "/partners", label: "For Businesses" },
+                { href: "/join", label: "For Students" },
+                { href: "/guides", label: "Guides for Businesses" },
+                { href: "/updates", label: "Progress Updates" },
+                { href: "/members/login", label: "Member Login" },
+                { href: "/apply", label: "Apply Now" },
               ].map((l) => (
                 <Link key={l.href} href={l.href} className="font-body text-sm hover:text-white transition-colors">
                   {l.label}
