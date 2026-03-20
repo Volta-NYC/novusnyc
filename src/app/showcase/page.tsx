@@ -117,11 +117,11 @@ export default async function Showcase() {
 
   const boroughCardClass = (borough: string) => {
     const key = borough.trim().toLowerCase();
-    if (key.includes("brooklyn")) return "bg-lime-500/10 border-lime-500/30 text-lime-900";
-    if (key.includes("queens")) return "bg-blue-400/10 border-blue-400/30 text-blue-900";
-    if (key.includes("manhattan")) return "bg-amber-400/12 border-amber-400/35 text-amber-900";
-    if (key.includes("bronx")) return "bg-purple-400/10 border-purple-400/30 text-purple-900";
-    if (key.includes("staten")) return "bg-rose-400/10 border-rose-400/30 text-rose-900";
+    if (key.includes("brooklyn")) return "bg-lime-500/8 border-lime-500/30 text-lime-700";
+    if (key.includes("queens")) return "bg-blue-400/10 border-blue-400/30 text-blue-700";
+    if (key.includes("manhattan")) return "bg-amber-300/12 border-amber-500/28 text-amber-700";
+    if (key.includes("bronx")) return "bg-purple-400/10 border-purple-400/30 text-purple-700";
+    if (key.includes("staten")) return "bg-rose-400/10 border-rose-400/30 text-rose-700";
     return "bg-v-bg border-v-border text-v-ink";
   };
 
