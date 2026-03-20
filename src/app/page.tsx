@@ -95,8 +95,8 @@ export default async function Home() {
 
       {/* ── STATS ─────────────────────────────────────────────── */}
       <section className="relative py-14 bg-v-dark border-b border-white/10 overflow-hidden">
-        <div className="absolute inset-0 hero-photo opacity-30" />
-        <div className="absolute inset-0 hero-photo-wash opacity-80" />
+        <div className="absolute inset-0 stats-photo opacity-35" />
+        <div className="absolute inset-0 stats-photo-wash opacity-85" />
         <div className="absolute inset-0 hero-vignette opacity-70" />
         <div className="relative max-w-6xl mx-auto px-5 md:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">

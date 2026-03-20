@@ -29,7 +29,14 @@ export default function Navbar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      if (pathname === "/") {
+        const homeSwitchY = Math.max(380, window.innerHeight * 0.9);
+        setScrolled(window.scrollY > homeSwitchY);
+        return;
+      }
+      setScrolled(window.scrollY > 20);
+    };
     // Sync immediately on mount so deep-links (e.g. /partners#contact) use the
     // correct navbar contrast before any manual scroll happens.
     onScroll();
@@ -44,7 +51,7 @@ export default function Navbar() {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timeout);
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     setOpen(false);

@@ -80,10 +80,22 @@ main {
   background-position: center center;
 }
 
+.stats-photo {
+  background-image: url("/stats-bg.jpg");
+  background-size: cover;
+  background-position: center center;
+}
+
 .hero-photo-wash {
   background:
     linear-gradient(145deg, rgba(15, 48, 16, 0.5) 0%, rgba(22, 71, 26, 0.35) 38%, rgba(12, 38, 14, 0.55) 100%),
     radial-gradient(120% 95% at 20% -10%, rgba(151, 201, 89, 0.34) 0%, rgba(151, 201, 89, 0) 62%);
+}
+
+.stats-photo-wash {
+  background:
+    linear-gradient(145deg, rgba(5, 14, 8, 0.65) 0%, rgba(8, 20, 11, 0.52) 40%, rgba(8, 16, 10, 0.6) 100%),
+    radial-gradient(120% 100% at 24% -8%, rgba(133, 204, 23, 0.24) 0%, rgba(133, 204, 23, 0) 66%);
 }
 
 .hero-vignette {
