@@ -1,24 +1,15 @@
 "use client";
 
-import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function HeroSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
-  const titleScale = useTransform(scrollYProgress, [0, 0.75], [1, 1.34]);
-  const titleY = useTransform(scrollYProgress, [0, 0.75], [0, -118]);
-  const ctaOpacity = useTransform(scrollYProgress, [0, 0.35], [1, 0]);
-  const ctaY = useTransform(scrollYProgress, [0, 0.35], [0, -16]);
-
   return (
-    <section ref={sectionRef} className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center overflow-hidden pt-16">
+    <section className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center overflow-hidden pt-16">
       {/* Logo + Title parallax group */}
       <motion.div
         className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
-        style={{ scale: titleScale, y: titleY }}
       >
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -54,7 +45,6 @@ export default function HeroSection() {
       {/* Subtitle + CTAs — centered under the title */}
       <motion.div
         className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center"
-        style={{ opacity: ctaOpacity, y: ctaY }}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
