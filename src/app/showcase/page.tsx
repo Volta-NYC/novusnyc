@@ -183,7 +183,7 @@ export default async function Showcase() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-3">
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
-              All of our projects
+              Selected Projects
             </h2>
             <Link href="/updates" className="font-body text-sm font-semibold text-v-blue hover:underline">
               See progress updates →
