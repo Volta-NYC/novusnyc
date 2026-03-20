@@ -57,7 +57,7 @@ export default function HeroSection() {
             <span className="text-v-green font-semibold">Free of charge.</span>
           </p>
           <p className="font-body text-sm text-white/75 mb-8">
-            A registered 501(c)(3) nonprofit organization.
+            A registered nonprofit organization.
           </p>
           <div className="flex gap-4 flex-wrap justify-center">
             <Link

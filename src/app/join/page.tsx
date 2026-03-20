@@ -172,7 +172,7 @@ export default async function Join() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Our members</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where our members and applicants come from</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where our members come from</h2>
           </AnimatedSection>
           <div className="space-y-10">
             {schoolGroups.map((group, gi) => (

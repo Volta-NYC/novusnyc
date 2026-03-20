@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 
 export default async function About() {
   const education = await getMemberEducationSnapshot();
+  const primaryLeaders = teamMembers.slice(0, 3);
+  const additionalLeaders = teamMembers.slice(3);
 
   return (
     <>
@@ -179,8 +181,8 @@ export default async function About() {
               A team of students from Stuyvesant High School, CUNY institutions, and other NYC schools.
             </p>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {teamMembers.map((m, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {primaryLeaders.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
                 <div className="bg-white border border-v-border rounded-xl overflow-hidden project-card h-full flex flex-col">
                   <div className="aspect-[4/5] bg-v-border flex items-center justify-center overflow-hidden">
@@ -202,6 +204,44 @@ export default async function About() {
               </AnimatedSection>
             ))}
           </div>
+          {additionalLeaders.length > 0 && (
+            <details className="group mt-6">
+              <summary className="mx-auto inline-flex list-none cursor-pointer items-center gap-2 rounded-full border border-v-border bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-v-muted transition-colors hover:border-v-green/40 hover:text-v-ink [&::-webkit-details-marker]:hidden">
+                Show more
+                <svg
+                  viewBox="0 0 20 20"
+                  className="h-3.5 w-3.5 transition-transform duration-200 group-open:rotate-180"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </summary>
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {additionalLeaders.map((m, i) => (
+                  <AnimatedSection key={m.email} delay={i * 0.08}>
+                    <div className="bg-white border border-v-border rounded-xl overflow-hidden project-card h-full flex flex-col">
+                      <div className="aspect-[4/5] bg-v-border flex items-center justify-center overflow-hidden">
+                        {m.photo ? (
+                          <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-top" />
+                        ) : (
+                          <span className="font-display font-bold text-v-muted/40 text-6xl">{m.initial}</span>
+                        )}
+                      </div>
+                      <div className="p-4 flex flex-col flex-1">
+                        <h3 className="font-display font-bold text-v-ink text-base leading-tight">{m.name}</h3>
+                        <p className="font-body text-xs text-v-muted mt-1">{m.role}</p>
+                        {m.desc && <p className="font-body text-xs text-v-muted/60 italic mt-2 leading-relaxed flex-1">{m.desc}</p>}
+                        <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-3 font-body text-xs text-v-blue hover:underline break-all">
+                          <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
+                        </a>
+                      </div>
+                    </div>
+                  </AnimatedSection>
+                ))}
+              </div>
+            </details>
+          )}
           <div className="grid md:grid-cols-3 gap-4 mt-8">
             {[
               { label: "High Schools", value: education.highSchoolCount },
