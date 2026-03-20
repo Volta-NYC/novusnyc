@@ -214,6 +214,126 @@ function normalizeBoroughName(value: string): string {
   return "";
 }
 
+function dedupeQueries(values: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of values) {
+    const value = raw.trim();
+    if (!value) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+  }
+  return out;
+}
+
+function buildBusinessGeocodeQueries(address: string, borough: string): string[] {
+  const a = address.trim();
+  const b = borough.trim();
+  if (!a) return [];
+  return dedupeQueries([
+    a,
+    `${a}, New York, NY`,
+    b ? `${a}, ${b}, New York, NY` : "",
+  ]);
+}
+
+async function geocodeWithGoogle(query: string): Promise<{ lat: number; lng: number } | null> {
+  const key = process.env.GOOGLE_GEOCODING_API_KEY;
+  if (!key) return null;
+
+  const components = encodeURIComponent("country:US|administrative_area:NY");
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=${components}&region=us&key=${encodeURIComponent(key)}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) return null;
+
+  const data = await res.json() as {
+    status?: string;
+    results?: Array<{
+      geometry?: { location?: { lat?: number; lng?: number } };
+    }>;
+  };
+  if (data.status !== "OK") return null;
+
+  const lat = data.results?.[0]?.geometry?.location?.lat;
+  const lng = data.results?.[0]?.geometry?.location?.lng;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+  return { lat, lng };
+}
+
+async function geocodeWithNominatim(query: string): Promise<{ lat: number; lng: number } | null> {
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&q=${encodeURIComponent(query)}`;
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "User-Agent": "VoltaNYC/1.0 (info@voltanyc.org)",
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) return null;
+
+  const rows = await res.json() as Array<{ lat?: string; lon?: string }>;
+  const first = rows?.[0];
+  if (!first?.lat || !first?.lon) return null;
+  const lat = Number(first.lat);
+  const lng = Number(first.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+const geocodeCache = new Map<string, { lat: number; lng: number }>();
+
+async function geocodeBusinessAddress(address: string, borough: string): Promise<{ lat: number; lng: number } | null> {
+  const queries = buildBusinessGeocodeQueries(address, borough);
+  for (const query of queries) {
+    const cacheKey = query.toLowerCase();
+    const cached = geocodeCache.get(cacheKey);
+    if (cached) return cached;
+
+    const google = await geocodeWithGoogle(query);
+    if (google) {
+      geocodeCache.set(cacheKey, google);
+      return google;
+    }
+  }
+
+  for (const query of queries) {
+    const cacheKey = query.toLowerCase();
+    const cached = geocodeCache.get(cacheKey);
+    if (cached) return cached;
+
+    const nominatim = await geocodeWithNominatim(query);
+    if (nominatim) {
+      geocodeCache.set(cacheKey, nominatim);
+      return nominatim;
+    }
+  }
+
+  return null;
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  const runWorker = async () => {
+    while (nextIndex < items.length) {
+      const current = nextIndex;
+      nextIndex += 1;
+      results[current] = await worker(items[current] as T);
+    }
+  };
+
+  const count = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(Array.from({ length: count }, () => runWorker()));
+  return results;
+}
+
 export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
   const db = getAdminDB();
   if (!db) return [];
@@ -284,6 +404,8 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   ]);
 
   const entries: PublicMapEntry[] = [];
+  const businessGeocodeWrites: Array<{ id: string; lat: number; lng: number }> = [];
+  const businessesMissingCoords: Array<{ id: string; address: string; borough: string; entry: PublicMapEntry }> = [];
 
   if (businessesSnap.exists()) {
     const businesses = businessesSnap.val() as Record<string, Record<string, unknown>>;
@@ -301,21 +423,63 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
       const color = asText(row.showcaseColor)
         ? normalizeColor(row.showcaseColor)
         : defaultShowcaseColor();
+      const address = asText(row.address);
+      const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(row.showcaseNeighborhood, row));
+      const lat = asNumber(row.lat);
+      const lng = asNumber(row.lng);
 
-      entries.push({
+      const entry: PublicMapEntry = {
         id: `business:${id}`,
         name,
         type,
         neighborhood,
-        borough: normalizeBoroughName(asText(row.borough) || neighborhood),
-        lat: asNumber(row.lat) ?? undefined,
-        lng: asNumber(row.lng) ?? undefined,
+        borough: borough || undefined,
+        lat: lat ?? undefined,
+        lng: lng ?? undefined,
         services: mergedServices,
         status,
         color,
         url: url || undefined,
         source: "business",
-      });
+      };
+
+      if ((lat == null || lng == null) && address) {
+        businessesMissingCoords.push({ id, address, borough, entry });
+      }
+
+      entries.push(entry);
+    }
+
+    if (businessesMissingCoords.length > 0) {
+      const geocoded = await mapWithConcurrency(
+        businessesMissingCoords,
+        6,
+        async ({ id, address, borough, entry }) => {
+          const result = await geocodeBusinessAddress(address, borough);
+          if (result) {
+            entry.lat = result.lat;
+            entry.lng = result.lng;
+            return { id, lat: result.lat, lng: result.lng };
+          }
+          return null;
+        },
+      );
+
+      for (const item of geocoded) {
+        if (item) businessGeocodeWrites.push(item);
+      }
+    }
+
+    if (businessGeocodeWrites.length > 0) {
+      await Promise.allSettled(
+        businessGeocodeWrites.map(({ id, lat, lng }) =>
+          db.ref(`businesses/${id}`).update({
+            lat,
+            lng,
+            updatedAt: new Date().toISOString(),
+          }),
+        ),
+      );
     }
   }
 

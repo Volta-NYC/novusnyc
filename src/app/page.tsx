@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
@@ -92,7 +93,15 @@ export default async function Home() {
   return (
     <>
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 home-shared-bg" />
+        <Image
+          src="/hero-nyc-skyline.jpg"
+          alt=""
+          fill
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          className="object-cover"
+        />
         <div className="absolute inset-0 home-shared-wash" />
         <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
         <div className="relative">
