@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Impact | Volta NYC",
     description: "Measurable outcomes. Real communities.",
+    images: ["/logo.png"],
   },
   robots: { index: false }, // keep unlinked until ready
 };

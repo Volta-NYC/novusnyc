@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Apply to Volta NYC",
     description: "Real projects. Real clients. Takes 5 minutes to apply.",
+    images: ["/logo.png"],
   },
 };
 

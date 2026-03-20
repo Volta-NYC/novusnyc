@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Progress Updates | Volta NYC",
   description:
     "Timestamped Volta progress updates covering projects, systems, and team growth.",
+  openGraph: {
+    title: "Progress Updates | Volta NYC",
+    description: "Timestamped Volta progress updates covering projects, systems, and team growth.",
+    images: ["/logo.png"],
+  },
 };
 
 function prettyDate(value: string): string {

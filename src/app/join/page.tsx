@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Get Involved | Volta NYC",
     description: "Real projects. Real clients. All experience levels welcome.",
+    images: ["/logo.png"],
   },
 };
 

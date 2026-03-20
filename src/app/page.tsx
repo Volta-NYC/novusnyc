@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Volta NYC",
     description: "Student consultants. Real deliverables. Free for NYC small businesses.",
+    images: ["/logo.png"],
   },
 };
 

@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Business Guides | Volta NYC",
   description:
     "Practical, no-fluff guides for small business owners on websites, hosting, marketing spend, and digital operations.",
+  openGraph: {
+    title: "Business Guides | Volta NYC",
+    description: "Practical, no-fluff guides for small business owners on websites, hosting, marketing spend, and digital operations.",
+    images: ["/logo.png"],
+  },
 };
 
 function prettyDate(value: string): string {
