@@ -8,6 +8,7 @@ import {
   trackToDivisions,
   type MemberTrack,
 } from "@/lib/server/memberPlacement";
+import { normalizeTeamPod } from "@/lib/teamPod";
 
 type TeamRow = Record<string, unknown>;
 type AppRow = Record<string, unknown>;
@@ -96,8 +97,14 @@ export async function POST(req: NextRequest) {
       patch.divisions = trackToDivisions(track);
     }
 
-    if (!asText(row.pod)) {
-      patch.pod = suggestTeamForTrack(track, workingTeam);
+    const existingPod = normalizeTeamPod(row.pod);
+    if (existingPod !== asText(row.pod)) {
+      patch.pod = existingPod;
+    }
+
+    if (!existingPod) {
+      const suggestedPod = normalizeTeamPod(suggestTeamForTrack(track, workingTeam));
+      if (suggestedPod) patch.pod = suggestedPod;
     }
 
     if (Object.keys(patch).length === 0) {

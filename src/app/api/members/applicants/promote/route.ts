@@ -6,6 +6,7 @@ import {
   suggestTeamForTrack,
   trackToDivisions,
 } from "@/lib/server/memberPlacement";
+import { normalizeTeamPod } from "@/lib/teamPod";
 
 type PromoteBody = {
   fullName?: string;
@@ -67,6 +68,8 @@ export async function POST(req: NextRequest) {
   if (targetId) {
     const existing = team[targetId] ?? {};
     const patch: Record<string, unknown> = {};
+    const existingPod = normalizeTeamPod(existing.pod);
+    if (existingPod !== String(existing.pod ?? "").trim()) patch.pod = existingPod;
     if (!String(existing.name ?? "").trim()) patch.name = fullName;
     if (!String(existing.email ?? "").trim()) patch.email = email;
     else if (
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
     if (!String(existing.acceptedDate ?? "").trim()) patch.acceptedDate = nowIso.slice(0, 10);
     if (track !== "Other") {
       patch.divisions = trackToDivisions(track);
-      if (!String(existing.pod ?? "").trim() && suggestedPod) patch.pod = suggestedPod;
+      if (!existingPod && suggestedPod) patch.pod = normalizeTeamPod(suggestedPod);
     }
     patch.role = role;
     if (!String(existing.notes ?? "").trim()) patch.notes = "Synced from accepted applicant";
@@ -94,7 +97,7 @@ export async function POST(req: NextRequest) {
     school: schoolName,
     grade,
     divisions: trackToDivisions(track),
-    pod: suggestedPod,
+    pod: normalizeTeamPod(suggestedPod),
     role,
     slackHandle: "",
     email,

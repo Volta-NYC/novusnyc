@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbPatch, dbRead, verifyCaller } from "@/lib/server/adminApi";
+import { normalizeTeamPod } from "@/lib/teamPod";
 
 function normalizeName(value: unknown): string {
   return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   Object.entries(assignments).forEach(([nameKey, value]) => {
     const key = normalizeName(nameKey);
-    const pod = String(value ?? "").trim();
+    const pod = normalizeTeamPod(value);
     if (key && pod) normalizedAssignments[key] = pod;
   });
 
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
       skippedCount += 1;
       continue;
     }
-    if (String(member.pod ?? "").trim() === targetPod) {
+    if (normalizeTeamPod(member.pod) === targetPod) {
       skippedCount += 1;
       continue;
     }

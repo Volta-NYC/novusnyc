@@ -8,6 +8,7 @@
 
 import { ref, push, update, remove, onValue, get, set, off } from "firebase/database";
 import { getDB, getAuth } from "@/lib/firebase";
+import { normalizeTeamPod } from "@/lib/teamPod";
 
 // ── DATA TYPES ────────────────────────────────────────────────────────────────
 
@@ -695,7 +696,7 @@ export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt"
   const db = getDB();
   if (!db) return;
   const memberRef = push(ref(db, "team"));
-  await set(memberRef, { ...data, createdAt: nowISO() });
+  await set(memberRef, { ...data, pod: normalizeTeamPod(data.pod), createdAt: nowISO() });
   await writeAuditLog(db, {
     action: "create",
     collection: "team",
@@ -740,7 +741,11 @@ export async function updateApplicationRecord(
 export async function updateTeamMember(id: string, data: Partial<TeamMember>): Promise<void> {
   const db = getDB();
   if (!db) return;
-  await update(ref(db, `team/${id}`), data);
+  const patch: Partial<TeamMember> = { ...data };
+  if (Object.prototype.hasOwnProperty.call(patch, "pod")) {
+    patch.pod = normalizeTeamPod(patch.pod);
+  }
+  await update(ref(db, `team/${id}`), patch);
   await writeAuditLog(db, {
     action: "update",
     collection: "team",
