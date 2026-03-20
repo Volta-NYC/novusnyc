@@ -86,7 +86,7 @@ export default function HeroSection() {
               href="/partners"
               className="border-2 border-white/70 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-white/12 transition-all backdrop-blur-sm"
             >
-              Partner With Us
+              Get Free Business Support
             </Link>
           </div>
         </div>
