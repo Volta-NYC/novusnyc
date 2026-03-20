@@ -94,7 +94,7 @@ export default async function Home() {
       <HeroSection />
 
       {/* ── STATS ─────────────────────────────────────────────── */}
-      <section className="relative py-14 bg-v-dark border-b border-white/10 overflow-hidden">
+      <section data-home-dark-end="true" className="relative py-14 bg-v-dark border-b border-white/10 overflow-hidden">
         <div className="absolute inset-0 stats-photo opacity-35" />
         <div className="absolute inset-0 stats-photo-wash opacity-85" />
         <div className="absolute inset-0 hero-vignette opacity-70" />

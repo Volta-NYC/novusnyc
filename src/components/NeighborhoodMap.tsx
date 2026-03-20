@@ -33,9 +33,9 @@ function FitMapToPoints({ points }: { points: [number, number][] }) {
 
   useEffect(() => {
     if (points.length === 0) return;
-    map.fitBounds(points, { padding: [56, 56], animate: false });
-    // Slightly zoom out after fitting so edge circles are reliably visible on first load.
-    map.setZoom(Math.max(map.getZoom() - 0.25, 9));
+    map.fitBounds(points, { padding: [42, 42], animate: false });
+    // Slightly zoom in from fit for a tighter default showcase view.
+    map.setZoom(Math.min(map.getZoom() + 0.4, 15));
   }, [map, points]);
 
   return null;

@@ -31,8 +31,14 @@ export default function Navbar() {
   useEffect(() => {
     const onScroll = () => {
       if (pathname === "/") {
-        const homeSwitchY = Math.max(380, window.innerHeight * 0.9);
-        setScrolled(window.scrollY > homeSwitchY);
+        const darkRegionEnd = document.querySelector<HTMLElement>('[data-home-dark-end="true"]');
+        if (darkRegionEnd) {
+          const darkRegionBottom = darkRegionEnd.getBoundingClientRect().bottom;
+          setScrolled(darkRegionBottom <= 72);
+          return;
+        }
+        const fallbackSwitchY = Math.max(520, window.innerHeight * 1.05);
+        setScrolled(window.scrollY > fallbackSwitchY);
         return;
       }
       setScrolled(window.scrollY > 20);

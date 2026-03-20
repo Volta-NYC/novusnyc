@@ -80,7 +80,7 @@ export default function HeroSection() {
               href="/join"
               className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-all hover:scale-[1.03] shadow-xl shadow-black/35"
             >
-              Apply to Join →
+              Apply to Join
             </Link>
             <Link
               href="/partners"
