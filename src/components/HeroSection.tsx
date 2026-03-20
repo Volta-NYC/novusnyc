@@ -16,7 +16,7 @@ export default function HeroSection() {
   const ctaY = useTransform(scrollYProgress, [0, 0.35], [0, -16]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-v-bg pt-16">
+    <section ref={sectionRef} className="relative min-h-screen md:min-h-[108vh] flex flex-col items-center justify-center overflow-hidden bg-v-bg pt-16">
       <motion.div className="absolute inset-0 hero-photo" style={{ scale: bgScale, y: bgY }} />
       <div className="absolute inset-0 hero-photo-wash" />
       <div className="absolute inset-0 hero-vignette pointer-events-none" />
@@ -34,7 +34,7 @@ export default function HeroSection() {
           <h1
             className="font-display font-bold leading-none tracking-tight"
             style={{
-              fontSize: "clamp(4.4rem, 12.8vw, 8.6rem)",
+              fontSize: "clamp(4.8rem, 13.6vw, 9.2rem)",
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
