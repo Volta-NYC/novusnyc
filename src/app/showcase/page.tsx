@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MapPinIcon } from "@/components/Icons";
-import { projects as fallbackProjects, joinTracks } from "@/data";
+import { projects as fallbackProjects } from "@/data";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Our Work | Volta NYC",
@@ -48,7 +48,7 @@ const SHOWCASE_COLOR_CLASS: Record<string, string> = {
   "green-deep": "bg-lime-700",
 };
 
-const NeighborhoodMap = dynamic(() => import("@/components/NeighborhoodMap"), {
+const NeighborhoodMap = nextDynamic(() => import("@/components/NeighborhoodMap"), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full bg-v-border/30 flex items-center justify-center">
@@ -170,39 +170,12 @@ export default async function Showcase() {
         </div>
       </section>
 
-      {/* ── BID PARTNER STRIP (LIVE FROM BID TRACKER) ───────── */}
-      <section className="relative z-10 bg-white border-b border-v-border py-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
-            BID partners on this map
-          </p>
-          {bidPartners.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {bidPartners.map((bid) => (
-                <div key={bid.id} className={`px-3 py-2.5 border rounded-xl ${boroughCardClass(bid.borough)}`}>
-                  <p className="font-display font-bold text-xs uppercase tracking-wide leading-tight">
-                    {bid.name}
-                  </p>
-                  <p className="font-body text-[11px] mt-1 opacity-85">
-                    {bid.borough}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="border border-v-border rounded-xl px-3 py-3 bg-v-bg/55">
-              <p className="font-body text-sm text-v-muted">No BID records yet in the tracker.</p>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* ── PROJECT CARDS ─────────────────────────────────────── */}
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-3">
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
-              Every project, documented.
+              All of our projects
             </h2>
             <Link href="/updates" className="font-body text-sm font-semibold text-v-blue hover:underline">
               See progress updates →
@@ -280,51 +253,30 @@ export default async function Showcase() {
               </AnimatedSection>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ── THREE TRACKS ──────────────────────────────────────── */}
-      <section id="tracks" className="py-20 bg-white border-b border-v-border">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-14">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
-            <p className="font-body text-v-muted mt-3 max-w-xl">
-              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems in addition to frontend execution.
-            </p>
+          <AnimatedSection className="mt-14 mb-6">
+            <h3 className="font-display font-bold text-v-ink text-xl md:text-2xl">
+              All of our organization partners
+            </h3>
           </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-6">
-            {joinTracks.map((t, i) => (
-              <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className={`border rounded-2xl p-8 h-full flex flex-col ${t.color}`}>
-                  <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
-                    <t.icon className={`w-5 h-5 ${t.iconColor}`} />
-                  </div>
-                  <h3 className="font-display font-bold text-v-ink text-xl mb-5">{t.name}</h3>
-
-                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3">What you&apos;ll do</p>
-                  <ul className="space-y-2 mb-6">
-                    {t.doWhat.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${t.iconColor.replace("text-", "bg-")}`} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3 mt-auto pt-4 border-t border-black/6">Who fits in</p>
-                  <ul className="space-y-2">
-                    {t.skills.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                        <span className="w-1.5 h-1.5 rounded-full bg-v-muted/30 flex-shrink-0 mt-1.5" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+          {bidPartners.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {bidPartners.map((bid) => (
+                <div key={bid.id} className={`px-3 py-2.5 border rounded-xl ${boroughCardClass(bid.borough)}`}>
+                  <p className="font-display font-bold text-[11px] uppercase tracking-wide leading-tight">
+                    {bid.name}
+                  </p>
+                  <p className="font-body text-[11px] mt-1 opacity-85">
+                    {bid.borough}
+                  </p>
                 </div>
-              </AnimatedSection>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-v-border rounded-xl px-3 py-3 bg-v-bg/55">
+              <p className="font-body text-sm text-v-muted">No partner records yet.</p>
+            </div>
+          )}
         </div>
       </section>
 

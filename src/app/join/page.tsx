@@ -125,36 +125,38 @@ export default async function Join() {
 
       <section id="tracks" className="py-20 bg-white border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Pick your path</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Three tracks</h2>
-            <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
-              Three tracks, one goal: ship real systems and campaigns that go live for real businesses.
+          <AnimatedSection className="mb-14">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
+            <p className="font-body text-v-muted mt-3 max-w-xl">
+              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems in addition to frontend execution, with sustainability and continued support built into how each client project is maintained over time.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
             {joinTracks.map((t, i) => (
               <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className={`border-2 ${t.color} rounded-2xl p-8 h-full`}>
-                  <div className={`w-12 h-12 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
-                    <t.icon className={`w-6 h-6 ${t.iconColor}`} />
+                <div className={`border rounded-2xl p-8 h-full flex flex-col ${t.color}`}>
+                  <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
+                    <t.icon className={`w-5 h-5 ${t.iconColor}`} />
                   </div>
-                  <span className={`tag ${t.tagColor} mb-4 inline-block`}>{t.name}</span>
-                  <h3 className="font-display font-bold text-v-ink text-lg mb-4">What you&apos;ll do</h3>
+                  <h3 className="font-display font-bold text-v-ink text-xl mb-5">{t.name}</h3>
+
+                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3">What you&apos;ll do</p>
                   <ul className="space-y-2 mb-6">
-                    {t.doWhat.map((d) => (
-                      <li key={d} className="font-body text-sm text-v-muted flex items-start gap-2.5">
-                        <span className="text-v-green mt-0.5 flex-shrink-0">→</span>
-                        {d}
+                    {t.doWhat.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${t.iconColor.replace("text-", "bg-")}`} />
+                        {item}
                       </li>
                     ))}
                   </ul>
-                  <h3 className="font-display font-bold text-v-ink text-sm mb-3 uppercase tracking-wide">We look for</h3>
+
+                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3 mt-auto pt-4 border-t border-black/6">Who fits in</p>
                   <ul className="space-y-2">
-                    {t.skills.map((s) => (
-                      <li key={s} className="font-body text-xs text-v-muted flex items-start gap-2">
-                        <span className="text-v-muted/50 mt-0.5 flex-shrink-0">·</span>
-                        {s}
+                    {t.skills.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
+                        <span className="w-1.5 h-1.5 rounded-full bg-v-muted/30 flex-shrink-0 mt-1.5" />
+                        {item}
                       </li>
                     ))}
                   </ul>
