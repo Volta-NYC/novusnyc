@@ -75,11 +75,11 @@ function normalizeBorough(value?: string): "Brooklyn" | "Queens" | "Manhattan" |
 }
 
 const BOROUGH_HEX: Record<string, string> = {
-  Brooklyn: "#A3E635", // lime-400
-  Queens: "#93C5FD", // blue-300
-  Manhattan: "#FBBF24", // amber-400
-  Bronx: "#C084FC", // purple-400
-  "Staten Island": "#FB7185", // rose-400
+  Brooklyn: "#65A30D", // lime-600
+  Queens: "#3B82F6", // blue-500
+  Manhattan: "#D97706", // amber-600
+  Bronx: "#8B5CF6", // violet-500
+  "Staten Island": "#E11D48", // rose-600
 };
 
 export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
@@ -132,9 +132,9 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
             center={[b.lat, b.lng]}
             radius={8}
             fillColor={b.hex}
-            fillOpacity={0.2}
+            fillOpacity={0.14}
             color={b.hex}
-            opacity={0.55}
+            opacity={0.45}
             weight={2}
           >
             <Popup>
