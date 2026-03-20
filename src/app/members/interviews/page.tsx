@@ -299,23 +299,6 @@ function getValidEvaluationEntries(value: unknown): EvaluationEntry[] {
   return Object.values(value as Record<string, unknown>).filter((entry): entry is EvaluationEntry => isValidEvaluationEntry(entry));
 }
 
-function getValidEvaluationCount(value: unknown): number {
-  return getValidEvaluationEntries(value).length;
-}
-
-function getLatestValidEvaluation(value: unknown): EvaluationEntry | null {
-  const entries = getValidEvaluationEntries(value);
-  if (entries.length === 0) return null;
-  const sorted = [...entries].sort((a, b) => {
-    const aMs = Date.parse(String(a.updatedAt ?? ""));
-    const bMs = Date.parse(String(b.updatedAt ?? ""));
-    const aTs = Number.isFinite(aMs) ? aMs : 0;
-    const bTs = Number.isFinite(bMs) ? bMs : 0;
-    return bTs - aTs;
-  });
-  return sorted[0] ?? null;
-}
-
 function getSlotInterviewerNames(slot: InterviewSlot, memberNameById: Record<string, string>): string[] {
   const ids = Array.isArray(slot.interviewerMemberIds)
     ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
@@ -813,6 +796,33 @@ function InterviewsContent() {
     return (app?.resumeUrl ?? "").trim();
   }, [canViewResumeForSlot, findApplicationForSlot]);
 
+  // Use one consistent source for interview eval state:
+  // prefer slot-level evals; fall back to matched applicant legacy evals.
+  const getEffectiveEvaluationEntriesForSlot = useCallback((slot: InterviewSlot): EvaluationEntry[] => {
+    const slotEntries = getValidEvaluationEntries(slot.evaluationByUid);
+    if (slotEntries.length > 0) return slotEntries;
+    const matchedApp = findApplicationForSlot(slot);
+    return getValidEvaluationEntries(matchedApp?.interviewEvaluations);
+  }, [findApplicationForSlot]);
+
+  const getEffectiveEvaluationCountForSlot = useCallback(
+    (slot: InterviewSlot): number => getEffectiveEvaluationEntriesForSlot(slot).length,
+    [getEffectiveEvaluationEntriesForSlot]
+  );
+
+  const getLatestEffectiveEvaluationForSlot = useCallback((slot: InterviewSlot): EvaluationEntry | null => {
+    const entries = getEffectiveEvaluationEntriesForSlot(slot);
+    if (entries.length === 0) return null;
+    const sorted = [...entries].sort((a, b) => {
+      const aMs = Date.parse(String(a.updatedAt ?? ""));
+      const bMs = Date.parse(String(b.updatedAt ?? ""));
+      const aTs = Number.isFinite(aMs) ? aMs : 0;
+      const bTs = Number.isFinite(bMs) ? bMs : 0;
+      return bTs - aTs;
+    });
+    return sorted[0] ?? null;
+  }, [getEffectiveEvaluationEntriesForSlot]);
+
   const recurringAvailableGroups = useMemo(() => {
     const grouped: Record<string, InterviewSlot[]> = {};
     for (const slot of availableFutureSlots) {
@@ -910,8 +920,8 @@ function InterviewsContent() {
   };
 
   const openEvaluation = (slot: InterviewSlot) => {
-    // Pre-populate only from a valid existing eval; legacy blank entries are ignored.
-    const existingEval = getLatestValidEvaluation(slot.evaluationByUid);
+    // Pre-populate only from a valid existing eval (slot-level or matched legacy app eval).
+    const existingEval = getLatestEffectiveEvaluationForSlot(slot);
     setEvaluationSlot(slot);
     setEvaluationRating(existingEval?.rating ?? "");
     setEvaluationComments(existingEval?.comments ?? "");
@@ -1824,9 +1834,7 @@ function InterviewsContent() {
                     const displayName = slot.bookerName?.trim() || "Interviewee";
                     const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
                     const resumeUrl = findResumeUrlForSlot(slot);
-                    const matchedApp = findApplicationForSlot(slot);
-                    const evalCount = getValidEvaluationCount(slot.evaluationByUid)
-                      || getValidEvaluationCount(matchedApp?.interviewEvaluations);
+                    const evalCount = getEffectiveEvaluationCountForSlot(slot);
                     return (
                       <tr key={slot.id} className="hover:bg-white/3 transition-colors">
                         <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap">{displayName}</td>
@@ -1918,9 +1926,7 @@ function InterviewsContent() {
                     const displayName = slot.bookerName?.trim() || "Interviewee";
                     const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
                     const resumeUrl = findResumeUrlForSlot(slot);
-                    const matchedApp = findApplicationForSlot(slot);
-                    const evalCount = getValidEvaluationCount(slot.evaluationByUid)
-                      || getValidEvaluationCount(matchedApp?.interviewEvaluations);
+                    const evalCount = getEffectiveEvaluationCountForSlot(slot);
                     return (
                       <tr key={slot.id} className="hover:bg-white/3 transition-colors">
                         <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap">{displayName}</td>
@@ -2578,7 +2584,7 @@ function InterviewsContent() {
         </div>
         <div className="flex justify-between items-center mt-5">
           <div>
-            {evaluationSlot && getValidEvaluationCount(evaluationSlot.evaluationByUid) > 0 && (
+            {evaluationSlot && getEffectiveEvaluationCountForSlot(evaluationSlot) > 0 && (
               <Btn variant="danger" onClick={() => void deleteEvaluation()} disabled={savingEvaluation}>
                 Delete
               </Btn>
