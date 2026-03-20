@@ -1,54 +1,38 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center overflow-hidden pt-16">
-      {/* Logo + Title parallax group */}
-      <motion.div
-        className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      {/* Logo + Title */}
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center">
+        <h1
+          className="font-display font-bold leading-none tracking-tight"
+          style={{
+            fontSize: "clamp(4.8rem, 13.6vw, 9.2rem)",
+            textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
+          }}
         >
-          <h1
-            className="font-display font-bold leading-none tracking-tight"
-            style={{
-              fontSize: "clamp(4.8rem, 13.6vw, 9.2rem)",
-              textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
-            }}
-          >
-            <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-2 sm:gap-2.5 md:gap-3.5">
-              <Image
-                src="/logo.png"
-                alt="Volta"
-                width={200}
-                height={200}
-                className="object-contain flex-shrink-0"
-                style={{
-                  width: "clamp(7.6rem, 20vw, 16.8rem)",
-                  height: "clamp(7.6rem, 20vw, 16.8rem)",
-                }}
-                priority
-              />
-              <span className="text-v-green">VOLTA</span>
-            </span>
-          </h1>
-        </motion.div>
-      </motion.div>
+          <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-2 sm:gap-2.5 md:gap-3.5">
+            <Image
+              src="/logo.png"
+              alt="Volta"
+              width={200}
+              height={200}
+              className="object-contain flex-shrink-0"
+              style={{
+                width: "clamp(7.6rem, 20vw, 16.8rem)",
+                height: "clamp(7.6rem, 20vw, 16.8rem)",
+              }}
+              priority
+            />
+            <span className="text-v-green">VOLTA</span>
+          </span>
+        </h1>
+      </div>
 
       {/* Subtitle + CTAs — centered under the title */}
-      <motion.div
-        className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center">
         <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-black/35 backdrop-blur-[2px] px-6 py-6 md:px-8 md:py-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
           <p className="font-body text-lg md:text-xl text-white/95 max-w-2xl mx-auto leading-relaxed mb-3">
             Digital equity is economic equity. Join a team of students building
@@ -74,7 +58,7 @@ export default function HeroSection() {
             </Link>
           </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
