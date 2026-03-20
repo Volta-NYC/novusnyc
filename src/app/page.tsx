@@ -93,22 +93,24 @@ export default async function Home() {
     <>
       <HeroSection />
 
-      {/* ── STATS ────────────────────────────────────────────── */}
-      <section className="bg-v-dark py-20">
-        <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-10">
-          {homeStats.map((s) => (
-            <AnimatedSection key={s.label} className="text-center">
-              <div className="font-display font-bold text-5xl md:text-6xl text-v-green mb-2">
-                <CountUp end={s.value} suffix={s.suffix} />
-              </div>
-              <div className="font-body text-xs uppercase tracking-widest text-white/40">{s.label}</div>
-            </AnimatedSection>
-          ))}
+      {/* ── STATS OVERLAY (ON HERO) ─────────────────────────── */}
+      <section className="relative -mt-24 z-20 pb-10">
+        <div className="max-w-5xl mx-auto px-5">
+          <div className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-md shadow-[0_18px_48px_rgba(0,0,0,0.38)] px-6 py-7 md:px-10 md:py-9 grid grid-cols-2 md:grid-cols-4 gap-8">
+            {homeStats.map((s) => (
+              <AnimatedSection key={s.label} className="text-center">
+                <div className="font-display font-bold text-4xl md:text-5xl text-v-green mb-2">
+                  <CountUp end={s.value} suffix={s.suffix} />
+                </div>
+                <div className="font-body text-[11px] md:text-xs uppercase tracking-widest text-white/75">{s.label}</div>
+              </AnimatedSection>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── HOW VOLTA WORKS ──────────────────────────────────── */}
-      <section className="py-20 bg-white border-b border-v-border">
+      <section className="pt-14 pb-20 bg-white border-b border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-muted uppercase tracking-widest mb-3">How Volta works</p>
