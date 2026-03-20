@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 
@@ -20,7 +21,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 hero-photo-wash" />
       <div className="absolute inset-0 hero-vignette pointer-events-none" />
 
-      {/* Title parallax group */}
+      {/* Logo + Title parallax group */}
       <motion.div
         className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
         style={{ scale: titleScale, y: titleY }}
@@ -31,13 +32,27 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
           <h1
-            className="font-display font-bold text-white leading-none tracking-tight"
+            className="font-display font-bold leading-none tracking-tight"
             style={{
               fontSize: "clamp(4.4rem, 12.8vw, 8.6rem)",
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
-            VOLTA NYC
+            <span className="flex items-center gap-4 md:gap-6">
+              <Image
+                src="/logo.png"
+                alt="Volta"
+                width={200}
+                height={200}
+                className="object-contain flex-shrink-0"
+                style={{
+                  width: "clamp(8.4rem, 22.8vw, 16.8rem)",
+                  height: "clamp(8.4rem, 22.8vw, 16.8rem)",
+                }}
+                priority
+              />
+              <span className="text-v-green">VOLTA</span>
+            </span>
           </h1>
         </motion.div>
       </motion.div>

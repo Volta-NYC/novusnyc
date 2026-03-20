@@ -75,8 +75,8 @@ export default function Navbar() {
               height={32}
               className="object-contain"
             />
-            <span className={`font-display font-bold text-xl tracking-tight transition-colors ${darkHero ? "text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]" : "text-v-ink"}`}>
-              VOLTA NYC
+            <span className={`font-display font-bold text-xl tracking-tight text-v-green transition-colors ${darkHero ? "drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]" : ""}`}>
+              VOLTA
             </span>
           </Link>
 
