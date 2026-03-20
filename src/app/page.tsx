@@ -51,8 +51,11 @@ const SHOWCASE_COLOR_CLASS: Record<string, string> = {
 
 export default async function Home() {
   const publicShowcase = await getPublicShowcaseCards();
-  const homeCarouselCards = publicShowcase.length > 0
-    ? publicShowcase.map((card) => ({
+  const featuredHomeCards = publicShowcase
+    .filter((card) => card.featuredOnHome)
+    .slice(0, 6);
+  const homeProjects = featuredHomeCards.length > 0
+    ? featuredHomeCards.map((card) => ({
       name: card.name,
       neighborhood: card.neighborhood,
       services: card.services,
@@ -60,14 +63,16 @@ export default async function Home() {
       url: card.url,
       imageUrl: card.imageUrl,
     }))
-    : fallbackCurrentProjects.map((project) => ({
+    : (publicShowcase.length === 0
+      ? fallbackCurrentProjects.slice(0, 6).map((project) => ({
       name: project.name,
       neighborhood: project.neighborhood,
       services: project.services,
       colorClass: project.color,
       url: project.url,
       imageUrl: undefined as string | undefined,
-    }));
+      }))
+      : []);
 
   const getServiceTagClass = (service: string) => {
     const key = service.trim().toLowerCase();
@@ -176,36 +181,36 @@ export default async function Home() {
       <section className="py-24 bg-v-bg border-t border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">What we do</p>
-            <h2 className="font-display font-bold text-v-ink" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
-              Three tracks.
-            </h2>
-            <p className="font-body text-v-muted text-lg mt-3 max-w-3xl">
-              Each track has clear deliverables and real ownership. Teams collaborate across tracks to ship live outcomes with measurable business impact.
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
+            <p className="font-body text-v-muted mt-3 max-w-xl">
+              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems in addition to frontend execution, with sustainability and continued support built into how each client project is maintained over time.
             </p>
           </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-3 gap-6">
             {joinTracks.map((t, i) => (
               <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className={`border-2 ${t.color} rounded-2xl p-8 h-full project-card`}>
-                  <div className={`w-12 h-12 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
-                    <t.icon className={`w-6 h-6 ${t.iconColor}`} />
+                <div className={`border rounded-2xl p-8 h-full flex flex-col ${t.color}`}>
+                  <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
+                    <t.icon className={`w-5 h-5 ${t.iconColor}`} />
                   </div>
-                  <span className={`tag ${t.tagColor} mb-4 inline-block`}>{t.name}</span>
-                  <h3 className="font-display font-bold text-v-ink text-base mb-3">What teams deliver</h3>
-                  <ul className="space-y-2 mb-5">
+                  <h3 className="font-display font-bold text-v-ink text-xl mb-5">{t.name}</h3>
+
+                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3">What you&apos;ll do</p>
+                  <ul className="space-y-2 mb-6">
                     {t.doWhat.map((item) => (
                       <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                        <span className="text-v-green mt-0.5 flex-shrink-0">→</span>
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${t.iconColor.replace("text-", "bg-")}`} />
                         {item}
                       </li>
                     ))}
                   </ul>
-                  <h3 className="font-display font-bold text-v-ink text-xs uppercase tracking-wider mb-3">Core skills</h3>
+
+                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3 mt-auto pt-4 border-t border-black/6">Who fits in</p>
                   <ul className="space-y-2">
                     {t.skills.map((item) => (
-                      <li key={item} className="flex items-start gap-2 font-body text-xs text-v-muted">
-                        <span className="text-v-muted/50 mt-0.5 flex-shrink-0">·</span>
+                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
+                        <span className="w-1.5 h-1.5 rounded-full bg-v-muted/30 flex-shrink-0 mt-1.5" />
                         {item}
                       </li>
                     ))}
@@ -222,18 +227,17 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
             <div>
-              <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-2">Currently active</p>
               <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">In the field right now</h2>
             </div>
             <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
               See all work →
             </Link>
           </AnimatedSection>
-          <div className="overflow-hidden">
-            <div className="marquee-track gap-5">
-              {[...homeCarouselCards, ...homeCarouselCards].map((p, i) => (
-                <AnimatedSection key={`${p.name}-${i}`} delay={i < homeCarouselCards.length ? i * 0.05 : 0}>
-                  <div className="w-[320px] md:w-[360px] border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
+          {homeProjects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {homeProjects.map((p, i) => (
+                <AnimatedSection key={p.name} delay={i * 0.06}>
+                  <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                     <div className={`${p.colorClass} h-2`} />
                     {p.imageUrl ? (
                       <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
@@ -265,7 +269,13 @@ export default async function Home() {
                 </AnimatedSection>
               ))}
             </div>
-          </div>
+          ) : (
+            <div className="border border-v-border rounded-2xl bg-v-bg px-5 py-6">
+              <p className="font-body text-sm text-v-muted">
+                No home projects selected yet. Enable “show on home” for up to 6 projects in the Projects popup.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

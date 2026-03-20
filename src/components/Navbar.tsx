@@ -67,7 +67,7 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-1.5 md:gap-2 group">
             <Image
               src="/logo.png"
               alt="Volta"

@@ -38,7 +38,7 @@ export default function HeroSection() {
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
-            <span className="flex items-center gap-4 md:gap-6">
+            <span className="flex items-center gap-2.5 md:gap-3.5">
               <Image
                 src="/logo.png"
                 alt="Volta"
