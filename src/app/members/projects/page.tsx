@@ -1366,14 +1366,6 @@ export default function BusinessesPage() {
           <Field label="Division">
             <Select options={DIVISIONS} value={form.division ?? "Tech"} onChange={e => setField("division", e.target.value)} />
           </Field>
-          <Field label="Team Lead">
-            <AutocompleteInput
-              value={form.teamLead}
-              onChange={(value) => setField("teamLead", value)}
-              options={teamNameOptions}
-              placeholder="Start typing a member name"
-            />
-          </Field>
           <div className="col-span-2">
             <Field label="Assigned Members">
               <div className="space-y-2">
