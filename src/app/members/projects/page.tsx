@@ -13,8 +13,8 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES  = ["Not Started", "Discovery", "Active", "On Hold", "Complete"];
-const DIVISIONS = ["Tech", "Marketing", "Finance"];
+const STATUSES  = ["Ongoing", "Upcoming", "Completed"] as const;
+const DIVISIONS = ["Tech", "Marketing", "Finance"] as const;
 const DIVISION_PUBLIC_LABEL: Record<string, string> = {
   Tech: "Digital & Tech",
   Marketing: "Marketing & Strategy",
@@ -56,32 +56,40 @@ const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; 
   { value: "red-mid", label: "Red · Mid", swatch: "#EF4444" },
   { value: "red-deep", label: "Red · Deep", swatch: "#991B1B" },
 ];
-const SHOWCASE_SERVICE_OPTIONS = [
-  { label: "Website", track: "tech" },
-  { label: "SEO", track: "tech" },
-  { label: "Social", track: "marketing" },
-  { label: "Content", track: "marketing" },
-  { label: "Grants", track: "finance" },
-  { label: "Finance", track: "finance" },
-] as const;
+const SHOWCASE_COLOR_VALUES = SHOWCASE_COLOR_OPTIONS.map((option) => option.value);
+const SHOWCASE_SERVICE_OPTIONS = ["Website", "SEO", "Social", "Content", "Grants", "Finance"] as const;
+type ShowcaseServiceValue = (typeof SHOWCASE_SERVICE_OPTIONS)[number];
 const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "info@voltanyc.org", label: "info@voltanyc.org" },
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ];
-const SORT_OPTIONS = [
-  { value: "status", label: "Status" },
-  { value: "name", label: "Name" },
-] as const;
-type ProjectSortMode = (typeof SORT_OPTIONS)[number]["value"];
-type ProjectViewMode = "cards" | "compact";
 
 const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
+  Ongoing: 0,
+  Upcoming: 1,
+  Completed: 2,
   Active: 0,
+  "On Hold": 1,
   "Not Started": 1,
-  Discovery: 2,
-  "On Hold": 3,
-  Complete: 4,
+  Discovery: 1,
+  Complete: 2,
 };
+
+type ProjectStatusValue = (typeof STATUSES)[number];
+
+function normalizeProjectStatus(value: unknown): ProjectStatusValue {
+  const raw = String(value ?? "").trim();
+  if (raw === "Ongoing" || raw === "Upcoming" || raw === "Completed") return raw;
+  if (raw === "Active") return "Ongoing";
+  if (raw === "Complete") return "Completed";
+  if (raw === "On Hold" || raw === "Not Started" || raw === "Discovery") return "Upcoming";
+  return "Upcoming";
+}
+
+function randomShowcaseColor(): ShowcaseColorValue {
+  const index = Math.floor(Math.random() * SHOWCASE_COLOR_VALUES.length);
+  return SHOWCASE_COLOR_VALUES[index] ?? "blue-mid";
+}
 
 function normalizeColorToken(raw: string): ShowcaseColorValue {
   const key = raw.trim().toLowerCase();
@@ -221,13 +229,6 @@ function downloadFile(filename: string, content: string, type: string): void {
   URL.revokeObjectURL(url);
 }
 
-function businessLocationLabel(business: Business): string {
-  const address = (business.address ?? "").trim();
-  const neighborhood = (business.showcaseNeighborhood ?? "").trim();
-  if (address && neighborhood) return `${address} (${neighborhood})`;
-  return address || neighborhood;
-}
-
 type BusinessExportRow = {
   id: string;
   name: string;
@@ -244,7 +245,6 @@ type BusinessExportRow = {
   website: string;
   teamLead: string;
   teamMembers: string[];
-  firstContactDate: string;
   intakeSource: string;
   notes: string;
   lat: number | "";
@@ -280,7 +280,6 @@ const BUSINESS_EXPORT_HEADERS: Array<keyof BusinessExportRow> = [
   "website",
   "teamLead",
   "teamMembers",
-  "firstContactDate",
   "intakeSource",
   "notes",
   "lat",
@@ -314,11 +313,10 @@ function toBusinessExportRow(business: Business): BusinessExportRow {
     phone: business.phone ?? "",
     alternatePhone: business.alternatePhone ?? "",
     address: business.address ?? "",
-    neighborhood: business.showcaseNeighborhood ?? "",
+    neighborhood: business.neighborhood ?? business.showcaseNeighborhood ?? "",
     website: business.website ?? "",
     teamLead: business.teamLead ?? "",
     teamMembers: business.teamMembers ?? [],
-    firstContactDate: business.firstContactDate ?? "",
     intakeSource: business.intakeSource ?? "",
     notes: business.notes ?? "",
     lat: typeof business.lat === "number" ? business.lat : "",
@@ -347,17 +345,17 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   phone: "",
   alternatePhone: "",
   address: "",
+  neighborhood: "",
   website: "",
-  projectStatus: "Not Started",
-  teamLead: "",
   firstContactDate: "",
+  projectStatus: "Upcoming",
+  teamLead: "",
   notes: "",
   division: "Tech",
   teamMembers: [],
   showcaseEnabled: false,
   showcaseFeaturedOnHome: false,
-  showcaseName: "",
-  showcaseType: "",
+  showcaseType: "Digital & Tech",
   showcaseNeighborhood: "",
   showcaseServices: [],
   showcaseStatus: "In Progress",
@@ -375,9 +373,6 @@ export default function BusinessesPage() {
   const [team, setTeam]                       = useState<TeamMember[]>([]);
   const [search, setSearch]                   = useState("");
   const [filterDiv, setFilterDiv]             = useState("");
-  const [sortMode, setSortMode]               = useState<ProjectSortMode>("status");
-  const [statusPage, setStatusPage]           = useState<"active_planning" | "completed">("active_planning");
-  const [viewMode, setViewMode]               = useState<ProjectViewMode>("cards");
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -390,6 +385,7 @@ export default function BusinessesPage() {
   const showcaseImageInputRef = useRef<HTMLInputElement | null>(null);
   const showcaseImagePreviewRef = useRef<HTMLImageElement | null>(null);
   const [memberInput, setMemberInput] = useState("");
+  const [memberInputError, setMemberInputError] = useState<string | null>(null);
   const [importingBusinessCsv, setImportingBusinessCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [emailModalProject, setEmailModalProject] = useState<Business | null>(null);
@@ -406,7 +402,20 @@ export default function BusinessesPage() {
   const { authRole, user, userProfile } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
 
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(
+    () =>
+      subscribeBusinesses((items) => {
+        setBusinesses(
+          items.map((item) => ({
+            ...item,
+            projectStatus: normalizeProjectStatus(item.projectStatus),
+            neighborhood: (item.neighborhood ?? item.showcaseNeighborhood ?? "").trim(),
+            teamMembers: item.teamMembers ?? [],
+          }))
+        );
+      }),
+    []
+  );
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => {
     if (normalizedLegacyColorsRef.current) return;
@@ -430,7 +439,10 @@ export default function BusinessesPage() {
     setForm(prev => ({ ...prev, [key]: value }));
 
   const openCreate = () => {
-    setForm(BLANK_FORM);
+    setForm({
+      ...BLANK_FORM,
+      firstContactDate: new Date().toISOString().slice(0, 10),
+    });
     setEditingBusiness(null);
     setShowOwnerAltEmail(false);
     setShowAlternatePhone(false);
@@ -439,6 +451,7 @@ export default function BusinessesPage() {
     setCropRect(null);
     setCropDragStart(null);
     setMemberInput("");
+    setMemberInputError(null);
     setModal("create");
   };
 
@@ -449,18 +462,18 @@ export default function BusinessesPage() {
       ownerEmail: b.ownerEmail,
       ownerAlternateEmail: b.ownerAlternateEmail ?? "",
       phone: b.phone, alternatePhone: b.alternatePhone ?? "", address: b.address, website: b.website,
-      projectStatus:  b.projectStatus,
+      neighborhood: b.neighborhood ?? b.showcaseNeighborhood ?? "",
+      firstContactDate: b.firstContactDate ?? "",
+      projectStatus:  normalizeProjectStatus(b.projectStatus),
       teamLead:       b.teamLead,
-      firstContactDate: b.firstContactDate,
       notes:          b.notes,
       division:       b.division        ?? "Tech",
-      teamMembers:    b.teamMembers     ?? [],
+      teamMembers:    (b.teamMembers ?? []).map((member) => resolveTeamMemberFromInput(member) ?? "").filter(Boolean),
       showcaseEnabled: !!b.showcaseEnabled,
       showcaseFeaturedOnHome: b.showcaseFeaturedOnHome ?? false,
-      showcaseName: b.showcaseName ?? "",
-      showcaseType: b.showcaseType ?? "",
-      showcaseNeighborhood: b.showcaseNeighborhood ?? "",
-      showcaseServices: b.showcaseServices ?? [],
+      showcaseType: DIVISION_PUBLIC_LABEL[b.division ?? "Tech"] ?? "Digital & Tech",
+      showcaseNeighborhood: b.neighborhood ?? b.showcaseNeighborhood ?? "",
+      showcaseServices: (b.showcaseServices && b.showcaseServices.length > 0) ? [b.showcaseServices[0]] : [],
       showcaseStatus: b.showcaseStatus ?? "In Progress",
       showcaseDescription: b.showcaseDescription ?? "",
       showcaseUrl: b.showcaseUrl ?? "",
@@ -477,33 +490,30 @@ export default function BusinessesPage() {
     setCropRect(null);
     setCropDragStart(null);
     setMemberInput("");
+    setMemberInputError(null);
     setModal("edit");
   };
 
   const addTeamMember = (raw: string) => {
-    const value = raw.trim();
-    if (!value) return;
+    const resolvedName = resolveTeamMemberFromInput(raw);
+    if (!resolvedName) {
+      setMemberInputError("Choose a member from the directory list.");
+      return;
+    }
     const current = form.teamMembers ?? [];
-    if (current.includes(value)) {
+    if (current.includes(resolvedName)) {
+      setMemberInputError(null);
       setMemberInput("");
       return;
     }
-    setField("teamMembers", [...current, value]);
+    setField("teamMembers", [...current, resolvedName]);
+    setMemberInputError(null);
     setMemberInput("");
   };
 
   const removeTeamMember = (name: string) => {
     const current = form.teamMembers ?? [];
     setField("teamMembers", current.filter((member) => member !== name));
-  };
-
-  const toggleShowcaseService = (label: string) => {
-    const current = form.showcaseServices ?? [];
-    if (current.includes(label)) {
-      setField("showcaseServices", current.filter((item) => item !== label));
-      return;
-    }
-    setField("showcaseServices", [...current, label]);
   };
 
   const geocodeProjectLocation = async (input: {
@@ -643,12 +653,16 @@ export default function BusinessesPage() {
     if (!form.name.trim()) return;
     if (!form.projectStatus) return;
     const showcaseEnabled = !!form.showcaseEnabled;
-    const showcaseColor = normalizeColorToken((form.showcaseColor as string) ?? "");
-    const showcaseServices = (form.showcaseServices ?? []).map((service) => service.trim()).filter(Boolean);
+    const showcaseColor = showcaseEnabled
+      ? normalizeColorToken((form.showcaseColor as string) ?? "")
+      : randomShowcaseColor();
+    const showcaseService = (form.showcaseServices ?? [])[0]?.trim() ?? "";
+    const showcaseServices = showcaseService ? [showcaseService] : [];
     const showcaseImageData = showcaseImageSource === "upload"
       ? (form.showcaseImageData ?? "").trim()
       : "";
-    const geocodeAddress = (form.address ?? "").trim() || (form.showcaseNeighborhood ?? "").trim();
+    const neighborhood = (form.neighborhood ?? "").trim();
+    const geocodeAddress = (form.address ?? "").trim() || neighborhood;
     const geocoded = geocodeAddress
       ? await geocodeProjectLocation({ address: geocodeAddress, zipCode: "", borough: "" })
       : null;
@@ -660,11 +674,12 @@ export default function BusinessesPage() {
       phone: form.phone.trim(),
       alternatePhone: (form.alternatePhone ?? "").trim(),
       address: form.address.trim(),
+      neighborhood,
       website: form.website.trim(),
-      projectStatus: form.projectStatus,
+      projectStatus: normalizeProjectStatus(form.projectStatus),
+      firstContactDate: editingBusiness?.firstContactDate ?? form.firstContactDate ?? "",
       teamLead: form.teamLead.trim(),
-      teamMembers: (form.teamMembers ?? []).map((member) => member.trim()).filter(Boolean),
-      firstContactDate: form.firstContactDate,
+      teamMembers: (form.teamMembers ?? []).map((member) => resolveTeamMemberFromInput(member) ?? "").filter(Boolean),
       division: form.division ?? "Tech",
       notes: form.notes,
       showcaseEnabled,
@@ -675,9 +690,8 @@ export default function BusinessesPage() {
 
     if (showcaseEnabled) {
       payload.showcaseFeaturedOnHome = !!form.showcaseFeaturedOnHome;
-      payload.showcaseName = (form.showcaseName ?? "").trim();
       payload.showcaseType = DIVISION_PUBLIC_LABEL[form.division ?? "Tech"] ?? "Digital & Tech";
-      payload.showcaseNeighborhood = (form.showcaseNeighborhood ?? "").trim();
+      payload.showcaseNeighborhood = neighborhood;
       payload.showcaseServices = showcaseServices;
       payload.showcaseStatus = (form.showcaseStatus as Business["showcaseStatus"]) ?? "In Progress";
       payload.showcaseDescription = (form.showcaseDescription ?? "").trim();
@@ -697,7 +711,7 @@ export default function BusinessesPage() {
         githubUrl: null as unknown as string,
         driveFolderUrl: null as unknown as string,
         clientNotes: null as unknown as string,
-        showcaseName: showcaseEnabled ? payload.showcaseName : (null as unknown as string),
+        showcaseName: null as unknown as string,
         showcaseType: showcaseEnabled ? payload.showcaseType : (null as unknown as string),
         showcaseNeighborhood: showcaseEnabled ? payload.showcaseNeighborhood : (null as unknown as string),
         showcaseServices: showcaseEnabled ? payload.showcaseServices : (null as unknown as string[]),
@@ -787,9 +801,10 @@ export default function BusinessesPage() {
           ownerAlternateEmail: "",
           phone: "",
           alternatePhone: "",
-          address: neighborhood,
+          address: "",
+          neighborhood,
           website: "",
-          projectStatus: "Discovery",
+          projectStatus: "Upcoming",
           teamLead: "",
           firstContactDate: iso.slice(0, 10),
           notes: [
@@ -805,9 +820,8 @@ export default function BusinessesPage() {
           intakeSource: "website_form",
           showcaseEnabled: false,
           showcaseFeaturedOnHome: false,
-          showcaseName: "",
           showcaseType: "",
-          showcaseNeighborhood: "",
+          showcaseNeighborhood: neighborhood,
           showcaseServices: [],
           showcaseStatus: "In Progress",
           showcaseDescription: "",
@@ -835,11 +849,6 @@ export default function BusinessesPage() {
     event.target.value = "";
   };
 
-  const statusMatchesPage = (status: Business["projectStatus"]) => {
-    if (statusPage === "active_planning") return status === "Active" || status === "Not Started" || status === "Discovery";
-    return status === "Complete";
-  };
-
   const matchesSearch = (project: Business) => {
     const query = search.trim().toLowerCase();
     if (!query) return true;
@@ -850,18 +859,17 @@ export default function BusinessesPage() {
   };
 
   const sortBusinesses = (list: Business[]) => {
-    if (sortMode === "name") {
-      return [...list].sort((a, b) => a.name.localeCompare(b.name));
-    }
     return [...list].sort((a, b) => {
-      const statusDelta = PROJECT_STATUS_SORT_ORDER[a.projectStatus] - PROJECT_STATUS_SORT_ORDER[b.projectStatus];
+      const neighborhoodA = (a.neighborhood ?? a.showcaseNeighborhood ?? "").trim().toLowerCase();
+      const neighborhoodB = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim().toLowerCase();
+      if (neighborhoodA !== neighborhoodB) return neighborhoodA.localeCompare(neighborhoodB);
+      const statusDelta = PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(a.projectStatus)] - PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(b.projectStatus)];
       if (statusDelta !== 0) return statusDelta;
       return a.name.localeCompare(b.name);
     });
   };
 
-  const statusScoped = businesses.filter((business) => statusMatchesPage(business.projectStatus));
-  const divisionScoped = statusScoped.filter((business) => !filterDiv || business.division === filterDiv);
+  const divisionScoped = businesses.filter((business) => !filterDiv || business.division === filterDiv);
   const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
 
   const exportBusinessesJson = () => {
@@ -894,26 +902,52 @@ export default function BusinessesPage() {
 
   const teamNameCounts = new Map<string, number>();
   team.forEach((member) => {
-    const key = member.name.trim().toLowerCase();
+    const key = normalizeKey(member.name ?? "");
     if (!key) return;
     teamNameCounts.set(key, (teamNameCounts.get(key) ?? 0) + 1);
+  });
+
+  const teamMemberLookup = new Map<string, TeamMember[]>();
+  team.forEach((member) => {
+    const key = normalizeKey(member.name ?? "");
+    if (!key) return;
+    const list = teamMemberLookup.get(key) ?? [];
+    list.push(member);
+    teamMemberLookup.set(key, list);
   });
 
   const teamNameOptions = Array.from(
     new Set(
       team
         .map((member) => {
-          const name = member.name.trim();
+          const name = (member.name ?? "").trim();
           if (!name) return "";
-          const nameKey = name.toLowerCase();
-          const count = teamNameCounts.get(nameKey) ?? 0;
+          const key = normalizeKey(name);
+          const count = teamNameCounts.get(key) ?? 0;
           if (count <= 1) return name;
-          const suffix = member.email?.trim() || member.school?.trim() || member.id.slice(-6);
+          const suffix = (member.email ?? "").trim() || (member.school ?? "").trim() || member.id.slice(-6);
           return `${name} (${suffix})`;
         })
         .filter(Boolean)
     )
   ).sort((a, b) => a.localeCompare(b));
+
+  const resolveTeamMemberFromInput = (raw: string): string | null => {
+    const value = raw.trim();
+    if (!value) return null;
+
+    const decoratedEmail = normalizeKey(parseEmailFromDecoratedName(value));
+    if (decoratedEmail) {
+      const byEmail = team.find((member) => normalizeKey(member.email ?? "") === decoratedEmail);
+      if (byEmail?.name?.trim()) return byEmail.name.trim();
+    }
+
+    const baseName = stripDecoratedName(value);
+    const byName = teamMemberLookup.get(normalizeKey(baseName));
+    if (byName && byName.length > 0) return (byName[0].name ?? "").trim();
+
+    return null;
+  };
 
   const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
     const unresolved: string[] = [];
@@ -1028,8 +1062,9 @@ export default function BusinessesPage() {
     }
   };
 
-  const activePlanningCount = businesses.filter((b) => b.projectStatus === "Active" || b.projectStatus === "Not Started" || b.projectStatus === "Discovery").length;
-  const completedCount = businesses.filter((b) => b.projectStatus === "Complete").length;
+  const ongoingCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Ongoing").length;
+  const upcomingCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Upcoming").length;
+  const completedCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Completed").length;
 
   const normalize = (v: string) => v.trim().toLowerCase();
   const myEmail = normalize(userProfile?.email ?? user?.email ?? "");
@@ -1051,176 +1086,93 @@ export default function BusinessesPage() {
   const isMemberRestricted = authRole === "member";
   const myProjects = isNonAdminMember ? filtered.filter(isProjectMine) : [];
   const otherProjects = isNonAdminMember ? filtered.filter((p) => !isProjectMine(p)) : filtered;
-  const renderProjectCard = (b: Business) => (
-    <div
-      key={b.id}
-      className="bg-[#1C1F26] border border-white/8 rounded-xl p-5 hover:border-white/15 transition-all flex flex-col gap-3"
-    >
 
-      {/* Name + badges */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-bold text-base leading-tight break-words">
-            {b.name}
-            {b.intakeSource === "website_form" && (
-              <span className="text-amber-300 ml-1" title="Submitted via website form">★</span>
-            )}
-            {b.showcaseEnabled && (
-              <span className="text-blue-300 ml-1" title="Visible on public site">◆</span>
-            )}
-          </p>
-          {businessLocationLabel(b) && (
-            <p className="text-white/45 text-[11px] mt-1 leading-tight break-words">
-              {businessLocationLabel(b)}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <Badge label={b.projectStatus} />
-          {b.division && (
-            <span className="text-[10px] font-medium text-white/60 bg-white/8 px-2 py-0.5 rounded-full">{b.division}</span>
-          )}
-        </div>
-      </div>
-
-      {/* Contact info (hidden for member role) */}
-      {!isMemberRestricted && (b.ownerName || b.ownerEmail || b.ownerAlternateEmail || b.phone || b.alternatePhone || b.website) && (
-        <div className="bg-white/4 rounded-lg px-3 py-2 space-y-1">
-          {b.ownerName && (
-            <p className="text-white/70 text-xs font-medium">{b.ownerName}</p>
-          )}
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-            {b.ownerEmail && (
-              <a href={`mailto:${b.ownerEmail}`} className="text-[#85CC17]/70 hover:text-[#85CC17] text-xs font-mono transition-colors">{b.ownerEmail}</a>
-            )}
-            {b.ownerAlternateEmail && (
-              <a href={`mailto:${b.ownerAlternateEmail}`} className="text-[#85CC17]/55 hover:text-[#85CC17]/80 text-xs font-mono transition-colors">{b.ownerAlternateEmail}</a>
-            )}
-            {b.phone && (
-              <span className="text-white/40 text-xs">{b.phone}</span>
-            )}
-            {b.alternatePhone && (
-              <span className="text-white/35 text-xs">{b.alternatePhone}</span>
-            )}
-          </div>
-          {b.website && (
-            <a href={b.website} target="_blank" rel="noopener noreferrer" className="text-blue-400/70 hover:text-blue-400 text-xs font-mono transition-colors truncate block">{b.website}</a>
-          )}
-        </div>
-      )}
-
-      {/* Assigned members (hidden for member role) */}
-      {!isMemberRestricted && (
-        <div className="border-t border-white/5 pt-2">
-          <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Assigned Members</p>
-          {(b.teamMembers ?? []).length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {(b.teamMembers ?? []).map((member) => (
-                <span
-                  key={member}
-                  className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border bg-[#85CC17]/15 text-[#85CC17] border-[#85CC17]/25"
-                >
-                  {member}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-white/35 text-xs">No members assigned yet.</p>
-          )}
-        </div>
-      )}
-
-      {/* Actions */}
-      {canEdit && (
-        <div className="flex gap-2 pt-2 border-t border-white/5 mt-auto">
-          <Btn
-            size="sm"
-            variant="secondary"
-            className="w-full justify-center"
-            onClick={() => openProjectEmailModal(b)}
-            disabled={resolveProjectRecipients(b).emails.length === 0}
-          >
-            Email Team
-          </Btn>
-          <Btn size="sm" variant="secondary" className="w-full justify-center" onClick={() => openEdit(b)}>Edit</Btn>
-        </div>
-      )}
-    </div>
-  );
+  const copyText = async (value: string) => {
+    const safe = value.trim();
+    if (!safe) return;
+    try {
+      await navigator.clipboard.writeText(safe);
+    } catch {
+      // no-op
+    }
+  };
 
   const renderProjectCompactRow = (b: Business) => {
-    if (isMemberRestricted) {
-      return (
-        <div
-          key={b.id}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 sm:grid-cols-[minmax(220px,2fr)_140px_140px] gap-2 sm:gap-3 items-center"
-        >
-          <div className="min-w-0">
-            <p className="text-white font-semibold text-sm leading-tight truncate" title={b.name}>
-              {b.name}
-              {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
-              {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
-            </p>
-            {businessLocationLabel(b) && (
-              <p className="text-white/45 text-[11px] leading-tight truncate mt-1" title={businessLocationLabel(b)}>
-                {businessLocationLabel(b)}
-              </p>
-            )}
-          </div>
-          <div className="text-xs"><Badge label={b.projectStatus} /></div>
-          <div className="text-xs text-white/70 min-w-0 truncate" title={b.division || "—"}>
-            {b.division || "—"}
-          </div>
-        </div>
-      );
-    }
-
-    const memberList = (b.teamMembers ?? []).filter(Boolean);
-    const teamSummary = [
-      b.teamLead ? `Lead: ${b.teamLead}` : "",
-      memberList.length > 0 ? `${memberList.slice(0, 3).join(", ")}${memberList.length > 3 ? ` +${memberList.length - 3}` : ""}` : "",
-    ].filter(Boolean).join(" · ");
-    const ownerSummary = [
-      b.ownerName || "",
-      b.ownerEmail || "",
-      b.phone || "",
-    ].filter(Boolean).join(" · ");
+    const neighborhood = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim();
+    const borough = (b as unknown as { borough?: string }).borough?.trim() ?? "";
+    const neighborhoodLabel = [neighborhood, borough].filter(Boolean).join(", ") || "—";
+    const normalizedStatus = normalizeProjectStatus(b.projectStatus);
 
     return (
-      <div
-        key={b.id}
-        className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-[minmax(240px,2fr)_120px_130px_minmax(240px,2fr)_minmax(240px,2fr)_auto] gap-2 sm:gap-3 items-center"
-      >
-        <div className="min-w-0">
-          <p className="text-white font-semibold text-sm leading-tight truncate" title={b.name}>
-            {b.name}
-            {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
-            {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
-          </p>
-          {businessLocationLabel(b) && (
-            <p className="text-white/45 text-[11px] leading-tight truncate mt-1" title={businessLocationLabel(b)}>
-              {businessLocationLabel(b)}
-            </p>
+      <tr key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
+        <td className="px-2 py-2 text-[12px] text-white/90 whitespace-nowrap max-w-[260px] truncate" title={b.name}>
+          {b.name}
+          {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
+          {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
+        </td>
+        <td className="px-2 py-2 text-[12px] text-white/65 whitespace-nowrap max-w-[240px] truncate" title={neighborhoodLabel}>
+          {neighborhoodLabel}
+        </td>
+        <td className="px-2 py-2 text-[12px] text-white/80 whitespace-nowrap max-w-[180px] truncate" title={b.ownerName || "—"}>
+          {b.ownerName || "—"}
+        </td>
+        <td className="px-2 py-2 text-[12px] whitespace-nowrap">
+          {isMemberRestricted ? (
+            <span className="text-white/40">—</span>
+          ) : b.ownerEmail ? (
+            <div className="inline-flex items-center gap-1.5">
+              <span className="text-[#85CC17]/80 max-w-[220px] truncate" title={b.ownerEmail}>{b.ownerEmail}</span>
+              <button
+                type="button"
+                className="text-white/45 hover:text-white text-[11px]"
+                onClick={() => void copyText(b.ownerEmail)}
+                title="Copy primary email"
+              >
+                ⧉
+              </button>
+            </div>
+          ) : (
+            <span className="text-white/40">—</span>
           )}
-        </div>
-        <div className="text-xs text-white/70 min-w-0 truncate" title={b.division || "—"}>{b.division || "—"}</div>
-        <div className="text-xs min-w-0"><Badge label={b.projectStatus} /></div>
-        <div className="text-xs text-white/55 min-w-0 truncate" title={ownerSummary || "—"}>{ownerSummary || "—"}</div>
-        <div className="text-xs text-white/55 min-w-0 truncate" title={teamSummary || "No team assigned"}>{teamSummary || "No team assigned"}</div>
-        {canEdit ? (
-          <div className="sm:justify-self-end flex gap-2">
-            <Btn
-              size="sm"
-              variant="secondary"
-              onClick={() => openProjectEmailModal(b)}
-              disabled={resolveProjectRecipients(b).emails.length === 0}
-            >
-              Email Team
-            </Btn>
-            <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
-          </div>
-        ) : <div />}
-      </div>
+        </td>
+        <td className="px-2 py-2 text-[12px] whitespace-nowrap">
+          {isMemberRestricted ? (
+            <span className="text-white/40">—</span>
+          ) : b.phone ? (
+            <div className="inline-flex items-center gap-1.5">
+              <span className="text-white/75 max-w-[160px] truncate" title={b.phone}>{b.phone}</span>
+              <button
+                type="button"
+                className="text-white/45 hover:text-white text-[11px]"
+                onClick={() => void copyText(b.phone)}
+                title="Copy primary phone number"
+              >
+                ⧉
+              </button>
+            </div>
+          ) : (
+            <span className="text-white/40">—</span>
+          )}
+        </td>
+        <td className="px-2 py-2 whitespace-nowrap">
+          <Badge label={normalizedStatus} />
+        </td>
+        <td className="px-2 py-2 whitespace-nowrap text-right">
+          {canEdit && (
+            <div className="inline-flex gap-1.5">
+              <Btn
+                size="sm"
+                variant="secondary"
+                onClick={() => openProjectEmailModal(b)}
+                disabled={resolveProjectRecipients(b).emails.length === 0}
+              >
+                Email Team
+              </Btn>
+              <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
+            </div>
+          )}
+        </td>
+      </tr>
     );
   };
 
@@ -1263,33 +1215,15 @@ export default function BusinessesPage() {
       </p>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
-        <StatCard label="Active"    value={businesses.filter(b => b.projectStatus === "Active").length}   color="text-green-400" />
-        <StatCard label="Discovery" value={businesses.filter(b => b.projectStatus === "Discovery").length} color="text-blue-400" />
-        <StatCard label="Not Started" value={businesses.filter(b => b.projectStatus === "Not Started").length} color="text-purple-400" />
-        <StatCard label="On Hold"   value={businesses.filter(b => b.projectStatus === "On Hold").length} color="text-orange-400" />
-      </div>
-
-      <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-4 w-fit">
-        {[
-          { key: "active_planning" as const, label: "Active / Planning", count: activePlanningCount },
-          { key: "completed" as const, label: "Completed", count: completedCount },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setStatusPage(tab.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium font-body transition-colors ${
-              statusPage === tab.key ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/55 hover:text-white"
-            }`}
-          >
-            {tab.label} <span className="text-xs opacity-75">({tab.count})</span>
-          </button>
-        ))}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <StatCard label="Ongoing" value={ongoingCount} color="text-green-400" />
+        <StatCard label="Upcoming" value={upcomingCount} color="text-blue-400" />
+        <StatCard label="Completed" value={completedCount} color="text-violet-400" />
       </div>
 
       {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder={isMemberRestricted ? "Search project names…" : "Search projects, owners, leads…"} />
+        <SearchBar value={search} onChange={setSearch} placeholder={isMemberRestricted ? "Search business names…" : "Search businesses, owners, leads…"} />
         <select
           value={filterDiv}
           onChange={e => setFilterDiv(e.target.value)}
@@ -1299,73 +1233,58 @@ export default function BusinessesPage() {
           <option value="">All divisions</option>
           {DIVISIONS.map(d => <option key={d}>{d}</option>)}
         </select>
-        <select
-          value={sortMode}
-          onChange={(e) => setSortMode(e.target.value as ProjectSortMode)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-        <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
-          <button
-            onClick={() => setViewMode("cards")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "cards" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
-          >
-            Cards
-          </button>
-          <button
-            onClick={() => setViewMode("compact")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "compact" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
-          >
-            Compact
-          </button>
-        </div>
       </div>
 
       {isNonAdminMember && myProjects.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-3">My Projects</h2>
-          {viewMode === "cards" ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myProjects.map(renderProjectCard)}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {myProjects.map(renderProjectCompactRow)}
-            </div>
-          )}
+        <div className="mb-4">
+          <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
+          <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
+            <table className="w-full min-w-[980px] text-left">
+              <thead className="bg-[#0F1014] border-b border-white/8">
+                <tr>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Neighborhood, Borough</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Owner Name</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>{myProjects.map(renderProjectCompactRow)}</tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Project cards */}
       {isNonAdminMember && myProjects.length > 0 && (
-        <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-3">Other Projects</h2>
+        <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-2">Other Projects</h2>
       )}
-      {viewMode === "cards" ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {otherProjects.map(renderProjectCard)}
-          {filtered.length === 0 && (
-            <div className="col-span-3">
-              <Empty
-                message="No projects found in this section."
-                action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first project</Btn> : undefined}
-              />
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-2 mb-6">
-          {otherProjects.map(renderProjectCompactRow)}
-          {filtered.length === 0 && (
+
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto mb-6">
+        <table className="w-full min-w-[980px] text-left">
+          <thead className="bg-[#0F1014] border-b border-white/8">
+            <tr>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Neighborhood, Borough</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Owner Name</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>{otherProjects.map(renderProjectCompactRow)}</tbody>
+        </table>
+        {filtered.length === 0 && (
+          <div className="p-4">
             <Empty
-              message="No projects found in this section."
+              message="No projects found."
               action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first project</Btn> : undefined}
             />
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       <Modal
         open={!!emailModalProject}
@@ -1463,10 +1382,11 @@ export default function BusinessesPage() {
                     value={memberInput}
                     onChange={setMemberInput}
                     options={teamNameOptions}
-                    placeholder="Type a member name"
+                    placeholder="Start typing a member name"
                   />
                   <Btn size="sm" variant="secondary" onClick={() => addTeamMember(memberInput)}>Add</Btn>
                 </div>
+                {memberInputError && <p className="text-[11px] text-red-300">{memberInputError}</p>}
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {(form.teamMembers ?? []).length === 0 ? (
                     <p className="text-xs text-white/35">No members assigned yet.</p>
@@ -1588,12 +1508,18 @@ export default function BusinessesPage() {
           <Field label="Website">
             <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
           </Field>
-          <Field label="First Contact Date">
-            <Input type="date" value={form.firstContactDate} onChange={e => setField("firstContactDate", e.target.value)} />
-          </Field>
           <div className="col-span-2">
             <Field label="Address">
               <Input value={form.address} onChange={e => setField("address", e.target.value)} />
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Neighborhood">
+              <Input
+                value={form.neighborhood ?? ""}
+                onChange={e => setField("neighborhood", e.target.value)}
+                placeholder="e.g. Flushing, Queens"
+              />
             </Field>
           </div>
 
@@ -1602,32 +1528,6 @@ export default function BusinessesPage() {
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Public Showcase</p>
             <p className="text-white/45 text-xs font-body">Controls what appears on the public home/showcase cards.</p>
           </div>
-          <Field label="Card/Map Color">
-            <div className="grid grid-cols-2 gap-2">
-              {SHOWCASE_COLOR_OPTIONS.map((option) => {
-                const selected = normalizeColorToken((form.showcaseColor as string) ?? "") === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setField("showcaseColor", option.value)}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-xs text-left transition-colors ${
-                      selected ? "border-white/55 bg-white/10 text-white" : "border-white/15 bg-[#0F1014] text-white/70 hover:border-white/30"
-                    }`}
-                    title={option.label}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <span
-                        className="inline-block h-3 w-3 rounded-full border border-black/25"
-                        style={{ backgroundColor: option.swatch }}
-                      />
-                      <span className="truncate">{option.label}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
           <div className="col-span-2">
             <label className="inline-flex items-center gap-2 text-sm text-white/80 font-body">
               <input
@@ -1656,18 +1556,31 @@ export default function BusinessesPage() {
 
           {form.showcaseEnabled && (
             <>
-              <Field label="Card Name (optional)">
-                <Input value={form.showcaseName ?? ""} onChange={e => setField("showcaseName", e.target.value)} />
-              </Field>
-              <Field label="Division">
-                <Input value={DIVISION_PUBLIC_LABEL[form.division ?? "Tech"]} readOnly />
-              </Field>
-              <Field label="Neighborhood, Borough">
-                <Input
-                  value={form.showcaseNeighborhood ?? ""}
-                  onChange={e => setField("showcaseNeighborhood", e.target.value)}
-                  placeholder="e.g. Chinatown, Manhattan"
-                />
+              <Field label="Card/Map Color">
+                <div className="grid grid-cols-2 gap-2">
+                  {SHOWCASE_COLOR_OPTIONS.map((option) => {
+                    const selected = normalizeColorToken((form.showcaseColor as string) ?? "") === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setField("showcaseColor", option.value)}
+                        className={`w-full rounded-lg border px-2 py-1.5 text-xs text-left transition-colors ${
+                          selected ? "border-white/55 bg-white/10 text-white" : "border-white/15 bg-[#0F1014] text-white/70 hover:border-white/30"
+                        }`}
+                        title={option.label}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className="inline-block h-3 w-3 rounded-full border border-black/25"
+                            style={{ backgroundColor: option.swatch }}
+                          />
+                          <span className="truncate">{option.label}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </Field>
               <Field label="Card Status">
                 <Select options={SHOWCASE_STATUSES} value={form.showcaseStatus ?? "In Progress"} onChange={e => setField("showcaseStatus", e.target.value)} />
@@ -1801,26 +1714,14 @@ export default function BusinessesPage() {
               </div>
               <div className="col-span-2">
                 <Field label="What we do">
-                  <div className="flex flex-wrap gap-2">
-                    {SHOWCASE_SERVICE_OPTIONS.map((option) => {
-                      const selected = (form.showcaseServices ?? []).includes(option.label);
-                      const trackClass = option.track === "tech"
-                        ? (selected ? "bg-blue-200 text-blue-900 border-blue-300" : "bg-blue-50 text-blue-700 border-blue-200")
-                        : option.track === "marketing"
-                        ? (selected ? "bg-lime-200 text-lime-900 border-lime-300" : "bg-lime-50 text-lime-700 border-lime-200")
-                        : (selected ? "bg-amber-200 text-amber-900 border-amber-300" : "bg-amber-50 text-amber-700 border-amber-200");
-                      return (
-                        <button
-                          key={option.label}
-                          type="button"
-                          onClick={() => toggleShowcaseService(option.label)}
-                          className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${trackClass}`}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <Select
+                    options={[...SHOWCASE_SERVICE_OPTIONS]}
+                    value={(form.showcaseServices?.[0] as ShowcaseServiceValue | undefined) ?? ""}
+                    onChange={e => {
+                      const next = e.target.value.trim();
+                      setField("showcaseServices", next ? [next] : []);
+                    }}
+                  />
                 </Field>
               </div>
               <div className="col-span-2">
@@ -1829,7 +1730,7 @@ export default function BusinessesPage() {
                 </Field>
               </div>
               <div className="col-span-2">
-                <Field label="Public Link (optional)">
+                <Field label="Completed Showcase">
                   <Input value={form.showcaseUrl ?? ""} onChange={e => setField("showcaseUrl", e.target.value)} placeholder="https://" />
                 </Field>
               </div>

@@ -142,8 +142,8 @@ function normalizeStatusFromShowcase(value: unknown): PublicShowcaseStatus | nul
 
 function mapBusinessStatusToShowcase(value: unknown): PublicShowcaseStatus {
   const key = asText(value);
-  if (key === "Active" || key === "Complete") return "Active";
-  if (key === "Not Started" || key === "Discovery" || key === "On Hold") return "Upcoming";
+  if (key === "Ongoing" || key === "Active" || key === "Completed" || key === "Complete") return "Active";
+  if (key === "Upcoming" || key === "Not Started" || key === "Discovery" || key === "On Hold") return "Upcoming";
   return "In Progress";
 }
 
@@ -172,6 +172,9 @@ function divisionLabel(value: "Tech" | "Marketing" | "Finance"): string {
 }
 
 function normalizeNeighborhood(value: unknown, row: Record<string, unknown>): string {
+  const fromBusinessField = asText(row.neighborhood);
+  if (fromBusinessField) return fromBusinessField;
+
   const explicit = asText(value);
   if (explicit) return explicit;
 

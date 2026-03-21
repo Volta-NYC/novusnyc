@@ -8,8 +8,10 @@ import { useState, ReactNode, useEffect, useId } from "react";
 const BADGE_COLORS: Record<string, string> = {
   // project / business status
   Active:              "bg-green-500/15 text-green-400 border-green-500/20",
+  Ongoing:             "bg-green-500/15 text-green-400 border-green-500/20",
   "Active Partner":    "bg-green-500/15 text-green-400 border-green-500/20",
   Complete:            "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  Completed:           "bg-blue-500/15 text-blue-400 border-blue-500/20",
   Done:                "bg-blue-500/15 text-blue-400 border-blue-500/20",
   Delivered:           "bg-blue-500/15 text-blue-400 border-blue-500/20",
   Planning:            "bg-purple-500/15 text-purple-400 border-purple-500/20",
@@ -22,6 +24,7 @@ const BADGE_COLORS: Record<string, string> = {
   Researched:          "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
   "Cold Outreach":     "bg-gray-500/15 text-gray-400 border-gray-500/20",
   "Not Started":       "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  Upcoming:            "bg-gray-500/15 text-gray-400 border-gray-500/20",
   Blocked:             "bg-red-500/15 text-red-400 border-red-500/20",
   Rejected:            "bg-red-500/15 text-red-400 border-red-500/20",
   Paused:              "bg-orange-500/15 text-orange-400 border-orange-500/20",
@@ -131,7 +134,7 @@ export function TextArea({ className = "", ...props }: TextAreaProps) {
   );
 }
 
-type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & { options: string[] };
+type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & { options: readonly string[] };
 export function Select({ options, className = "", ...props }: SelectProps) {
   return (
     <div className="relative w-full">

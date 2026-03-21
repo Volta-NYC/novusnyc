@@ -50,11 +50,20 @@ export interface Business {
   phone: string;
   alternatePhone: string;
   address: string;
+  neighborhood?: string;
   lat?: number;
   lng?: number;
   website: string;
   activeServices?: string[];   // legacy field
-  projectStatus: "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
+  projectStatus:
+    | "Ongoing"
+    | "Upcoming"
+    | "Completed"
+    | "Not Started"
+    | "Discovery"
+    | "Active"
+    | "On Hold"
+    | "Complete";
   teamLead: string;
   languages?: string[];        // legacy field
   firstContactDate: string;
