@@ -24,6 +24,7 @@ export default function Footer() {
                 { href: "/about", label: "About" },
                 { href: "/partners", label: "For Businesses" },
                 { href: "/join", label: "For Students" },
+                { href: "/reports", label: "Reports & Case Studies" },
                 { href: "/guides", label: "Guides for Businesses" },
                 { href: "/updates", label: "Progress Updates" },
                 { href: "/members/login", label: "Member Login" },
