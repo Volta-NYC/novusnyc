@@ -197,12 +197,14 @@ export default async function Home() {
                     <div className={`${p.colorClass} h-2`} />
                     {p.imageUrl ? (
                       <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
-                        <img
+                        <Image
                           src={p.imageUrl}
                           alt={`${p.name} project`}
+                          width={1600}
+                          height={1000}
+                          unoptimized
                           className="block w-full h-auto"
                           loading="lazy"
-                          decoding="async"
                         />
                       </div>
                     ) : (

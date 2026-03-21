@@ -5,11 +5,11 @@ import AnimatedSection from "@/components/AnimatedSection";
 export const metadata: Metadata = {
   title: "Reports & Case Studies | Volta NYC",
   description:
-    "Reports, case studies, practical business guides, and tutorials written by Volta student teams across the country, grounded in direct owner interviews and in-person fieldwork.",
+    "Field research reports and business case studies written by Volta student teams across the country, grounded in direct owner interviews and in-person fieldwork.",
   openGraph: {
     title: "Reports & Case Studies | Volta NYC",
     description:
-      "A publication library of field reports, case studies, practical owner guides, and tool tutorials from Volta student teams across the country.",
+      "A publication library of field research reports and business case studies from Volta student teams across the country.",
     images: ["/hero-nyc-skyline.jpg"],
   },
 };
@@ -27,9 +27,8 @@ export default function ReportsPage() {
               Field research on small business realities.
             </h1>
             <p className="font-body text-v-muted text-lg max-w-3xl">
-              This is Volta&apos;s publication library of local-market reports, business case studies,
-              practical guides for owners, and basic tutorials on design and web tools.
-              Each publication is written by high school and college students doing direct interviews,
+              This is Volta&apos;s publication library of local-market reports and business case studies.
+              Each report is written by high school and college students doing direct interviews,
               in-person fieldwork, and firsthand observation in neighborhoods across the country.
             </p>
           </AnimatedSection>
@@ -44,15 +43,14 @@ export default function ReportsPage() {
                 Why this series exists
               </h2>
               <p className="font-body text-v-muted mb-4">
-                We saw repeated confusion around vendor pricing, website costs, and what actually drives results.
                 Most small-business guidance is broad and repetitive. Local business conditions are not.
                 A family restaurant in Queens, a retail shop in the Bay Area, and a neighborhood service business
                 in Florida can face similar pressures, but the execution details are different.
               </p>
               <p className="font-body text-v-muted">
-                These publications document those differences clearly and publicly. They are practical references
-                business owners can use whether or not they work with us directly, and they also serve as
-                serious portfolio-quality research for the students who produce them.
+                These reports document those differences clearly and publicly. They are practical references
+                owners and advocates can use, and they also serve as serious portfolio-quality research for
+                the students who produce them.
               </p>
             </article>
           </AnimatedSection>
@@ -60,7 +58,7 @@ export default function ReportsPage() {
           <AnimatedSection delay={0.06}>
             <article className="bg-v-bg border border-v-border rounded-2xl p-6 md:p-7">
               <h2 className="font-display font-bold text-v-ink text-2xl mb-3">
-                What this library covers
+                What each report covers
               </h2>
               <ul className="space-y-2">
                 <li className="font-body text-v-ink flex items-start gap-2">
@@ -78,10 +76,6 @@ export default function ReportsPage() {
                 <li className="font-body text-v-ink flex items-start gap-2">
                   <span className="text-v-green mt-0.5">•</span>
                   Practical recommendations grounded in field evidence
-                </li>
-                <li className="font-body text-v-ink flex items-start gap-2">
-                  <span className="text-v-green mt-0.5">•</span>
-                  Useful owner guides and basic tutorials for graphic design and web tools
                 </li>
               </ul>
             </article>
@@ -102,6 +96,11 @@ export default function ReportsPage() {
                 interview design, synthesis, writing, and analysis that can be used in applications, interviews,
                 and professional portfolios. It is one part of Volta&apos;s broader mission to advance digital and
                 financial equity for small businesses.
+              </p>
+              <p className="font-body text-v-muted mt-4">
+                For practical owner-facing playbooks and tool tutorials, see
+                {" "}
+                <Link href="/guides" className="text-v-blue hover:underline">Guides for Businesses</Link>.
               </p>
             </article>
           </AnimatedSection>

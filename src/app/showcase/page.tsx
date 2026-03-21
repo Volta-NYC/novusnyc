@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
+import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MapPinIcon } from "@/components/Icons";
 import { projects as fallbackProjects } from "@/data";
@@ -215,12 +216,14 @@ export default async function Showcase() {
                   <div className={`${p.colorClass} h-2`} />
                   {p.imageUrl ? (
                     <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg overflow-hidden">
-                      <img
+                      <Image
                         src={p.imageUrl}
                         alt={`${p.name} project`}
+                        width={1600}
+                        height={1000}
+                        unoptimized
                         className="block w-full h-auto"
                         loading="lazy"
-                        decoding="async"
                       />
                     </div>
                   ) : (
