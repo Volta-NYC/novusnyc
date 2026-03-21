@@ -228,6 +228,117 @@ function businessLocationLabel(business: Business): string {
   return address || neighborhood;
 }
 
+type BusinessExportRow = {
+  id: string;
+  name: string;
+  projectStatus: string;
+  division: string;
+  bidId: string;
+  ownerName: string;
+  ownerEmail: string;
+  ownerAlternateEmail: string;
+  phone: string;
+  alternatePhone: string;
+  address: string;
+  neighborhood: string;
+  website: string;
+  teamLead: string;
+  teamMembers: string[];
+  firstContactDate: string;
+  intakeSource: string;
+  notes: string;
+  lat: number | "";
+  lng: number | "";
+  showcaseEnabled: boolean;
+  showcaseFeaturedOnHome: boolean;
+  showcaseName: string;
+  showcaseType: string;
+  showcaseStatus: string;
+  showcaseServices: string[];
+  showcaseDescription: string;
+  showcaseUrl: string;
+  showcaseImageUrl: string;
+  hasUploadedShowcaseImage: boolean;
+  uploadedShowcaseImageBytes: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+const BUSINESS_EXPORT_HEADERS: Array<keyof BusinessExportRow> = [
+  "id",
+  "name",
+  "projectStatus",
+  "division",
+  "bidId",
+  "ownerName",
+  "ownerEmail",
+  "ownerAlternateEmail",
+  "phone",
+  "alternatePhone",
+  "address",
+  "neighborhood",
+  "website",
+  "teamLead",
+  "teamMembers",
+  "firstContactDate",
+  "intakeSource",
+  "notes",
+  "lat",
+  "lng",
+  "showcaseEnabled",
+  "showcaseFeaturedOnHome",
+  "showcaseName",
+  "showcaseType",
+  "showcaseStatus",
+  "showcaseServices",
+  "showcaseDescription",
+  "showcaseUrl",
+  "showcaseImageUrl",
+  "hasUploadedShowcaseImage",
+  "uploadedShowcaseImageBytes",
+  "createdAt",
+  "updatedAt",
+];
+
+function toBusinessExportRow(business: Business): BusinessExportRow {
+  const imageData = (business.showcaseImageData ?? "").trim();
+  return {
+    id: business.id,
+    name: business.name ?? "",
+    projectStatus: business.projectStatus ?? "",
+    division: business.division ?? "",
+    bidId: business.bidId ?? "",
+    ownerName: business.ownerName ?? "",
+    ownerEmail: business.ownerEmail ?? "",
+    ownerAlternateEmail: business.ownerAlternateEmail ?? "",
+    phone: business.phone ?? "",
+    alternatePhone: business.alternatePhone ?? "",
+    address: business.address ?? "",
+    neighborhood: business.showcaseNeighborhood ?? "",
+    website: business.website ?? "",
+    teamLead: business.teamLead ?? "",
+    teamMembers: business.teamMembers ?? [],
+    firstContactDate: business.firstContactDate ?? "",
+    intakeSource: business.intakeSource ?? "",
+    notes: business.notes ?? "",
+    lat: typeof business.lat === "number" ? business.lat : "",
+    lng: typeof business.lng === "number" ? business.lng : "",
+    showcaseEnabled: !!business.showcaseEnabled,
+    showcaseFeaturedOnHome: !!business.showcaseFeaturedOnHome,
+    showcaseName: business.showcaseName ?? "",
+    showcaseType: business.showcaseType ?? "",
+    showcaseStatus: business.showcaseStatus ?? "",
+    showcaseServices: business.showcaseServices ?? [],
+    showcaseDescription: business.showcaseDescription ?? "",
+    showcaseUrl: business.showcaseUrl ?? "",
+    showcaseImageUrl: business.showcaseImageUrl ?? "",
+    hasUploadedShowcaseImage: imageData.length > 0,
+    uploadedShowcaseImageBytes: imageData.length,
+    createdAt: business.createdAt ?? "",
+    updatedAt: business.updatedAt ?? "",
+  };
+}
+
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   ownerName: "",
@@ -754,10 +865,7 @@ export default function BusinessesPage() {
   const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
 
   const exportBusinessesJson = () => {
-    const payload = businesses.map((business) => ({
-      ...business,
-      neighborhood: (business.showcaseNeighborhood ?? "").trim(),
-    }));
+    const payload = businesses.map(toBusinessExportRow);
     const date = new Date().toISOString().slice(0, 10);
     downloadFile(
       `volta-projects-${date}.json`,
@@ -767,41 +875,8 @@ export default function BusinessesPage() {
   };
 
   const exportBusinessesCsv = () => {
-    const rows = businesses.map((business) => ({
-      ...business,
-      neighborhood: (business.showcaseNeighborhood ?? "").trim(),
-    })) as Array<Record<string, unknown>>;
-
-    const keys = new Set<string>();
-    rows.forEach((row) => Object.keys(row).forEach((key) => keys.add(key)));
-
-    const preferredOrder = [
-      "id",
-      "name",
-      "ownerName",
-      "ownerEmail",
-      "ownerAlternateEmail",
-      "phone",
-      "alternatePhone",
-      "address",
-      "neighborhood",
-      "website",
-      "projectStatus",
-      "division",
-      "teamLead",
-      "teamMembers",
-      "firstContactDate",
-      "notes",
-      "createdAt",
-      "updatedAt",
-    ];
-    const remaining = Array.from(keys)
-      .filter((key) => !preferredOrder.includes(key))
-      .sort((a, b) => a.localeCompare(b));
-    const headers = [
-      ...preferredOrder.filter((key) => keys.has(key)),
-      ...remaining,
-    ];
+    const rows = businesses.map(toBusinessExportRow);
+    const headers = BUSINESS_EXPORT_HEADERS;
     const lines = [
       headers.join(","),
       ...rows.map((row) =>
@@ -1086,6 +1161,11 @@ export default function BusinessesPage() {
               {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
               {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
             </p>
+            {businessLocationLabel(b) && (
+              <p className="text-white/45 text-[11px] leading-tight truncate mt-1" title={businessLocationLabel(b)}>
+                {businessLocationLabel(b)}
+              </p>
+            )}
           </div>
           <div className="text-xs"><Badge label={b.projectStatus} /></div>
           <div className="text-xs text-white/70 min-w-0 truncate" title={b.division || "—"}>
@@ -1117,6 +1197,11 @@ export default function BusinessesPage() {
             {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
             {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
           </p>
+          {businessLocationLabel(b) && (
+            <p className="text-white/45 text-[11px] leading-tight truncate mt-1" title={businessLocationLabel(b)}>
+              {businessLocationLabel(b)}
+            </p>
+          )}
         </div>
         <div className="text-xs text-white/70 min-w-0 truncate" title={b.division || "—"}>{b.division || "—"}</div>
         <div className="text-xs min-w-0"><Badge label={b.projectStatus} /></div>
