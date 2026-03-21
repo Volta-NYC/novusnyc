@@ -212,6 +212,7 @@ export default function ApplicantsPage() {
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
   const [viewingEvaluationsApp, setViewingEvaluationsApp] = useState<ApplicationRecord | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const columnsMenuRef = useRef<HTMLDivElement | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin" || authRole === "project_lead";
@@ -225,6 +226,32 @@ export default function ApplicantsPage() {
 
   // Subscribe to interview slots for resume access control
   useEffect(() => subscribeInterviewSlots(setSlots), []);
+
+  useEffect(() => {
+    if (!columnsMenuOpen) return;
+
+    const closeMenu = () => setColumnsMenuOpen(false);
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (target && columnsMenuRef.current?.contains(target)) return;
+      closeMenu();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMenu();
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("scroll", closeMenu, true);
+
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [columnsMenuOpen]);
 
   // Resolve the current user's team member IDs
   const currentInterviewerMemberIds = useMemo(() => {
@@ -910,7 +937,10 @@ export default function ApplicantsPage() {
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
         <div className="relative group">
-          <div className="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <div
+            ref={columnsMenuRef}
+            className="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+          >
             <button
               type="button"
               className="h-7 px-2 rounded-md border border-white/15 bg-[#0F1014]/95 text-[11px] text-white/70 hover:text-white hover:border-white/30 transition-colors"
