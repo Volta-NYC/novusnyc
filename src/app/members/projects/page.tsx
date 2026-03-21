@@ -395,6 +395,8 @@ export default function BusinessesPage() {
   const [projectEmailMode, setProjectEmailMode] = useState<"plain" | "html">("plain");
   const [projectEmailSending, setProjectEmailSending] = useState(false);
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
+  const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
+  const [projectEmailRecipientLabel, setProjectEmailRecipientLabel] = useState<string | null>(null);
   const businessCsvInputRef = useRef<HTMLInputElement | null>(null);
   const normalizedLegacyColorsRef = useRef(false);
 
@@ -949,6 +951,33 @@ export default function BusinessesPage() {
     return null;
   };
 
+  const resolveActiveMemberEmail = (raw: string): string | null => {
+    const value = raw.trim();
+    if (!value) return null;
+    const activeMembers = team.filter((member) => normalize(member.status ?? "") !== "inactive");
+
+    const decoratedEmail = normalizeKey(parseEmailFromDecoratedName(value));
+    if (decoratedEmail) {
+      const byEmail = activeMembers.find((member) => normalizeKey(member.email ?? "") === decoratedEmail);
+      if (byEmail?.email?.trim()) return byEmail.email.trim().toLowerCase();
+    }
+
+    const baseName = stripDecoratedName(value);
+    const key = normalizeKey(baseName);
+    const byName = activeMembers.find((member) => normalizeKey(member.name ?? "") === key);
+    if (byName?.email?.trim()) return byName.email.trim().toLowerCase();
+    return null;
+  };
+
+  const getProjectMemberNames = (project: Business): string[] => {
+    const values = [...(project.teamMembers ?? []), project.teamLead ?? ""]
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean)
+      .map((value) => resolveTeamMemberFromInput(value) ?? stripDecoratedName(value))
+      .filter(Boolean);
+    return Array.from(new Set(values));
+  };
+
   const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
     const unresolved: string[] = [];
     const emailSet = new Set<string>();
@@ -969,7 +998,7 @@ export default function BusinessesPage() {
     const assigned = [
       ...(project.teamLead ? [project.teamLead] : []),
       ...(project.teamMembers ?? []),
-    ].map((value) => value.trim()).filter(Boolean);
+    ].map((value) => String(value ?? "").trim()).filter(Boolean);
 
     for (const raw of assigned) {
       const decoratedEmail = normalizeKey(parseEmailFromDecoratedName(raw));
@@ -1000,15 +1029,39 @@ export default function BusinessesPage() {
     };
   };
 
-  const projectEmailRecipients = emailModalProject ? resolveProjectRecipients(emailModalProject) : { emails: [], unresolved: [] };
+  const baseProjectEmailRecipients = emailModalProject ? resolveProjectRecipients(emailModalProject) : { emails: [], unresolved: [] };
+  const projectEmailRecipients = projectEmailRecipientOverride
+    ? { emails: projectEmailRecipientOverride, unresolved: [] as string[] }
+    : baseProjectEmailRecipients;
+
+  const closeProjectEmailModal = () => {
+    setEmailModalProject(null);
+    setProjectEmailRecipientOverride(null);
+    setProjectEmailRecipientLabel(null);
+    setProjectEmailStatus(null);
+  };
 
   const openProjectEmailModal = (project: Business) => {
     setEmailModalProject(project);
+    setProjectEmailRecipientOverride(null);
+    setProjectEmailRecipientLabel(null);
     setProjectEmailFrom("info@voltanyc.org");
     setProjectEmailMode("plain");
     setProjectEmailSubject(`${project.name} — Project Update`);
     setProjectEmailMessage("");
     setProjectEmailStatus(null);
+  };
+
+  const openProjectMemberEmailModal = (project: Business, memberName: string) => {
+    openProjectEmailModal(project);
+    const memberEmail = resolveActiveMemberEmail(memberName);
+    setProjectEmailRecipientLabel(memberName);
+    if (memberEmail) {
+      setProjectEmailRecipientOverride([memberEmail]);
+      return;
+    }
+    setProjectEmailRecipientOverride([]);
+    setProjectEmailStatus(`No active email found for ${memberName}.`);
   };
 
   const sendProjectEmail = async () => {
@@ -1103,6 +1156,7 @@ export default function BusinessesPage() {
     const borough = (b as unknown as { borough?: string }).borough?.trim() ?? "";
     const neighborhoodLabel = [neighborhood, borough].filter(Boolean).join(", ") || "—";
     const normalizedStatus = normalizeProjectStatus(b.projectStatus);
+    const memberNames = getProjectMemberNames(b);
 
     return (
       <tr key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
@@ -1158,7 +1212,30 @@ export default function BusinessesPage() {
         <td className="px-2 py-2 whitespace-nowrap">
           <Badge label={normalizedStatus} />
         </td>
-        <td className="px-2 py-2 whitespace-nowrap text-right">
+        <td className="px-2 py-2 text-[12px] text-white/80 max-w-[300px] truncate" title={memberNames.join(", ")}>
+          {memberNames.length === 0 ? (
+            <span className="text-white/40">—</span>
+          ) : (
+            memberNames.map((memberName, idx) => (
+              <span key={`${b.id}-${memberName}-${idx}`}>
+                {idx > 0 && <span className="text-white/40">, </span>}
+                {canEdit ? (
+                  <button
+                    type="button"
+                    className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
+                    onClick={() => openProjectMemberEmailModal(b, memberName)}
+                    title={`Email ${memberName}`}
+                  >
+                    {memberName}
+                  </button>
+                ) : (
+                  <span>{memberName}</span>
+                )}
+              </span>
+            ))
+          )}
+        </td>
+        <td className="px-2 py-2 whitespace-nowrap text-right w-[180px]">
           {canEdit && (
             <div className="inline-flex gap-1.5">
               <Btn
@@ -1240,7 +1317,7 @@ export default function BusinessesPage() {
         <div className="mb-4">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left">
+            <table className="w-full min-w-[1160px] text-left">
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
@@ -1249,7 +1326,8 @@ export default function BusinessesPage() {
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right">Actions</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Team Members</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
                 </tr>
               </thead>
               <tbody>{myProjects.map(renderProjectCompactRow)}</tbody>
@@ -1263,7 +1341,7 @@ export default function BusinessesPage() {
       )}
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto mb-6">
-        <table className="w-full min-w-[980px] text-left">
+        <table className="w-full min-w-[1160px] text-left">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
@@ -1272,7 +1350,8 @@ export default function BusinessesPage() {
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right">Actions</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Team Members</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
             </tr>
           </thead>
           <tbody>{otherProjects.map(renderProjectCompactRow)}</tbody>
@@ -1289,11 +1368,12 @@ export default function BusinessesPage() {
 
       <Modal
         open={!!emailModalProject}
-        onClose={() => setEmailModalProject(null)}
-        title={`Email Team${emailModalProject ? ` · ${emailModalProject.name}` : ""}`}
+        onClose={closeProjectEmailModal}
+        title={`${projectEmailRecipientLabel ? "Email Member" : "Email Team"}${emailModalProject ? ` · ${emailModalProject.name}` : ""}`}
       >
         <div className="space-y-4">
           <p className="text-xs text-white/55">
+            {projectEmailRecipientLabel ? `${projectEmailRecipientLabel} · ` : ""}
             {projectEmailRecipients.emails.length} recipients
             {projectEmailRecipients.unresolved.length > 0 ? ` · ${projectEmailRecipients.unresolved.length} unresolved assignments` : ""}
           </p>
@@ -1342,7 +1422,7 @@ export default function BusinessesPage() {
           {projectEmailStatus && <p className="text-xs text-white/60">{projectEmailStatus}</p>}
 
           <div className="flex justify-end gap-2">
-            <Btn variant="ghost" onClick={() => setEmailModalProject(null)}>Close</Btn>
+            <Btn variant="ghost" onClick={closeProjectEmailModal}>Close</Btn>
             <Btn
               variant="primary"
               onClick={sendProjectEmail}
