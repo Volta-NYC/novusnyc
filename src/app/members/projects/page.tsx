@@ -956,6 +956,7 @@ export default function BusinessesPage() {
     const availableByName = new Map<string, TeamMember[]>();
 
     for (const member of team) {
+      if (normalize(member.status ?? "") === "inactive") continue;
       const emailKey = normalizeKey(member.email ?? "");
       if (emailKey) availableByEmail.set(emailKey, member);
       const nameKey = normalizeKey(member.name ?? "");

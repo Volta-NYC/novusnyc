@@ -17,6 +17,10 @@ function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+function isInactiveMember(member: TeamMember): boolean {
+  return normalizeToken(member.status ?? "") === "inactive";
+}
+
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
   const canUseEmail = authRole === "admin" || authRole === "project_lead";
@@ -89,13 +93,27 @@ export default function MemberEmailPage() {
       Array.from(
         new Set(
           filteredMembers
-            .filter((member) => selectedIds.includes(member.id))
+            .filter((member) => selectedIds.includes(member.id) && !isInactiveMember(member))
             .map((member) => (member.email ?? "").trim().toLowerCase())
             .filter(Boolean),
         ),
       ),
     [filteredMembers, selectedIds],
   );
+
+  const selectableFilteredMembers = useMemo(
+    () => filteredMembers.filter((member) => !isInactiveMember(member)),
+    [filteredMembers],
+  );
+
+  useEffect(() => {
+    setSelectedIds((prev) =>
+      prev.filter((id) => {
+        const member = team.find((entry) => entry.id === id);
+        return !!member && !isInactiveMember(member);
+      })
+    );
+  }, [team]);
 
   const toggleSelected = (id: string, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -107,7 +125,7 @@ export default function MemberEmailPage() {
   const selectAllFiltered = () => {
     setSelectedIds((prev) => {
       const set = new Set(prev);
-      filteredMembers.forEach((member) => set.add(member.id));
+      selectableFilteredMembers.forEach((member) => set.add(member.id));
       return Array.from(set);
     });
   };
@@ -228,6 +246,7 @@ export default function MemberEmailPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <p className="text-xs text-white/55">
               {selectedEmails.length} selected · {filteredMembers.length} in current filter
+              {filteredMembers.length !== selectableFilteredMembers.length ? ` · ${filteredMembers.length - selectableFilteredMembers.length} inactive` : ""}
             </p>
             <div className="flex gap-2">
               <Btn size="sm" variant="secondary" onClick={selectAllFiltered}>Select filtered</Btn>
@@ -248,17 +267,22 @@ export default function MemberEmailPage() {
               <tbody className="divide-y divide-white/5">
                 {filteredMembers.map((member) => {
                   const checked = selectedIds.includes(member.id);
+                  const inactive = isInactiveMember(member);
                   return (
-                    <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""}`}>
+                    <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
-                          checked={checked}
+                          checked={checked && !inactive}
                           onChange={(e) => toggleSelected(member.id, e.target.checked)}
-                          className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
+                          disabled={inactive}
+                          className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
                         />
                       </td>
-                      <td className="px-3 py-2 text-white/75">{member.name}</td>
+                      <td className="px-3 py-2 text-white/75">
+                        {member.name}
+                        {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
+                      </td>
                       <td className="px-3 py-2 text-white/65 font-mono">{member.email || "—"}</td>
                       <td className="px-3 py-2 text-white/45">{member.school || "—"}</td>
                       <td className="px-3 py-2 text-white/45">{member.pod || "—"}</td>

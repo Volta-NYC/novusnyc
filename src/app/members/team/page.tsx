@@ -6,7 +6,7 @@ import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm, AutocompleteInput,
 } from "@/components/members/ui";
 import {
-  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, type TeamMember, type UserProfile,
+  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, type TeamMember, type UserProfile, type Business,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -173,6 +173,7 @@ function parseTrack(raw: string): TrackKey {
 
 export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
+  const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -192,6 +193,7 @@ export default function TeamPage() {
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
 
   // Generic field updater used by all form inputs.
@@ -536,6 +538,31 @@ export default function TeamPage() {
     setField("divisions", [track]);
   };
 
+  const activeProjectAssignedNameKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const business of businesses) {
+      const status = normalizeKey(business.projectStatus ?? "");
+      const isActiveProject = status === "ongoing" || status === "active";
+      if (!isActiveProject) continue;
+      const assigned = [...(business.teamMembers ?? []), business.teamLead ?? ""];
+      for (const raw of assigned) {
+        const key = normalizeKey(String(raw ?? ""));
+        if (key) keys.add(key);
+      }
+    }
+    return keys;
+  }, [businesses]);
+
+  const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
+    if (normalizeKey(member.status ?? "") === "inactive") {
+      return { colorClass: "bg-red-400", label: "Inactive" };
+    }
+    if (activeProjectAssignedNameKeys.has(normalizeKey(member.name ?? ""))) {
+      return { colorClass: "bg-emerald-400", label: "Assigned to active project" };
+    }
+    return { colorClass: "bg-yellow-400", label: "Not assigned to active project" };
+  };
+
   return (
     <MembersLayout>
       <Dialog />
@@ -568,6 +595,11 @@ export default function TeamPage() {
       {/* Search controls */}
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
+        <div className="flex items-center gap-3 text-[10px] text-white/55">
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Active project</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Not assigned</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-400" /> Inactive</span>
+        </div>
         {!isMemberRestricted && (
           <div className="relative">
             <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
@@ -632,6 +664,7 @@ export default function TeamPage() {
               {sorted.map((member) => {
                 const track = getMemberTrack(member);
                 const avatar = getTrackAvatarStyles(track);
+                const indicator = getMemberIndicator(member);
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors align-top">
                     <td className="px-2 py-1.5 whitespace-nowrap">
@@ -642,6 +675,7 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-2 min-w-0">
+                        <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
                         <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
@@ -696,9 +730,11 @@ export default function TeamPage() {
               {sorted.map((member) => {
                 const track = getMemberTrack(member);
                 const avatar = getTrackAvatarStyles(track);
+                const indicator = getMemberIndicator(member);
                 const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
                 const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
                 const directEmail = (member.email ?? member.alternateEmail ?? "").trim();
+                const inactive = normalizeKey(member.status ?? "") === "inactive";
                 return (
                   <tr
                     key={member.id}
@@ -712,6 +748,7 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-2 min-w-0">
+                        <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
                         <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
@@ -756,6 +793,7 @@ export default function TeamPage() {
                             variant="secondary"
                             className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap"
                             onClick={() => { window.location.href = `mailto:${directEmail}`; }}
+                            disabled={inactive}
                           >
                             Email
                           </Btn>
@@ -861,6 +899,22 @@ export default function TeamPage() {
               onChange={e => setField("acceptedDate", e.target.value)}
             />
           </Field>
+          {editingMember && (
+            <div className="pt-2 mt-2 border-t border-white/8">
+              <label className="inline-flex items-center gap-2 text-sm text-white/75">
+                <input
+                  type="checkbox"
+                  className="accent-[#85CC17] w-4 h-4"
+                  checked={normalizeKey(form.status ?? "") === "inactive"}
+                  onChange={(e) => setField("status", e.target.checked ? "Inactive" : "Active")}
+                />
+                Mark member as inactive
+              </label>
+              <p className="text-[11px] text-white/45 mt-1">
+                Inactive members appear with a red status dot and are disabled in mass email selection.
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
           <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
