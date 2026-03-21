@@ -191,6 +191,43 @@ function parseCsv(text: string): string[][] {
     });
 }
 
+function csvEscape(value: string): string {
+  if (/[",\n]/.test(value)) {
+    return `"${value.replace(/"/g, "\"\"")}"`;
+  }
+  return value;
+}
+
+function toExportString(value: unknown): string {
+  if (value == null) return "";
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item ?? "").trim()).filter(Boolean).join(" | ");
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function downloadFile(filename: string, content: string, type: string): void {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function businessLocationLabel(business: Business): string {
+  const address = (business.address ?? "").trim();
+  const neighborhood = (business.showcaseNeighborhood ?? "").trim();
+  if (address && neighborhood) return `${address} (${neighborhood})`;
+  return address || neighborhood;
+}
+
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   ownerName: "",
@@ -716,6 +753,70 @@ export default function BusinessesPage() {
   const divisionScoped = statusScoped.filter((business) => !filterDiv || business.division === filterDiv);
   const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
 
+  const exportBusinessesJson = () => {
+    const payload = businesses.map((business) => ({
+      ...business,
+      neighborhood: (business.showcaseNeighborhood ?? "").trim(),
+    }));
+    const date = new Date().toISOString().slice(0, 10);
+    downloadFile(
+      `volta-projects-${date}.json`,
+      JSON.stringify(payload, null, 2),
+      "application/json;charset=utf-8",
+    );
+  };
+
+  const exportBusinessesCsv = () => {
+    const rows = businesses.map((business) => ({
+      ...business,
+      neighborhood: (business.showcaseNeighborhood ?? "").trim(),
+    })) as Array<Record<string, unknown>>;
+
+    const keys = new Set<string>();
+    rows.forEach((row) => Object.keys(row).forEach((key) => keys.add(key)));
+
+    const preferredOrder = [
+      "id",
+      "name",
+      "ownerName",
+      "ownerEmail",
+      "ownerAlternateEmail",
+      "phone",
+      "alternatePhone",
+      "address",
+      "neighborhood",
+      "website",
+      "projectStatus",
+      "division",
+      "teamLead",
+      "teamMembers",
+      "firstContactDate",
+      "notes",
+      "createdAt",
+      "updatedAt",
+    ];
+    const remaining = Array.from(keys)
+      .filter((key) => !preferredOrder.includes(key))
+      .sort((a, b) => a.localeCompare(b));
+    const headers = [
+      ...preferredOrder.filter((key) => keys.has(key)),
+      ...remaining,
+    ];
+    const lines = [
+      headers.join(","),
+      ...rows.map((row) =>
+        headers.map((header) => csvEscape(toExportString(row[header]))).join(",")
+      ),
+    ];
+
+    const date = new Date().toISOString().slice(0, 10);
+    downloadFile(
+      `volta-projects-${date}.csv`,
+      lines.join("\n"),
+      "text/csv;charset=utf-8",
+    );
+  };
+
   const teamNameCounts = new Map<string, number>();
   team.forEach((member) => {
     const key = member.name.trim().toLowerCase();
@@ -893,6 +994,11 @@ export default function BusinessesPage() {
               <span className="text-blue-300 ml-1" title="Visible on public site">◆</span>
             )}
           </p>
+          {businessLocationLabel(b) && (
+            <p className="text-white/45 text-[11px] mt-1 leading-tight break-words">
+              {businessLocationLabel(b)}
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           <Badge label={b.projectStatus} />
@@ -1050,6 +1156,8 @@ export default function BusinessesPage() {
         action={
           canEdit ? (
             <div className="flex gap-2">
+              <Btn variant="secondary" onClick={exportBusinessesCsv}>Export CSV</Btn>
+              <Btn variant="secondary" onClick={exportBusinessesJson}>Export JSON</Btn>
               <Btn
                 variant="secondary"
                 onClick={() => businessCsvInputRef.current?.click()}
