@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES  = ["Ongoing", "Upcoming", "Completed"] as const;
+const STATUSES  = ["Upcoming", "Ongoing", "Completed"] as const;
 const DIVISIONS = ["Tech", "Marketing", "Finance"] as const;
 type TrackDivision = (typeof DIVISIONS)[number];
 type ProjectStatusValue = (typeof STATUSES)[number];
@@ -933,9 +933,7 @@ export default function BusinessesPage() {
 
   const getNeighborhoodGroupLabel = (project: Business) => {
     const neighborhood = (project.neighborhood ?? project.showcaseNeighborhood ?? "").trim();
-    const borough = (project as unknown as { borough?: string }).borough?.trim() ?? "";
-    const label = [neighborhood, borough].filter(Boolean).join(", ").trim();
-    return label || "Unspecified location";
+    return neighborhood || "Unspecified location";
   };
 
   const compareNeighborhoodLabels = (a: string, b: string) => {
@@ -1461,6 +1459,7 @@ export default function BusinessesPage() {
           <Field label="Status" required>
             <Select
               options={STATUSES}
+              emptyLabel="-"
               value={info.projectStatus}
               onChange={(e) => setTrackField(track, "projectStatus", normalizeProjectStatus(e.target.value))}
             />
