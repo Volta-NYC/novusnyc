@@ -7,8 +7,9 @@ import { MapPinIcon } from "@/components/Icons";
 import { homeStats, currentProjects as fallbackCurrentProjects, joinTracks } from "@/data";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
+import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Volta NYC — Free Consulting for NYC Small Businesses",
@@ -93,12 +94,14 @@ export default async function Home() {
     <>
       <section className="relative overflow-hidden">
         <Image
-          src="/hero-nyc-skyline.jpg"
+          src={heroSkyline}
           alt=""
           fill
           priority
           fetchPriority="high"
-          sizes="100vw"
+          placeholder="blur"
+          quality={72}
+          sizes="(max-width: 768px) 1200px, (max-width: 1280px) 1800px, 2400px"
           className="object-cover"
         />
         <div className="absolute inset-0 home-shared-wash" />
