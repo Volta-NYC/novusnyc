@@ -140,7 +140,7 @@ async function CurrentProjectsSection() {
         </AnimatedSection>
         {homeProjects.length > 0 ? (
           <>
-            <div className="md:hidden -mx-5 px-5 overflow-x-auto pb-2">
+            <div className="sm:hidden -mx-5 px-5 overflow-x-auto pb-2">
               <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory">
                 {homeProjects.map((p, i) => (
                   <AnimatedSection
@@ -184,12 +184,12 @@ async function CurrentProjectsSection() {
               </div>
             </div>
 
-            <div className="hidden md:block columns-1 md:columns-2 xl:columns-3 [column-gap:1.25rem]">
+            <div className="hidden sm:grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {homeProjects.map((p, i) => (
                 <AnimatedSection
                   key={`desktop-${p.name}`}
                   delay={i * 0.06}
-                  className="inline-block w-full break-inside-avoid mb-5 align-top"
+                  className="w-full"
                 >
                   <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                     <div className={`${p.colorClass} h-2`} />

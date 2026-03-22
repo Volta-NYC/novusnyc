@@ -145,20 +145,16 @@ export default async function About() {
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we got here</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
           </AnimatedSection>
-          <div>
+          <div className="relative">
+            <div className="absolute left-8 top-8 bottom-8 w-0.5 bg-v-border" />
             {aboutTimeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.12}>
-                <div className="flex gap-10">
-                  <div className="flex flex-col items-center flex-shrink-0">
-                    <div className="w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center shadow-sm">
-                      <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
-                      <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
-                    </div>
-                    {i < aboutTimeline.length - 1 && (
-                      <div className="w-0.5 bg-v-border flex-1 min-h-8" />
-                    )}
+                <div className={`relative flex gap-6 md:gap-10 ${i < aboutTimeline.length - 1 ? "pb-10 md:pb-12" : ""}`}>
+                  <div className="w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 flex-shrink-0">
+                    <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
+                    <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
                   </div>
-                  <div className={`flex-1 pt-3${i < aboutTimeline.length - 1 ? " pb-14" : ""}`}>
+                  <div className="flex-1 pt-3 min-w-0">
                     <h3 className="font-display font-bold text-v-ink text-xl mb-2">{t.label}</h3>
                     <p className="font-body text-v-muted text-base leading-relaxed">{t.desc}</p>
                   </div>

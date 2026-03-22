@@ -34,9 +34,10 @@ function FitMapToPoints({ points }: { points: [number, number][] }) {
   useEffect(() => {
     if (points.length === 0) return;
     map.fitBounds(points, { padding: [42, 42], animate: false });
-    // Slightly zoom in from fit for a tighter default showcase view.
-    // Tuned down so initial view is a bit wider.
-    map.setZoom(Math.min(map.getZoom() + 0.3, 15));
+    // Lock the minimum zoom to the fitted default view so users can zoom in,
+    // but not zoom out further than the initial map extent.
+    const fittedZoom = map.getZoom();
+    map.setMinZoom(fittedZoom);
   }, [map, points]);
 
   return null;
