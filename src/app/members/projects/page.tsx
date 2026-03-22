@@ -591,10 +591,7 @@ export default function BusinessesPage() {
   };
 
   const openCreate = () => {
-    setForm({
-      ...BLANK_FORM,
-      firstContactDate: new Date().toISOString().slice(0, 10),
-    });
+    setForm({ ...BLANK_FORM });
     setEditingBusiness(null);
     setShowOwnerAltEmail(false);
     setShowAlternatePhone(false);
@@ -620,7 +617,7 @@ export default function BusinessesPage() {
       neighborhood: b.neighborhood ?? b.showcaseNeighborhood ?? "",
       firstContactDate: b.firstContactDate ?? "",
       projectStatus: overallStatus,
-      teamLead: b.teamLead,
+      teamLead: b.teamLead ?? "",
       notes: normalized.trackProjects[primaryDivision]?.notes ?? "",
       division: primaryDivision,
       teamMembers: TRACK_ORDER.flatMap((track) => normalized.trackProjects[track]?.teamMembers ?? []),
@@ -869,8 +866,6 @@ export default function BusinessesPage() {
       neighborhood,
       website: form.website.trim(),
       projectStatus: overallStatus,
-      firstContactDate: editingBusiness?.firstContactDate ?? form.firstContactDate ?? "",
-      teamLead: form.teamLead.trim(),
       teamMembers: flattenedTeamMembers,
       division: primaryDivision,
       notes: primaryNotes,
@@ -904,6 +899,8 @@ export default function BusinessesPage() {
         githubUrl: null as unknown as string,
         driveFolderUrl: null as unknown as string,
         clientNotes: null as unknown as string,
+        firstContactDate: null as unknown as string,
+        teamLead: null as unknown as string,
         showcaseName: null as unknown as string,
         showcaseType: showcaseEnabled ? payload.showcaseType : (null as unknown as string),
         showcaseNeighborhood: showcaseEnabled ? payload.showcaseNeighborhood : (null as unknown as string),
@@ -1281,7 +1278,7 @@ export default function BusinessesPage() {
 
     return (
       <tr key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
-        <td className="px-2 py-2 text-[12px] text-white/90 whitespace-nowrap max-w-[260px] truncate" title={b.name}>
+        <td className="px-2 py-1.5 text-[11px] text-white/90 whitespace-nowrap max-w-[220px] truncate" title={b.name}>
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-flex items-center gap-1">
               {trackAssignments.map((assignment) => (
@@ -1297,15 +1294,15 @@ export default function BusinessesPage() {
           {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
           {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
         </td>
-        <td className="px-2 py-2 text-[12px] text-white/80 whitespace-nowrap max-w-[180px] truncate" title={b.ownerName || "—"}>
+        <td className="px-2 py-1.5 text-[11px] text-white/80 whitespace-nowrap max-w-[150px] truncate" title={b.ownerName || "—"}>
           {b.ownerName || "—"}
         </td>
-        <td className="px-2 py-2 text-[12px] whitespace-nowrap">
+        <td className="px-2 py-1.5 text-[11px] whitespace-nowrap">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
             <div className="inline-flex items-center gap-1.5">
-              <span className="text-[#85CC17]/80 max-w-[220px] truncate" title={b.ownerEmail}>{b.ownerEmail}</span>
+              <span className="text-[#85CC17]/80 max-w-[160px] truncate" title={b.ownerEmail}>{b.ownerEmail}</span>
               <button
                 type="button"
                 className="members-copy-btn"
@@ -1323,12 +1320,12 @@ export default function BusinessesPage() {
             <span className="text-white/40">—</span>
           )}
         </td>
-        <td className="px-2 py-2 text-[12px] whitespace-nowrap">
+        <td className="px-2 py-1.5 text-[11px] whitespace-nowrap">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.phone ? (
             <div className="inline-flex items-center gap-1.5">
-              <span className="text-white/75 max-w-[160px] truncate" title={b.phone}>{b.phone}</span>
+              <span className="text-white/75 max-w-[120px] truncate" title={b.phone}>{b.phone}</span>
               <button
                 type="button"
                 className="members-copy-btn"
@@ -1346,10 +1343,10 @@ export default function BusinessesPage() {
             <span className="text-white/40">—</span>
           )}
         </td>
-        <td className="px-2 py-2 whitespace-nowrap">
+        <td className="px-2 py-1.5 whitespace-nowrap">
           <Badge label={normalizedStatus} />
         </td>
-        <td className="px-2 py-2 text-[12px] text-white/80 max-w-[360px]" title={trackAssignments.map((assignment) => `${formatTrackTeamLabel(assignment.track)}: ${assignment.members.join(", ") || "—"}`).join(" · ")}>
+        <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[260px]" title={trackAssignments.map((assignment) => `${formatTrackTeamLabel(assignment.track)}: ${assignment.members.join(", ") || "—"}`).join(" · ")}>
           {trackAssignments.every((assignment) => assignment.members.length === 0) ? (
             <span className="text-white/40">—</span>
           ) : (
@@ -1381,7 +1378,7 @@ export default function BusinessesPage() {
             </div>
           )}
         </td>
-        <td className="px-2 py-2 whitespace-nowrap text-right w-[180px]">
+        <td className="px-2 py-1.5 whitespace-nowrap text-right w-[160px]">
           {canEdit && (
             <div className="inline-flex gap-1.5">
               <Btn
@@ -1456,9 +1453,9 @@ export default function BusinessesPage() {
     const memberInput = memberInputByTrack[track] ?? "";
     const memberInputError = memberInputErrorByTrack[track] ?? "";
     return (
-      <div key={`track-section-${track}`} className="col-span-2 rounded-xl border border-white/10 bg-[#0F1014] p-3.5">
+      <div key={`track-section-${track}`} className="lg:col-span-2 rounded-xl border border-white/10 bg-[#0F1014] p-3.5">
         <p className="text-white/85 text-sm font-semibold mb-3">{TRACK_META[track].label} Project Info</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <Field label="Status" required>
             <Select
               options={STATUSES}
@@ -1468,7 +1465,7 @@ export default function BusinessesPage() {
             />
           </Field>
           <div />
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <Field label="Assigned Members">
               <div className="space-y-2">
                 <div className="flex gap-2">
@@ -1503,7 +1500,7 @@ export default function BusinessesPage() {
               </div>
             </Field>
           </div>
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <Field label="Notes">
               <TextArea rows={3} value={info.notes} onChange={(e) => setTrackField(track, "notes", e.target.value)} />
             </Field>
@@ -1568,16 +1565,16 @@ export default function BusinessesPage() {
         <div className="mb-4">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[1020px] text-left">
+            <table className="w-full min-w-[920px] xl:min-w-0 table-fixed text-left">
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Owner Name</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Track Teams</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Owner Name</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Primary Email</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Primary Phone</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[11%]">Status</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Track Teams</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1602,16 +1599,16 @@ export default function BusinessesPage() {
       )}
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto mb-6">
-        <table className="w-full min-w-[1020px] text-left">
+        <table className="w-full min-w-[920px] xl:min-w-0 table-fixed text-left">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Owner Name</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Track Teams</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Owner Name</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Primary Email</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Primary Phone</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[11%]">Status</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Track Teams</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -1707,9 +1704,9 @@ export default function BusinessesPage() {
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>
-        <div className="grid grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[74vh] overflow-y-auto pr-2">
           {/* ── Business Info ── */}
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Business Info</p>
           </div>
           <Field label="Business Name" required>
@@ -1800,12 +1797,12 @@ export default function BusinessesPage() {
           <Field label="Website">
             <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
           </Field>
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <Field label="Address">
               <Input value={form.address} onChange={e => setField("address", e.target.value)} />
             </Field>
           </div>
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <Field label="Neighborhood">
               <Input
                 value={form.neighborhood ?? ""}
@@ -1816,11 +1813,11 @@ export default function BusinessesPage() {
           </div>
 
           {/* ── Project Info ── */}
-          <div className="col-span-2 mt-2 pt-2 border-t border-white/8">
+          <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Project Info</p>
             <p className="text-white/45 text-xs font-body">Select one or more tracks, then configure each track project below.</p>
           </div>
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <Field label="Tracks" required>
               <div className="flex flex-wrap gap-2">
                 {TRACK_ORDER.map((track) => {
@@ -1851,11 +1848,11 @@ export default function BusinessesPage() {
             .map((track) => renderTrackProjectSection(track))}
 
           {/* ── Public Showcase ── */}
-          <div className="col-span-2 mt-2 pt-2 border-t border-white/8">
+          <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Public Showcase</p>
             <p className="text-white/45 text-xs font-body">Controls what appears on the public home/showcase cards.</p>
           </div>
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <label className="inline-flex items-center gap-2.5 text-sm text-white/80 font-body rounded-lg border border-white/10 bg-[#11141A] px-3 py-2">
               <input
                 type="checkbox"
@@ -1909,7 +1906,7 @@ export default function BusinessesPage() {
                   })}
                 </div>
               </Field>
-              <div className="col-span-2">
+              <div className="lg:col-span-2">
                 <Field label="Image">
                   <div className="space-y-3">
                     <div className="flex gap-2">
@@ -2036,7 +2033,7 @@ export default function BusinessesPage() {
                   </div>
                 </Field>
               </div>
-              <div className="col-span-2">
+              <div className="lg:col-span-2">
                 <Field label="What we do">
                   <Select
                     options={[...SHOWCASE_SERVICE_OPTIONS]}
@@ -2048,12 +2045,12 @@ export default function BusinessesPage() {
                   />
                 </Field>
               </div>
-              <div className="col-span-2">
+              <div className="lg:col-span-2">
                 <Field label="Description">
                   <TextArea rows={3} value={form.showcaseDescription ?? ""} onChange={e => setField("showcaseDescription", e.target.value)} />
                 </Field>
               </div>
-              <div className="col-span-2">
+              <div className="lg:col-span-2">
                 <Field label="Completed Showcase">
                   <Input value={form.showcaseUrl ?? ""} onChange={e => setField("showcaseUrl", e.target.value)} placeholder="https://" />
                 </Field>

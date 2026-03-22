@@ -173,18 +173,18 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
 // ── Column widths (tailwind-compatible) ────────────────────────────────────────
 
 const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
-  status: "w-[130px]",
-  actions: "w-[200px]",
-  name: "w-[120px]",
-  email: "min-w-[260px]",
-  school: "w-[140px]",
-  grade: "w-[90px]",
-  cityState: "w-[100px]",
-  referral: "w-[100px]",
-  tracks: "w-[90px]",
+  status: "w-[120px]",
+  actions: "w-[190px]",
+  name: "w-[130px]",
+  email: "w-[180px]",
+  school: "w-[160px]",
+  grade: "w-[80px]",
+  cityState: "w-[130px]",
+  referral: "w-[115px]",
+  tracks: "w-[170px]",
   resume: "w-[70px]",
-  applied: "w-[110px]",
-  invite: "w-[130px]",
+  applied: "w-[120px]",
+  invite: "w-[120px]",
   interview: "w-[130px]",
 };
 
@@ -938,7 +938,7 @@ export default function ApplicantsPage() {
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-        <table className="w-full text-[11px] leading-4">
+        <table className="w-full min-w-[980px] xl:min-w-0 table-fixed text-[10px] leading-4">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {selectionMode !== "none" && (
@@ -1033,7 +1033,7 @@ export default function ApplicantsPage() {
                       case "email":
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/60 font-mono">
-                            <span className="block break-all" title={app.email}>{app.email}</span>
+                            <span className="block truncate" title={app.email}>{app.email}</span>
                           </td>
                         );
                       case "school":

@@ -647,7 +647,7 @@ export default function TeamPage() {
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text">
-          <table className="w-full min-w-[720px] text-[11px] leading-4 table-fixed">
+          <table className="w-full min-w-[640px] xl:min-w-0 text-[10px] leading-4 table-fixed">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "School", "Grade"].map((col) => (
@@ -698,7 +698,7 @@ export default function TeamPage() {
         <div
           className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text"
         >
-          <table className="w-full min-w-[1060px] text-[11px] leading-4 table-fixed">
+          <table className="w-full min-w-[940px] xl:min-w-0 text-[10px] leading-4 table-fixed">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
@@ -709,7 +709,7 @@ export default function TeamPage() {
                   return (
                     <th
                       key={col}
-                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${col === "Track" || col === "Team" ? "w-[56px]" : ""} ${col === "Actions" ? "w-[120px]" : ""}`}
+                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${col === "Track" || col === "Team" ? "w-[56px]" : ""} ${col === "Email" ? "w-[170px]" : ""} ${col === "School" ? "w-[130px]" : ""} ${col === "Actions" ? "w-[120px]" : ""}`}
                       onClick={() => sortable && handleSort(idx)}
                     >
                       <span className="inline-flex items-center gap-0.5">
@@ -759,18 +759,10 @@ export default function TeamPage() {
                       <div className="font-mono">
                         <span
                           className="text-white/55 block truncate"
-                          title={member.email || "—"}
+                          title={[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}
                         >
-                          {member.email || "—"}
+                          {[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}
                         </span>
-                        {member.alternateEmail && (
-                          <span
-                            className="text-white/35 block truncate mt-0.5"
-                            title={member.alternateEmail}
-                          >
-                            {member.alternateEmail}
-                          </span>
-                        )}
                       </div>
                     </td>
                     <td className="px-2 py-1.5 whitespace-nowrap">
