@@ -247,6 +247,10 @@ function normalizeKey(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+function normalizeLoose(value: string): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
 function parseEmailFromDecoratedName(value: string): string {
   const match = value.match(/\(([^()]*@[^()]+)\)\s*$/);
   return match ? match[1].trim().toLowerCase() : "";
@@ -1057,7 +1061,7 @@ export default function BusinessesPage() {
   const resolveActiveMemberEmail = (raw: string): string | null => {
     const value = raw.trim();
     if (!value) return null;
-    const activeMembers = team.filter((member) => normalize(member.status ?? "") !== "inactive");
+    const activeMembers = team.filter((member) => normalizeLoose(member.status ?? "") !== "inactive");
 
     const decoratedEmail = normalizeKey(parseEmailFromDecoratedName(value));
     if (decoratedEmail) {
@@ -1092,7 +1096,7 @@ export default function BusinessesPage() {
     const availableByName = new Map<string, TeamMember[]>();
 
     for (const member of team) {
-      if (normalize(member.status ?? "") === "inactive") continue;
+      if (normalizeLoose(member.status ?? "") === "inactive") continue;
       const emailKey = normalizeKey(member.email ?? "");
       if (emailKey) availableByEmail.set(emailKey, member);
       const nameKey = normalizeKey(member.name ?? "");
@@ -1227,12 +1231,11 @@ export default function BusinessesPage() {
   const upcomingCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Upcoming").length;
   const completedCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Completed").length;
 
-  const normalize = (v: string) => v.trim().toLowerCase();
-  const myEmail = normalize(userProfile?.email ?? user?.email ?? "");
-  const teamMatchByEmail = myEmail ? team.find((m) => normalize(m.email ?? "") === myEmail) : undefined;
+  const myEmail = normalizeLoose(userProfile?.email ?? user?.email ?? "");
+  const teamMatchByEmail = myEmail ? team.find((m) => normalizeLoose(m.email ?? "") === myEmail) : undefined;
   const myNameSet = new Set(
     [userProfile?.name, teamMatchByEmail?.name]
-      .map((v) => normalize(v ?? ""))
+      .map((v) => normalizeLoose(v ?? ""))
       .filter(Boolean)
   );
 
@@ -1240,7 +1243,7 @@ export default function BusinessesPage() {
     if (myNameSet.size === 0) return false;
     return getTrackAssignments(project)
       .flatMap((assignment) => assignment.members)
-      .some((member) => myNameSet.has(normalize(member)));
+      .some((member) => myNameSet.has(normalizeLoose(member)));
   };
 
   const isNonAdminMember = authRole !== "admin";

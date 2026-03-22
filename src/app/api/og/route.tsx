@@ -37,7 +37,14 @@ export async function GET(req: NextRequest) {
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(6, 11, 18, 0.58)",
+            background: "linear-gradient(180deg, rgba(6,11,18,0.62) 0%, rgba(6,11,18,0.62) 100%)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            boxShadow: "inset 0 0 180px rgba(0,0,0,0.45)",
           }}
         />
 
@@ -52,22 +59,23 @@ export async function GET(req: NextRequest) {
             justifyContent: "center",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "26px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "0 28px" }}>
             <img
               src={logoSrc}
               alt="Volta logo"
-              width={150}
-              height={150}
+              width={184}
+              height={184}
               style={{ objectFit: "contain" }}
             />
             <div
               style={{
                 color: "#85CC17",
-                fontSize: "142px",
+                fontSize: "176px",
                 lineHeight: 1,
                 fontWeight: 800,
-                letterSpacing: "0.06em",
-                fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+                letterSpacing: "0.02em",
+                textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
+                fontFamily: "\"Space Grotesk\", \"DM Sans\", system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
               }}
             >
               VOLTA
