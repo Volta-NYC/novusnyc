@@ -9,8 +9,10 @@ export default function Footer() {
         <div className="grid md:grid-cols-3 gap-10 mb-12 items-start">
 
           <div className="flex flex-col items-start">
-            <Image src="/logo.png" alt="Volta" width={72} height={72} className="object-contain mb-4" />
-            <span className="font-display font-bold text-xl text-white tracking-tight mb-3">VOLTA NYC</span>
+            <Link href="/" className="flex items-center gap-3 mb-4">
+              <Image src="/logo.png" alt="Volta" width={52} height={52} className="object-contain" />
+              <span className="font-display font-bold text-3xl tracking-tight text-v-green">VOLTA</span>
+            </Link>
             <p className="font-body text-sm leading-relaxed text-white/50">
               A registered nonprofit connecting student teams with NYC small businesses.
             </p>
