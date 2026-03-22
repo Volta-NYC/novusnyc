@@ -202,7 +202,6 @@ export default function ApplicantsPage() {
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
-  const [backfillingTracks, setBackfillingTracks] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
@@ -600,29 +599,6 @@ export default function ApplicantsPage() {
     }
   };
 
-  const backfillAcceptedTracks = async () => {
-    if (!canEdit || !user) return;
-    setBackfillingTracks(true);
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch("/api/members/admin/backfill-accepted-tracks", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("backfill_failed");
-      const payload = await response.json() as { updated?: number; skipped?: number };
-      setStatusMessage(`Track/team backfill complete — updated: ${payload.updated ?? 0}, skipped: ${payload.skipped ?? 0}.`);
-      await fetchApplicantsData();
-    } catch {
-      setStatusMessage("Could not backfill accepted tracks.");
-    } finally {
-      setBackfillingTracks(false);
-    }
-  };
-
-
   const updateRowStatus = async (app: ApplicationRecord, nextStatus: ApplicationStatus) => {
     if (!canManageStatus) return;
     try {
@@ -823,7 +799,7 @@ export default function ApplicantsPage() {
               type="checkbox"
               checked={acceptSendEmail}
               onChange={(e) => setAcceptSendEmail(e.target.checked)}
-              className="accent-[#85CC17]"
+              className="members-checkbox"
             />
             Send acceptance email
           </label>
@@ -858,13 +834,6 @@ export default function ApplicantsPage() {
           >
             {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
           </Btn>
-          <Btn
-            variant="secondary"
-            onClick={backfillAcceptedTracks}
-            disabled={backfillingTracks}
-          >
-            {backfillingTracks ? "Backfilling..." : "Backfill Accepted Tracks"}
-          </Btn>
           <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites || unbookedReminderIds.length === 0} className={unbookedReminderIds.length === 0 ? "opacity-50" : ""}>
             {sendingReminders ? "Sending reminders..." : `Remind Unbooked (${unbookedReminderIds.length})`}
           </Btn>
@@ -883,7 +852,7 @@ export default function ApplicantsPage() {
             type="checkbox"
             checked={showAcceptedApplicants}
             onChange={(e) => setShowAcceptedApplicants(e.target.checked)}
-            className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-1 after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
+            className="members-checkbox"
           />
           Show accepted applicants
         </label>
@@ -933,46 +902,42 @@ export default function ApplicantsPage() {
             </Btn>
           </>
         )}
+        <div ref={columnsMenuRef} className="relative ml-auto">
+          <button
+            type="button"
+            className="h-8 px-2.5 rounded-md border border-white/15 bg-[#0F1014]/95 text-[11px] text-white/70 hover:text-white hover:border-white/30 transition-colors"
+            onClick={() => setColumnsMenuOpen((prev) => !prev)}
+          >
+            Columns
+          </button>
+          {columnsMenuOpen && (
+            <div className="absolute right-0 mt-1 w-52 rounded-lg border border-white/15 bg-[#0F1014] p-2 shadow-xl z-30">
+              <p className="px-1 pb-1 text-[10px] uppercase tracking-wide text-white/45">Show Columns</p>
+              <div className="max-h-56 overflow-y-auto space-y-1">
+                {ALL_COLUMNS.filter((col) => col.key !== "actions").map((col) => {
+                  const checked = !hiddenColumns.has(col.key);
+                  return (
+                    <label key={col.key} className="flex items-center gap-2 px-1 py-0.5 text-[11px] text-white/80">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) showColumn(col.key);
+                          else hideColumn(col.key);
+                        }}
+                        className="members-checkbox"
+                      />
+                      <span className="truncate">{col.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-        <div className="relative group">
-          <div
-            ref={columnsMenuRef}
-            className="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
-          >
-            <button
-              type="button"
-              className="h-7 px-2 rounded-md border border-white/15 bg-[#0F1014]/95 text-[11px] text-white/70 hover:text-white hover:border-white/30 transition-colors"
-              onClick={() => setColumnsMenuOpen((prev) => !prev)}
-            >
-              Columns
-            </button>
-            {columnsMenuOpen && (
-              <div className="absolute right-0 mt-1 w-52 rounded-lg border border-white/15 bg-[#0F1014] p-2 shadow-xl">
-                <p className="px-1 pb-1 text-[10px] uppercase tracking-wide text-white/45">Show Columns</p>
-                <div className="max-h-56 overflow-y-auto space-y-1">
-                  {ALL_COLUMNS.filter((col) => col.key !== "actions").map((col) => {
-                    const checked = !hiddenColumns.has(col.key);
-                    return (
-                      <label key={col.key} className="flex items-center gap-2 px-1 py-0.5 text-[11px] text-white/80">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            if (e.target.checked) showColumn(col.key);
-                            else hideColumn(col.key);
-                          }}
-                          className="accent-[#85CC17]"
-                        />
-                        <span className="truncate">{col.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
         <table className="w-full text-[11px] leading-4">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
@@ -980,7 +945,7 @@ export default function ApplicantsPage() {
                 <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[32px]">
                   <input
                     type="checkbox"
-                    className="accent-[#85CC17]"
+                    className="members-checkbox"
                     checked={selectableFilteredIds.length > 0 && selectableFilteredIds.every((id) => selectedIds.includes(id))}
                     onChange={(e) => {
                       if (e.target.checked) setSelectedIds(selectableFilteredIds);
@@ -1028,7 +993,7 @@ export default function ApplicantsPage() {
                     <td className="px-2 py-1.5">
                       <input
                         type="checkbox"
-                        className="accent-[#85CC17]"
+                        className="members-checkbox"
                         checked={selectedIds.includes(app.id)}
                         onChange={(e) => {
                           if (e.target.checked) setSelectedIds((prev) => Array.from(new Set([...prev, app.id])));
@@ -1223,7 +1188,6 @@ export default function ApplicantsPage() {
             })}
           </tbody>
         </table>
-        </div>
       </div>
 
       {loadingData ? <p className="text-xs text-white/40 mt-3">Loading applicants...</p> : null}

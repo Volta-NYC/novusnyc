@@ -2044,7 +2044,7 @@ function InterviewsContent() {
               type="checkbox"
               checked={manualRepeatWeekly}
               onChange={(e) => setManualRepeatWeekly(e.target.checked)}
-              className="accent-[#85CC17] w-4 h-4"
+              className="members-checkbox"
             />
             Repeat weekly (same time range for future weeks)
           </label>
@@ -2339,7 +2339,7 @@ function InterviewsContent() {
                   type="checkbox"
                   checked={applyAvailableEditWeekly}
                   onChange={(e) => setApplyAvailableEditWeekly(e.target.checked)}
-                  className="accent-[#85CC17] w-4 h-4"
+                  className="members-checkbox"
                 />
                 Apply to all upcoming weekly slots in this series
               </label>
@@ -2391,7 +2391,7 @@ function InterviewsContent() {
                   type="checkbox"
                   checked={repeatWeekly}
                   onChange={(e) => setRepeatWeekly(e.target.checked)}
-                  className="accent-[#85CC17] w-4 h-4"
+                  className="members-checkbox"
                 />
                 Repeat weekly (same slots for future weeks)
               </label>
@@ -2627,7 +2627,7 @@ function InterviewsContent() {
               type="checkbox"
               checked={finalizeSendEmail}
               onChange={(e) => setFinalizeSendEmail(e.target.checked)}
-              className="accent-[#85CC17]"
+              className="members-checkbox"
             />
             Send acceptance email
           </label>

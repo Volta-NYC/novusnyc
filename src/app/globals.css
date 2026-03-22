@@ -159,6 +159,66 @@ main {
   letter-spacing: 0.03em;
 }
 
+/* Backend controls */
+.members-checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 4px;
+  background: rgba(15, 16, 20, 0.92);
+  cursor: pointer;
+  position: relative;
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  flex-shrink: 0;
+}
+
+.members-checkbox:checked {
+  background: #85cc17;
+  border-color: #85cc17;
+}
+
+.members-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border-right: 2px solid #0d0d0d;
+  border-bottom: 2px solid #0d0d0d;
+  transform: rotate(45deg);
+}
+
+.members-checkbox:focus-visible {
+  outline: 2px solid rgba(133, 204, 23, 0.55);
+  outline-offset: 1px;
+}
+
+.members-checkbox:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.members-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.58);
+  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+
+.members-copy-btn:hover {
+  border-color: rgba(133, 204, 23, 0.45);
+  color: rgba(133, 204, 23, 0.95);
+  background: rgba(133, 204, 23, 0.12);
+}
+
 /* Form inputs */
 .volta-input {
   width: 100%;

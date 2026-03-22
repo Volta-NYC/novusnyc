@@ -904,7 +904,7 @@ export default function TeamPage() {
               <label className="inline-flex items-center gap-2 text-sm text-white/75">
                 <input
                   type="checkbox"
-                  className="accent-[#85CC17] w-4 h-4"
+                  className="members-checkbox"
                   checked={normalizeKey(form.status ?? "") === "inactive"}
                   onChange={(e) => setField("status", e.target.checked ? "Inactive" : "Active")}
                 />

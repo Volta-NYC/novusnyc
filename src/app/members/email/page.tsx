@@ -276,7 +276,7 @@ export default function MemberEmailPage() {
                           checked={checked && !inactive}
                           onChange={(e) => toggleSelected(member.id, e.target.checked)}
                           disabled={inactive}
-                          className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
+                          className="members-checkbox"
                         />
                       </td>
                       <td className="px-3 py-2 text-white/75">

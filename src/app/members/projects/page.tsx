@@ -243,19 +243,6 @@ function nextSortIndex(items: Business[]): number {
   return max + 1000;
 }
 
-function normalizeHeader(raw: string): string {
-  return raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function findHeaderIndex(headers: string[], aliases: string[]): number {
-  const normalized = headers.map(normalizeHeader);
-  for (const alias of aliases) {
-    const index = normalized.indexOf(alias);
-    if (index !== -1) return index;
-  }
-  return -1;
-}
-
 function normalizeKey(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -267,38 +254,6 @@ function parseEmailFromDecoratedName(value: string): string {
 
 function stripDecoratedName(value: string): string {
   return value.replace(/\s*\([^()]*\)\s*$/, "").trim();
-}
-
-function parseCsv(text: string): string[][] {
-  return text
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .filter((line) => line.trim() !== "")
-    .map((line) => {
-      const out: string[] = [];
-      let current = "";
-      let inQuotes = false;
-      for (let i = 0; i < line.length; i += 1) {
-        const ch = line[i];
-        if (ch === "\"") {
-          if (inQuotes && line[i + 1] === "\"") {
-            current += "\"";
-            i += 1;
-          } else {
-            inQuotes = !inQuotes;
-          }
-          continue;
-        }
-        if (ch === "," && !inQuotes) {
-          out.push(current.trim());
-          current = "";
-          continue;
-        }
-        current += ch;
-      }
-      out.push(current.trim());
-      return out;
-    });
 }
 
 function csvEscape(value: string): string {
@@ -515,8 +470,6 @@ export default function BusinessesPage() {
     Finance: "",
   });
   const [memberInputErrorByTrack, setMemberInputErrorByTrack] = useState<Partial<Record<TrackDivision, string>>>({});
-  const [importingBusinessCsv, setImportingBusinessCsv] = useState(false);
-  const [importMessage, setImportMessage] = useState<string | null>(null);
   const [emailModalProject, setEmailModalProject] = useState<Business | null>(null);
   const [projectEmailSubject, setProjectEmailSubject] = useState("");
   const [projectEmailMessage, setProjectEmailMessage] = useState("");
@@ -526,7 +479,6 @@ export default function BusinessesPage() {
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
   const [projectEmailRecipientLabel, setProjectEmailRecipientLabel] = useState<string | null>(null);
-  const businessCsvInputRef = useRef<HTMLInputElement | null>(null);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
 
@@ -979,126 +931,6 @@ export default function BusinessesPage() {
     );
   };
 
-  const importBusinessInquiriesCsv = async (file: File) => {
-    setImportingBusinessCsv(true);
-    setImportMessage("Importing business inquiries...");
-    try {
-      const rows = parseCsv(await file.text());
-      if (rows.length < 2) {
-        setImportMessage("CSV must include headers and at least one row.");
-        return;
-      }
-      const headers = rows[0];
-      const timestampIdx = findHeaderIndex(headers, ["timestamp", "created at", "date"]);
-      const businessNameIdx = findHeaderIndex(headers, ["business name", "name"]);
-      const ownerNameIdx = findHeaderIndex(headers, ["owner name", "your name", "contact name"]);
-      const ownerEmailIdx = findHeaderIndex(headers, ["email", "owner email"]);
-      const neighborhoodIdx = findHeaderIndex(headers, ["neighborhood", "borough", "city"]);
-      const servicesIdx = findHeaderIndex(headers, ["services requested", "services"]);
-      const messageIdx = findHeaderIndex(headers, ["message", "notes"]);
-      const languageIdx = findHeaderIndex(headers, ["language"]);
-
-      if (businessNameIdx === -1 || ownerNameIdx === -1 || ownerEmailIdx === -1) {
-        setImportMessage("CSV must include Business Name, Owner Name, and Email headers.");
-        return;
-      }
-
-      const existing = new Set(
-        businesses.map((b) => `${b.name.trim().toLowerCase()}|${b.ownerName.trim().toLowerCase()}|${b.ownerEmail.trim().toLowerCase()}`)
-      );
-      let sortCursor = nextSortIndex(businesses);
-
-      let added = 0;
-      let skipped = 0;
-      for (const row of rows.slice(1)) {
-        const businessName = (row[businessNameIdx] ?? "").trim();
-        const ownerName = (row[ownerNameIdx] ?? "").trim();
-        const ownerEmail = (row[ownerEmailIdx] ?? "").trim().toLowerCase();
-        if (!businessName || !ownerName || !ownerEmail) {
-          skipped += 1;
-          continue;
-        }
-        const key = `${businessName.toLowerCase()}|${ownerName.toLowerCase()}|${ownerEmail}`;
-        if (existing.has(key)) {
-          skipped += 1;
-          continue;
-        }
-        const neighborhood = neighborhoodIdx === -1 ? "" : (row[neighborhoodIdx] ?? "").trim();
-        const services = servicesIdx === -1 ? "" : (row[servicesIdx] ?? "").trim();
-        const message = messageIdx === -1 ? "" : (row[messageIdx] ?? "").trim();
-        const language = languageIdx === -1 ? "" : (row[languageIdx] ?? "").trim();
-        const rawTimestamp = timestampIdx === -1 ? "" : String(row[timestampIdx] ?? "").trim();
-        const parsed = rawTimestamp ? Date.parse(rawTimestamp) : NaN;
-        const iso = Number.isNaN(parsed) ? new Date().toISOString() : new Date(parsed).toISOString();
-        await createBusiness({
-          name: businessName,
-          bidId: "",
-          ownerName,
-          ownerEmail,
-          ownerAlternateEmail: "",
-          phone: "",
-          alternatePhone: "",
-          address: "",
-          neighborhood,
-          website: "",
-          projectStatus: "Upcoming",
-          teamLead: "",
-          firstContactDate: iso.slice(0, 10),
-          notes: [
-            "Imported from Business Inquiries CSV",
-            neighborhood ? `Neighborhood: ${neighborhood}` : "",
-            services ? `Services Requested: ${services}` : "",
-            language ? `Language: ${language}` : "",
-            message ? `Message: ${message}` : "",
-          ].filter(Boolean).join("\n"),
-          division: "Marketing",
-          teamMembers: [],
-          projectTracks: ["Marketing"],
-          trackProjects: {
-            Marketing: {
-              projectStatus: "Upcoming",
-              teamMembers: [],
-              notes: [
-                "Imported from Business Inquiries CSV",
-                neighborhood ? `Neighborhood: ${neighborhood}` : "",
-                services ? `Services Requested: ${services}` : "",
-                language ? `Language: ${language}` : "",
-                message ? `Message: ${message}` : "",
-              ].filter(Boolean).join("\n"),
-            },
-          },
-          sortIndex: sortCursor,
-          intakeSource: "website_form",
-          showcaseEnabled: false,
-          showcaseFeaturedOnHome: false,
-          showcaseType: "",
-          showcaseNeighborhood: neighborhood,
-          showcaseServices: [],
-          showcaseDescription: "",
-          showcaseUrl: "",
-          showcaseImageUrl: "",
-          showcaseImageData: "",
-          showcaseColor: "blue-mid",
-        });
-        sortCursor += 1000;
-        existing.add(key);
-        added += 1;
-      }
-      setImportMessage(`Business import complete: ${added} added, ${skipped} skipped.`);
-    } catch {
-      setImportMessage("Could not import business inquiries CSV.");
-    } finally {
-      setImportingBusinessCsv(false);
-    }
-  };
-
-  const onBusinessCsvInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    await importBusinessInquiriesCsv(file);
-    event.target.value = "";
-  };
-
   const getNeighborhoodGroupLabel = (project: Business) => {
     const neighborhood = (project.neighborhood ?? project.showcaseNeighborhood ?? "").trim();
     const borough = (project as unknown as { borough?: string }).borough?.trim() ?? "";
@@ -1475,11 +1307,15 @@ export default function BusinessesPage() {
               <span className="text-[#85CC17]/80 max-w-[220px] truncate" title={b.ownerEmail}>{b.ownerEmail}</span>
               <button
                 type="button"
-                className="text-white/45 hover:text-white text-[11px]"
+                className="members-copy-btn"
                 onClick={() => void copyText(b.ownerEmail)}
                 title="Copy primary email"
+                aria-label="Copy primary email"
               >
-                ⧉
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="9" y="9" width="11" height="11" rx="2" />
+                  <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+                </svg>
               </button>
             </div>
           ) : (
@@ -1494,11 +1330,15 @@ export default function BusinessesPage() {
               <span className="text-white/75 max-w-[160px] truncate" title={b.phone}>{b.phone}</span>
               <button
                 type="button"
-                className="text-white/45 hover:text-white text-[11px]"
+                className="members-copy-btn"
                 onClick={() => void copyText(b.phone)}
                 title="Copy primary phone number"
+                aria-label="Copy primary phone number"
               >
-                ⧉
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="9" y="9" width="11" height="11" rx="2" />
+                  <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+                </svg>
               </button>
             </div>
           ) : (
@@ -1674,13 +1514,6 @@ export default function BusinessesPage() {
   return (
     <MembersLayout>
       <Dialog />
-      <input
-        ref={businessCsvInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
-        onChange={onBusinessCsvInput}
-      />
 
       <PageHeader
         title="Projects"
@@ -1690,19 +1523,11 @@ export default function BusinessesPage() {
             <div className="flex gap-2">
               <Btn variant="secondary" onClick={exportBusinessesCsv}>Export CSV</Btn>
               <Btn variant="secondary" onClick={exportBusinessesJson}>Export JSON</Btn>
-              <Btn
-                variant="secondary"
-                onClick={() => businessCsvInputRef.current?.click()}
-                disabled={importingBusinessCsv}
-              >
-                {importingBusinessCsv ? "Importing..." : "Import Business Inquiries CSV"}
-              </Btn>
               <Btn variant="primary" onClick={openCreate}>+ New Project</Btn>
             </div>
           ) : undefined
         }
       />
-      {importMessage && <p className="text-xs text-white/55 mb-3">{importMessage}</p>}
       <p className="text-xs text-white/45 mb-4">
         <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
         <span className="mx-2">·</span>
@@ -2029,10 +1854,10 @@ export default function BusinessesPage() {
             <p className="text-white/45 text-xs font-body">Controls what appears on the public home/showcase cards.</p>
           </div>
           <div className="col-span-2">
-            <label className="inline-flex items-center gap-2 text-sm text-white/80 font-body">
+            <label className="inline-flex items-center gap-2.5 text-sm text-white/80 font-body rounded-lg border border-white/10 bg-[#11141A] px-3 py-2">
               <input
                 type="checkbox"
-                className="accent-[#85CC17] w-4 h-4"
+                className="members-checkbox"
                 checked={!!form.showcaseEnabled}
                 onChange={(e) => {
                   const checked = e.target.checked;
@@ -2042,10 +1867,10 @@ export default function BusinessesPage() {
               />
               Show this project on the public site
             </label>
-            <label className={`inline-flex items-center gap-2 text-sm font-body mt-2 ${form.showcaseEnabled ? "text-white/75" : "text-white/35"}`}>
+            <label className={`inline-flex items-center gap-2.5 text-sm font-body mt-2 rounded-lg border px-3 py-2 ${form.showcaseEnabled ? "text-white/75 border-white/10 bg-[#11141A]" : "text-white/35 border-white/5 bg-[#11141A]/40"}`}>
               <input
                 type="checkbox"
-                className="accent-[#85CC17] w-4 h-4"
+                className="members-checkbox"
                 checked={!!form.showcaseFeaturedOnHome}
                 onChange={(e) => setField("showcaseFeaturedOnHome", e.target.checked)}
                 disabled={!form.showcaseEnabled}

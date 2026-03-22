@@ -716,7 +716,7 @@ export default function CalendarPage() {
                 onChange={(e) => {
                   setVisibleKinds((prev) => ({ ...prev, [eventType]: e.target.checked }));
                 }}
-                className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
+                className="members-checkbox"
               />
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
               {item.label}
@@ -930,7 +930,7 @@ export default function CalendarPage() {
               id="allday"
               checked={form.allDay}
               onChange={e => setField("allDay", e.target.checked)}
-              className="appearance-none w-4 h-4 border border-white/20 rounded-sm bg-black/20 checked:bg-[#85CC17] checked:border-[#85CC17] focus:outline-none transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-1.5 after:top-0.5 after:w-[3px] after:h-2 after:border-r-2 after:border-b-2 after:border-black after:rotate-45"
+              className="members-checkbox"
             />
             <label htmlFor="allday" className="text-sm text-white/60 font-body">All-day event</label>
           </div>
