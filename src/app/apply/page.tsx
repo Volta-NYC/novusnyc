@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationForm from "@/components/ApplicationForm";
 
@@ -70,18 +69,6 @@ export default function Apply() {
                   ))}
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-v-border">
-                  <p className="font-body text-xs text-v-muted">
-                    Questions?{" "}
-                    <Link href="/partners#contact" className="text-v-blue hover:underline">
-                      Contact the team
-                    </Link>{" "}
-                    or{" "}
-                    <Link href="/join" className="text-v-blue hover:underline">
-                      read more about how Volta works.
-                    </Link>
-                  </p>
-                </div>
               </div>
 
               {/* Right: form */}
