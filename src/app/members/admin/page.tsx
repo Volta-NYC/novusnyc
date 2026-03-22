@@ -22,22 +22,37 @@ function generateInviteCode(): string {
 }
 
 // Returns a display string for the current state of an invite code.
-function isInviteCodeExpired(expiresAt: string): boolean {
-  const raw = expiresAt.trim().toLowerCase();
+function isInviteCodeExpired(expiresAt?: string): boolean {
+  const value = String(expiresAt ?? "");
+  const raw = value.trim().toLowerCase();
   if (raw === "never") return false;
-  const t = new Date(expiresAt).getTime();
+  const t = new Date(value).getTime();
   if (Number.isNaN(t)) return true;
   return t < Date.now();
 }
 
 function getCodeStatus(code: InviteCode): string {
-  if (code.used) return "Used";
+  if (code.active === false) return "Inactive";
   if (isInviteCodeExpired(code.expiresAt)) return "Expired";
+  const isSingleUse = code.multiUse === false;
+  const signupCount = getSignupCount(code);
+  if (isSingleUse && (code.used || signupCount > 0)) return "Used";
   return "Active";
+}
+
+function getSignupCount(code: InviteCode): number {
+  const count = Number(code.signupCount);
+  if (Number.isFinite(count) && count >= 0) return Math.trunc(count);
+  return code.used || !!code.usedBy ? 1 : 0;
+}
+
+function getSourceLabel(code: InviteCode): string {
+  return code.source === "auto_rotation" ? "Auto (3-day)" : "Manual";
 }
 
 // Returns a Tailwind text color class for an invite code status string.
 function getCodeStatusColor(status: string): string {
+  if (status === "Inactive") return "text-white/40";
   if (status === "Used")    return "text-white/30";
   if (status === "Expired") return "text-orange-400";
   return "text-green-400";
@@ -64,6 +79,10 @@ function AccessCodesTab({ uid }: { uid: string }) {
       role:      newRole,
       expiresAt,
       used:      false,
+      multiUse:  true,
+      active:    true,
+      source:    "manual",
+      signupCount: 0,
       createdBy: uid,
       createdAt: new Date().toISOString(),
     });
@@ -109,24 +128,24 @@ function AccessCodesTab({ uid }: { uid: string }) {
 
       {/* Existing codes table */}
       <Table
-        cols={["Code", "Link", "Role", "Expires", "Status", "Actions"]}
+        cols={["Code", "Accounts", "Role", "Source", "Expires", "Status", "Actions"]}
         rows={sortedCodes.map(code => {
           const status = getCodeStatus(code);
-          const inviteLink = `${typeof window !== "undefined" ? window.location.origin : ""}/members/signup?code=${encodeURIComponent(code.code)}`;
+          const expiresValue = String(code.expiresAt ?? "").trim();
           return [
             <span key="code" className="font-mono text-white tracking-widest text-sm whitespace-nowrap">{code.code}</span>,
-            <button
-              key="link"
-              onClick={() => copySignupLink(code.code, code.id)}
-              className="text-xs text-[#85CC17]/70 hover:text-[#85CC17] transition-colors font-body whitespace-nowrap"
-              title={inviteLink}
-            >
-              {copiedCodeId === code.id ? "Copied!" : "Copy Link"}
-            </button>,
+            <span key="count" className="text-xs text-white/80 whitespace-nowrap">{getSignupCount(code)}</span>,
             <Badge key="role" label={code.role} />,
-            <span key="exp" className="text-white/70 text-xs whitespace-nowrap">{code.expiresAt.trim().toLowerCase() === "never" ? "Never" : code.expiresAt}</span>,
+            <span key="source" className="text-xs text-white/60 whitespace-nowrap">{getSourceLabel(code)}</span>,
+            <span key="exp" className="text-white/70 text-xs whitespace-nowrap">{expiresValue.toLowerCase() === "never" ? "Never" : (expiresValue || "—")}</span>,
             <span key="status" className={`text-xs font-medium ${getCodeStatusColor(status)}`}>{status}</span>,
-            <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div key="actions" className="flex gap-2">
+              <button
+                onClick={() => copySignupLink(code.code, code.id)}
+                className="text-xs text-[#85CC17]/80 hover:text-[#85CC17] transition-colors font-body whitespace-nowrap"
+              >
+                {copiedCodeId === code.id ? "Copied!" : "Copy Link"}
+              </button>
               <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteInviteCode(code.id))}>Delete</Btn>
             </div>,
           ];

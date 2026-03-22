@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller, dbRead, dbPatch } from "@/lib/server/adminApi";
 import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
+import { getOrCreateRotatingInviteLink } from "@/lib/server/inviteCodes";
 
 type Decision = "Accepted";
 
@@ -15,16 +16,6 @@ type DecisionEmailBody = {
   tracks?: string;
 };
 
-function buildMessage(name: string, decision: Decision, notes: string, role?: string, tracks?: string): { subject: string; text: string; html: string } {
-  const signupLink = process.env.MEMBER_SIGNUP_LINK || "https://voltanyc.org/members/signup?code=VOLTA-8J3UMP";
-  return buildAcceptanceTemplate({
-    name,
-    role: role ?? "Analyst",
-    tracks: tracks ?? "",
-    signupLink,
-  });
-}
-
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -37,7 +28,6 @@ export async function POST(req: NextRequest) {
   const applicantName = (body.applicantName ?? "").trim();
   const applicantEmail = (body.applicantEmail ?? "").trim().toLowerCase();
   const decision = body.decision;
-  const notes = (body.notes ?? "").trim();
   const requestedFrom = (body.fromAddress ?? "").trim().toLowerCase();
   const role = (body.role ?? "").trim();
   const tracks = (body.tracks ?? "").trim();
@@ -72,7 +62,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
   }
   const replyTo = getDefaultReplyToAddress(from);
-  const content = buildMessage(applicantName, decision, notes, role, tracks);
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
+  let signupLink = process.env.MEMBER_SIGNUP_LINK || `${baseUrl.replace(/\/+$/g, "")}/members/signup`;
+  try {
+    const rotatingInvite = await getOrCreateRotatingInviteLink({
+      role: "member",
+      createdBy: verified.caller.uid,
+      baseUrl,
+      idToken: verified.caller.idToken,
+    });
+    signupLink = rotatingInvite.link;
+  } catch {
+    // fallback keeps acceptance flow alive if invite-code storage is unavailable
+  }
+  const content = buildAcceptanceTemplate({
+    name: applicantName,
+    role: role || "Analyst",
+    tracks: tracks || "",
+    signupLink,
+  });
 
   await transporter.sendMail({
     from: resolveFromWithName(from),

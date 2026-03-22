@@ -8,6 +8,7 @@ import {
 } from "@/lib/server/smtp";
 import { getAdminDB } from "@/lib/firebaseAdmin";
 import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
+import { getOrCreateRotatingInviteLink } from "@/lib/server/inviteCodes";
 import {
   pickPrimaryTrack,
   suggestTeamForTrack,
@@ -67,6 +68,9 @@ async function sendAcceptanceEmail(input: {
   notes?: string;
   role: string;
   tracks?: string;
+  createdByUid: string;
+  baseUrl: string;
+  idToken: string;
 }) {
   const allowedFrom = Array.from(
     new Set(
@@ -81,7 +85,18 @@ async function sendAcceptanceEmail(input: {
   if (!from || !allowedFrom.includes(from)) return;
   const transporter = createTransportForFrom(from).transporter;
   const replyTo = getDefaultReplyToAddress(from);
-  const signupLink = process.env.MEMBER_SIGNUP_LINK || "https://voltanyc.org/members/signup?code=VOLTA-8J3UMP";
+  let signupLink = process.env.MEMBER_SIGNUP_LINK || `${input.baseUrl.replace(/\/+$/g, "")}/members/signup`;
+  try {
+    const rotatingInvite = await getOrCreateRotatingInviteLink({
+      role: "member",
+      createdBy: input.createdByUid,
+      baseUrl: input.baseUrl,
+      idToken: input.idToken,
+    });
+    signupLink = rotatingInvite.link;
+  } catch {
+    // fallback keeps acceptance flow alive if invite-code storage is unavailable
+  }
   const tpl = buildAcceptanceTemplate({
     name: input.applicantName,
     role: input.role,
@@ -208,6 +223,7 @@ export async function POST(req: NextRequest) {
   const teamRole = (body.teamRole ?? "").trim() || "Member";
   const sendEmail = !!body.sendAcceptanceEmail;
   const notes = (body.notes ?? "").trim();
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
 
   const [slotsData, applicationsData] = await Promise.all([
     dbRead("interviewSlots", verified.caller.idToken),
@@ -323,6 +339,9 @@ export async function POST(req: NextRequest) {
           notes,
           role: teamRole,
           tracks,
+          createdByUid: verified.caller.uid,
+          baseUrl,
+          idToken: verified.caller.idToken,
         });
       } catch {
         // continue pipeline even if email fails

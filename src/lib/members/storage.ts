@@ -267,6 +267,12 @@ export interface InviteCode {
   role: AuthRole;
   expiresAt: string;  // ISO date string, or "never"
   used: boolean;
+  multiUse?: boolean;
+  active?: boolean;
+  source?: "manual" | "auto_rotation";
+  signupCount?: number;
+  lastUsedBy?: string;
+  lastUsedAt?: string;
   usedBy?: string;    // email address of the user who redeemed it
   usedAt?: string;
   createdBy: string;  // uid of the admin who generated it
@@ -922,7 +928,12 @@ export async function createInviteCode(data: Omit<InviteCode, "id">): Promise<vo
     action: "create",
     collection: "inviteCodes",
     recordId: data.code,
-    details: { role: data.role, expiresAt: data.expiresAt },
+    details: {
+      role: data.role,
+      expiresAt: data.expiresAt,
+      source: data.source ?? "manual",
+      multiUse: data.multiUse !== false,
+    },
   });
 }
 

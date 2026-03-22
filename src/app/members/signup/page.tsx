@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { updateProfile } from "firebase/auth";
 import { signUp } from "@/lib/members/firebaseAuth";
 import {
-  getInviteCodeByValue, updateInviteCode, setUserProfileRecord, type AuthRole,
+  getInviteCodeByValue, setUserProfileRecord, type AuthRole,
 } from "@/lib/members/storage";
 
 const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
@@ -90,8 +90,19 @@ export default function SignupPage() {
     try {
       const invite = await getInviteCodeByValue(normalizedCode);
       if (!invite)                                   { setError("Invalid invite code."); setLoading(false); return; }
+      if (invite.active === false)                   { setError("This invite code is inactive."); setLoading(false); return; }
       if (isInviteCodeExpired(invite.expiresAt))      { setError("This invite code has expired."); setLoading(false); return; }
-      inviteRole = invite.role;
+      const isSingleUse = invite.multiUse === false;
+      const signupCount = Number(invite.signupCount);
+      if (isSingleUse && (
+        invite.used
+        || (Number.isFinite(signupCount) && signupCount > 0)
+      )) {
+        setError("This invite code has already been used.");
+        setLoading(false);
+        return;
+      }
+      inviteRole = invite.role ?? "member";
     } catch {
       setError("Could not verify invite code. Please try again or contact an admin.");
       setLoading(false);
@@ -153,15 +164,20 @@ export default function SignupPage() {
       });
     } catch { /* non-fatal */ }
 
-    // ── Step 4: Mark invite code as used ──────────────────────────────────────
-    // Non-fatal: new members don't have write access to inviteCodes. The code
-    // appears unused in admin, but the account is created with the correct role.
-    // Admin can delete the code manually after verifying the account was created.
+    // ── Step 4: Track invite code usage ───────────────────────────────────────
+    // Non-fatal: account creation should still complete even if usage analytics
+    // cannot be written (e.g. temporary network/server issue).
     try {
-      await updateInviteCode(normalizedCode, {
-        used:   true,
-        usedBy: email.trim().toLowerCase(),
-        usedAt: new Date().toISOString(),
+      await fetch("/api/members/signup/redeem-invite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          code: normalizedCode,
+          email: email.trim().toLowerCase(),
+        }),
       });
     } catch { /* non-fatal */ }
 
