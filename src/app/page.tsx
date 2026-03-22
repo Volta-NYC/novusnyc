@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Volta NYC",
     description: "Student consultants. Real deliverables. Free for NYC small businesses.",
-    images: ["/hero-nyc-skyline.jpg"],
+    images: ["/api/og"],
   },
 };
 
@@ -186,47 +186,93 @@ export default async function Home() {
             </Link>
           </AnimatedSection>
           {homeProjects.length > 0 ? (
-            <div className="columns-1 md:columns-2 xl:columns-3 [column-gap:1.25rem]">
-              {homeProjects.map((p, i) => (
-                <AnimatedSection
-                  key={p.name}
-                  delay={i * 0.06}
-                  className="inline-block w-full break-inside-avoid mb-5 align-top"
-                >
-                  <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
-                    <div className={`${p.colorClass} h-2`} />
-                    {p.imageUrl ? (
-                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
-                        <Image
-                          src={p.imageUrl}
-                          alt={`${p.name} project`}
-                          width={1600}
-                          height={1000}
-                          unoptimized
-                          className="block w-full h-auto"
-                          loading="lazy"
-                        />
+            <>
+              <div className="md:hidden -mx-5 px-5 overflow-x-auto pb-2">
+                <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory">
+                  {homeProjects.map((p, i) => (
+                    <AnimatedSection
+                      key={`mobile-${p.name}`}
+                      delay={i * 0.05}
+                      className="snap-start shrink-0 w-[82vw] max-w-[360px]"
+                    >
+                      <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg h-full">
+                        <div className={`${p.colorClass} h-2`} />
+                        {p.imageUrl ? (
+                          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
+                            <Image
+                              src={p.imageUrl}
+                              alt={`${p.name} project`}
+                              width={1600}
+                              height={1000}
+                              unoptimized
+                              className="block w-full h-auto"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className="mx-4 mt-5 rounded-xl border border-v-border h-36 flex items-center justify-center bg-white">
+                            <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                          </div>
+                        )}
+                        <div className="p-5">
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {p.services.map((service) => (
+                              <span key={`mobile-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                            ))}
+                          </div>
+                          <h3 className="font-display font-bold text-v-ink text-lg mb-1">{p.name}</h3>
+                          <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
+                            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                          </p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-white">
-                        <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                    </AnimatedSection>
+                  ))}
+                </div>
+              </div>
+
+              <div className="hidden md:block columns-1 md:columns-2 xl:columns-3 [column-gap:1.25rem]">
+                {homeProjects.map((p, i) => (
+                  <AnimatedSection
+                    key={`desktop-${p.name}`}
+                    delay={i * 0.06}
+                    className="inline-block w-full break-inside-avoid mb-5 align-top"
+                  >
+                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
+                      <div className={`${p.colorClass} h-2`} />
+                      {p.imageUrl ? (
+                        <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
+                          <Image
+                            src={p.imageUrl}
+                            alt={`${p.name} project`}
+                            width={1600}
+                            height={1000}
+                            unoptimized
+                            className="block w-full h-auto"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-white">
+                          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                        </div>
+                      )}
+                      <div className="p-6">
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {p.services.map((service) => (
+                            <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                          ))}
+                        </div>
+                        <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
+                        <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
+                          <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                        </p>
                       </div>
-                    )}
-                    <div className="p-6">
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {p.services.map((service) => (
-                          <span key={`${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-                        ))}
-                      </div>
-                      <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                      <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
-                        <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                      </p>
                     </div>
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
+                  </AnimatedSection>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="border border-v-border rounded-2xl bg-v-bg px-5 py-6">
               <p className="font-body text-sm text-v-muted">

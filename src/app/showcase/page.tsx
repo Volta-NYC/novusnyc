@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Our Work | Volta NYC",
     description: `${formatStat(VOLTA_STATS.businessesServed)} businesses across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods. See every project.`,
-    images: ["/hero-nyc-skyline.jpg"],
+    images: ["/api/og"],
   },
 };
 
@@ -214,80 +214,159 @@ export default async function Showcase() {
               See progress updates →
             </Link>
           </AnimatedSection>
-          <div className="columns-1 md:columns-2 lg:columns-3 [column-gap:1.5rem]">
-            {projects.map((p, i) => (
-              <AnimatedSection
-                key={p.name}
-                delay={i * 0.07}
-                className="inline-block w-full break-inside-avoid mb-6 align-top"
-              >
-                <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
-                  <div className={`${p.colorClass} h-2`} />
-                  {p.imageUrl ? (
-                    <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg overflow-hidden">
-                      <Image
-                        src={p.imageUrl}
-                        alt={`${p.name} project`}
-                        width={1600}
-                        height={1000}
-                        unoptimized
-                        className="block w-full h-auto"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg h-40 flex items-center justify-center">
-                      <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
-                    </div>
-                  )}
-                  <div className="p-7 flex-1 flex flex-col">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex gap-2 flex-wrap">
-                        {p.services.map((s) => (
-                          <span key={s} className={`tag border ${getServiceTagClass(s)}`}>{s}</span>
-                        ))}
-                      </div>
-                      <span
-                        className={`tag text-xs flex-shrink-0 ${
-                          p.status === "Completed"
-                            ? "bg-lime-100 text-lime-700"
-                            : p.status === "Ongoing"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-v-border text-v-muted"
-                        }`}
-                      >
-                        {p.status}
-                      </span>
-                    </div>
-                    <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                    <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
-                    <p className="font-body text-sm text-v-ink/70 leading-relaxed flex-1">{p.desc}</p>
-                    {p.quote && (
-                      <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
-                        &ldquo;{p.quote}&rdquo;
-                      </blockquote>
-                    )}
-                    <div className="flex items-center justify-between mt-4">
-                      <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
-                        <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
-                        {p.neighborhood}
-                      </p>
-                      {p.url && (
-                        <a
-                          href={p.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-body text-xs font-semibold text-v-blue hover:underline"
-                        >
-                          View →
-                        </a>
+          <>
+            <div className="lg:hidden -mx-5 px-5 overflow-x-auto pb-2">
+              <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory">
+                {projects.map((p, i) => (
+                  <AnimatedSection
+                    key={`mobile-${p.name}`}
+                    delay={i * 0.05}
+                    className="snap-start shrink-0 w-[84vw] max-w-[380px]"
+                  >
+                    <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col h-full">
+                      <div className={`${p.colorClass} h-2`} />
+                      {p.imageUrl ? (
+                        <div className="mx-4 mt-5 rounded-xl border border-v-border bg-v-bg overflow-hidden">
+                          <Image
+                            src={p.imageUrl}
+                            alt={`${p.name} project`}
+                            width={1600}
+                            height={1000}
+                            unoptimized
+                            className="block w-full h-auto"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="mx-4 mt-5 rounded-xl border border-v-border bg-v-bg h-36 flex items-center justify-center">
+                          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                        </div>
                       )}
+                      <div className="p-5 flex-1 flex flex-col">
+                        <div className="flex items-start justify-between mb-4 gap-2">
+                          <div className="flex gap-2 flex-wrap">
+                            {p.services.map((s) => (
+                              <span key={`mobile-${p.name}-${s}`} className={`tag border ${getServiceTagClass(s)}`}>{s}</span>
+                            ))}
+                          </div>
+                          <span
+                            className={`tag text-xs flex-shrink-0 ${
+                              p.status === "Completed"
+                                ? "bg-lime-100 text-lime-700"
+                                : p.status === "Ongoing"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-v-border text-v-muted"
+                            }`}
+                          >
+                            {p.status}
+                          </span>
+                        </div>
+                        <h3 className="font-display font-bold text-v-ink text-lg mb-1">{p.name}</h3>
+                        <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
+                        <p className="font-body text-sm text-v-ink/70 leading-relaxed flex-1">{p.desc}</p>
+                        {p.quote && (
+                          <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+                            &ldquo;{p.quote}&rdquo;
+                          </blockquote>
+                        )}
+                        <div className="flex items-center justify-between mt-4">
+                          <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+                            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                            {p.neighborhood}
+                          </p>
+                          {p.url && (
+                            <a
+                              href={p.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-body text-xs font-semibold text-v-blue hover:underline"
+                            >
+                              View →
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </AnimatedSection>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden lg:block columns-1 md:columns-2 lg:columns-3 [column-gap:1.5rem]">
+              {projects.map((p, i) => (
+                <AnimatedSection
+                  key={`desktop-${p.name}`}
+                  delay={i * 0.07}
+                  className="inline-block w-full break-inside-avoid mb-6 align-top"
+                >
+                  <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+                    <div className={`${p.colorClass} h-2`} />
+                    {p.imageUrl ? (
+                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg overflow-hidden">
+                        <Image
+                          src={p.imageUrl}
+                          alt={`${p.name} project`}
+                          width={1600}
+                          height={1000}
+                          unoptimized
+                          className="block w-full h-auto"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg h-40 flex items-center justify-center">
+                        <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                      </div>
+                    )}
+                    <div className="p-7 flex-1 flex flex-col">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex gap-2 flex-wrap">
+                          {p.services.map((s) => (
+                            <span key={`desktop-${p.name}-${s}`} className={`tag border ${getServiceTagClass(s)}`}>{s}</span>
+                          ))}
+                        </div>
+                        <span
+                          className={`tag text-xs flex-shrink-0 ${
+                            p.status === "Completed"
+                              ? "bg-lime-100 text-lime-700"
+                              : p.status === "Ongoing"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-v-border text-v-muted"
+                          }`}
+                        >
+                          {p.status}
+                        </span>
+                      </div>
+                      <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
+                      <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
+                      <p className="font-body text-sm text-v-ink/70 leading-relaxed flex-1">{p.desc}</p>
+                      {p.quote && (
+                        <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+                          &ldquo;{p.quote}&rdquo;
+                        </blockquote>
+                      )}
+                      <div className="flex items-center justify-between mt-4">
+                        <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+                          <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                          {p.neighborhood}
+                        </p>
+                        {p.url && (
+                          <a
+                            href={p.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-body text-xs font-semibold text-v-blue hover:underline"
+                          >
+                            View →
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </>
 
           <AnimatedSection className="mt-14 mb-6">
             <h3 className="font-display font-bold text-v-ink text-xl md:text-2xl">

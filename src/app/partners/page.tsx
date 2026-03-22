@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: "Free Help for NYC Small Businesses | Volta NYC",
     description:
       "Student teams build websites, grow social media, write grants, and optimize SEO for NYC small businesses — at no cost. Reach out to get started.",
-    images: ["/hero-nyc-skyline.jpg"],
+    images: ["/api/og"],
   },
 };
 

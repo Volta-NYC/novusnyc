@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Reports & Case Studies | Volta NYC",
     description:
       "A publication library of field research reports and business case studies from Volta student teams across the country.",
-    images: ["/hero-nyc-skyline.jpg"],
+    images: ["/api/og"],
   },
 };
 

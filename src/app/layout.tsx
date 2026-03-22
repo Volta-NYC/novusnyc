@@ -33,7 +33,7 @@ export const metadata: Metadata = {
       "Student consultants. Real deliverables. Free for NYC small businesses.",
     url: SITE_URL,
     siteName: "Volta NYC",
-    images: ["/hero-nyc-skyline.jpg"],
+    images: ["/api/og"],
     locale: "en_US",
     type: "website",
   },
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Volta NYC",
     description: "Student consultants. Real deliverables. Free for NYC small businesses.",
-    images: ["/hero-nyc-skyline.jpg"],
+    images: ["/api/og"],
   },
 };
 

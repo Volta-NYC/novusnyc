@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Guides for Businesses | Volta NYC",
     description:
       "Practical guides for business owners on website costs, vendor pricing, digital tools, and execution decisions.",
-    images: ["/hero-nyc-skyline.jpg"],
+    images: ["/api/og"],
   },
 };
 
