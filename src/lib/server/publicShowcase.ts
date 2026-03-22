@@ -50,6 +50,15 @@ export interface PublicMapEntry {
   source: "business" | "bid";
 }
 
+function resolvePublicShowcaseImageUrl(
+  id: string,
+  row: Record<string, unknown>,
+): string {
+  const inline = asText(row.showcaseImageData);
+  if (inline) return `/api/showcase-image/${encodeURIComponent(id)}`;
+  return asText(row.showcaseImageUrl);
+}
+
 function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -355,7 +364,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     const status = mapBusinessStatusToShowcase(row.projectStatus);
     const desc = normalizeDescription(row.showcaseDescription);
     const url = asText(row.showcaseUrl);
-    const imageUrl = asText(row.showcaseImageData) || asText(row.showcaseImageUrl);
+    const imageUrl = resolvePublicShowcaseImageUrl(id, row);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();
