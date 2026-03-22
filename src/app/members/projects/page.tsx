@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
@@ -851,6 +851,20 @@ export default function BusinessesPage() {
     event.target.value = "";
   };
 
+  const getNeighborhoodGroupLabel = (project: Business) => {
+    const neighborhood = (project.neighborhood ?? project.showcaseNeighborhood ?? "").trim();
+    const borough = (project as unknown as { borough?: string }).borough?.trim() ?? "";
+    const label = [neighborhood, borough].filter(Boolean).join(", ").trim();
+    return label || "Unspecified location";
+  };
+
+  const compareNeighborhoodLabels = (a: string, b: string) => {
+    const aUnspecified = a.toLowerCase() === "unspecified location";
+    const bUnspecified = b.toLowerCase() === "unspecified location";
+    if (aUnspecified !== bUnspecified) return aUnspecified ? 1 : -1;
+    return a.localeCompare(b);
+  };
+
   const matchesSearch = (project: Business) => {
     const query = search.trim().toLowerCase();
     if (!query) return true;
@@ -862,9 +876,9 @@ export default function BusinessesPage() {
 
   const sortBusinesses = (list: Business[]) => {
     return [...list].sort((a, b) => {
-      const neighborhoodA = (a.neighborhood ?? a.showcaseNeighborhood ?? "").trim().toLowerCase();
-      const neighborhoodB = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim().toLowerCase();
-      if (neighborhoodA !== neighborhoodB) return neighborhoodA.localeCompare(neighborhoodB);
+      const neighborhoodA = getNeighborhoodGroupLabel(a);
+      const neighborhoodB = getNeighborhoodGroupLabel(b);
+      if (neighborhoodA !== neighborhoodB) return compareNeighborhoodLabels(neighborhoodA, neighborhoodB);
       const statusDelta = PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(a.projectStatus)] - PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(b.projectStatus)];
       if (statusDelta !== 0) return statusDelta;
       return a.name.localeCompare(b.name);
@@ -1140,6 +1154,20 @@ export default function BusinessesPage() {
   const isMemberRestricted = authRole === "member";
   const myProjects = isNonAdminMember ? filtered.filter(isProjectMine) : [];
   const otherProjects = isNonAdminMember ? filtered.filter((p) => !isProjectMine(p)) : filtered;
+  const groupProjectsByNeighborhood = (list: Business[]) => {
+    const grouped = new Map<string, Business[]>();
+    for (const project of list) {
+      const label = getNeighborhoodGroupLabel(project);
+      const current = grouped.get(label) ?? [];
+      current.push(project);
+      grouped.set(label, current);
+    }
+    return Array.from(grouped.entries())
+      .sort(([labelA], [labelB]) => compareNeighborhoodLabels(labelA, labelB))
+      .map(([label, items]) => ({ label, items }));
+  };
+  const groupedMyProjects = groupProjectsByNeighborhood(myProjects);
+  const groupedOtherProjects = groupProjectsByNeighborhood(otherProjects);
 
   const copyText = async (value: string) => {
     const safe = value.trim();
@@ -1152,9 +1180,6 @@ export default function BusinessesPage() {
   };
 
   const renderProjectCompactRow = (b: Business) => {
-    const neighborhood = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim();
-    const borough = (b as unknown as { borough?: string }).borough?.trim() ?? "";
-    const neighborhoodLabel = [neighborhood, borough].filter(Boolean).join(", ") || "—";
     const normalizedStatus = normalizeProjectStatus(b.projectStatus);
     const memberNames = getProjectMemberNames(b);
 
@@ -1164,9 +1189,6 @@ export default function BusinessesPage() {
           {b.name}
           {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
           {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
-        </td>
-        <td className="px-2 py-2 text-[12px] text-white/65 whitespace-nowrap max-w-[240px] truncate" title={neighborhoodLabel}>
-          {neighborhoodLabel}
         </td>
         <td className="px-2 py-2 text-[12px] text-white/80 whitespace-nowrap max-w-[180px] truncate" title={b.ownerName || "—"}>
           {b.ownerName || "—"}
@@ -1317,11 +1339,10 @@ export default function BusinessesPage() {
         <div className="mb-4">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[1160px] text-left">
+            <table className="w-full min-w-[1020px] text-left">
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Neighborhood, Borough</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Owner Name</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
@@ -1330,7 +1351,18 @@ export default function BusinessesPage() {
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
                 </tr>
               </thead>
-              <tbody>{myProjects.map(renderProjectCompactRow)}</tbody>
+              <tbody>
+                {groupedMyProjects.map((group) => (
+                  <Fragment key={`my-${group.label}`}>
+                    <tr className="bg-[#12151B] border-b border-white/8">
+                      <td colSpan={7} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
+                        {group.label} · {group.items.length}
+                      </td>
+                    </tr>
+                    {group.items.map(renderProjectCompactRow)}
+                  </Fragment>
+                ))}
+              </tbody>
             </table>
           </div>
         </div>
@@ -1341,11 +1373,10 @@ export default function BusinessesPage() {
       )}
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto mb-6">
-        <table className="w-full min-w-[1160px] text-left">
+        <table className="w-full min-w-[1020px] text-left">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Business Name</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Neighborhood, Borough</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Owner Name</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
@@ -1354,7 +1385,18 @@ export default function BusinessesPage() {
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
             </tr>
           </thead>
-          <tbody>{otherProjects.map(renderProjectCompactRow)}</tbody>
+          <tbody>
+            {groupedOtherProjects.map((group) => (
+              <Fragment key={`all-${group.label}`}>
+                <tr className="bg-[#12151B] border-b border-white/8">
+                  <td colSpan={7} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
+                    {group.label} · {group.items.length}
+                  </td>
+                </tr>
+                {group.items.map(renderProjectCompactRow)}
+              </Fragment>
+            ))}
+          </tbody>
         </table>
         {filtered.length === 0 && (
           <div className="p-4">
