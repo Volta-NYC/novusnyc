@@ -38,30 +38,6 @@ const SERVICE_AREAS = [
     ],
   },
   {
-    icon: SmartphoneIcon,
-    title: "Social Media & Content",
-    summary: "Practical social strategy with content systems your team can actually sustain.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
-    details: [
-      "Posting calendars, content pillars, and weekly execution planning",
-      "Founder interview clips, short-form edits, and reusable media templates",
-      "Audience growth tracking with clear performance feedback loops",
-    ],
-  },
-  {
-    icon: DollarIcon,
-    title: "Grant Research & Writing",
-    summary: "We identify eligible grants and draft complete application-ready materials.",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-    details: [
-      "Grant discovery based on your business type, location, and stage",
-      "Narrative drafting, budget support, and checklist completion",
-      "Submission prep and timeline tracking through deadlines",
-    ],
-  },
-  {
     icon: SearchIcon,
     title: "SEO & Online Visibility",
     summary: "Better discoverability across search, maps, and local listing platforms.",
@@ -74,6 +50,18 @@ const SERVICE_AREAS = [
     ],
   },
   {
+    icon: SmartphoneIcon,
+    title: "Social Media & Content",
+    summary: "Practical social strategy with content systems your team can actually sustain.",
+    color: "text-v-green",
+    bg: "bg-lime-50",
+    details: [
+      "Posting calendars, content pillars, and weekly execution planning",
+      "Founder interview clips, short-form edits, and reusable media templates",
+      "Audience growth tracking with clear performance feedback loops",
+    ],
+  },
+  {
     icon: TrendingUpIcon,
     title: "Sales & Financial Analysis",
     summary: "Owner-facing analysis that turns raw sales numbers into decisions.",
@@ -83,6 +71,18 @@ const SERVICE_AREAS = [
       "Sales and revenue trend analysis by period, category, and seasonality",
       "Competitor benchmarking and positioning insights",
       "Pricing and operations recommendations with clear reporting takeaways",
+    ],
+  },
+  {
+    icon: DollarIcon,
+    title: "Grant Research & Writing",
+    summary: "We identify eligible grants and draft complete application-ready materials.",
+    color: "text-amber-500",
+    bg: "bg-amber-50",
+    details: [
+      "Grant discovery based on your business type, location, and stage",
+      "Narrative drafting, budget support, and checklist completion",
+      "Submission prep and timeline tracking through deadlines",
     ],
   },
   {
@@ -213,7 +213,7 @@ export default function Partners() {
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="block font-display font-bold text-v-ink text-base leading-tight">
-                        • {service.title}
+                        {service.title}
                       </span>
                       <span className="block font-body text-sm text-v-muted mt-1">
                         {service.summary}
@@ -271,17 +271,16 @@ export default function Partners() {
           <div className="grid md:grid-cols-3 gap-4">
             <AnimatedSection>
               <div className="border border-v-border rounded-xl p-5 h-full">
+                <div className="w-8 h-8 rounded-full bg-v-green/15 text-v-green font-display font-bold text-sm flex items-center justify-center mb-3">1</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Apply</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
-                  Submit a short interest form on our website:
+                  Leave your contact information, and we&apos;ll get back to you via text or email within a few days.
                 </p>
-                <a href="https://voltanyc.org/partners" className="inline-block mt-2 text-v-blue font-body text-sm font-semibold hover:text-v-blue-dark transition-colors">
-                  voltanyc.org/partners
-                </a>
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.06}>
               <div className="border border-v-border rounded-xl p-5 h-full">
+                <div className="w-8 h-8 rounded-full bg-v-blue/15 text-v-blue font-display font-bold text-sm flex items-center justify-center mb-3">2</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Meet</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
                   We schedule an in-person visit or call to understand your business, priorities, and goals.
@@ -290,6 +289,7 @@ export default function Partners() {
             </AnimatedSection>
             <AnimatedSection delay={0.12}>
               <div className="border border-v-border rounded-xl p-5 h-full">
+                <div className="w-8 h-8 rounded-full bg-amber-200 text-amber-700 font-display font-bold text-sm flex items-center justify-center mb-3">3</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Build</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
                   A dedicated student team is assigned and starts work right away, with clear timelines and regular updates.
