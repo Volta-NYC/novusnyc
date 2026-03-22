@@ -349,12 +349,9 @@ export default function Partners() {
                 support, making introductions, and ensuring follow-through on every
                 project. We&apos;re also open to a quick Zoom chat to discuss fit.
               </p>
-              <a
-                href="mailto:ethan@voltanyc.org?subject=BID%20Partnership%20Inquiry"
-                className="inline-block bg-v-ink text-white font-display font-bold text-sm px-7 py-3 rounded-full hover:bg-v-ink/80 transition-colors"
-              >
-                Email Ethan about BID partnerships →
-              </a>
+              <p className="font-body text-sm text-v-ink leading-relaxed">
+                To get started, fill out the form above and tell us a little about what your businesses need.
+              </p>
             </AnimatedSection>
             <AnimatedSection direction="right">
               <div className="bg-v-bg border border-v-border rounded-2xl p-8">
