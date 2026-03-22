@@ -116,6 +116,13 @@ export interface Business {
     | "red-soft"
     | "red-mid"
     | "red-deep";
+  // Multi-track project model for per-business track workstreams.
+  projectTracks?: Array<"Tech" | "Marketing" | "Finance">;
+  trackProjects?: Partial<Record<"Tech" | "Marketing" | "Finance", {
+    projectStatus?: "Ongoing" | "Upcoming" | "Completed" | "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
+    teamMembers?: string[];
+    notes?: string;
+  }>>;
 }
 
 export interface Task {

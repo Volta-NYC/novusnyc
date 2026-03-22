@@ -245,7 +245,7 @@ export const teamMembers = [
   { name: "Tahmid Islam", role: "Director of Tech", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
   { name: "Joseph Long", role: "Co-Director of Outreach", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "", photo: "/team/joseph.jpg" },
   { name: "Jean-Pierre Proulx", role: "Co-Director of Marketing", email: "jppfinster@gmail.com", initial: "JP", desc: "", photo: "/team/jp.jpg" },
-  { name: "Kaia Talathi", role: "Co-Director of Marketing", email: "31kaia.talathi@gmail.com", initial: "K", desc: "", photo: "" },
+  { name: "Kaia Talathi", role: "Co-Director of Marketing", email: "31kaia.talathi@gmail.com", initial: "K", desc: "", photo: "/team/kaia.jpg" },
 ];
 
 export const branches = [

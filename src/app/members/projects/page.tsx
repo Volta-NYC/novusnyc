@@ -15,11 +15,37 @@ import { useAuth } from "@/lib/members/authContext";
 
 const STATUSES  = ["Ongoing", "Upcoming", "Completed"] as const;
 const DIVISIONS = ["Tech", "Marketing", "Finance"] as const;
+type TrackDivision = (typeof DIVISIONS)[number];
+type ProjectStatusValue = (typeof STATUSES)[number];
 const DIVISION_PUBLIC_LABEL: Record<string, string> = {
   Tech: "Digital & Tech",
   Marketing: "Marketing & Strategy",
   Finance: "Finance & Operations",
 };
+const TRACK_META: Record<TrackDivision, { label: string; chipClass: string; dotClass: string }> = {
+  Tech: {
+    label: "Tech",
+    chipClass: "bg-blue-100 text-blue-700 border-blue-300",
+    dotClass: "bg-blue-500 border-blue-300",
+  },
+  Marketing: {
+    label: "Marketing",
+    chipClass: "bg-lime-100 text-lime-700 border-lime-300",
+    dotClass: "bg-lime-500 border-lime-300",
+  },
+  Finance: {
+    label: "Finance",
+    chipClass: "bg-amber-100 text-amber-700 border-amber-300",
+    dotClass: "bg-amber-500 border-amber-300",
+  },
+};
+const TRACK_ORDER: TrackDivision[] = ["Tech", "Marketing", "Finance"];
+type TrackProjectInfo = {
+  projectStatus: ProjectStatusValue;
+  teamMembers: string[];
+  notes: string;
+};
+type TrackProjectMap = Partial<Record<TrackDivision, TrackProjectInfo>>;
 type ShowcaseColorValue =
   | "blue-soft"
   | "blue-mid"
@@ -74,8 +100,6 @@ const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
   Complete: 2,
 };
 
-type ProjectStatusValue = (typeof STATUSES)[number];
-
 function normalizeProjectStatus(value: unknown): ProjectStatusValue {
   const raw = String(value ?? "").trim();
   if (raw === "Ongoing" || raw === "Upcoming" || raw === "Completed") return raw;
@@ -83,6 +107,85 @@ function normalizeProjectStatus(value: unknown): ProjectStatusValue {
   if (raw === "Complete") return "Completed";
   if (raw === "On Hold" || raw === "Not Started" || raw === "Discovery") return "Upcoming";
   return "Upcoming";
+}
+
+function isTrackDivision(value: unknown): value is TrackDivision {
+  return value === "Tech" || value === "Marketing" || value === "Finance";
+}
+
+function normalizeDivision(value: unknown): TrackDivision {
+  return isTrackDivision(value) ? value : "Tech";
+}
+
+function normalizeTrackProjectInfo(value: unknown): TrackProjectInfo | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  return {
+    projectStatus: normalizeProjectStatus(row.projectStatus),
+    teamMembers: Array.isArray(row.teamMembers) ? row.teamMembers.map((item) => String(item ?? "").trim()).filter(Boolean) : [],
+    notes: String(row.notes ?? "").trim(),
+  };
+}
+
+function normalizeTrackProjectsFromBusiness(business: Business): { projectTracks: TrackDivision[]; trackProjects: TrackProjectMap } {
+  const normalizedMap: TrackProjectMap = {};
+  const rawTrackProjects = business.trackProjects && typeof business.trackProjects === "object"
+    ? (business.trackProjects as Record<string, unknown>)
+    : {};
+
+  for (const track of TRACK_ORDER) {
+    const info = normalizeTrackProjectInfo(rawTrackProjects[track]);
+    if (info) normalizedMap[track] = info;
+  }
+
+  const normalizedTracks = (Array.isArray(business.projectTracks) ? business.projectTracks : [])
+    .map((track) => normalizeDivision(track))
+    .filter((track, index, arr) => arr.indexOf(track) === index);
+
+  let projectTracks = normalizedTracks.filter((track) => !!normalizedMap[track]);
+  if (projectTracks.length === 0) {
+    projectTracks = Object.keys(normalizedMap).filter(isTrackDivision);
+  }
+
+  if (projectTracks.length === 0) {
+    const legacyMembers = (business.teamMembers ?? []).map((name) => String(name ?? "").trim()).filter(Boolean);
+    const fallbackTrack: TrackDivision = legacyMembers.length > 0 ? "Tech" : normalizeDivision(business.division);
+    projectTracks = [fallbackTrack];
+    normalizedMap[fallbackTrack] = {
+      projectStatus: normalizeProjectStatus(business.projectStatus),
+      teamMembers: legacyMembers,
+      notes: String(business.notes ?? "").trim(),
+    };
+  }
+
+  for (const track of projectTracks) {
+    if (!normalizedMap[track]) {
+      normalizedMap[track] = {
+        projectStatus: normalizeProjectStatus(business.projectStatus),
+        teamMembers: [],
+        notes: "",
+      };
+    }
+  }
+
+  return { projectTracks, trackProjects: normalizedMap };
+}
+
+function deriveOverallStatus(trackProjects: TrackProjectMap, projectTracks: TrackDivision[]): ProjectStatusValue {
+  const statuses = projectTracks.map((track) => trackProjects[track]?.projectStatus ?? "Upcoming");
+  if (statuses.includes("Ongoing")) return "Ongoing";
+  if (statuses.includes("Upcoming")) return "Upcoming";
+  return "Completed";
+}
+
+function derivePrimaryDivision(projectTracks: TrackDivision[]): TrackDivision {
+  if (projectTracks.includes("Tech")) return "Tech";
+  if (projectTracks.includes("Marketing")) return "Marketing";
+  return "Finance";
+}
+
+function formatTrackTeamLabel(track: TrackDivision): string {
+  return `${TRACK_META[track].label} Team`;
 }
 
 function randomShowcaseColor(): ShowcaseColorValue {
@@ -231,6 +334,8 @@ function downloadFile(filename: string, content: string, type: string): void {
 type BusinessExportRow = {
   id: string;
   name: string;
+  projectTracks: string[];
+  trackProjects: string;
   projectStatus: string;
   division: string;
   bidId: string;
@@ -265,6 +370,8 @@ type BusinessExportRow = {
 const BUSINESS_EXPORT_HEADERS: Array<keyof BusinessExportRow> = [
   "id",
   "name",
+  "projectTracks",
+  "trackProjects",
   "projectStatus",
   "division",
   "bidId",
@@ -298,11 +405,26 @@ const BUSINESS_EXPORT_HEADERS: Array<keyof BusinessExportRow> = [
 
 function toBusinessExportRow(business: Business): BusinessExportRow {
   const imageData = (business.showcaseImageData ?? "").trim();
+  const { projectTracks, trackProjects } = normalizeTrackProjectsFromBusiness(business);
+  const serializedTrackProjects = TRACK_ORDER.reduce<Record<string, { projectStatus: ProjectStatusValue; teamMembers: string[]; notes: string }>>((acc, track) => {
+    const info = trackProjects[track];
+    if (!info) return acc;
+    acc[track] = {
+      projectStatus: info.projectStatus,
+      teamMembers: info.teamMembers,
+      notes: info.notes,
+    };
+    return acc;
+  }, {});
+  const overallStatus = deriveOverallStatus(trackProjects, projectTracks);
+  const primaryDivision = derivePrimaryDivision(projectTracks);
   return {
     id: business.id,
     name: business.name ?? "",
-    projectStatus: business.projectStatus ?? "",
-    division: business.division ?? "",
+    projectTracks,
+    trackProjects: JSON.stringify(serializedTrackProjects),
+    projectStatus: overallStatus,
+    division: primaryDivision,
     bidId: business.bidId ?? "",
     ownerName: business.ownerName ?? "",
     ownerEmail: business.ownerEmail ?? "",
@@ -313,7 +435,7 @@ function toBusinessExportRow(business: Business): BusinessExportRow {
     neighborhood: business.neighborhood ?? business.showcaseNeighborhood ?? "",
     website: business.website ?? "",
     teamLead: business.teamLead ?? "",
-    teamMembers: business.teamMembers ?? [],
+    teamMembers: TRACK_ORDER.flatMap((track) => (trackProjects[track]?.teamMembers ?? [])),
     intakeSource: business.intakeSource ?? "",
     notes: business.notes ?? "",
     lat: typeof business.lat === "number" ? business.lat : "",
@@ -349,6 +471,14 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   notes: "",
   division: "Tech",
   teamMembers: [],
+  projectTracks: ["Tech"],
+  trackProjects: {
+    Tech: {
+      projectStatus: "Upcoming",
+      teamMembers: [],
+      notes: "",
+    },
+  },
   showcaseEnabled: false,
   showcaseFeaturedOnHome: false,
   showcaseType: "Digital & Tech",
@@ -379,8 +509,12 @@ export default function BusinessesPage() {
   const [cropDragStart, setCropDragStart] = useState<{ x: number; y: number } | null>(null);
   const showcaseImageInputRef = useRef<HTMLInputElement | null>(null);
   const showcaseImagePreviewRef = useRef<HTMLImageElement | null>(null);
-  const [memberInput, setMemberInput] = useState("");
-  const [memberInputError, setMemberInputError] = useState<string | null>(null);
+  const [memberInputByTrack, setMemberInputByTrack] = useState<Record<TrackDivision, string>>({
+    Tech: "",
+    Marketing: "",
+    Finance: "",
+  });
+  const [memberInputErrorByTrack, setMemberInputErrorByTrack] = useState<Partial<Record<TrackDivision, string>>>({});
   const [importingBusinessCsv, setImportingBusinessCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [emailModalProject, setEmailModalProject] = useState<Business | null>(null);
@@ -394,6 +528,7 @@ export default function BusinessesPage() {
   const [projectEmailRecipientLabel, setProjectEmailRecipientLabel] = useState<string | null>(null);
   const businessCsvInputRef = useRef<HTMLInputElement | null>(null);
   const normalizedLegacyColorsRef = useRef(false);
+  const normalizedLegacyTracksRef = useRef(false);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -403,12 +538,19 @@ export default function BusinessesPage() {
     () =>
       subscribeBusinesses((items) => {
         setBusinesses(
-          items.map((item) => ({
-            ...item,
-            projectStatus: normalizeProjectStatus(item.projectStatus),
-            neighborhood: (item.neighborhood ?? item.showcaseNeighborhood ?? "").trim(),
-            teamMembers: item.teamMembers ?? [],
-          }))
+          items.map((item) => {
+            const normalized = normalizeTrackProjectsFromBusiness(item);
+            return {
+              ...item,
+              projectTracks: normalized.projectTracks,
+              trackProjects: normalized.trackProjects,
+              projectStatus: deriveOverallStatus(normalized.trackProjects, normalized.projectTracks),
+              division: derivePrimaryDivision(normalized.projectTracks),
+              neighborhood: (item.neighborhood ?? item.showcaseNeighborhood ?? "").trim(),
+              teamMembers: TRACK_ORDER.flatMap((track) => normalized.trackProjects[track]?.teamMembers ?? []),
+              notes: normalized.trackProjects[normalized.projectTracks[0]]?.notes ?? "",
+            };
+          })
         );
       }),
     []
@@ -432,8 +574,65 @@ export default function BusinessesPage() {
     })();
   }, [businesses, canEdit]);
 
+  useEffect(() => {
+    if (normalizedLegacyTracksRef.current) return;
+    if (!canEdit || businesses.length === 0) return;
+    normalizedLegacyTracksRef.current = true;
+
+    void (async () => {
+      for (const business of businesses) {
+        const normalized = normalizeTrackProjectsFromBusiness(business);
+        const hasLegacyShape = !Array.isArray(business.projectTracks) || !business.trackProjects;
+        const existingTracks = (Array.isArray(business.projectTracks) ? business.projectTracks : []).join("|");
+        const normalizedTracks = normalized.projectTracks.join("|");
+        const shouldWrite = hasLegacyShape || existingTracks !== normalizedTracks;
+        if (!shouldWrite) continue;
+
+        const primaryTrack = normalized.projectTracks[0] ?? "Tech";
+        // Legacy migration: any existing assignment is normalized into Tech unless already explicit.
+        const techMembers = (business.teamMembers ?? []).map((name) => String(name ?? "").trim()).filter(Boolean);
+        const nextTrackProjects: TrackProjectMap = {
+          ...normalized.trackProjects,
+          ...(techMembers.length > 0 ? {
+            Tech: {
+              projectStatus: normalized.trackProjects.Tech?.projectStatus ?? normalizeProjectStatus(business.projectStatus),
+              teamMembers: techMembers,
+              notes: normalized.trackProjects.Tech?.notes ?? String(business.notes ?? "").trim(),
+            },
+          } : {}),
+        };
+        const nextTracks = Array.from(new Set([
+          ...(normalized.projectTracks.length > 0 ? normalized.projectTracks : [primaryTrack]),
+          ...(techMembers.length > 0 ? ["Tech"] as TrackDivision[] : []),
+        ]));
+        const overallStatus = deriveOverallStatus(nextTrackProjects, nextTracks);
+        const primaryDivision = derivePrimaryDivision(nextTracks);
+        const flattenedTeamMembers = TRACK_ORDER.flatMap((track) => nextTrackProjects[track]?.teamMembers ?? []);
+
+        // eslint-disable-next-line no-await-in-loop
+        await updateBusiness(business.id, {
+          projectTracks: nextTracks,
+          trackProjects: nextTrackProjects,
+          projectStatus: overallStatus,
+          division: primaryDivision,
+          teamMembers: flattenedTeamMembers,
+          notes: nextTrackProjects[primaryDivision]?.notes ?? "",
+        });
+      }
+    })();
+  }, [businesses, canEdit]);
+
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
+
+  const normalizedFormTrackProjects = (): TrackProjectMap => {
+    const out: TrackProjectMap = {};
+    for (const track of TRACK_ORDER) {
+      const info = normalizeTrackProjectInfo(form.trackProjects?.[track]);
+      if (info) out[track] = info;
+    }
+    return out;
+  };
 
   const openCreate = () => {
     setForm({
@@ -447,12 +646,15 @@ export default function BusinessesPage() {
     setUploadImageData("");
     setCropRect(null);
     setCropDragStart(null);
-    setMemberInput("");
-    setMemberInputError(null);
+    setMemberInputByTrack({ Tech: "", Marketing: "", Finance: "" });
+    setMemberInputErrorByTrack({});
     setModal("create");
   };
 
   const openEdit = (b: Business) => {
+    const normalized = normalizeTrackProjectsFromBusiness(b);
+    const primaryDivision = derivePrimaryDivision(normalized.projectTracks);
+    const overallStatus = deriveOverallStatus(normalized.trackProjects, normalized.projectTracks);
     setForm({
       name: b.name,
       ownerName: b.ownerName,
@@ -461,14 +663,16 @@ export default function BusinessesPage() {
       phone: b.phone, alternatePhone: b.alternatePhone ?? "", address: b.address, website: b.website,
       neighborhood: b.neighborhood ?? b.showcaseNeighborhood ?? "",
       firstContactDate: b.firstContactDate ?? "",
-      projectStatus:  normalizeProjectStatus(b.projectStatus),
-      teamLead:       b.teamLead,
-      notes:          b.notes,
-      division:       b.division        ?? "Tech",
-      teamMembers:    (b.teamMembers ?? []).map((member) => resolveTeamMemberFromInput(member) ?? "").filter(Boolean),
+      projectStatus: overallStatus,
+      teamLead: b.teamLead,
+      notes: normalized.trackProjects[primaryDivision]?.notes ?? "",
+      division: primaryDivision,
+      teamMembers: TRACK_ORDER.flatMap((track) => normalized.trackProjects[track]?.teamMembers ?? []),
+      projectTracks: normalized.projectTracks,
+      trackProjects: normalized.trackProjects,
       showcaseEnabled: !!b.showcaseEnabled,
       showcaseFeaturedOnHome: b.showcaseFeaturedOnHome ?? false,
-      showcaseType: DIVISION_PUBLIC_LABEL[b.division ?? "Tech"] ?? "Digital & Tech",
+      showcaseType: DIVISION_PUBLIC_LABEL[primaryDivision] ?? "Digital & Tech",
       showcaseNeighborhood: b.neighborhood ?? b.showcaseNeighborhood ?? "",
       showcaseServices: (b.showcaseServices && b.showcaseServices.length > 0) ? [b.showcaseServices[0]] : [],
       showcaseDescription: b.showcaseDescription ?? "",
@@ -485,31 +689,49 @@ export default function BusinessesPage() {
     setUploadImageData(savedImageData);
     setCropRect(null);
     setCropDragStart(null);
-    setMemberInput("");
-    setMemberInputError(null);
+    setMemberInputByTrack({ Tech: "", Marketing: "", Finance: "" });
+    setMemberInputErrorByTrack({});
     setModal("edit");
   };
 
-  const addTeamMember = (raw: string) => {
+  const addTeamMember = (track: TrackDivision, raw: string) => {
     const resolvedName = resolveTeamMemberFromInput(raw);
     if (!resolvedName) {
-      setMemberInputError("Choose a member from the directory list.");
+      setMemberInputErrorByTrack((prev) => ({ ...prev, [track]: "Choose a member from the directory list." }));
       return;
     }
-    const current = form.teamMembers ?? [];
+    const formTrackProjects = normalizedFormTrackProjects();
+    const current = formTrackProjects[track]?.teamMembers ?? [];
     if (current.includes(resolvedName)) {
-      setMemberInputError(null);
-      setMemberInput("");
+      setMemberInputErrorByTrack((prev) => ({ ...prev, [track]: "" }));
+      setMemberInputByTrack((prev) => ({ ...prev, [track]: "" }));
       return;
     }
-    setField("teamMembers", [...current, resolvedName]);
-    setMemberInputError(null);
-    setMemberInput("");
+    const nextTrackProjects: TrackProjectMap = {
+      ...formTrackProjects,
+      [track]: {
+        projectStatus: formTrackProjects[track]?.projectStatus ?? "Upcoming",
+        notes: formTrackProjects[track]?.notes ?? "",
+        teamMembers: [...current, resolvedName],
+      },
+    };
+    setField("trackProjects", nextTrackProjects);
+    setMemberInputErrorByTrack((prev) => ({ ...prev, [track]: "" }));
+    setMemberInputByTrack((prev) => ({ ...prev, [track]: "" }));
   };
 
-  const removeTeamMember = (name: string) => {
-    const current = form.teamMembers ?? [];
-    setField("teamMembers", current.filter((member) => member !== name));
+  const removeTeamMember = (track: TrackDivision, name: string) => {
+    const formTrackProjects = normalizedFormTrackProjects();
+    const current = formTrackProjects[track]?.teamMembers ?? [];
+    const nextTrackProjects: TrackProjectMap = {
+      ...formTrackProjects,
+      [track]: {
+        projectStatus: formTrackProjects[track]?.projectStatus ?? "Upcoming",
+        notes: formTrackProjects[track]?.notes ?? "",
+        teamMembers: current.filter((member) => member !== name),
+      },
+    };
+    setField("trackProjects", nextTrackProjects);
   };
 
   const geocodeProjectLocation = async (input: {
@@ -647,7 +869,25 @@ export default function BusinessesPage() {
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (!form.projectStatus) return;
+    const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : [])
+      .map((track) => normalizeDivision(track))
+      .filter((track, index, arr) => arr.indexOf(track) === index);
+    if (selectedTracks.length === 0) return;
+
+    const nextTrackProjects: TrackProjectMap = {};
+    for (const track of selectedTracks) {
+      const info = normalizeTrackProjectInfo(form.trackProjects?.[track]);
+      nextTrackProjects[track] = info ?? {
+        projectStatus: "Upcoming",
+        teamMembers: [],
+        notes: "",
+      };
+    }
+    const overallStatus = deriveOverallStatus(nextTrackProjects, selectedTracks);
+    const primaryDivision = derivePrimaryDivision(selectedTracks);
+    const flattenedTeamMembers = TRACK_ORDER.flatMap((track) => nextTrackProjects[track]?.teamMembers ?? []);
+    const primaryNotes = nextTrackProjects[primaryDivision]?.notes ?? "";
+
     const showcaseEnabled = !!form.showcaseEnabled;
     const showcaseColor = showcaseEnabled
       ? normalizeColorToken((form.showcaseColor as string) ?? "")
@@ -672,12 +912,14 @@ export default function BusinessesPage() {
       address: form.address.trim(),
       neighborhood,
       website: form.website.trim(),
-      projectStatus: normalizeProjectStatus(form.projectStatus),
+      projectStatus: overallStatus,
       firstContactDate: editingBusiness?.firstContactDate ?? form.firstContactDate ?? "",
       teamLead: form.teamLead.trim(),
-      teamMembers: (form.teamMembers ?? []).map((member) => resolveTeamMemberFromInput(member) ?? "").filter(Boolean),
-      division: form.division ?? "Tech",
-      notes: form.notes,
+      teamMembers: flattenedTeamMembers,
+      division: primaryDivision,
+      notes: primaryNotes,
+      projectTracks: selectedTracks,
+      trackProjects: nextTrackProjects,
       showcaseEnabled,
       showcaseColor,
       ...(geocoded ? { lat: geocoded.lat, lng: geocoded.lng } : {}),
@@ -686,7 +928,7 @@ export default function BusinessesPage() {
 
     if (showcaseEnabled) {
       payload.showcaseFeaturedOnHome = !!form.showcaseFeaturedOnHome;
-      payload.showcaseType = DIVISION_PUBLIC_LABEL[form.division ?? "Tech"] ?? "Digital & Tech";
+      payload.showcaseType = DIVISION_PUBLIC_LABEL[primaryDivision] ?? "Digital & Tech";
       payload.showcaseNeighborhood = neighborhood;
       payload.showcaseServices = showcaseServices;
       payload.showcaseDescription = (form.showcaseDescription ?? "").trim();
@@ -811,6 +1053,20 @@ export default function BusinessesPage() {
           ].filter(Boolean).join("\n"),
           division: "Marketing",
           teamMembers: [],
+          projectTracks: ["Marketing"],
+          trackProjects: {
+            Marketing: {
+              projectStatus: "Upcoming",
+              teamMembers: [],
+              notes: [
+                "Imported from Business Inquiries CSV",
+                neighborhood ? `Neighborhood: ${neighborhood}` : "",
+                services ? `Services Requested: ${services}` : "",
+                language ? `Language: ${language}` : "",
+                message ? `Message: ${message}` : "",
+              ].filter(Boolean).join("\n"),
+            },
+          },
           sortIndex: sortCursor,
           intakeSource: "website_form",
           showcaseEnabled: false,
@@ -860,9 +1116,16 @@ export default function BusinessesPage() {
   const matchesSearch = (project: Business) => {
     const query = search.trim().toLowerCase();
     if (!query) return true;
+    const trackAssignments = getTrackAssignments(project);
+    const allTeamNames = trackAssignments.flatMap((assignment) => assignment.members);
+    const allTrackNotes = trackAssignments
+      .map((assignment) => String(project.trackProjects?.[assignment.track]?.notes ?? ""))
+      .join(" ");
     return project.name.toLowerCase().includes(query)
       || project.ownerName.toLowerCase().includes(query)
       || project.ownerEmail.toLowerCase().includes(query)
+      || allTeamNames.some((name) => name.toLowerCase().includes(query))
+      || allTrackNotes.toLowerCase().includes(query)
       || (project.teamLead ?? "").toLowerCase().includes(query);
   };
 
@@ -877,7 +1140,11 @@ export default function BusinessesPage() {
     });
   };
 
-  const divisionScoped = businesses.filter((business) => !filterDiv || business.division === filterDiv);
+  const divisionScoped = businesses.filter((business) => {
+    if (!filterDiv) return true;
+    const normalized = normalizeTrackProjectsFromBusiness(business);
+    return normalized.projectTracks.includes(normalizeDivision(filterDiv));
+  });
   const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
 
   const exportBusinessesJson = () => {
@@ -975,13 +1242,17 @@ export default function BusinessesPage() {
     return null;
   };
 
-  const getProjectMemberNames = (project: Business): string[] => {
-    const values = [...(project.teamMembers ?? []), project.teamLead ?? ""]
-      .map((value) => String(value ?? "").trim())
-      .filter(Boolean)
-      .map((value) => resolveTeamMemberFromInput(value) ?? stripDecoratedName(value))
-      .filter(Boolean);
-    return Array.from(new Set(values));
+  const getTrackAssignments = (project: Business): Array<{ track: TrackDivision; members: string[] }> => {
+    const normalized = normalizeTrackProjectsFromBusiness(project);
+    return normalized.projectTracks.map((track) => {
+      const members = (normalized.trackProjects[track]?.teamMembers ?? [])
+        .map((value) => resolveTeamMemberFromInput(value) ?? stripDecoratedName(String(value ?? "")))
+        .filter(Boolean);
+      return {
+        track,
+        members: Array.from(new Set(members)),
+      };
+    });
   };
 
   const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
@@ -1001,10 +1272,10 @@ export default function BusinessesPage() {
       availableByName.set(nameKey, list);
     }
 
-    const assigned = [
-      ...(project.teamLead ? [project.teamLead] : []),
-      ...(project.teamMembers ?? []),
-    ].map((value) => String(value ?? "").trim()).filter(Boolean);
+    const assigned = getTrackAssignments(project)
+      .flatMap((assignment) => assignment.members)
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
 
     for (const raw of assigned) {
       const decoratedEmail = normalizeKey(parseEmailFromDecoratedName(raw));
@@ -1137,9 +1408,9 @@ export default function BusinessesPage() {
 
   const isProjectMine = (project: Business) => {
     if (myNameSet.size === 0) return false;
-    const leadKey = normalize(project.teamLead ?? "");
-    if (leadKey && myNameSet.has(leadKey)) return true;
-    return (project.teamMembers ?? []).some((member) => myNameSet.has(normalize(member)));
+    return getTrackAssignments(project)
+      .flatMap((assignment) => assignment.members)
+      .some((member) => myNameSet.has(normalize(member)));
   };
 
   const isNonAdminMember = authRole !== "admin";
@@ -1173,12 +1444,23 @@ export default function BusinessesPage() {
 
   const renderProjectCompactRow = (b: Business) => {
     const normalizedStatus = normalizeProjectStatus(b.projectStatus);
-    const memberNames = getProjectMemberNames(b);
+    const trackAssignments = getTrackAssignments(b);
 
     return (
       <tr key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
         <td className="px-2 py-2 text-[12px] text-white/90 whitespace-nowrap max-w-[260px] truncate" title={b.name}>
-          {b.name}
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1">
+              {trackAssignments.map((assignment) => (
+                <span
+                  key={`${b.id}-${assignment.track}`}
+                  className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META[assignment.track].dotClass}`}
+                  title={TRACK_META[assignment.track].label}
+                />
+              ))}
+            </span>
+            <span>{b.name}</span>
+          </span>
           {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
           {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
         </td>
@@ -1226,27 +1508,36 @@ export default function BusinessesPage() {
         <td className="px-2 py-2 whitespace-nowrap">
           <Badge label={normalizedStatus} />
         </td>
-        <td className="px-2 py-2 text-[12px] text-white/80 max-w-[300px] truncate" title={memberNames.join(", ")}>
-          {memberNames.length === 0 ? (
+        <td className="px-2 py-2 text-[12px] text-white/80 max-w-[360px]" title={trackAssignments.map((assignment) => `${formatTrackTeamLabel(assignment.track)}: ${assignment.members.join(", ") || "—"}`).join(" · ")}>
+          {trackAssignments.every((assignment) => assignment.members.length === 0) ? (
             <span className="text-white/40">—</span>
           ) : (
-            memberNames.map((memberName, idx) => (
-              <span key={`${b.id}-${memberName}-${idx}`}>
-                {idx > 0 && <span className="text-white/40">, </span>}
-                {canEdit ? (
-                  <button
-                    type="button"
-                    className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
-                    onClick={() => openProjectMemberEmailModal(b, memberName)}
-                    title={`Email ${memberName}`}
-                  >
-                    {memberName}
-                  </button>
-                ) : (
-                  <span>{memberName}</span>
-                )}
-              </span>
-            ))
+            <div className="space-y-0.5">
+              {trackAssignments.map((assignment) => (
+                <div key={`${b.id}-${assignment.track}`} className="truncate">
+                  <span className="text-white/55">{formatTrackTeamLabel(assignment.track)}:</span>{" "}
+                  {assignment.members.length === 0 ? (
+                    <span className="text-white/40">—</span>
+                  ) : assignment.members.map((memberName, idx) => (
+                    <span key={`${b.id}-${assignment.track}-${memberName}-${idx}`}>
+                      {idx > 0 && <span className="text-white/40">, </span>}
+                      {canEdit ? (
+                        <button
+                          type="button"
+                          className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
+                          onClick={() => openProjectMemberEmailModal(b, memberName)}
+                          title={`Email ${memberName}`}
+                        >
+                          {memberName}
+                        </button>
+                      ) : (
+                        <span>{memberName}</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
           )}
         </td>
         <td className="px-2 py-2 whitespace-nowrap text-right w-[180px]">
@@ -1265,6 +1556,118 @@ export default function BusinessesPage() {
           )}
         </td>
       </tr>
+    );
+  };
+
+  const toggleTrackSelection = (track: TrackDivision) => {
+    const currentTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
+    const formTrackProjects = normalizedFormTrackProjects();
+    const hasTrack = currentTracks.includes(track);
+    if (hasTrack && currentTracks.length === 1) return;
+
+    if (hasTrack) {
+      const nextTracks = currentTracks.filter((item) => item !== track);
+      const nextTrackProjects = { ...formTrackProjects };
+      delete nextTrackProjects[track];
+      setField("projectTracks", nextTracks);
+      setField("trackProjects", nextTrackProjects);
+      setMemberInputByTrack((prev) => ({ ...prev, [track]: "" }));
+      setMemberInputErrorByTrack((prev) => ({ ...prev, [track]: "" }));
+      return;
+    }
+
+    const nextTracks = [...currentTracks, track];
+    const nextTrackProjects: TrackProjectMap = {
+      ...formTrackProjects,
+      [track]: formTrackProjects[track] ?? {
+        projectStatus: "Upcoming",
+        teamMembers: [],
+        notes: "",
+      },
+    };
+    setField("projectTracks", nextTracks);
+    setField("trackProjects", nextTrackProjects);
+  };
+
+  const setTrackField = (track: TrackDivision, key: keyof TrackProjectInfo, value: string | string[]) => {
+    const formTrackProjects = normalizedFormTrackProjects();
+    const current = formTrackProjects[track] ?? {
+      projectStatus: "Upcoming",
+      teamMembers: [],
+      notes: "",
+    };
+    const nextTrackProjects: TrackProjectMap = {
+      ...formTrackProjects,
+      [track]: {
+        ...current,
+        [key]: value,
+      },
+    };
+    setField("trackProjects", nextTrackProjects);
+  };
+
+  const renderTrackProjectSection = (track: TrackDivision) => {
+    const info = normalizedFormTrackProjects()[track] ?? {
+      projectStatus: "Upcoming",
+      teamMembers: [],
+      notes: "",
+    };
+    const memberInput = memberInputByTrack[track] ?? "";
+    const memberInputError = memberInputErrorByTrack[track] ?? "";
+    return (
+      <div key={`track-section-${track}`} className="col-span-2 rounded-xl border border-white/10 bg-[#0F1014] p-3.5">
+        <p className="text-white/85 text-sm font-semibold mb-3">{TRACK_META[track].label} Project Info</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Status" required>
+            <Select
+              options={STATUSES}
+              value={info.projectStatus}
+              onChange={(e) => setTrackField(track, "projectStatus", normalizeProjectStatus(e.target.value))}
+            />
+          </Field>
+          <div />
+          <div className="col-span-2">
+            <Field label="Assigned Members">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <AutocompleteInput
+                    value={memberInput}
+                    onChange={(value) => setMemberInputByTrack((prev) => ({ ...prev, [track]: value }))}
+                    options={teamNameOptions}
+                    placeholder={`Add a ${TRACK_META[track].label} team member`}
+                  />
+                  <Btn size="sm" variant="secondary" onClick={() => addTeamMember(track, memberInput)}>Add</Btn>
+                </div>
+                {memberInputError && <p className="text-[11px] text-red-300">{memberInputError}</p>}
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {(info.teamMembers ?? []).length === 0 ? (
+                    <p className="text-xs text-white/35">No members assigned yet.</p>
+                  ) : (
+                    (info.teamMembers ?? []).map((member) => (
+                      <div key={`${track}-${member}`} className="flex items-center justify-between rounded-lg border border-white/10 bg-[#11141A] px-3 py-2">
+                        <span className="text-sm text-white/80">{member}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeTeamMember(track, member)}
+                          className="text-white/30 hover:text-red-400 transition-colors"
+                          aria-label={`Remove ${member}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </Field>
+          </div>
+          <div className="col-span-2">
+            <Field label="Notes">
+              <TextArea rows={3} value={info.notes} onChange={(e) => setTrackField(track, "notes", e.target.value)} />
+            </Field>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -1304,6 +1707,13 @@ export default function BusinessesPage() {
         <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
         <span className="mx-2">·</span>
         <span className="text-blue-300 font-semibold">◆</span> Visible on public home/showcase.
+        <span className="mx-2">·</span>
+        <span className="inline-flex items-center gap-1 align-middle">
+          <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META.Tech.dotClass}`} />
+          <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META.Marketing.dotClass}`} />
+          <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META.Finance.dotClass}`} />
+        </span>{" "}
+        Track assignments (Tech / Marketing / Finance).
       </p>
 
       {/* Stats */}
@@ -1339,7 +1749,7 @@ export default function BusinessesPage() {
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Team Members</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Track Teams</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
                 </tr>
               </thead>
@@ -1373,7 +1783,7 @@ export default function BusinessesPage() {
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Email</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Primary Phone</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Status</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Team Members</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45">Track Teams</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[180px]">Actions</th>
             </tr>
           </thead>
@@ -1471,58 +1881,6 @@ export default function BusinessesPage() {
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>
         <div className="grid grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2">
-          {/* ── Project Info ── */}
-          <div className="col-span-2">
-            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Project Info</p>
-          </div>
-          <Field label="Status" required>
-            <Select options={STATUSES} value={form.projectStatus} onChange={e => setField("projectStatus", e.target.value)} />
-          </Field>
-          <Field label="Division">
-            <Select options={DIVISIONS} value={form.division ?? "Tech"} onChange={e => setField("division", e.target.value)} />
-          </Field>
-          <div className="col-span-2">
-            <Field label="Assigned Members">
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <AutocompleteInput
-                    value={memberInput}
-                    onChange={setMemberInput}
-                    options={teamNameOptions}
-                    placeholder="Start typing a member name"
-                  />
-                  <Btn size="sm" variant="secondary" onClick={() => addTeamMember(memberInput)}>Add</Btn>
-                </div>
-                {memberInputError && <p className="text-[11px] text-red-300">{memberInputError}</p>}
-                <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                  {(form.teamMembers ?? []).length === 0 ? (
-                    <p className="text-xs text-white/35">No members assigned yet.</p>
-                  ) : (
-                    (form.teamMembers ?? []).map((member) => (
-                      <div key={member} className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2">
-                        <span className="text-sm text-white/80">{member}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeTeamMember(member)}
-                          className="text-white/30 hover:text-red-400 transition-colors"
-                          aria-label={`Remove ${member}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </Field>
-          </div>
-
-          <div className="col-span-2">
-            <Field label="Notes">
-              <TextArea rows={3} value={form.notes} onChange={e => setField("notes", e.target.value)} />
-            </Field>
-          </div>
-
           {/* ── Business Info ── */}
           <div className="col-span-2">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Business Info</p>
@@ -1629,6 +1987,41 @@ export default function BusinessesPage() {
               />
             </Field>
           </div>
+
+          {/* ── Project Info ── */}
+          <div className="col-span-2 mt-2 pt-2 border-t border-white/8">
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Project Info</p>
+            <p className="text-white/45 text-xs font-body">Select one or more tracks, then configure each track project below.</p>
+          </div>
+          <div className="col-span-2">
+            <Field label="Tracks" required>
+              <div className="flex flex-wrap gap-2">
+                {TRACK_ORDER.map((track) => {
+                  const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
+                  const selected = selectedTracks.includes(track);
+                  return (
+                    <button
+                      key={`track-toggle-${track}`}
+                      type="button"
+                      onClick={() => toggleTrackSelection(track)}
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        selected
+                          ? TRACK_META[track].chipClass
+                          : "border-white/20 text-white/65 bg-[#11141A] hover:border-white/35"
+                      }`}
+                    >
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META[track].dotClass}`} />
+                      {TRACK_META[track].label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+          </div>
+          {(Array.isArray(form.projectTracks) ? form.projectTracks : [])
+            .map((track) => normalizeDivision(track))
+            .filter((track, index, arr) => arr.indexOf(track) === index)
+            .map((track) => renderTrackProjectSection(track))}
 
           {/* ── Public Showcase ── */}
           <div className="col-span-2 mt-2 pt-2 border-t border-white/8">
