@@ -37,8 +37,7 @@ export async function GET(req: NextRequest) {
           style={{
             position: "absolute",
             inset: 0,
-            background:
-              "linear-gradient(110deg, rgba(5,8,13,0.86) 5%, rgba(5,8,13,0.58) 48%, rgba(5,8,13,0.72) 100%)",
+            background: "rgba(6, 11, 18, 0.58)",
           }}
         />
 
@@ -49,65 +48,29 @@ export async function GET(req: NextRequest) {
             display: "flex",
             width: "100%",
             height: "100%",
-            padding: "58px 64px",
-            flexDirection: "column",
-            justifyContent: "space-between",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "22px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "26px" }}>
             <img
               src={logoSrc}
               alt="Volta logo"
-              width={90}
-              height={90}
+              width={150}
+              height={150}
               style={{ objectFit: "contain" }}
             />
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div
-                style={{
-                  color: "#85CC17",
-                  fontSize: "88px",
-                  lineHeight: 1,
-                  fontWeight: 800,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                VOLTA
-              </div>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.92)",
-                  fontSize: "30px",
-                  lineHeight: 1.1,
-                  letterSpacing: "0.08em",
-                  fontWeight: 600,
-                }}
-              >
-                NYC
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <div
               style={{
-                color: "rgba(255,255,255,0.96)",
-                fontSize: "38px",
-                lineHeight: 1.1,
-                fontWeight: 700,
+                color: "#85CC17",
+                fontSize: "142px",
+                lineHeight: 1,
+                fontWeight: 800,
+                letterSpacing: "0.06em",
+                fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
               }}
             >
-              Student teams shipping real work for small businesses.
-            </div>
-            <div
-              style={{
-                color: "rgba(255,255,255,0.78)",
-                fontSize: "23px",
-                lineHeight: 1.25,
-                fontWeight: 500,
-              }}
-            >
-              Websites, marketing, finance, and operations support through Volta NYC.
+              VOLTA
             </div>
           </div>
         </div>

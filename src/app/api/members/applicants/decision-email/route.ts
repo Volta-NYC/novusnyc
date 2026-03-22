@@ -63,23 +63,17 @@ export async function POST(req: NextRequest) {
   }
   const replyTo = getDefaultReplyToAddress(from);
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
-  let signupLink = process.env.MEMBER_SIGNUP_LINK || `${baseUrl.replace(/\/+$/g, "")}/members/signup`;
-  try {
-    const rotatingInvite = await getOrCreateRotatingInviteLink({
-      role: "member",
-      createdBy: verified.caller.uid,
-      baseUrl,
-      idToken: verified.caller.idToken,
-    });
-    signupLink = rotatingInvite.link;
-  } catch {
-    // fallback keeps acceptance flow alive if invite-code storage is unavailable
-  }
+  const rotatingInvite = await getOrCreateRotatingInviteLink({
+    role: "member",
+    createdBy: verified.caller.uid,
+    baseUrl,
+    idToken: verified.caller.idToken,
+  });
   const content = buildAcceptanceTemplate({
     name: applicantName,
     role: role || "Analyst",
     tracks: tracks || "",
-    signupLink,
+    signupLink: rotatingInvite.link,
   });
 
   await transporter.sendMail({

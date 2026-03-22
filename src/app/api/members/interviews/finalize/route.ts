@@ -85,23 +85,17 @@ async function sendAcceptanceEmail(input: {
   if (!from || !allowedFrom.includes(from)) return;
   const transporter = createTransportForFrom(from).transporter;
   const replyTo = getDefaultReplyToAddress(from);
-  let signupLink = process.env.MEMBER_SIGNUP_LINK || `${input.baseUrl.replace(/\/+$/g, "")}/members/signup`;
-  try {
-    const rotatingInvite = await getOrCreateRotatingInviteLink({
-      role: "member",
-      createdBy: input.createdByUid,
-      baseUrl: input.baseUrl,
-      idToken: input.idToken,
-    });
-    signupLink = rotatingInvite.link;
-  } catch {
-    // fallback keeps acceptance flow alive if invite-code storage is unavailable
-  }
+  const rotatingInvite = await getOrCreateRotatingInviteLink({
+    role: "member",
+    createdBy: input.createdByUid,
+    baseUrl: input.baseUrl,
+    idToken: input.idToken,
+  });
   const tpl = buildAcceptanceTemplate({
     name: input.applicantName,
     role: input.role,
     tracks: input.tracks ?? "",
-    signupLink,
+    signupLink: rotatingInvite.link,
   });
   await transporter.sendMail({
     from: resolveFromWithName(from),
