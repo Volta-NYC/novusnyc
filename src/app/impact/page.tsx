@@ -144,7 +144,7 @@ export default function Impact() {
       </section>
 
       {/* Key Stats */}
-      <section className="py-20 bg-v-bg border-b border-v-border">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">By the numbers</p>
@@ -199,7 +199,7 @@ export default function Impact() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-v-bg border-y border-v-border">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">From our partners</p>

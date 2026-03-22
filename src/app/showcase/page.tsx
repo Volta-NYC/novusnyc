@@ -198,7 +198,7 @@ export default async function Showcase() {
         </div>
 
         {/* ── MAP ───────────────────────────────────────────────── */}
-        <div className="w-full h-[520px] md:h-[600px] relative z-0 border-t border-white/10">
+        <div className="w-full h-[520px] md:h-[600px] relative z-0">
           <NeighborhoodMap projects={mapProjects} />
         </div>
       </section>

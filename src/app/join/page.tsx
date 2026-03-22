@@ -124,7 +124,7 @@ export default async function Join() {
         </div>
       </section>
 
-      <section id="tracks" className="py-20 bg-white border-b border-v-border">
+      <section id="tracks" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
@@ -168,7 +168,7 @@ export default async function Join() {
         </div>
       </section>
 
-      <section className="py-20 bg-v-bg border-b border-v-border">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Our members</p>
@@ -193,7 +193,7 @@ export default async function Join() {
         </div>
       </section>
 
-      <section className="py-20 bg-white border-b border-v-border">
+      <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">How you grow</p>
@@ -203,7 +203,6 @@ export default async function Join() {
             </p>
           </AnimatedSection>
           <div className="relative">
-            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-px bg-v-border" />
             <div className="grid md:grid-cols-5 gap-6">
               {leadershipSteps.map((step, i) => (
                 <AnimatedSection key={step.role} delay={i * 0.1}>

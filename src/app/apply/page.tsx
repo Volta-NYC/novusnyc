@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function Apply() {
   return (
     <>
-      <section className="bg-v-bg pt-32 pb-0 border-b border-v-border">
+      <section className="bg-v-bg pt-32 pb-0">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-5 gap-12 items-start pb-12">

@@ -107,7 +107,7 @@ export default async function Home() {
           <HeroSection />
 
           {/* ── STATS ─────────────────────────────────────────────── */}
-          <section data-home-dark-end="true" className="relative py-14 border-b border-white/10">
+          <section data-home-dark-end="true" className="relative py-14">
             <div className="max-w-6xl mx-auto px-5 md:px-8">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {homeStats.map((s) => (
@@ -130,7 +130,7 @@ export default async function Home() {
       </section>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
-      <section className="py-24 bg-v-bg border-t border-v-border">
+      <section className="py-24 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
@@ -175,7 +175,7 @@ export default async function Home() {
       </section>
 
       {/* ── CURRENT PROJECTS ─────────────────────────────────── */}
-      <section className="py-20 bg-white border-y border-v-border">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
             <div>

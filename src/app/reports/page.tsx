@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function ReportsPage() {
   return (
     <>
-      <section className="bg-v-bg pt-32 pb-16 border-b border-v-border">
+      <section className="bg-v-bg pt-32 pb-16">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">

@@ -32,9 +32,9 @@ const SERVICE_AREAS = [
     color: "text-v-blue",
     bg: "bg-blue-50",
     details: [
-      "New builds or full redesigns using modern frameworks and clean CMS handoff",
-      "Mobile performance, accessibility, and conversion-focused page structure",
-      "Deployment support, analytics setup, and ongoing iteration with your team",
+      "Build a new website or redesign your current one based on your business needs",
+      "Create fast, mobile-friendly pages with clear service and contact sections",
+      "Launch the site and continue with updates after it goes live",
     ],
   },
   {
@@ -44,9 +44,9 @@ const SERVICE_AREAS = [
     color: "text-v-blue",
     bg: "bg-blue-50",
     details: [
-      "Google Business Profile optimization and listing consistency",
-      "Yelp and Apple Maps cleanup with stronger search relevance signals",
-      "On-site SEO updates to improve rankings and local discovery",
+      "Update your Google Business Profile with accurate info and photos",
+      "Clean up Yelp and Apple Maps listings so details match everywhere",
+      "Improve key website pages so customers can find you in search",
     ],
   },
   {
@@ -56,9 +56,9 @@ const SERVICE_AREAS = [
     color: "text-v-green",
     bg: "bg-lime-50",
     details: [
-      "Posting calendars, content pillars, and weekly execution planning",
-      "Founder interview clips, short-form edits, and reusable media templates",
-      "Audience growth tracking with clear performance feedback loops",
+      "Create a weekly posting plan based on your goals",
+      "Make short videos and graphics using your business story and products",
+      "Track results in a simple way so you know what is working",
     ],
   },
   {
@@ -68,9 +68,9 @@ const SERVICE_AREAS = [
     color: "text-v-green",
     bg: "bg-lime-50",
     details: [
-      "Sales and revenue trend analysis by period, category, and seasonality",
-      "Competitor benchmarking and positioning insights",
-      "Pricing and operations recommendations with clear reporting takeaways",
+      "Break down sales and revenue trends by time period and category",
+      "Compare nearby competitors and pricing",
+      "Share clear recommendations for pricing and daily operations",
     ],
   },
   {
@@ -80,9 +80,9 @@ const SERVICE_AREAS = [
     color: "text-amber-500",
     bg: "bg-amber-50",
     details: [
-      "Grant discovery based on your business type, location, and stage",
-      "Narrative drafting, budget support, and checklist completion",
-      "Submission prep and timeline tracking through deadlines",
+      "Find grants your business is actually eligible for",
+      "Draft the writing, budget, and required materials",
+      "Track deadlines and prepare final submission documents",
     ],
   },
   {
@@ -92,9 +92,9 @@ const SERVICE_AREAS = [
     color: "text-amber-500",
     bg: "bg-amber-50",
     details: [
-      "Payment platform setup and checkout flow recommendations",
-      "Online ordering and loyalty program configuration support",
-      "Practical setup guidance so staff can run systems confidently",
+      "Set up card, tap, and online payment options",
+      "Help configure online ordering and loyalty tools",
+      "Train owner and staff on day-to-day use",
     ],
   },
 ] as const;
@@ -193,7 +193,7 @@ export default function Partners() {
       </section>
 
       {/* ── SERVICES ─────────────────────────────────────────── */}
-      <section className="py-14 bg-v-bg border-b border-v-border">
+      <section className="py-14 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
@@ -236,7 +236,7 @@ export default function Partners() {
       </section>
 
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
-      <section className="py-16 bg-v-bg" id="contact">
+      <section className="py-16 bg-white" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
@@ -258,7 +258,7 @@ export default function Partners() {
       </section>
 
       {/* ── PROCESS ─────────────────────────────────────────── */}
-      <section className="py-12 bg-white border-y border-v-border">
+      <section className="py-12 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-6">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-2">
@@ -301,7 +301,7 @@ export default function Partners() {
       </section>
 
       {/* ── GUIDES / NEWSLETTER ─────────────────────────────── */}
-      <section className="py-12 bg-white border-b border-v-border">
+      <section className="py-12 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-2">
@@ -333,7 +333,7 @@ export default function Partners() {
       </section>
 
       {/* ── BID SECTION ──────────────────────────────────────── */}
-      <section className="py-20 bg-white border-t border-v-border">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <AnimatedSection direction="left">
@@ -354,7 +354,7 @@ export default function Partners() {
               </p>
             </AnimatedSection>
             <AnimatedSection direction="right">
-              <div className="bg-v-bg border border-v-border rounded-2xl p-8">
+              <div className="bg-white border border-v-border rounded-2xl p-8">
                 <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
                   Currently active
                 </p>
