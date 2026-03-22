@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
@@ -51,11 +52,35 @@ const SHOWCASE_COLOR_CLASS: Record<string, string> = {
   "green-deep": "bg-lime-700",
 };
 
-export default async function Home() {
+type HomeProject = {
+  name: string;
+  neighborhood: string;
+  services: string[];
+  colorClass: string;
+  url?: string;
+  imageUrl?: string;
+};
+
+function getServiceTagClass(service: string): string {
+  const key = service.trim().toLowerCase();
+  if (key.includes("website") || key.includes("seo") || key.includes("google")) {
+    return "bg-blue-100 text-blue-700 border-blue-200";
+  }
+  if (key.includes("social")) {
+    return "bg-lime-100 text-lime-700 border-lime-200";
+  }
+  if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
+    return "bg-amber-100 text-amber-700 border-amber-200";
+  }
+  return "bg-v-border text-v-muted border-v-border";
+}
+
+async function getHomeProjects(): Promise<HomeProject[]> {
   const publicShowcase = await getPublicShowcaseCards();
   const featuredHomeCards = publicShowcase
     .filter((card) => card.featuredOnHome)
     .slice(0, 6);
+
   const homeProjects = featuredHomeCards.length > 0
     ? featuredHomeCards.map((card) => ({
       name: card.name,
@@ -76,19 +101,144 @@ export default async function Home() {
       }))
       : []);
 
-  const getServiceTagClass = (service: string) => {
-    const key = service.trim().toLowerCase();
-    if (key.includes("website") || key.includes("seo") || key.includes("google")) {
-      return "bg-blue-100 text-blue-700 border-blue-200";
-    }
-    if (key.includes("social")) {
-      return "bg-lime-100 text-lime-700 border-lime-200";
-    }
-    if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
-      return "bg-amber-100 text-amber-700 border-amber-200";
-    }
-    return "bg-v-border text-v-muted border-v-border";
-  };
+  return homeProjects;
+}
+
+function CurrentProjectsFallback() {
+  return (
+    <section className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-5 md:px-8">
+        <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
+          <div>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">In the field right now</h2>
+          </div>
+          <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
+            See all work →
+          </Link>
+        </AnimatedSection>
+        <div className="border border-v-border rounded-2xl bg-v-bg px-5 py-6 animate-pulse">
+          <p className="font-body text-sm text-v-muted">Loading featured projects…</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+async function CurrentProjectsSection() {
+  const homeProjects = await getHomeProjects();
+
+  return (
+    <section className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-5 md:px-8">
+        <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
+          <div>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">In the field right now</h2>
+          </div>
+          <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
+            See all work →
+          </Link>
+        </AnimatedSection>
+        {homeProjects.length > 0 ? (
+          <>
+            <div className="md:hidden -mx-5 px-5 overflow-x-auto pb-2">
+              <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory">
+                {homeProjects.map((p, i) => (
+                  <AnimatedSection
+                    key={`mobile-${p.name}`}
+                    delay={i * 0.05}
+                    className="snap-start shrink-0 w-[82vw] max-w-[360px]"
+                  >
+                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg h-full">
+                      <div className={`${p.colorClass} h-2`} />
+                      {p.imageUrl ? (
+                        <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
+                          <Image
+                            src={p.imageUrl}
+                            alt={`${p.name} project`}
+                            width={1600}
+                            height={1000}
+                            unoptimized
+                            className="block w-full h-auto"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="mx-4 mt-5 rounded-xl border border-v-border h-36 flex items-center justify-center bg-white">
+                          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {p.services.map((service) => (
+                            <span key={`mobile-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                          ))}
+                        </div>
+                        <h3 className="font-display font-bold text-v-ink text-lg mb-1">{p.name}</h3>
+                        <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
+                          <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                        </p>
+                      </div>
+                    </div>
+                  </AnimatedSection>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden md:block columns-1 md:columns-2 xl:columns-3 [column-gap:1.25rem]">
+              {homeProjects.map((p, i) => (
+                <AnimatedSection
+                  key={`desktop-${p.name}`}
+                  delay={i * 0.06}
+                  className="inline-block w-full break-inside-avoid mb-5 align-top"
+                >
+                  <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
+                    <div className={`${p.colorClass} h-2`} />
+                    {p.imageUrl ? (
+                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
+                        <Image
+                          src={p.imageUrl}
+                          alt={`${p.name} project`}
+                          width={1600}
+                          height={1000}
+                          unoptimized
+                          className="block w-full h-auto"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-white">
+                        <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                      </div>
+                    )}
+                    <div className="p-6">
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {p.services.map((service) => (
+                          <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                        ))}
+                      </div>
+                      <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
+                      <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
+                        <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                      </p>
+                    </div>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="border border-v-border rounded-2xl bg-v-bg px-5 py-6">
+            <p className="font-body text-sm text-v-muted">
+              No home projects selected yet. Enable “show on home” for up to 6 projects in the Projects popup.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export default function Home() {
 
   return (
     <>
@@ -177,114 +327,9 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── CURRENT PROJECTS ─────────────────────────────────── */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
-            <div>
-              <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">In the field right now</h2>
-            </div>
-            <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
-              See all work →
-            </Link>
-          </AnimatedSection>
-          {homeProjects.length > 0 ? (
-            <>
-              <div className="md:hidden -mx-5 px-5 overflow-x-auto pb-2">
-                <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory">
-                  {homeProjects.map((p, i) => (
-                    <AnimatedSection
-                      key={`mobile-${p.name}`}
-                      delay={i * 0.05}
-                      className="snap-start shrink-0 w-[82vw] max-w-[360px]"
-                    >
-                      <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg h-full">
-                        <div className={`${p.colorClass} h-2`} />
-                        {p.imageUrl ? (
-                          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
-                            <Image
-                              src={p.imageUrl}
-                              alt={`${p.name} project`}
-                              width={1600}
-                              height={1000}
-                              unoptimized
-                              className="block w-full h-auto"
-                              loading="lazy"
-                            />
-                          </div>
-                        ) : (
-                          <div className="mx-4 mt-5 rounded-xl border border-v-border h-36 flex items-center justify-center bg-white">
-                            <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
-                          </div>
-                        )}
-                        <div className="p-5">
-                          <div className="flex flex-wrap gap-1.5 mb-4">
-                            {p.services.map((service) => (
-                              <span key={`mobile-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-                            ))}
-                          </div>
-                          <h3 className="font-display font-bold text-v-ink text-lg mb-1">{p.name}</h3>
-                          <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
-                            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                          </p>
-                        </div>
-                      </div>
-                    </AnimatedSection>
-                  ))}
-                </div>
-              </div>
-
-              <div className="hidden md:block columns-1 md:columns-2 xl:columns-3 [column-gap:1.25rem]">
-                {homeProjects.map((p, i) => (
-                  <AnimatedSection
-                    key={`desktop-${p.name}`}
-                    delay={i * 0.06}
-                    className="inline-block w-full break-inside-avoid mb-5 align-top"
-                  >
-                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
-                      <div className={`${p.colorClass} h-2`} />
-                      {p.imageUrl ? (
-                        <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
-                          <Image
-                            src={p.imageUrl}
-                            alt={`${p.name} project`}
-                            width={1600}
-                            height={1000}
-                            unoptimized
-                            className="block w-full h-auto"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-white">
-                          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
-                        </div>
-                      )}
-                      <div className="p-6">
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {p.services.map((service) => (
-                            <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-                          ))}
-                        </div>
-                        <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                        <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
-                          <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                        </p>
-                      </div>
-                    </div>
-                  </AnimatedSection>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="border border-v-border rounded-2xl bg-v-bg px-5 py-6">
-              <p className="font-body text-sm text-v-muted">
-                No home projects selected yet. Enable “show on home” for up to 6 projects in the Projects popup.
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
+      <Suspense fallback={<CurrentProjectsFallback />}>
+        <CurrentProjectsSection />
+      </Suspense>
 
       {/* ── NYC REACH ────────────────────────────────────────── */}
       <section className="py-20 bg-v-dark">
