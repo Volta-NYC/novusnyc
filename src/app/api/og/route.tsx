@@ -9,6 +9,15 @@ export async function GET(req: NextRequest) {
   const origin = new URL(req.url).origin;
   const bgSrc = `${origin}/hero-nyc-skyline.jpg`;
   const logoSrc = `${origin}/logo.png`;
+  const fontSrc = `${origin}/fonts/SpaceGrotesk-Latin.woff2`;
+  const displayFont = await fetch(fontSrc).then((res) => res.arrayBuffer());
+
+  // Exact desktop hero clamp math at 1200px OG width:
+  // font-size: clamp(4.8rem, 13.6vw, 9.2rem) => 147.2px
+  // logo size: clamp(7.6rem, 20vw, 16.8rem) => 240px
+  const heroFontSize = 147.2;
+  const heroLogoSize = 240;
+  const heroGap = 14; // md:gap-3.5
 
   return new ImageResponse(
     (
@@ -37,14 +46,18 @@ export async function GET(req: NextRequest) {
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(180deg, rgba(6,11,18,0.62) 0%, rgba(6,11,18,0.62) 100%)",
+            // Matches .home-shared-wash from globals.css
+            background:
+              "linear-gradient(145deg,rgba(10,26,15,.58),rgba(14,40,20,.42) 38%,rgba(8,24,12,.52)),radial-gradient(120% 100% at 24% -8%,rgba(133,204,23,.22) 0,rgba(133,204,23,0) 66%)",
           }}
         />
         <div
           style={{
             position: "absolute",
             inset: 0,
-            boxShadow: "inset 0 0 180px rgba(0,0,0,0.45)",
+            // Matches .hero-vignette from globals.css
+            background:
+              "radial-gradient(circle at 50% 40%,transparent 16%,rgba(0,0,0,.24) 70%,rgba(0,0,0,.46) 100%),linear-gradient(180deg,rgba(0,0,0,.32),rgba(0,0,0,.08) 32%,rgba(0,0,0,.44))",
           }}
         />
 
@@ -55,30 +68,50 @@ export async function GET(req: NextRequest) {
             display: "flex",
             width: "100%",
             height: "100%",
+            paddingTop: "64px", // aligns with hero pt-16
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "0 28px" }}>
-            <img
-              src={logoSrc}
-              alt="Volta logo"
-              width={184}
-              height={184}
-              style={{ objectFit: "contain" }}
-            />
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "1024px", // max-w-5xl
+              paddingLeft: "32px", // px-8
+              paddingRight: "32px",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
             <div
               style={{
-                color: "#85CC17",
-                fontSize: "176px",
-                lineHeight: 1,
-                fontWeight: 800,
-                letterSpacing: "0.02em",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: `${heroGap}px`,
                 textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
-                fontFamily: "\"Space Grotesk\", \"DM Sans\", system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+                lineHeight: 1,
               }}
             >
-              VOLTA
+              <img
+                src={logoSrc}
+                alt="Volta logo"
+                width={heroLogoSize}
+                height={heroLogoSize}
+                style={{ objectFit: "contain" }}
+              />
+              <div
+                style={{
+                  color: "#85CC17",
+                  fontSize: `${heroFontSize}px`,
+                  fontWeight: 700,
+                  letterSpacing: "-0.025em", // tracking-tight
+                  lineHeight: 1,
+                  fontFamily: "Space Grotesk",
+                }}
+              >
+                VOLTA
+              </div>
             </div>
           </div>
         </div>
@@ -87,6 +120,14 @@ export async function GET(req: NextRequest) {
     {
       width: 1200,
       height: 630,
+      fonts: [
+        {
+          name: "Space Grotesk",
+          data: displayFont,
+          weight: 700,
+          style: "normal",
+        },
+      ],
     }
   );
 }
