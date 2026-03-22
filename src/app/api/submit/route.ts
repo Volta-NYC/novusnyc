@@ -13,6 +13,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
   const businessName = asText(data.businessName);
   const ownerName = asText(data.name);
   const ownerEmail = asText(data.email).toLowerCase();
+  const phone = asText(data.phone);
   const neighborhood = asText(data.neighborhood);
   const services = asText(data.services);
   const message = asText(data.message);
@@ -45,6 +46,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
   const notesParts = [
     "Website form submission",
     neighborhood ? `Neighborhood: ${neighborhood}` : "",
+    phone ? `Phone: ${phone}` : "",
     services ? `Services requested: ${services}` : "",
     language ? `Language: ${language}` : "",
     message ? `Message: ${message}` : "",
@@ -56,7 +58,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     ownerName,
     ownerEmail,
     ownerAlternateEmail: "",
-    phone: "",
+    phone,
     alternatePhone: "",
     address: "",
     neighborhood,

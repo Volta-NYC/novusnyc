@@ -8,7 +8,7 @@ export const VOLTA_STATS = {
   nycNeighborhoods: { value: 12, suffix: "+" } satisfies VoltaStat,
   studentMembers: { value: 175, suffix: "+" } satisfies VoltaStat,
   serviceTracks: { value: 3, suffix: "" } satisfies VoltaStat,
-  bidPartners: { value: 12, suffix: "" } satisfies VoltaStat,
+  bidPartners: { value: 14, suffix: "+" } satisfies VoltaStat,
   floridaBusinessesServed: { value: 40, suffix: "+" } satisfies VoltaStat,
   operatingCities: { value: 6, suffix: "" } satisfies VoltaStat,
 } as const;

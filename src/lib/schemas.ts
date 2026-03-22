@@ -33,6 +33,7 @@ export interface ContactFormValues {
   businessName: string;
   name: string;
   email: string;
+  phone: string;
   neighborhood: string;
   services: string[];
   message: string;

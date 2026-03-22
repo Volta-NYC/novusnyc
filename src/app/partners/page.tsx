@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
-import { partnerServices } from "@/data";
+import {
+  GlobeIcon,
+  SmartphoneIcon,
+  DollarIcon,
+  SearchIcon,
+  TrendingUpIcon,
+  CreditCardIcon,
+} from "@/components/Icons";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 
 export const metadata: Metadata = {
@@ -16,6 +23,81 @@ export const metadata: Metadata = {
     images: ["/hero-nyc-skyline.jpg"],
   },
 };
+
+const SERVICE_AREAS = [
+  {
+    icon: GlobeIcon,
+    title: "Website Design & Development",
+    summary: "Custom websites that are mobile-friendly, fast, and built for real business goals.",
+    color: "text-v-blue",
+    bg: "bg-blue-50",
+    details: [
+      "New builds or full redesigns using modern frameworks and clean CMS handoff",
+      "Mobile performance, accessibility, and conversion-focused page structure",
+      "Deployment support, analytics setup, and ongoing iteration with your team",
+    ],
+  },
+  {
+    icon: SmartphoneIcon,
+    title: "Social Media & Content",
+    summary: "Practical social strategy with content systems your team can actually sustain.",
+    color: "text-v-green",
+    bg: "bg-lime-50",
+    details: [
+      "Posting calendars, content pillars, and weekly execution planning",
+      "Founder interview clips, short-form edits, and reusable media templates",
+      "Audience growth tracking with clear performance feedback loops",
+    ],
+  },
+  {
+    icon: DollarIcon,
+    title: "Grant Research & Writing",
+    summary: "We identify eligible grants and draft complete application-ready materials.",
+    color: "text-amber-500",
+    bg: "bg-amber-50",
+    details: [
+      "Grant discovery based on your business type, location, and stage",
+      "Narrative drafting, budget support, and checklist completion",
+      "Submission prep and timeline tracking through deadlines",
+    ],
+  },
+  {
+    icon: SearchIcon,
+    title: "SEO & Online Visibility",
+    summary: "Better discoverability across search, maps, and local listing platforms.",
+    color: "text-v-blue",
+    bg: "bg-blue-50",
+    details: [
+      "Google Business Profile optimization and listing consistency",
+      "Yelp and Apple Maps cleanup with stronger search relevance signals",
+      "On-site SEO updates to improve rankings and local discovery",
+    ],
+  },
+  {
+    icon: TrendingUpIcon,
+    title: "Sales & Financial Analysis",
+    summary: "Owner-facing analysis that turns raw sales numbers into decisions.",
+    color: "text-v-green",
+    bg: "bg-lime-50",
+    details: [
+      "Sales and revenue trend analysis by period, category, and seasonality",
+      "Competitor benchmarking and positioning insights",
+      "Pricing and operations recommendations with clear reporting takeaways",
+    ],
+  },
+  {
+    icon: CreditCardIcon,
+    title: "Digital Payment Setup",
+    summary: "Support moving from cash-heavy workflows to modern payment options.",
+    color: "text-amber-500",
+    bg: "bg-amber-50",
+    details: [
+      "Payment platform setup and checkout flow recommendations",
+      "Online ordering and loyalty program configuration support",
+      "Practical setup guidance so staff can run systems confidently",
+    ],
+  },
+] as const;
 
 export default function Partners() {
   const faqSchema = {
@@ -88,8 +170,9 @@ export default function Partners() {
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
               Volta places student teams on real projects for NYC small businesses —
-              websites, social media, grant writing, SEO, and more.
-              Professional-grade work, no cost to you.
+              websites, social media, grant writing, SEO, and financial operations.
+              We scope with you first, then execute with clear deliverables, timelines,
+              and regular updates. Professional-grade work, no cost to you.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a
@@ -120,16 +203,32 @@ export default function Partners() {
               Six service areas.
             </h2>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {partnerServices.map((s, i) => (
-              <AnimatedSection key={s.title} delay={i * 0.07}>
-                <div className="bg-white border border-v-border rounded-2xl p-5 project-card h-full">
-                  <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-                    <s.icon className={`w-4 h-4 ${s.color}`} />
+          <div className="space-y-3">
+            {SERVICE_AREAS.map((service, i) => (
+              <AnimatedSection key={service.title} delay={i * 0.06}>
+                <details className="group bg-white border border-v-border rounded-2xl px-4 py-3">
+                  <summary className="list-none cursor-pointer flex items-start gap-3">
+                    <span className={`w-10 h-10 rounded-xl ${service.bg} flex items-center justify-center shrink-0`}>
+                      <service.icon className={`w-4 h-4 ${service.color}`} />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block font-display font-bold text-v-ink text-base leading-tight">
+                        • {service.title}
+                      </span>
+                      <span className="block font-body text-sm text-v-muted mt-1">
+                        {service.summary}
+                      </span>
+                    </span>
+                    <span className="text-v-muted text-xs mt-2 group-open:rotate-180 transition-transform">⌄</span>
+                  </summary>
+                  <div className="mt-3 pl-[3.25rem]">
+                    <ul className="list-disc pl-5 space-y-1.5 font-body text-sm text-v-muted">
+                      {service.details.map((detail) => (
+                        <li key={detail}>{detail}</li>
+                      ))}
+                    </ul>
                   </div>
-                  <h3 className="font-display font-bold text-v-ink text-base mb-1.5">{s.title}</h3>
-                  <p className="font-body text-xs text-v-muted leading-relaxed">{s.desc}</p>
-                </div>
+                </details>
               </AnimatedSection>
             ))}
           </div>
@@ -158,33 +257,76 @@ export default function Partners() {
         </div>
       </section>
 
+      {/* ── PROCESS ─────────────────────────────────────────── */}
+      <section className="py-12 bg-white border-y border-v-border">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-6">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-2">
+              How engagement works
+            </p>
+            <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
+              Clear steps from intake to execution.
+            </h2>
+          </AnimatedSection>
+          <div className="grid md:grid-cols-3 gap-4">
+            <AnimatedSection>
+              <div className="border border-v-border rounded-xl p-5 h-full">
+                <p className="font-display font-bold text-v-ink text-lg mb-2">Apply</p>
+                <p className="font-body text-sm text-v-muted leading-relaxed">
+                  Submit a short interest form on our website:
+                </p>
+                <a href="https://voltanyc.org/partners" className="inline-block mt-2 text-v-blue font-body text-sm font-semibold hover:text-v-blue-dark transition-colors">
+                  voltanyc.org/partners
+                </a>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.06}>
+              <div className="border border-v-border rounded-xl p-5 h-full">
+                <p className="font-display font-bold text-v-ink text-lg mb-2">Meet</p>
+                <p className="font-body text-sm text-v-muted leading-relaxed">
+                  We schedule an in-person visit or call to understand your business, priorities, and goals.
+                </p>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.12}>
+              <div className="border border-v-border rounded-xl p-5 h-full">
+                <p className="font-display font-bold text-v-ink text-lg mb-2">Build</p>
+                <p className="font-body text-sm text-v-muted leading-relaxed">
+                  A dedicated student team is assigned and starts work right away, with clear timelines and regular updates.
+                </p>
+              </div>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
+
       {/* ── GUIDES / NEWSLETTER ─────────────────────────────── */}
       <section className="py-12 bg-white border-b border-v-border">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="bg-v-bg border border-v-border rounded-2xl p-6 md:p-8">
+          <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-2">
               Practical resources
             </p>
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl mb-3">
-              See what we recommend for owners.
+              Owner guides, case studies, and practical references.
             </h2>
             <p className="font-body text-v-muted leading-relaxed mb-5 max-w-3xl">
-              Beyond project work, we publish business guides with practical advice on websites, marketing, and operations.
-              If you want to share your experience or be featured in future newsletters/guides, tell us in the form above or email us directly.
+              We publish concise resources on websites, marketing, operations, and real field learnings from business work across neighborhoods.
+              You can use them whether or not you work with us directly.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/guides"
-                className="inline-block bg-v-ink text-white font-display font-bold text-sm px-6 py-3 rounded-full hover:bg-v-ink/85 transition-colors"
+                className="inline-block text-v-blue font-display font-bold text-sm hover:text-v-blue-dark transition-colors"
               >
                 Read Business Guides →
               </Link>
-              <a
-                href="mailto:info@voltanyc.org"
-                className="inline-block border border-v-border text-v-ink font-display font-bold text-sm px-6 py-3 rounded-full hover:border-v-ink transition-colors"
+              <Link
+                href="/reports"
+                className="inline-block text-v-ink font-display font-bold text-sm hover:text-v-blue-dark transition-colors"
               >
-                Talk to us →
-              </a>
+                Read Reports & Case Studies →
+              </Link>
             </div>
           </AnimatedSection>
         </div>
@@ -208,10 +350,10 @@ export default function Partners() {
                 project. We&apos;re also open to a quick Zoom chat to discuss fit.
               </p>
               <a
-                href="mailto:ethan@voltanyc.org"
+                href="mailto:ethan@voltanyc.org?subject=BID%20Partnership%20Inquiry"
                 className="inline-block bg-v-ink text-white font-display font-bold text-sm px-7 py-3 rounded-full hover:bg-v-ink/80 transition-colors"
               >
-                Contact us directly
+                Email Ethan about BID partnerships →
               </a>
             </AnimatedSection>
             <AnimatedSection direction="right">

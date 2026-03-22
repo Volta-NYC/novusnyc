@@ -26,21 +26,21 @@ const SERVICES_BY_LANG: Record<Lang, string[]> = {
 };
 
 const COPY: Record<Lang, {
-  businessName: string; ownerName: string; email: string; neighborhood: string;
+  businessName: string; ownerName: string; email: string; phone: string; neighborhood: string;
   services: string; message: string; messagePlaceholder: string; submit: string;
   submitting: string; successTitle: string; successBody: string; errorMsg: string;
   footerNote: string; dir: "ltr" | "rtl";
 }> = {
-  en: { businessName: "Business Name *", ownerName: "Your Name *", email: "Email *", neighborhood: "Neighborhood", services: "What do you need help with?", message: "Tell us more", messagePlaceholder: "What's your biggest challenge right now?", submit: "Send Message", submitting: "Sending…", successTitle: "Got it. We'll be in touch.", successBody: "We'll review your submission and reach out within a few days.", errorMsg: "Something went wrong. Email us at info@voltanyc.org", footerNote: "We typically respond within 2–3 business days. Our services are 100% free.", dir: "ltr" },
-  es: { businessName: "Nombre del negocio *", ownerName: "Su nombre *", email: "Correo electrónico *", neighborhood: "Vecindario", services: "¿Con qué necesita ayuda?", message: "Cuéntenos más", messagePlaceholder: "¿Cuál es su mayor desafío ahora mismo?", submit: "Enviar mensaje", submitting: "Enviando…", successTitle: "Recibido. Nos pondremos en contacto.", successBody: "Revisaremos su solicitud y le responderemos en pocos días.", errorMsg: "Algo salió mal. Escríbanos a info@voltanyc.org", footerNote: "Generalmente respondemos en 2–3 días hábiles. Nuestros servicios son 100% gratuitos.", dir: "ltr" },
-  zh: { businessName: "商户名称 *", ownerName: "您的姓名 *", email: "电子邮件 *", neighborhood: "所在社区", services: "您需要哪方面的帮助？", message: "请告诉我们更多", messagePlaceholder: "您目前面临的最大挑战是什么？", submit: "发送消息", submitting: "发送中…", successTitle: "已收到。我们会尽快联系您。", successBody: "我们将审核您的提交，并在几天内回复您。", errorMsg: "出现错误。请发送邮件至 info@voltanyc.org", footerNote: "我们通常在 2–3 个工作日内回复。我们的服务完全免费。", dir: "ltr" },
-  ko: { businessName: "사업체명 *", ownerName: "성함 *", email: "이메일 *", neighborhood: "동네", services: "어떤 도움이 필요하신가요?", message: "더 알려주세요", messagePlaceholder: "현재 가장 어려운 점은 무엇인가요?", submit: "메시지 보내기", submitting: "전송 중…", successTitle: "접수되었습니다. 곧 연락드리겠습니다.", successBody: "제출하신 내용을 검토하고 며칠 내에 연락드리겠습니다.", errorMsg: "오류가 발생했습니다. info@voltanyc.org 으로 이메일 보내주세요.", footerNote: "보통 2–3 영업일 이내에 답변드립니다. 모든 서비스는 무료입니다.", dir: "ltr" },
-  ar: { businessName: "اسم النشاط التجاري *", ownerName: "اسمك *", email: "البريد الإلكتروني *", neighborhood: "الحي", services: "ما الذي تحتاج إلى مساعدة فيه؟", message: "أخبرنا المزيد", messagePlaceholder: "ما هو أكبر تحديك الآن؟", submit: "إرسال الرسالة", submitting: "جارٍ الإرسال…", successTitle: "تم الاستلام. سنتواصل معك قريبًا.", successBody: "سنراجع طلبك ونتواصل معك خلال أيام قليلة.", errorMsg: "حدث خطأ ما. راسلنا على info@voltanyc.org", footerNote: "نرد عادةً خلال 2–3 أيام عمل. خدماتنا مجانية 100%.", dir: "rtl" },
-  fr: { businessName: "Nom de l'entreprise *", ownerName: "Votre nom *", email: "E-mail *", neighborhood: "Quartier", services: "De quoi avez-vous besoin ?", message: "Dites-nous en plus", messagePlaceholder: "Quel est votre plus grand défi en ce moment ?", submit: "Envoyer le message", submitting: "Envoi en cours…", successTitle: "Reçu. Nous vous recontacterons.", successBody: "Nous examinerons votre demande et reviendrons vers vous dans quelques jours.", errorMsg: "Une erreur s'est produite. Écrivez-nous à info@voltanyc.org", footerNote: "Nous répondons généralement sous 2–3 jours ouvrés. Nos services sont 100% gratuits.", dir: "ltr" },
+  en: { businessName: "Business Name *", ownerName: "Your Name *", email: "Email *", phone: "Phone Number", neighborhood: "Neighborhood", services: "What do you need help with?", message: "Tell us more", messagePlaceholder: "What's your biggest challenge right now?", submit: "Send Message", submitting: "Sending…", successTitle: "Got it. We'll be in touch.", successBody: "We'll review your submission and reach out within a few days.", errorMsg: "Something went wrong. Email us at info@voltanyc.org", footerNote: "We typically respond within 2–3 business days. Our services are 100% free.", dir: "ltr" },
+  es: { businessName: "Nombre del negocio *", ownerName: "Su nombre *", email: "Correo electrónico *", phone: "Número de teléfono", neighborhood: "Vecindario", services: "¿Con qué necesita ayuda?", message: "Cuéntenos más", messagePlaceholder: "¿Cuál es su mayor desafío ahora mismo?", submit: "Enviar mensaje", submitting: "Enviando…", successTitle: "Recibido. Nos pondremos en contacto.", successBody: "Revisaremos su solicitud y le responderemos en pocos días.", errorMsg: "Algo salió mal. Escríbanos a info@voltanyc.org", footerNote: "Generalmente respondemos en 2–3 días hábiles. Nuestros servicios son 100% gratuitos.", dir: "ltr" },
+  zh: { businessName: "商户名称 *", ownerName: "您的姓名 *", email: "电子邮件 *", phone: "电话号码", neighborhood: "所在社区", services: "您需要哪方面的帮助？", message: "请告诉我们更多", messagePlaceholder: "您目前面临的最大挑战是什么？", submit: "发送消息", submitting: "发送中…", successTitle: "已收到。我们会尽快联系您。", successBody: "我们将审核您的提交，并在几天内回复您。", errorMsg: "出现错误。请发送邮件至 info@voltanyc.org", footerNote: "我们通常在 2–3 个工作日内回复。我们的服务完全免费。", dir: "ltr" },
+  ko: { businessName: "사업체명 *", ownerName: "성함 *", email: "이메일 *", phone: "전화번호", neighborhood: "동네", services: "어떤 도움이 필요하신가요?", message: "더 알려주세요", messagePlaceholder: "현재 가장 어려운 점은 무엇인가요?", submit: "메시지 보내기", submitting: "전송 중…", successTitle: "접수되었습니다. 곧 연락드리겠습니다.", successBody: "제출하신 내용을 검토하고 며칠 내에 연락드리겠습니다.", errorMsg: "오류가 발생했습니다. info@voltanyc.org 으로 이메일 보내주세요.", footerNote: "보통 2–3 영업일 이내에 답변드립니다. 모든 서비스는 무료입니다.", dir: "ltr" },
+  ar: { businessName: "اسم النشاط التجاري *", ownerName: "اسمك *", email: "البريد الإلكتروني *", phone: "رقم الهاتف", neighborhood: "الحي", services: "ما الذي تحتاج إلى مساعدة فيه؟", message: "أخبرنا المزيد", messagePlaceholder: "ما هو أكبر تحديك الآن؟", submit: "إرسال الرسالة", submitting: "جارٍ الإرسال…", successTitle: "تم الاستلام. سنتواصل معك قريبًا.", successBody: "سنراجع طلبك ونتواصل معك خلال أيام قليلة.", errorMsg: "حدث خطأ ما. راسلنا على info@voltanyc.org", footerNote: "نرد عادةً خلال 2–3 أيام عمل. خدماتنا مجانية 100%.", dir: "rtl" },
+  fr: { businessName: "Nom de l'entreprise *", ownerName: "Votre nom *", email: "E-mail *", phone: "Numéro de téléphone", neighborhood: "Quartier", services: "De quoi avez-vous besoin ?", message: "Dites-nous en plus", messagePlaceholder: "Quel est votre plus grand défi en ce moment ?", submit: "Envoyer le message", submitting: "Envoi en cours…", successTitle: "Reçu. Nous vous recontacterons.", successBody: "Nous examinerons votre demande et reviendrons vers vous dans quelques jours.", errorMsg: "Une erreur s'est produite. Écrivez-nous à info@voltanyc.org", footerNote: "Nous répondons généralement sous 2–3 jours ouvrés. Nos services sont 100% gratuits.", dir: "ltr" },
 };
 
 const EMPTY: ContactFormValues = {
-  businessName: "", name: "", email: "", neighborhood: "", services: [], message: "",
+  businessName: "", name: "", email: "", phone: "", neighborhood: "", services: [], message: "",
 };
 
 export default function ContactForm() {
@@ -90,6 +90,7 @@ export default function ContactForm() {
           businessName: formData.businessName,
           name:         formData.name,
           email:        formData.email,
+          phone:        formData.phone,
           neighborhood: formData.neighborhood,
           services:     englishServices,
           message:      formData.message,
@@ -157,7 +158,7 @@ export default function ContactForm() {
             {errors.name && <p className="text-red-500 text-xs mt-1 font-body">{errors.name}</p>}
           </div>
         </div>
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid md:grid-cols-3 gap-5">
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.email}</label>
             <input
@@ -167,6 +168,14 @@ export default function ContactForm() {
               className={`volta-input ${errors.email ? "border-red-400" : ""}`}
             />
             {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
+          </div>
+          <div>
+            <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.phone}</label>
+            <input
+              value={formData.phone}
+              onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+              className="volta-input"
+            />
           </div>
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.neighborhood}</label>
