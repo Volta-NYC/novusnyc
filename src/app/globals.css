@@ -204,19 +204,16 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.58);
-  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 120ms ease;
 }
 
 .members-copy-btn:hover {
-  border-color: rgba(133, 204, 23, 0.45);
   color: rgba(133, 204, 23, 0.95);
-  background: rgba(133, 204, 23, 0.12);
 }
 
 /* Form inputs */

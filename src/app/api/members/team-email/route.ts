@@ -7,7 +7,11 @@ type SendBody = {
   subject?: string;
   message?: string;
   contentMode?: "plain" | "html";
+  deliveryMode?: "to" | "cc" | "bcc";
   recipients?: string[];
+  toRecipients?: string[];
+  ccRecipients?: string[];
+  bccRecipients?: string[];
 };
 
 function normalizeEmail(email: string): string {
@@ -36,24 +40,43 @@ export async function POST(req: NextRequest) {
   const subject = (body.subject ?? "").trim();
   const message = (body.message ?? "").trim();
   const contentMode: "plain" | "html" = body.contentMode === "html" ? "html" : "plain";
+  const deliveryMode = body.deliveryMode === "to" || body.deliveryMode === "cc" ? body.deliveryMode : "bcc";
   const incoming = Array.isArray(body.recipients) ? body.recipients : [];
+  const incomingTo = Array.isArray(body.toRecipients) ? body.toRecipients : [];
+  const incomingCc = Array.isArray(body.ccRecipients) ? body.ccRecipients : [];
+  const incomingBcc = Array.isArray(body.bccRecipients) ? body.bccRecipients : [];
 
   if (!subject || !message) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  const deduped = Array.from(
-    new Set(
-      incoming
-        .map((email) => normalizeEmail(String(email ?? "")))
-        .filter((email) => email && isValidEmail(email))
-    )
-  );
+  const dedupeEmails = (emails: string[]) =>
+    Array.from(
+      new Set(
+        emails
+          .map((email) => normalizeEmail(String(email ?? "")))
+          .filter((email) => email && isValidEmail(email))
+      )
+    );
 
-  if (deduped.length === 0) {
+  const dedupedTo = dedupeEmails(incomingTo);
+  const dedupedCc = dedupeEmails(incomingCc);
+  const dedupedBcc = dedupeEmails(incomingBcc);
+
+  // Backward compatibility for existing callers that pass only "recipients".
+  if ((dedupedTo.length + dedupedCc.length + dedupedBcc.length) === 0 && incoming.length > 0) {
+    const fallbackRecipients = dedupeEmails(incoming);
+    if (deliveryMode === "to") dedupedTo.push(...fallbackRecipients);
+    else if (deliveryMode === "cc") dedupedCc.push(...fallbackRecipients);
+    else dedupedBcc.push(...fallbackRecipients);
+  }
+
+  const totalRecipients = dedupedTo.length + dedupedCc.length + dedupedBcc.length;
+
+  if (totalRecipients === 0) {
     return NextResponse.json({ error: "no_recipients" }, { status: 400 });
   }
-  if (deduped.length > 400) {
+  if (totalRecipients > 400) {
     return NextResponse.json({ error: "too_many_recipients" }, { status: 400 });
   }
 
@@ -87,12 +110,16 @@ export async function POST(req: NextRequest) {
     ? message
     : message.replace(/\n/g, "<br/>");
 
+  const fallbackToAddress = dedupedTo.length > 0 ? undefined : selectedFrom;
+
   try {
     await transporter.sendMail({
       from,
       sender: selectedFrom,
       replyTo,
-      bcc: deduped, // Using BCC for privacy so 65+ people don't get reply-all chained or see each other's emails
+      to: fallbackToAddress ?? dedupedTo,
+      cc: dedupedCc.length > 0 ? dedupedCc : undefined,
+      bcc: dedupedBcc.length > 0 ? dedupedBcc : undefined,
       subject,
       text: textBody,
       html: htmlBody,
@@ -104,7 +131,12 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    sent: deduped.length,
+    sent: totalRecipients,
+    counts: {
+      to: dedupedTo.length,
+      cc: dedupedCc.length,
+      bcc: dedupedBcc.length,
+    },
     failed: [],
     from: selectedFrom,
   });

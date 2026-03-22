@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, Field, Input, TextArea, Btn, AutocompleteTagInput, Empty,
+  PageHeader, Field, TextArea, Btn, AutocompleteTagInput, Empty,
 } from "@/components/members/ui";
 import { subscribeTeam, type TeamMember } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -13,12 +13,18 @@ const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ];
 
+type DeliveryMode = "to" | "cc" | "bcc";
+
 function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function isInactiveMember(member: TeamMember): boolean {
   return normalizeToken(member.status ?? "") === "inactive";
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 export default function MemberEmailPage() {
@@ -28,11 +34,11 @@ export default function MemberEmailPage() {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
   const [schools, setSchools] = useState<string[]>([]);
-  const [roles, setRoles] = useState<string[]>([]);
-  const [teams, setTeams] = useState<string[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deliveryModeById, setDeliveryModeById] = useState<Record<string, DeliveryMode>>({});
+  const [defaultNewRecipientMode, setDefaultNewRecipientMode] = useState<DeliveryMode>("bcc");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [contentMode, setContentMode] = useState<"plain" | "html">("plain");
@@ -43,15 +49,7 @@ export default function MemberEmailPage() {
 
   const divisionOptions = ["Tech", "Marketing", "Finance", "Other"];
   const schoolOptions = useMemo(
-    () => Array.from(new Set(team.map((m) => (m.school ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [team],
-  );
-  const roleOptions = useMemo(
-    () => Array.from(new Set(team.map((m) => (m.role ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [team],
-  );
-  const teamOptions = useMemo(
-    () => Array.from(new Set(team.map((m) => (m.pod ?? "").trim()).filter((v) => v && v !== "—"))).sort((a, b) => a.localeCompare(b)),
+    () => Array.from(new Set(team.map((member) => (member.school ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
     [team],
   );
 
@@ -60,45 +58,26 @@ export default function MemberEmailPage() {
   const filteredMembers = useMemo(
     () =>
       team.filter((member) => {
-        const memberDivisions = (member.divisions ?? []).map((d) => normalizeToken(d));
-        const selectedDivisions = divisions.map((d) => normalizeToken(d));
-        const selectedSchools = schools.map((s) => normalizeToken(s));
-        const selectedRoles = roles.map((r) => normalizeToken(r));
-        const selectedTeams = teams.map((t) => normalizeToken(t));
-        const divisionMatch = selectedDivisions.length === 0 || memberDivisions.some((d) => selectedDivisions.includes(d));
+        const memberDivisions = (member.divisions ?? []).map((division) => normalizeToken(division));
+        const selectedDivisions = divisions.map((division) => normalizeToken(division));
+        const selectedSchools = schools.map((school) => normalizeToken(school));
+        const divisionMatch = selectedDivisions.length === 0 || memberDivisions.some((division) => selectedDivisions.includes(division));
         const schoolMatch = selectedSchools.length === 0 || selectedSchools.includes(normalizeToken(member.school ?? ""));
-        const roleMatch = selectedRoles.length === 0 || selectedRoles.includes(normalizeToken(member.role ?? ""));
-        const teamMatch = selectedTeams.length === 0 || selectedTeams.includes(normalizeToken(member.pod ?? ""));
         const searchable = [
           member.name,
           member.email,
           member.alternateEmail,
           member.school,
           member.grade,
-          member.role,
-          member.pod,
           member.status,
           ...(member.divisions ?? []),
         ]
           .map((value) => String(value ?? "").toLowerCase())
           .join(" ");
         const textMatch = !normalizedSearch || searchable.includes(normalizedSearch);
-        return divisionMatch && schoolMatch && roleMatch && teamMatch && textMatch;
+        return divisionMatch && schoolMatch && textMatch;
       }),
-    [team, divisions, schools, roles, teams, normalizedSearch],
-  );
-
-  const selectedEmails = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          filteredMembers
-            .filter((member) => selectedIds.includes(member.id) && !isInactiveMember(member))
-            .map((member) => (member.email ?? "").trim().toLowerCase())
-            .filter(Boolean),
-        ),
-      ),
-    [filteredMembers, selectedIds],
+    [team, divisions, schools, normalizedSearch],
   );
 
   const selectableFilteredMembers = useMemo(
@@ -106,27 +85,78 @@ export default function MemberEmailPage() {
     [filteredMembers],
   );
 
+  const selectedRecipients = useMemo(() => {
+    const selectedSet = new Set(selectedIds);
+    return filteredMembers
+      .filter((member) => selectedSet.has(member.id) && !isInactiveMember(member))
+      .map((member) => {
+        const email = normalizeEmail(member.email ?? "");
+        const mode = deliveryModeById[member.id] ?? "bcc";
+        return { id: member.id, email, mode, name: member.name };
+      })
+      .filter((item) => !!item.email);
+  }, [deliveryModeById, filteredMembers, selectedIds]);
+
+  const toRecipients = useMemo(
+    () => Array.from(new Set(selectedRecipients.filter((recipient) => recipient.mode === "to").map((recipient) => recipient.email))),
+    [selectedRecipients],
+  );
+  const ccRecipients = useMemo(
+    () => Array.from(new Set(selectedRecipients.filter((recipient) => recipient.mode === "cc").map((recipient) => recipient.email))),
+    [selectedRecipients],
+  );
+  const bccRecipients = useMemo(
+    () => Array.from(new Set(selectedRecipients.filter((recipient) => recipient.mode === "bcc").map((recipient) => recipient.email))),
+    [selectedRecipients],
+  );
+
   useEffect(() => {
     setSelectedIds((prev) =>
       prev.filter((id) => {
         const member = team.find((entry) => entry.id === id);
         return !!member && !isInactiveMember(member);
-      })
+      }),
     );
   }, [team]);
 
   const toggleSelected = (id: string, checked: boolean) => {
     setSelectedIds((prev) => {
-      if (checked) return prev.includes(id) ? prev : [...prev, id];
+      if (checked) {
+        if (!deliveryModeById[id]) {
+          setDeliveryModeById((current) => ({ ...current, [id]: defaultNewRecipientMode }));
+        }
+        return prev.includes(id) ? prev : [...prev, id];
+      }
       return prev.filter((value) => value !== id);
+    });
+  };
+
+  const setRecipientMode = (id: string, mode: DeliveryMode) => {
+    setDeliveryModeById((prev) => ({ ...prev, [id]: mode }));
+  };
+
+  const setModeForSelected = (mode: DeliveryMode) => {
+    setDeliveryModeById((prev) => {
+      const next = { ...prev };
+      selectedIds.forEach((id) => {
+        next[id] = mode;
+      });
+      return next;
     });
   };
 
   const selectAllFiltered = () => {
     setSelectedIds((prev) => {
-      const set = new Set(prev);
-      selectableFilteredMembers.forEach((member) => set.add(member.id));
-      return Array.from(set);
+      const next = new Set(prev);
+      selectableFilteredMembers.forEach((member) => next.add(member.id));
+      return Array.from(next);
+    });
+    setDeliveryModeById((prev) => {
+      const next = { ...prev };
+      selectableFilteredMembers.forEach((member) => {
+        if (!next[member.id]) next[member.id] = defaultNewRecipientMode;
+      });
+      return next;
     });
   };
 
@@ -140,7 +170,8 @@ export default function MemberEmailPage() {
       setStatus("Please add a subject and message.");
       return;
     }
-    if (selectedEmails.length === 0) {
+    const totalRecipients = toRecipients.length + ccRecipients.length + bccRecipients.length;
+    if (totalRecipients === 0) {
       setStatus("No recipients selected.");
       return;
     }
@@ -148,6 +179,7 @@ export default function MemberEmailPage() {
       setStatus("Not authenticated.");
       return;
     }
+
     setSending(true);
     setStatus("Sending…");
     try {
@@ -163,20 +195,29 @@ export default function MemberEmailPage() {
           subject: subject.trim(),
           message: message.trim(),
           contentMode,
-          recipients: selectedEmails,
+          toRecipients,
+          ccRecipients,
+          bccRecipients,
         }),
       });
       if (!response.ok) {
         setStatus("Could not send email.");
         return;
       }
-      const payload = await response.json() as { sent?: number; failed?: string[]; from?: string };
+      const payload = await response.json() as {
+        sent?: number;
+        failed?: string[];
+        from?: string;
+        counts?: { to?: number; cc?: number; bcc?: number };
+      };
       const sentCount = payload.sent ?? 0;
       const failedCount = payload.failed?.length ?? 0;
+      const counts = payload.counts ?? {};
+      const breakdown = `To ${counts.to ?? toRecipients.length} · CC ${counts.cc ?? ccRecipients.length} · BCC ${counts.bcc ?? bccRecipients.length}`;
       setStatus(
         failedCount > 0
-          ? `Sent from ${payload.from ?? fromAddress} to ${sentCount}. Failed: ${failedCount}.`
-          : `Sent from ${payload.from ?? fromAddress} to ${sentCount} members.`,
+          ? `Sent from ${payload.from ?? fromAddress} to ${sentCount}. Failed: ${failedCount}. ${breakdown}`
+          : `Sent from ${payload.from ?? fromAddress} to ${sentCount}. ${breakdown}`,
       );
     } catch {
       setStatus("Could not send email.");
@@ -194,9 +235,11 @@ export default function MemberEmailPage() {
     );
   }
 
+  const totalSelected = toRecipients.length + ccRecipients.length + bccRecipients.length;
+
   return (
     <MembersLayout>
-      <PageHeader title="Member Email" subtitle="Filter recipients, then send one message to all selected members." />
+      <PageHeader title="Member Email" subtitle="Find recipients quickly, choose To/CC/BCC, and send in one flow." />
 
       <div className="space-y-4">
         <div className="grid md:grid-cols-2 gap-3">
@@ -216,91 +259,120 @@ export default function MemberEmailPage() {
               placeholder="Type school…"
             />
           </Field>
-          <Field label="Role">
-            <AutocompleteTagInput
-              values={roles}
-              onChange={setRoles}
-              options={roleOptions}
-              placeholder="Type role…"
-            />
-          </Field>
-          <Field label="Team">
-            <AutocompleteTagInput
-              values={teams}
-              onChange={setTeams}
-              options={teamOptions}
-              placeholder="Type team…"
-            />
-          </Field>
         </div>
 
-        <Field label="Search Members">
-          <Input
-            value={memberSearch}
-            onChange={(e) => setMemberSearch(e.target.value)}
-            placeholder="Search name, email, school, team, role, track, grade..."
-          />
-        </Field>
+        <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
+          <div className="flex flex-col gap-3">
+            <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">Recipients</label>
 
-        <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <p className="text-xs text-white/55">
-              {selectedEmails.length} selected · {filteredMembers.length} in current filter
-              {filteredMembers.length !== selectableFilteredMembers.length ? ` · ${filteredMembers.length - selectableFilteredMembers.length} inactive` : ""}
-            </p>
-            <div className="flex gap-2">
-              <Btn size="sm" variant="secondary" onClick={selectAllFiltered}>Select filtered</Btn>
-              <Btn size="sm" variant="ghost" onClick={clearFiltered}>Clear filtered</Btn>
+            <div className="relative">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                placeholder="Search members by name, email, school, grade, or track…"
+                className="w-full h-12 rounded-xl border border-white/10 bg-[#0F1014] pl-11 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#85CC17]/45"
+              />
             </div>
-          </div>
-          <div className="max-h-56 overflow-y-auto border border-white/8 rounded-lg">
-            <table className="w-full text-xs">
-              <thead className="bg-[#141821] sticky top-0">
-                <tr>
-                  <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
-                  <th className="text-left px-3 py-2 text-white/45">Name</th>
-                  <th className="text-left px-3 py-2 text-white/45">Primary Email</th>
-                  <th className="text-left px-3 py-2 text-white/45">School</th>
-                  <th className="text-left px-3 py-2 text-white/45">Team</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredMembers.map((member) => {
-                  const checked = selectedIds.includes(member.id);
-                  const inactive = isInactiveMember(member);
-                  return (
-                    <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={checked && !inactive}
-                          onChange={(e) => toggleSelected(member.id, e.target.checked)}
-                          disabled={inactive}
-                          className="members-checkbox"
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-white/75">
-                        {member.name}
-                        {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
-                      </td>
-                      <td className="px-3 py-2 text-white/65 font-mono">{member.email || "—"}</td>
-                      <td className="px-3 py-2 text-white/45">{member.school || "—"}</td>
-                      <td className="px-3 py-2 text-white/45">{member.pod || "—"}</td>
-                    </tr>
-                  );
-                })}
-                {filteredMembers.length === 0 && (
+
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="text-white/55">
+                {totalSelected} selected · {filteredMembers.length} in current filter
+                {filteredMembers.length !== selectableFilteredMembers.length ? ` · ${filteredMembers.length - selectableFilteredMembers.length} inactive` : ""}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-white/40">New recipients as:</span>
+                <select
+                  value={defaultNewRecipientMode}
+                  onChange={(e) => setDefaultNewRecipientMode((e.target.value as DeliveryMode) || "bcc")}
+                  className="h-8 rounded-lg border border-white/10 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                >
+                  <option value="to">To</option>
+                  <option value="cc">CC</option>
+                  <option value="bcc">BCC (recommended)</option>
+                </select>
+                <Btn size="sm" variant="secondary" onClick={selectAllFiltered}>Select filtered</Btn>
+                <Btn size="sm" variant="ghost" onClick={clearFiltered}>Clear filtered</Btn>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Btn size="sm" variant="secondary" onClick={() => setModeForSelected("to")}>Set selected: To</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => setModeForSelected("cc")}>Set selected: CC</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => setModeForSelected("bcc")}>Set selected: BCC</Btn>
+              <span className="ml-auto text-white/50 self-center">
+                To {toRecipients.length} · CC {ccRecipients.length} · BCC {bccRecipients.length}
+              </span>
+            </div>
+
+            <div className="max-h-[420px] overflow-y-auto border border-white/8 rounded-lg">
+              <table className="w-full text-xs">
+                <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
-                    <td colSpan={5} className="px-3 py-4 text-center text-white/35">No members in this filter/search.</td>
+                    <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
+                    <th className="text-left px-3 py-2 text-white/45">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45">Primary Email</th>
+                    <th className="text-left px-3 py-2 text-white/45">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[90px]">Mode</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredMembers.map((member) => {
+                    const checked = selectedIds.includes(member.id);
+                    const inactive = isInactiveMember(member);
+                    const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
+                    return (
+                      <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={checked && !inactive}
+                            onChange={(e) => toggleSelected(member.id, e.target.checked)}
+                            disabled={inactive}
+                            className="members-checkbox"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-white/75">
+                          {member.name}
+                          {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
+                        </td>
+                        <td className="px-3 py-2 text-white/65 font-mono">{member.email || "—"}</td>
+                        <td className="px-3 py-2 text-white/45">{member.school || "—"}</td>
+                        <td className="px-3 py-2">
+                          <select
+                            value={mode}
+                            onChange={(e) => setRecipientMode(member.id, (e.target.value as DeliveryMode) || "bcc")}
+                            disabled={!checked || inactive}
+                            className="h-8 w-full rounded-md border border-white/10 bg-[#0F1014] px-2 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 disabled:opacity-50"
+                          >
+                            <option value="to">To</option>
+                            <option value="cc">CC</option>
+                            <option value="bcc">BCC</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredMembers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-white/35">No members in this filter/search.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         <Field label="Subject" required>
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+          <input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+          />
         </Field>
         <Field label="Send from" required>
           <select
@@ -342,12 +414,13 @@ export default function MemberEmailPage() {
           <Btn
             variant="primary"
             onClick={sendEmail}
-            disabled={sending || selectedEmails.length === 0}
+            disabled={sending || totalSelected === 0}
           >
-            {sending ? "Sending..." : `Send Emails (${selectedEmails.length})`}
+            {sending ? "Sending..." : `Send Emails (${totalSelected})`}
           </Btn>
         </div>
       </div>
     </MembersLayout>
   );
 }
+
