@@ -37,7 +37,6 @@ type ShowcaseColorValue =
   | "red-soft"
   | "red-mid"
   | "red-deep";
-const SHOWCASE_STATUSES = ["In Progress", "Active", "Upcoming"];
 const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; swatch: string }> = [
   { value: "blue-soft", label: "Blue · Soft", swatch: "#93C5FD" },
   { value: "blue-mid", label: "Blue · Mid", swatch: "#3B82F6" },
@@ -253,7 +252,6 @@ type BusinessExportRow = {
   showcaseFeaturedOnHome: boolean;
   showcaseName: string;
   showcaseType: string;
-  showcaseStatus: string;
   showcaseServices: string[];
   showcaseDescription: string;
   showcaseUrl: string;
@@ -288,7 +286,6 @@ const BUSINESS_EXPORT_HEADERS: Array<keyof BusinessExportRow> = [
   "showcaseFeaturedOnHome",
   "showcaseName",
   "showcaseType",
-  "showcaseStatus",
   "showcaseServices",
   "showcaseDescription",
   "showcaseUrl",
@@ -325,7 +322,6 @@ function toBusinessExportRow(business: Business): BusinessExportRow {
     showcaseFeaturedOnHome: !!business.showcaseFeaturedOnHome,
     showcaseName: business.showcaseName ?? "",
     showcaseType: business.showcaseType ?? "",
-    showcaseStatus: business.showcaseStatus ?? "",
     showcaseServices: business.showcaseServices ?? [],
     showcaseDescription: business.showcaseDescription ?? "",
     showcaseUrl: business.showcaseUrl ?? "",
@@ -358,7 +354,6 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   showcaseType: "Digital & Tech",
   showcaseNeighborhood: "",
   showcaseServices: [],
-  showcaseStatus: "In Progress",
   showcaseDescription: "",
   showcaseUrl: "",
   showcaseImageUrl: "",
@@ -476,7 +471,6 @@ export default function BusinessesPage() {
       showcaseType: DIVISION_PUBLIC_LABEL[b.division ?? "Tech"] ?? "Digital & Tech",
       showcaseNeighborhood: b.neighborhood ?? b.showcaseNeighborhood ?? "",
       showcaseServices: (b.showcaseServices && b.showcaseServices.length > 0) ? [b.showcaseServices[0]] : [],
-      showcaseStatus: b.showcaseStatus ?? "In Progress",
       showcaseDescription: b.showcaseDescription ?? "",
       showcaseUrl: b.showcaseUrl ?? "",
       showcaseImageUrl: b.showcaseImageUrl ?? "",
@@ -695,7 +689,6 @@ export default function BusinessesPage() {
       payload.showcaseType = DIVISION_PUBLIC_LABEL[form.division ?? "Tech"] ?? "Digital & Tech";
       payload.showcaseNeighborhood = neighborhood;
       payload.showcaseServices = showcaseServices;
-      payload.showcaseStatus = (form.showcaseStatus as Business["showcaseStatus"]) ?? "In Progress";
       payload.showcaseDescription = (form.showcaseDescription ?? "").trim();
       payload.showcaseUrl = (form.showcaseUrl ?? "").trim();
       payload.showcaseImageUrl = (form.showcaseImageUrl ?? "").trim();
@@ -717,7 +710,7 @@ export default function BusinessesPage() {
         showcaseType: showcaseEnabled ? payload.showcaseType : (null as unknown as string),
         showcaseNeighborhood: showcaseEnabled ? payload.showcaseNeighborhood : (null as unknown as string),
         showcaseServices: showcaseEnabled ? payload.showcaseServices : (null as unknown as string[]),
-        showcaseStatus: showcaseEnabled ? payload.showcaseStatus : (null as unknown as Business["showcaseStatus"]),
+        showcaseStatus: null as unknown as Business["showcaseStatus"],
         showcaseDescription: showcaseEnabled ? payload.showcaseDescription : (null as unknown as string),
         showcaseUrl: showcaseEnabled ? payload.showcaseUrl : (null as unknown as string),
         showcaseImageUrl: showcaseEnabled ? payload.showcaseImageUrl : (null as unknown as string),
@@ -825,7 +818,6 @@ export default function BusinessesPage() {
           showcaseType: "",
           showcaseNeighborhood: neighborhood,
           showcaseServices: [],
-          showcaseStatus: "In Progress",
           showcaseDescription: "",
           showcaseUrl: "",
           showcaseImageUrl: "",
@@ -1696,9 +1688,6 @@ export default function BusinessesPage() {
                     );
                   })}
                 </div>
-              </Field>
-              <Field label="Card Status">
-                <Select options={SHOWCASE_STATUSES} value={form.showcaseStatus ?? "In Progress"} onChange={e => setField("showcaseStatus", e.target.value)} />
               </Field>
               <div className="col-span-2">
                 <Field label="Image">

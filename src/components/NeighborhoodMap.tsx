@@ -18,7 +18,7 @@ export interface MapProject {
   borough?: string;
   lat?: number;
   lng?: number;
-  status: "Active" | "In Progress" | "Upcoming";
+  status: "Ongoing" | "Upcoming" | "Completed";
   url?: string;
   colorClass: string;
   source?: "business" | "bid";

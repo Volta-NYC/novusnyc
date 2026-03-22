@@ -59,6 +59,15 @@ const NeighborhoodMap = nextDynamic(() => import("@/components/NeighborhoodMap")
   ),
 });
 
+type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
+
+function normalizeProjectDisplayStatus(value: string): ProjectDisplayStatus {
+  const key = value.trim();
+  if (key === "Completed" || key === "Complete") return "Completed";
+  if (key === "Ongoing" || key === "Active" || key === "In Progress") return "Ongoing";
+  return "Upcoming";
+}
+
 export default async function Showcase() {
   const publicShowcase = await getPublicShowcaseCards();
   const publicMapEntries = await getPublicMapEntries();
@@ -68,7 +77,7 @@ export default async function Showcase() {
       type: card.type,
       neighborhood: card.neighborhood,
       services: card.services,
-      status: card.status,
+      status: normalizeProjectDisplayStatus(card.status),
       colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
       desc: card.desc,
       url: card.url,
@@ -80,7 +89,7 @@ export default async function Showcase() {
       type: project.type,
       neighborhood: project.neighborhood,
       services: project.services,
-      status: project.status,
+      status: normalizeProjectDisplayStatus(project.status),
       colorClass: project.color,
       desc: project.desc,
       url: project.url,
@@ -116,7 +125,7 @@ export default async function Showcase() {
       borough: entry.borough,
       lat: entry.lat,
       lng: entry.lng,
-      status: entry.status,
+      status: normalizeProjectDisplayStatus(entry.status),
       url: entry.url,
       colorClass,
       source: entry.source,
@@ -240,9 +249,9 @@ export default async function Showcase() {
                       </div>
                       <span
                         className={`tag text-xs flex-shrink-0 ${
-                          p.status === "Active"
+                          p.status === "Completed"
                             ? "bg-lime-100 text-lime-700"
-                            : p.status === "In Progress"
+                            : p.status === "Ongoing"
                             ? "bg-blue-100 text-blue-700"
                             : "bg-v-border text-v-muted"
                         }`}

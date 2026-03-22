@@ -2,7 +2,7 @@ import "server-only";
 
 import { getAdminDB } from "@/lib/firebaseAdmin";
 
-export type PublicShowcaseStatus = "In Progress" | "Active" | "Upcoming";
+export type PublicShowcaseStatus = "Ongoing" | "Upcoming" | "Completed";
 export type PublicShowcaseColor =
   | "blue-soft"
   | "blue-mid"
@@ -134,17 +134,12 @@ function defaultShowcaseColor(): PublicShowcaseColor {
   return "blue-mid";
 }
 
-function normalizeStatusFromShowcase(value: unknown): PublicShowcaseStatus | null {
-  const key = asText(value);
-  if (key === "In Progress" || key === "Active" || key === "Upcoming") return key;
-  return null;
-}
-
 function mapBusinessStatusToShowcase(value: unknown): PublicShowcaseStatus {
   const key = asText(value);
-  if (key === "Ongoing" || key === "Active" || key === "Completed" || key === "Complete") return "Active";
+  if (key === "Completed" || key === "Complete") return "Completed";
+  if (key === "Ongoing" || key === "Active" || key === "In Progress") return "Ongoing";
   if (key === "Upcoming" || key === "Not Started" || key === "Discovery" || key === "On Hold") return "Upcoming";
-  return "In Progress";
+  return "Upcoming";
 }
 
 function defaultServicesFromDivision(value: unknown): string[] {
@@ -201,8 +196,8 @@ function compareMapEntries(a: PublicMapEntry, b: PublicMapEntry): number {
 
 function mapBidStatusToShowcase(value: unknown): PublicShowcaseStatus {
   const key = asText(value);
-  if (key === "Active Partner") return "Active";
-  if (key === "In Conversation" || key === "Outreach") return "In Progress";
+  if (key === "Active Partner") return "Ongoing";
+  if (key === "In Conversation" || key === "Outreach") return "Upcoming";
   return "Upcoming";
 }
 
@@ -357,9 +352,9 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
     const services = asStringArray(row.showcaseServices);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
-    const status = normalizeStatusFromShowcase(row.showcaseStatus) ?? mapBusinessStatusToShowcase(row.projectStatus);
+    const status = mapBusinessStatusToShowcase(row.projectStatus);
     const desc = normalizeDescription(row.showcaseDescription);
-    const url = asText(row.showcaseUrl) || asText(row.website) || "";
+    const url = asText(row.showcaseUrl);
     const imageUrl = asText(row.showcaseImageData) || asText(row.showcaseImageUrl);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
@@ -421,8 +416,8 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
       const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
       const services = asStringArray(row.showcaseServices);
       const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
-      const status = normalizeStatusFromShowcase(row.showcaseStatus) ?? mapBusinessStatusToShowcase(row.projectStatus);
-      const url = asText(row.showcaseUrl) || asText(row.website) || "";
+      const status = mapBusinessStatusToShowcase(row.projectStatus);
+      const url = asText(row.showcaseUrl);
       const color = asText(row.showcaseColor)
         ? normalizeColor(row.showcaseColor)
         : defaultShowcaseColor();
