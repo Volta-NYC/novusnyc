@@ -214,12 +214,6 @@ export const aboutValues = [
 
 export const aboutTimeline = [
   {
-    month: "Apr",
-    year: "2025",
-    label: "Florida branch founded",
-    desc: "Volta begins working with local businesses, food trucks, and nonprofits in the Jacksonville area.",
-  },
-  {
     month: "Nov",
     year: "2025",
     label: "NYC branch launched",
