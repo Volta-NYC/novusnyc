@@ -214,7 +214,7 @@ function mapZoomSaveError(code: string): string {
     return "Could not save zoom link: sign in again and retry.";
   }
   if (code.includes("forbidden")) {
-    return "Could not save zoom link: your account is missing admin/project lead permissions.";
+    return "Could not save zoom link: your account is missing admin permissions.";
   }
   if (code.includes("db_patch_failed")) {
     return "Could not save zoom link: server could not write interviewSettings in Firebase.";
@@ -377,9 +377,9 @@ function InterviewsContent() {
   const recurringSyncInFlightRef = useRef(false);
   const evalCleanupTriggeredRef = useRef(false);
 
-  const canAccessInterviews = authRole === "admin" || authRole === "project_lead" || authRole === "interviewer";
-  const canDeleteInterviews = authRole === "admin" || authRole === "project_lead";
-  const canEditZoom = authRole === "admin" || authRole === "project_lead";
+  const canAccessInterviews = authRole === "admin" || authRole === "interviewer";
+  const canDeleteInterviews = authRole === "admin";
+  const canEditZoom = authRole === "admin";
 
   useEffect(() => {
     if (!loading && !canAccessInterviews) {
@@ -671,7 +671,7 @@ function InterviewsContent() {
   }, [teamMembers, user]);
 
   const canViewResumeForSlot = useCallback((slot: InterviewSlot): boolean => {
-    // Admins and project leads can always see resumes
+    // Admins can always see resumes
     if (canDeleteInterviews) return true;
     // Interviewers can only see resumes for slots they are assigned to
     if (authRole !== "interviewer") return false;

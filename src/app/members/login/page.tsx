@@ -19,7 +19,7 @@ export default function MembersLogin() {
     setLoading(true);
     try {
       await signIn(email.trim().toLowerCase(), password);
-      router.replace("/members/projects");
+      router.replace("/members");
     } catch (err: unknown) {
       const msg = (err as { code?: string })?.code;
       if (msg === "auth/invalid-credential" || msg === "auth/wrong-password" || msg === "auth/user-not-found") {

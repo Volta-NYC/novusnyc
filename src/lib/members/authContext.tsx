@@ -6,6 +6,14 @@ import { ref, get } from "firebase/database";
 import { getAuth, getDB } from "@/lib/firebase";
 import { setUserProfileRecord, type UserProfile, type AuthRole } from "@/lib/members/storage";
 
+function normalizeAuthRole(value: unknown): AuthRole {
+  const raw = String(value ?? "").trim();
+  if (raw === "admin") return "admin";
+  if (raw === "interviewer") return "interviewer";
+  // Legacy cleanup: project_lead now maps to member.
+  return "member";
+}
+
 // ── CONTEXT TYPE ──────────────────────────────────────────────────────────────
 
 interface AuthContextValue {
@@ -48,7 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (profileSnap.exists()) {
               const profile = profileSnap.val() as Omit<UserProfile, "id">;
-              setUserProfile({ ...profile, id: firebaseUser.uid });
+              const normalizedRole = normalizeAuthRole(profile.authRole);
+              setUserProfile({ ...profile, id: firebaseUser.uid, authRole: normalizedRole });
+              if (profile.authRole !== normalizedRole) {
+                await setUserProfileRecord(firebaseUser.uid, {
+                  ...profile,
+                  authRole: normalizedRole,
+                });
+              }
             } else {
               // First login: create a profile record in the database.
               const newProfile: UserProfile = {

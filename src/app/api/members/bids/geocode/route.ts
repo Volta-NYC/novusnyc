@@ -98,7 +98,7 @@ async function geocodeWithNominatim(query: string): Promise<{ lat: number; lng: 
 }
 
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin", "project_lead"]);
+  const verified = await verifyCaller(req, ["admin"]);
   if (!verified.ok) {
     return NextResponse.json({ error: verified.error }, { status: verified.status });
   }

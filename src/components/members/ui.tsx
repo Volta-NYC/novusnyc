@@ -42,7 +42,6 @@ const BADGE_COLORS: Record<string, string> = {
   Low:    "bg-gray-500/15 text-gray-400 border-gray-500/20",
   // auth role
   admin:        "bg-red-500/15 text-red-400 border-red-500/20",
-  project_lead: "bg-blue-500/15 text-blue-400 border-blue-500/20",
   interviewer:  "bg-cyan-500/15 text-cyan-300 border-cyan-500/20",
   member:       "bg-green-500/15 text-green-400 border-green-500/20",
   viewer:       "bg-gray-500/15 text-gray-400 border-gray-500/20",

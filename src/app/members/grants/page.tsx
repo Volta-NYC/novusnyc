@@ -48,7 +48,7 @@ export default function GrantsPage() {
   const { authRole, userProfile } = useAuth();
   const router = useRouter();
 
-  const canManageAll = authRole === "admin" || authRole === "project_lead";
+  const canManageAll = authRole === "admin";
   const isContributorRole = authRole === "member" || authRole === "interviewer";
   const myName = userProfile?.name ?? "";
 
@@ -59,7 +59,7 @@ export default function GrantsPage() {
     (isContributorRole && myName !== "" && grant.assignedResearcher.toLowerCase() === myName.toLowerCase());
 
   useEffect(() => {
-    if (authRole && authRole !== "admin" && authRole !== "project_lead") {
+    if (authRole && authRole !== "admin") {
       router.replace("/members/projects");
     }
   }, [authRole, router]);

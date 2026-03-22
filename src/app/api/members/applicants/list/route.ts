@@ -134,7 +134,7 @@ function normalizeApplication(
 }
 
 export async function GET(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin", "project_lead", "interviewer"]);
+  const verified = await verifyCaller(req, ["admin", "interviewer"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const [applicationsData, slotsData, teamData] = await Promise.all([

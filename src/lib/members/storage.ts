@@ -248,7 +248,7 @@ export interface Project {
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
 
-export type AuthRole = "admin" | "project_lead" | "interviewer" | "member";
+export type AuthRole = "admin" | "interviewer" | "member";
 
 export interface UserProfile {
   id: string;       // Firebase Auth UID, set to the snapshot key by snapToList
@@ -502,6 +502,13 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
     createdAt,
     updatedAt,
   };
+}
+
+function normalizeAuthRoleValue(value: unknown): AuthRole {
+  const raw = String(value ?? "").trim();
+  if (raw === "admin") return "admin";
+  if (raw === "interviewer") return "interviewer";
+  return "member";
 }
 
 // ── REAL-TIME SUBSCRIBERS ─────────────────────────────────────────────────────
@@ -827,7 +834,22 @@ export async function deleteProject(id: string): Promise<void> {
 
 // ── UserProfiles (admin only) ─────────────────────────────────────────────────
 
-export const subscribeUserProfiles = makeSubscriber<UserProfile>("userProfiles");
+export function subscribeUserProfiles(callback: (items: UserProfile[]) => void): (() => void) {
+  const database = getDB();
+  if (!database) {
+    callback([]);
+    return () => {};
+  }
+  const dbRef = ref(database, "userProfiles");
+  const handler = onValue(dbRef, (snap) => {
+    const list = snapToList<UserProfile>(snap).map((row) => ({
+      ...row,
+      authRole: normalizeAuthRoleValue(row.authRole),
+    }));
+    callback(list);
+  });
+  return () => off(dbRef, "value", handler);
+}
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
   const db = getDB();
@@ -848,6 +870,7 @@ export async function setUserProfileRecord(uid: string, data: Omit<UserProfile, 
   const before = await get(profileRef);
   const beforeData = before.exists() ? (before.val() as Omit<UserProfile, "id">) : null;
   const merged = beforeData ? { ...beforeData, ...data } : data;
+  merged.authRole = normalizeAuthRoleValue(merged.authRole);
   await set(profileRef, merged);
   await writeAuditLog(db, {
     action: before.exists() ? "update" : "create",
@@ -897,7 +920,10 @@ export async function getUserProfilesList(): Promise<UserProfile[]> {
   const db = getDB();
   if (!db) return [];
   const snap = await get(ref(db, "userProfiles"));
-  return snapToList<UserProfile>(snap);
+  return snapToList<UserProfile>(snap).map((row) => ({
+    ...row,
+    authRole: normalizeAuthRoleValue(row.authRole),
+  }));
 }
 
 export async function getTeamMembersList(): Promise<TeamMember[]> {
@@ -916,20 +942,39 @@ export async function getAuditLogsList(): Promise<AuditLogEntry[]> {
 
 // ── InviteCodes ───────────────────────────────────────────────────────────────
 
-export const subscribeInviteCodes = makeSubscriber<InviteCode>("inviteCodes");
+export function subscribeInviteCodes(callback: (items: InviteCode[]) => void): (() => void) {
+  const database = getDB();
+  if (!database) {
+    callback([]);
+    return () => {};
+  }
+  const dbRef = ref(database, "inviteCodes");
+  const handler = onValue(dbRef, (snap) => {
+    const list = snapToList<InviteCode>(snap).map((row) => ({
+      ...row,
+      role: normalizeAuthRoleValue(row.role),
+    }));
+    callback(list);
+  });
+  return () => off(dbRef, "value", handler);
+}
 
 export async function createInviteCode(data: Omit<InviteCode, "id">): Promise<void> {
   const db = getDB();
   if (!db) return;
   // Store at inviteCodes/{code} so the signup page can read a single code without
   // needing to list the entire collection (which requires admin auth).
-  await set(ref(db, `inviteCodes/${data.code}`), data);
+  const normalizedData = {
+    ...data,
+    role: normalizeAuthRoleValue(data.role),
+  };
+  await set(ref(db, `inviteCodes/${data.code}`), normalizedData);
   await writeAuditLog(db, {
     action: "create",
     collection: "inviteCodes",
     recordId: data.code,
     details: {
-      role: data.role,
+      role: normalizedData.role,
       expiresAt: data.expiresAt,
       source: data.source ?? "manual",
       multiUse: data.multiUse !== false,
@@ -945,7 +990,12 @@ export async function getInviteCodeByValue(code: string): Promise<InviteCode | n
   if (!db) return null;
   const snap = await get(ref(db, `inviteCodes/${code}`));
   if (!snap.exists()) return null;
-  return { ...snap.val(), id: code } as InviteCode;
+  const row = snap.val() as InviteCode;
+  return {
+    ...row,
+    id: code,
+    role: normalizeAuthRoleValue(row.role),
+  };
 }
 
 export async function updateInviteCode(id: string, data: Partial<InviteCode>): Promise<void> {
@@ -975,7 +1025,10 @@ export async function getInviteCodes(): Promise<InviteCode[]> {
   const db = getDB();
   if (!db) return [];
   const snap = await get(ref(db, "inviteCodes"));
-  return snapToList<InviteCode>(snap);
+  return snapToList<InviteCode>(snap).map((row) => ({
+    ...row,
+    role: normalizeAuthRoleValue(row.role),
+  }));
 }
 
 // ── CalendarEvents ────────────────────────────────────────────────────────────

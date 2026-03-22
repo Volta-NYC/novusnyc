@@ -188,7 +188,7 @@ export default function TeamPage() {
 
   const { ask, Dialog } = useConfirm();
   const { authRole } = useAuth();
-  const canEdit = authRole === "admin" || authRole === "project_lead";
+  const canEdit = authRole === "admin";
   const isMemberRestricted = authRole === "member";
 
   // Subscribe to real-time team updates; unsubscribe on unmount.

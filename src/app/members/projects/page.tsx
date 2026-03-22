@@ -484,7 +484,7 @@ export default function BusinessesPage() {
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
-  const canEdit = authRole === "admin" || authRole === "project_lead";
+  const canEdit = authRole === "admin";
 
   useEffect(
     () =>

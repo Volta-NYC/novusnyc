@@ -109,7 +109,7 @@ function AccessCodesTab({ uid }: { uid: string }) {
         <div className="flex flex-wrap gap-3 items-end">
           <Field label="Role">
             <Select
-              options={["member", "interviewer", "project_lead", "admin"]}
+              options={["member", "interviewer", "admin"]}
               value={newRole}
               onChange={e => setNewRole(e.target.value as AuthRole)}
             />
@@ -201,7 +201,6 @@ function UsersTab() {
           >
             <option value="member">member</option>
             <option value="interviewer">interviewer</option>
-            <option value="project_lead">project_lead</option>
             <option value="admin">admin</option>
           </select>,
           <span key="active" className={`text-xs font-medium ${user.active ? "text-green-400" : "text-red-400"}`}>

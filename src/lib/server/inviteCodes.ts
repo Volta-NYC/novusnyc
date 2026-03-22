@@ -1,7 +1,7 @@
 import { dbPatch, dbRead } from "@/lib/server/adminApi";
 import { getAdminDB } from "@/lib/firebaseAdmin";
 
-type AuthRole = "admin" | "project_lead" | "interviewer" | "member";
+type AuthRole = "admin" | "interviewer" | "member";
 
 type InviteCodeRecord = {
   code?: string;

@@ -214,9 +214,9 @@ export default function ApplicantsPage() {
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
-  const canEdit = authRole === "admin" || authRole === "project_lead";
+  const canEdit = authRole === "admin";
   const canDelete = authRole === "admin";
-  const canManageStatus = authRole === "admin" || authRole === "interviewer" || authRole === "project_lead";
+  const canManageStatus = authRole === "admin" || authRole === "interviewer";
   const canView = canEdit || authRole === "interviewer";
   const isInterviewerOnly = authRole === "interviewer" && !canEdit;
 
@@ -331,7 +331,7 @@ export default function ApplicantsPage() {
 
   // Check if the current interviewer can view the resume for a specific applicant
   const canViewResumeForApp = useCallback((app: ApplicationRecord): boolean => {
-    // Admins and project leads can view all resumes
+    // Admins can view all resumes
     if (canEdit) return true;
     // Interviewers can only view resumes of applicants who booked in their assigned slots
     if (isInterviewerOnly) {

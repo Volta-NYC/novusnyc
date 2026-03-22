@@ -315,10 +315,10 @@ interface PopupPosition { top: number; left: number; }
 export default function CalendarPage() {
   const { user, authRole } = useAuth();
   const router = useRouter();
-  const canEdit = authRole === "admin" || authRole === "project_lead";
+  const canEdit = authRole === "admin";
 
   useEffect(() => {
-    if (authRole && authRole !== "admin" && authRole !== "project_lead") {
+    if (authRole && authRole !== "admin") {
       router.replace("/members/projects");
     }
   }, [authRole, router]);
@@ -437,7 +437,7 @@ export default function CalendarPage() {
           description: `${t.assignedTo} · ${t.status}`,
           isTask:      true,
         })),
-      // Booked interview slots (admin + project_lead)
+      // Booked interview slots (admin)
       ...(canEdit ? interviewSlots
         .filter(s => !!s.bookedBy)
         .map((s): DisplayEvent => {

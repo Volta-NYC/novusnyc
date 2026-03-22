@@ -16,6 +16,12 @@ type VerifyResult =
   | { ok: true; caller: VerifiedCaller }
   | { ok: false; status: number; error: string };
 
+function normalizeCallerRole(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (raw === "project_lead") return "member";
+  return raw;
+}
+
 function toDbUrl(path: string, idToken?: string): string {
   if (!DB_URL) throw new Error("no_db");
   const cleanPath = path.replace(/^\/+|\/+$/g, "");
@@ -121,7 +127,7 @@ export async function verifyCaller(
       const email = decoded.email ?? "";
       const name = decoded.name ?? "";
       const roleSnap = await adminDb.ref(`userProfiles/${uid}/authRole`).get();
-      const role = roleSnap.exists() ? String(roleSnap.val()) : "";
+      const role = normalizeCallerRole(roleSnap.exists() ? String(roleSnap.val()) : "");
       if (!allowedRoles.includes(role)) {
         return { ok: false, status: 403, error: "forbidden" };
       }
@@ -142,7 +148,7 @@ export async function verifyCaller(
   let role = "";
   try {
     const roleData = await dbRead(`userProfiles/${caller.uid}/authRole`, idToken);
-    role = typeof roleData === "string" ? roleData : "";
+    role = normalizeCallerRole(typeof roleData === "string" ? roleData : "");
   } catch {
     return { ok: false, status: 403, error: "forbidden" };
   }

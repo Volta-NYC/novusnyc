@@ -14,82 +14,93 @@ import { type AuthRole } from "@/lib/members/storage";
 type NavItem = {
   href: string;
   label: string;
-  minRole?: AuthRole;   // if set, only users with this role or higher can see this item
-  visibleTo?: AuthRole[]; // if set, only these roles can see this item
   icon: React.ReactNode;
 };
 
 // ── NAV ITEM LIST ─────────────────────────────────────────────────────────────
 
-const NAV_ITEMS: NavItem[] = [
+const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/projects",
-    label: "Project Library",
+    label: "Projects",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
   },
   {
-    href: "/members/calendar",
-    label: "Calendar",
-    minRole: "project_lead",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  },
-  {
-    href: "/members/email",
-    label: "Email",
-    minRole: "project_lead",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>,
-  },
-  {
     href: "/members/bids",
-    label: "BID Tracker",
+    label: "BIDs",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   },
   {
-    href: "/members/grants",
-    label: "Grant Library",
-    minRole: "project_lead",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+    href: "/members/team",
+    label: "Members",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   },
   {
-    href: "/members/team",
-    label: "Member Directory",
+    href: "/members/applicants",
+    label: "Applicants",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   },
   {
     href: "/members/interviews",
     label: "Interviews",
-    visibleTo: ["admin", "project_lead", "interviewer"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>,
   },
   {
-    href: "/members/applicants",
-    label: "Applicants",
-    minRole: "project_lead",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    href: "/members/email",
+    label: "Emails",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  },
+  {
+    href: "/members/calendar",
+    label: "Calendar",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  },
+  {
+    href: "/members/grants",
+    label: "Grant Library",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
   },
   {
     href: "/members/admin",
     label: "Admin",
-    minRole: "admin",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
   },
 ];
 
-// ── ROLE HELPERS ──────────────────────────────────────────────────────────────
+const INTERVIEWER_NAV_ITEMS: NavItem[] = [
+  {
+    href: "/members/dashboard",
+    label: "Dashboard",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
+  },
+  {
+    href: "/members/interviews",
+    label: "Interviews",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>,
+  },
+];
 
-// Converts a role string to a numeric level so we can compare roles.
-function rolePriority(role: AuthRole | null): number {
-  if (role === "admin") return 3;
-  if (role === "project_lead") return 2;
-  if (role === "interviewer") return 1;
-  return 1; // "member" or null
+const MEMBER_NAV_ITEMS: NavItem[] = [
+  {
+    href: "/members/dashboard",
+    label: "Dashboard",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
+  },
+];
+
+function getDefaultMembersPath(role: AuthRole | null): string {
+  if (role === "admin") return "/members/projects";
+  return "/members/dashboard";
 }
 
-// Returns true if the user's role meets the minimum required for this nav item.
-function canViewNavItem(item: NavItem, userRole: AuthRole | null): boolean {
-  if (item.visibleTo) return userRole ? item.visibleTo.includes(userRole) : false;
-  if (!item.minRole) return true;
-  return rolePriority(userRole) >= rolePriority(item.minRole);
+function getNavItemsForRole(role: AuthRole | null): NavItem[] {
+  if (role === "admin") return ADMIN_NAV_ITEMS;
+  if (role === "interviewer") return INTERVIEWER_NAV_ITEMS;
+  return MEMBER_NAV_ITEMS;
+}
+
+function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
+  return allowedRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
 // ── INNER LAYOUT (has access to AuthContext) ──────────────────────────────────
@@ -111,6 +122,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     }
   }, [loading, user, userProfile, router]);
 
+  const visibleNavItems = getNavItemsForRole(authRole);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    const allowedRoots = visibleNavItems.map((item) => item.href);
+    if (!isAllowedPath(pathname, allowedRoots)) {
+      router.replace(getDefaultMembersPath(authRole));
+    }
+  }, [authRole, loading, pathname, router, user, visibleNavItems]);
+
   const handleSignOut = async () => {
     await signOut();
     router.replace("/members/login");
@@ -125,11 +146,9 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     );
   }
 
-  const visibleNavItems = NAV_ITEMS.filter(item => canViewNavItem(item, authRole));
   const memberDisplayName = userProfile?.name || user.email?.split("@")[0] || "Member";
   const memberRoleLabel =
     authRole === "admin" ? "Admin" :
-    authRole === "project_lead" ? "Project Lead" :
     authRole === "interviewer" ? "Interviewer" :
     "Member";
 
@@ -151,8 +170,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         <div className="px-4 py-4 border-b border-white/6 flex items-center gap-2.5">
           <Image src="/logo.png" alt="Volta" width={28} height={28} className="object-contain" />
           <div>
-            <p className="font-display font-bold text-white text-sm leading-none">VOLTA NYC</p>
-            <p className="font-body text-[10px] text-white/30 mt-0.5">Members Portal</p>
+            <p className="font-display font-bold text-[#85CC17] text-sm leading-none">VOLTA</p>
+            <p className="font-body text-[10px] text-white mt-0.5">Members Portal</p>
           </div>
         </div>
 

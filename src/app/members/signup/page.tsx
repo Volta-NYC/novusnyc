@@ -181,7 +181,7 @@ export default function SignupPage() {
       });
     } catch { /* non-fatal */ }
 
-    router.replace("/members/projects");
+    router.replace("/members");
   };
 
   return (

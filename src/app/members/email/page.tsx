@@ -23,7 +23,7 @@ function isInactiveMember(member: TeamMember): boolean {
 
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
-  const canUseEmail = authRole === "admin" || authRole === "project_lead";
+  const canUseEmail = authRole === "admin";
 
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
@@ -188,7 +188,7 @@ export default function MemberEmailPage() {
   if (!canUseEmail) {
     return (
       <MembersLayout>
-        <PageHeader title="Member Email" subtitle="Project lead or admin access required" />
+        <PageHeader title="Member Email" subtitle="Admin access required" />
         <Empty message="You do not have permission to use bulk member email." />
       </MembersLayout>
     );
