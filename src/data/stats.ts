@@ -4,9 +4,9 @@ export interface VoltaStat {
 }
 
 export const VOLTA_STATS = {
-  businessesServed: { value: 40, suffix: "+" } satisfies VoltaStat,
+  businessesServed: { value: 60, suffix: "+" } satisfies VoltaStat,
   nycNeighborhoods: { value: 12, suffix: "+" } satisfies VoltaStat,
-  studentMembers: { value: 150, suffix: "+" } satisfies VoltaStat,
+  studentMembers: { value: 175, suffix: "+" } satisfies VoltaStat,
   serviceTracks: { value: 3, suffix: "" } satisfies VoltaStat,
   bidPartners: { value: 12, suffix: "" } satisfies VoltaStat,
   floridaBusinessesServed: { value: 40, suffix: "+" } satisfies VoltaStat,
