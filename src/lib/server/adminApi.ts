@@ -109,6 +109,20 @@ export async function dbPush(path: string, data: Record<string, unknown>, idToke
   if (!res.ok) throw new Error("db_write_failed");
 }
 
+export async function dbDelete(path: string, idToken?: string): Promise<void> {
+  const adminDb = getAdminDB();
+  if (adminDb) {
+    await adminDb.ref(path).remove();
+    return;
+  }
+
+  const res = await fetch(toDbUrl(path, idToken), {
+    method: "DELETE",
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("db_delete_failed");
+}
+
 export async function verifyCaller(
   req: NextRequest,
   allowedRoles: string[]

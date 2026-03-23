@@ -19,10 +19,6 @@ import {
   useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeFinanceAssignments,
-  createFinanceAssignment,
-  updateFinanceAssignment,
-  deleteFinanceAssignment,
   subscribeTeam,
   type FinanceAssignment,
   type TeamMember,
@@ -78,8 +74,10 @@ export default function FinanceAssignmentsPage() {
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<FinanceAssignment | null>(null);
   const [form, setForm] = useState(BLANK_FORM);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { ask, Dialog } = useConfirm();
-  const { authRole } = useAuth();
+  const { authRole, user } = useAuth();
   const router = useRouter();
 
   const canEdit = authRole === "admin";
@@ -90,8 +88,38 @@ export default function FinanceAssignmentsPage() {
     }
   }, [authRole, router]);
 
-  useEffect(() => subscribeFinanceAssignments(setAssignments), []);
   useEffect(() => subscribeTeam(setTeam), []);
+
+  const fetchAssignments = async () => {
+    if (!user) return;
+    setLoadingAssignments(true);
+    setLoadError(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/finance-assignments", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        setAssignments([]);
+        setLoadError("Could not load assignments.");
+        return;
+      }
+      const data = await res.json() as { assignments?: FinanceAssignment[] };
+      setAssignments(Array.isArray(data.assignments) ? data.assignments : []);
+    } catch {
+      setAssignments([]);
+      setLoadError("Could not load assignments.");
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user || !canEdit) return;
+    void fetchAssignments();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, canEdit]);
 
   const memberNameOptions = useMemo(
     () =>
@@ -170,11 +198,32 @@ export default function FinanceAssignmentsPage() {
       notes: String(form.notes ?? "").trim(),
     };
 
+    if (!user) return;
+    const token = await user.getIdToken();
+
     if (editingAssignment) {
-      await updateFinanceAssignment(editingAssignment.id, payload);
+      await fetch("/api/members/finance-assignments", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: editingAssignment.id,
+          patch: payload,
+        }),
+      });
     } else {
-      await createFinanceAssignment(payload);
+      await fetch("/api/members/finance-assignments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
     }
+    await fetchAssignments();
     setModal(null);
   };
 
@@ -209,14 +258,16 @@ export default function FinanceAssignmentsPage() {
       <Dialog />
 
       <PageHeader
-        title="Finance Assignments"
+        title="Assignments"
         subtitle={`${filtered.length} shown · ${assignments.length} total assignments`}
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn> : undefined}
       />
 
-      <p className="text-sm text-white/50 mb-4">
-        Track long-form finance workstreams (reports + business case studies), including team members, deadlines, and publication progress.
-      </p>
+      {(loadingAssignments || loadError) && (
+        <p className={`text-xs mb-3 ${loadError ? "text-red-300" : "text-white/45"}`}>
+          {loadError ?? "Loading assignments..."}
+        </p>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <StatCard label="Reports" value={reportCount} color="text-blue-300" />
@@ -272,7 +323,15 @@ export default function FinanceAssignmentsPage() {
                   size="sm"
                   variant="danger"
                   onClick={() => ask(
-                    async () => deleteFinanceAssignment(item.id),
+                    async () => {
+                      if (!user) return;
+                      const token = await user.getIdToken();
+                      await fetch(`/api/members/finance-assignments?id=${encodeURIComponent(item.id)}`, {
+                        method: "DELETE",
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      await fetchAssignments();
+                    },
                     `Delete "${item.title}"? This cannot be undone.`
                   )}
                 >

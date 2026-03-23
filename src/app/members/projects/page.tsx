@@ -1515,7 +1515,7 @@ export default function BusinessesPage() {
       <Dialog />
 
       <PageHeader
-        title="Business Projects"
+        title="Projects"
         subtitle={`${filtered.length} shown · ${businesses.length} total projects`}
         action={
           canEdit ? (
