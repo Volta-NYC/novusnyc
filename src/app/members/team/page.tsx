@@ -6,7 +6,7 @@ import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm, AutocompleteInput,
 } from "@/components/members/ui";
 import {
-  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, type TeamMember, type UserProfile, type Business,
+  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, type TeamMember, type UserProfile, type Business, type FinanceAssignment,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -65,6 +65,15 @@ type ImportedMember = {
   school: string;
   grade: string;
   track: TrackKey;
+};
+
+type MemberAssignmentLink = {
+  id: string;
+  kind: "Business Project" | "Finance Assignment";
+  title: string;
+  status: string;
+  deadline: string;
+  href: string;
 };
 
 function normalizeText(v: string): string {
@@ -174,6 +183,7 @@ function parseTrack(raw: string): TrackKey {
 export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
   const [businesses, setBusinesses]   = useState<Business[]>([]);
+  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -182,6 +192,7 @@ export default function TeamPage() {
   const [showAlternateEmail, setShowAlternateEmail] = useState(false);
   const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>([{ col: 0, dir: "asc" }]);
   const [showSortPanel, setShowSortPanel] = useState(false);
+  const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -194,6 +205,7 @@ export default function TeamPage() {
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
 
   const copyText = async (value: string) => {
@@ -563,15 +575,88 @@ export default function TeamPage() {
     return keys;
   }, [businesses]);
 
+  const activeFinanceAssignedNameKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const assignment of financeAssignments) {
+      const status = normalizeKey(assignment.status ?? "");
+      const isActiveFinanceAssignment = status !== "completed";
+      if (!isActiveFinanceAssignment) continue;
+      for (const rawName of assignment.assignedMemberNames ?? []) {
+        const key = normalizeKey(rawName ?? "");
+        if (key) keys.add(key);
+      }
+    }
+    return keys;
+  }, [financeAssignments]);
+
+  const assignmentsByMemberName = useMemo(() => {
+    const map = new Map<string, MemberAssignmentLink[]>();
+    const pushForMember = (memberName: string, item: MemberAssignmentLink) => {
+      const key = normalizeKey(memberName);
+      if (!key) return;
+      const current = map.get(key) ?? [];
+      current.push(item);
+      map.set(key, current);
+    };
+
+    for (const business of businesses) {
+      const status = String(business.projectStatus ?? "").trim() || "—";
+      const entry: MemberAssignmentLink = {
+        id: business.id,
+        kind: "Business Project",
+        title: business.name || "Untitled Project",
+        status,
+        deadline: "—",
+        href: `/members/projects#project-${business.id}`,
+      };
+      const assignedNames = [...(business.teamMembers ?? []), business.teamLead ?? ""]
+        .map((name) => String(name ?? "").trim())
+        .filter(Boolean);
+      for (const memberName of assignedNames) pushForMember(memberName, entry);
+    }
+
+    for (const assignment of financeAssignments) {
+      const deadline = assignment.deadline || assignment.finalDueDate || assignment.firstDraftDueDate || assignment.interviewDueDate || "—";
+      const entry: MemberAssignmentLink = {
+        id: assignment.id,
+        kind: "Finance Assignment",
+        title: assignment.title || "Untitled Assignment",
+        status: assignment.status || "—",
+        deadline,
+        href: `/members/projects/finance#finance-assignment-${assignment.id}`,
+      };
+      for (const memberName of assignment.assignedMemberNames ?? []) pushForMember(memberName, entry);
+    }
+
+    for (const [key, items] of Array.from(map.entries())) {
+      map.set(
+        key,
+        items
+          .slice()
+          .sort((a, b) => {
+            if (a.kind !== b.kind) return a.kind.localeCompare(b.kind);
+            return a.title.localeCompare(b.title);
+          }),
+      );
+    }
+    return map;
+  }, [businesses, financeAssignments]);
+
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
     if (normalizeKey(member.status ?? "") === "inactive") {
       return { colorClass: "bg-red-400", label: "Inactive" };
     }
-    if (activeProjectAssignedNameKeys.has(normalizeKey(member.name ?? ""))) {
-      return { colorClass: "bg-emerald-400", label: "Assigned to active project" };
+    const memberKey = normalizeKey(member.name ?? "");
+    if (activeProjectAssignedNameKeys.has(memberKey) || activeFinanceAssignedNameKeys.has(memberKey)) {
+      return { colorClass: "bg-emerald-400", label: "Assigned to active project or finance assignment" };
     }
-    return { colorClass: "bg-yellow-400", label: "Not assigned to active project" };
+    return { colorClass: "bg-yellow-400", label: "Not assigned to active project or finance assignment" };
   };
+
+  const selectedMemberAssignments = useMemo(() => {
+    if (!assignmentDetailMember) return [];
+    return assignmentsByMemberName.get(normalizeKey(assignmentDetailMember.name ?? "")) ?? [];
+  }, [assignmentDetailMember, assignmentsByMemberName]);
 
   return (
     <MembersLayout>
@@ -606,7 +691,7 @@ export default function TeamPage() {
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
         <div className="flex items-center gap-3 text-[10px] text-white/55">
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Active project</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Active assignment</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Not assigned</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-400" /> Inactive</span>
         </div>
@@ -685,7 +770,13 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                        <button
+                          type="button"
+                          className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
+                          title={`${indicator.label} · Click for assignments`}
+                          onClick={() => setAssignmentDetailMember(member)}
+                          aria-label={`View assignments for ${member.name}`}
+                        />
                         <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
@@ -758,7 +849,13 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                        <button
+                          type="button"
+                          className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
+                          title={`${indicator.label} · Click for assignments`}
+                          onClick={() => setAssignmentDetailMember(member)}
+                          aria-label={`View assignments for ${member.name}`}
+                        />
                         <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
@@ -831,6 +928,38 @@ export default function TeamPage() {
           action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first member</Btn> : undefined}
         />
       )}
+
+      <Modal
+        open={!!assignmentDetailMember}
+        onClose={() => setAssignmentDetailMember(null)}
+        title={`Assignments · ${assignmentDetailMember?.name ?? ""}`}
+      >
+        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-2">
+          {selectedMemberAssignments.length === 0 ? (
+            <p className="text-sm text-white/45">No project assignments found for this member.</p>
+          ) : (
+            selectedMemberAssignments.map((item) => (
+              <a
+                key={`${item.kind}-${item.id}`}
+                href={item.href}
+                className="block rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 hover:border-[#85CC17]/45 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-white/90 font-medium">{item.title}</p>
+                    <p className="text-[11px] text-white/45 mt-0.5">{item.kind}</p>
+                  </div>
+                  <span className="text-[10px] text-white/50 whitespace-nowrap">{item.deadline !== "—" ? `Due ${item.deadline}` : "No deadline"}</span>
+                </div>
+                <p className="text-[11px] text-white/55 mt-1">Status: {item.status || "—"}</p>
+              </a>
+            ))
+          )}
+        </div>
+        <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setAssignmentDetailMember(null)}>Close</Btn>
+        </div>
+      </Modal>
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingMember ? "Edit Member" : "New Member"}>

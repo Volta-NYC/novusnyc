@@ -259,6 +259,7 @@ export interface FinanceAssignment {
   region: string;
   assignedMemberNames: string[]; // may be undefined if Firebase omitted empty array
   assignedMemberIds?: string[];  // may be undefined if Firebase omitted empty array
+  deadline?: string;
   interviewDueDate?: string;
   firstDraftDueDate?: string;
   finalDueDate?: string;

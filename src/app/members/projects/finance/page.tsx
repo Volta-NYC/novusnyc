@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import ProjectsTabs from "@/components/members/ProjectsTabs";
 import {
   PageHeader,
   SearchBar,
@@ -41,6 +40,7 @@ const BLANK_FORM: Omit<FinanceAssignment, "id" | "createdAt" | "updatedAt"> = {
   region: "",
   assignedMemberNames: [],
   assignedMemberIds: [],
+  deadline: "",
   interviewDueDate: "",
   firstDraftDueDate: "",
   finalDueDate: "",
@@ -56,6 +56,9 @@ function normalizeDateForSort(value: string | undefined): number {
 }
 
 function formatDeadlineLabel(item: FinanceAssignment): string {
+  if (item.deadline) {
+    return `Deadline: ${item.deadline}`;
+  }
   if (item.type === "Report") {
     const first = item.firstDraftDueDate ? `Draft: ${item.firstDraftDueDate}` : "";
     const final = item.finalDueDate ? `Final: ${item.finalDueDate}` : "";
@@ -131,6 +134,7 @@ export default function FinanceAssignmentsPage() {
       region: item.region ?? "",
       assignedMemberNames: item.assignedMemberNames ?? [],
       assignedMemberIds: item.assignedMemberIds ?? [],
+      deadline: item.deadline ?? "",
       interviewDueDate: item.interviewDueDate ?? "",
       firstDraftDueDate: item.firstDraftDueDate ?? "",
       finalDueDate: item.finalDueDate ?? "",
@@ -158,6 +162,7 @@ export default function FinanceAssignmentsPage() {
       region: String(form.region ?? "").trim(),
       assignedMemberNames: normalizedMemberNames,
       assignedMemberIds: normalizedMemberIds,
+      deadline: String(form.deadline ?? "").trim(),
       interviewDueDate: String(form.interviewDueDate ?? "").trim(),
       firstDraftDueDate: String(form.firstDraftDueDate ?? "").trim(),
       finalDueDate: String(form.finalDueDate ?? "").trim(),
@@ -208,7 +213,6 @@ export default function FinanceAssignmentsPage() {
         subtitle={`${filtered.length} shown · ${assignments.length} total assignments`}
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn> : undefined}
       />
-      <ProjectsTabs />
 
       <p className="text-sm text-white/50 mb-4">
         Track long-form finance workstreams (reports + business case studies), including team members, deadlines, and publication progress.
@@ -246,7 +250,7 @@ export default function FinanceAssignmentsPage() {
         rows={filtered.map((item) => [
           <span key="type" className="text-white/80">{item.type}</span>,
           <div key="assignment" className="min-w-[240px]">
-            <p className="text-white font-medium">{item.title}</p>
+            <p id={`finance-assignment-${item.id}`} className="text-white font-medium">{item.title}</p>
             <p className="text-xs text-white/45">{item.topic}</p>
           </div>,
           <div key="team" className="min-w-[170px]">
@@ -370,6 +374,14 @@ export default function FinanceAssignmentsPage() {
               />
             </Field>
           )}
+
+          <Field label="Primary Deadline">
+            <Input
+              type="date"
+              value={form.deadline ?? ""}
+              onChange={(event) => setField("deadline", event.target.value)}
+            />
+          </Field>
 
           <Field label="Final Due Date">
             <Input

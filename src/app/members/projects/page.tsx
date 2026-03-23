@@ -2,7 +2,6 @@
 
 import { Fragment, useState, useEffect, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import ProjectsTabs from "@/components/members/ProjectsTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
   Empty, StatCard, AutocompleteInput, useConfirm,
@@ -1278,7 +1277,7 @@ export default function BusinessesPage() {
     const trackAssignments = getTrackAssignments(b);
 
     return (
-      <tr key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
+      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
         <td className="px-2 py-1.5 text-[11px] text-white/90 whitespace-nowrap max-w-[220px] truncate" title={b.name}>
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-flex items-center gap-1">
@@ -1516,7 +1515,7 @@ export default function BusinessesPage() {
       <Dialog />
 
       <PageHeader
-        title="Projects"
+        title="Business Projects"
         subtitle={`${filtered.length} shown · ${businesses.length} total projects`}
         action={
           canEdit ? (
@@ -1528,7 +1527,6 @@ export default function BusinessesPage() {
           ) : undefined
         }
       />
-      <ProjectsTabs />
       <p className="text-xs text-white/45 mb-4">
         <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
         <span className="mx-2">·</span>
