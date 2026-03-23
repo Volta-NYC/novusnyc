@@ -196,6 +196,16 @@ export default function TeamPage() {
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
 
+  const copyText = async (value: string) => {
+    const safe = value.trim();
+    if (!safe) return;
+    try {
+      await navigator.clipboard.writeText(safe);
+    } catch {
+      // no-op
+    }
+  };
+
   // Generic field updater used by all form inputs.
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -756,13 +766,27 @@ export default function TeamPage() {
                       </div>
                     </td>
                     <td className="px-2 py-1.5 whitespace-nowrap">
-                      <div className="font-mono">
+                      <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
                         <span
                           className="text-white/55 block truncate"
                           title={[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}
                         >
                           {[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}
                         </span>
+                        {(member.email || member.alternateEmail) && (
+                          <button
+                            type="button"
+                            className="members-copy-btn"
+                            onClick={() => void copyText(member.email || member.alternateEmail || "")}
+                            title="Copy email"
+                            aria-label="Copy email"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                              <rect x="9" y="9" width="11" height="11" rx="2" />
+                              <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="px-2 py-1.5 whitespace-nowrap">

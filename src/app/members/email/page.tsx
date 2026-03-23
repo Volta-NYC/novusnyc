@@ -5,7 +5,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, Field, TextArea, Btn, AutocompleteTagInput, Empty,
 } from "@/components/members/ui";
-import { subscribeTeam, type TeamMember } from "@/lib/members/storage";
+import { subscribeTeam, subscribeBusinesses, type TeamMember, type Business } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
@@ -17,6 +17,15 @@ type DeliveryMode = "to" | "cc" | "bcc";
 
 function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function getMemberTrack(member: TeamMember): "Tech" | "Marketing" | "Finance" | "Other" | "—" {
+  const divisions = member.divisions ?? [];
+  if (divisions.includes("Tech")) return "Tech";
+  if (divisions.includes("Marketing")) return "Marketing";
+  if (divisions.includes("Finance")) return "Finance";
+  if (divisions.includes("Other") || divisions.includes("Outreach")) return "Other";
+  return "—";
 }
 
 function isInactiveMember(member: TeamMember): boolean {
@@ -32,13 +41,14 @@ export default function MemberEmailPage() {
   const canUseEmail = authRole === "admin";
 
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
   const [schools, setSchools] = useState<string[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deliveryModeById, setDeliveryModeById] = useState<Record<string, DeliveryMode>>({});
-  const [defaultNewRecipientMode, setDefaultNewRecipientMode] = useState<DeliveryMode>("bcc");
+  const [defaultNewRecipientMode, setDefaultNewRecipientMode] = useState<DeliveryMode>("to");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [contentMode, setContentMode] = useState<"plain" | "html">("plain");
@@ -46,6 +56,30 @@ export default function MemberEmailPage() {
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeBusinesses(setBusinesses), []);
+
+  const activeProjectAssignedNameKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const business of businesses) {
+      const status = normalizeToken(business.projectStatus ?? "");
+      const isActiveProject = status === "ongoing" || status === "active";
+      if (!isActiveProject) continue;
+      const assigned = [...(business.teamMembers ?? []), business.teamLead ?? ""];
+      for (const raw of assigned) {
+        const key = normalizeToken(String(raw ?? ""));
+        if (key) keys.add(key);
+      }
+    }
+    return keys;
+  }, [businesses]);
+
+  const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
+    if (isInactiveMember(member)) return { colorClass: "bg-red-400", label: "Inactive" };
+    if (activeProjectAssignedNameKeys.has(normalizeToken(member.name ?? ""))) {
+      return { colorClass: "bg-emerald-400", label: "Assigned to active project" };
+    }
+    return { colorClass: "bg-yellow-400", label: "Not assigned to active project" };
+  };
 
   const divisionOptions = ["Tech", "Marketing", "Finance", "Other"];
   const schoolOptions = useMemo(
@@ -91,11 +125,11 @@ export default function MemberEmailPage() {
       .filter((member) => selectedSet.has(member.id) && !isInactiveMember(member))
       .map((member) => {
         const email = normalizeEmail(member.email ?? "");
-        const mode = deliveryModeById[member.id] ?? "bcc";
+        const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
         return { id: member.id, email, mode, name: member.name };
       })
       .filter((item) => !!item.email);
-  }, [deliveryModeById, filteredMembers, selectedIds]);
+  }, [defaultNewRecipientMode, deliveryModeById, filteredMembers, selectedIds]);
 
   const toRecipients = useMemo(
     () => Array.from(new Set(selectedRecipients.filter((recipient) => recipient.mode === "to").map((recipient) => recipient.email))),
@@ -287,12 +321,12 @@ export default function MemberEmailPage() {
                 <span className="text-white/40">New recipients as:</span>
                 <select
                   value={defaultNewRecipientMode}
-                  onChange={(e) => setDefaultNewRecipientMode((e.target.value as DeliveryMode) || "bcc")}
+                  onChange={(e) => setDefaultNewRecipientMode((e.target.value as DeliveryMode) || "to")}
                   className="h-8 rounded-lg border border-white/10 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
                 >
                   <option value="to">To</option>
                   <option value="cc">CC</option>
-                  <option value="bcc">BCC (recommended)</option>
+                  <option value="bcc">BCC</option>
                 </select>
                 <Btn size="sm" variant="secondary" onClick={selectAllFiltered}>Select filtered</Btn>
                 <Btn size="sm" variant="ghost" onClick={clearFiltered}>Clear filtered</Btn>
@@ -315,6 +349,7 @@ export default function MemberEmailPage() {
                     <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
                     <th className="text-left px-3 py-2 text-white/45">Name</th>
                     <th className="text-left px-3 py-2 text-white/45">Primary Email</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>
                     <th className="text-left px-3 py-2 text-white/45">School</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[90px]">Mode</th>
                   </tr>
@@ -323,6 +358,8 @@ export default function MemberEmailPage() {
                   {filteredMembers.map((member) => {
                     const checked = selectedIds.includes(member.id);
                     const inactive = isInactiveMember(member);
+                    const indicator = getMemberIndicator(member);
+                    const track = getMemberTrack(member);
                     const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
                     return (
                       <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
@@ -336,15 +373,19 @@ export default function MemberEmailPage() {
                           />
                         </td>
                         <td className="px-3 py-2 text-white/75">
-                          {member.name}
+                          <span className="inline-flex items-center gap-2 min-w-0">
+                            <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                            <span className="truncate">{member.name}</span>
+                          </span>
                           {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
                         </td>
                         <td className="px-3 py-2 text-white/65 font-mono">{member.email || "—"}</td>
+                        <td className="px-3 py-2 text-white/55">{track}</td>
                         <td className="px-3 py-2 text-white/45">{member.school || "—"}</td>
                         <td className="px-3 py-2">
                           <select
                             value={mode}
-                            onChange={(e) => setRecipientMode(member.id, (e.target.value as DeliveryMode) || "bcc")}
+                            onChange={(e) => setRecipientMode(member.id, (e.target.value as DeliveryMode) || "to")}
                             disabled={!checked || inactive}
                             className="h-8 w-full rounded-md border border-white/10 bg-[#0F1014] px-2 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 disabled:opacity-50"
                           >
@@ -358,7 +399,7 @@ export default function MemberEmailPage() {
                   })}
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-6 text-center text-white/35">No members in this filter/search.</td>
+                      <td colSpan={6} className="px-3 py-6 text-center text-white/35">No members in this filter/search.</td>
                     </tr>
                   )}
                 </tbody>
@@ -423,4 +464,3 @@ export default function MemberEmailPage() {
     </MembersLayout>
   );
 }
-
