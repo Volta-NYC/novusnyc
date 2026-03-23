@@ -1488,7 +1488,7 @@ export default function BusinessesPage() {
                         <button
                           type="button"
                           onClick={() => removeTeamMember(track, member)}
-                          className="text-white/30 hover:text-red-400 transition-colors"
+                          className="h-7 w-7 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center"
                           aria-label={`Remove ${member}`}
                         >
                           ×
@@ -1731,7 +1731,7 @@ export default function BusinessesPage() {
               ) : (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-white/15 text-white/40 hover:text-red-300 hover:border-red-300/40 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  className="h-8 w-8 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
                   onClick={() => {
                     setField("ownerAlternateEmail", "");
                     setShowOwnerAltEmail(false);
@@ -1771,7 +1771,7 @@ export default function BusinessesPage() {
               ) : (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-white/15 text-white/40 hover:text-red-300 hover:border-red-300/40 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  className="h-8 w-8 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
                   onClick={() => {
                     setField("alternatePhone", "");
                     setShowAlternatePhone(false);

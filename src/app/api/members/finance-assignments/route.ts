@@ -7,6 +7,20 @@ function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeAssignmentType(value: unknown): "Report" | "Case Study" | "Grant" {
+  const raw = asText(value);
+  if (raw === "Report" || raw === "Case Study" || raw === "Grant") return raw;
+  if (raw === "Business Case Study") return "Case Study";
+  return "Report";
+}
+
+function normalizeAssignmentStatus(value: unknown): "Upcoming" | "Ongoing" | "Completed" {
+  const raw = asText(value);
+  if (raw === "Upcoming" || raw === "Ongoing" || raw === "Completed") return raw;
+  if (raw === "On Hold") return "Upcoming";
+  return "Upcoming";
+}
+
 type NormalizedDeadline = { label: string; date: string };
 
 function normalizeDeadlines(row: FinanceAssignmentRow): NormalizedDeadline[] {
@@ -47,7 +61,7 @@ function normalizeRow(id: string, row: FinanceAssignmentRow) {
   return {
     id,
     seedKey: asText(row.seedKey),
-    type: asText(row.type) || "Report",
+    type: normalizeAssignmentType(row.type),
     title: asText(row.title),
     topic: asText(row.topic),
     teamLabel: asText(row.teamLabel),
@@ -64,7 +78,7 @@ function normalizeRow(id: string, row: FinanceAssignmentRow) {
     firstDraftDueDate: asText(row.firstDraftDueDate),
     finalDueDate: asText(row.finalDueDate),
     deliverableUrl: asText(row.deliverableUrl),
-    status: asText(row.status) || "Upcoming",
+    status: normalizeAssignmentStatus(row.status),
     notes: asText(row.notes),
     createdAt,
     updatedAt: asText(row.updatedAt) || createdAt,
@@ -94,7 +108,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json() as FinanceAssignmentRow;
   const now = new Date().toISOString();
-  await dbPush("financeAssignments", { ...body, createdAt: now, updatedAt: now }, verified.caller.idToken);
+  const nextBody: FinanceAssignmentRow = {
+    ...body,
+    type: normalizeAssignmentType(body.type),
+    status: normalizeAssignmentStatus(body.status),
+  };
+  await dbPush("financeAssignments", { ...nextBody, createdAt: now, updatedAt: now }, verified.caller.idToken);
   return NextResponse.json({ success: true });
 }
 
@@ -105,7 +124,9 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json() as { id?: string; patch?: FinanceAssignmentRow };
   const id = asText(body.id);
   if (!id) return NextResponse.json({ error: "missing_id" }, { status: 400 });
-  const patch = (body.patch ?? {}) as FinanceAssignmentRow;
+  const patch = { ...((body.patch ?? {}) as FinanceAssignmentRow) };
+  if ("type" in patch) patch.type = normalizeAssignmentType(patch.type);
+  if ("status" in patch) patch.status = normalizeAssignmentStatus(patch.status);
   await dbPatch(`financeAssignments/${id}`, { ...patch, updatedAt: new Date().toISOString() }, verified.caller.idToken);
   return NextResponse.json({ success: true });
 }

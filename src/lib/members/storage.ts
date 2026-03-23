@@ -246,8 +246,8 @@ export interface Project {
   updatedAt: string;
 }
 
-export type FinanceAssignmentType = "Report" | "Business Case Study";
-export type FinanceAssignmentStatus = "Upcoming" | "Ongoing" | "Completed" | "On Hold";
+export type FinanceAssignmentType = "Report" | "Case Study" | "Grant";
+export type FinanceAssignmentStatus = "Upcoming" | "Ongoing" | "Completed";
 
 export interface FinanceAssignment {
   id: string;

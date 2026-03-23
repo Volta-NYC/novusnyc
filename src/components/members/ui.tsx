@@ -263,7 +263,7 @@ export function AutocompleteTagInput({
         {safeValues.map((tag) => (
           <span key={tag} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
             {tag}
-            <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">×</button>
+            <button type="button" onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
           </span>
         ))}
       </div>
@@ -447,7 +447,7 @@ export function TagInput({
         {safeValues.map((tag) => (
           <span key={tag} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
             {tag}
-            <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">×</button>
+            <button type="button" onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
           </span>
         ))}
       </div>

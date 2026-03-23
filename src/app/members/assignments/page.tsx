@@ -25,8 +25,8 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
-const ASSIGNMENT_TYPES = ["Report", "Business Case Study"] as const;
-const STATUSES = ["Upcoming", "Ongoing", "Completed", "On Hold"] as const;
+const ASSIGNMENT_TYPES = ["Report", "Case Study", "Grant"] as const;
+const STATUSES = ["Upcoming", "Ongoing", "Completed"] as const;
 const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "info@voltanyc.org", label: "info@voltanyc.org" },
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
@@ -103,6 +103,13 @@ function getOrdinalDeadlineLabel(index: number): string {
   if (last === 2) return `${value}nd Deadline`;
   if (last === 3) return `${value}rd Deadline`;
   return `${value}th Deadline`;
+}
+
+function parseOrdinalDeadlineNumber(label: string): number | null {
+  const match = label.trim().match(/^(\d+)(st|nd|rd|th)\s+deadline$/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 function normalizeDeadlines(item: Partial<FinanceAssignment>): DeadlineItem[] {
@@ -301,8 +308,12 @@ export default function FinanceAssignmentsPage() {
 
   const addDeadlineRow = () => {
     const current = normalizeDeadlines(form);
-    const nonFinalCount = current.filter((entry, idx) => idx > 0 && normalizeLoose(entry.label) !== "final deadline").length;
-    const nextLabel = getOrdinalDeadlineLabel(nonFinalCount + 1);
+    const maxOrdinal = current.reduce((best, entry) => {
+      const parsed = parseOrdinalDeadlineNumber(entry.label);
+      if (!parsed) return best;
+      return parsed > best ? parsed : best;
+    }, 0);
+    const nextLabel = getOrdinalDeadlineLabel(maxOrdinal + 1);
     setField("deadlines", [...current, { label: nextLabel, date: "" }]);
   };
 
@@ -522,7 +533,8 @@ export default function FinanceAssignmentsPage() {
     });
 
   const reportCount = assignments.filter((item) => item.type === "Report").length;
-  const caseStudyCount = assignments.filter((item) => item.type === "Business Case Study").length;
+  const caseStudyCount = assignments.filter((item) => item.type === "Case Study").length;
+  const grantCount = assignments.filter((item) => item.type === "Grant").length;
   const ongoingCount = assignments.filter((item) => item.status === "Ongoing").length;
   const completedCount = assignments.filter((item) => item.status === "Completed").length;
 
@@ -542,9 +554,10 @@ export default function FinanceAssignmentsPage() {
         </p>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
         <StatCard label="Reports" value={reportCount} color="text-blue-300" />
         <StatCard label="Case Studies" value={caseStudyCount} color="text-emerald-300" />
+        <StatCard label="Grants" value={grantCount} color="text-amber-300" />
         <StatCard label="Ongoing" value={ongoingCount} color="text-green-400" />
         <StatCard label="Completed" value={completedCount} color="text-violet-300" />
       </div>
@@ -744,7 +757,13 @@ export default function FinanceAssignmentsPage() {
               <Input
                 value={form.title}
                 onChange={(event) => setField("title", event.target.value)}
-                placeholder={form.type === "Report" ? "e.g., Practical Guide: Customer Loyalty Programs" : "e.g., Local Business Landscape Case Study"}
+                placeholder={
+                  form.type === "Report"
+                    ? "e.g., Practical Guide: Customer Loyalty Programs"
+                    : form.type === "Grant"
+                      ? "e.g., Grant Application Playbook for Local Retail"
+                      : "e.g., Local Business Landscape Case Study"
+                }
               />
             </Field>
             <p className="text-[11px] text-white/45 mt-1">Keep titles focused on topic; assigned member names should stay in the Assigned Members field only.</p>
@@ -766,7 +785,7 @@ export default function FinanceAssignmentsPage() {
             <Input
               value={form.region}
               onChange={(event) => setField("region", event.target.value)}
-              placeholder={form.type === "Report" ? "Optional" : "e.g., Manhattan Hunter"}
+              placeholder={form.type === "Case Study" ? "e.g., Manhattan Hunter" : "Optional"}
             />
           </Field>
           </div>
@@ -800,7 +819,7 @@ export default function FinanceAssignmentsPage() {
                     />
                     <Btn
                       size="sm"
-                      variant="ghost"
+                      variant="danger"
                       onClick={() => removeDeadlineRow(index)}
                       disabled={normalizeDeadlines(form).length <= 1}
                     >

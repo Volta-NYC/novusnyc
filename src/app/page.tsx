@@ -184,12 +184,12 @@ async function CurrentProjectsSection() {
               </div>
             </div>
 
-            <div className="hidden sm:grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="hidden sm:block columns-1 md:columns-2 xl:columns-3 [column-gap:1.25rem]">
               {homeProjects.map((p, i) => (
                 <AnimatedSection
                   key={`desktop-${p.name}`}
                   delay={i * 0.06}
-                  className="w-full"
+                  className="inline-block w-full break-inside-avoid mb-5 align-top"
                 >
                   <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                     <div className={`${p.colorClass} h-2`} />

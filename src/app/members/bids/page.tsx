@@ -358,7 +358,7 @@ export default function BIDTrackerPage() {
                           {canEdit && (
                             <button
                               onClick={() => handleDeleteTimeline(bid.id, entry.id)}
-                              className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5"
+                              className="h-7 w-7 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex-shrink-0 mt-0.5 flex items-center justify-center"
                               aria-label="Delete timeline entry"
                             >
                               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

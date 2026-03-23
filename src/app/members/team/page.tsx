@@ -729,7 +729,14 @@ export default function TeamPage() {
                       <option value="desc">Z→A</option>
                     </select>
                     {sortRules.length > 1 && (
-                      <button onClick={() => removeSortRule(idx)} className="text-white/30 hover:text-white/60 text-xs">✕</button>
+                      <button
+                        onClick={() => removeSortRule(idx)}
+                        className="h-6 w-6 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-colors flex items-center justify-center text-xs"
+                        aria-label="Remove sort rule"
+                        title="Remove sort rule"
+                      >
+                        ✕
+                      </button>
                     )}
                   </div>
                 ))}
@@ -988,7 +995,7 @@ export default function TeamPage() {
               ) : (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-white/15 text-white/40 hover:text-red-300 hover:border-red-300/40 transition-colors flex items-center justify-center text-base leading-none"
+                  className="h-8 w-8 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center text-base leading-none"
                   aria-label="Remove alternate email"
                   title="Remove alternate email"
                   onClick={() => {
