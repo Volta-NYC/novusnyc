@@ -7,6 +7,14 @@ import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 
 export const revalidate = 3600;
 
+const ABOUT_VALUE_BADGE_STYLES = [
+  { bg: "bg-lime-100", text: "text-lime-700" }, // Brooklyn
+  { bg: "bg-blue-100", text: "text-blue-700" }, // Queens
+  { bg: "bg-amber-100", text: "text-amber-700" }, // Manhattan
+  { bg: "bg-violet-100", text: "text-violet-700" }, // Bronx
+  { bg: "bg-rose-100", text: "text-rose-700" }, // Staten Island
+] as const;
+
 export const metadata: Metadata = {
   title: "About Us | Volta NYC",
   description:
@@ -107,9 +115,16 @@ export default async function About() {
                     <div className={`flex ${isLeft ? "justify-start" : "justify-end"}`}>
                       <div className="w-full md:w-[62%] bg-white border border-v-border rounded-2xl p-8 shadow-sm">
                         <div className="flex items-start gap-4 mb-3">
-                          <span className="font-display font-bold text-v-green text-5xl leading-none flex-shrink-0">
-                            {i + 1}
-                          </span>
+                          {(() => {
+                            const style = ABOUT_VALUE_BADGE_STYLES[i % ABOUT_VALUE_BADGE_STYLES.length];
+                            return (
+                              <span
+                                className={`w-10 h-10 rounded-full ${style.bg} ${style.text} font-display font-bold text-sm flex items-center justify-center flex-shrink-0 mt-1`}
+                              >
+                                {i + 1}
+                              </span>
+                            );
+                          })()}
                           <h3 className="font-display font-bold text-v-ink text-xl pt-2 leading-snug">
                             {v.title}
                           </h3>
