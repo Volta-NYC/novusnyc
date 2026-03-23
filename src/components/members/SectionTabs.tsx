@@ -48,8 +48,8 @@ export default function SectionTabs({
 }
 
 export const PROJECT_GROUP_TABS: SectionTab[] = [
-  { href: "/members/projects", label: "Projects" },
-  { href: "/members/assignments", label: "Assignments" },
+  { href: "/members/projects", label: "Business Projects" },
+  { href: "/members/assignments", label: "Independent Projects" },
   { href: "/members/grants", label: "Grant Library" },
 ];
 
