@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
+import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader,
   SearchBar,
@@ -541,6 +542,7 @@ export default function FinanceAssignmentsPage() {
   return (
     <MembersLayout>
       <Dialog />
+      <SectionTabs tabs={PROJECT_GROUP_TABS} />
 
       <PageHeader
         title="Assignments"

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
+import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   Btn, Empty, Modal, Field, PageHeader, SearchBar, useConfirm,
 } from "@/components/members/ui";
@@ -824,6 +825,7 @@ export default function ApplicantsPage() {
         title="Applicants"
         subtitle={`${filtered.length} shown · ${applications.length} total`}
       />
+      <SectionTabs tabs={PEOPLE_GROUP_TABS} />
 
       {canEdit && (
         <div className="flex gap-2 mb-4 flex-wrap">
@@ -938,7 +940,7 @@ export default function ApplicantsPage() {
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-        <table className="w-full min-w-[980px] xl:min-w-0 table-fixed text-[10px] leading-4">
+        <table className="w-full min-w-[980px] table-fixed text-[10px] leading-4">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {selectionMode !== "none" && (

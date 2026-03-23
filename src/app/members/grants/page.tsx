@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
+import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
   Table, Empty, StatCard, AutocompleteInput, AutocompleteTagInput, useConfirm,
@@ -157,6 +158,7 @@ export default function GrantsPage() {
   return (
     <MembersLayout>
       <Dialog />
+      <SectionTabs tabs={PROJECT_GROUP_TABS} />
 
       <PageHeader
         title="Grant Library"

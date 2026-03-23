@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
+import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInterviewSlots,
@@ -1705,6 +1706,7 @@ function InterviewsContent() {
           All times are shown in New York time (EST/EDT).
         </p>
       </div>
+      <SectionTabs tabs={PEOPLE_GROUP_TABS} />
 
       <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-6 w-fit">
         {TABS.map((tab) => (
@@ -1811,11 +1813,22 @@ function InterviewsContent() {
                 <span className="font-semibold text-blue-200">Interviewers:</span> After the interview is done, click <span className="font-semibold">Evaluate</span> in the Actions column to submit your rating and notes. Evaluations are saved to the applicant record and visible to all team members.
               </div>
             <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-              <table className="w-full text-[11px] leading-4">
+              <table className="w-full min-w-[980px] table-fixed text-[11px] leading-4">
                 <thead className="bg-[#0F1014] border-b border-white/8">
                   <tr>
                     {["Name", "Email", "Time", "Interviewer(s)", "Eval", "Resume", "Actions"].map((col) => (
-                      <th key={col} className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap">
+                      <th
+                        key={col}
+                        className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
+                          col === "Name" ? "w-[160px]" :
+                          col === "Email" ? "w-[220px]" :
+                          col === "Time" ? "w-[190px]" :
+                          col === "Interviewer(s)" ? "w-[180px]" :
+                          col === "Eval" ? "w-[52px]" :
+                          col === "Resume" ? "w-[72px]" :
+                          "w-[190px]"
+                        }`}
+                      >
                         <span className="inline-flex items-center gap-0.5">
                           {col}
                           {col === "Time" && (
@@ -1837,10 +1850,10 @@ function InterviewsContent() {
                     const evalCount = getEffectiveEvaluationCountForSlot(slot);
                     return (
                       <tr key={slot.id} className="hover:bg-white/3 transition-colors">
-                        <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap">{displayName}</td>
-                        <td className="px-2 py-1.5 text-white/55 font-mono">{slot.bookerEmail || "—"}</td>
+                        <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap max-w-[160px] truncate" title={displayName}>{displayName}</td>
+                        <td className="px-2 py-1.5 text-white/55 font-mono whitespace-nowrap max-w-[220px] truncate" title={slot.bookerEmail || "—"}>{slot.bookerEmail || "—"}</td>
                         <td className="px-2 py-1.5 text-white/65 whitespace-nowrap">{formatDateTime(slot.datetime)}</td>
-                        <td className="px-2 py-1.5 text-white/50 whitespace-nowrap">{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
+                        <td className="px-2 py-1.5 text-white/50 whitespace-nowrap max-w-[180px] truncate" title={slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}>{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
                         <td className="px-2 py-1.5 text-center">
                           {evalCount > 0 ? (
                             <div className="w-2.5 h-2.5 rounded-full bg-[#85CC17] inline-block shadow-[0_0_8px_rgba(133,204,23,0.4)]" title="Evaluation submitted" />
@@ -1903,11 +1916,22 @@ function InterviewsContent() {
                 <span className="font-semibold text-purple-200">Tip:</span> Click the number in the <span className="font-semibold">Evals</span> column to read evaluation notes. Evaluation data is also visible in <span className="font-semibold">/members/applicants</span> under the Evals column.
               </div>
             <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-              <table className="w-full text-[11px] leading-4">
+              <table className="w-full min-w-[980px] table-fixed text-[11px] leading-4">
                 <thead className="bg-[#0F1014] border-b border-white/8">
                   <tr>
                     {["Name", "Email", "Time", "Interviewer(s)", "Eval", "Resume", "Actions"].map((col) => (
-                      <th key={col} className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap">
+                      <th
+                        key={col}
+                        className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
+                          col === "Name" ? "w-[160px]" :
+                          col === "Email" ? "w-[220px]" :
+                          col === "Time" ? "w-[190px]" :
+                          col === "Interviewer(s)" ? "w-[180px]" :
+                          col === "Eval" ? "w-[52px]" :
+                          col === "Resume" ? "w-[72px]" :
+                          "w-[190px]"
+                        }`}
+                      >
                         <span className="inline-flex items-center gap-0.5">
                           {col}
                           {col === "Time" && (
@@ -1929,10 +1953,10 @@ function InterviewsContent() {
                     const evalCount = getEffectiveEvaluationCountForSlot(slot);
                     return (
                       <tr key={slot.id} className="hover:bg-white/3 transition-colors">
-                        <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap">{displayName}</td>
-                        <td className="px-2 py-1.5 text-white/55 font-mono">{slot.bookerEmail || "—"}</td>
+                        <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap max-w-[160px] truncate" title={displayName}>{displayName}</td>
+                        <td className="px-2 py-1.5 text-white/55 font-mono whitespace-nowrap max-w-[220px] truncate" title={slot.bookerEmail || "—"}>{slot.bookerEmail || "—"}</td>
                         <td className="px-2 py-1.5 text-white/65 whitespace-nowrap">{formatDateTime(slot.datetime)}</td>
-                        <td className="px-2 py-1.5 text-white/50 whitespace-nowrap">{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
+                        <td className="px-2 py-1.5 text-white/50 whitespace-nowrap max-w-[180px] truncate" title={slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}>{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
                         <td className="px-2 py-1.5 text-center">
                           {evalCount > 0 ? (
                             <div className="w-2.5 h-2.5 rounded-full bg-[#85CC17] inline-block shadow-[0_0_8px_rgba(133,204,23,0.4)]" title="Evaluation submitted" />

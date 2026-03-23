@@ -501,7 +501,7 @@ export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-white/8">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="bg-[#1C1F26] border-b border-white/8">
             {cols.map((col, i) => {
@@ -536,7 +536,7 @@ export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
           {rows.map((row, rowIndex) => (
             <tr key={rowIndex} className="hover:bg-white/3 transition-colors group">
               {row.map((cell, colIndex) => (
-                <td key={colIndex} className="px-4 py-3 text-white/70 whitespace-nowrap">{cell}</td>
+                <td key={colIndex} className="px-4 py-3 text-white/70 whitespace-nowrap align-top">{cell}</td>
               ))}
             </tr>
           ))}

@@ -342,15 +342,15 @@ export default function MemberEmailPage() {
               </span>
             </div>
 
-            <div className="max-h-[420px] overflow-y-auto border border-white/8 rounded-lg">
-              <table className="w-full text-xs">
+            <div className="max-h-[420px] overflow-x-auto overflow-y-auto border border-white/8 rounded-lg">
+              <table className="w-full min-w-[860px] table-fixed text-xs">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
-                    <th className="text-left px-3 py-2 text-white/45">Name</th>
-                    <th className="text-left px-3 py-2 text-white/45">Primary Email</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>
-                    <th className="text-left px-3 py-2 text-white/45">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">School</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[90px]">Mode</th>
                   </tr>
                 </thead>
@@ -372,16 +372,16 @@ export default function MemberEmailPage() {
                             className="members-checkbox"
                           />
                         </td>
-                        <td className="px-3 py-2 text-white/75">
+                        <td className="px-3 py-2 text-white/75 whitespace-nowrap">
                           <span className="inline-flex items-center gap-2 min-w-0">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
                             <span className="truncate">{member.name}</span>
                           </span>
                           {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
                         </td>
-                        <td className="px-3 py-2 text-white/65 font-mono">{member.email || "—"}</td>
-                        <td className="px-3 py-2 text-white/55">{track}</td>
-                        <td className="px-3 py-2 text-white/45">{member.school || "—"}</td>
+                        <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
+                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{track}</td>
+                        <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
                         <td className="px-3 py-2">
                           <select
                             value={mode}

@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useEffect, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
+import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
   Empty, StatCard, AutocompleteInput, useConfirm,
@@ -1513,6 +1514,7 @@ export default function BusinessesPage() {
   return (
     <MembersLayout>
       <Dialog />
+      <SectionTabs tabs={PROJECT_GROUP_TABS} />
 
       <PageHeader
         title="Projects"
@@ -1565,7 +1567,7 @@ export default function BusinessesPage() {
         <div className="mb-4">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[920px] xl:min-w-0 table-fixed text-left">
+            <table className="w-full min-w-[920px] table-fixed text-left">
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
@@ -1599,7 +1601,7 @@ export default function BusinessesPage() {
       )}
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto mb-6">
-        <table className="w-full min-w-[920px] xl:min-w-0 table-fixed text-left">
+        <table className="w-full min-w-[920px] table-fixed text-left">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>

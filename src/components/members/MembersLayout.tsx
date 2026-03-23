@@ -15,6 +15,7 @@ type NavItem = {
   href: string;
   label: string;
   icon: React.ReactNode;
+  activeMatchRoots?: string[];
 };
 
 // ── NAV ITEM LIST ─────────────────────────────────────────────────────────────
@@ -23,12 +24,8 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/projects",
     label: "Projects",
+    activeMatchRoots: ["/members/projects", "/members/assignments", "/members/grants"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
-  },
-  {
-    href: "/members/assignments",
-    label: "Assignments",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19h16"/><path d="M4 15h16"/><path d="M4 11h16"/><path d="M4 7h16"/><path d="M4 3h16"/></svg>,
   },
   {
     href: "/members/bids",
@@ -38,17 +35,8 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/team",
     label: "Members",
+    activeMatchRoots: ["/members/team", "/members/applicants", "/members/interviews"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  },
-  {
-    href: "/members/applicants",
-    label: "Applicants",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  },
-  {
-    href: "/members/interviews",
-    label: "Interviews",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>,
   },
   {
     href: "/members/email",
@@ -59,11 +47,6 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
     href: "/members/calendar",
     label: "Calendar",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  },
-  {
-    href: "/members/grants",
-    label: "Grant Library",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
   },
   {
     href: "/members/admin",
@@ -104,6 +87,25 @@ function getNavItemsForRole(role: AuthRole | null): NavItem[] {
   return MEMBER_NAV_ITEMS;
 }
 
+function getAllowedRootsForRole(role: AuthRole | null): string[] {
+  if (role === "admin") {
+    return [
+      "/members/projects",
+      "/members/assignments",
+      "/members/grants",
+      "/members/bids",
+      "/members/team",
+      "/members/applicants",
+      "/members/interviews",
+      "/members/email",
+      "/members/calendar",
+      "/members/admin",
+    ];
+  }
+  if (role === "interviewer") return ["/members/dashboard", "/members/interviews"];
+  return ["/members/dashboard"];
+}
+
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
   return allowedRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
@@ -131,11 +133,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading || !user) return;
-    const allowedRoots = visibleNavItems.map((item) => item.href);
+    const allowedRoots = getAllowedRootsForRole(authRole);
     if (!isAllowedPath(pathname, allowedRoots)) {
       router.replace(getDefaultMembersPath(authRole));
     }
-  }, [authRole, loading, pathname, router, user, visibleNavItems]);
+  }, [authRole, loading, pathname, router, user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -183,7 +185,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         {/* Navigation links */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {visibleNavItems.map((item) => {
-            const isActive = pathname === item.href;
+            const matchRoots = item.activeMatchRoots?.length ? item.activeMatchRoots : [item.href];
+            const isActive = matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
             return (
               <Link
                 key={item.href}

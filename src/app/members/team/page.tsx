@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
+import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm, AutocompleteInput,
 } from "@/components/members/ui";
@@ -688,6 +689,7 @@ export default function TeamPage() {
           </div>
         ) : undefined}
       />
+      <SectionTabs tabs={PEOPLE_GROUP_TABS} />
       {importMessage && (
         <p className="text-xs text-white/55 mb-4">{importMessage}</p>
       )}
@@ -754,7 +756,7 @@ export default function TeamPage() {
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text">
-          <table className="w-full min-w-[640px] xl:min-w-0 text-[10px] leading-4 table-fixed">
+          <table className="w-full min-w-[640px] text-[10px] leading-4 table-fixed">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "School", "Grade"].map((col) => (
@@ -811,7 +813,7 @@ export default function TeamPage() {
         <div
           className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text"
         >
-          <table className="w-full min-w-[940px] xl:min-w-0 text-[10px] leading-4 table-fixed">
+          <table className="w-full min-w-[940px] text-[10px] leading-4 table-fixed">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
