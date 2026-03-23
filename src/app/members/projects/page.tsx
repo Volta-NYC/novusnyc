@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useEffect, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
+import ProjectsTabs from "@/components/members/ProjectsTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
   Empty, StatCard, AutocompleteInput, useConfirm,
@@ -1527,6 +1528,7 @@ export default function BusinessesPage() {
           ) : undefined
         }
       />
+      <ProjectsTabs />
       <p className="text-xs text-white/45 mb-4">
         <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
         <span className="mx-2">·</span>

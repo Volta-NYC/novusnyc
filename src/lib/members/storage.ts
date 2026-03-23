@@ -246,6 +246,29 @@ export interface Project {
   updatedAt: string;
 }
 
+export type FinanceAssignmentType = "Report" | "Business Case Study";
+export type FinanceAssignmentStatus = "Upcoming" | "Ongoing" | "Completed" | "On Hold";
+
+export interface FinanceAssignment {
+  id: string;
+  seedKey?: string;
+  type: FinanceAssignmentType;
+  title: string;
+  topic: string;
+  teamLabel: string;
+  region: string;
+  assignedMemberNames: string[]; // may be undefined if Firebase omitted empty array
+  assignedMemberIds?: string[];  // may be undefined if Firebase omitted empty array
+  interviewDueDate?: string;
+  firstDraftDueDate?: string;
+  finalDueDate?: string;
+  deliverableUrl?: string;
+  status: FinanceAssignmentStatus;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── Auth and invite types ─────────────────────────────────────────────────────
 
 export type AuthRole = "admin" | "interviewer" | "member";
@@ -519,6 +542,7 @@ export const subscribeTasks       = makeSubscriber<Task>("tasks");
 export const subscribeGrants      = makeSubscriber<Grant>("grants");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
+export const subscribeFinanceAssignments = makeSubscriber<FinanceAssignment>("financeAssignments");
 export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
 
 export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
@@ -828,6 +852,49 @@ export async function deleteProject(id: string): Promise<void> {
   await writeAuditLog(db, {
     action: "delete",
     collection: "projects",
+    recordId: id,
+  });
+}
+
+// ── Finance Assignments ──────────────────────────────────────────────────────
+
+export async function createFinanceAssignment(
+  data: Omit<FinanceAssignment, "id" | "createdAt" | "updatedAt">
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const assignmentRef = push(ref(db, "financeAssignments"));
+  await set(assignmentRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "financeAssignments",
+    recordId: assignmentRef.key ?? "",
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function updateFinanceAssignment(
+  id: string,
+  data: Partial<FinanceAssignment>
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `financeAssignments/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "financeAssignments",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteFinanceAssignment(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `financeAssignments/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "financeAssignments",
     recordId: id,
   });
 }
