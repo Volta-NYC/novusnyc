@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/members/authContext";
 import { useRouter } from "next/navigation";
 import {
   subscribeCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
-  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeFinanceAssignments,
-  deleteInterviewSlot, type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite, type FinanceAssignment,
+  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeFinanceAssignments, subscribeBusinesses,
+  deleteInterviewSlot, type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite, type FinanceAssignment, type Business,
 } from "@/lib/members/storage";
 import { Btn, Modal, Field, Input, TextArea, useConfirm } from "@/components/members/ui";
 
@@ -93,6 +93,36 @@ function getCalendarAssignmentDeadlines(assignment: FinanceAssignment): Array<{ 
     legacy.push({ label: "Interview Deadline", date: interviewDate });
   }
   return legacy;
+}
+
+function getCalendarBusinessTrackDeadlines(
+  business: Business
+): Array<{ track: "Tech" | "Marketing" | "Finance"; label: string; date: string; businessName: string; neighborhood: string }> {
+  const businessName = String(business.name ?? "").trim() || "Business Project";
+  const neighborhood = String(business.neighborhood ?? business.showcaseNeighborhood ?? "").trim();
+  const explicitTracks = (Array.isArray(business.projectTracks) ? business.projectTracks : [])
+    .filter((track): track is "Tech" | "Marketing" | "Finance" => track === "Tech" || track === "Marketing" || track === "Finance");
+  const inferredTracks = Object.keys(business.trackProjects ?? {})
+    .filter((track): track is "Tech" | "Marketing" | "Finance" => track === "Tech" || track === "Marketing" || track === "Finance");
+  const tracks = Array.from(new Set([...explicitTracks, ...inferredTracks]));
+
+  const out: Array<{ track: "Tech" | "Marketing" | "Finance"; label: string; date: string; businessName: string; neighborhood: string }> = [];
+  for (const track of tracks) {
+    const info = business.trackProjects?.[track];
+    const deadlines = Array.isArray(info?.deadlines) ? info.deadlines : [];
+    deadlines.forEach((item) => {
+      const date = String(item?.date ?? "").trim();
+      if (!date) return;
+      out.push({
+        track,
+        label: String(item?.label ?? "").trim() || "Deadline",
+        date,
+        businessName,
+        neighborhood,
+      });
+    });
+  }
+  return out;
 }
 
 function escapeICSValue(value: string): string {
@@ -323,6 +353,7 @@ interface DisplayEvent {
   isTask: boolean;
   isInterview?: boolean;
   isAssignment?: boolean;
+  isBusinessProjectDeadline?: boolean;
   calEvent?: CalendarEvent;
   interviewSlotId?: string; // for deleting booked interview slots
 }
@@ -359,6 +390,7 @@ export default function CalendarPage() {
   const [calEvents, setCalEvents]           = useState<CalendarEvent[]>([]);
   const [tasks, setTasks]                   = useState<Task[]>([]);
   const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [interviewSlots, setInterviewSlots] = useState<InterviewSlot[]>([]);
   const [interviewInvites, setInterviewInvites] = useState<InterviewInvite[]>([]);
   const [visibleKinds, setVisibleKinds] = useState<Record<DisplayEvent["kind"], boolean>>({
@@ -386,9 +418,10 @@ export default function CalendarPage() {
     const unsubEvents   = subscribeCalendarEvents(setCalEvents);
     const unsubTasks    = subscribeTasks(setTasks);
     const unsubAssignments = subscribeFinanceAssignments(setFinanceAssignments);
+    const unsubBusinesses = subscribeBusinesses(setBusinesses);
     const unsubISlots   = canEdit ? subscribeInterviewSlots(setInterviewSlots) : () => {};
     const unsubIInvites = canEdit ? subscribeInterviewInvites(setInterviewInvites) : () => {};
-    return () => { unsubEvents(); unsubTasks(); unsubAssignments(); unsubISlots(); unsubIInvites(); };
+    return () => { unsubEvents(); unsubTasks(); unsubAssignments(); unsubBusinesses(); unsubISlots(); unsubIInvites(); };
   }, [canEdit]);
 
   // Close popup when clicking outside of it.
@@ -494,6 +527,26 @@ export default function CalendarPage() {
           []
         );
       }),
+      // Business project deadlines (per-track)
+      ...businesses.flatMap((business): DisplayEvent[] => {
+        const trackColor: Record<"Tech" | "Marketing" | "Finance", string> = {
+          Tech: "#3B82F6",
+          Marketing: "#84CC16",
+          Finance: "#F59E0B",
+        };
+        return getCalendarBusinessTrackDeadlines(business).map((entry, index) => ({
+          id:                       `project-deadline-${business.id}-${entry.track}-${index}`,
+          title:                    `${entry.track}: ${entry.businessName}`,
+          color:                    trackColor[entry.track],
+          kind:                     "assignment",
+          dateStr:                  entry.date,
+          time:                     undefined,
+          description:              [entry.label, entry.neighborhood].filter(Boolean).join(" · "),
+          isTask:                   false,
+          isAssignment:             true,
+          isBusinessProjectDeadline: true,
+        }));
+      }),
       // Booked interview slots (admin)
       ...(canEdit ? interviewSlots
         .filter(s => !!s.bookedBy)
@@ -516,7 +569,7 @@ export default function CalendarPage() {
           };
         }) : []),
     ],
-    [calEvents, tasks, financeAssignments, canEdit, interviewSlots, inviteMap]
+    [calEvents, tasks, financeAssignments, businesses, canEdit, interviewSlots, inviteMap]
   );
 
   const filteredDisplayEvents = useMemo(
@@ -705,7 +758,7 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display font-bold text-white text-2xl">Calendar</h1>
-          <p className="text-white/40 text-sm mt-1 font-body">Task deadlines, assignment deadlines, and team events.</p>
+          <p className="text-white/40 text-sm mt-1 font-body">Tasks, deadlines, and team events.</p>
         </div>
         {canEdit && (
           <div className="flex items-center gap-2">
@@ -759,7 +812,7 @@ export default function CalendarPage() {
         {[
           { key: "event", label: "Events", color: "#85CC17" },
           { key: "task", label: "Tasks", color: "#60A5FA" },
-          { key: "assignment", label: "Assignments", color: "#F59E0B" },
+          { key: "assignment", label: "Deadlines", color: "#F59E0B" },
           ...(canEdit ? [{ key: "interview", label: "Interviews", color: "#8B5CF6" }] : []),
         ].map((item) => {
           const eventType = item.key as DisplayEvent["kind"];
@@ -897,7 +950,10 @@ export default function CalendarPage() {
           <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />Task deadlines
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Assignment deadlines
+          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Independent deadlines
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />Business project deadlines
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events
@@ -942,7 +998,9 @@ export default function CalendarPage() {
               <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6]">Interview</span>
             )}
             {popup.event.isAssignment && (
-              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/20 text-[#F59E0B]">Assignment deadline</span>
+              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/20 text-[#F59E0B]">
+                {popup.event.isBusinessProjectDeadline ? "Project deadline" : "Assignment deadline"}
+              </span>
             )}
           </div>
 

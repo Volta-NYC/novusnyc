@@ -121,6 +121,10 @@ export interface Business {
   trackProjects?: Partial<Record<"Tech" | "Marketing" | "Finance", {
     projectStatus?: "Ongoing" | "Upcoming" | "Completed" | "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
     teamMembers?: string[];
+    deadlines?: Array<{
+      label?: string;
+      date?: string;
+    }>;
     notes?: string;
   }>>;
 }

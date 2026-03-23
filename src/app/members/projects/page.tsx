@@ -18,6 +18,10 @@ const STATUSES  = ["Upcoming", "Ongoing", "Completed"] as const;
 const DIVISIONS = ["Tech", "Marketing", "Finance"] as const;
 type TrackDivision = (typeof DIVISIONS)[number];
 type ProjectStatusValue = (typeof STATUSES)[number];
+type DeadlineItem = {
+  label: string;
+  date: string;
+};
 const DIVISION_PUBLIC_LABEL: Record<string, string> = {
   Tech: "Digital & Tech",
   Marketing: "Marketing & Strategy",
@@ -44,9 +48,11 @@ const TRACK_ORDER: TrackDivision[] = ["Tech", "Marketing", "Finance"];
 type TrackProjectInfo = {
   projectStatus: ProjectStatusValue;
   teamMembers: string[];
+  deadlines: DeadlineItem[];
   notes: string;
 };
 type TrackProjectMap = Partial<Record<TrackDivision, TrackProjectInfo>>;
+const TRACK_DEADLINE_DEFAULT: DeadlineItem[] = [{ label: "Final Deadline", date: "" }];
 type ShowcaseColorValue =
   | "blue-soft"
   | "blue-mid"
@@ -110,6 +116,57 @@ function normalizeProjectStatus(value: unknown): ProjectStatusValue {
   return "Upcoming";
 }
 
+function sortDeadlinesMostRecentFirst(input: DeadlineItem[]): DeadlineItem[] {
+  return [...input]
+    .map((entry, index) => ({ entry, index }))
+    .sort((a, b) => {
+      const aMs = Date.parse(a.entry.date || "");
+      const bMs = Date.parse(b.entry.date || "");
+      const aValid = Number.isFinite(aMs);
+      const bValid = Number.isFinite(bMs);
+      if (aValid && bValid && aMs !== bMs) return bMs - aMs;
+      if (aValid !== bValid) return aValid ? -1 : 1;
+      return a.index - b.index;
+    })
+    .map((row) => row.entry);
+}
+
+function getOrdinalDeadlineLabel(index: number): string {
+  const value = Math.max(1, index);
+  const lastTwo = value % 100;
+  if (lastTwo >= 11 && lastTwo <= 13) return `${value}th Deadline`;
+  const last = value % 10;
+  if (last === 1) return `${value}st Deadline`;
+  if (last === 2) return `${value}nd Deadline`;
+  if (last === 3) return `${value}rd Deadline`;
+  return `${value}th Deadline`;
+}
+
+function parseOrdinalDeadlineNumber(label: string): number | null {
+  const match = label.trim().match(/^(\d+)(st|nd|rd|th)\s+deadline$/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function normalizeTrackDeadlines(value: unknown): DeadlineItem[] {
+  const fromArray = Array.isArray(value)
+    ? value
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") return null;
+        const row = entry as Record<string, unknown>;
+        const label = String(row.label ?? "").trim();
+        const date = String(row.date ?? "").trim();
+        if (!label && !date) return null;
+        return { label, date };
+      })
+      .filter((entry): entry is DeadlineItem => !!entry)
+    : [];
+
+  if (fromArray.length > 0) return sortDeadlinesMostRecentFirst(fromArray);
+  return [...TRACK_DEADLINE_DEFAULT];
+}
+
 function isTrackDivision(value: unknown): value is TrackDivision {
   return value === "Tech" || value === "Marketing" || value === "Finance";
 }
@@ -124,6 +181,7 @@ function normalizeTrackProjectInfo(value: unknown): TrackProjectInfo | null {
   return {
     projectStatus: normalizeProjectStatus(row.projectStatus),
     teamMembers: Array.isArray(row.teamMembers) ? row.teamMembers.map((item) => String(item ?? "").trim()).filter(Boolean) : [],
+    deadlines: normalizeTrackDeadlines(row.deadlines),
     notes: String(row.notes ?? "").trim(),
   };
 }
@@ -155,6 +213,7 @@ function normalizeTrackProjectsFromBusiness(business: Business): { projectTracks
     normalizedMap[fallbackTrack] = {
       projectStatus: normalizeProjectStatus(business.projectStatus),
       teamMembers: legacyMembers,
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
       notes: String(business.notes ?? "").trim(),
     };
   }
@@ -164,6 +223,7 @@ function normalizeTrackProjectsFromBusiness(business: Business): { projectTracks
       normalizedMap[track] = {
         projectStatus: normalizeProjectStatus(business.projectStatus),
         teamMembers: [],
+        deadlines: [...TRACK_DEADLINE_DEFAULT],
         notes: "",
       };
     }
@@ -366,12 +426,13 @@ const BUSINESS_EXPORT_HEADERS: Array<keyof BusinessExportRow> = [
 function toBusinessExportRow(business: Business): BusinessExportRow {
   const imageData = (business.showcaseImageData ?? "").trim();
   const { projectTracks, trackProjects } = normalizeTrackProjectsFromBusiness(business);
-  const serializedTrackProjects = TRACK_ORDER.reduce<Record<string, { projectStatus: ProjectStatusValue; teamMembers: string[]; notes: string }>>((acc, track) => {
+  const serializedTrackProjects = TRACK_ORDER.reduce<Record<string, { projectStatus: ProjectStatusValue; teamMembers: string[]; deadlines: DeadlineItem[]; notes: string }>>((acc, track) => {
     const info = trackProjects[track];
     if (!info) return acc;
     acc[track] = {
       projectStatus: info.projectStatus,
       teamMembers: info.teamMembers,
+      deadlines: info.deadlines,
       notes: info.notes,
     };
     return acc;
@@ -436,6 +497,7 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
     Tech: {
       projectStatus: "Upcoming",
       teamMembers: [],
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
       notes: "",
     },
   },
@@ -554,6 +616,7 @@ export default function BusinessesPage() {
             Tech: {
               projectStatus: normalized.trackProjects.Tech?.projectStatus ?? normalizeProjectStatus(business.projectStatus),
               teamMembers: techMembers,
+              deadlines: normalized.trackProjects.Tech?.deadlines ?? [...TRACK_DEADLINE_DEFAULT],
               notes: normalized.trackProjects.Tech?.notes ?? String(business.notes ?? "").trim(),
             },
           } : {}),
@@ -666,6 +729,7 @@ export default function BusinessesPage() {
       [track]: {
         projectStatus: formTrackProjects[track]?.projectStatus ?? "Upcoming",
         notes: formTrackProjects[track]?.notes ?? "",
+        deadlines: formTrackProjects[track]?.deadlines ?? [...TRACK_DEADLINE_DEFAULT],
         teamMembers: [...current, resolvedName],
       },
     };
@@ -682,6 +746,7 @@ export default function BusinessesPage() {
       [track]: {
         projectStatus: formTrackProjects[track]?.projectStatus ?? "Upcoming",
         notes: formTrackProjects[track]?.notes ?? "",
+        deadlines: formTrackProjects[track]?.deadlines ?? [...TRACK_DEADLINE_DEFAULT],
         teamMembers: current.filter((member) => member !== name),
       },
     };
@@ -834,6 +899,7 @@ export default function BusinessesPage() {
       nextTrackProjects[track] = info ?? {
         projectStatus: "Upcoming",
         teamMembers: [],
+        deadlines: [...TRACK_DEADLINE_DEFAULT],
         notes: "",
       };
     }
@@ -1421,6 +1487,7 @@ export default function BusinessesPage() {
       [track]: formTrackProjects[track] ?? {
         projectStatus: "Upcoming",
         teamMembers: [],
+        deadlines: [...TRACK_DEADLINE_DEFAULT],
         notes: "",
       },
     };
@@ -1428,11 +1495,12 @@ export default function BusinessesPage() {
     setField("trackProjects", nextTrackProjects);
   };
 
-  const setTrackField = (track: TrackDivision, key: keyof TrackProjectInfo, value: string | string[]) => {
+  const setTrackField = (track: TrackDivision, key: keyof TrackProjectInfo, value: string | string[] | DeadlineItem[]) => {
     const formTrackProjects = normalizedFormTrackProjects();
     const current = formTrackProjects[track] ?? {
       projectStatus: "Upcoming",
       teamMembers: [],
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
       notes: "",
     };
     const nextTrackProjects: TrackProjectMap = {
@@ -1445,10 +1513,58 @@ export default function BusinessesPage() {
     setField("trackProjects", nextTrackProjects);
   };
 
+  const setTrackDeadlineField = (track: TrackDivision, index: number, key: keyof DeadlineItem, value: string) => {
+    const formTrackProjects = normalizedFormTrackProjects();
+    const current = formTrackProjects[track] ?? {
+      projectStatus: "Upcoming",
+      teamMembers: [],
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
+      notes: "",
+    };
+    const currentDeadlines = current.deadlines?.length ? [...current.deadlines] : [...TRACK_DEADLINE_DEFAULT];
+    if (!currentDeadlines[index]) return;
+    currentDeadlines[index] = { ...currentDeadlines[index], [key]: value };
+    setTrackField(track, "deadlines", sortDeadlinesMostRecentFirst(currentDeadlines));
+  };
+
+  const addTrackDeadline = (track: TrackDivision) => {
+    const formTrackProjects = normalizedFormTrackProjects();
+    const current = formTrackProjects[track] ?? {
+      projectStatus: "Upcoming",
+      teamMembers: [],
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
+      notes: "",
+    };
+    const deadlines = current.deadlines?.length ? [...current.deadlines] : [...TRACK_DEADLINE_DEFAULT];
+    const maxOrdinal = deadlines
+      .map((entry) => parseOrdinalDeadlineNumber(entry.label))
+      .reduce<number>((best, value) => (typeof value === "number" && value > best ? value : best), 0);
+    deadlines.push({ label: getOrdinalDeadlineLabel(maxOrdinal + 1), date: "" });
+    setTrackField(track, "deadlines", sortDeadlinesMostRecentFirst(deadlines));
+  };
+
+  const removeTrackDeadline = (track: TrackDivision, index: number) => {
+    const formTrackProjects = normalizedFormTrackProjects();
+    const current = formTrackProjects[track] ?? {
+      projectStatus: "Upcoming",
+      teamMembers: [],
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
+      notes: "",
+    };
+    const deadlines = current.deadlines?.length ? [...current.deadlines] : [...TRACK_DEADLINE_DEFAULT];
+    const next = deadlines.filter((_, itemIndex) => itemIndex !== index);
+    setTrackField(
+      track,
+      "deadlines",
+      next.length > 0 ? sortDeadlinesMostRecentFirst(next) : [...TRACK_DEADLINE_DEFAULT]
+    );
+  };
+
   const renderTrackProjectSection = (track: TrackDivision) => {
     const info = normalizedFormTrackProjects()[track] ?? {
       projectStatus: "Upcoming",
       teamMembers: [],
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
       notes: "",
     };
     const memberInput = memberInputByTrack[track] ?? "";
@@ -1497,6 +1613,37 @@ export default function BusinessesPage() {
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+            </Field>
+          </div>
+          <div className="lg:col-span-2">
+            <Field label="Deadlines">
+              <div className="space-y-2">
+                {(info.deadlines ?? TRACK_DEADLINE_DEFAULT).map((deadline, index) => (
+                  <div key={`${track}-deadline-${index}`} className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_170px_auto] gap-2 items-center">
+                    <Input
+                      value={deadline.label}
+                      onChange={(e) => setTrackDeadlineField(track, index, "label", e.target.value)}
+                      placeholder={index === 0 ? "Final Deadline" : getOrdinalDeadlineLabel(index)}
+                    />
+                    <Input
+                      type="date"
+                      value={deadline.date}
+                      onChange={(e) => setTrackDeadlineField(track, index, "date", e.target.value)}
+                    />
+                    <Btn
+                      size="sm"
+                      variant="danger"
+                      onClick={() => removeTrackDeadline(track, index)}
+                      disabled={(info.deadlines ?? TRACK_DEADLINE_DEFAULT).length <= 1}
+                    >
+                      Remove
+                    </Btn>
+                  </div>
+                ))}
+                <div className="flex justify-end">
+                  <Btn size="sm" variant="secondary" onClick={() => addTrackDeadline(track)}>+ Add Deadline</Btn>
                 </div>
               </div>
             </Field>
