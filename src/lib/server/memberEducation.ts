@@ -19,6 +19,10 @@ type SchoolGroup = {
   colleges: string[];
 };
 
+// Keep school lists stable and editorially controlled from src/data/schools.md.
+// Set FORCE_STATIC_SCHOOL_LIST=false only if you explicitly want live DB-derived lists.
+const FORCE_STATIC_SCHOOL_LIST = process.env.FORCE_STATIC_SCHOOL_LIST !== "false";
+
 const SCHOOL_NORMALIZATION: Record<string, string> = {
   cornell: "Cornell University",
   "brooklyn technical highschool": "Brooklyn Technical High School",
@@ -112,6 +116,8 @@ function normalizeSchoolName(raw: string): string {
   const trimmed = normalizeWhitespace(raw);
   if (!trimmed) return "";
   if (trimmed.includes("@")) return "";
+  if (/^not declared/i.test(trimmed)) return "";
+  if (/still in 8th grade/i.test(trimmed)) return "";
 
   const mapped = SCHOOL_NORMALIZATION[schoolKey(trimmed)];
   if (mapped) return mapped;
@@ -238,6 +244,8 @@ function fallbackSnapshot(): EducationSnapshot {
 }
 
 export async function getMemberEducationSnapshot(): Promise<EducationSnapshot> {
+  if (FORCE_STATIC_SCHOOL_LIST) return fallbackSnapshot();
+
   const db = getAdminDB();
   if (!db) return fallbackSnapshot();
 
