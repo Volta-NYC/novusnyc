@@ -139,9 +139,15 @@ async function upsertInquiryFromForm(data: Record<string, unknown>): Promise<voi
   });
 }
 
-async function forwardToAppsScriptBackup(data: Record<string, unknown>): Promise<void> {
+type AppsScriptForwardResult = {
+  configured: boolean;
+  ok: boolean;
+  status?: number;
+};
+
+async function forwardToAppsScriptBackup(data: Record<string, unknown>): Promise<AppsScriptForwardResult> {
   const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
-  if (!url) return;
+  if (!url) return { configured: false, ok: false };
   try {
     const upstream = await fetch(url, {
       method: "POST",
@@ -151,9 +157,12 @@ async function forwardToAppsScriptBackup(data: Record<string, unknown>): Promise
     });
     if (!upstream.ok) {
       console.error("apps_script_backup_failed", upstream.status);
+      return { configured: true, ok: false, status: upstream.status };
     }
+    return { configured: true, ok: true, status: upstream.status };
   } catch (err) {
     console.error("apps_script_backup_unreachable", err);
+    return { configured: true, ok: false };
   }
 }
 
@@ -209,11 +218,13 @@ export async function POST(request: Request) {
     }
   }
 
+  let firebaseWriteFailed = false;
+
   if (formType === "contact") {
     try {
       await upsertBusinessLeadFromContactForm(data);
     } catch {
-      return NextResponse.json({ error: "db_write_failed" }, { status: 502 });
+      firebaseWriteFailed = true;
     }
   }
 
@@ -221,7 +232,7 @@ export async function POST(request: Request) {
     try {
       await upsertApplicationFromForm(data);
     } catch {
-      return NextResponse.json({ error: "db_write_failed" }, { status: 502 });
+      firebaseWriteFailed = true;
     }
   }
 
@@ -229,13 +240,32 @@ export async function POST(request: Request) {
     try {
       await upsertInquiryFromForm(data);
     } catch {
-      return NextResponse.json({ error: "db_write_failed" }, { status: 502 });
+      firebaseWriteFailed = true;
     }
   }
 
-  // Keep legacy Google Sheets logging as best-effort backup only.
-  // Primary source of truth is Firebase.
-  await forwardToAppsScriptBackup(data);
+  // Always attempt the Google Sheets forward, especially if Firebase write fails.
+  const sheetsForward = await forwardToAppsScriptBackup(data);
 
-  return NextResponse.json({ success: true });
+  if (firebaseWriteFailed) {
+    if (sheetsForward.ok) {
+      return NextResponse.json({
+        success: true,
+        stored: "sheets_backup_only",
+      });
+    }
+    return NextResponse.json(
+      {
+        error: "storage_failed",
+        firebase: "write_failed",
+        sheets: sheetsForward.configured ? "forward_failed" : "not_configured",
+      },
+      { status: 502 }
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    sheetsBackupForwarded: sheetsForward.ok,
+  });
 }
