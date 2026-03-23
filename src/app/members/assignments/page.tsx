@@ -67,13 +67,29 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function stripAssignedNamePrefix(title: string, assignedMembers: string[]): string {
+function stripAssignedNamesFromTitle(title: string, assignedMembers: string[]): string {
   let cleaned = title.trim();
-  for (const raw of assignedMembers) {
-    const name = String(raw ?? "").trim();
-    if (!name) continue;
-    const pattern = new RegExp(`^${escapeRegex(name)}\\s*[:\-\u2013\u2014]\\s*`, "i");
-    cleaned = cleaned.replace(pattern, "").trim();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const raw of assignedMembers) {
+      const name = String(raw ?? "").trim();
+      if (!name) continue;
+
+      const prefixPattern = new RegExp(`^${escapeRegex(name)}\\s*[:\\-\\u2013\\u2014]\\s*`, "i");
+      const suffixPattern = new RegExp(`\\s*[:\\-\\u2013\\u2014]\\s*${escapeRegex(name)}$`, "i");
+
+      const withoutPrefix = cleaned.replace(prefixPattern, "").trim();
+      if (withoutPrefix !== cleaned) {
+        cleaned = withoutPrefix;
+        changed = true;
+      }
+      const withoutSuffix = cleaned.replace(suffixPattern, "").trim();
+      if (withoutSuffix !== cleaned) {
+        cleaned = withoutSuffix;
+        changed = true;
+      }
+    }
   }
   return cleaned;
 }
@@ -265,7 +281,7 @@ export default function FinanceAssignmentsPage() {
   };
 
   const getAssignmentDisplayTitle = (item: FinanceAssignment): string => {
-    const stripped = stripAssignedNamePrefix(item.title ?? "", item.assignedMemberNames ?? []);
+    const stripped = stripAssignedNamesFromTitle(item.title ?? "", item.assignedMemberNames ?? []);
     return stripped || item.title || "Untitled Assignment";
   };
 
@@ -304,7 +320,7 @@ export default function FinanceAssignmentsPage() {
   };
 
   const openEdit = (item: FinanceAssignment) => {
-    const strippedTitle = stripAssignedNamePrefix(item.title ?? "", item.assignedMemberNames ?? []);
+    const strippedTitle = stripAssignedNamesFromTitle(item.title ?? "", item.assignedMemberNames ?? []);
     setForm({
       type: item.type,
       title: strippedTitle || item.title,
@@ -336,7 +352,7 @@ export default function FinanceAssignmentsPage() {
       .map((name) => memberIdByName.get(name.toLowerCase()) ?? "")
       .filter(Boolean);
 
-    const cleanedTitle = stripAssignedNamePrefix(form.title.trim(), normalizedMemberNames);
+    const cleanedTitle = stripAssignedNamesFromTitle(form.title.trim(), normalizedMemberNames);
 
     const normalizedDeadlines = normalizeDeadlines(form)
       .map((entry) => ({
@@ -355,7 +371,7 @@ export default function FinanceAssignmentsPage() {
       ...form,
       title: cleanedTitle,
       topic: form.topic.trim(),
-      teamLabel: String(form.teamLabel ?? "").trim(),
+      teamLabel: "",
       region: String(form.region ?? "").trim(),
       assignedMemberNames: normalizedMemberNames,
       assignedMemberIds: normalizedMemberIds,
@@ -494,7 +510,6 @@ export default function FinanceAssignmentsPage() {
       return [
         item.title,
         item.topic,
-        item.teamLabel,
         item.region,
         ...(item.assignedMemberNames ?? []),
       ].some((value) => String(value ?? "").toLowerCase().includes(q));
@@ -535,7 +550,7 @@ export default function FinanceAssignmentsPage() {
       </div>
 
       <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search title, topic, team, member..." />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search title, topic, region, member..." />
         <div className="min-w-[180px]">
           <Select
             options={ASSIGNMENT_TYPES}
@@ -555,18 +570,17 @@ export default function FinanceAssignmentsPage() {
       </div>
 
       <Table
-        cols={["Type", "Assignment", "Team / Region", "Members", "Deadlines", "Status", "Actions"]}
+        cols={["Type", "Assignment", "Members", "Deadlines", "Status", "Actions"]}
         rows={filtered.map((item) => {
           const rowRecipients = resolveRecipientsFromNames(item.assignedMemberNames ?? []);
           return [
-            <span key="type" className="text-white/80">{item.type}</span>,
+            <div key="type" className="min-w-[170px]">
+              <p className="text-white/80">{item.type}</p>
+              <p className="text-xs text-white/45">{item.region || "-"}</p>
+            </div>,
             <div key="assignment" className="min-w-[260px]">
               <p id={`finance-assignment-${item.id}`} className="text-white font-medium">{getAssignmentDisplayTitle(item)}</p>
               <p className="text-xs text-white/45">{item.topic}</p>
-            </div>,
-            <div key="team" className="min-w-[170px]">
-              <p className="text-white/80">{item.teamLabel || "-"}</p>
-              <p className="text-xs text-white/45">{item.region || "-"}</p>
             </div>,
             <div key="members" className="min-w-[230px]" title={(item.assignedMemberNames ?? []).join(", ")}>
               {(item.assignedMemberNames ?? []).length === 0 ? (
@@ -747,13 +761,7 @@ export default function FinanceAssignmentsPage() {
             </Field>
           </div>
 
-          <Field label="Team / Group Label">
-            <Input
-              value={form.teamLabel}
-              onChange={(event) => setField("teamLabel", event.target.value)}
-              placeholder={form.type === "Report" ? "e.g., Reports" : "e.g., Stuy 1"}
-            />
-          </Field>
+          <div className="md:col-span-2">
           <Field label="Region / School Cohort">
             <Input
               value={form.region}
@@ -761,6 +769,7 @@ export default function FinanceAssignmentsPage() {
               placeholder={form.type === "Report" ? "Optional" : "e.g., Manhattan Hunter"}
             />
           </Field>
+          </div>
 
           <div className="md:col-span-2">
             <Field label="Assigned Members">
