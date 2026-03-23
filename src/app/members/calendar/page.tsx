@@ -67,6 +67,34 @@ function toICSDate(isoString: string): string {
   return `${y}${m}${day}`;
 }
 
+function getCalendarAssignmentDeadlines(assignment: FinanceAssignment): Array<{ label: string; date: string }> {
+  const fromArray = Array.isArray(assignment.deadlines)
+    ? assignment.deadlines
+      .map((entry) => ({
+        label: String(entry?.label ?? "").trim(),
+        date: String(entry?.date ?? "").trim(),
+      }))
+      .filter((entry) => entry.label || entry.date)
+    : [];
+
+  if (fromArray.length > 0) return fromArray;
+
+  const legacy: Array<{ label: string; date: string }> = [];
+  const finalDate = String(assignment.finalDueDate ?? "").trim();
+  const primaryDate = String(assignment.deadline ?? "").trim();
+  const firstDraftDate = String(assignment.firstDraftDueDate ?? "").trim();
+  const interviewDate = String(assignment.interviewDueDate ?? "").trim();
+  if (finalDate) legacy.push({ label: "Final Deadline", date: finalDate });
+  if (primaryDate && primaryDate !== finalDate) legacy.push({ label: "Deadline", date: primaryDate });
+  if (firstDraftDate && firstDraftDate !== finalDate && firstDraftDate !== primaryDate) {
+    legacy.push({ label: "Draft Deadline", date: firstDraftDate });
+  }
+  if (interviewDate && interviewDate !== finalDate && interviewDate !== primaryDate && interviewDate !== firstDraftDate) {
+    legacy.push({ label: "Interview Deadline", date: interviewDate });
+  }
+  return legacy;
+}
+
 function escapeICSValue(value: string): string {
   return value
     .replace(/\\/g, "\\\\")
@@ -445,7 +473,7 @@ export default function CalendarPage() {
       ...financeAssignments.flatMap((assignment): DisplayEvent[] => {
         const topic = String(assignment.topic ?? "").trim() || String(assignment.title ?? "").trim() || "Assignment";
         const region = String(assignment.region ?? "").trim();
-        return (Array.isArray(assignment.deadlines) ? assignment.deadlines : []).reduce<DisplayEvent[]>(
+        return getCalendarAssignmentDeadlines(assignment).reduce<DisplayEvent[]>(
           (acc, deadlineItem, index) => {
             const dateStr = String(deadlineItem?.date ?? "").trim();
             if (!dateStr) return acc;
