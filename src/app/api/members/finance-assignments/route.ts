@@ -7,8 +7,43 @@ function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+type NormalizedDeadline = { label: string; date: string };
+
+function normalizeDeadlines(row: FinanceAssignmentRow): NormalizedDeadline[] {
+  const fromArray = Array.isArray(row.deadlines)
+    ? row.deadlines
+      .map((item) => {
+        if (!item || typeof item !== "object") return null;
+        const data = item as Record<string, unknown>;
+        const label = asText(data.label) || "Deadline";
+        const date = asText(data.date);
+        if (!label && !date) return null;
+        return { label, date };
+      })
+      .filter((item): item is NormalizedDeadline => !!item)
+    : [];
+
+  if (fromArray.length > 0) return fromArray;
+
+  const legacy: NormalizedDeadline[] = [];
+  const finalDue = asText(row.finalDueDate);
+  const genericDue = asText(row.deadline);
+  const firstDraft = asText(row.firstDraftDueDate);
+  const interview = asText(row.interviewDueDate);
+
+  if (finalDue) legacy.push({ label: "Final Deadline", date: finalDue });
+  if (genericDue && genericDue !== finalDue) legacy.push({ label: "1st Deadline", date: genericDue });
+  if (firstDraft && firstDraft !== finalDue && firstDraft !== genericDue) legacy.push({ label: "2nd Deadline", date: firstDraft });
+  if (interview && interview !== finalDue && interview !== genericDue && interview !== firstDraft) {
+    legacy.push({ label: "Interview Deadline", date: interview });
+  }
+
+  return legacy;
+}
+
 function normalizeRow(id: string, row: FinanceAssignmentRow) {
   const createdAt = asText(row.createdAt) || new Date().toISOString();
+  const deadlines = normalizeDeadlines(row);
   return {
     id,
     seedKey: asText(row.seedKey),
@@ -23,6 +58,7 @@ function normalizeRow(id: string, row: FinanceAssignmentRow) {
     assignedMemberIds: Array.isArray(row.assignedMemberIds)
       ? row.assignedMemberIds.map((item) => asText(item)).filter(Boolean)
       : [],
+    deadlines,
     deadline: asText(row.deadline),
     interviewDueDate: asText(row.interviewDueDate),
     firstDraftDueDate: asText(row.firstDraftDueDate),

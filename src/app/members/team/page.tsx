@@ -616,14 +616,19 @@ export default function TeamPage() {
     }
 
     for (const assignment of financeAssignments) {
-      const deadline = assignment.deadline || assignment.finalDueDate || assignment.firstDraftDueDate || assignment.interviewDueDate || "—";
+      const firstDeadlineDate = Array.isArray(assignment.deadlines)
+        ? assignment.deadlines
+          .map((entry) => (entry && typeof entry === "object" ? String((entry as { date?: string }).date ?? "").trim() : ""))
+          .find(Boolean)
+        : "";
+      const deadline = firstDeadlineDate || assignment.deadline || assignment.finalDueDate || assignment.firstDraftDueDate || assignment.interviewDueDate || "—";
       const entry: MemberAssignmentLink = {
         id: assignment.id,
         kind: "Finance Assignment",
         title: assignment.title || "Untitled Assignment",
         status: assignment.status || "—",
         deadline,
-        href: `/members/projects/finance#finance-assignment-${assignment.id}`,
+        href: `/members/assignments#finance-assignment-${assignment.id}`,
       };
       for (const memberName of assignment.assignedMemberNames ?? []) pushForMember(memberName, entry);
     }
