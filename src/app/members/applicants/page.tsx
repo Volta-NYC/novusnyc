@@ -823,7 +823,6 @@ export default function ApplicantsPage() {
 
       <PageHeader
         title="Applicants"
-        subtitle={`${filtered.length} shown · ${applications.length} total`}
       />
       <SectionTabs tabs={PEOPLE_GROUP_TABS} />
 

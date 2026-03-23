@@ -1518,7 +1518,6 @@ export default function BusinessesPage() {
 
       <PageHeader
         title="Projects"
-        subtitle={`${filtered.length} shown · ${businesses.length} total projects`}
         action={
           canEdit ? (
             <div className="flex gap-2">

@@ -247,7 +247,6 @@ export default function BIDTrackerPage() {
 
       <PageHeader
         title="BID Tracker"
-        subtitle={`${stats.total} BIDs · ${stats.active} active · ${stats.pipeline} in pipeline`}
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New BID</Btn> : undefined}
       />
 

@@ -187,7 +187,6 @@ export default function MembersDashboardPage() {
     <MembersLayout>
       <PageHeader
         title="Dashboard"
-        subtitle="Project details, owner contacts, and team context for your assigned work."
       />
 
       {!myMember ? (

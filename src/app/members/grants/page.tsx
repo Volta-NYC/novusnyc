@@ -162,7 +162,6 @@ export default function GrantsPage() {
 
       <PageHeader
         title="Grant Library"
-        subtitle={`${grants.length} grants · ${grants.filter(g => g.status === "Awarded").length} awarded`}
         action={canCreate ? <Btn variant="primary" onClick={openCreate}>+ New Grant</Btn> : undefined}
       />
 

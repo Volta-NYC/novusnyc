@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, Field, TextArea, Btn, AutocompleteTagInput, Empty,
+  PageHeader, Field, TextArea, Btn, Empty,
 } from "@/components/members/ui";
 import { subscribeTeam, subscribeBusinesses, type TeamMember, type Business } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -42,8 +42,6 @@ export default function MemberEmailPage() {
 
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [divisions, setDivisions] = useState<string[]>([]);
-  const [schools, setSchools] = useState<string[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -81,22 +79,11 @@ export default function MemberEmailPage() {
     return { colorClass: "bg-yellow-400", label: "Not assigned to active project" };
   };
 
-  const divisionOptions = ["Tech", "Marketing", "Finance", "Other"];
-  const schoolOptions = useMemo(
-    () => Array.from(new Set(team.map((member) => (member.school ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [team],
-  );
-
   const normalizedSearch = memberSearch.trim().toLowerCase();
 
   const filteredMembers = useMemo(
     () =>
       team.filter((member) => {
-        const memberDivisions = (member.divisions ?? []).map((division) => normalizeToken(division));
-        const selectedDivisions = divisions.map((division) => normalizeToken(division));
-        const selectedSchools = schools.map((school) => normalizeToken(school));
-        const divisionMatch = selectedDivisions.length === 0 || memberDivisions.some((division) => selectedDivisions.includes(division));
-        const schoolMatch = selectedSchools.length === 0 || selectedSchools.includes(normalizeToken(member.school ?? ""));
         const searchable = [
           member.name,
           member.email,
@@ -108,10 +95,10 @@ export default function MemberEmailPage() {
         ]
           .map((value) => String(value ?? "").toLowerCase())
           .join(" ");
-        const textMatch = !normalizedSearch || searchable.includes(normalizedSearch);
-        return divisionMatch && schoolMatch && textMatch;
+        const textMatch = normalizedSearch.length > 0 && searchable.includes(normalizedSearch);
+        return textMatch;
       }).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
-    [team, divisions, schools, normalizedSearch],
+    [team, normalizedSearch],
   );
 
   const selectableFilteredMembers = useMemo(
@@ -258,7 +245,7 @@ export default function MemberEmailPage() {
   if (!canUseEmail) {
     return (
       <MembersLayout>
-        <PageHeader title="Member Email" subtitle="Admin access required" />
+        <PageHeader title="Member Email" />
         <Empty message="You do not have permission to use bulk member email." />
       </MembersLayout>
     );
@@ -268,28 +255,9 @@ export default function MemberEmailPage() {
 
   return (
     <MembersLayout>
-      <PageHeader title="Member Email" subtitle="Find recipients quickly, choose To/CC/BCC, and send in one flow." />
+      <PageHeader title="Member Email" />
 
       <div className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-3">
-          <Field label="Division">
-            <AutocompleteTagInput
-              values={divisions}
-              onChange={setDivisions}
-              options={divisionOptions}
-              placeholder="Type division…"
-            />
-          </Field>
-          <Field label="School">
-            <AutocompleteTagInput
-              values={schools}
-              onChange={setSchools}
-              options={schoolOptions}
-              placeholder="Type school…"
-            />
-          </Field>
-        </div>
-
         <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
           <div className="flex flex-col gap-3">
             <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">Recipients</label>
@@ -376,7 +344,7 @@ export default function MemberEmailPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="text-white/55">
-                {totalSelected} selected · {filteredMembers.length} in current filter
+                {totalSelected} selected · {filteredMembers.length} matching search
                 {filteredMembers.length !== selectableFilteredMembers.length ? ` · ${filteredMembers.length - selectableFilteredMembers.length} inactive` : ""}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -390,10 +358,13 @@ export default function MemberEmailPage() {
                   <option value="cc">CC</option>
                   <option value="bcc">BCC</option>
                 </select>
-                <Btn size="sm" variant="secondary" onClick={selectAllFiltered}>Select filtered</Btn>
+                <Btn size="sm" variant="secondary" onClick={selectAllFiltered} disabled={filteredMembers.length === 0}>
+                  Select filtered
+                </Btn>
                 <Btn
                   size="sm"
                   variant="secondary"
+                  disabled={filteredMembers.length === 0}
                   className="!text-red-300 !border-red-400/30 !bg-red-500/10 hover:!bg-red-500/20"
                   onClick={clearFiltered}
                 >
@@ -445,7 +416,9 @@ export default function MemberEmailPage() {
                   })}
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-6 text-center text-white/35">No members in this filter/search.</td>
+                      <td colSpan={5} className="px-3 py-6 text-center text-white/35">
+                        {normalizedSearch ? "No members match this search." : "Start typing to search members."}
+                      </td>
                     </tr>
                   )}
                 </tbody>

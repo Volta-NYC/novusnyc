@@ -161,7 +161,6 @@ export default function TasksPage() {
 
       <PageHeader
         title="Tasks"
-        subtitle={`${filtered.length} open · ${filtered.filter((t) => normalizeStatus(t.status) === "On Hold").length} on hold`}
         action={
           <div className="flex gap-2">
             <div className="flex bg-[#1C1F26] border border-white/8 rounded-lg p-0.5">

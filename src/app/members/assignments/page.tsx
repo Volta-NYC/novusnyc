@@ -546,7 +546,6 @@ export default function FinanceAssignmentsPage() {
 
       <PageHeader
         title="Assignments"
-        subtitle={`${filtered.length} shown · ${assignments.length} total assignments`}
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn> : undefined}
       />
 

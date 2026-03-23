@@ -679,7 +679,6 @@ export default function TeamPage() {
 
       <PageHeader
         title="Team Directory"
-        subtitle={`${team.length} members tracked`}
         action={canEdit ? (
           <div className="flex gap-2">
             <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importingCsv}>
