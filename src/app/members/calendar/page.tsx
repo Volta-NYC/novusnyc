@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/members/authContext";
 import { useRouter } from "next/navigation";
 import {
   subscribeCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
-  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites,
-  deleteInterviewSlot, type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite,
+  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeFinanceAssignments,
+  deleteInterviewSlot, type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite, type FinanceAssignment,
 } from "@/lib/members/storage";
 import { Btn, Modal, Field, Input, TextArea, useConfirm } from "@/components/members/ui";
 
@@ -288,12 +288,13 @@ interface DisplayEvent {
   id: string;
   title: string;
   color: string;
-  kind: "event" | "task" | "interview";
+  kind: "event" | "task" | "interview" | "assignment";
   dateStr: string;        // YYYY-MM-DD
   time?: string;          // formatted time string; undefined means all-day
   description?: string;
   isTask: boolean;
   isInterview?: boolean;
+  isAssignment?: boolean;
   calEvent?: CalendarEvent;
   interviewSlotId?: string; // for deleting booked interview slots
 }
@@ -329,12 +330,14 @@ export default function CalendarPage() {
 
   const [calEvents, setCalEvents]           = useState<CalendarEvent[]>([]);
   const [tasks, setTasks]                   = useState<Task[]>([]);
+  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [interviewSlots, setInterviewSlots] = useState<InterviewSlot[]>([]);
   const [interviewInvites, setInterviewInvites] = useState<InterviewInvite[]>([]);
   const [visibleKinds, setVisibleKinds] = useState<Record<DisplayEvent["kind"], boolean>>({
     event: true,
     task: true,
     interview: true,
+    assignment: true,
   });
 
   const [modal, setModal]               = useState<"create" | "edit" | null>(null);
@@ -354,9 +357,10 @@ export default function CalendarPage() {
   useEffect(() => {
     const unsubEvents   = subscribeCalendarEvents(setCalEvents);
     const unsubTasks    = subscribeTasks(setTasks);
+    const unsubAssignments = subscribeFinanceAssignments(setFinanceAssignments);
     const unsubISlots   = canEdit ? subscribeInterviewSlots(setInterviewSlots) : () => {};
     const unsubIInvites = canEdit ? subscribeInterviewInvites(setInterviewInvites) : () => {};
-    return () => { unsubEvents(); unsubTasks(); unsubISlots(); unsubIInvites(); };
+    return () => { unsubEvents(); unsubTasks(); unsubAssignments(); unsubISlots(); unsubIInvites(); };
   }, [canEdit]);
 
   // Close popup when clicking outside of it.
@@ -437,6 +441,31 @@ export default function CalendarPage() {
           description: `${t.assignedTo} · ${t.status}`,
           isTask:      true,
         })),
+      // Assignment deadlines (reports / case studies / grants)
+      ...financeAssignments.flatMap((assignment): DisplayEvent[] => {
+        const topic = String(assignment.topic ?? "").trim() || String(assignment.title ?? "").trim() || "Assignment";
+        const region = String(assignment.region ?? "").trim();
+        return (Array.isArray(assignment.deadlines) ? assignment.deadlines : []).reduce<DisplayEvent[]>(
+          (acc, deadlineItem, index) => {
+            const dateStr = String(deadlineItem?.date ?? "").trim();
+            if (!dateStr) return acc;
+            const label = String(deadlineItem?.label ?? "").trim() || "Deadline";
+            acc.push({
+              id:           `assignment-${assignment.id}-${index}`,
+              title:        `${assignment.type}: ${topic}`,
+              color:        "#F59E0B",
+              kind:         "assignment",
+              dateStr,
+              time:         undefined,
+              description:  [label, region].filter(Boolean).join(" · "),
+              isTask:       false,
+              isAssignment: true,
+            });
+            return acc;
+          },
+          []
+        );
+      }),
       // Booked interview slots (admin)
       ...(canEdit ? interviewSlots
         .filter(s => !!s.bookedBy)
@@ -459,7 +488,7 @@ export default function CalendarPage() {
           };
         }) : []),
     ],
-    [calEvents, tasks, canEdit, interviewSlots, inviteMap]
+    [calEvents, tasks, financeAssignments, canEdit, interviewSlots, inviteMap]
   );
 
   const filteredDisplayEvents = useMemo(
@@ -648,7 +677,7 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display font-bold text-white text-2xl">Calendar</h1>
-          <p className="text-white/40 text-sm mt-1 font-body">Task deadlines and team events.</p>
+          <p className="text-white/40 text-sm mt-1 font-body">Task deadlines, assignment deadlines, and team events.</p>
         </div>
         {canEdit && (
           <div className="flex items-center gap-2">
@@ -702,6 +731,7 @@ export default function CalendarPage() {
         {[
           { key: "event", label: "Events", color: "#85CC17" },
           { key: "task", label: "Tasks", color: "#60A5FA" },
+          { key: "assignment", label: "Assignments", color: "#F59E0B" },
           ...(canEdit ? [{ key: "interview", label: "Interviews", color: "#8B5CF6" }] : []),
         ].map((item) => {
           const eventType = item.key as DisplayEvent["kind"];
@@ -839,6 +869,9 @@ export default function CalendarPage() {
           <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />Task deadlines
         </span>
         <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Assignment deadlines
+        </span>
+        <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events
         </span>
         {canEdit && (
@@ -879,6 +912,9 @@ export default function CalendarPage() {
             )}
             {popup.event.isInterview && (
               <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6]">Interview</span>
+            )}
+            {popup.event.isAssignment && (
+              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/20 text-[#F59E0B]">Assignment deadline</span>
             )}
           </div>
 
