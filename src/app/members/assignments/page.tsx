@@ -104,7 +104,7 @@ function normalizeDeadlines(item: Partial<FinanceAssignment>): DeadlineItem[] {
       .map((entry) => {
         if (!entry || typeof entry !== "object") return null;
         const data = entry as Record<string, unknown>;
-        const label = String(data.label ?? "").trim() || "Deadline";
+        const label = String(data.label ?? "").trim();
         const date = String(data.date ?? "").trim();
         if (!label && !date) return null;
         return { label, date };
@@ -151,7 +151,7 @@ function earliestDeadlineForSort(item: FinanceAssignment): number {
 function formatDeadlineLabel(item: FinanceAssignment): string[] {
   const rows = normalizeDeadlines(item);
   if (rows.length === 0) return ["-"];
-  return rows.map((row) => `${row.label}: ${row.date || "-"}`);
+  return rows.map((row) => (row.label ? `${row.label}: ${row.date || "-"}` : `${row.date || "-"}`));
 }
 
 export default function FinanceAssignmentsPage() {
@@ -371,7 +371,7 @@ export default function FinanceAssignmentsPage() {
 
     const normalizedDeadlines = sortDeadlinesMostRecentFirst(normalizeDeadlines(form)
       .map((entry) => ({
-        label: String(entry.label ?? "").trim() || "Deadline",
+        label: String(entry.label ?? "").trim(),
         date: String(entry.date ?? "").trim(),
       }))
       .filter((entry) => entry.label || entry.date));

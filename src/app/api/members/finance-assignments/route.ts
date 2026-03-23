@@ -33,7 +33,7 @@ function normalizeDeadlines(row: FinanceAssignmentRow): NormalizedDeadline[] {
       .map((item) => {
         if (!item || typeof item !== "object") return null;
         const data = item as Record<string, unknown>;
-        const label = asText(data.label) || "Deadline";
+        const label = asText(data.label);
         const date = asText(data.date);
         if (!label && !date) return null;
         return { label, date };
