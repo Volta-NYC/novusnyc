@@ -16,13 +16,14 @@ import {
   TextArea,
   StatCard,
   Table,
-  AutocompleteTagInput,
   useConfirm,
 } from "@/components/members/ui";
 import {
   subscribeTeam,
+  subscribeApplications,
   type FinanceAssignment,
   type TeamMember,
+  type ApplicationRecord,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -64,35 +65,19 @@ function normalizeLoose(value: string): string {
   return String(value ?? "").trim().toLowerCase();
 }
 
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function stripAssignedNamesFromTitle(title: string, assignedMembers: string[]): string {
-  let cleaned = title.trim();
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const raw of assignedMembers) {
-      const name = String(raw ?? "").trim();
-      if (!name) continue;
-
-      const prefixPattern = new RegExp(`^${escapeRegex(name)}\\s*[:\\-\\u2013\\u2014]\\s*`, "i");
-      const suffixPattern = new RegExp(`\\s*[:\\-\\u2013\\u2014]\\s*${escapeRegex(name)}$`, "i");
-
-      const withoutPrefix = cleaned.replace(prefixPattern, "").trim();
-      if (withoutPrefix !== cleaned) {
-        cleaned = withoutPrefix;
-        changed = true;
-      }
-      const withoutSuffix = cleaned.replace(suffixPattern, "").trim();
-      if (withoutSuffix !== cleaned) {
-        cleaned = withoutSuffix;
-        changed = true;
-      }
-    }
-  }
-  return cleaned;
+function sortDeadlinesMostRecentFirst(input: DeadlineItem[]): DeadlineItem[] {
+  return [...input]
+    .map((entry, index) => ({ entry, index }))
+    .sort((a, b) => {
+      const aMs = Date.parse(a.entry.date || "");
+      const bMs = Date.parse(b.entry.date || "");
+      const aValid = Number.isFinite(aMs);
+      const bValid = Number.isFinite(bMs);
+      if (aValid && bValid && aMs !== bMs) return bMs - aMs;
+      if (aValid !== bValid) return aValid ? -1 : 1;
+      return a.index - b.index;
+    })
+    .map((row) => row.entry);
 }
 
 function getOrdinalDeadlineLabel(index: number): string {
@@ -127,7 +112,7 @@ function normalizeDeadlines(item: Partial<FinanceAssignment>): DeadlineItem[] {
       .filter((entry): entry is DeadlineItem => !!entry)
     : [];
 
-  if (fromArray.length > 0) return fromArray;
+  if (fromArray.length > 0) return sortDeadlinesMostRecentFirst(fromArray);
 
   const legacy: DeadlineItem[] = [];
   const finalDate = String(item.finalDueDate ?? "").trim();
@@ -144,7 +129,9 @@ function normalizeDeadlines(item: Partial<FinanceAssignment>): DeadlineItem[] {
     legacy.push({ label: "Interview Deadline", date: interviewDate });
   }
 
-  return legacy.length > 0 ? legacy : [{ label: "Final Deadline", date: "" }];
+  return legacy.length > 0
+    ? sortDeadlinesMostRecentFirst(legacy)
+    : [{ label: "Final Deadline", date: "" }];
 }
 
 function normalizeDateForSort(value: string | undefined): number {
@@ -161,15 +148,16 @@ function earliestDeadlineForSort(item: FinanceAssignment): number {
   return dated[0] ?? Number.MAX_SAFE_INTEGER;
 }
 
-function formatDeadlineLabel(item: FinanceAssignment): string {
+function formatDeadlineLabel(item: FinanceAssignment): string[] {
   const rows = normalizeDeadlines(item);
-  if (rows.length === 0) return "-";
-  return rows.map((row) => `${row.label}: ${row.date || "-"}`).join(" | ");
+  if (rows.length === 0) return ["-"];
+  return rows.map((row) => `${row.label}: ${row.date || "-"}`);
 }
 
 export default function FinanceAssignmentsPage() {
   const [assignments, setAssignments] = useState<FinanceAssignment[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -187,6 +175,7 @@ export default function FinanceAssignmentsPage() {
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
   const [emailRecipientOverride, setEmailRecipientOverride] = useState<string[] | null>(null);
   const [emailRecipientLabel, setEmailRecipientLabel] = useState<string | null>(null);
+  const [memberPickerSearch, setMemberPickerSearch] = useState("");
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const router = useRouter();
@@ -200,6 +189,7 @@ export default function FinanceAssignmentsPage() {
   }, [authRole, router]);
 
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeApplications(setApplications), []);
 
   const fetchAssignments = async () => {
     if (!user) return;
@@ -236,12 +226,18 @@ export default function FinanceAssignmentsPage() {
     () =>
       Array.from(
         new Set(
-          team
-            .map((member) => String(member.name ?? "").trim())
-            .filter(Boolean)
+          [
+            ...team.map((member) => String(member.name ?? "").trim()),
+            ...applications.map((app) => String(app.fullName ?? "").trim()),
+          ].filter(Boolean),
         )
       ).sort((a, b) => a.localeCompare(b)),
-    [team]
+    [team, applications]
+  );
+
+  const memberNameLookup = useMemo(
+    () => new Map(memberNameOptions.map((name) => [normalizeLoose(name), name])),
+    [memberNameOptions],
   );
 
   const memberIdByName = useMemo(() => {
@@ -289,8 +285,7 @@ export default function FinanceAssignmentsPage() {
   };
 
   const getAssignmentDisplayTitle = (item: FinanceAssignment): string => {
-    const stripped = stripAssignedNamesFromTitle(item.title ?? "", item.assignedMemberNames ?? []);
-    return stripped || item.title || "Untitled Assignment";
+    return String(item.topic ?? "").trim() || String(item.title ?? "").trim() || "Untitled Assignment";
   };
 
   const setField = (key: keyof typeof form, value: unknown) => {
@@ -304,7 +299,7 @@ export default function FinanceAssignmentsPage() {
       ...entry,
       ...patch,
     } : entry));
-    setField("deadlines", next);
+    setField("deadlines", sortDeadlinesMostRecentFirst(next));
   };
 
   const addDeadlineRow = () => {
@@ -315,27 +310,30 @@ export default function FinanceAssignmentsPage() {
       return parsed > best ? parsed : best;
     }, 0);
     const nextLabel = getOrdinalDeadlineLabel(maxOrdinal + 1);
-    setField("deadlines", [...current, { label: nextLabel, date: "" }]);
+    setField("deadlines", sortDeadlinesMostRecentFirst([...current, { label: nextLabel, date: "" }]));
   };
 
   const removeDeadlineRow = (index: number) => {
     const current = normalizeDeadlines(form);
     if (current.length <= 1) return;
     const next = current.filter((_, idx) => idx !== index);
-    setField("deadlines", next.length > 0 ? next : [{ label: "Final Deadline", date: "" }]);
+    setField(
+      "deadlines",
+      next.length > 0 ? sortDeadlinesMostRecentFirst(next) : [{ label: "Final Deadline", date: "" }],
+    );
   };
 
   const openCreate = () => {
     setForm({ ...BLANK_FORM });
+    setMemberPickerSearch("");
     setEditingAssignment(null);
     setModal("create");
   };
 
   const openEdit = (item: FinanceAssignment) => {
-    const strippedTitle = stripAssignedNamesFromTitle(item.title ?? "", item.assignedMemberNames ?? []);
     setForm({
       type: item.type,
-      title: strippedTitle || item.title,
+      title: item.title ?? "",
       topic: item.topic,
       teamLabel: item.teamLabel ?? "",
       region: item.region ?? "",
@@ -350,28 +348,33 @@ export default function FinanceAssignmentsPage() {
       status: item.status,
       notes: item.notes ?? "",
     });
+    setMemberPickerSearch("");
     setEditingAssignment(item);
     setModal("edit");
   };
 
   const handleSave = async () => {
-    if (!form.title.trim() || !form.topic.trim()) return;
+    if (!form.topic.trim()) return;
 
     const normalizedMemberNames = (form.assignedMemberNames ?? [])
       .map((name) => String(name ?? "").trim())
+      .map((name) => memberNameLookup.get(normalizeLoose(name)) ?? "")
       .filter(Boolean);
     const normalizedMemberIds = normalizedMemberNames
       .map((name) => memberIdByName.get(name.toLowerCase()) ?? "")
       .filter(Boolean);
+    const generatedTitle = form.type === "Case Study"
+      ? `Case Study${String(form.region ?? "").trim() ? ` — ${String(form.region ?? "").trim()}` : ""}`
+      : form.type === "Grant"
+        ? "Grant Assignment"
+        : "Report Assignment";
 
-    const cleanedTitle = stripAssignedNamesFromTitle(form.title.trim(), normalizedMemberNames);
-
-    const normalizedDeadlines = normalizeDeadlines(form)
+    const normalizedDeadlines = sortDeadlinesMostRecentFirst(normalizeDeadlines(form)
       .map((entry) => ({
         label: String(entry.label ?? "").trim() || "Deadline",
         date: String(entry.date ?? "").trim(),
       }))
-      .filter((entry) => entry.label || entry.date);
+      .filter((entry) => entry.label || entry.date));
 
     const datedRows = normalizedDeadlines.filter((entry) => !!entry.date);
     const finalDate = normalizedDeadlines.find((entry) => normalizeLoose(entry.label) === "final deadline" && entry.date)?.date
@@ -381,7 +384,7 @@ export default function FinanceAssignmentsPage() {
 
     const payload: Omit<FinanceAssignment, "id" | "createdAt" | "updatedAt"> = {
       ...form,
-      title: cleanedTitle,
+      title: generatedTitle,
       topic: form.topic.trim(),
       teamLabel: "",
       region: String(form.region ?? "").trim(),
@@ -393,7 +396,7 @@ export default function FinanceAssignmentsPage() {
       firstDraftDueDate: "",
       finalDueDate: finalDate,
       deliverableUrl: String(form.deliverableUrl ?? "").trim(),
-      notes: String(form.notes ?? "").trim(),
+      notes: "",
     };
 
     if (!user) return;
@@ -520,9 +523,9 @@ export default function FinanceAssignmentsPage() {
       if (!search.trim()) return true;
       const q = search.trim().toLowerCase();
       return [
-        item.title,
         item.topic,
         item.region,
+        item.type,
         ...(item.assignedMemberNames ?? []),
       ].some((value) => String(value ?? "").toLowerCase().includes(q));
     })
@@ -564,7 +567,7 @@ export default function FinanceAssignmentsPage() {
       </div>
 
       <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search title, topic, region, member..." />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search topic, region, or member..." />
         <div className="min-w-[180px]">
           <Select
             options={ASSIGNMENT_TYPES}
@@ -584,7 +587,7 @@ export default function FinanceAssignmentsPage() {
       </div>
 
       <Table
-        cols={["Type", "Assignment", "Members", "Deadlines", "Status", "Actions"]}
+        cols={["Type / Region", "Topic / Focus", "Members", "Deadlines", "Status", "Actions"]}
         rows={filtered.map((item) => {
           const rowRecipients = resolveRecipientsFromNames(item.assignedMemberNames ?? []);
           return [
@@ -592,9 +595,8 @@ export default function FinanceAssignmentsPage() {
               <p className="text-white/80">{item.type}</p>
               <p className="text-xs text-white/45">{item.region || "-"}</p>
             </div>,
-            <div key="assignment" className="min-w-[260px]">
-              <p id={`finance-assignment-${item.id}`} className="text-white font-medium">{getAssignmentDisplayTitle(item)}</p>
-              <p className="text-xs text-white/45">{item.topic}</p>
+            <div key="topic" className="min-w-[260px]">
+              <p id={`finance-assignment-${item.id}`} className="text-white font-medium">{item.topic || "-"}</p>
             </div>,
             <div key="members" className="min-w-[230px]" title={(item.assignedMemberNames ?? []).join(", ")}>
               {(item.assignedMemberNames ?? []).length === 0 ? (
@@ -621,7 +623,11 @@ export default function FinanceAssignmentsPage() {
                 </span>
               )}
             </div>,
-            <span key="deadlines" className="text-xs text-white/70 min-w-[260px]">{formatDeadlineLabel(item)}</span>,
+            <div key="deadlines" className="text-xs text-white/70 min-w-[260px] space-y-1">
+              {formatDeadlineLabel(item).map((line, idx) => (
+                <p key={`${item.id}-deadline-${idx}`} className="leading-tight">{line}</p>
+              ))}
+            </div>,
             <Badge key="status" label={item.status} />,
             <div key="actions" className="flex items-center gap-2">
               {canEdit ? (
@@ -754,26 +760,8 @@ export default function FinanceAssignmentsPage() {
           </Field>
 
           <div className="md:col-span-2">
-            <Field label="Assignment Title" required>
-              <Input
-                value={form.title}
-                onChange={(event) => setField("title", event.target.value)}
-                placeholder={
-                  form.type === "Report"
-                    ? "e.g., Practical Guide: Customer Loyalty Programs"
-                    : form.type === "Grant"
-                      ? "e.g., Grant Application Playbook for Local Retail"
-                      : "e.g., Local Business Landscape Case Study"
-                }
-              />
-            </Field>
-            <p className="text-[11px] text-white/45 mt-1">Keep titles focused on topic; assigned member names should stay in the Assigned Members field only.</p>
-          </div>
-
-          <div className="md:col-span-2">
             <Field label="Topic / Focus" required>
-              <TextArea
-                rows={2}
+              <Input
                 value={form.topic}
                 onChange={(event) => setField("topic", event.target.value)}
                 placeholder="What this assignment should cover."
@@ -782,24 +770,70 @@ export default function FinanceAssignmentsPage() {
           </div>
 
           <div className="md:col-span-2">
-          <Field label="Region / School Cohort">
-            <Input
-              value={form.region}
-              onChange={(event) => setField("region", event.target.value)}
-              placeholder={form.type === "Case Study" ? "e.g., Manhattan Hunter" : "Optional"}
-            />
-          </Field>
+            <Field label="Region">
+              <Input
+                value={form.region}
+                onChange={(event) => setField("region", event.target.value)}
+                placeholder={form.type === "Case Study" ? "e.g., Manhattan Hunter" : "Optional"}
+              />
+            </Field>
           </div>
 
           <div className="md:col-span-2">
             <Field label="Assigned Members">
-              <AutocompleteTagInput
-                values={form.assignedMemberNames ?? []}
-                onChange={(values) => setField("assignedMemberNames", values)}
-                options={memberNameOptions}
-                commitOnBlur
-                placeholder="Type member names, then Enter/comma"
-              />
+              <div className="space-y-2">
+                <Input
+                  value={memberPickerSearch}
+                  onChange={(event) => setMemberPickerSearch(event.target.value)}
+                  placeholder="Search members/applicants to add..."
+                />
+                <div className="flex flex-wrap gap-1.5 min-h-[1.25rem]">
+                  {(form.assignedMemberNames ?? []).map((name) => (
+                    <span key={name} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
+                      {name}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setField(
+                            "assignedMemberNames",
+                            (form.assignedMemberNames ?? []).filter((entry) => entry !== name),
+                          )
+                        }
+                        className="text-red-300 hover:text-red-200 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-white/10 bg-[#0F1014]">
+                  {memberNameOptions
+                    .filter((option) => !(form.assignedMemberNames ?? []).includes(option))
+                    .filter((option) => {
+                      const q = memberPickerSearch.trim().toLowerCase();
+                      return !q || option.toLowerCase().includes(q);
+                    })
+                    .slice(0, 80)
+                    .map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setField("assignedMemberNames", [...(form.assignedMemberNames ?? []), option])}
+                        className="w-full px-3 py-2 text-left text-sm text-white/75 hover:bg-white/10 transition-colors"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  {memberNameOptions
+                    .filter((option) => !(form.assignedMemberNames ?? []).includes(option))
+                    .filter((option) => {
+                      const q = memberPickerSearch.trim().toLowerCase();
+                      return !q || option.toLowerCase().includes(q);
+                    }).length === 0 && (
+                    <p className="px-3 py-2 text-xs text-white/40">No matching members/applicants.</p>
+                  )}
+                </div>
+              </div>
             </Field>
           </div>
 
@@ -834,22 +868,11 @@ export default function FinanceAssignmentsPage() {
           </div>
 
           <div className="md:col-span-2">
-            <Field label="Deliverable Link (Google Doc)">
+            <Field label="Deliverable Link">
               <Input
                 value={form.deliverableUrl ?? ""}
                 onChange={(event) => setField("deliverableUrl", event.target.value)}
                 placeholder="https://docs.google.com/..."
-              />
-            </Field>
-          </div>
-
-          <div className="md:col-span-2">
-            <Field label="Notes">
-              <TextArea
-                rows={3}
-                value={form.notes ?? ""}
-                onChange={(event) => setField("notes", event.target.value)}
-                placeholder="Instructions, scope, publishing notes, or reviewer comments."
               />
             </Field>
           </div>

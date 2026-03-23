@@ -182,7 +182,7 @@ function buildSeedAssignments() {
   const reports = REPORT_ASSIGNMENTS.map((entry, index) => ({
     seedKey: `report:${index + 1}:${normalizeNameKey(entry.member)}`,
     type: "Report",
-    title: `Report — ${normalizeWhitespace(entry.member)}`,
+    title: `Report — ${normalizeWhitespace(entry.topic)}`,
     topic: normalizeWhitespace(entry.topic),
     teamLabel: "Reports",
     region: "",
@@ -198,8 +198,8 @@ function buildSeedAssignments() {
 
   const caseStudies = CASE_STUDY_ASSIGNMENTS.map((entry, index) => ({
     seedKey: `case:${index + 1}:${normalizeNameKey(entry.teamLabel)}`,
-    type: "Business Case Study",
-    title: `Business Case Study — ${normalizeWhitespace(entry.teamLabel)}`,
+    type: "Case Study",
+    title: `Case Study — ${normalizeWhitespace(entry.teamLabel)}`,
     topic: "Field interview + local small-business case study report.",
     teamLabel: normalizeWhitespace(entry.teamLabel),
     region: normalizeWhitespace(entry.region),
@@ -234,12 +234,14 @@ async function main() {
 
   try {
     const db = getDatabase(app);
-    const [teamSnap, assignmentsSnap] = await Promise.all([
+    const [teamSnap, applicationsSnap, assignmentsSnap] = await Promise.all([
       db.ref("team").get(),
+      db.ref("applications").get(),
       db.ref("financeAssignments").get(),
     ]);
 
     const team = teamSnap.val() ?? {};
+    const applications = applicationsSnap.val() ?? {};
     const existingAssignments = assignmentsSnap.val() ?? {};
 
     const teamCandidates = Object.entries(team)
@@ -247,10 +249,22 @@ async function main() {
         id,
         name: normalizeWhitespace(row?.name ?? ""),
         key: normalizeNameKey(row?.name ?? ""),
+        source: "team",
       }))
       .filter((row) => row.name && row.key);
 
-    const exactNameMap = new Map(teamCandidates.map((row) => [row.key, row]));
+    const applicationCandidates = Object.values(applications)
+      .map((row) => ({
+        id: "",
+        name: normalizeWhitespace(row?.fullName ?? ""),
+        key: normalizeNameKey(row?.fullName ?? ""),
+        source: "application",
+      }))
+      .filter((row) => row.name && row.key);
+
+    const allCandidates = [...teamCandidates, ...applicationCandidates];
+
+    const exactNameMap = new Map(allCandidates.map((row) => [row.key, row]));
     const aliasMap = new Map([
       ["yuba", "yuba bhatta"],
       ["ellie", "ellie"],
@@ -288,7 +302,7 @@ async function main() {
       }
 
       let best = null;
-      for (const candidate of teamCandidates) {
+      for (const candidate of allCandidates) {
         const score = similarityScore(rawKey, candidate.key);
         if (!best || score > best.score) {
           best = { ...candidate, score };
@@ -310,7 +324,7 @@ async function main() {
         .filter(Boolean);
       return {
         ...item,
-        assignedMemberIds: Array.from(new Set(resolvedMembers.map((member) => member.id))),
+        assignedMemberIds: Array.from(new Set(resolvedMembers.map((member) => member.id).filter(Boolean))),
       };
     });
 

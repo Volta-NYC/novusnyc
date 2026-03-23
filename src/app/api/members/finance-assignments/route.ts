@@ -7,6 +7,10 @@ function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeNameKey(value: unknown): string {
+  return asText(value).replace(/\s+/g, " ").toLowerCase();
+}
+
 function normalizeAssignmentType(value: unknown): "Report" | "Case Study" | "Grant" {
   const raw = asText(value);
   if (raw === "Report" || raw === "Case Study" || raw === "Grant") return raw;
@@ -85,6 +89,54 @@ function normalizeRow(id: string, row: FinanceAssignmentRow) {
   };
 }
 
+function buildAllowedAssigneeLookup(
+  teamRows: Record<string, FinanceAssignmentRow>,
+  applicationRows: Record<string, FinanceAssignmentRow>,
+): { canonicalByKey: Map<string, string>; teamIdByKey: Map<string, string> } {
+  const canonicalByKey = new Map<string, string>();
+  const teamIdByKey = new Map<string, string>();
+
+  for (const [id, row] of Object.entries(teamRows)) {
+    const name = asText(row?.name);
+    const key = normalizeNameKey(name);
+    if (!key) continue;
+    if (!canonicalByKey.has(key)) canonicalByKey.set(key, name);
+    if (id) teamIdByKey.set(key, id);
+  }
+
+  for (const row of Object.values(applicationRows)) {
+    const name = asText(row?.fullName);
+    const key = normalizeNameKey(name);
+    if (!key) continue;
+    if (!canonicalByKey.has(key)) canonicalByKey.set(key, name);
+  }
+
+  return { canonicalByKey, teamIdByKey };
+}
+
+function sanitizeAssignedMembers(
+  row: FinanceAssignmentRow,
+  lookup: { canonicalByKey: Map<string, string>; teamIdByKey: Map<string, string> },
+): { names: string[]; ids: string[] } {
+  const seen = new Set<string>();
+  const names: string[] = [];
+  const ids: string[] = [];
+  const rawNames = Array.isArray(row.assignedMemberNames) ? row.assignedMemberNames : [];
+
+  for (const rawName of rawNames) {
+    const key = normalizeNameKey(rawName);
+    if (!key || seen.has(key)) continue;
+    const canonicalName = lookup.canonicalByKey.get(key);
+    if (!canonicalName) continue;
+    seen.add(key);
+    names.push(canonicalName);
+    const teamId = lookup.teamIdByKey.get(key);
+    if (teamId) ids.push(teamId);
+  }
+
+  return { names, ids };
+}
+
 export async function GET(req: NextRequest) {
   const verified = await verifyCaller(req, ["admin"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
@@ -107,11 +159,22 @@ export async function POST(req: NextRequest) {
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = await req.json() as FinanceAssignmentRow;
+  const [teamRows, applicationRows] = await Promise.all([
+    dbRead("team", verified.caller.idToken),
+    dbRead("applications", verified.caller.idToken),
+  ]);
+  const lookup = buildAllowedAssigneeLookup(
+    (teamRows ?? {}) as Record<string, FinanceAssignmentRow>,
+    (applicationRows ?? {}) as Record<string, FinanceAssignmentRow>,
+  );
+  const sanitizedAssignees = sanitizeAssignedMembers(body, lookup);
   const now = new Date().toISOString();
   const nextBody: FinanceAssignmentRow = {
     ...body,
     type: normalizeAssignmentType(body.type),
     status: normalizeAssignmentStatus(body.status),
+    assignedMemberNames: sanitizedAssignees.names,
+    assignedMemberIds: sanitizedAssignees.ids,
   };
   await dbPush("financeAssignments", { ...nextBody, createdAt: now, updatedAt: now }, verified.caller.idToken);
   return NextResponse.json({ success: true });
@@ -127,6 +190,19 @@ export async function PATCH(req: NextRequest) {
   const patch = { ...((body.patch ?? {}) as FinanceAssignmentRow) };
   if ("type" in patch) patch.type = normalizeAssignmentType(patch.type);
   if ("status" in patch) patch.status = normalizeAssignmentStatus(patch.status);
+  if ("assignedMemberNames" in patch || "assignedMemberIds" in patch) {
+    const [teamRows, applicationRows] = await Promise.all([
+      dbRead("team", verified.caller.idToken),
+      dbRead("applications", verified.caller.idToken),
+    ]);
+    const lookup = buildAllowedAssigneeLookup(
+      (teamRows ?? {}) as Record<string, FinanceAssignmentRow>,
+      (applicationRows ?? {}) as Record<string, FinanceAssignmentRow>,
+    );
+    const sanitizedAssignees = sanitizeAssignedMembers(patch, lookup);
+    patch.assignedMemberNames = sanitizedAssignees.names;
+    patch.assignedMemberIds = sanitizedAssignees.ids;
+  }
   await dbPatch(`financeAssignments/${id}`, { ...patch, updatedAt: new Date().toISOString() }, verified.caller.idToken);
   return NextResponse.json({ success: true });
 }
