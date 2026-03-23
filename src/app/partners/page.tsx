@@ -265,7 +265,7 @@ export default function Partners() {
               How engagement works
             </p>
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
-              Clear steps from intake to execution.
+              Three simple steps, on your schedule
             </h2>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-4">
