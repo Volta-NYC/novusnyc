@@ -626,21 +626,6 @@ export default function TeamPage() {
     setField("divisions", [track]);
   };
 
-  const activeProjectAssignedNameKeys = useMemo(() => {
-    const keys = new Set<string>();
-    for (const business of businesses) {
-      const status = normalizeKey(business.projectStatus ?? "");
-      const isActiveProject = status === "ongoing" || status === "active";
-      if (!isActiveProject) continue;
-      const assigned = [...(business.teamMembers ?? []), business.teamLead ?? ""];
-      for (const raw of assigned) {
-        const key = normalizeKey(String(raw ?? ""));
-        if (key) keys.add(key);
-      }
-    }
-    return keys;
-  }, [businesses]);
-
   const resolvedFinanceMemberKeysByAssignment = useMemo(() => {
     const map = new Map<string, string[]>();
     const teamRows = team.map((member) => {
@@ -691,19 +676,6 @@ export default function TeamPage() {
     }
     return map;
   }, [financeAssignments, team]);
-
-  const activeFinanceAssignedNameKeys = useMemo(() => {
-    const keys = new Set<string>();
-    for (const assignment of financeAssignments) {
-      const status = normalizeKey(assignment.status ?? "");
-      const isActiveFinanceAssignment = status !== "completed";
-      if (!isActiveFinanceAssignment) continue;
-      for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
-        if (memberKey) keys.add(memberKey);
-      }
-    }
-    return keys;
-  }, [financeAssignments, resolvedFinanceMemberKeysByAssignment]);
 
   const assignmentsByMemberName = useMemo(() => {
     const map = new Map<string, MemberAssignmentLink[]>();
@@ -831,11 +803,11 @@ export default function TeamPage() {
     if (normalizeKey(member.status ?? "") === "inactive") {
       return { colorClass: "bg-red-400", label: "Inactive" };
     }
-    const memberKey = normalizeKey(member.name ?? "");
-    if (activeProjectAssignedNameKeys.has(memberKey) || activeFinanceAssignedNameKeys.has(memberKey)) {
-      return { colorClass: "bg-emerald-400", label: "Assigned to active project or finance assignment" };
+    const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
+    if (memberAssignments.length > 0) {
+      return { colorClass: "bg-emerald-400", label: "Assigned to at least one project or assignment" };
     }
-    return { colorClass: "bg-yellow-400", label: "Not assigned to active project or finance assignment" };
+    return { colorClass: "bg-yellow-400", label: "No project or assignment linked" };
   };
 
   const selectedMemberAssignments = useMemo(() => {
@@ -847,8 +819,8 @@ export default function TeamPage() {
   const inactiveMembersCount = team.filter((member) => normalizeKey(member.status ?? "") === "inactive").length;
   const assignedMembersCount = team.filter((member) => {
     if (normalizeKey(member.status ?? "") === "inactive") return false;
-    const memberKey = normalizeKey(member.name ?? "");
-    return activeProjectAssignedNameKeys.has(memberKey) || activeFinanceAssignedNameKeys.has(memberKey);
+    const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
+    return memberAssignments.length > 0;
   }).length;
   const totalApplicantsCount = applications.length;
 
@@ -859,7 +831,7 @@ export default function TeamPage() {
 
     return (
       <div className="min-w-0">
-        <div className="members-assignments-scroll w-[182px] max-w-[182px] overflow-x-auto overflow-y-hidden pb-0.5">
+        <div className="members-assignments-scroll w-[88px] max-w-[88px] overflow-x-auto overflow-y-hidden pb-0.5">
           <div className="inline-flex min-w-max items-center gap-1 pr-1">
             {memberAssignments.map((item) => (
               <a
@@ -1000,7 +972,7 @@ export default function TeamPage() {
                     key={col}
                     className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
                       col === "Track" ? "w-[88px]" :
-                      col === "Projects" ? "w-[220px]" :
+                      col === "Projects" ? "w-[96px]" :
                       col === "Name" ? "w-[250px]" :
                       col === "School" ? "w-[360px]" :
                       "w-[90px]"
@@ -1020,8 +992,13 @@ export default function TeamPage() {
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="text-white/65 text-[10px] font-semibold">{track}</span>
+                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
+                    </td>
+                    <td className="px-2 py-1">
+                      {renderAssignmentCell(memberAssignments, `member-${member.id}`)}
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
@@ -1029,13 +1006,6 @@ export default function TeamPage() {
                           onClick={() => setAssignmentDetailMember(member)}
                           aria-label={`View assignments for ${member.name}`}
                         />
-                      </span>
-                    </td>
-                    <td className="px-2 py-1">
-                      {renderAssignmentCell(memberAssignments, `member-${member.id}`)}
-                    </td>
-                    <td className="px-2 py-1">
-                      <div className="flex items-center gap-2 min-w-0">
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
@@ -1069,7 +1039,7 @@ export default function TeamPage() {
                       key={col}
                       className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${
                         col === "Track" ? "w-[88px]" :
-                        col === "Projects" ? "w-[220px]" :
+                        col === "Projects" ? "w-[96px]" :
                         col === "Name" ? "w-[250px]" :
                         col === "Email" ? "w-[330px]" :
                         col === "School" ? "w-[260px]" :
@@ -1110,8 +1080,13 @@ export default function TeamPage() {
                     className="hover:bg-white/3 transition-colors align-middle"
                   >
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="text-white/65 text-[10px] font-semibold">{track}</span>
+                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
+                    </td>
+                    <td className="px-2 py-1">
+                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`)}
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
@@ -1119,13 +1094,6 @@ export default function TeamPage() {
                           onClick={() => setAssignmentDetailMember(member)}
                           aria-label={`View assignments for ${member.name}`}
                         />
-                      </span>
-                    </td>
-                    <td className="px-2 py-1">
-                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`)}
-                    </td>
-                    <td className="px-2 py-1">
-                      <div className="flex items-center gap-2 min-w-0">
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
