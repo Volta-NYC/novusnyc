@@ -363,6 +363,10 @@ export default function ApplicantsPage() {
     return base;
   }, [applications, search, showAcceptedApplicants]);
 
+  const totalApplicantsCount = applications.length;
+  const acceptedApplicantsCount = applications.filter((app) => normalize(app.status) === "accepted").length;
+  const newApplicantsCount = applications.filter((app) => normalize(app.status) === "new").length;
+
   const uninvitedApplicantIds = useMemo(
     () =>
       applications
@@ -824,6 +828,11 @@ export default function ApplicantsPage() {
       <PageHeader
         title="Applicants"
       />
+      <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
+        <span>Total: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
+        <span>Accepted: <span className="text-emerald-300 font-semibold">{acceptedApplicantsCount}</span></span>
+        <span>New: <span className="text-sky-300 font-semibold">{newApplicantsCount}</span></span>
+      </div>
       <SectionTabs tabs={PEOPLE_GROUP_TABS} />
 
       {canEdit && (
