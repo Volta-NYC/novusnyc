@@ -915,6 +915,14 @@ export default function TeamPage() {
           </div>
         ) : undefined}
       />
+      <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
+        <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
+        <span>Assigned: <span className="text-emerald-300 font-semibold">{assignedMembersCount}</span></span>
+        <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
+        {canEdit && (
+          <span>Total Applicants: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
+        )}
+      </div>
       <SectionTabs tabs={PEOPLE_GROUP_TABS} />
       {importMessage && (
         <p className="text-xs text-white/55 mb-4">{importMessage}</p>
@@ -981,15 +989,6 @@ export default function TeamPage() {
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
-        <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
-        <span>Assigned: <span className="text-emerald-300 font-semibold">{assignedMembersCount}</span></span>
-        <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
-        {canEdit && (
-          <span>Total Applicants: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
-        )}
-      </div>
-
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="members-table-shell relative select-text">
