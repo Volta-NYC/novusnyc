@@ -128,13 +128,19 @@ function getCalendarBusinessTrackDeadlines(
   const out: Array<{ track: "Tech" | "Marketing" | "Finance"; label: string; date: string; businessName: string; neighborhood: string }> = [];
   for (const track of tracks) {
     const info = business.trackProjects?.[track];
-    const deadlines = Array.isArray(info?.deadlines) ? info.deadlines : [];
+    const rawDeadlines = info?.deadlines;
+    const deadlines = Array.isArray(rawDeadlines)
+      ? rawDeadlines
+      : rawDeadlines && typeof rawDeadlines === "object"
+        ? Object.values(rawDeadlines as Record<string, unknown>)
+        : [];
     deadlines.forEach((item) => {
-      const date = String(item?.date ?? "").trim();
+      const entry = item && typeof item === "object" ? item as { label?: unknown; date?: unknown } : null;
+      const date = String(entry?.date ?? "").trim();
       if (!date) return;
       out.push({
         track,
-        label: String(item?.label ?? "").trim() || "Deadline",
+        label: String(entry?.label ?? "").trim() || "Deadline",
         date,
         businessName,
         neighborhood,
@@ -438,12 +444,16 @@ export default function CalendarPage() {
     let mounted = true;
 
     const loadAssignments = async () => {
-      if (!canEdit) {
+      if (!canEdit || !user) {
         if (mounted) setFinanceAssignments([]);
         return;
       }
       try {
-        const res = await fetch("/api/members/finance-assignments", { cache: "no-store" });
+        const token = await user.getIdToken();
+        const res = await fetch("/api/members/finance-assignments", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!res.ok) return;
         const data = await res.json() as { assignments?: FinanceAssignment[] };
         if (!mounted) return;
@@ -459,7 +469,7 @@ export default function CalendarPage() {
       mounted = false;
       window.clearInterval(timer);
     };
-  }, [canEdit]);
+  }, [canEdit, user]);
 
   // Close popup when clicking outside of it.
   useEffect(() => {

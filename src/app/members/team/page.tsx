@@ -232,16 +232,47 @@ export default function TeamPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ask, Dialog } = useConfirm();
-  const { authRole } = useAuth();
+  const { authRole, user } = useAuth();
   const canEdit = authRole === "admin";
   const isMemberRestricted = authRole === "member";
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
   useEffect(() => subscribeApplications(setApplications), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
+  useEffect(() => {
+    let mounted = true;
+    let timer: number | null = null;
+
+    if (!canEdit || !user) {
+      return subscribeFinanceAssignments(setFinanceAssignments);
+    }
+
+    const loadAssignments = async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/members/finance-assignments", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json() as { assignments?: FinanceAssignment[] };
+        if (!mounted) return;
+        setFinanceAssignments(Array.isArray(data.assignments) ? data.assignments : []);
+      } catch {
+        // Keep existing in-memory assignments.
+      }
+    };
+
+    void loadAssignments();
+    timer = window.setInterval(() => { void loadAssignments(); }, 30000);
+
+    return () => {
+      mounted = false;
+      if (timer) window.clearInterval(timer);
+    };
+  }, [canEdit, user]);
 
   const copyText = async (value: string) => {
     const safe = value.trim();
@@ -821,6 +852,45 @@ export default function TeamPage() {
   }).length;
   const totalApplicantsCount = applications.length;
 
+  const renderAssignmentCell = (memberAssignments: MemberAssignmentLink[], keyPrefix: string) => {
+    if (memberAssignments.length === 0) {
+      return <span className="text-white/35">—</span>;
+    }
+
+    return (
+      <div className="min-w-0">
+        <div className="w-[182px] max-w-[182px] overflow-x-auto overflow-y-hidden pb-0.5">
+          <div className="inline-flex min-w-max items-center gap-1 pr-1">
+            {memberAssignments.map((item) => (
+              <a
+                key={`${keyPrefix}-code-${item.id}-${item.code}`}
+                href={item.href}
+                className="inline-flex h-5 w-10 items-center justify-center rounded-full border border-white/15 bg-[#11141A] px-1 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
+                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""}`}
+              >
+                {item.code}
+              </a>
+            ))}
+          </div>
+        </div>
+        {expandAssignments && (
+          <div className="mt-1 space-y-0.5">
+            {memberAssignments.map((item) => (
+              <a
+                key={`${keyPrefix}-preview-${item.id}-${item.code}`}
+                href={item.href}
+                className="block truncate text-[10px] text-white/55 hover:text-[#C4F135] transition-colors"
+                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""} · ${item.status}`}
+              >
+                <span className="text-white/80">{item.code}</span> {item.title}{item.topic ? ` · ${item.topic}` : ""}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <MembersLayout>
       <Dialog />
@@ -954,38 +1024,7 @@ export default function TeamPage() {
                       <span className="text-white/65 text-[10px] font-semibold">{track}</span>
                     </td>
                     <td className="px-2 py-1">
-                      {memberAssignments.length === 0 ? (
-                        <span className="text-white/35">—</span>
-                      ) : (
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap gap-1">
-                            {memberAssignments.map((item) => (
-                              <a
-                                key={`code-${member.id}-${item.id}-${item.code}`}
-                                href={item.href}
-                                className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-1.5 py-0.5 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
-                                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""}`}
-                              >
-                                {item.code}
-                              </a>
-                            ))}
-                          </div>
-                          {expandAssignments && (
-                            <div className="mt-1 space-y-0.5">
-                              {memberAssignments.map((item) => (
-                                <a
-                                  key={`preview-${member.id}-${item.id}-${item.code}`}
-                                  href={item.href}
-                                  className="block truncate text-[10px] text-white/55 hover:text-[#C4F135] transition-colors"
-                                  title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""} · ${item.status}`}
-                                >
-                                  <span className="text-white/80">{item.code}</span> {item.title}{item.topic ? ` · ${item.topic}` : ""}
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {renderAssignmentCell(memberAssignments, `member-${member.id}`)}
                     </td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
@@ -1029,7 +1068,7 @@ export default function TeamPage() {
                       key={col}
                       className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${
                         col === "Track" ? "w-[64px]" :
-                        col === "Projects" ? "w-[280px]" :
+                        col === "Projects" ? "w-[220px]" :
                         col === "Name" ? "w-[250px]" :
                         col === "Email" ? "w-[330px]" :
                         col === "School" ? "w-[260px]" :
@@ -1073,38 +1112,7 @@ export default function TeamPage() {
                       <span className="text-white/65 text-[10px] font-semibold">{track}</span>
                     </td>
                     <td className="px-2 py-1">
-                      {memberAssignments.length === 0 ? (
-                        <span className="text-white/35">—</span>
-                      ) : (
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap gap-1">
-                            {memberAssignments.map((item) => (
-                              <a
-                                key={`admin-code-${member.id}-${item.id}-${item.code}`}
-                                href={item.href}
-                                className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-1.5 py-0.5 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
-                                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""}`}
-                              >
-                                {item.code}
-                              </a>
-                            ))}
-                          </div>
-                          {expandAssignments && (
-                            <div className="mt-1 space-y-0.5">
-                              {memberAssignments.map((item) => (
-                                <a
-                                  key={`admin-preview-${member.id}-${item.id}-${item.code}`}
-                                  href={item.href}
-                                  className="block truncate text-[10px] text-white/55 hover:text-[#C4F135] transition-colors"
-                                  title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""} · ${item.status}`}
-                                >
-                                  <span className="text-white/80">{item.code}</span> {item.title}{item.topic ? ` · ${item.topic}` : ""}
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`)}
                     </td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
