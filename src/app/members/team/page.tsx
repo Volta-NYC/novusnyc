@@ -859,7 +859,7 @@ export default function TeamPage() {
 
     return (
       <div className="min-w-0">
-        <div className="w-[182px] max-w-[182px] overflow-x-auto overflow-y-hidden pb-0.5">
+        <div className="members-assignments-scroll w-[182px] max-w-[182px] overflow-x-auto overflow-y-hidden pb-0.5">
           <div className="inline-flex min-w-max items-center gap-1 pr-1">
             {memberAssignments.map((item) => (
               <a
@@ -999,7 +999,7 @@ export default function TeamPage() {
                   <th
                     key={col}
                     className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
-                      col === "Track" ? "w-[64px]" :
+                      col === "Track" ? "w-[88px]" :
                       col === "Projects" ? "w-[220px]" :
                       col === "Name" ? "w-[250px]" :
                       col === "School" ? "w-[360px]" :
@@ -1020,13 +1020,8 @@ export default function TeamPage() {
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
-                    </td>
-                    <td className="px-2 py-1">
-                      {renderAssignmentCell(memberAssignments, `member-${member.id}`)}
-                    </td>
-                    <td className="px-2 py-1">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="text-white/65 text-[10px] font-semibold">{track}</span>
                         <button
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
@@ -1034,6 +1029,13 @@ export default function TeamPage() {
                           onClick={() => setAssignmentDetailMember(member)}
                           aria-label={`View assignments for ${member.name}`}
                         />
+                      </span>
+                    </td>
+                    <td className="px-2 py-1">
+                      {renderAssignmentCell(memberAssignments, `member-${member.id}`)}
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex items-center gap-2 min-w-0">
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
@@ -1066,7 +1068,7 @@ export default function TeamPage() {
                     <th
                       key={col}
                       className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${
-                        col === "Track" ? "w-[64px]" :
+                        col === "Track" ? "w-[88px]" :
                         col === "Projects" ? "w-[220px]" :
                         col === "Name" ? "w-[250px]" :
                         col === "Email" ? "w-[330px]" :
@@ -1108,13 +1110,8 @@ export default function TeamPage() {
                     className="hover:bg-white/3 transition-colors align-middle"
                   >
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
-                    </td>
-                    <td className="px-2 py-1">
-                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`)}
-                    </td>
-                    <td className="px-2 py-1">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="text-white/65 text-[10px] font-semibold">{track}</span>
                         <button
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
@@ -1122,6 +1119,13 @@ export default function TeamPage() {
                           onClick={() => setAssignmentDetailMember(member)}
                           aria-label={`View assignments for ${member.name}`}
                         />
+                      </span>
+                    </td>
+                    <td className="px-2 py-1">
+                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`)}
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex items-center gap-2 min-w-0">
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>

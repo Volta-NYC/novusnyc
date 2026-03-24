@@ -314,6 +314,15 @@ main {
   line-height: 1.1 !important;
 }
 
+.members-portal .members-assignments-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.members-portal .members-assignments-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 @media (min-width: 768px) {
   .members-portal .members-page-header-action > * {
     justify-content: flex-end;

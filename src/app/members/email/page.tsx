@@ -271,7 +271,7 @@ export default function MemberEmailPage() {
               <table className="members-grid-table w-full min-w-[1100px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#10131A] sticky top-0 z-[1]">
                   <tr>
-                    <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
                     <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>
@@ -374,7 +374,7 @@ export default function MemberEmailPage() {
               <table className="members-grid-table w-full min-w-[1100px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
-                    <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
                     <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>

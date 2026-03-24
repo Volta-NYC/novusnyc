@@ -634,7 +634,7 @@ export default function FinanceAssignmentsPage() {
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[21%]">Members</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Deadlines</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[9%]">Status</th>
-              <th className="px-2 py-2 pr-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-left w-[160px]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -697,9 +697,9 @@ export default function FinanceAssignmentsPage() {
                       <td className="px-2 py-1.5 whitespace-nowrap">
                         <Badge label={item.status} />
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-right w-[160px]">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-left w-[160px]">
                         {canEdit ? (
-                          <div className="flex justify-end gap-1.5">
+                          <div className="flex justify-start gap-1.5">
                             <Btn
                               size="sm"
                               variant="secondary"
