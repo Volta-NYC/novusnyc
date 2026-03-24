@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/members/authContext";
 import { useRouter } from "next/navigation";
 import {
   subscribeCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
-  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeFinanceAssignments, subscribeBusinesses,
+  subscribeTasks, subscribeInterviewSlots, subscribeInterviewInvites, subscribeBusinesses,
   deleteInterviewSlot, type CalendarEvent, type Task, type InterviewSlot, type InterviewInvite, type FinanceAssignment, type Business,
 } from "@/lib/members/storage";
 import { Btn, Modal, Field, Input, TextArea, useConfirm } from "@/components/members/ui";
@@ -78,14 +78,23 @@ function toICSDate(isoString: string): string {
 }
 
 function getCalendarAssignmentDeadlines(assignment: FinanceAssignment): Array<{ label: string; date: string }> {
-  const fromArray = Array.isArray(assignment.deadlines)
-    ? assignment.deadlines
-      .map((entry) => ({
-        label: String(entry?.label ?? "").trim(),
-        date: String(entry?.date ?? "").trim(),
-      }))
-      .filter((entry) => entry.label || entry.date)
-    : [];
+  const rawDeadlines = (assignment as { deadlines?: unknown }).deadlines;
+  const deadlineRows = Array.isArray(rawDeadlines)
+    ? rawDeadlines
+    : rawDeadlines && typeof rawDeadlines === "object"
+      ? Object.values(rawDeadlines as Record<string, unknown>)
+      : [];
+
+  const fromArray = deadlineRows
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const row = entry as { label?: unknown; date?: unknown };
+      const label = String(row.label ?? "").trim();
+      const date = String(row.date ?? "").trim();
+      if (!label && !date) return null;
+      return { label, date };
+    })
+    .filter((entry): entry is { label: string; date: string } => !!entry);
 
   if (fromArray.length > 0) return fromArray;
 
@@ -418,11 +427,38 @@ export default function CalendarPage() {
   useEffect(() => {
     const unsubEvents   = subscribeCalendarEvents(setCalEvents);
     const unsubTasks    = subscribeTasks(setTasks);
-    const unsubAssignments = subscribeFinanceAssignments(setFinanceAssignments);
     const unsubBusinesses = subscribeBusinesses(setBusinesses);
     const unsubISlots   = canEdit ? subscribeInterviewSlots(setInterviewSlots) : () => {};
     const unsubIInvites = canEdit ? subscribeInterviewInvites(setInterviewInvites) : () => {};
-    return () => { unsubEvents(); unsubTasks(); unsubAssignments(); unsubBusinesses(); unsubISlots(); unsubIInvites(); };
+    return () => { unsubEvents(); unsubTasks(); unsubBusinesses(); unsubISlots(); unsubIInvites(); };
+  }, [canEdit]);
+
+  // Load finance assignments through the same normalized API used by /members/assignments.
+  useEffect(() => {
+    let mounted = true;
+
+    const loadAssignments = async () => {
+      if (!canEdit) {
+        if (mounted) setFinanceAssignments([]);
+        return;
+      }
+      try {
+        const res = await fetch("/api/members/finance-assignments", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json() as { assignments?: FinanceAssignment[] };
+        if (!mounted) return;
+        setFinanceAssignments(Array.isArray(data.assignments) ? data.assignments : []);
+      } catch {
+        // silent: keep existing in-memory assignments
+      }
+    };
+
+    void loadAssignments();
+    const timer = window.setInterval(() => { void loadAssignments(); }, 30000);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
   }, [canEdit]);
 
   // Close popup when clicking outside of it.
@@ -969,28 +1005,6 @@ export default function CalendarPage() {
             </button>
           );
         })}
-      </div>
-
-      {/* Legend */}
-      <div className="mt-4 flex flex-wrap gap-4 text-xs text-white/40 font-body">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />Task deadlines
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Finance deadlines
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#EF4444]" />Tech & marketing deadlines
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events
-        </span>
-        {canEdit && (
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />Interviews
-          </span>
-        )}
-        {canEdit && <span className="italic">Click a day to add an event.</span>}
       </div>
 
       {/* Event detail popup */}
