@@ -95,59 +95,36 @@ export default async function About() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
 
-          {/* Bolt layout: cards alternate left/right like a zigzag lightning bolt.
-              A large faint bolt SVG sits behind as a watermark. */}
-          <div className="relative max-w-3xl mx-auto">
-
-            {/* Background bolt watermark */}
-            <div className="pointer-events-none select-none absolute inset-0 flex items-center justify-center">
-              <svg viewBox="0 0 160 520" className="h-full w-auto opacity-[0.055]" fill="#85CC17">
-                <polygon points="105,0 50,230 90,230 35,520 145,210 100,210 150,0" />
-              </svg>
-            </div>
-
-            {/* Cards */}
-            <div className="relative space-y-5">
-              {aboutValues.map((v, i) => {
-                const isLeft = i % 2 === 0;
-                return (
-                  <AnimatedSection key={v.title} delay={i * 0.1}>
-                    <div className={`flex ${isLeft ? "justify-start" : "justify-end"}`}>
-                      <div className="w-full md:w-[62%] bg-white border border-v-border rounded-2xl p-8 shadow-sm">
-                        <div className="flex items-start gap-4 mb-3">
-                          {(() => {
-                            const style = ABOUT_VALUE_BADGE_STYLES[i % ABOUT_VALUE_BADGE_STYLES.length];
-                            return (
-                              <span
-                                className={`w-10 h-10 rounded-full ${style.bg} ${style.text} font-display font-bold text-sm flex items-center justify-center flex-shrink-0 mt-1`}
-                              >
-                                {i + 1}
-                              </span>
-                            );
-                          })()}
-                          <h3 className="font-display font-bold text-v-ink text-xl pt-2 leading-snug">
-                            {v.title}
-                          </h3>
-                        </div>
-                        <p className="font-body text-v-muted leading-relaxed pl-14">{v.desc}</p>
-                      </div>
+          <div className="relative">
+            <div className="hidden lg:block absolute left-[8%] right-[8%] top-8 border-t-2 border-dashed border-v-green/45" />
+            <div className="relative grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-5">
+              {aboutValues.map((v, i) => (
+                <AnimatedSection key={v.title} delay={i * 0.1}>
+                  <div className="h-full bg-white border border-v-border rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-3">
+                      {(() => {
+                        const style = ABOUT_VALUE_BADGE_STYLES[i % ABOUT_VALUE_BADGE_STYLES.length];
+                        return (
+                          <span
+                            className={`w-9 h-9 rounded-full ${style.bg} ${style.text} font-display font-bold text-sm flex items-center justify-center flex-shrink-0`}
+                          >
+                            {i + 1}
+                          </span>
+                        );
+                      })()}
+                      <h3 className="font-display font-bold text-v-ink text-xl leading-snug">
+                        {v.title}
+                      </h3>
                     </div>
-
-                    {/* Diagonal connector between cards */}
-                    {i < aboutValues.length - 1 && (
-                      <div className={`hidden md:flex my-1 ${isLeft ? "justify-end pr-[34%]" : "justify-start pl-[34%]"}`}>
-                        <svg width="72" height="36" viewBox="0 0 72 36" fill="none">
-                          <line
-                            x1={isLeft ? "4" : "68"} y1="4"
-                            x2={isLeft ? "68" : "4"} y2="32"
-                            stroke="#85CC17" strokeWidth="2" strokeLinecap="round" strokeDasharray="5 4"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </AnimatedSection>
-                );
-              })}
+                    <p className="font-body text-v-muted leading-relaxed text-sm md:text-base">{v.desc}</p>
+                  </div>
+                  {i < aboutValues.length - 1 && (
+                    <div className="lg:hidden flex justify-center py-2">
+                      <span className="h-6 w-0 border-l-2 border-dashed border-v-green/45" />
+                    </div>
+                  )}
+                </AnimatedSection>
+              ))}
             </div>
           </div>
         </div>
@@ -160,11 +137,13 @@ export default async function About() {
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we got here</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
           </AnimatedSection>
-          <div className="relative">
-            <div className="absolute left-8 top-8 bottom-8 w-0.5 bg-v-border" />
+          <div>
             {aboutTimeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.12}>
                 <div className={`relative flex gap-6 md:gap-10 ${i < aboutTimeline.length - 1 ? "pb-10 md:pb-12" : ""}`}>
+                  {i < aboutTimeline.length - 1 && (
+                    <div className="absolute left-8 top-16 bottom-0 -translate-x-1/2 w-0.5 bg-v-border" />
+                  )}
                   <div className="w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 flex-shrink-0">
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
