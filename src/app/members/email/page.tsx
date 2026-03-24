@@ -268,7 +268,7 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="max-h-[240px] overflow-x-auto overflow-y-auto border border-white/8 rounded-lg bg-[#11151D]">
-              <table className="w-full min-w-[860px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="w-full min-w-[1100px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#10131A] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
@@ -371,7 +371,7 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="max-h-[420px] overflow-x-auto overflow-y-auto border border-white/8 rounded-lg">
-              <table className="w-full min-w-[860px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="w-full min-w-[1100px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10">#</th>

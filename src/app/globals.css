@@ -216,6 +216,27 @@ main {
   color: rgba(133, 204, 23, 0.95);
 }
 
+/* Members portal UI standardization */
+.members-portal button,
+.members-portal a[role="button"] {
+  border-radius: 0.5rem;
+}
+
+.members-portal input:not([type="checkbox"]):not([type="radio"]),
+.members-portal select,
+.members-portal textarea {
+  border-radius: 0.5rem !important;
+}
+
+.members-portal .members-checkbox {
+  border-radius: 4px !important;
+}
+
+.members-portal table.table-fixed th,
+.members-portal table.table-fixed td {
+  vertical-align: top;
+}
+
 /* Form inputs */
 .volta-input {
   width: 100%;

@@ -160,7 +160,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     "Member";
 
   return (
-    <div className="min-h-screen bg-[#0F1014] flex">
+    <div className="members-portal min-h-screen bg-[#0F1014] flex">
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
