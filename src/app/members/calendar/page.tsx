@@ -329,17 +329,6 @@ function buildMonthGrid(year: number, month: number): Date[] {
   return days;
 }
 
-// ── EVENT COLORS ──────────────────────────────────────────────────────────────
-
-const EVENT_COLOR_OPTIONS = [
-  { label: "Green",  value: "#85CC17" },
-  { label: "Blue",   value: "#3B74ED" },
-  { label: "Purple", value: "#8B5CF6" },
-  { label: "Cyan",   value: "#06B6D4" },
-  { label: "Orange", value: "#F59E0B" },
-  { label: "Red",    value: "#EF4444" },
-];
-
 // Maps task status to a hex color for rendering tasks on the calendar.
 const TASK_STATUS_COLORS: Record<string, string> = {
   "To Do":       "#6B7280",
@@ -356,7 +345,7 @@ interface DisplayEvent {
   id: string;
   title: string;
   color: string;
-  kind: "event" | "task" | "interview" | "assignment";
+  kind: "event" | "task" | "interview" | "financeDeadline" | "projectDeadline";
   dateStr: string;        // YYYY-MM-DD
   time?: string;          // formatted time string; undefined means all-day
   description?: string;
@@ -372,7 +361,7 @@ interface DisplayEvent {
 
 const BLANK_EVENT_FORM = {
   title: "", description: "", date: "", startTime: "09:00", endTime: "09:30",
-  allDay: false, color: "#85CC17",
+  allDay: false,
 };
 type EventForm = typeof BLANK_EVENT_FORM;
 
@@ -407,7 +396,8 @@ export default function CalendarPage() {
     event: true,
     task: true,
     interview: true,
-    assignment: true,
+    financeDeadline: true,
+    projectDeadline: true,
   });
 
   const [modal, setModal]               = useState<"create" | "edit" | null>(null);
@@ -492,7 +482,7 @@ export default function CalendarPage() {
       ...calEvents.map((ev): DisplayEvent => ({
         id:          ev.id,
         title:       ev.title,
-        color:       ev.color ?? "#85CC17",
+        color:       "#85CC17",
         kind:        "event",
         dateStr:     ev.start.split("T")[0],
         time:        ev.allDay ? undefined : formatTime(ev.start),
@@ -526,7 +516,7 @@ export default function CalendarPage() {
               id:           `assignment-${assignment.id}-${index}`,
               title:        `${assignment.type}: ${topic}`,
               color:        "#F59E0B",
-              kind:         "assignment",
+              kind:         "financeDeadline",
               dateStr,
               time:         undefined,
               description:  [label, region].filter(Boolean).join(" · "),
@@ -540,19 +530,14 @@ export default function CalendarPage() {
       }),
       // Business project deadlines (per-track)
       ...businesses.flatMap((business): DisplayEvent[] => {
-        const trackColor: Record<"Tech" | "Marketing" | "Finance", string> = {
-          Tech: "#3B82F6",
-          Marketing: "#84CC16",
-          Finance: "#F59E0B",
-        };
         return getCalendarBusinessTrackDeadlines(business)
           .map((entry) => ({ ...entry, date: normalizeDeadlineDateString(entry.date) }))
           .filter((entry) => !!entry.date)
           .map((entry, index) => ({
           id:                       `project-deadline-${business.id}-${entry.track}-${index}`,
           title:                    `${entry.track}: ${entry.businessName}`,
-          color:                    trackColor[entry.track],
-          kind:                     "assignment",
+          color:                    "#EF4444",
+          kind:                     "projectDeadline",
           dateStr:                  entry.date,
           time:                     undefined,
           description:              [entry.label, entry.neighborhood].filter(Boolean).join(" · "),
@@ -640,7 +625,6 @@ export default function CalendarPage() {
       startTime:   `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`,
       endTime:     `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`,
       allDay:      ev.allDay ?? false,
-      color:       ev.color ?? "#85CC17",
     });
     setEditingEvent(ev);
     setModal("edit");
@@ -657,7 +641,7 @@ export default function CalendarPage() {
       start:       startIso,
       end:         endIso,
       allDay:      form.allDay,
-      color:       form.color,
+      color:       "#85CC17",
       iCalUID:     editingEvent?.iCalUID ?? `volta-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@voltanyc.org`,
       createdBy:   user?.uid ?? "",
       createdAt:   Date.now(),
@@ -719,7 +703,7 @@ export default function CalendarPage() {
           end: item.end,
           allDay: item.allDay,
           description: item.description,
-          color: existing?.color ?? "#85CC17",
+          color: "#85CC17",
           iCalUID: item.uid || existing?.iCalUID || "",
           createdBy: existing?.createdBy ?? (user?.uid ?? ""),
           createdAt: existing?.createdAt ?? Date.now(),
@@ -832,7 +816,8 @@ export default function CalendarPage() {
         {[
           { key: "event", label: "Events", color: "#85CC17" },
           { key: "task", label: "Tasks", color: "#60A5FA" },
-          { key: "assignment", label: "Deadlines", color: "#F59E0B" },
+          { key: "financeDeadline", label: "Finance Deadlines", color: "#F59E0B" },
+          { key: "projectDeadline", label: "Tech & Marketing Deadlines", color: "#EF4444" },
           ...(canEdit ? [{ key: "interview", label: "Interviews", color: "#8B5CF6" }] : []),
         ].map((item) => {
           const eventType = item.key as DisplayEvent["kind"];
@@ -992,10 +977,10 @@ export default function CalendarPage() {
           <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />Task deadlines
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Independent deadlines
+          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />Finance deadlines
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />Business project deadlines
+          <span className="w-2 h-2 rounded-full bg-[#EF4444]" />Tech & marketing deadlines
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#85CC17]" />Team events
@@ -1040,9 +1025,15 @@ export default function CalendarPage() {
               <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6]">Interview</span>
             )}
             {popup.event.isAssignment && (
-              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/20 text-[#F59E0B]">
-                {popup.event.isBusinessProjectDeadline ? "Project deadline" : "Assignment deadline"}
-              </span>
+              popup.event.isBusinessProjectDeadline ? (
+                <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#EF4444]/20 text-[#EF4444]">
+                  Tech & marketing deadline
+                </span>
+              ) : (
+                <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/20 text-[#F59E0B]">
+                  Finance deadline
+                </span>
+              )
             )}
           </div>
 
@@ -1067,26 +1058,9 @@ export default function CalendarPage() {
           <Field label="Title" required>
             <Input value={form.title} onChange={e => setField("title", e.target.value)} placeholder="Team meeting, deadline…" />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Date" required>
-              <Input type="date" value={form.date} onChange={e => setField("date", e.target.value)} />
-            </Field>
-            <Field label="Color">
-              <div className="flex gap-2 mt-2 flex-wrap">
-                {EVENT_COLOR_OPTIONS.map(colorOption => (
-                  <button
-                    key={colorOption.value}
-                    title={colorOption.label}
-                    onClick={() => setField("color", colorOption.value)}
-                    className={`w-6 h-6 rounded-full transition-all ${
-                      form.color === colorOption.value ? "ring-2 ring-white ring-offset-2 ring-offset-[#0F1014]" : ""
-                    }`}
-                    style={{ backgroundColor: colorOption.value }}
-                  />
-                ))}
-              </div>
-            </Field>
-          </div>
+          <Field label="Date" required>
+            <Input type="date" value={form.date} onChange={e => setField("date", e.target.value)} />
+          </Field>
 
           <div className="flex items-center gap-2">
             <input
