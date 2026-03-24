@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
@@ -15,7 +15,6 @@ import {
   Select,
   TextArea,
   StatCard,
-  Table,
   useConfirm,
 } from "@/components/members/ui";
 import {
@@ -562,6 +561,20 @@ export default function FinanceAssignmentsPage() {
       return getAssignmentDisplayTitle(a).localeCompare(getAssignmentDisplayTitle(b));
     });
 
+  const groupedFiltered = useMemo<Array<{ label: string; items: FinanceAssignment[] }>>(() => {
+    const grouped: Array<{ label: string; items: FinanceAssignment[] }> = ASSIGNMENT_TYPES
+      .map((type) => ({
+        label: type,
+        items: filtered.filter((item) => item.type === type),
+      }))
+      .filter((group) => group.items.length > 0);
+
+    const knownTypes = new Set(ASSIGNMENT_TYPES);
+    const otherItems = filtered.filter((item) => !knownTypes.has(item.type));
+    if (otherItems.length > 0) grouped.push({ label: "Other", items: otherItems });
+    return grouped;
+  }, [filtered]);
+
   const reportCount = assignments.filter((item) => item.type === "Report").length;
   const caseStudyCount = assignments.filter((item) => item.type === "Case Study").length;
   const grantCount = assignments.filter((item) => item.type === "Grant").length;
@@ -612,69 +625,109 @@ export default function FinanceAssignmentsPage() {
         </div>
       </div>
 
-      <Table
-        cols={["Type / Region", "Topic / Focus", "Members", "Deadlines", "Status", "Actions"]}
-        rows={filtered.map((item) => {
-          const rowRecipients = resolveRecipientsFromNames(item.assignedMemberNames ?? []);
-          return [
-            <div key="type" className="min-w-[170px]">
-              <p className="text-white/80">{item.type}</p>
-              <p className="text-xs text-white/45">{item.region || "-"}</p>
-            </div>,
-            <div key="topic" className="min-w-[260px]">
-              <p id={`finance-assignment-${item.id}`} className="text-white font-medium">{item.topic || "-"}</p>
-            </div>,
-            <div key="members" className="min-w-[230px]" title={(item.assignedMemberNames ?? []).join(", ")}>
-              {(item.assignedMemberNames ?? []).length === 0 ? (
-                <span className="text-white/40 text-xs">-</span>
-              ) : (
-                <span className="text-xs text-white/80">
-                  {(item.assignedMemberNames ?? []).map((memberName, idx) => (
-                    <span key={`${item.id}-${memberName}-${idx}`}>
-                      {idx > 0 && <span className="text-white/40">, </span>}
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
-                          onClick={() => openAssignmentMemberEmailModal(item, memberName)}
-                          title={`Email ${memberName}`}
-                        >
-                          {memberName}
-                        </button>
-                      ) : (
-                        <span className="text-white/70">{memberName}</span>
-                      )}
-                    </span>
-                  ))}
-                </span>
-              )}
-            </div>,
-            <div key="deadlines" className="text-xs text-white/70 min-w-[260px] space-y-1">
-              {formatDeadlineLabel(item).map((line, idx) => (
-                <p key={`${item.id}-deadline-${idx}`} className="leading-tight">{line}</p>
-              ))}
-            </div>,
-            <Badge key="status" label={item.status} />,
-            <div key="actions" className="flex items-center gap-2">
-              {canEdit ? (
-                <>
-                  <Btn
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => openAssignmentTeamEmailModal(item)}
-                    disabled={rowRecipients.emails.length === 0}
-                  >
-                    Email Team
-                  </Btn>
-                  <Btn size="sm" variant="secondary" onClick={() => openEdit(item)}>Edit</Btn>
-                </>
-              ) : (
-                <span className="text-white/35 text-xs">View only</span>
-              )}
-            </div>,
-          ];
-        })}
-      />
+      <div className="members-table-shell mb-6">
+        <table className="members-grid-table w-full min-w-[1280px] table-fixed text-left [&_td]:overflow-hidden">
+          <thead className="bg-[#0F1014] border-b border-white/8">
+            <tr>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Type / Region</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[24%]">Topic / Focus</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[21%]">Members</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Deadlines</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[9%]">Status</th>
+              <th className="px-2 py-2 pr-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groupedFiltered.map((group) => (
+              <Fragment key={`assignment-group-${group.label}`}>
+                <tr className="bg-[#12151B] border-b border-white/8">
+                  <td colSpan={6} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
+                    {group.label} · {group.items.length}
+                  </td>
+                </tr>
+                {group.items.map((item) => {
+                  const rowRecipients = resolveRecipientsFromNames(item.assignedMemberNames ?? []);
+                  const deadlineLines = formatDeadlineLabel(item);
+                  return (
+                    <tr key={item.id} className="border-b border-white/8 hover:bg-white/[0.03]">
+                      <td className="px-2 py-1.5 text-[11px] text-white/85 whitespace-nowrap max-w-[220px] truncate" title={`${item.type}${item.region ? ` · ${item.region}` : ""}`}>
+                        <div className="truncate">{item.type}</div>
+                        <div className="text-[10px] text-white/45 truncate">{item.region || "—"}</div>
+                      </td>
+                      <td className="px-2 py-1.5 text-[11px] text-white/90 whitespace-nowrap max-w-[300px] truncate" title={item.topic || "—"}>
+                        <p id={`finance-assignment-${item.id}`} className="truncate font-medium">{item.topic || "—"}</p>
+                      </td>
+                      <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[300px]" title={(item.assignedMemberNames ?? []).join(", ")}>
+                        {(item.assignedMemberNames ?? []).length === 0 ? (
+                          <span className="text-white/35">—</span>
+                        ) : (
+                          <div className="truncate">
+                            {(item.assignedMemberNames ?? []).map((memberName, idx) => (
+                              <span key={`${item.id}-${memberName}-${idx}`}>
+                                {idx > 0 && <span className="text-white/40">, </span>}
+                                {canEdit ? (
+                                  <button
+                                    type="button"
+                                    className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
+                                    onClick={() => openAssignmentMemberEmailModal(item, memberName)}
+                                    title={`Email ${memberName}`}
+                                  >
+                                    {memberName}
+                                  </button>
+                                ) : (
+                                  <span>{memberName}</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5 text-[11px] text-white/75 max-w-[260px]" title={deadlineLines.join(" · ") || "—"}>
+                        {deadlineLines.length === 0 ? (
+                          <span className="text-white/35">—</span>
+                        ) : (
+                          <div className="space-y-0.5">
+                            {deadlineLines.slice(0, 2).map((line, idx) => (
+                              <div key={`${item.id}-deadline-${idx}`} className="truncate">{line}</div>
+                            ))}
+                            {deadlineLines.length > 2 && <div className="text-white/40">+{deadlineLines.length - 2} more</div>}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">
+                        <Badge label={item.status} />
+                      </td>
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right w-[160px]">
+                        {canEdit ? (
+                          <div className="flex justify-end gap-1.5">
+                            <Btn
+                              size="sm"
+                              variant="secondary"
+                              className="members-pill-btn"
+                              onClick={() => openAssignmentTeamEmailModal(item)}
+                              disabled={rowRecipients.emails.length === 0}
+                            >
+                              Email Team
+                            </Btn>
+                            <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEdit(item)}>Edit</Btn>
+                          </div>
+                        ) : (
+                          <span className="text-white/35 text-xs">View only</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <div className="p-4">
+            <p className="text-center text-white/35 text-sm">No assignments found.</p>
+          </div>
+        )}
+      </div>
 
       <Modal
         open={!!emailModalAssignment}

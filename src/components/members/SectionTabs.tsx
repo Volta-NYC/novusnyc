@@ -24,7 +24,7 @@ export default function SectionTabs({
   const pathname = usePathname();
 
   return (
-    <div className={`mb-4 overflow-x-auto ${className}`}>
+    <div className={`mb-4 overflow-x-auto pb-1 ${className}`}>
       <div className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-[#12151B] p-1 min-w-max">
         {tabs.map((tab) => {
           const active = isTabActive(pathname, tab);

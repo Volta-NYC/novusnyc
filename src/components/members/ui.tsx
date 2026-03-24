@@ -79,9 +79,9 @@ export function Modal({ open, onClose, title, children }: {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-3 sm:py-8 sm:px-4">
       <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#1C1F26] border border-white/10 rounded-2xl w-full max-w-2xl p-6 shadow-2xl">
+      <div className="relative bg-[#1C1F26] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto p-4 sm:p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-display font-bold text-white text-lg">{title}</h2>
           <button onClick={onClose} className="text-white/40 hover:text-white p-1 transition-colors">
@@ -313,13 +313,13 @@ export function PageHeader({ title, subtitle, action }: {
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6">
+    <div className="members-page-header mb-5 flex flex-col gap-3 md:mb-6 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
         <h1 className="font-display font-bold text-white text-2xl">{title}</h1>
         {subtitle && <p className="text-white/40 text-sm mt-1">{subtitle}</p>}
       </div>
       {action && (
-        <div className="flex-shrink-0">
+        <div className="members-page-header-action w-full md:w-auto md:flex-shrink-0">
           {action}
         </div>
       )}

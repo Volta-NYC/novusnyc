@@ -242,6 +242,7 @@ main {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.75rem;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .members-portal .members-grid-table th {
@@ -259,6 +260,13 @@ main {
 .members-portal .members-grid-table td > * {
   min-width: 0;
   max-width: 100%;
+}
+
+.members-portal .members-page-header-action > * {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
 }
 
 .members-portal .members-icon-btn {
@@ -304,6 +312,23 @@ main {
   min-height: 22px !important;
   font-size: 10px !important;
   line-height: 1.1 !important;
+}
+
+@media (min-width: 768px) {
+  .members-portal .members-page-header-action > * {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 767px) {
+  .members-portal .members-grid-table th,
+  .members-portal .members-grid-table td {
+    line-height: 1.15;
+  }
+
+  .members-portal .members-table-shell {
+    border-radius: 0.65rem;
+  }
 }
 
 /* Form inputs */
