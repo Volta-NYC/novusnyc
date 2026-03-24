@@ -766,7 +766,7 @@ export default function TeamPage() {
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text">
-          <table className="w-full min-w-[640px] text-[10px] leading-4 table-fixed">
+          <table className="w-full min-w-[760px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "School", "Grade"].map((col) => (
@@ -823,7 +823,7 @@ export default function TeamPage() {
         <div
           className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text"
         >
-          <table className="w-full min-w-[940px] text-[10px] leading-4 table-fixed">
+          <table className="w-full min-w-[1180px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {

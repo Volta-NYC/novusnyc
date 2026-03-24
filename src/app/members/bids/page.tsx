@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES   = ["Active Partner", "In Conversation", "Outreach", "Paused", "Dead"];
+const STATUSES   = ["Active Partner", "In Conversation", "Outreach", "Paused"] as const;
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
 const PRIORITIES = ["High", "Medium", "Low"];
 const SORT_OPTIONS = [
@@ -25,13 +25,23 @@ const SORT_OPTIONS = [
 type SortMode = (typeof SORT_OPTIONS)[number]["value"];
 type BidViewMode = "cards" | "compact";
 
-const BID_STATUS_SORT_ORDER: Record<BID["status"], number> = {
+type BidStatusOption = (typeof STATUSES)[number];
+
+const BID_STATUS_SORT_ORDER: Record<BidStatusOption, number> = {
   "Active Partner": 0,
   "In Conversation": 1,
   Outreach: 2,
   Paused: 3,
-  Dead: 4,
 };
+
+function normalizeBidStatus(status: string): BidStatusOption {
+  const value = String(status ?? "").trim();
+  if (value === "Active Partner") return "Active Partner";
+  if (value === "In Conversation") return "In Conversation";
+  if (value === "Outreach") return "Outreach";
+  // Legacy "Dead" status maps to Paused so it is no longer selectable.
+  return "Paused";
+}
 
 function nextSortIndex(items: BID[]): number {
   const max = items.reduce((best, item) => {
@@ -82,7 +92,7 @@ export default function BIDTrackerPage() {
   const openEdit = (bid: BID) => {
     setForm({
       name:         bid.name,
-      status:       bid.status,
+      status:       normalizeBidStatus(bid.status),
       contactName:  bid.contactName,
       contactEmail: bid.contactEmail,
       phone:        bid.phone,
@@ -145,10 +155,11 @@ export default function BIDTrackerPage() {
       : ({ lat: null as unknown as number, lng: null as unknown as number });
 
     if (editingBID) {
-      await updateBID(editingBID.id, { ...(form as Partial<BID>), ...geocodePatch });
+      await updateBID(editingBID.id, { ...(form as Partial<BID>), status: normalizeBidStatus(form.status), ...geocodePatch });
     } else {
       await createBID({
         ...form,
+        status: normalizeBidStatus(form.status),
         ...geocodePatch,
         sortIndex: nextSortIndex(bids),
       } as Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline">);
@@ -226,7 +237,7 @@ export default function BIDTrackerPage() {
       return [...list].sort((a, b) => a.name.localeCompare(b.name));
     }
     return [...list].sort((a, b) => {
-      const statusDelta = BID_STATUS_SORT_ORDER[a.status] - BID_STATUS_SORT_ORDER[b.status];
+      const statusDelta = BID_STATUS_SORT_ORDER[normalizeBidStatus(a.status)] - BID_STATUS_SORT_ORDER[normalizeBidStatus(b.status)];
       if (statusDelta !== 0) return statusDelta;
       return a.name.localeCompare(b.name);
     });
@@ -319,7 +330,7 @@ export default function BIDTrackerPage() {
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge label={bid.status} />
+                    <Badge label={normalizeBidStatus(bid.status)} />
                     {!isMemberRestricted && <Badge label={bid.priority} />}
                   </div>
                 </div>
@@ -429,7 +440,7 @@ export default function BIDTrackerPage() {
               <div className="min-w-0">
                 <p className="text-white font-semibold text-sm leading-tight break-words">{bid.name}</p>
               </div>
-              <div className="text-xs"><Badge label={bid.status} /></div>
+              <div className="text-xs"><Badge label={normalizeBidStatus(bid.status)} /></div>
               {!isMemberRestricted && (
                 <div className="text-xs text-white/55 break-words">
                   {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}

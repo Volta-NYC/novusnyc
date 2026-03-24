@@ -259,74 +259,71 @@ export default function MemberEmailPage() {
 
       <div className="space-y-4">
         <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
-          <div className="flex flex-col gap-3">
-            <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">Recipients</label>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-white">Recipients</h2>
+              <span className="text-xs text-white/50">
+                To {toRecipients.length} · CC {ccRecipients.length} · BCC {bccRecipients.length}
+              </span>
+            </div>
 
-            <div className="rounded-lg border border-white/8 bg-[#141821] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/55">Selected Recipients</p>
-                <span className="text-[11px] text-white/45">
-                  To {toRecipients.length} · CC {ccRecipients.length} · BCC {bccRecipients.length}
-                </span>
-              </div>
-              <div className="max-h-[240px] overflow-x-auto overflow-y-auto border border-white/8 rounded-lg">
-                <table className="w-full min-w-[860px] table-fixed text-xs">
-                  <thead className="bg-[#10131A] sticky top-0 z-[1]">
-                    <tr>
-                      <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[220px]">School</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[90px]">Mode</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {selectedMembers.map((member) => {
-                      const track = getMemberTrack(member);
-                      const indicator = getMemberIndicator(member);
-                      const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
-                      return (
-                        <tr key={`selected-${member.id}`} className="hover:bg-white/5 bg-[#85CC17]/6">
-                          <td className="px-3 py-2">
-                            <input
-                              type="checkbox"
-                              checked
-                              onChange={(e) => toggleSelected(member.id, e.target.checked)}
-                              className="members-checkbox"
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-white/75 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-2 min-w-0">
-                              <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                              <span className="truncate">{member.name}</span>
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
-                          <td className="px-3 py-2 text-white/55 whitespace-nowrap">{track}</td>
-                          <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
-                          <td className="px-3 py-2">
-                            <select
-                              value={mode}
-                              onChange={(e) => setRecipientMode(member.id, (e.target.value as DeliveryMode) || "to")}
-                              className="h-8 w-full rounded-md border border-white/10 bg-[#0F1014] px-2 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
-                            >
-                              <option value="to">To</option>
-                              <option value="cc">CC</option>
-                              <option value="bcc">BCC</option>
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {selectedMembers.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="px-3 py-6 text-center text-white/35">No recipients selected yet.</td>
+            <div className="max-h-[240px] overflow-x-auto overflow-y-auto border border-white/8 rounded-lg bg-[#11151D]">
+              <table className="w-full min-w-[860px] table-fixed text-xs [&_td]:overflow-hidden">
+                <thead className="bg-[#10131A] sticky top-0 z-[1]">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-white/45 w-10">#</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[90px]">Mode</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {selectedMembers.map((member) => {
+                    const track = getMemberTrack(member);
+                    const indicator = getMemberIndicator(member);
+                    const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
+                    return (
+                      <tr key={`selected-${member.id}`} className="hover:bg-white/5 bg-[#85CC17]/6">
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked
+                            onChange={(e) => toggleSelected(member.id, e.target.checked)}
+                            className="members-checkbox"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-white/75 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-2 min-w-0">
+                            <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                            <span className="truncate">{member.name}</span>
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
+                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{track}</td>
+                        <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
+                        <td className="px-3 py-2">
+                          <select
+                            value={mode}
+                            onChange={(e) => setRecipientMode(member.id, (e.target.value as DeliveryMode) || "to")}
+                            className="h-8 w-full rounded-md border border-white/10 bg-[#0F1014] px-2 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                          >
+                            <option value="to">To</option>
+                            <option value="cc">CC</option>
+                            <option value="bcc">BCC</option>
+                          </select>
+                        </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                  {selectedMembers.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-3 py-6 text-center text-white/35">No recipients selected yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
 
             <div className="relative">
@@ -348,7 +345,7 @@ export default function MemberEmailPage() {
                 {filteredMembers.length !== selectableFilteredMembers.length ? ` · ${filteredMembers.length - selectableFilteredMembers.length} inactive` : ""}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-white/40">New recipients as:</span>
+                <span className="text-white/40">Default mode:</span>
                 <select
                   value={defaultNewRecipientMode}
                   onChange={(e) => setDefaultNewRecipientMode((e.target.value as DeliveryMode) || "to")}
@@ -374,7 +371,7 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="max-h-[420px] overflow-x-auto overflow-y-auto border border-white/8 rounded-lg">
-              <table className="w-full min-w-[860px] table-fixed text-xs">
+              <table className="w-full min-w-[860px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10">#</th>

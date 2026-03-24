@@ -939,7 +939,7 @@ export default function ApplicantsPage() {
       </div>
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-        <table className="w-full min-w-[980px] table-fixed text-[10px] leading-4">
+        <table className="w-full min-w-[1480px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {selectionMode !== "none" && (

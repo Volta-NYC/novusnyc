@@ -420,6 +420,7 @@ export default function CalendarPage() {
   const [popup, setPopup] = useState<{ event: DisplayEvent; pos: PopupPosition } | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const popupAnchorRef = useRef<HTMLElement | null>(null);
+  const [expandedDayBoxes, setExpandedDayBoxes] = useState<Record<string, boolean>>({});
 
   const { ask, Dialog } = useConfirm();
 
@@ -605,11 +606,13 @@ export default function CalendarPage() {
   // ── Month navigation ──────────────────────────────────────────────────────
 
   const goToPrevMonth = () => {
+    setExpandedDayBoxes({});
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
     else setViewMonth(m => m - 1);
   };
 
   const goToNextMonth = () => {
+    setExpandedDayBoxes({});
     if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
     else setViewMonth(m => m + 1);
   };
@@ -814,7 +817,11 @@ export default function CalendarPage() {
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
         <button
-          onClick={() => { setViewYear(today.getFullYear()); setViewMonth(today.getMonth()); }}
+          onClick={() => {
+            setExpandedDayBoxes({});
+            setViewYear(today.getFullYear());
+            setViewMonth(today.getMonth());
+          }}
           className="text-xs text-white/40 hover:text-white/70 transition-colors font-body"
         >
           Today
@@ -868,9 +875,10 @@ export default function CalendarPage() {
             const inMonth  = day.getMonth() === viewMonth;
             const isToday  = dateStr === todayStr;
             const dayEvents = eventsForDay(dateStr);
-            // Show at most 3 pills per cell; indicate overflow with "+N more".
-            const visibleEvents = dayEvents.slice(0, 3);
-            const overflowCount = dayEvents.length - 3;
+            const hasOverflow = dayEvents.length > 3;
+            const isExpanded = !!expandedDayBoxes[dateStr];
+            const visibleEvents = isExpanded ? dayEvents : dayEvents.slice(0, 3);
+            const overflowCount = Math.max(0, dayEvents.length - 3);
 
             return (
               <div
@@ -901,8 +909,29 @@ export default function CalendarPage() {
                       {ev.title}
                     </button>
                   ))}
-                  {overflowCount > 0 && (
-                    <p className="text-xs text-white/25 pl-1 font-body">+{overflowCount} more</p>
+                  {hasOverflow && !isExpanded && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedDayBoxes((prev) => ({ ...prev, [dateStr]: true }));
+                      }}
+                      className="text-xs text-white/40 pl-1 font-body hover:text-white/70 transition-colors"
+                    >
+                      +{overflowCount} more
+                    </button>
+                  )}
+                  {hasOverflow && isExpanded && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedDayBoxes((prev) => ({ ...prev, [dateStr]: false }));
+                      }}
+                      className="text-xs text-white/40 pl-1 font-body hover:text-white/70 transition-colors"
+                    >
+                      Show less
+                    </button>
                   )}
                 </div>
               </div>
