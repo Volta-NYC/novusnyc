@@ -538,6 +538,7 @@ export default function BusinessesPage() {
   });
   const [memberInputErrorByTrack, setMemberInputErrorByTrack] = useState<Partial<Record<TrackDivision, string>>>({});
   const [emailModalProject, setEmailModalProject] = useState<Business | null>(null);
+  const [projectTeamPickerProject, setProjectTeamPickerProject] = useState<Business | null>(null);
   const [projectEmailSubject, setProjectEmailSubject] = useState("");
   const [projectEmailMessage, setProjectEmailMessage] = useState("");
   const [projectEmailFrom, setProjectEmailFrom] = useState("info@voltanyc.org");
@@ -1175,7 +1176,7 @@ export default function BusinessesPage() {
       .map((row) => row.line);
   };
 
-  const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
+  const resolveRecipientsFromAssignedNames = (inputNames: string[]): { emails: string[]; unresolved: string[] } => {
     const unresolved: string[] = [];
     const emailSet = new Set<string>();
     const availableByEmail = new Map<string, TeamMember>();
@@ -1192,8 +1193,7 @@ export default function BusinessesPage() {
       availableByName.set(nameKey, list);
     }
 
-    const assigned = getTrackAssignments(project)
-      .flatMap((assignment) => assignment.members)
+    const assigned = inputNames
       .map((value) => String(value ?? "").trim())
       .filter(Boolean);
 
@@ -1226,6 +1226,14 @@ export default function BusinessesPage() {
     };
   };
 
+  const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
+    const assigned = getTrackAssignments(project)
+      .flatMap((assignment) => assignment.members)
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
+    return resolveRecipientsFromAssignedNames(assigned);
+  };
+
   const baseProjectEmailRecipients = emailModalProject ? resolveProjectRecipients(emailModalProject) : { emails: [], unresolved: [] };
   const projectEmailRecipients = projectEmailRecipientOverride
     ? { emails: projectEmailRecipientOverride, unresolved: [] as string[] }
@@ -1238,15 +1246,44 @@ export default function BusinessesPage() {
     setProjectEmailStatus(null);
   };
 
-  const openProjectEmailModal = (project: Business) => {
+  const openProjectEmailModal = (project: Business, options?: { memberNames?: string[]; label?: string }) => {
     setEmailModalProject(project);
-    setProjectEmailRecipientOverride(null);
-    setProjectEmailRecipientLabel(null);
+    const scopedNames = (options?.memberNames ?? []).map((name) => String(name ?? "").trim()).filter(Boolean);
+    if (scopedNames.length > 0) {
+      const resolved = resolveRecipientsFromAssignedNames(scopedNames);
+      setProjectEmailRecipientOverride(resolved.emails);
+      setProjectEmailRecipientLabel(options?.label ?? null);
+      if (resolved.emails.length === 0) {
+        setProjectEmailStatus(`No active emails found for ${options?.label ?? "selected team"}.`);
+      } else {
+        setProjectEmailStatus(null);
+      }
+    } else {
+      setProjectEmailRecipientOverride(null);
+      setProjectEmailRecipientLabel(null);
+      setProjectEmailStatus(null);
+    }
     setProjectEmailFrom("info@voltanyc.org");
     setProjectEmailMode("plain");
     setProjectEmailSubject(`${project.name} — Project Update`);
     setProjectEmailMessage("");
-    setProjectEmailStatus(null);
+  };
+
+  const openProjectTeamEmailModal = (project: Business) => {
+    const teamChoices = getTrackAssignments(project).filter((assignment) => assignment.members.length > 0);
+    if (teamChoices.length > 1) {
+      setProjectTeamPickerProject(project);
+      return;
+    }
+    if (teamChoices.length === 1) {
+      const choice = teamChoices[0];
+      openProjectEmailModal(project, {
+        memberNames: choice.members,
+        label: formatTrackTeamLabel(choice.track),
+      });
+      return;
+    }
+    openProjectEmailModal(project);
   };
 
   const openProjectMemberEmailModal = (project: Business, memberName: string) => {
@@ -1260,6 +1297,17 @@ export default function BusinessesPage() {
     setProjectEmailRecipientOverride([]);
     setProjectEmailStatus(`No active email found for ${memberName}.`);
   };
+
+  const projectTeamPickerOptions = projectTeamPickerProject
+    ? getTrackAssignments(projectTeamPickerProject)
+      .filter((assignment) => assignment.members.length > 0)
+      .map((assignment) => ({
+        track: assignment.track,
+        label: formatTrackTeamLabel(assignment.track),
+        members: assignment.members,
+        recipients: resolveRecipientsFromAssignedNames(assignment.members),
+      }))
+    : [];
 
   const sendProjectEmail = async () => {
     if (!emailModalProject) return;
@@ -1486,7 +1534,7 @@ export default function BusinessesPage() {
               <Btn
                 size="sm"
                 variant="secondary"
-                onClick={() => openProjectEmailModal(b)}
+                onClick={() => openProjectTeamEmailModal(b)}
                 disabled={resolveProjectRecipients(b).emails.length === 0}
               >
                 Email Team
@@ -1818,6 +1866,47 @@ export default function BusinessesPage() {
           </div>
         )}
       </div>
+
+      <Modal
+        open={!!projectTeamPickerProject}
+        onClose={() => setProjectTeamPickerProject(null)}
+        title={`Choose Team · ${projectTeamPickerProject?.name ?? ""}`}
+      >
+        <div className="space-y-2">
+          {projectTeamPickerOptions.length === 0 ? (
+            <p className="text-sm text-white/55">No assigned teams with email recipients were found.</p>
+          ) : (
+            projectTeamPickerOptions.map((option) => (
+              <button
+                key={`team-picker-${option.track}`}
+                type="button"
+                className="w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 text-left hover:border-[#85CC17]/45 transition-colors disabled:opacity-50"
+                disabled={option.recipients.emails.length === 0}
+                onClick={() => {
+                  if (!projectTeamPickerProject) return;
+                  setProjectTeamPickerProject(null);
+                  openProjectEmailModal(projectTeamPickerProject, {
+                    memberNames: option.members,
+                    label: option.label,
+                  });
+                }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-white/90">{option.label}</span>
+                  <span className="text-xs text-white/55">{option.recipients.emails.length} recipients</span>
+                </div>
+                <p className="text-[11px] text-white/50 mt-1 truncate" title={option.members.join(", ")}>
+                  {option.members.join(", ")}
+                </p>
+              </button>
+            ))
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Btn variant="ghost" onClick={() => setProjectTeamPickerProject(null)}>Cancel</Btn>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         open={!!emailModalProject}
