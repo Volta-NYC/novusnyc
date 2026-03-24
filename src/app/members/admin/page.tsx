@@ -57,6 +57,22 @@ function getCodeStatusColor(status: string): string {
   return "text-green-400";
 }
 
+const EXPORT_OPTIONS = [
+  { key: "businesses", label: "Businesses" },
+  { key: "projects", label: "Projects (legacy collection)" },
+  { key: "financeAssignments", label: "Finance Assignments" },
+  { key: "members", label: "Member List" },
+  { key: "applicants", label: "Applicants" },
+  { key: "bids", label: "BIDs" },
+  { key: "interviews", label: "Interview Slots" },
+  { key: "grants", label: "Grant Library" },
+  { key: "calendar", label: "Calendar Events" },
+  { key: "users", label: "Portal Users" },
+  { key: "inviteCodes", label: "Invite Codes" },
+] as const;
+
+type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
+
 // ── TAB: ACCESS CODES ─────────────────────────────────────────────────────────
 
 function AccessCodesTab({ uid }: { uid: string }) {
@@ -228,9 +244,16 @@ function UsersTab() {
 
 function DataTab() {
   const [statusMessage, setStatusMessage] = useState("");
+  const [selectedSections, setSelectedSections] = useState<ExportOptionKey[]>([]);
   const { user } = useAuth();
 
-  const handleExport = async () => {
+  const toggleSection = (key: ExportOptionKey) => {
+    setSelectedSections((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
+    );
+  };
+
+  const handleExport = async (sections?: ExportOptionKey[]) => {
     if (!user) {
       setStatusMessage("You must be signed in as admin to export.");
       return;
@@ -239,7 +262,10 @@ function DataTab() {
     setStatusMessage("Exporting…");
     try {
       const token = await user.getIdToken();
-      const res = await fetch("/api/members/admin/export", {
+      const query = sections && sections.length > 0
+        ? `?sections=${encodeURIComponent(sections.join(","))}`
+        : "";
+      const res = await fetch(`/api/members/admin/export${query}`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });
@@ -254,10 +280,16 @@ function DataTab() {
       const url  = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href     = url;
-      link.download = `volta-data-${new Date().toISOString().split("T")[0]}.json`;
+      const date = new Date().toISOString().split("T")[0];
+      const suffix = sections && sections.length > 0 ? `-${sections.join("-")}` : "-full";
+      link.download = `volta-data-${date}${suffix}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      setStatusMessage("Export complete.");
+      setStatusMessage(
+        sections && sections.length > 0
+          ? `Export complete (${sections.length} section${sections.length === 1 ? "" : "s"}).`
+          : "Export complete (full backup).",
+      );
     } catch {
       setStatusMessage("Export failed. Check admin access and try again.");
     }
@@ -267,13 +299,66 @@ function DataTab() {
     <div className="max-w-lg space-y-4">
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
         <h2 className="font-display font-bold text-white mb-1">Export Data</h2>
-        <p className="text-white/40 text-sm mb-4">Download a JSON backup of all portal data.</p>
-        <button
-          onClick={handleExport}
-          className="bg-[#85CC17] text-[#0D0D0D] font-display font-bold px-5 py-2.5 rounded-xl hover:bg-[#72b314] transition-colors text-sm"
-        >
-          Download Backup
-        </button>
+        <p className="text-white/40 text-sm mb-4">Download a full JSON backup, or export selected datasets only.</p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => void handleExport()}
+            className="bg-[#85CC17] text-[#0D0D0D] font-display font-bold px-5 py-2.5 rounded-xl hover:bg-[#72b314] transition-colors text-sm"
+          >
+            Download Full Backup
+          </button>
+        </div>
+
+        <div className="border border-white/10 rounded-lg p-3 bg-[#0F1014]">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] uppercase tracking-wide text-white/45">Select Data Sections</p>
+            <div className="flex gap-3 text-[11px]">
+              <button
+                type="button"
+                className="text-[#85CC17]/80 hover:text-[#85CC17] transition-colors"
+                onClick={() => setSelectedSections(EXPORT_OPTIONS.map((opt) => opt.key))}
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                className="text-red-300/80 hover:text-red-300 transition-colors"
+                onClick={() => setSelectedSections([])}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {EXPORT_OPTIONS.map((option) => (
+              <label key={option.key} className="inline-flex items-center gap-2 text-xs text-white/80">
+                <input
+                  type="checkbox"
+                  className="members-checkbox"
+                  checked={selectedSections.includes(option.key)}
+                  onChange={() => toggleSection(option.key)}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-[11px] text-white/45">
+              {selectedSections.length} selected
+            </span>
+            <button
+              onClick={() => void handleExport(selectedSections)}
+              disabled={selectedSections.length === 0}
+              className={`font-display font-bold px-4 py-2 rounded-lg transition-colors text-xs ${
+                selectedSections.length === 0
+                  ? "bg-white/10 text-white/35 cursor-not-allowed"
+                  : "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+              }`}
+            >
+              Download Selected
+            </button>
+          </div>
+        </div>
       </div>
       {statusMessage && (
         <div className="bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white/60 text-sm font-body">

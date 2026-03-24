@@ -37,76 +37,6 @@ function normalize(v: string): string {
 }
 
 
-function parseDelimitedLine(line: string, delimiter: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === "\"") {
-      if (inQuotes && line[i + 1] === "\"") {
-        current += "\"";
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-    if (ch === delimiter && !inQuotes) {
-      cells.push(current);
-      current = "";
-      continue;
-    }
-    current += ch;
-  }
-  cells.push(current);
-  return cells.map((cell) => cell.trim());
-}
-
-function countDelimiterOutsideQuotes(line: string, delimiter: string): number {
-  let inQuotes = false;
-  let count = 0;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === "\"") {
-      if (inQuotes && line[i + 1] === "\"") i += 1;
-      else inQuotes = !inQuotes;
-      continue;
-    }
-    if (!inQuotes && ch === delimiter) count += 1;
-  }
-  return count;
-}
-
-function parseCsv(csvText: string): string[][] {
-  const lines = csvText.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim() !== "");
-  if (lines.length === 0) return [];
-  const delimiters = [",", "\t", ";"];
-  let delimiter = ",";
-  let bestCount = -1;
-  for (const d of delimiters) {
-    const count = countDelimiterOutsideQuotes(lines[0], d);
-    if (count > bestCount) {
-      bestCount = count;
-      delimiter = d;
-    }
-  }
-  return lines.map((line) => parseDelimitedLine(line, delimiter));
-}
-
-function headerKey(raw: string): string {
-  return raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function findHeaderIndex(headers: string[], aliases: string[]): number {
-  const normalized = headers.map(headerKey);
-  for (const alias of aliases) {
-    const idx = normalized.indexOf(alias);
-    if (idx !== -1) return idx;
-  }
-  return -1;
-}
-
 function normalizeName(value: string): string {
   return normalize(value).replace(/[^a-z0-9]+/g, " ").trim();
 }
@@ -199,7 +129,6 @@ export default function ApplicantsPage() {
   const [showAcceptedApplicants, setShowAcceptedApplicants] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState<"none" | "invite" | "accept">("none");
-  const [importing, setImporting] = useState(false);
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
@@ -211,7 +140,6 @@ export default function ApplicantsPage() {
   const [acceptRole, setAcceptRole] = useState("Analyst");
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
   const [viewingEvaluationsApp, setViewingEvaluationsApp] = useState<ApplicationRecord | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
@@ -634,115 +562,6 @@ export default function ApplicantsPage() {
     await fetchApplicantsData();
   };
 
-  const importCsv = async (file: File) => {
-    setImporting(true);
-    setStatusMessage("Importing...");
-    try {
-      const text = await file.text();
-      const rows = parseCsv(text);
-      if (rows.length < 2) {
-        setStatusMessage("CSV must include at least one data row.");
-        return;
-      }
-
-      const headers = rows[0];
-      const nameIdx = findHeaderIndex(headers, ["full name", "name"]);
-      const emailIdx = findHeaderIndex(headers, ["email", "email address"]);
-      const schoolIdx = findHeaderIndex(headers, ["school name", "education", "school", "high school"]);
-      const gradeIdx = findHeaderIndex(headers, ["grade", "class year", "year"]);
-      const cityStateIdx = findHeaderIndex(headers, ["city state", "city, state"]);
-      const cityIdx = findHeaderIndex(headers, ["city"]);
-      const stateIdx = findHeaderIndex(headers, ["state"]);
-      const referralIdx = findHeaderIndex(headers, ["how they heard", "referral", "heard about", "source"]);
-      const tracksIdx = findHeaderIndex(headers, ["tracks selected", "tracks", "track"]);
-      const statusIdx = findHeaderIndex(headers, ["status", "application status", "progress"]);
-      const notesIdx = findHeaderIndex(headers, ["notes", "note"]);
-      const timestampIdx = findHeaderIndex(headers, ["timestamp", "created at", "date"]);
-      const resumeIdx = findHeaderIndex(headers, ["resume url", "resume"]);
-      const sentInviteIdx = findHeaderIndex(headers, ["send invite to interview"]);
-
-      if (nameIdx === -1 && emailIdx === -1) {
-        setStatusMessage("CSV must include at least Name or Email headers.");
-        return;
-      }
-
-      const importRows = rows.slice(1).map((row) => {
-        const fullName = nameIdx === -1 ? "" : (row[nameIdx] ?? "").trim();
-        const email = emailIdx === -1 ? "" : (row[emailIdx] ?? "").trim().toLowerCase();
-        const parsedSchool = schoolIdx === -1 ? "" : (row[schoolIdx] ?? "").trim();
-        const parsedGrade = gradeIdx === -1 ? "" : (row[gradeIdx] ?? "").trim();
-        const parsedCity = cityStateIdx !== -1
-          ? (row[cityStateIdx] ?? "").trim()
-          : [cityIdx === -1 ? "" : String(row[cityIdx] ?? "").trim(), stateIdx === -1 ? "" : String(row[stateIdx] ?? "").trim()]
-            .filter(Boolean)
-            .join(", ");
-        const parsedReferral = referralIdx === -1 ? "" : (row[referralIdx] ?? "").trim();
-        const parsedTracks = tracksIdx === -1 ? "" : (row[tracksIdx] ?? "").trim();
-        const parsedStatusRaw = statusIdx === -1 ? "" : (row[statusIdx] ?? "").trim();
-        const parsedNotes = notesIdx === -1 ? "" : (row[notesIdx] ?? "").trim();
-        const parsedTimestampRaw = timestampIdx === -1 ? "" : (row[timestampIdx] ?? "").trim();
-        const parsedResumeUrl = resumeIdx === -1 ? "" : (row[resumeIdx] ?? "").trim();
-        const parsedInviteFlag = sentInviteIdx === -1 ? "" : (row[sentInviteIdx] ?? "").trim().toLowerCase();
-
-        return {
-          fullName,
-          email,
-          schoolName: parsedSchool,
-          grade: parsedGrade,
-          cityState: parsedCity,
-          referral: parsedReferral,
-          tracksSelected: parsedTracks,
-          statusRaw: parsedStatusRaw,
-          notes: parsedNotes,
-          timestampRaw: parsedTimestampRaw,
-          resumeUrl: parsedResumeUrl,
-          inviteSent: parsedInviteFlag === "true" || parsedInviteFlag === "yes",
-        };
-      }).filter((entry) => entry.fullName || entry.email);
-
-      if (importRows.length === 0) {
-        setStatusMessage("CSV has no usable rows.");
-        return;
-      }
-
-      const token = await user?.getIdToken();
-      if (!token) {
-        setStatusMessage("You are not authenticated. Please sign in again.");
-        return;
-      }
-
-      const response = await fetch("/api/members/applicants/import", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ rows: importRows }),
-      });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        const code = typeof payload?.error === "string" ? payload.error : "import_failed";
-        throw new Error(code);
-      }
-
-      const result = await response.json() as { added?: number; updated?: number; skipped?: number };
-      setStatusMessage(`Import complete: ${result.added ?? 0} added, ${result.updated ?? 0} updated, ${result.skipped ?? 0} skipped.`);
-      await fetchApplicantsData();
-    } catch (err) {
-      const message = err instanceof Error && err.message ? err.message : "unknown_error";
-      setStatusMessage(`Could not import CSV (${message}).`);
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const onCsvInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await importCsv(file);
-    e.target.value = "";
-  };
-
   const visibleColumns = ALL_COLUMNS.filter((col) => !hiddenColumns.has(col.key));
 
   const hideColumn = (key: ColumnKey) => {
@@ -817,14 +636,6 @@ export default function ApplicantsPage() {
         </div>
       </Modal>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
-        onChange={onCsvInputChange}
-      />
-
       <PageHeader
         title="Applicants"
       />
@@ -846,9 +657,6 @@ export default function ApplicantsPage() {
           </Btn>
           <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites || unbookedReminderIds.length === 0} className={unbookedReminderIds.length === 0 ? "opacity-50" : ""}>
             {sendingReminders ? "Sending reminders..." : `Remind Unbooked (${unbookedReminderIds.length})`}
-          </Btn>
-          <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
-            {importing ? "Importing..." : "Import CSV"}
           </Btn>
         </div>
       )}

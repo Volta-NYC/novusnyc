@@ -321,161 +321,6 @@ function stripDecoratedName(value: string): string {
   return value.replace(/\s*\([^()]*\)\s*$/, "").trim();
 }
 
-function csvEscape(value: string): string {
-  if (/[",\n]/.test(value)) {
-    return `"${value.replace(/"/g, "\"\"")}"`;
-  }
-  return value;
-}
-
-function toExportString(value: unknown): string {
-  if (value == null) return "";
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item ?? "").trim()).filter(Boolean).join(" | ");
-  }
-  if (typeof value === "object") {
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
-
-function downloadFile(filename: string, content: string, type: string): void {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-type BusinessExportRow = {
-  id: string;
-  name: string;
-  projectTracks: string[];
-  trackProjects: string;
-  projectStatus: string;
-  division: string;
-  bidId: string;
-  ownerName: string;
-  ownerEmail: string;
-  ownerAlternateEmail: string;
-  phone: string;
-  alternatePhone: string;
-  address: string;
-  neighborhood: string;
-  website: string;
-  teamLead: string;
-  teamMembers: string[];
-  intakeSource: string;
-  notes: string;
-  lat: number | "";
-  lng: number | "";
-  showcaseEnabled: boolean;
-  showcaseFeaturedOnHome: boolean;
-  showcaseName: string;
-  showcaseType: string;
-  showcaseServices: string[];
-  showcaseDescription: string;
-  showcaseUrl: string;
-  showcaseImageUrl: string;
-  hasUploadedShowcaseImage: boolean;
-  uploadedShowcaseImageBytes: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-const BUSINESS_EXPORT_HEADERS: Array<keyof BusinessExportRow> = [
-  "id",
-  "name",
-  "projectTracks",
-  "trackProjects",
-  "projectStatus",
-  "division",
-  "bidId",
-  "ownerName",
-  "ownerEmail",
-  "ownerAlternateEmail",
-  "phone",
-  "alternatePhone",
-  "address",
-  "neighborhood",
-  "website",
-  "teamLead",
-  "teamMembers",
-  "intakeSource",
-  "notes",
-  "lat",
-  "lng",
-  "showcaseEnabled",
-  "showcaseFeaturedOnHome",
-  "showcaseName",
-  "showcaseType",
-  "showcaseServices",
-  "showcaseDescription",
-  "showcaseUrl",
-  "showcaseImageUrl",
-  "hasUploadedShowcaseImage",
-  "uploadedShowcaseImageBytes",
-  "createdAt",
-  "updatedAt",
-];
-
-function toBusinessExportRow(business: Business): BusinessExportRow {
-  const imageData = (business.showcaseImageData ?? "").trim();
-  const { projectTracks, trackProjects } = normalizeTrackProjectsFromBusiness(business);
-  const serializedTrackProjects = TRACK_ORDER.reduce<Record<string, { projectStatus: ProjectStatusValue; teamMembers: string[]; deadlines: DeadlineItem[]; notes: string }>>((acc, track) => {
-    const info = trackProjects[track];
-    if (!info) return acc;
-    acc[track] = {
-      projectStatus: info.projectStatus,
-      teamMembers: info.teamMembers,
-      deadlines: info.deadlines,
-      notes: info.notes,
-    };
-    return acc;
-  }, {});
-  const overallStatus = deriveOverallStatus(trackProjects, projectTracks);
-  const primaryDivision = derivePrimaryDivision(projectTracks);
-  return {
-    id: business.id,
-    name: business.name ?? "",
-    projectTracks,
-    trackProjects: JSON.stringify(serializedTrackProjects),
-    projectStatus: overallStatus,
-    division: primaryDivision,
-    bidId: business.bidId ?? "",
-    ownerName: business.ownerName ?? "",
-    ownerEmail: business.ownerEmail ?? "",
-    ownerAlternateEmail: business.ownerAlternateEmail ?? "",
-    phone: business.phone ?? "",
-    alternatePhone: business.alternatePhone ?? "",
-    address: business.address ?? "",
-    neighborhood: business.neighborhood ?? business.showcaseNeighborhood ?? "",
-    website: business.website ?? "",
-    teamLead: business.teamLead ?? "",
-    teamMembers: TRACK_ORDER.flatMap((track) => (trackProjects[track]?.teamMembers ?? [])),
-    intakeSource: business.intakeSource ?? "",
-    notes: business.notes ?? "",
-    lat: typeof business.lat === "number" ? business.lat : "",
-    lng: typeof business.lng === "number" ? business.lng : "",
-    showcaseEnabled: !!business.showcaseEnabled,
-    showcaseFeaturedOnHome: !!business.showcaseFeaturedOnHome,
-    showcaseName: business.showcaseName ?? "",
-    showcaseType: business.showcaseType ?? "",
-    showcaseServices: business.showcaseServices ?? [],
-    showcaseDescription: business.showcaseDescription ?? "",
-    showcaseUrl: business.showcaseUrl ?? "",
-    showcaseImageUrl: business.showcaseImageUrl ?? "",
-    hasUploadedShowcaseImage: imageData.length > 0,
-    uploadedShowcaseImageBytes: imageData.length,
-    createdAt: business.createdAt ?? "",
-    updatedAt: business.updatedAt ?? "",
-  };
-}
-
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   ownerName: "",
@@ -1063,34 +908,6 @@ export default function BusinessesPage() {
     return normalized.projectTracks.includes(normalizeDivision(filterDiv));
   });
   const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
-
-  const exportBusinessesJson = () => {
-    const payload = businesses.map(toBusinessExportRow);
-    const date = new Date().toISOString().slice(0, 10);
-    downloadFile(
-      `volta-projects-${date}.json`,
-      JSON.stringify(payload, null, 2),
-      "application/json;charset=utf-8",
-    );
-  };
-
-  const exportBusinessesCsv = () => {
-    const rows = businesses.map(toBusinessExportRow);
-    const headers = BUSINESS_EXPORT_HEADERS;
-    const lines = [
-      headers.join(","),
-      ...rows.map((row) =>
-        headers.map((header) => csvEscape(toExportString(row[header]))).join(",")
-      ),
-    ];
-
-    const date = new Date().toISOString().slice(0, 10);
-    downloadFile(
-      `volta-projects-${date}.csv`,
-      lines.join("\n"),
-      "text/csv;charset=utf-8",
-    );
-  };
 
   const teamNameCounts = new Map<string, number>();
   team.forEach((member) => {
@@ -1769,8 +1586,6 @@ export default function BusinessesPage() {
         action={
           canEdit ? (
             <div className="flex gap-2">
-              <Btn variant="secondary" onClick={exportBusinessesCsv}>Export CSV</Btn>
-              <Btn variant="secondary" onClick={exportBusinessesJson}>Export JSON</Btn>
               <Btn variant="primary" onClick={openCreate}>+ New Project</Btn>
             </div>
           ) : undefined
