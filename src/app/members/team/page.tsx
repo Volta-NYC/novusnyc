@@ -49,6 +49,14 @@ function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
   }
 }
 
+const TRACK_SORT_ORDER: Record<TrackKey, number> = {
+  Tech: 0,
+  Marketing: 1,
+  Finance: 2,
+  Other: 3,
+  "—": 4,
+};
+
 function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
   if (track === "Tech") {
     return (
@@ -102,6 +110,22 @@ type MemberAssignmentLink = {
   deadline: string;
   href: string;
 };
+
+const DEFAULT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
+  { col: 0, dir: "asc" },
+  { col: 2, dir: "asc" },
+];
+
+const SORT_OPTIONS = [
+  { value: 0, label: "Track (default grouping)" },
+  { value: 1, label: "Projects" },
+  { value: 2, label: "Name" },
+  { value: 3, label: "Email" },
+  { value: 4, label: "School" },
+  { value: 5, label: "Grade" },
+  { value: 6, label: "Date Accepted" },
+  { value: 7, label: "Account Created" },
+];
 
 function normalizeText(v: string): string {
   return v.trim().replace(/\s+/g, " ");
@@ -249,7 +273,7 @@ export default function TeamPage() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
   const [showAlternateEmail, setShowAlternateEmail] = useState(false);
-  const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>([{ col: 1, dir: "asc" }]);
+  const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_SORT_RULES);
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
@@ -581,17 +605,26 @@ export default function TeamPage() {
     return map;
   }, [userProfiles]);
 
-  const SORT_COLUMNS = ["Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
+  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
 
   const compareMemberByCol = (a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
-      case 0: return 0;
-      case 1: return a.name.localeCompare(b.name);
-      case 2: return (a.email || "").localeCompare(b.email || "");
-      case 3: return (a.school || "").localeCompare(b.school || "");
-      case 4: return (a.grade || "").localeCompare(b.grade || "");
-      case 5: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
-      case 6: {
+      case 0: {
+        const trackCmp = TRACK_SORT_ORDER[getMemberTrack(a)] - TRACK_SORT_ORDER[getMemberTrack(b)];
+        return trackCmp !== 0 ? trackCmp : a.name.localeCompare(b.name);
+      }
+      case 1: {
+        const aMeta = projectSortMetaByMemberKey.get(normalizeKey(a.name ?? "")) ?? { count: 0, key: "" };
+        const bMeta = projectSortMetaByMemberKey.get(normalizeKey(b.name ?? "")) ?? { count: 0, key: "" };
+        if (aMeta.count !== bMeta.count) return aMeta.count - bMeta.count;
+        return aMeta.key.localeCompare(bMeta.key);
+      }
+      case 2: return a.name.localeCompare(b.name);
+      case 3: return (a.email || "").localeCompare(b.email || "");
+      case 4: return (a.school || "").localeCompare(b.school || "");
+      case 5: return (a.grade || "").localeCompare(b.grade || "");
+      case 6: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
+      case 7: {
         const aProfile = profileByEmail.get(normalizeKey(a.email ?? "")) ?? profileByEmail.get(normalizeKey(a.alternateEmail ?? ""));
         const bProfile = profileByEmail.get(normalizeKey(b.email ?? "")) ?? profileByEmail.get(normalizeKey(b.alternateEmail ?? ""));
         return (aProfile?.createdAt || "").localeCompare(bProfile?.createdAt || "");
@@ -603,10 +636,11 @@ export default function TeamPage() {
   const handleSort = (i: number) => {
     // Click on column header = reset to single-column sort
     const current = sortRules[0];
+    const defaultDir: "asc" | "desc" = i === 1 ? "desc" : "asc";
     if (current && current.col === i) {
       setSortRules([{ col: i, dir: current.dir === "asc" ? "desc" : "asc" }]);
     } else {
-      setSortRules([{ col: i, dir: "asc" }]);
+      setSortRules([{ col: i, dir: defaultDir }]);
     }
   };
 
@@ -620,7 +654,9 @@ export default function TeamPage() {
   const removeSortRule = (idx: number) => {
     setSortRules((prev) => {
       const next = prev.filter((_, i) => i !== idx);
-      return next.length === 0 ? [{ col: 1, dir: "asc" }] : next;
+      return next.length === 0
+        ? DEFAULT_SORT_RULES
+        : next;
     });
   };
 
@@ -631,14 +667,6 @@ export default function TeamPage() {
       return { ...r, dir: value as "asc" | "desc" };
     }));
   };
-
-  const sorted = [...filtered].sort((a, b) => {
-    for (const rule of sortRules) {
-      const cmp = compareMemberByCol(a, b, rule.col);
-      if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
-    }
-    return 0;
-  });
 
   const setTrack = (track: TrackKey) => {
     if (track === "—") {
@@ -821,6 +849,26 @@ export default function TeamPage() {
     return map;
   }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment]);
 
+  const projectSortMetaByMemberKey = useMemo(() => {
+    const map = new Map<string, { count: number; key: string }>();
+    for (const [memberKey, assignments] of Array.from(assignmentsByMemberName.entries())) {
+      const sortedCodes = assignments.map((item) => item.code).sort((a, b) => a.localeCompare(b));
+      map.set(memberKey, {
+        count: assignments.length,
+        key: sortedCodes.join(" "),
+      });
+    }
+    return map;
+  }, [assignmentsByMemberName]);
+
+  const sorted = [...filtered].sort((a, b) => {
+    for (const rule of sortRules) {
+      const cmp = compareMemberByCol(a, b, rule.col);
+      if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
+    }
+    return 0;
+  });
+
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
     if (normalizeKey(member.status ?? "") === "inactive") {
       return { colorClass: "bg-red-400", label: "Inactive" };
@@ -939,24 +987,33 @@ export default function TeamPage() {
               Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
             </Btn>
             {showSortPanel && (
-              <div className="absolute top-full left-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 min-w-[320px]">
-                <p className="text-[10px] text-white/40 uppercase tracking-wide mb-2">Sort Rules</p>
+              <div className="absolute top-full right-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 w-[360px] max-w-[min(92vw,360px)]">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] text-white/45 uppercase tracking-wide">Sort Rules</p>
+                  <button
+                    type="button"
+                    className="text-[10px] text-white/55 hover:text-white transition-colors"
+                    onClick={() => setShowSortPanel(false)}
+                  >
+                    Close
+                  </button>
+                </div>
                 {sortRules.map((rule, idx) => (
                   <div key={idx} className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] text-white/40 w-[48px]">{idx === 0 ? "Sort by" : "Then by"}</span>
+                    <span className="text-[10px] text-white/45 w-[54px]">{idx === 0 ? "Sort by" : "Then by"}</span>
                     <select
                       value={rule.col}
                       onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
                       className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
                     >
-                      {SORT_COLUMNS.map((name, i) => (
-                        <option key={i} value={i}>{name}</option>
+                      {SORT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
                       ))}
                     </select>
                     <select
                       value={rule.dir}
                       onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
-                      className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[60px]"
+                      className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[72px]"
                     >
                       <option value="asc">A→Z</option>
                       <option value="desc">Z→A</option>
@@ -973,11 +1030,20 @@ export default function TeamPage() {
                     )}
                   </div>
                 ))}
-                {sortRules.length < SORT_COLUMNS.length && (
-                  <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/70 hover:text-[#85CC17] transition-colors">
-                    + Add sort level
+                <div className="mt-2 flex items-center justify-between">
+                  {sortRules.length < SORT_COLUMNS.length ? (
+                    <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+                      + Add sort level
+                    </button>
+                  ) : <span />}
+                  <button
+                    type="button"
+                    className="text-[10px] text-white/50 hover:text-white/80 transition-colors"
+                    onClick={() => setSortRules(DEFAULT_SORT_RULES)}
+                  >
+                    Reset default
                   </button>
-                )}
+                </div>
               </div>
             )}
           </div>
@@ -1047,28 +1113,28 @@ export default function TeamPage() {
           <table className="members-grid-table w-full min-w-[1460px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
-                  const sortable = [0, 1, 2, 3, 4, 5, 6].includes(idx);
+                {[
+                  { label: "Projects", sortCol: 1, width: "w-[96px]" },
+                  { label: "Name", sortCol: 2, width: "w-[250px]" },
+                  { label: "Email", sortCol: 3, width: "w-[330px]" },
+                  { label: "School", sortCol: 4, width: "w-[260px]" },
+                  { label: "Grade", sortCol: 5, width: "w-[92px]" },
+                  { label: "Date Accepted", sortCol: 6, width: "w-[116px]" },
+                  { label: "Account Created", sortCol: 7, width: "w-[116px]" },
+                  { label: "Actions", sortCol: null, width: "w-[124px]" },
+                ].map((col) => {
+                  const sortable = typeof col.sortCol === "number";
                   const primaryRule = sortRules[0];
-                  const isActive = primaryRule?.col === idx;
+                  const isActive = sortable && primaryRule?.col === col.sortCol;
                   const dir = isActive ? primaryRule.dir : "asc";
                   return (
                     <th
-                      key={col}
-                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${
-                        col === "Projects" ? "w-[96px]" :
-                        col === "Name" ? "w-[250px]" :
-                        col === "Email" ? "w-[330px]" :
-                        col === "School" ? "w-[260px]" :
-                        col === "Grade" ? "w-[92px]" :
-                        col === "Date Accepted" ? "w-[116px]" :
-                        col === "Account Created" ? "w-[116px]" :
-                        "w-[124px]"
-                      }`}
-                      onClick={() => sortable && handleSort(idx)}
+                      key={col.label}
+                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${col.width}`}
+                      onClick={() => sortable && handleSort(col.sortCol as number)}
                     >
                       <span className="inline-flex items-center gap-0.5">
-                        {col}
+                        {col.label}
                         {sortable && (
                           <span className="inline-flex flex-col ml-0.5 leading-none align-middle">
                             <span className={`text-[8px] ${isActive && dir === "asc" ? "text-white/80" : "text-white/20"}`}>▲</span>
