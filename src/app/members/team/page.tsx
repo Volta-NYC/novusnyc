@@ -726,7 +726,7 @@ export default function TeamPage() {
                     <select
                       value={rule.col}
                       onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
-                      className="flex-1 bg-[#0F1014] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                      className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
                     >
                       {SORT_COLUMNS.map((name, i) => (
                         <option key={i} value={i}>{name}</option>
@@ -735,7 +735,7 @@ export default function TeamPage() {
                     <select
                       value={rule.dir}
                       onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
-                      className="bg-[#0F1014] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[60px]"
+                      className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[60px]"
                     >
                       <option value="asc">A→Z</option>
                       <option value="desc">Z→A</option>
@@ -743,7 +743,7 @@ export default function TeamPage() {
                     {sortRules.length > 1 && (
                       <button
                         onClick={() => removeSortRule(idx)}
-                        className="h-6 w-6 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-colors flex items-center justify-center text-xs"
+                        className="members-icon-btn members-icon-btn-danger h-6 w-6 text-xs"
                         aria-label="Remove sort rule"
                         title="Remove sort rule"
                       >
@@ -765,8 +765,8 @@ export default function TeamPage() {
 
       {/* Team member list */}
       {isMemberRestricted ? (
-        <div className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text">
-          <table className="w-full min-w-[760px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+        <div className="members-table-shell relative select-text">
+          <table className="members-grid-table w-full min-w-[760px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "School", "Grade"].map((col) => (
@@ -820,10 +820,8 @@ export default function TeamPage() {
           </table>
         </div>
       ) : (
-        <div
-          className="relative bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto select-text"
-        >
-          <table className="w-full min-w-[1180px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+        <div className="members-table-shell relative select-text">
+          <table className="members-grid-table w-full min-w-[1180px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
@@ -996,7 +994,7 @@ export default function TeamPage() {
               {!showAlternateEmail ? (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-white/15 text-white/65 hover:text-white hover:border-white/30 transition-colors flex items-center justify-center text-base leading-none"
+                  className="members-icon-btn h-8 w-8 text-base leading-none"
                   aria-label="Add alternate email"
                   title="Add alternate email"
                   onClick={() => setShowAlternateEmail(true)}
@@ -1006,7 +1004,7 @@ export default function TeamPage() {
               ) : (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center text-base leading-none"
+                  className="members-icon-btn members-icon-btn-danger h-8 w-8 text-base leading-none"
                   aria-label="Remove alternate email"
                   title="Remove alternate email"
                   onClick={() => {

@@ -906,7 +906,7 @@ export default function ApplicantsPage() {
         <div ref={columnsMenuRef} className="relative ml-auto">
           <button
             type="button"
-            className="h-8 px-2.5 rounded-md border border-white/15 bg-[#0F1014]/95 text-[11px] text-white/70 hover:text-white hover:border-white/30 transition-colors"
+            className="h-8 px-2.5 rounded-lg border border-white/15 bg-[#0F1014]/95 text-[11px] text-white/70 hover:text-white hover:border-white/30 transition-colors"
             onClick={() => setColumnsMenuOpen((prev) => !prev)}
           >
             Columns
@@ -938,8 +938,8 @@ export default function ApplicantsPage() {
         </div>
       </div>
 
-      <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-        <table className="w-full min-w-[1480px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
+      <div className="members-table-shell">
+        <table className="members-grid-table w-full min-w-[1480px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {selectionMode !== "none" && (

@@ -1640,7 +1640,7 @@ export default function BusinessesPage() {
                         <button
                           type="button"
                           onClick={() => removeTeamMember(track, member)}
-                          className="h-7 w-7 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center"
+                          className="members-icon-btn members-icon-btn-danger h-7 w-7"
                           aria-label={`Remove ${member}`}
                         >
                           ×
@@ -1736,7 +1736,7 @@ export default function BusinessesPage() {
         <select
           value={filterDiv}
           onChange={e => setFilterDiv(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl pl-3 pr-11 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
+          className="bg-[#1C1F26] border border-white/8 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
           style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff66' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center" }}
         >
           <option value="">All divisions</option>
@@ -1747,8 +1747,8 @@ export default function BusinessesPage() {
       {isNonAdminMember && myProjects.length > 0 && (
         <div className="mb-4">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[1320px] table-fixed text-left [&_td]:overflow-hidden">
+          <div className="members-table-shell">
+            <table className="members-grid-table w-full min-w-[1320px] table-fixed text-left [&_td]:overflow-hidden">
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
@@ -1782,8 +1782,8 @@ export default function BusinessesPage() {
         <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-2">Other Projects</h2>
       )}
 
-      <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto mb-6">
-        <table className="w-full min-w-[1320px] table-fixed text-left [&_td]:overflow-hidden">
+      <div className="members-table-shell mb-6">
+        <table className="members-grid-table w-full min-w-[1320px] table-fixed text-left [&_td]:overflow-hidden">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
@@ -1906,7 +1906,7 @@ export default function BusinessesPage() {
               {!showOwnerAltEmail ? (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-white/15 text-white/65 hover:text-white hover:border-white/30 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  className="members-icon-btn h-8 w-8 text-base leading-none flex-shrink-0"
                   onClick={() => setShowOwnerAltEmail(true)}
                   aria-label="Add alternate email"
                   title="Add alternate email"
@@ -1916,7 +1916,7 @@ export default function BusinessesPage() {
               ) : (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  className="members-icon-btn members-icon-btn-danger h-8 w-8 text-base leading-none flex-shrink-0"
                   onClick={() => {
                     setField("ownerAlternateEmail", "");
                     setShowOwnerAltEmail(false);
@@ -1946,7 +1946,7 @@ export default function BusinessesPage() {
               {!showAlternatePhone ? (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-white/15 text-white/65 hover:text-white hover:border-white/30 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  className="members-icon-btn h-8 w-8 text-base leading-none flex-shrink-0"
                   onClick={() => setShowAlternatePhone(true)}
                   aria-label="Add alternate phone"
                   title="Add alternate phone"
@@ -1956,7 +1956,7 @@ export default function BusinessesPage() {
               ) : (
                 <button
                   type="button"
-                  className="h-8 w-8 rounded-md border border-red-400/30 text-red-300 hover:text-red-200 hover:bg-red-500/10 hover:border-red-300/60 transition-colors flex items-center justify-center text-base leading-none flex-shrink-0"
+                  className="members-icon-btn members-icon-btn-danger h-8 w-8 text-base leading-none flex-shrink-0"
                   onClick={() => {
                     setField("alternatePhone", "");
                     setShowAlternatePhone(false);
@@ -2013,7 +2013,7 @@ export default function BusinessesPage() {
                       key={`track-toggle-${track}`}
                       type="button"
                       onClick={() => toggleTrackSelection(track)}
-                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                         selected
                           ? TRACK_META[track].chipClass
                           : "border-white/20 text-white/65 bg-[#11141A] hover:border-white/35"

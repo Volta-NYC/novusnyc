@@ -175,7 +175,7 @@ export function SearchBar({ value, onChange, placeholder = "Search…" }: {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-[#1C1F26] border border-white/8 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 transition-colors"
+        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 transition-colors"
       />
     </div>
   );
@@ -506,8 +506,8 @@ export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
   sortableCols?: number[];
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/8">
-      <table className="w-full min-w-max text-sm">
+    <div className="members-table-shell">
+      <table className="members-grid-table w-full min-w-max table-fixed text-sm">
         <thead>
           <tr className="bg-[#1C1F26] border-b border-white/8">
             {cols.map((col, i) => {

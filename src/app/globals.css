@@ -222,6 +222,10 @@ main {
   border-radius: 0.5rem;
 }
 
+.members-portal button:not(.members-icon-btn) {
+  min-height: 32px;
+}
+
 .members-portal input:not([type="checkbox"]):not([type="radio"]),
 .members-portal select,
 .members-portal textarea {
@@ -235,6 +239,58 @@ main {
 .members-portal table.table-fixed th,
 .members-portal table.table-fixed td {
   vertical-align: top;
+}
+
+.members-portal .members-table-shell {
+  background: #1c1f26;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+.members-portal .members-grid-table th {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.members-portal .members-grid-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.members-portal .members-grid-table td > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.members-portal .members-icon-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.65);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+
+.members-portal .members-icon-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.members-portal .members-icon-btn-danger {
+  border-color: rgba(248, 113, 113, 0.3);
+  color: rgba(252, 165, 165, 0.95);
+}
+
+.members-portal .members-icon-btn-danger:hover {
+  border-color: rgba(252, 165, 165, 0.65);
+  color: rgb(254, 202, 202);
+  background: rgba(239, 68, 68, 0.12);
 }
 
 /* Form inputs */
