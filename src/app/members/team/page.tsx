@@ -39,14 +39,48 @@ function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
     case "Tech":
       return { bg: "#DBEAFE", text: "#1E3A8A" };
     case "Marketing":
-      return { bg: "#ECFCCB", text: "#365314" };
-    case "Finance":
       return { bg: "#FEF3C7", text: "#92400E" };
+    case "Finance":
+      return { bg: "#DCFCE7", text: "#166534" };
     case "Other":
       return { bg: "#F3F4F6", text: "#374151" };
     default:
       return { bg: "rgba(133,204,23,0.15)", text: "#85CC17" };
   }
+}
+
+function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
+  if (track === "Tech") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M8 8L3 12L8 16" />
+        <path d="M16 8L21 12L16 16" />
+      </svg>
+    );
+  }
+  if (track === "Marketing") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 20l4.5-1.2L19 8.3a1.6 1.6 0 0 0 0-2.2l-1.1-1.1a1.6 1.6 0 0 0-2.2 0L5.2 15.5L4 20z" />
+        <path d="M13.5 6.5l4 4" />
+      </svg>
+    );
+  }
+  if (track === "Finance") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 19h16" />
+        <path d="M7 16v-4" />
+        <path d="M12 16V9" />
+        <path d="M17 16v-7" />
+      </svg>
+    );
+  }
+  return (
+    <span className="text-[11px] font-semibold leading-none" style={{ color }} aria-hidden="true">
+      –
+    </span>
+  );
 }
 
 const TRACK_SORT_ORDER: Record<TrackKey, number> = {
@@ -1007,7 +1041,7 @@ export default function TeamPage() {
                           aria-label={`View assignments for ${member.name}`}
                         />
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                          <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
+                          <TrackAvatarIcon track={track} color={avatar.text} />
                         </div>
                         <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 44)}</span>
                       </div>
@@ -1095,7 +1129,7 @@ export default function TeamPage() {
                           aria-label={`View assignments for ${member.name}`}
                         />
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                          <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
+                          <TrackAvatarIcon track={track} color={avatar.text} />
                         </div>
                         <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
                       </div>
