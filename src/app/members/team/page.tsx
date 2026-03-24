@@ -83,14 +83,6 @@ function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
   );
 }
 
-const TRACK_SORT_ORDER: Record<TrackKey, number> = {
-  Tech: 0,
-  Marketing: 1,
-  Finance: 2,
-  Other: 3,
-  "—": 4,
-};
-
 type ImportedMember = {
   name: string;
   email: string;
@@ -257,7 +249,7 @@ export default function TeamPage() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
   const [showAlternateEmail, setShowAlternateEmail] = useState(false);
-  const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>([{ col: 0, dir: "asc" }]);
+  const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>([{ col: 1, dir: "asc" }]);
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
@@ -589,21 +581,17 @@ export default function TeamPage() {
     return map;
   }, [userProfiles]);
 
-  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
+  const SORT_COLUMNS = ["Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
 
   const compareMemberByCol = (a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
-      case 0: {
-        const trackCmp = TRACK_SORT_ORDER[getMemberTrack(a)] - TRACK_SORT_ORDER[getMemberTrack(b)];
-        return trackCmp !== 0 ? trackCmp : a.name.localeCompare(b.name);
-      }
-      case 1: return 0;
-      case 2: return a.name.localeCompare(b.name);
-      case 3: return (a.email || "").localeCompare(b.email || "");
-      case 4: return (a.school || "").localeCompare(b.school || "");
-      case 5: return (a.grade || "").localeCompare(b.grade || "");
-      case 6: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
-      case 7: {
+      case 0: return 0;
+      case 1: return a.name.localeCompare(b.name);
+      case 2: return (a.email || "").localeCompare(b.email || "");
+      case 3: return (a.school || "").localeCompare(b.school || "");
+      case 4: return (a.grade || "").localeCompare(b.grade || "");
+      case 5: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
+      case 6: {
         const aProfile = profileByEmail.get(normalizeKey(a.email ?? "")) ?? profileByEmail.get(normalizeKey(a.alternateEmail ?? ""));
         const bProfile = profileByEmail.get(normalizeKey(b.email ?? "")) ?? profileByEmail.get(normalizeKey(b.alternateEmail ?? ""));
         return (aProfile?.createdAt || "").localeCompare(bProfile?.createdAt || "");
@@ -632,7 +620,7 @@ export default function TeamPage() {
   const removeSortRule = (idx: number) => {
     setSortRules((prev) => {
       const next = prev.filter((_, i) => i !== idx);
-      return next.length === 0 ? [{ col: 0, dir: "asc" }] : next;
+      return next.length === 0 ? [{ col: 1, dir: "asc" }] : next;
     });
   };
 
@@ -998,14 +986,13 @@ export default function TeamPage() {
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="members-table-shell relative select-text">
-          <table className="members-grid-table w-full min-w-[1020px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[880px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Track", "Projects", "Name", "School", "Grade"].map((col) => (
+                {["Projects", "Name", "School", "Grade"].map((col) => (
                   <th
                     key={col}
                     className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
-                      col === "Track" ? "w-[88px]" :
                       col === "Projects" ? "w-[96px]" :
                       col === "Name" ? "w-[250px]" :
                       col === "School" ? "w-[360px]" :
@@ -1026,9 +1013,6 @@ export default function TeamPage() {
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
-                    </td>
-                    <td className="px-2 py-1">
                       {renderAssignmentCell(memberAssignments, `member-${member.id}`)}
                     </td>
                     <td className="px-2 py-1">
@@ -1060,11 +1044,11 @@ export default function TeamPage() {
         </div>
       ) : (
         <div className="members-table-shell relative select-text">
-          <table className="members-grid-table w-full min-w-[1600px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[1460px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Track", "Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
-                  const sortable = [0, 1, 2, 3, 4, 5, 6, 7].includes(idx);
+                {["Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
+                  const sortable = [0, 1, 2, 3, 4, 5, 6].includes(idx);
                   const primaryRule = sortRules[0];
                   const isActive = primaryRule?.col === idx;
                   const dir = isActive ? primaryRule.dir : "asc";
@@ -1072,7 +1056,6 @@ export default function TeamPage() {
                     <th
                       key={col}
                       className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${
-                        col === "Track" ? "w-[88px]" :
                         col === "Projects" ? "w-[96px]" :
                         col === "Name" ? "w-[250px]" :
                         col === "Email" ? "w-[330px]" :
@@ -1114,9 +1097,6 @@ export default function TeamPage() {
                     className="hover:bg-white/3 transition-colors align-middle"
                   >
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/65 text-[10px] font-semibold">{track}</span>
-                    </td>
-                    <td className="px-2 py-1">
                       {renderAssignmentCell(memberAssignments, `admin-${member.id}`)}
                     </td>
                     <td className="px-2 py-1">
