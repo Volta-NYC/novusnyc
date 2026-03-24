@@ -1879,14 +1879,14 @@ function InterviewsContent() {
                           <div className="flex gap-1 flex-nowrap">
                             {canDeleteInterviews ? (
                               <>
-                                <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none" onClick={() => startReschedule(slot)}>Move</Btn>
-                                <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
-                                <Btn size="sm" variant="danger" className="!px-2 !py-0.5 !text-[10px] leading-none" onClick={() => cancelBookedInterview(slot)}>Cancel</Btn>
+                                <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => startReschedule(slot)}>Move</Btn>
+                                <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
+                                <Btn size="sm" variant="danger" className="members-pill-btn" onClick={() => cancelBookedInterview(slot)}>Cancel</Btn>
                               </>
                             ) : currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid)) ? (
                               <>
-                                <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
-                                <Btn size="sm" variant="ghost" className="!px-2 !py-0.5 !text-[10px] leading-none text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
+                                <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
+                                <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
                               </>
                             ) : null}
                           </div>
@@ -1981,19 +1981,19 @@ function InterviewsContent() {
                         <td className="px-2 py-1.5 whitespace-nowrap">
                           <div className="flex gap-1 flex-nowrap">
                             {(canDeleteInterviews || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && (
-                              <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
+                              <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
                             )}
                             {(canDeleteInterviews || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && !slot.noShow && (
-                              <Btn size="sm" variant="ghost" className="!px-2 !py-0.5 !text-[10px] leading-none text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
+                              <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
                             )}
                             {slot.noShow && (
                               <span className="text-[10px] text-orange-400 font-semibold px-1">NO SHOW</span>
                             )}
                             {canDeleteInterviews && (
-                              <Btn size="sm" variant="primary" className="!px-2 !py-0.5 !text-[10px] leading-none" onClick={() => setFinalizeSlot(slot)}>Accept</Btn>
+                              <Btn size="sm" variant="primary" className="members-pill-btn" onClick={() => setFinalizeSlot(slot)}>Accept</Btn>
                             )}
                             {canDeleteInterviews && (
-                              <Btn size="sm" variant="danger" className="!px-2 !py-0.5 !text-[10px] leading-none" onClick={() => deletePastInterviewEntry(slot)}>Delete</Btn>
+                              <Btn size="sm" variant="danger" className="members-pill-btn" onClick={() => deletePastInterviewEntry(slot)}>Delete</Btn>
                             )}
                           </div>
                         </td>

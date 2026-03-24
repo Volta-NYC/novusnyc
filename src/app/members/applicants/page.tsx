@@ -1139,7 +1139,7 @@ export default function ApplicantsPage() {
                                   <Btn
                                     size="sm"
                                     variant="secondary"
-                                    className={`!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap ${!canSendInviteAction ? "opacity-50" : ""}`}
+                                    className={`members-pill-btn whitespace-nowrap ${!canSendInviteAction ? "opacity-50" : ""}`}
                                     onClick={() => sendInviteForApplicant(app)}
                                     disabled={sendingInvites || sendingReminders || !canSendInviteAction}
                                   >
@@ -1148,7 +1148,7 @@ export default function ApplicantsPage() {
                                   <Btn
                                     size="sm"
                                     variant="primary"
-                                    className={`!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap ${!canAcceptAction ? "opacity-50" : ""}`}
+                                    className={`members-pill-btn whitespace-nowrap ${!canAcceptAction ? "opacity-50" : ""}`}
                                     onClick={() => {
                                       setAcceptRole(app.finalDecisionRole || "Analyst");
                                       setAcceptSendEmail(true);
@@ -1162,7 +1162,7 @@ export default function ApplicantsPage() {
                                     <Btn
                                       size="sm"
                                       variant="danger"
-                                      className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap"
+                                      className="members-pill-btn whitespace-nowrap"
                                       onClick={() => {
                                         void ask(
                                           async () => {

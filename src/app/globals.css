@@ -222,10 +222,6 @@ main {
   border-radius: 0.5rem;
 }
 
-.members-portal button:not(.members-icon-btn) {
-  min-height: 32px;
-}
-
 .members-portal input:not([type="checkbox"]):not([type="radio"]),
 .members-portal select,
 .members-portal textarea {
@@ -257,7 +253,7 @@ main {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .members-portal .members-grid-table td > * {
@@ -291,6 +287,23 @@ main {
   border-color: rgba(252, 165, 165, 0.65);
   color: rgb(254, 202, 202);
   background: rgba(239, 68, 68, 0.12);
+}
+
+.members-portal .members-status-dot {
+  display: inline-block !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  line-height: 0 !important;
+}
+
+.members-portal .members-pill-btn {
+  border-radius: 9999px !important;
+  padding: 2px 8px !important;
+  min-height: 22px !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
 }
 
 /* Form inputs */

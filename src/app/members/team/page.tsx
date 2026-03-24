@@ -4,10 +4,10 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm, AutocompleteInput,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, type TeamMember, type UserProfile, type Business, type FinanceAssignment,
+  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, subscribeApplications, type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -22,11 +22,8 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 };
 
 const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
-const TECH_TEAM_SEED: string[] = [];
-const MARKETING_TEAM_SEED: string[] = [];
-const FINANCE_TEAM_OPTIONS = ["Outreach", "Grants", "Reports"];
-
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
+type AssignmentCodePrefix = "W" | "M" | "R" | "C";
 
 function getMemberTrack(member: TeamMember): TrackKey {
   const divisions = member.divisions ?? [];
@@ -72,6 +69,9 @@ type MemberAssignmentLink = {
   id: string;
   kind: "Business Project" | "Finance Assignment";
   title: string;
+  topic?: string;
+  codePrefix: AssignmentCodePrefix;
+  code: string;
   status: string;
   deadline: string;
   href: string;
@@ -83,6 +83,37 @@ function normalizeText(v: string): string {
 
 function normalizeKey(v: string): string {
   return normalizeText(v).toLowerCase();
+}
+
+function truncateCell(value: string, max = 64): string {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (text.length <= max) return text;
+  return `${text.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
+}
+
+function readAssignmentNames(assignment: FinanceAssignment): string[] {
+  const raw = (assignment as { assignedMemberNames?: unknown }).assignedMemberNames;
+  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
+  if (raw && typeof raw === "object") {
+    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function readAssignmentIds(assignment: FinanceAssignment): string[] {
+  const raw = (assignment as { assignedMemberIds?: unknown }).assignedMemberIds;
+  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
+  if (raw && typeof raw === "object") {
+    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
 }
 
 function parseDelimitedLine(line: string, delimiter: string): string[] {
@@ -185,6 +216,7 @@ export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
   const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -193,6 +225,7 @@ export default function TeamPage() {
   const [showAlternateEmail, setShowAlternateEmail] = useState(false);
   const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>([{ col: 0, dir: "asc" }]);
   const [showSortPanel, setShowSortPanel] = useState(false);
+  const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -207,6 +240,7 @@ export default function TeamPage() {
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
+  useEffect(() => subscribeApplications(setApplications), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
 
   const copyText = async (value: string) => {
@@ -432,7 +466,7 @@ export default function TeamPage() {
       grade:       member.grade ?? "",
       // Guard against undefined: Firebase omits empty arrays when storing.
       divisions:   member.divisions ?? [],
-      pod:         member.pod,
+      pod:         "",
       role:        member.role,
       slackHandle: member.slackHandle,
       email:       member.email,
@@ -451,9 +485,9 @@ export default function TeamPage() {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     if (editingMember) {
-      await updateTeamMember(editingMember.id, form as Partial<TeamMember>);
+      await updateTeamMember(editingMember.id, { ...(form as Partial<TeamMember>), pod: "" });
     } else {
-      await createTeamMember(form as Omit<TeamMember, "id" | "createdAt">);
+      await createTeamMember({ ...(form as Omit<TeamMember, "id" | "createdAt">), pod: "" });
     }
     setModal(null);
   };
@@ -490,17 +524,15 @@ export default function TeamPage() {
     return map;
   }, [userProfiles]);
 
-  const SORT_COLUMNS = ["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
+  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
 
   const compareMemberByCol = (a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
       case 0: {
         const trackCmp = TRACK_SORT_ORDER[getMemberTrack(a)] - TRACK_SORT_ORDER[getMemberTrack(b)];
-        if (trackCmp !== 0) return trackCmp;
-        const teamCmp = (a.pod || "—").localeCompare(b.pod || "—");
-        return teamCmp !== 0 ? teamCmp : a.name.localeCompare(b.name);
+        return trackCmp !== 0 ? trackCmp : a.name.localeCompare(b.name);
       }
-      case 1: return (a.pod || "—").localeCompare(b.pod || "—");
+      case 1: return 0;
       case 2: return a.name.localeCompare(b.name);
       case 3: return (a.email || "").localeCompare(b.email || "");
       case 4: return (a.school || "").localeCompare(b.school || "");
@@ -555,15 +587,6 @@ export default function TeamPage() {
     return 0;
   });
 
-  const formTeamOptions = Array.from(
-    new Set([
-      ...TECH_TEAM_SEED,
-      ...MARKETING_TEAM_SEED,
-      ...FINANCE_TEAM_OPTIONS,
-      ...team.map((member) => (member.pod ?? "").trim()).filter(Boolean),
-    ])
-  ).sort((a, b) => a.localeCompare(b));
-
   const setTrack = (track: TrackKey) => {
     if (track === "—") {
       setField("divisions", []);
@@ -587,77 +610,191 @@ export default function TeamPage() {
     return keys;
   }, [businesses]);
 
+  const resolvedFinanceMemberKeysByAssignment = useMemo(() => {
+    const map = new Map<string, string[]>();
+    const teamRows = team.map((member) => {
+      const full = normalizeKey(member.name ?? "");
+      const first = normalizeKey((member.name ?? "").split(/\s+/)[0] ?? "");
+      return {
+        id: member.id,
+        full,
+        first,
+      };
+    }).filter((row) => row.full);
+    const fullById = new Map(teamRows.map((row) => [row.id, row.full]));
+
+    const resolveName = (rawName: string): string[] => {
+      const rawKey = normalizeKey(rawName ?? "");
+      if (!rawKey) return [];
+
+      // Exact full-name match takes priority.
+      const exactFull = teamRows.filter((row) => row.full === rawKey);
+      if (exactFull.length === 1) return [exactFull[0].full];
+      if (exactFull.length > 1) return exactFull.map((row) => row.full);
+
+      // If first-name match is unique, use it.
+      const firstMatches = teamRows.filter((row) => row.first && row.first === rawKey);
+      if (firstMatches.length === 1) return [firstMatches[0].full];
+
+      // Fallback: closest contains relation when unique.
+      const containsMatches = teamRows.filter((row) => row.full.includes(rawKey) || rawKey.includes(row.full));
+      if (containsMatches.length === 1) return [containsMatches[0].full];
+
+      // Unknown/ambiguous raw names still get recorded as their own key.
+      return [rawKey];
+    };
+
+    for (const assignment of financeAssignments) {
+      const keySet = new Set<string>();
+
+      for (const memberId of readAssignmentIds(assignment)) {
+        const memberKey = fullById.get(memberId);
+        if (memberKey) keySet.add(memberKey);
+      }
+
+      for (const memberName of readAssignmentNames(assignment)) {
+        for (const resolved of resolveName(memberName)) keySet.add(resolved);
+      }
+
+      map.set(assignment.id, Array.from(keySet));
+    }
+    return map;
+  }, [financeAssignments, team]);
+
   const activeFinanceAssignedNameKeys = useMemo(() => {
     const keys = new Set<string>();
     for (const assignment of financeAssignments) {
       const status = normalizeKey(assignment.status ?? "");
       const isActiveFinanceAssignment = status !== "completed";
       if (!isActiveFinanceAssignment) continue;
-      for (const rawName of assignment.assignedMemberNames ?? []) {
-        const key = normalizeKey(rawName ?? "");
-        if (key) keys.add(key);
+      for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
+        if (memberKey) keys.add(memberKey);
       }
     }
     return keys;
-  }, [financeAssignments]);
+  }, [financeAssignments, resolvedFinanceMemberKeysByAssignment]);
 
   const assignmentsByMemberName = useMemo(() => {
     const map = new Map<string, MemberAssignmentLink[]>();
-    const pushForMember = (memberName: string, item: MemberAssignmentLink) => {
-      const key = normalizeKey(memberName);
+    const pushForMemberKey = (memberKey: string, item: Omit<MemberAssignmentLink, "code">) => {
+      const key = normalizeKey(memberKey);
       if (!key) return;
       const current = map.get(key) ?? [];
-      current.push(item);
+      current.push({ ...item, code: "" });
       map.set(key, current);
+    };
+    const pushForMemberName = (memberName: string, item: Omit<MemberAssignmentLink, "code">) => {
+      pushForMemberKey(memberName, item);
     };
 
     for (const business of businesses) {
       const status = String(business.projectStatus ?? "").trim() || "—";
-      const entry: MemberAssignmentLink = {
-        id: business.id,
-        kind: "Business Project",
-        title: business.name || "Untitled Project",
-        status,
-        deadline: "—",
-        href: `/members/projects#project-${business.id}`,
-      };
-      const assignedNames = [...(business.teamMembers ?? []), business.teamLead ?? ""]
+      const legacyAssignedNames = [...(business.teamMembers ?? []), business.teamLead ?? ""]
         .map((name) => String(name ?? "").trim())
-        .filter(Boolean);
-      for (const memberName of assignedNames) pushForMember(memberName, entry);
+        .filter(Boolean)
+        .filter((name, index, arr) => arr.indexOf(name) === index);
+      const trackProjects = business.trackProjects ?? {};
+      const requestedTracks = Array.isArray(business.projectTracks)
+        ? business.projectTracks.map((track) => String(track ?? "").trim()).filter(Boolean)
+        : [];
+      const explicitTracks = Object.keys(trackProjects).map((track) => String(track ?? "").trim()).filter(Boolean);
+      const allTracks = Array.from(new Set([...requestedTracks, ...explicitTracks]));
+      const trackOrder: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
+      const hasTrackSpecificAssignments = allTracks.length > 0;
+
+      if (!hasTrackSpecificAssignments) {
+        const entry: Omit<MemberAssignmentLink, "code"> = {
+          id: business.id,
+          kind: "Business Project",
+          title: business.name || "Untitled Project",
+          topic: "Website project",
+          codePrefix: "W",
+          status,
+          deadline: "—",
+          href: `/members/projects#project-${business.id}`,
+        };
+        for (const memberName of legacyAssignedNames) pushForMemberName(memberName, entry);
+        continue;
+      }
+
+      for (const track of trackOrder) {
+        if (!allTracks.includes(track)) continue;
+        const trackInfo = (trackProjects as Record<string, unknown>)[track];
+        const rawMembers = trackInfo && typeof trackInfo === "object"
+          ? (trackInfo as { teamMembers?: unknown }).teamMembers
+          : [];
+        const trackMembers = Array.isArray(rawMembers)
+          ? rawMembers.map((name) => String(name ?? "").trim()).filter(Boolean)
+          : [];
+        const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : legacyAssignedNames));
+        if (assignedNames.length === 0) continue;
+        const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : "W";
+        const topic =
+          track === "Marketing"
+            ? "Marketing project"
+            : track === "Finance"
+              ? "Operations project"
+              : "Website project";
+        const entry: Omit<MemberAssignmentLink, "code"> = {
+          id: `${business.id}-${track.toLowerCase()}`,
+          kind: "Business Project",
+          title: business.name || "Untitled Project",
+          topic,
+          codePrefix,
+          status,
+          deadline: "—",
+          href: `/members/projects#project-${business.id}`,
+        };
+        for (const memberName of assignedNames) pushForMemberName(memberName, entry);
+      }
     }
 
     for (const assignment of financeAssignments) {
+      const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
+      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
       const firstDeadlineDate = Array.isArray(assignment.deadlines)
         ? assignment.deadlines
           .map((entry) => (entry && typeof entry === "object" ? String((entry as { date?: string }).date ?? "").trim() : ""))
           .find(Boolean)
         : "";
       const deadline = firstDeadlineDate || assignment.deadline || assignment.finalDueDate || assignment.firstDraftDueDate || assignment.interviewDueDate || "—";
-      const entry: MemberAssignmentLink = {
+      const entry: Omit<MemberAssignmentLink, "code"> = {
         id: assignment.id,
         kind: "Finance Assignment",
-        title: assignment.title || "Untitled Assignment",
+        title: assignment.title || assignment.topic || "Untitled Assignment",
+        topic: assignment.topic || "",
+        codePrefix,
         status: assignment.status || "—",
         deadline,
         href: `/members/assignments#finance-assignment-${assignment.id}`,
       };
-      for (const memberName of assignment.assignedMemberNames ?? []) pushForMember(memberName, entry);
+      for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
+        pushForMemberKey(memberKey, entry);
+      }
     }
 
+    const prefixOrder: Record<AssignmentCodePrefix, number> = { W: 0, M: 1, R: 2, C: 3 };
     for (const [key, items] of Array.from(map.entries())) {
       map.set(
         key,
         items
           .slice()
           .sort((a, b) => {
-            if (a.kind !== b.kind) return a.kind.localeCompare(b.kind);
+            const prefixCmp = prefixOrder[a.codePrefix] - prefixOrder[b.codePrefix];
+            if (prefixCmp !== 0) return prefixCmp;
             return a.title.localeCompare(b.title);
+          })
+          .map((item, index, arr) => {
+            const seen = arr.slice(0, index).filter((entry) => entry.codePrefix === item.codePrefix).length;
+            return {
+              ...item,
+              code: `${item.codePrefix}${seen + 1}`,
+            };
           }),
       );
     }
     return map;
-  }, [businesses, financeAssignments]);
+  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment]);
 
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
     if (normalizeKey(member.status ?? "") === "inactive") {
@@ -674,6 +811,15 @@ export default function TeamPage() {
     if (!assignmentDetailMember) return [];
     return assignmentsByMemberName.get(normalizeKey(assignmentDetailMember.name ?? "")) ?? [];
   }, [assignmentDetailMember, assignmentsByMemberName]);
+
+  const totalMembersCount = team.length;
+  const inactiveMembersCount = team.filter((member) => normalizeKey(member.status ?? "") === "inactive").length;
+  const assignedMembersCount = team.filter((member) => {
+    if (normalizeKey(member.status ?? "") === "inactive") return false;
+    const memberKey = normalizeKey(member.name ?? "");
+    return activeProjectAssignedNameKeys.has(memberKey) || activeFinanceAssignedNameKeys.has(memberKey);
+  }).length;
+  const totalApplicantsCount = applications.length;
 
   return (
     <MembersLayout>
@@ -712,6 +858,9 @@ export default function TeamPage() {
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Not assigned</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-400" /> Inactive</span>
         </div>
+        <Btn size="sm" variant="ghost" onClick={() => setExpandAssignments((prev) => !prev)}>
+          {expandAssignments ? "Collapse Assignments" : "Expand Assignments"}
+        </Btn>
         {!isMemberRestricted && (
           <div className="relative">
             <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
@@ -762,17 +911,31 @@ export default function TeamPage() {
           </div>
         )}
       </div>
+      <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
+        <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
+        <span>Assigned: <span className="text-emerald-300 font-semibold">{assignedMembersCount}</span></span>
+        <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
+        {canEdit && (
+          <span>Total Applicants: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
+        )}
+      </div>
 
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="members-table-shell relative select-text">
-          <table className="members-grid-table w-full min-w-[760px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[1020px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Track", "Team", "Name", "School", "Grade"].map((col) => (
+                {["Track", "Projects", "Name", "School", "Grade"].map((col) => (
                   <th
                     key={col}
-                    className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${col === "Track" || col === "Team" ? "w-[56px]" : ""}`}
+                    className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
+                      col === "Track" ? "w-[64px]" :
+                      col === "Projects" ? "w-[220px]" :
+                      col === "Name" ? "w-[250px]" :
+                      col === "School" ? "w-[360px]" :
+                      "w-[90px]"
+                    }`}
                   >
                     {col}
                   </th>
@@ -784,33 +947,65 @@ export default function TeamPage() {
                 const track = getMemberTrack(member);
                 const avatar = getTrackAvatarStyles(track);
                 const indicator = getMemberIndicator(member);
+                const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
                 return (
-                  <tr key={member.id} className="hover:bg-white/3 transition-colors align-top">
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                  <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/65 text-[10px] font-semibold">{track}</span>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
-                      <span className="text-white/65 text-[10px] font-semibold">{member.pod || "—"}</span>
+                    <td className="px-2 py-1">
+                      {memberAssignments.length === 0 ? (
+                        <span className="text-white/35">—</span>
+                      ) : (
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap gap-1">
+                            {memberAssignments.map((item) => (
+                              <a
+                                key={`code-${member.id}-${item.id}-${item.code}`}
+                                href={item.href}
+                                className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-1.5 py-0.5 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
+                                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""}`}
+                              >
+                                {item.code}
+                              </a>
+                            ))}
+                          </div>
+                          {expandAssignments && (
+                            <div className="mt-1 space-y-0.5">
+                              {memberAssignments.map((item) => (
+                                <a
+                                  key={`preview-${member.id}-${item.id}-${item.code}`}
+                                  href={item.href}
+                                  className="block truncate text-[10px] text-white/55 hover:text-[#C4F135] transition-colors"
+                                  title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""} · ${item.status}`}
+                                >
+                                  <span className="text-white/80">{item.code}</span> {item.title}{item.topic ? ` · ${item.topic}` : ""}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
-                          className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
+                          className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
                           title={`${indicator.label} · Click for assignments`}
                           onClick={() => setAssignmentDetailMember(member)}
                           aria-label={`View assignments for ${member.name}`}
                         />
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                          <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                          <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
-                        <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{member.name}</span>
+                        <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 44)}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
-                      <span className="text-white/50 block truncate" title={member.school || ""}>{member.school || "—"}</span>
+                    <td className="px-2 py-1 whitespace-nowrap">
+                      <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 64) : "—"}</span>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{member.grade || "—"}</span>
                     </td>
                   </tr>
@@ -821,10 +1016,10 @@ export default function TeamPage() {
         </div>
       ) : (
         <div className="members-table-shell relative select-text">
-          <table className="members-grid-table w-full min-w-[1180px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[1600px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Track", "Team", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
+                {["Track", "Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created", "Actions"].map((col, idx) => {
                   const sortable = [0, 1, 2, 3, 4, 5, 6, 7].includes(idx);
                   const primaryRule = sortRules[0];
                   const isActive = primaryRule?.col === idx;
@@ -832,7 +1027,17 @@ export default function TeamPage() {
                   return (
                     <th
                       key={col}
-                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${col === "Track" || col === "Team" ? "w-[56px]" : ""} ${col === "Email" ? "w-[170px]" : ""} ${col === "School" ? "w-[130px]" : ""} ${col === "Actions" ? "w-[120px]" : ""}`}
+                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${
+                        col === "Track" ? "w-[64px]" :
+                        col === "Projects" ? "w-[280px]" :
+                        col === "Name" ? "w-[250px]" :
+                        col === "Email" ? "w-[330px]" :
+                        col === "School" ? "w-[260px]" :
+                        col === "Grade" ? "w-[92px]" :
+                        col === "Date Accepted" ? "w-[116px]" :
+                        col === "Account Created" ? "w-[116px]" :
+                        "w-[124px]"
+                      }`}
                       onClick={() => sortable && handleSort(idx)}
                     >
                       <span className="inline-flex items-center gap-0.5">
@@ -858,39 +1063,71 @@ export default function TeamPage() {
                 const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
                 const directEmail = (member.email ?? member.alternateEmail ?? "").trim();
                 const inactive = normalizeKey(member.status ?? "") === "inactive";
+                const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
                 return (
                   <tr
                     key={member.id}
-                    className="hover:bg-white/3 transition-colors align-top"
+                    className="hover:bg-white/3 transition-colors align-middle"
                   >
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/65 text-[10px] font-semibold">{track}</span>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
-                      <span className="text-white/65 text-[10px] font-semibold">{member.pod || "—"}</span>
+                    <td className="px-2 py-1">
+                      {memberAssignments.length === 0 ? (
+                        <span className="text-white/35">—</span>
+                      ) : (
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap gap-1">
+                            {memberAssignments.map((item) => (
+                              <a
+                                key={`admin-code-${member.id}-${item.id}-${item.code}`}
+                                href={item.href}
+                                className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-1.5 py-0.5 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
+                                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""}`}
+                              >
+                                {item.code}
+                              </a>
+                            ))}
+                          </div>
+                          {expandAssignments && (
+                            <div className="mt-1 space-y-0.5">
+                              {memberAssignments.map((item) => (
+                                <a
+                                  key={`admin-preview-${member.id}-${item.id}-${item.code}`}
+                                  href={item.href}
+                                  className="block truncate text-[10px] text-white/55 hover:text-[#C4F135] transition-colors"
+                                  title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""} · ${item.status}`}
+                                >
+                                  <span className="text-white/80">{item.code}</span> {item.title}{item.topic ? ` · ${item.topic}` : ""}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
-                          className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
+                          className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
                           title={`${indicator.label} · Click for assignments`}
                           onClick={() => setAssignmentDetailMember(member)}
                           aria-label={`View assignments for ${member.name}`}
                         />
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                          <span className="text-[10px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                          <span className="text-[9px] font-bold" style={{ color: avatar.text }}>{member.name[0]?.toUpperCase()}</span>
                         </div>
-                        <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{member.name}</span>
+                        <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
                         <span
                           className="text-white/55 block truncate"
                           title={[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}
                         >
-                          {[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}
+                          {truncateCell([member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—", 92)}
                         </span>
                         {(member.email || member.alternateEmail) && (
                           <button
@@ -908,32 +1145,32 @@ export default function TeamPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
-                      <span className="text-white/50 block truncate" title={member.school || ""}>{member.school || "—"}</span>
+                    <td className="px-2 py-1 whitespace-nowrap">
+                      <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 72) : "—"}</span>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{member.grade || "—"}</span>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{member.acceptedDate || "—"}</span>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{accountCreated}</span>
                     </td>
-                    <td className="px-2 py-1.5 whitespace-nowrap">
+                    <td className="px-2 py-1 whitespace-nowrap">
                       <div className="flex gap-1 flex-nowrap">
                         {directEmail && (
                           <Btn
                             size="sm"
                             variant="secondary"
-                            className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap"
+                            className="members-pill-btn whitespace-nowrap"
                             onClick={() => { window.location.href = `mailto:${directEmail}`; }}
                             disabled={inactive}
                           >
                             Email
                           </Btn>
                         )}
-                        {canEdit && <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
+                        {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
                       </div>
                     </td>
                   </tr>
@@ -968,7 +1205,9 @@ export default function TeamPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm text-white/90 font-medium">{item.title}</p>
-                    <p className="text-[11px] text-white/45 mt-0.5">{item.kind}</p>
+                    <p className="text-[11px] text-white/45 mt-0.5">
+                      {item.code} · {item.kind}{item.topic ? ` · ${item.topic}` : ""}
+                    </p>
                   </div>
                   <span className="text-[10px] text-white/50 whitespace-nowrap">{item.deadline !== "—" ? `Due ${item.deadline}` : "No deadline"}</span>
                 </div>
@@ -1049,14 +1288,6 @@ export default function TeamPage() {
               <option value="Finance">Finance</option>
               <option value="Other">Other</option>
             </select>
-          </Field>
-          <Field label="Team">
-            <AutocompleteInput
-              value={form.pod ?? ""}
-              onChange={(value) => setField("pod", value)}
-              options={formTeamOptions}
-              placeholder="Type team name (e.g. Outreach, Grants, Reports)"
-            />
           </Field>
           <Field label="Date Accepted">
             <Input

@@ -31,17 +31,17 @@ const TRACK_META: Record<TrackDivision, { label: string; chipClass: string; dotC
   Tech: {
     label: "Tech",
     chipClass: "bg-blue-100 text-blue-700 border-blue-300",
-    dotClass: "bg-blue-500 border-blue-300",
+    dotClass: "bg-blue-500",
   },
   Marketing: {
     label: "Marketing",
     chipClass: "bg-lime-100 text-lime-700 border-lime-300",
-    dotClass: "bg-lime-500 border-lime-300",
+    dotClass: "bg-lime-500",
   },
   Finance: {
     label: "Finance",
     chipClass: "bg-amber-100 text-amber-700 border-amber-300",
-    dotClass: "bg-amber-500 border-amber-300",
+    dotClass: "bg-amber-500",
   },
 };
 const TRACK_ORDER: TrackDivision[] = ["Tech", "Marketing", "Finance"];
@@ -1374,7 +1374,7 @@ export default function BusinessesPage() {
               {trackAssignments.map((assignment) => (
                 <span
                   key={`${b.id}-${assignment.track}`}
-                  className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META[assignment.track].dotClass}`}
+                  className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META[assignment.track].dotClass}`}
                   title={TRACK_META[assignment.track].label}
                 />
               ))}
@@ -1716,9 +1716,9 @@ export default function BusinessesPage() {
         <span className="text-blue-300 font-semibold">◆</span> Visible on public home/showcase.
         <span className="mx-2">·</span>
         <span className="inline-flex items-center gap-1 align-middle">
-          <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META.Tech.dotClass}`} />
-          <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META.Marketing.dotClass}`} />
-          <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META.Finance.dotClass}`} />
+          <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META.Tech.dotClass}`} />
+          <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META.Marketing.dotClass}`} />
+          <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META.Finance.dotClass}`} />
         </span>{" "}
         Track assignments (Tech / Marketing / Finance).
       </p>
@@ -2019,7 +2019,7 @@ export default function BusinessesPage() {
                           : "border-white/20 text-white/65 bg-[#11141A] hover:border-white/35"
                       }`}
                     >
-                      <span className={`inline-block h-2.5 w-2.5 rounded-full border ${TRACK_META[track].dotClass}`} />
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META[track].dotClass}`} />
                       {TRACK_META[track].label}
                     </button>
                   );
