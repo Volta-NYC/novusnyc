@@ -553,6 +553,14 @@ export default function BusinessesPage() {
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
   const canEdit = authRole === "admin";
+  const [deepLinkedProjectId, setDeepLinkedProjectId] = useState("");
+  const handledProjectDeepLinkRef = useRef<string>("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setDeepLinkedProjectId((params.get("projectId") ?? "").trim());
+  }, []);
 
   useEffect(
     () =>
@@ -711,6 +719,16 @@ export default function BusinessesPage() {
     setMemberInputErrorByTrack({});
     setModal("edit");
   };
+
+  useEffect(() => {
+    if (!canEdit) return;
+    if (!deepLinkedProjectId) return;
+    if (handledProjectDeepLinkRef.current === deepLinkedProjectId) return;
+    const target = businesses.find((business) => business.id === deepLinkedProjectId);
+    if (!target) return;
+    handledProjectDeepLinkRef.current = deepLinkedProjectId;
+    openEdit(target);
+  }, [businesses, canEdit, deepLinkedProjectId]);
 
   const addTeamMember = (track: TrackDivision, raw: string) => {
     const resolvedName = resolveTeamMemberFromInput(raw);

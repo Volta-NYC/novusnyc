@@ -253,13 +253,33 @@ main {
 .members-portal .members-grid-table td {
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   vertical-align: middle;
 }
 
 .members-portal .members-grid-table td > * {
   min-width: 0;
   max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.members-portal .members-grid-table td > *::-webkit-scrollbar {
+  display: none;
+}
+
+.members-portal .members-grid-table td .truncate {
+  text-overflow: clip !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.members-portal .members-grid-table td .truncate::-webkit-scrollbar {
+  display: none;
 }
 
 .members-portal .members-page-header-action > * {

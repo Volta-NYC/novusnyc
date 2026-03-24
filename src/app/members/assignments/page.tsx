@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
@@ -178,6 +178,14 @@ export default function FinanceAssignmentsPage() {
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const router = useRouter();
+  const [deepLinkedAssignmentId, setDeepLinkedAssignmentId] = useState("");
+  const handledAssignmentDeepLinkRef = useRef<string>("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setDeepLinkedAssignmentId((params.get("assignmentId") ?? "").trim());
+  }, []);
 
   const canEdit = authRole === "admin";
 
@@ -361,6 +369,16 @@ export default function FinanceAssignmentsPage() {
     setEditingAssignment(item);
     setModal("edit");
   };
+
+  useEffect(() => {
+    if (!canEdit) return;
+    if (!deepLinkedAssignmentId) return;
+    if (handledAssignmentDeepLinkRef.current === deepLinkedAssignmentId) return;
+    const target = assignments.find((item) => item.id === deepLinkedAssignmentId);
+    if (!target) return;
+    handledAssignmentDeepLinkRef.current = deepLinkedAssignmentId;
+    openEdit(target);
+  }, [assignments, canEdit, deepLinkedAssignmentId]);
 
   const handleSave = async () => {
     if (!form.topic.trim()) return;

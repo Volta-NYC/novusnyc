@@ -742,7 +742,7 @@ export default function TeamPage() {
           codePrefix: "W",
           status,
           deadline: "—",
-          href: `/members/projects#project-${business.id}`,
+          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
         };
         for (const memberName of legacyAssignedNames) pushForMemberName(memberName, entry);
         continue;
@@ -774,7 +774,7 @@ export default function TeamPage() {
           codePrefix,
           status,
           deadline: "—",
-          href: `/members/projects#project-${business.id}`,
+          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
         };
         for (const memberName of assignedNames) pushForMemberName(memberName, entry);
       }
@@ -797,7 +797,7 @@ export default function TeamPage() {
         codePrefix,
         status: assignment.status || "—",
         deadline,
-        href: `/members/assignments#finance-assignment-${assignment.id}`,
+        href: `/members/assignments?assignmentId=${encodeURIComponent(assignment.id)}#finance-assignment-${assignment.id}`,
       };
       for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
         pushForMemberKey(memberKey, entry);
