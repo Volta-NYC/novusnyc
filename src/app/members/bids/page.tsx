@@ -18,11 +18,6 @@ import { useAuth } from "@/lib/members/authContext";
 const STATUSES   = ["Active Partner", "In Conversation", "Outreach", "Paused"] as const;
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
 const PRIORITIES = ["High", "Medium", "Low"];
-const SORT_OPTIONS = [
-  { value: "status", label: "Status" },
-  { value: "name", label: "Name" },
-] as const;
-type SortMode = (typeof SORT_OPTIONS)[number]["value"];
 type BidViewMode = "cards" | "compact";
 
 type BidStatusOption = (typeof STATUSES)[number];
@@ -62,7 +57,6 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
 export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
   const [search, setSearch]           = useState("");
-  const [sortMode, setSortMode]       = useState<SortMode>("status");
   const [viewMode, setViewMode]       = useState<BidViewMode>("cards");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
@@ -233,9 +227,6 @@ export default function BIDTrackerPage() {
   };
 
   const sortBids = (list: BID[]) => {
-    if (sortMode === "name") {
-      return [...list].sort((a, b) => a.name.localeCompare(b.name));
-    }
     return [...list].sort((a, b) => {
       const statusDelta = BID_STATUS_SORT_ORDER[normalizeBidStatus(a.status)] - BID_STATUS_SORT_ORDER[normalizeBidStatus(b.status)];
       if (statusDelta !== 0) return statusDelta;
@@ -271,15 +262,6 @@ export default function BIDTrackerPage() {
       {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <SearchBar value={search} onChange={setSearch} placeholder={isMemberRestricted ? "Search BID names…" : "Search BIDs, boroughs…"} />
-        <select
-          value={sortMode}
-          onChange={(e) => setSortMode(e.target.value as SortMode)}
-          className="bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
         <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
           <button
             onClick={() => setViewMode("cards")}
@@ -427,42 +409,71 @@ export default function BIDTrackerPage() {
       </div>
       )}
       {viewMode === "compact" && (
-        <div className="space-y-2 mb-6">
-          {sorted.map((bid) => (
-            <div
-              key={bid.id}
-              className={`bg-[#1C1F26] border border-white/8 rounded-xl px-3 py-2.5 grid gap-2 md:gap-3 items-start ${
-                isMemberRestricted
-                  ? "grid-cols-1 md:grid-cols-[minmax(220px,2fr)_130px_140px]"
-                  : "grid-cols-1 md:grid-cols-[minmax(220px,2fr)_130px_minmax(220px,2fr)_120px_minmax(220px,2fr)_auto]"
-              }`}
-            >
-              <div className="min-w-0">
-                <p className="text-white font-semibold text-sm leading-tight break-words">{bid.name}</p>
-              </div>
-              <div className="text-xs"><Badge label={normalizeBidStatus(bid.status)} /></div>
-              {!isMemberRestricted && (
-                <div className="text-xs text-white/55 break-words">
-                  {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
-                </div>
+        <div className="members-table-shell mb-6">
+          <table className={`members-grid-table w-full table-fixed text-[10px] leading-4 [&_td]:overflow-hidden ${isMemberRestricted ? "min-w-[660px]" : "min-w-[1240px]"}`}>
+            <thead className="bg-[#0F1014] border-b border-white/8">
+              <tr>
+                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[280px]">Name</th>
+                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[140px]">Status</th>
+                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[170px]">Borough</th>
+                {!isMemberRestricted && (
+                  <>
+                    <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[300px]">Contact</th>
+                    <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[240px]">Next Action</th>
+                  </>
+                )}
+                {canEdit && (
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[110px]">Actions</th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {sorted.map((bid) => (
+                <tr key={bid.id} className="hover:bg-white/3 transition-colors">
+                  <td className="px-2 py-1.5 text-white/90">
+                    <span className="block truncate" title={bid.name}>{bid.name}</span>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <Badge label={normalizeBidStatus(bid.status)} />
+                  </td>
+                  <td className="px-2 py-1.5 text-white/60 whitespace-nowrap">
+                    <span className="block truncate" title={[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}>
+                      {[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}
+                    </span>
+                  </td>
+                  {!isMemberRestricted && (
+                    <>
+                      <td className="px-2 py-1.5 text-white/55">
+                        <span className="block truncate" title={[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}>
+                          {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1.5 text-white/55">
+                        <span className="block truncate" title={bid.nextAction || bid.notes || "—"}>
+                          {bid.nextAction || bid.notes || "—"}
+                        </span>
+                      </td>
+                    </>
+                  )}
+                  {canEdit && (
+                    <td className="px-2 py-1.5">
+                      <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
+                    </td>
+                  )}
+                </tr>
+              ))}
+              {sorted.length === 0 && (
+                <tr>
+                  <td
+                    className="px-2 py-4 text-white/40 text-xs"
+                    colSpan={isMemberRestricted ? 3 : (canEdit ? 6 : 5)}
+                  >
+                    No BIDs match your filters.
+                  </td>
+                </tr>
               )}
-              <div className="text-xs text-white/65">{[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}</div>
-              {!isMemberRestricted && (
-                <div className="text-xs text-white/55 break-words">{bid.nextAction || bid.notes || "—"}</div>
-              )}
-              {canEdit ? (
-                <div className="md:justify-self-end">
-                  <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
-                </div>
-              ) : (!isMemberRestricted ? <div /> : null)}
-            </div>
-          ))}
-          {filtered.length === 0 && (
-            <Empty
-              message="No BIDs match your filters."
-              action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first BID</Btn> : undefined}
-            />
-          )}
+            </tbody>
+          </table>
         </div>
       )}
 

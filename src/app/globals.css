@@ -270,6 +270,13 @@ main {
   display: none;
 }
 
+.members-portal .members-grid-table td > .members-no-cell-scroll,
+.members-portal .members-grid-table td > select.members-no-cell-scroll {
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  white-space: nowrap;
+}
+
 .members-portal .members-grid-table td .truncate {
   text-overflow: clip !important;
   overflow-x: auto !important;

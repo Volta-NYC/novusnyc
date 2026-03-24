@@ -80,7 +80,7 @@ function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
         <path d="M4 19h16" />
         <path d="M7 16v-4" />
         <path d="M12 16V9" />
-        <path d="M17 16v-7" />
+        <path d="M17 16v-10" />
       </svg>
     );
   }
@@ -805,6 +805,12 @@ export default function TeamPage() {
     for (const assignment of financeAssignments) {
       const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
       const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
+      const assignmentTypeLabel =
+        assignmentType === "case study" ? "Case Study"
+          : assignmentType === "grant" ? "Grant"
+            : "Report";
+      const region = String(assignment.region ?? "").trim();
+      const assignmentDisplayTitle = region ? `${region} ${assignmentTypeLabel}` : assignmentTypeLabel;
       const firstDeadlineDate = Array.isArray(assignment.deadlines)
         ? assignment.deadlines
           .map((entry) => (entry && typeof entry === "object" ? String((entry as { date?: string }).date ?? "").trim() : ""))
@@ -814,8 +820,8 @@ export default function TeamPage() {
       const entry: Omit<MemberAssignmentLink, "code"> = {
         id: assignment.id,
         kind: "Finance Assignment",
-        title: assignment.title || assignment.topic || "Untitled Assignment",
-        topic: assignment.topic || "",
+        title: assignmentDisplayTitle,
+        topic: "",
         codePrefix,
         status: assignment.status || "—",
         deadline,
@@ -898,17 +904,18 @@ export default function TeamPage() {
     if (memberAssignments.length === 0) {
       return <span className="text-white/35">—</span>;
     }
+    const projectsViewportClass = expandAssignments ? "w-[460px] max-w-[460px]" : "w-[88px] max-w-[88px]";
 
     return (
       <div className="min-w-0">
-        <div className="members-assignments-scroll w-[88px] max-w-[88px] overflow-x-auto overflow-y-hidden pb-0.5">
+        <div className={`members-assignments-scroll ${projectsViewportClass} overflow-x-auto overflow-y-hidden pb-0.5`}>
           <div className="inline-flex min-w-max items-center gap-1 pr-1">
             {memberAssignments.map((item) => (
               <a
                 key={`${keyPrefix}-code-${item.id}-${item.code}`}
                 href={item.href}
                 className="inline-flex h-5 w-10 items-center justify-center rounded-full border border-white/15 bg-[#11141A] px-1 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
-                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""}`}
+                title={`${item.code} · ${item.title}`}
               >
                 {item.code}
               </a>
@@ -921,10 +928,10 @@ export default function TeamPage() {
               <a
                 key={`${keyPrefix}-preview-${item.id}-${item.code}`}
                 href={item.href}
-                className="block truncate text-[10px] text-white/55 hover:text-[#C4F135] transition-colors"
-                title={`${item.code} · ${item.title}${item.topic ? ` · ${item.topic}` : ""} · ${item.status}`}
+                className="block text-[10px] leading-4 text-white/55 hover:text-[#C4F135] transition-colors"
+                title={`${item.code} · ${item.title} · ${item.status}`}
               >
-                <span className="text-white/80">{item.code}</span> {item.title}{item.topic ? ` · ${item.topic}` : ""}
+                <span className="text-white/80">{item.code}</span> {item.title}
               </a>
             ))}
           </div>
@@ -1052,6 +1059,9 @@ export default function TeamPage() {
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="members-table-shell relative select-text">
+          {(() => {
+            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[96px]";
+            return (
           <table className="members-grid-table w-full min-w-[880px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
@@ -1059,7 +1069,7 @@ export default function TeamPage() {
                   <th
                     key={col}
                     className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
-                      col === "Projects" ? "w-[96px]" :
+                      col === "Projects" ? projectsColWidthClass :
                       col === "Name" ? "w-[250px]" :
                       col === "School" ? "w-[360px]" :
                       "w-[90px]"
@@ -1107,14 +1117,19 @@ export default function TeamPage() {
               })}
             </tbody>
           </table>
+            );
+          })()}
         </div>
       ) : (
         <div className="members-table-shell relative select-text">
+          {(() => {
+            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[96px]";
+            return (
           <table className="members-grid-table w-full min-w-[1460px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {[
-                  { label: "Projects", sortCol: 1, width: "w-[96px]" },
+                  { label: "Projects", sortCol: 1, width: projectsColWidthClass },
                   { label: "Name", sortCol: 2, width: "w-[250px]" },
                   { label: "Email", sortCol: 3, width: "w-[330px]" },
                   { label: "School", sortCol: 4, width: "w-[260px]" },
@@ -1237,6 +1252,8 @@ export default function TeamPage() {
               })}
             </tbody>
           </table>
+            );
+          })()}
         </div>
       )}
       {filtered.length === 0 && (

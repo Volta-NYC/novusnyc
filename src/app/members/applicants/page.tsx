@@ -174,8 +174,8 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
 // ── Column widths (tailwind-compatible) ────────────────────────────────────────
 
 const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
-  status: "w-[120px]",
-  actions: "w-[190px]",
+  status: "w-[180px]",
+  actions: "w-[360px]",
   name: "w-[130px]",
   email: "w-[180px]",
   school: "w-[160px]",
@@ -948,7 +948,7 @@ export default function ApplicantsPage() {
       </div>
 
       <div className="members-table-shell">
-        <table className="members-grid-table w-full min-w-[1480px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
+        <table className="members-grid-table w-full min-w-[1700px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {selectionMode !== "none" && (
@@ -1021,7 +1021,7 @@ export default function ApplicantsPage() {
                               <select
                                 value={STATUS_OPTIONS.includes(app.status) ? app.status : "New"}
                                 onChange={(e) => void updateRowStatus(app, e.target.value as ApplicationStatus)}
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold focus:outline-none ${STATUS_BADGE_CLASS[app.status] ?? STATUS_BADGE_CLASS["New"]}`}
+                                className={`members-no-cell-scroll rounded-full px-2 py-0.5 text-[10px] font-semibold focus:outline-none ${STATUS_BADGE_CLASS[app.status] ?? STATUS_BADGE_CLASS["New"]}`}
                               >
                                 {STATUS_OPTIONS.map((status) => (
                                   <option key={status} value={status}>{status}</option>
@@ -1142,7 +1142,7 @@ export default function ApplicantsPage() {
                       case "actions":
                         return (
                           <td key={col.key} className="px-2 py-1.5 whitespace-nowrap">
-                            <div className="flex gap-1 flex-nowrap">
+                            <div className="members-no-cell-scroll flex gap-1 flex-nowrap">
                               {canEdit && (
                                 <>
                                   <Btn
