@@ -190,12 +190,14 @@ export function AutocompleteInput({
   options,
   placeholder = "Start typing…",
   className = "",
+  showOnEmpty = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   options: string[];
   placeholder?: string;
   className?: string;
+  showOnEmpty?: boolean;
 }) {
   const listId = `ac-${useId().replace(/[:]/g, "")}`;
   const normalizedOptions = Array.from(
@@ -205,6 +207,10 @@ export function AutocompleteInput({
         .filter(Boolean)
     )
   ).sort((a, b) => a.localeCompare(b));
+  const query = value.trim().toLowerCase();
+  const filteredOptions = query || showOnEmpty
+    ? normalizedOptions.filter((option) => option.toLowerCase().includes(query))
+    : [];
 
   return (
     <div className="w-full">
@@ -216,7 +222,7 @@ export function AutocompleteInput({
         className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
       />
       <datalist id={listId}>
-        {normalizedOptions.map((option) => (
+        {filteredOptions.map((option) => (
           <option key={option} value={option} />
         ))}
       </datalist>

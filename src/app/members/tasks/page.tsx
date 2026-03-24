@@ -117,6 +117,17 @@ export default function TasksPage() {
     setModal(null);
   };
 
+  const handleDeleteFromEdit = async () => {
+    if (!editingTask) return;
+    await ask(
+      async () => {
+        await deleteTask(editingTask.id);
+        setModal(null);
+      },
+      `Delete "${editingTask.name}"? This permanently removes the task.`
+    );
+  };
+
   const matchesSearch = (task: Task) => {
     const query = search.trim().toLowerCase();
     if (!query) return true;
@@ -237,22 +248,6 @@ export default function TasksPage() {
                         ${draggingId === task.id ? "opacity-40 scale-95" : ""}`}
                       onClick={() => canEdit ? openEdit(task) : undefined}
                     >
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            ask(async () => deleteTask(task.id));
-                          }}
-                          className="absolute right-2 top-2 text-red-400 transition-colors"
-                          aria-label="Delete task"
-                        >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        </button>
-                      )}
                       <p className="text-white text-sm font-medium leading-snug mb-1.5 pr-4">{task.name}</p>
                       <div className="flex flex-wrap gap-1">
                         <Badge label={task.priority} />
@@ -292,7 +287,6 @@ export default function TasksPage() {
               <span key="due" className="text-white/40">{task.dueDate || "—"}</span>,
               <div key="actions" className="flex gap-2">
                 {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(task)}>Edit</Btn>}
-                {canEdit && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteTask(task.id))}>Delete</Btn>}
               </div>,
             ])}
           />
@@ -343,9 +337,16 @@ export default function TasksPage() {
             </Field>
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave}>{editingTask ? "Save" : "Create Task"}</Btn>
+        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
+          {editingTask ? (
+            <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
+              Delete Task
+            </Btn>
+          ) : <span />}
+          <div className="flex items-center gap-3">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn variant="primary" onClick={handleSave}>{editingTask ? "Save" : "Create Task"}</Btn>
+          </div>
         </div>
       </Modal>
     </MembersLayout>

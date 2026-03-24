@@ -239,6 +239,16 @@ export default function FinanceAssignmentsPage() {
     () => new Map(memberNameOptions.map((name) => [normalizeLoose(name), name])),
     [memberNameOptions],
   );
+  const memberPickerQuery = memberPickerSearch.trim().toLowerCase();
+  const memberPickerOptions = useMemo(
+    () => (memberPickerQuery
+      ? memberNameOptions
+        .filter((option) => !(form.assignedMemberNames ?? []).includes(option))
+        .filter((option) => option.toLowerCase().includes(memberPickerQuery))
+        .slice(0, 80)
+      : []),
+    [memberNameOptions, form.assignedMemberNames, memberPickerQuery]
+  );
 
   const memberIdByName = useMemo(() => {
     const map = new Map<string, string>();
@@ -426,6 +436,22 @@ export default function FinanceAssignmentsPage() {
     }
     await fetchAssignments();
     setModal(null);
+  };
+
+  const handleDeleteFromEdit = async () => {
+    if (!editingAssignment || !user) return;
+    await ask(
+      async () => {
+        const token = await user.getIdToken();
+        await fetch(`/api/members/finance-assignments?id=${encodeURIComponent(editingAssignment.id)}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        await fetchAssignments();
+        setModal(null);
+      },
+      `Delete "${getAssignmentDisplayTitle(editingAssignment)}"? This cannot be undone.`
+    );
   };
 
   const closeEmailModal = () => {
@@ -641,24 +667,6 @@ export default function FinanceAssignmentsPage() {
                     Email Team
                   </Btn>
                   <Btn size="sm" variant="secondary" onClick={() => openEdit(item)}>Edit</Btn>
-                  <Btn
-                    size="sm"
-                    variant="danger"
-                    onClick={() => ask(
-                      async () => {
-                        if (!user) return;
-                        const token = await user.getIdToken();
-                        await fetch(`/api/members/finance-assignments?id=${encodeURIComponent(item.id)}`, {
-                          method: "DELETE",
-                          headers: { Authorization: `Bearer ${token}` },
-                        });
-                        await fetchAssignments();
-                      },
-                      `Delete "${getAssignmentDisplayTitle(item)}"? This cannot be undone.`
-                    )}
-                  >
-                    Delete
-                  </Btn>
                 </>
               ) : (
                 <span className="text-white/35 text-xs">View only</span>
@@ -807,14 +815,7 @@ export default function FinanceAssignmentsPage() {
                   ))}
                 </div>
                 <div className="max-h-40 overflow-y-auto rounded-lg border border-white/10 bg-[#0F1014]">
-                  {memberNameOptions
-                    .filter((option) => !(form.assignedMemberNames ?? []).includes(option))
-                    .filter((option) => {
-                      const q = memberPickerSearch.trim().toLowerCase();
-                      return !q || option.toLowerCase().includes(q);
-                    })
-                    .slice(0, 80)
-                    .map((option) => (
+                  {memberPickerOptions.map((option) => (
                       <button
                         key={option}
                         type="button"
@@ -824,12 +825,10 @@ export default function FinanceAssignmentsPage() {
                         {option}
                       </button>
                     ))}
-                  {memberNameOptions
-                    .filter((option) => !(form.assignedMemberNames ?? []).includes(option))
-                    .filter((option) => {
-                      const q = memberPickerSearch.trim().toLowerCase();
-                      return !q || option.toLowerCase().includes(q);
-                    }).length === 0 && (
+                  {!memberPickerQuery && (
+                    <p className="px-3 py-2 text-xs text-white/40">Start typing to search members/applicants.</p>
+                  )}
+                  {memberPickerQuery && memberPickerOptions.length === 0 && (
                     <p className="px-3 py-2 text-xs text-white/40">No matching members/applicants.</p>
                   )}
                 </div>
@@ -877,11 +876,18 @@ export default function FinanceAssignmentsPage() {
             </Field>
           </div>
         </div>
-        <div className="mt-5 pt-4 border-t border-white/10 flex justify-end gap-3">
-          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave}>
-            {editingAssignment ? "Save Changes" : "Create Assignment"}
-          </Btn>
+        <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+          {editingAssignment ? (
+            <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
+              Delete Assignment
+            </Btn>
+          ) : <span />}
+          <div className="flex items-center gap-3">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn variant="primary" onClick={handleSave}>
+              {editingAssignment ? "Save Changes" : "Create Assignment"}
+            </Btn>
+          </div>
         </div>
       </Modal>
     </MembersLayout>

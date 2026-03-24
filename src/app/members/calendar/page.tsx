@@ -24,6 +24,16 @@ function toDateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function normalizeDeadlineDateString(value: string): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const direct = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (direct) return direct[1];
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return toDateString(parsed);
+}
+
 // Format an ISO datetime string as "9:30am" for display on calendar pills.
 function formatTime(isoString: string): string {
   const date = new Date(isoString);
@@ -508,7 +518,7 @@ export default function CalendarPage() {
         const region = String(assignment.region ?? "").trim();
         return getCalendarAssignmentDeadlines(assignment).reduce<DisplayEvent[]>(
           (acc, deadlineItem, index) => {
-            const dateStr = String(deadlineItem?.date ?? "").trim();
+            const dateStr = normalizeDeadlineDateString(String(deadlineItem?.date ?? ""));
             if (!dateStr) return acc;
             const label = String(deadlineItem?.label ?? "").trim() || "Deadline";
             acc.push({
@@ -534,7 +544,10 @@ export default function CalendarPage() {
           Marketing: "#84CC16",
           Finance: "#F59E0B",
         };
-        return getCalendarBusinessTrackDeadlines(business).map((entry, index) => ({
+        return getCalendarBusinessTrackDeadlines(business)
+          .map((entry) => ({ ...entry, date: normalizeDeadlineDateString(entry.date) }))
+          .filter((entry) => !!entry.date)
+          .map((entry, index) => ({
           id:                       `project-deadline-${business.id}-${entry.track}-${index}`,
           title:                    `${entry.track}: ${entry.businessName}`,
           color:                    trackColor[entry.track],

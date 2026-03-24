@@ -1153,6 +1153,28 @@ export default function BusinessesPage() {
     });
   };
 
+  const getTrackDeadlineLines = (project: Business): string[] => {
+    const normalized = normalizeTrackProjectsFromBusiness(project);
+    const lines: Array<{ date: string; line: string }> = [];
+    for (const track of normalized.projectTracks) {
+      const deadlines = sortDeadlinesMostRecentFirst(normalized.trackProjects[track]?.deadlines ?? []);
+      for (const item of deadlines) {
+        const date = String(item.date ?? "").trim();
+        if (!date) continue;
+        const label = String(item.label ?? "").trim() || "Deadline";
+        lines.push({ date, line: `${TRACK_META[track].label} ${label}: ${date}` });
+      }
+    }
+    return lines
+      .sort((a, b) => {
+        const aMs = Date.parse(a.date);
+        const bMs = Date.parse(b.date);
+        if (Number.isFinite(aMs) && Number.isFinite(bMs) && aMs !== bMs) return bMs - aMs;
+        return a.line.localeCompare(b.line);
+      })
+      .map((row) => row.line);
+  };
+
   const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
     const unresolved: string[] = [];
     const emailSet = new Set<string>();
@@ -1342,6 +1364,7 @@ export default function BusinessesPage() {
   const renderProjectCompactRow = (b: Business) => {
     const normalizedStatus = normalizeProjectStatus(b.projectStatus);
     const trackAssignments = getTrackAssignments(b);
+    const deadlineLines = getTrackDeadlineLines(b);
 
     return (
       <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
@@ -1445,9 +1468,21 @@ export default function BusinessesPage() {
             </div>
           )}
         </td>
+        <td className="px-2 py-1.5 text-[11px] text-white/75 max-w-[240px]" title={deadlineLines.join(" · ") || "—"}>
+          {deadlineLines.length === 0 ? (
+            <span className="text-white/35">—</span>
+          ) : (
+            <div className="space-y-0.5">
+              {deadlineLines.slice(0, 2).map((line, idx) => (
+                <div key={`${b.id}-deadline-line-${idx}`} className="truncate">{line}</div>
+              ))}
+              {deadlineLines.length > 2 && <div className="text-white/40">+{deadlineLines.length - 2} more</div>}
+            </div>
+          )}
+        </td>
         <td className="px-2 py-1.5 whitespace-nowrap text-right w-[160px]">
           {canEdit && (
-            <div className="inline-flex gap-1.5">
+            <div className="flex justify-end gap-1.5">
               <Btn
                 size="sm"
                 variant="secondary"
@@ -1713,23 +1748,24 @@ export default function BusinessesPage() {
         <div className="mb-4">
           <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
           <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[920px] table-fixed text-left">
+            <table className="w-full min-w-[1080px] table-fixed text-left">
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Owner Name</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Primary Email</th>
                   <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Primary Phone</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[11%]">Status</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Track Teams</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Track Teams</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Deadlines</th>
+                  <th className="px-2 py-2 pr-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {groupedMyProjects.map((group) => (
                   <Fragment key={`my-${group.label}`}>
                     <tr className="bg-[#12151B] border-b border-white/8">
-                      <td colSpan={7} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
+                      <td colSpan={8} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
                         {group.label} · {group.items.length}
                       </td>
                     </tr>
@@ -1747,23 +1783,24 @@ export default function BusinessesPage() {
       )}
 
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-x-auto mb-6">
-        <table className="w-full min-w-[920px] table-fixed text-left">
+        <table className="w-full min-w-[1080px] table-fixed text-left">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Owner Name</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Primary Email</th>
               <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Primary Phone</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[11%]">Status</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Track Teams</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Track Teams</th>
+              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Deadlines</th>
+              <th className="px-2 py-2 pr-2 text-[10px] uppercase tracking-wider text-white/45 text-right w-[160px]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {groupedOtherProjects.map((group) => (
               <Fragment key={`all-${group.label}`}>
                 <tr className="bg-[#12151B] border-b border-white/8">
-                  <td colSpan={7} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
+                  <td colSpan={8} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
                     {group.label} · {group.items.length}
                   </td>
                 </tr>

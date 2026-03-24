@@ -458,6 +458,17 @@ export default function TeamPage() {
     setModal(null);
   };
 
+  const handleDeleteFromEdit = async () => {
+    if (!editingMember) return;
+    await ask(
+      async () => {
+        await deleteTeamMember(editingMember.id);
+        setModal(null);
+      },
+      `Delete ${editingMember.name}? This permanently removes them from the member directory.`
+    );
+  };
+
   // Filter by search text.
   const filtered = team.filter(member => {
     const matchesSearch = !search
@@ -925,7 +936,6 @@ export default function TeamPage() {
                           </Btn>
                         )}
                         {canEdit && <Btn size="sm" variant="secondary" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
-                        {canEdit && <Btn size="sm" variant="danger" className="!px-2 !py-0.5 !text-[10px] leading-none whitespace-nowrap" onClick={() => ask(async () => deleteTeamMember(member.id))}>Delete</Btn>}
                       </div>
                     </td>
                   </tr>
@@ -1074,9 +1084,16 @@ export default function TeamPage() {
             </div>
           )}
         </div>
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave}>{editingMember ? "Save" : "Add Member"}</Btn>
+        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
+          {editingMember ? (
+            <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
+              Delete Member
+            </Btn>
+          ) : <span />}
+          <div className="flex items-center gap-3">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn variant="primary" onClick={handleSave}>{editingMember ? "Save" : "Add Member"}</Btn>
+          </div>
         </div>
       </Modal>
     </MembersLayout>

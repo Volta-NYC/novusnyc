@@ -127,6 +127,17 @@ export default function GrantsPage() {
     setModal(null);
   };
 
+  const handleDeleteFromEdit = async () => {
+    if (!editingGrant || !canManageAll) return;
+    await ask(
+      async () => {
+        await deleteGrant(editingGrant.id);
+        setModal(null);
+      },
+      `Delete "${editingGrant.name}"? This permanently removes it from the grant library.`
+    );
+  };
+
   // Filter by search text.
   const filtered = grants.filter(grant =>
     !search
@@ -195,7 +206,6 @@ export default function GrantsPage() {
           </span>,
           <div key="actions" className="flex gap-2">
             {canEditGrant(grant) && <Btn size="sm" variant="secondary" onClick={() => openEdit(grant)}>Edit</Btn>}
-            {canManageAll && <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteGrant(grant.id))}>Delete</Btn>}
           </div>,
         ])}
       />
@@ -300,9 +310,16 @@ export default function GrantsPage() {
             </Field>
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave}>{editingGrant ? "Save" : "Create Grant"}</Btn>
+        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
+          {editingGrant && canManageAll ? (
+            <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
+              Delete Grant
+            </Btn>
+          ) : <span />}
+          <div className="flex items-center gap-3">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn variant="primary" onClick={handleSave}>{editingGrant ? "Save" : "Create Grant"}</Btn>
+          </div>
         </div>
       </Modal>
     </MembersLayout>
