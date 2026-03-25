@@ -17,6 +17,11 @@ import { formatInterviewInET, toInterviewTimestamp } from "@/lib/interviews/date
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
 import { getDefaultFromAddress } from "@/lib/server/smtp";
 import {
+  enforcePublicBookingRateLimit,
+  normalizeBookingId,
+  validateBookerInput,
+} from "@/lib/server/publicBookingSecurity";
+import {
   sendInterviewerBookingNotificationEmail,
   sendInterviewerRescheduledNotificationEmail,
   sendInterviewBookingEmail,
@@ -279,11 +284,14 @@ async function syncApplicationInterviewScheduled(params: {
 // Returns { invite, slots, zoomLink } for a valid, unexpired booking token.
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  const { token } = params;
+  const cleanToken = normalizeBookingId(params.token);
+  if (!cleanToken) {
+    return NextResponse.json({ error: "invalid_token" }, { status: 400 });
+  }
 
   let inviteData: unknown;
   try {
-    inviteData = await dbGet(`interviewInvites/${token}`);
+    inviteData = await dbGet(`interviewInvites/${cleanToken}`);
   } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
@@ -293,18 +301,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
   }
 
   type RawInvite = Record<string, unknown> & { id: string };
-  const invite: RawInvite = { ...(inviteData as Record<string, unknown>), id: token };
+  const invite: RawInvite = { ...(inviteData as Record<string, unknown>), id: cleanToken };
 
   if (invite["status"] === "cancelled" || invite["status"] === "expired") {
     return NextResponse.json({ error: "expired" }, { status: 410 });
   }
 
   if (Date.now() > (invite["expiresAt"] as number)) {
-    await dbPatch(`interviewInvites/${token}`, { status: "expired" })
+    await dbPatch(`interviewInvites/${cleanToken}`, { status: "expired" })
       .then(() => writeAuditLog({
         action: "update",
         collection: "interviewInvites",
-        recordId: token,
+        recordId: cleanToken,
         actorUid: "system",
         actorEmail: "system",
         details: { status: "expired", reason: "invite_expired_on_read" },
@@ -352,21 +360,33 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // Books a slot. Body: { slotId, bookerName, bookerEmail }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const { token } = params;
-
-  const { slotId, bookerName, bookerEmail } = await req.json() as {
-    slotId: string;
-    bookerName: string;
-    bookerEmail: string;
-  };
-
-  if (!slotId) {
-    return NextResponse.json({ error: "missing_slot" }, { status: 400 });
+  const cleanToken = normalizeBookingId(params.token);
+  if (!cleanToken) {
+    return NextResponse.json({ error: "invalid_token" }, { status: 400 });
   }
+
+  const body = await req.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  const slotId = normalizeBookingId(body.slotId);
+  if (!slotId) {
+    return NextResponse.json({ error: "invalid_slot" }, { status: 400 });
+  }
+  const booker = validateBookerInput(body.bookerName, body.bookerEmail);
+  if (!booker.ok) {
+    return NextResponse.json({ error: booker.error }, { status: 400 });
+  }
+  const cleanName = booker.name;
+  const cleanEmail = booker.email;
+
+  const rateLimited = await enforcePublicBookingRateLimit(req, "booking-token", cleanEmail);
+  if (rateLimited) return rateLimited;
 
   let inviteData: unknown;
   try {
-    inviteData = await dbGet(`interviewInvites/${token}`);
+    inviteData = await dbGet(`interviewInvites/${cleanToken}`);
   } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
@@ -394,33 +414,33 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     await dbPatch(`interviewSlots/${slotId}`, {
       available:   false,
-      bookedBy:    token,
-      bookerName:  bookerName || "",
-      bookerEmail: bookerEmail || "",
+      bookedBy:    cleanToken,
+      bookerName:  cleanName,
+      bookerEmail: cleanEmail,
       reminderSentAt: "",
     });
     await writeAuditLog({
       action: "update",
       collection: "interviewSlots",
       recordId: slotId,
-      actorUid: `public:${token}`,
-      actorEmail: (bookerEmail || "").trim().toLowerCase() || "public",
-      actorName: bookerName || "",
-      details: { bookedBy: token, available: false },
+      actorUid: `public:${cleanToken}`,
+      actorEmail: cleanEmail || "public",
+      actorName: cleanName,
+      details: { bookedBy: cleanToken, available: false },
     }).catch(() => {});
 
     if (!invite.multiUse) {
-      await dbPatch(`interviewInvites/${token}`, {
+      await dbPatch(`interviewInvites/${cleanToken}`, {
         status:       "booked",
         bookedSlotId: slotId,
       });
       await writeAuditLog({
         action: "update",
         collection: "interviewInvites",
-        recordId: token,
-        actorUid: `public:${token}`,
-        actorEmail: (bookerEmail || "").trim().toLowerCase() || "public",
-        actorName: bookerName || "",
+        recordId: cleanToken,
+        actorUid: `public:${cleanToken}`,
+        actorEmail: cleanEmail || "public",
+        actorName: cleanName,
         details: { status: "booked", bookedSlotId: slotId },
       }).catch(() => {});
     }
@@ -428,8 +448,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 
-  const cleanName = (bookerName || "").trim();
-  const cleanEmail = (bookerEmail || "").trim();
   let replacedBookings: ExistingBooking[] = [];
   try {
     replacedBookings = await findExistingBookingsByEmail(cleanEmail, slotId);
@@ -439,7 +457,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         action: "update",
         collection: "interviewSlots",
         recordId: existing.id,
-        actorUid: `public:${token}`,
+        actorUid: `public:${cleanToken}`,
         actorEmail: cleanEmail.toLowerCase() || "public",
         actorName: cleanName || "",
         details: { rescheduledTo: slotId, available: true, bookedBy: "" },
@@ -457,7 +475,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     bookingName: cleanName,
     newSlotId: slotId,
     newDatetimeIso: datetimeIso,
-    inviteToken: token,
+    inviteToken: cleanToken,
     previousSlotIds: replacedBookings.map((booking) => booking.id),
   }).catch(() => {});
 

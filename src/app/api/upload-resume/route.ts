@@ -34,6 +34,19 @@ export async function POST(req: Request) {
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
+  const maxMb = Number(process.env.RESUME_UPLOAD_MAX_MB ?? 8);
+  const maxBytes = (Number.isFinite(maxMb) && maxMb > 0 ? maxMb : 8) * 1024 * 1024;
+  if (!Number.isFinite(file.size) || file.size <= 0 || file.size > maxBytes) {
+    return NextResponse.json({ error: "File too large" }, { status: 413 });
+  }
+  const allowedMimeTypes = new Set([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ]);
+  if (file.type && !allowedMimeTypes.has(file.type)) {
+    return NextResponse.json({ error: "Unsupported file type" }, { status: 415 });
+  }
 
   // Convert file to base64 for transport to Apps Script.
   const buffer = await file.arrayBuffer();

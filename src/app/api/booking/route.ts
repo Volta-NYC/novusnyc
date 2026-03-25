@@ -5,6 +5,11 @@ import { formatInterviewInET, toInterviewTimestamp } from "@/lib/interviews/date
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
 import { getDefaultFromAddress } from "@/lib/server/smtp";
 import {
+  enforcePublicBookingRateLimit,
+  normalizeBookingId,
+  validateBookerInput,
+} from "@/lib/server/publicBookingSecurity";
+import {
   sendInterviewerBookingNotificationEmail,
   sendInterviewerRescheduledNotificationEmail,
   sendInterviewBookingEmail,
@@ -294,22 +299,24 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { slotId, bookerName, bookerEmail } = await req.json() as {
-    slotId?: string;
-    bookerName?: string;
-    bookerEmail?: string;
-  };
+  const body = await req.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
 
-  const cleanSlotId = (slotId ?? "").trim();
-  const cleanName = (bookerName ?? "").trim();
-  const cleanEmail = (bookerEmail ?? "").trim();
-
+  const cleanSlotId = normalizeBookingId(body.slotId);
   if (!cleanSlotId) {
-    return NextResponse.json({ error: "missing_slot" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_slot" }, { status: 400 });
   }
-  if (!cleanName || !cleanEmail) {
-    return NextResponse.json({ error: "missing_booker" }, { status: 400 });
+  const booker = validateBookerInput(body.bookerName, body.bookerEmail);
+  if (!booker.ok) {
+    return NextResponse.json({ error: booker.error }, { status: 400 });
   }
+  const cleanName = booker.name;
+  const cleanEmail = booker.email;
+
+  const rateLimited = await enforcePublicBookingRateLimit(req, "booking-public", cleanEmail);
+  if (rateLimited) return rateLimited;
 
   let slotData: unknown;
   try {
@@ -345,7 +352,7 @@ export async function POST(req: NextRequest) {
       collection: "interviewSlots",
       recordId: cleanSlotId,
       actorUid: "public:booking",
-      actorEmail: cleanEmail.toLowerCase(),
+      actorEmail: cleanEmail,
       actorName: cleanName,
       details: { bookedBy: "public-booking", available: false },
     }).catch(() => {});
@@ -363,7 +370,7 @@ export async function POST(req: NextRequest) {
         collection: "interviewSlots",
         recordId: existing.id,
         actorUid: "public:booking",
-        actorEmail: cleanEmail.toLowerCase(),
+        actorEmail: cleanEmail,
         actorName: cleanName,
         details: { rescheduledTo: cleanSlotId, available: true, bookedBy: "" },
       }).catch(() => {});

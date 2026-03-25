@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
 import { getAdminDB } from "@/lib/firebaseAdmin";
+import {
+  validateApplicationForm,
+  validateContactForm,
+  validateInquiryForm,
+} from "@/lib/schemas";
 
 function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -83,6 +88,15 @@ function splitToCsv(values: unknown): string {
     return values.map((item) => asText(item)).filter(Boolean).join(", ");
   }
   return asText(values);
+}
+
+function splitCsvToList(values: unknown): string[] {
+  const raw = splitToCsv(values);
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 }
 
 async function upsertApplicationFromForm(data: Record<string, unknown>): Promise<void> {
@@ -178,6 +192,54 @@ export async function POST(request: Request) {
   const isKnownFormType = formType === "application" || formType === "contact" || formType === "inquiry";
   if (!isKnownFormType) {
     return NextResponse.json({ error: "unknown_form_type" }, { status: 400 });
+  }
+
+  if (formType === "application") {
+    const validation = validateApplicationForm({
+      fullName: asText(data["Full Name"]),
+      email: asText(data.Email),
+      city: asText(data["City, State"]) || asText(data.City),
+      schoolName: asText(data["School Name"]) || asText(data.Education),
+      grade: asText(data.Grade),
+      referral: asText(data["How They Heard"]),
+      tracks: splitCsvToList(data["Tracks Selected"]),
+      hasResume: asText(data["Has Resume"]).toLowerCase() === "yes"
+        ? true
+        : asText(data["Has Resume"]).toLowerCase() === "no"
+          ? false
+          : null,
+      tools: asText(data["Tools/Software"]),
+      accomplishment: asText(data.Accomplishment),
+    });
+    if (!validation.success) {
+      return NextResponse.json({ error: "invalid_form", fields: validation.errors }, { status: 400 });
+    }
+  }
+
+  if (formType === "contact") {
+    const validation = validateContactForm({
+      businessName: asText(data.businessName),
+      name: asText(data.name),
+      email: asText(data.email),
+      phone: asText(data.phone),
+      neighborhood: asText(data.neighborhood),
+      services: splitCsvToList(data.services),
+      message: asText(data.message),
+    });
+    if (!validation.success) {
+      return NextResponse.json({ error: "invalid_form", fields: validation.errors }, { status: 400 });
+    }
+  }
+
+  if (formType === "inquiry") {
+    const validation = validateInquiryForm({
+      name: asText(data.name),
+      email: asText(data.email),
+      inquiry: asText(data.inquiry),
+    });
+    if (!validation.success) {
+      return NextResponse.json({ error: "invalid_form", fields: validation.errors }, { status: 400 });
+    }
   }
 
   const ip = getClientIp(request.headers);
