@@ -5,7 +5,14 @@ import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, Field, TextArea, Btn, Empty,
 } from "@/components/members/ui";
-import { subscribeTeam, subscribeBusinesses, type TeamMember, type Business } from "@/lib/members/storage";
+import {
+  subscribeTeam,
+  subscribeBusinesses,
+  subscribeFinanceAssignments,
+  type TeamMember,
+  type Business,
+  type FinanceAssignment,
+} from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
@@ -14,6 +21,15 @@ const TEAM_EMAIL_FROM_OPTIONS = [
 ];
 
 type DeliveryMode = "to" | "cc" | "bcc";
+type AssignmentCodePrefix = "W" | "M" | "R" | "C";
+
+type MemberAssignmentLink = {
+  id: string;
+  title: string;
+  codePrefix: AssignmentCodePrefix;
+  code: string;
+  href: string;
+};
 
 function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -36,12 +52,37 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+function readAssignmentNames(assignment: FinanceAssignment): string[] {
+  const raw = (assignment as { assignedMemberNames?: unknown }).assignedMemberNames;
+  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
+  if (raw && typeof raw === "object") {
+    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function readAssignmentIds(assignment: FinanceAssignment): string[] {
+  const raw = (assignment as { assignedMemberIds?: unknown }).assignedMemberIds;
+  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
+  if (raw && typeof raw === "object") {
+    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
   const canUseEmail = authRole === "admin";
 
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -52,31 +93,171 @@ export default function MemberEmailPage() {
   const [contentMode, setContentMode] = useState<"plain" | "html">("plain");
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [prefillIds, setPrefillIds] = useState<string[]>([]);
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = new URLSearchParams(window.location.search).get("prefill");
+    if (!raw) return;
+    const ids = raw.split(",").map((id) => id.trim()).filter(Boolean);
+    if (ids.length === 0) return;
+    setPrefillIds(ids);
+  }, []);
 
-  const activeProjectAssignedNameKeys = useMemo(() => {
-    const keys = new Set<string>();
+  const resolvedFinanceMemberKeysByAssignment = useMemo(() => {
+    const map = new Map<string, string[]>();
+    const teamRows = team.map((member) => {
+      const full = normalizeToken(member.name ?? "");
+      const first = normalizeToken((member.name ?? "").split(/\s+/)[0] ?? "");
+      return { id: member.id, full, first };
+    }).filter((row) => row.full);
+    const fullById = new Map(teamRows.map((row) => [row.id, row.full]));
+
+    const resolveName = (rawName: string): string[] => {
+      const rawKey = normalizeToken(rawName ?? "");
+      if (!rawKey) return [];
+      const exactFull = teamRows.filter((row) => row.full === rawKey);
+      if (exactFull.length === 1) return [exactFull[0].full];
+      if (exactFull.length > 1) return exactFull.map((row) => row.full);
+      const firstMatches = teamRows.filter((row) => row.first && row.first === rawKey);
+      if (firstMatches.length === 1) return [firstMatches[0].full];
+      const containsMatches = teamRows.filter((row) => row.full.includes(rawKey) || rawKey.includes(row.full));
+      if (containsMatches.length === 1) return [containsMatches[0].full];
+      return [rawKey];
+    };
+
+    for (const assignment of financeAssignments) {
+      const keySet = new Set<string>();
+      for (const memberId of readAssignmentIds(assignment)) {
+        const memberKey = fullById.get(memberId);
+        if (memberKey) keySet.add(memberKey);
+      }
+      for (const memberName of readAssignmentNames(assignment)) {
+        for (const resolved of resolveName(memberName)) keySet.add(resolved);
+      }
+      map.set(assignment.id, Array.from(keySet));
+    }
+    return map;
+  }, [financeAssignments, team]);
+
+  const assignmentsByMemberName = useMemo(() => {
+    const map = new Map<string, MemberAssignmentLink[]>();
+    const pushForMemberName = (memberName: string, item: Omit<MemberAssignmentLink, "code">) => {
+      const key = normalizeToken(memberName);
+      if (!key) return;
+      const current = map.get(key) ?? [];
+      current.push({ ...item, code: "" });
+      map.set(key, current);
+    };
+
     for (const business of businesses) {
-      const status = normalizeToken(business.projectStatus ?? "");
-      const isActiveProject = status === "ongoing" || status === "active";
-      if (!isActiveProject) continue;
-      const assigned = [...(business.teamMembers ?? []), business.teamLead ?? ""];
-      for (const raw of assigned) {
-        const key = normalizeToken(String(raw ?? ""));
-        if (key) keys.add(key);
+      const legacyAssignedNames = [...(business.teamMembers ?? []), business.teamLead ?? ""]
+        .map((name) => String(name ?? "").trim())
+        .filter(Boolean)
+        .filter((name, index, arr) => arr.indexOf(name) === index);
+      const trackProjects = business.trackProjects ?? {};
+      const requestedTracks = Array.isArray(business.projectTracks)
+        ? business.projectTracks.map((track) => String(track ?? "").trim()).filter(Boolean)
+        : [];
+      const explicitTracks = Object.keys(trackProjects).map((track) => String(track ?? "").trim()).filter(Boolean);
+      const allTracks = Array.from(new Set([...requestedTracks, ...explicitTracks]));
+      const trackOrder: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
+      const hasTrackSpecificAssignments = allTracks.length > 0;
+
+      if (!hasTrackSpecificAssignments) {
+        const entry: Omit<MemberAssignmentLink, "code"> = {
+          id: business.id,
+          title: business.name || "Untitled Project",
+          codePrefix: "W",
+          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
+        };
+        for (const memberName of legacyAssignedNames) pushForMemberName(memberName, entry);
+        continue;
+      }
+
+      for (const track of trackOrder) {
+        if (!allTracks.includes(track)) continue;
+        const trackInfo = (trackProjects as Record<string, unknown>)[track];
+        const rawMembers = trackInfo && typeof trackInfo === "object"
+          ? (trackInfo as { teamMembers?: unknown }).teamMembers
+          : [];
+        const trackMembers = Array.isArray(rawMembers)
+          ? rawMembers.map((name) => String(name ?? "").trim()).filter(Boolean)
+          : [];
+        const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : legacyAssignedNames));
+        if (assignedNames.length === 0) continue;
+        const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : "W";
+        const entry: Omit<MemberAssignmentLink, "code"> = {
+          id: `${business.id}-${track.toLowerCase()}`,
+          title: business.name || "Untitled Project",
+          codePrefix,
+          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
+        };
+        for (const memberName of assignedNames) pushForMemberName(memberName, entry);
       }
     }
-    return keys;
-  }, [businesses]);
+
+    for (const assignment of financeAssignments) {
+      const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
+      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
+      const assignmentTypeLabel =
+        assignmentType === "case study" ? "Case Study"
+          : assignmentType === "grant" ? "Grant"
+            : "Report";
+      const region = String(assignment.region ?? "").trim();
+      const assignmentDisplayTitle = region ? `${region} ${assignmentTypeLabel}` : assignmentTypeLabel;
+      const entry: Omit<MemberAssignmentLink, "code"> = {
+        id: assignment.id,
+        title: assignmentDisplayTitle,
+        codePrefix,
+        href: `/members/assignments?assignmentId=${encodeURIComponent(assignment.id)}#finance-assignment-${assignment.id}`,
+      };
+      for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
+        pushForMemberName(memberKey, entry);
+      }
+    }
+
+    const prefixOrder: Record<AssignmentCodePrefix, number> = { W: 0, M: 1, R: 2, C: 3 };
+    for (const [key, items] of Array.from(map.entries())) {
+      map.set(
+        key,
+        items
+          .slice()
+          .sort((a, b) => {
+            const prefixCmp = prefixOrder[a.codePrefix] - prefixOrder[b.codePrefix];
+            if (prefixCmp !== 0) return prefixCmp;
+            return a.title.localeCompare(b.title);
+          })
+          .map((item, index, arr) => {
+            const seen = arr.slice(0, index).filter((entry) => entry.codePrefix === item.codePrefix).length;
+            return {
+              ...item,
+              code: `${item.codePrefix}${seen + 1}`,
+            };
+          }),
+      );
+    }
+    return map;
+  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment]);
+
+  const memberAssignmentsById = useMemo(() => {
+    const map = new Map<string, MemberAssignmentLink[]>();
+    for (const member of team) {
+      map.set(member.id, assignmentsByMemberName.get(normalizeToken(member.name ?? "")) ?? []);
+    }
+    return map;
+  }, [assignmentsByMemberName, team]);
 
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
     if (isInactiveMember(member)) return { colorClass: "bg-red-400", label: "Inactive" };
-    if (activeProjectAssignedNameKeys.has(normalizeToken(member.name ?? ""))) {
-      return { colorClass: "bg-emerald-400", label: "Assigned to active project" };
+    const memberAssignments = memberAssignmentsById.get(member.id) ?? [];
+    if (memberAssignments.length > 0) {
+      return { colorClass: "bg-emerald-400", label: "Assigned to at least one project or assignment" };
     }
-    return { colorClass: "bg-yellow-400", label: "Not assigned to active project" };
+    return { colorClass: "bg-yellow-400", label: "No project or assignment linked" };
   };
 
   const normalizedSearch = memberSearch.trim().toLowerCase();
@@ -123,6 +304,9 @@ export default function MemberEmailPage() {
       .filter((item) => !!item.email);
   }, [defaultNewRecipientMode, deliveryModeById, selectedMembers]);
 
+  const prefillKey = prefillIds.join(",");
+  const [appliedPrefillKey, setAppliedPrefillKey] = useState("");
+
   const toRecipients = useMemo(
     () => Array.from(new Set(selectedRecipients.filter((recipient) => recipient.mode === "to").map((recipient) => recipient.email))),
     [selectedRecipients],
@@ -144,6 +328,29 @@ export default function MemberEmailPage() {
       }),
     );
   }, [team]);
+
+  useEffect(() => {
+    if (!prefillKey || prefillKey === appliedPrefillKey || team.length === 0) return;
+    const validSet = new Set(
+      team
+        .filter((member) => prefillIds.includes(member.id))
+        .filter((member) => !isInactiveMember(member) && !!normalizeEmail(member.email ?? ""))
+        .map((member) => member.id),
+    );
+    if (validSet.size === 0) {
+      setAppliedPrefillKey(prefillKey);
+      return;
+    }
+    setSelectedIds((prev) => Array.from(new Set([...prev, ...Array.from(validSet)])));
+    setDeliveryModeById((prev) => {
+      const next = { ...prev };
+      for (const id of Array.from(validSet)) {
+        if (!next[id]) next[id] = defaultNewRecipientMode;
+      }
+      return next;
+    });
+    setAppliedPrefillKey(prefillKey);
+  }, [appliedPrefillKey, defaultNewRecipientMode, prefillIds, prefillKey, team]);
 
   const toggleSelected = (id: string, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -179,6 +386,29 @@ export default function MemberEmailPage() {
   const clearFiltered = () => {
     const removeSet = new Set(filteredMembers.map((member) => member.id));
     setSelectedIds((prev) => prev.filter((id) => !removeSet.has(id)));
+  };
+
+  const renderProjectCodes = (member: TeamMember, keyPrefix: string) => {
+    const assignments = memberAssignmentsById.get(member.id) ?? [];
+    if (assignments.length === 0) {
+      return <span className="text-white/35">—</span>;
+    }
+    return (
+      <div className="members-assignments-scroll w-[148px] max-w-[148px] overflow-x-auto overflow-y-hidden pb-0.5">
+        <div className="inline-flex min-w-max items-center gap-1 pr-1">
+          {assignments.map((item) => (
+            <a
+              key={`${keyPrefix}-${item.id}-${item.code}`}
+              href={item.href}
+              className="inline-flex h-5 w-10 items-center justify-center rounded-full border border-white/15 bg-[#11141A] px-1 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
+              title={`${item.code} · ${item.title}`}
+            >
+              {item.code}
+            </a>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const sendEmail = async () => {
@@ -371,14 +601,16 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="members-table-shell max-h-[420px] overflow-x-auto overflow-y-auto">
-              <table className="members-grid-table w-full min-w-[1100px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="members-grid-table w-full min-w-[1320px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[200px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[168px]">Projects</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[84px]">Status</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[240px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[96px]">Grade</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -386,7 +618,6 @@ export default function MemberEmailPage() {
                     const checked = selectedIds.includes(member.id);
                     const inactive = isInactiveMember(member);
                     const indicator = getMemberIndicator(member);
-                    const track = getMemberTrack(member);
                     return (
                       <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
                         <td className="px-3 py-2">
@@ -399,21 +630,25 @@ export default function MemberEmailPage() {
                           />
                         </td>
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-2 min-w-0">
-                            <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                            <span className="truncate">{member.name}</span>
-                          </span>
+                          <span className="truncate">{member.name}</span>
                           {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
                         </td>
+                        <td className="px-3 py-2 whitespace-nowrap">{renderProjectCodes(member, `search-${member.id}`)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-white/55">
+                          <span className="inline-flex items-center gap-2">
+                            <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                            <span>{indicator.label}</span>
+                          </span>
+                        </td>
                         <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
-                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{track}</td>
                         <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
+                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{member.grade || "—"}</td>
                       </tr>
                     );
                   })}
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-6 text-center text-white/35">
+                      <td colSpan={7} className="px-3 py-6 text-center text-white/35">
                         {normalizedSearch ? "No members match this search." : "Start typing to search members."}
                       </td>
                     </tr>
