@@ -284,7 +284,7 @@ export default function MemberEmailPage() {
         ]
           .map((value) => String(value ?? "").toLowerCase())
           .join(" ");
-        const textMatch = normalizedSearch.length > 0 && searchable.includes(normalizedSearch);
+        const textMatch = normalizedSearch.length === 0 || searchable.includes(normalizedSearch);
         return textMatch;
       }).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
     [team, normalizedSearch],
@@ -657,7 +657,7 @@ export default function MemberEmailPage() {
                   {filteredMembers.length === 0 && (
                     <tr>
                       <td colSpan={7} className="px-3 py-6 text-center text-white/35">
-                        {normalizedSearch ? "No members match this search." : "Start typing to search members."}
+                        {normalizedSearch ? "No members match this search." : "No members found."}
                       </td>
                     </tr>
                   )}
