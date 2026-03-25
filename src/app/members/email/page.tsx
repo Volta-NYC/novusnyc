@@ -22,6 +22,7 @@ const TEAM_EMAIL_FROM_OPTIONS = [
 
 type DeliveryMode = "to" | "cc" | "bcc";
 type AssignmentCodePrefix = "W" | "M" | "R" | "C";
+type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
 type MemberAssignmentLink = {
   id: string;
@@ -35,13 +36,62 @@ function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-function getMemberTrack(member: TeamMember): "Tech" | "Marketing" | "Finance" | "Other" | "—" {
+function getMemberTrack(member: TeamMember): TrackKey {
   const divisions = member.divisions ?? [];
   if (divisions.includes("Tech")) return "Tech";
   if (divisions.includes("Marketing")) return "Marketing";
   if (divisions.includes("Finance")) return "Finance";
   if (divisions.includes("Other") || divisions.includes("Outreach")) return "Other";
   return "—";
+}
+
+function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
+  switch (track) {
+    case "Tech":
+      return { bg: "#DBEAFE", text: "#1E3A8A" };
+    case "Marketing":
+      return { bg: "#FEF3C7", text: "#92400E" };
+    case "Finance":
+      return { bg: "#DCFCE7", text: "#166534" };
+    case "Other":
+      return { bg: "#F3F4F6", text: "#374151" };
+    default:
+      return { bg: "rgba(133,204,23,0.15)", text: "#85CC17" };
+  }
+}
+
+function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
+  if (track === "Tech") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M8 8L3 12L8 16" />
+        <path d="M16 8L21 12L16 16" />
+      </svg>
+    );
+  }
+  if (track === "Marketing") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 20l4.5-1.2L19 8.3a1.6 1.6 0 0 0 0-2.2l-1.1-1.1a1.6 1.6 0 0 0-2.2 0L5.2 15.5L4 20z" />
+        <path d="M13.5 6.5l4 4" />
+      </svg>
+    );
+  }
+  if (track === "Finance") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 19h16" />
+        <path d="M7 16v-4" />
+        <path d="M12 16V9" />
+        <path d="M17 16v-10" />
+      </svg>
+    );
+  }
+  return (
+    <span className="text-[11px] font-semibold leading-none" style={{ color }} aria-hidden="true">
+      –
+    </span>
+  );
 }
 
 function isInactiveMember(member: TeamMember): boolean {
@@ -505,21 +555,23 @@ export default function MemberEmailPage() {
               </span>
             </div>
 
-            <div className="members-table-shell max-h-[240px] overflow-x-auto overflow-y-auto bg-[#11151D]">
-              <table className="members-grid-table w-full min-w-[1100px] table-fixed text-xs [&_td]:overflow-hidden">
+            <div className="members-table-shell members-scroll-hidden max-h-[240px] overflow-x-auto overflow-y-auto bg-[#11151D]">
+              <table className="members-grid-table w-full min-w-[1360px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#10131A] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
+                    <th className="text-left px-3 py-2 text-white/45 w-[168px]">Projects</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[88px]">Track</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[220px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[96px]">Grade</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[90px]">Mode</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {selectedMembers.map((member) => {
                     const track = getMemberTrack(member);
+                    const avatar = getTrackAvatarStyles(track);
                     const indicator = getMemberIndicator(member);
                     const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
                     return (
@@ -532,15 +584,19 @@ export default function MemberEmailPage() {
                             className="members-checkbox"
                           />
                         </td>
+                        <td className="px-3 py-2 whitespace-nowrap">{renderProjectCodes(member, `selected-${member.id}`)}</td>
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
                           <span className="inline-flex items-center gap-2 min-w-0">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                              <TrackAvatarIcon track={track} color={avatar.text} />
+                            </span>
                             <span className="truncate">{member.name}</span>
                           </span>
                         </td>
                         <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
-                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{track}</td>
                         <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
+                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{member.grade || "—"}</td>
                         <td className="px-3 py-2">
                           <select
                             value={mode}
@@ -557,7 +613,7 @@ export default function MemberEmailPage() {
                   })}
                   {selectedMembers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-3 py-6 text-center text-white/35">No recipients selected yet.</td>
+                      <td colSpan={7} className="px-3 py-6 text-center text-white/35">No recipients selected yet.</td>
                     </tr>
                   )}
                 </tbody>
@@ -608,14 +664,13 @@ export default function MemberEmailPage() {
               </div>
             </div>
 
-            <div className="members-table-shell max-h-[420px] overflow-x-auto overflow-y-auto">
+            <div className="members-table-shell members-scroll-hidden max-h-[420px] overflow-x-auto overflow-y-auto">
               <table className="members-grid-table w-full min-w-[1320px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[200px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[168px]">Projects</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[84px]">Status</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[240px]">School</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[96px]">Grade</th>
@@ -626,6 +681,8 @@ export default function MemberEmailPage() {
                     const checked = selectedIds.includes(member.id);
                     const inactive = isInactiveMember(member);
                     const indicator = getMemberIndicator(member);
+                    const track = getMemberTrack(member);
+                    const avatar = getTrackAvatarStyles(track);
                     return (
                       <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
                         <td className="px-3 py-2">
@@ -637,16 +694,16 @@ export default function MemberEmailPage() {
                             className="members-checkbox"
                           />
                         </td>
-                        <td className="px-3 py-2 text-white/75 whitespace-nowrap">
-                          <span className="truncate">{member.name}</span>
-                          {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
-                        </td>
                         <td className="px-3 py-2 whitespace-nowrap">{renderProjectCodes(member, `search-${member.id}`)}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-white/55">
-                          <span className="inline-flex items-center gap-2">
+                        <td className="px-3 py-2 text-white/75 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-2 min-w-0">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                            <span>{indicator.label}</span>
+                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                              <TrackAvatarIcon track={track} color={avatar.text} />
+                            </span>
+                            <span className="truncate">{member.name}</span>
                           </span>
+                          {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
                         </td>
                         <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
                         <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
@@ -656,7 +713,7 @@ export default function MemberEmailPage() {
                   })}
                   {filteredMembers.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-3 py-6 text-center text-white/35">
+                      <td colSpan={6} className="px-3 py-6 text-center text-white/35">
                         {normalizedSearch ? "No members match this search." : "No members found."}
                       </td>
                     </tr>
