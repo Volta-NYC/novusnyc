@@ -158,6 +158,7 @@ export default function MemberEmailPage() {
   const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [lastClickedRecipientId, setLastClickedRecipientId] = useState<string | null>(null);
   const [deliveryModeById, setDeliveryModeById] = useState<Record<string, DeliveryMode>>({});
   const [defaultNewRecipientMode, setDefaultNewRecipientMode] = useState<DeliveryMode>("to");
   const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_EMAIL_SORT_RULES);
@@ -451,6 +452,10 @@ export default function MemberEmailPage() {
     () => sortedFilteredMembers.filter((member) => !isInactiveMember(member)),
     [sortedFilteredMembers],
   );
+  const orderedSelectableMemberIds = useMemo(
+    () => selectableFilteredMembers.map((member) => member.id),
+    [selectableFilteredMembers],
+  );
 
   const selectedMembers = useMemo(() => {
     const selectedSet = new Set(selectedIds);
@@ -523,16 +528,35 @@ export default function MemberEmailPage() {
     setAppliedPrefillKey(prefillKey);
   }, [appliedPrefillKey, defaultNewRecipientMode, prefillIds, prefillKey, team]);
 
-  const toggleSelected = (id: string, checked: boolean) => {
+  const toggleSelected = (id: string, checked: boolean, shiftKey = false) => {
+    const targetIds = (() => {
+      if (!shiftKey || !lastClickedRecipientId || lastClickedRecipientId === id) return [id];
+      const start = orderedSelectableMemberIds.indexOf(lastClickedRecipientId);
+      const end = orderedSelectableMemberIds.indexOf(id);
+      if (start === -1 || end === -1) return [id];
+      const [lo, hi] = start < end ? [start, end] : [end, start];
+      return orderedSelectableMemberIds.slice(lo, hi + 1);
+    })();
+
     setSelectedIds((prev) => {
+      const next = new Set(prev);
       if (checked) {
-        if (!deliveryModeById[id]) {
-          setDeliveryModeById((current) => ({ ...current, [id]: defaultNewRecipientMode }));
-        }
-        return prev.includes(id) ? prev : [...prev, id];
+        targetIds.forEach((targetId) => next.add(targetId));
+      } else {
+        targetIds.forEach((targetId) => next.delete(targetId));
       }
-      return prev.filter((value) => value !== id);
+      return Array.from(next);
     });
+    if (checked) {
+      setDeliveryModeById((current) => {
+        const next = { ...current };
+        targetIds.forEach((targetId) => {
+          if (!next[targetId]) next[targetId] = defaultNewRecipientMode;
+        });
+        return next;
+      });
+    }
+    setLastClickedRecipientId(id);
   };
 
   const setRecipientMode = (id: string, mode: DeliveryMode) => {
@@ -693,7 +717,12 @@ export default function MemberEmailPage() {
                           <input
                             type="checkbox"
                             checked
-                            onChange={(e) => toggleSelected(member.id, e.target.checked)}
+                            onChange={(e) => {
+                              const shiftKey = "shiftKey" in e.nativeEvent
+                                ? Boolean((e.nativeEvent as MouseEvent).shiftKey)
+                                : false;
+                              toggleSelected(member.id, e.target.checked, shiftKey);
+                            }}
                             className="members-checkbox"
                           />
                         </td>
@@ -867,7 +896,12 @@ export default function MemberEmailPage() {
                           <input
                             type="checkbox"
                             checked={checked && !inactive}
-                            onChange={(e) => toggleSelected(member.id, e.target.checked)}
+                            onChange={(e) => {
+                              const shiftKey = "shiftKey" in e.nativeEvent
+                                ? Boolean((e.nativeEvent as MouseEvent).shiftKey)
+                                : false;
+                              toggleSelected(member.id, e.target.checked, shiftKey);
+                            }}
                             disabled={inactive}
                             className="members-checkbox"
                           />
