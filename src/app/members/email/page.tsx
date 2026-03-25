@@ -556,16 +556,16 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="members-table-shell members-scroll-hidden max-h-[240px] overflow-x-auto overflow-y-auto bg-[#11151D]">
-              <table className="members-grid-table w-full min-w-[1360px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="members-grid-table members-email-grid w-full min-w-[1480px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#10131A] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[168px]">Projects</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[96px]">Grade</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[90px]">Mode</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[200px]">Projects</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[300px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Grade</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Mode</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -586,12 +586,12 @@ export default function MemberEmailPage() {
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">{renderProjectCodes(member, `selected-${member.id}`)}</td>
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-2 min-w-0">
+                          <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
                             <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                               <TrackAvatarIcon track={track} color={avatar.text} />
                             </span>
-                            <span className="truncate">{member.name}</span>
+                            <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
                           </span>
                         </td>
                         <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
@@ -601,7 +601,7 @@ export default function MemberEmailPage() {
                           <select
                             value={mode}
                             onChange={(e) => setRecipientMode(member.id, (e.target.value as DeliveryMode) || "to")}
-                            className="h-8 w-full rounded-lg border border-white/10 bg-[#0F1014] px-2 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                            className="members-no-cell-scroll h-8 w-full rounded-lg border border-white/10 bg-[#0F1014] px-2 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
                           >
                             <option value="to">To</option>
                             <option value="cc">CC</option>
@@ -665,15 +665,15 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="members-table-shell members-scroll-hidden max-h-[420px] overflow-x-auto overflow-y-auto">
-              <table className="members-grid-table w-full min-w-[1320px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="members-grid-table members-email-grid w-full min-w-[1460px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[168px]">Projects</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[220px]">Name</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[250px]">Primary Email</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[240px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[96px]">Grade</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[200px]">Projects</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[320px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Grade</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -696,12 +696,12 @@ export default function MemberEmailPage() {
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">{renderProjectCodes(member, `search-${member.id}`)}</td>
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-2 min-w-0">
+                          <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
                             <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                               <TrackAvatarIcon track={track} color={avatar.text} />
                             </span>
-                            <span className="truncate">{member.name}</span>
+                            <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
                           </span>
                           {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
                         </td>

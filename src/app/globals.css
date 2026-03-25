@@ -361,6 +361,19 @@ main {
   display: none;
 }
 
+/* Email tab tables: keep one clean horizontal scroll at table level on mobile/desktop */
+.members-portal .members-email-grid td > * {
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.members-portal .members-email-grid td .truncate {
+  overflow: hidden !important;
+  overflow-y: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
 @media (min-width: 768px) {
   .members-portal .members-page-header-action > * {
     justify-content: flex-end;
