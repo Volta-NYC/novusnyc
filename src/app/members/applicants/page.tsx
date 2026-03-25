@@ -104,19 +104,20 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
 // ── Column widths (tailwind-compatible) ────────────────────────────────────────
 
 const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
-  status: "w-[180px]",
-  actions: "w-[360px]",
-  name: "w-[130px]",
-  email: "w-[180px]",
-  school: "w-[160px]",
-  grade: "w-[80px]",
-  cityState: "w-[130px]",
-  referral: "w-[115px]",
-  tracks: "w-[170px]",
-  resume: "w-[70px]",
-  applied: "w-[120px]",
-  invite: "w-[120px]",
-  interview: "w-[130px]",
+  status: "w-[195px]",
+  actions: "w-[310px]",
+  name: "w-[170px]",
+  email: "w-[240px]",
+  school: "w-[230px]",
+  grade: "w-[92px]",
+  cityState: "w-[160px]",
+  referral: "w-[150px]",
+  tracks: "w-[220px]",
+  resume: "w-[90px]",
+  applied: "w-[170px]",
+  invite: "w-[170px]",
+  interview: "w-[185px]",
+  evals: "w-[56px]",
 };
 
 
@@ -756,7 +757,7 @@ export default function ApplicantsPage() {
       </div>
 
       <div className="members-table-shell">
-        <table className="members-grid-table w-full min-w-[1700px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
+        <table className="members-grid-table w-full min-w-[2460px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {selectionMode !== "none" && (
