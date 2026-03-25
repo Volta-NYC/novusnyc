@@ -754,6 +754,13 @@ export default function TeamPage() {
       const allTracks = Array.from(new Set([...requestedTracks, ...explicitTracks]));
       const trackOrder: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
       const hasTrackSpecificAssignments = allTracks.length > 0;
+      const hasAnyExplicitTrackTeamMembers = trackOrder.some((track) => {
+        if (!allTracks.includes(track)) return false;
+        const info = (trackProjects as Record<string, unknown>)[track];
+        if (!info || typeof info !== "object") return false;
+        const raw = (info as { teamMembers?: unknown }).teamMembers;
+        return Array.isArray(raw);
+      });
 
       if (!hasTrackSpecificAssignments) {
         const entry: Omit<MemberAssignmentLink, "code"> = {
@@ -779,7 +786,8 @@ export default function TeamPage() {
         const trackMembers = Array.isArray(rawMembers)
           ? rawMembers.map((name) => String(name ?? "").trim()).filter(Boolean)
           : [];
-        const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : legacyAssignedNames));
+        const fallbackMembers = hasAnyExplicitTrackTeamMembers ? [] : legacyAssignedNames;
+        const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : fallbackMembers));
         if (assignedNames.length === 0) continue;
         const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : "W";
         const topic =
