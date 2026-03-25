@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, Field, TextArea, Btn, Empty,
@@ -30,6 +30,28 @@ type MemberAssignmentLink = {
   codePrefix: AssignmentCodePrefix;
   code: string;
   href: string;
+};
+
+const DEFAULT_EMAIL_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
+  { col: 3, dir: "asc" },
+];
+
+const EMAIL_SORT_OPTIONS = [
+  { value: 0, label: "Status" },
+  { value: 1, label: "Track" },
+  { value: 2, label: "Projects" },
+  { value: 3, label: "Name" },
+  { value: 4, label: "Email" },
+  { value: 5, label: "School" },
+  { value: 6, label: "Grade" },
+];
+
+const TRACK_SORT_ORDER: Record<TrackKey, number> = {
+  Tech: 0,
+  Marketing: 1,
+  Finance: 2,
+  Other: 3,
+  "—": 4,
 };
 
 function normalizeToken(value: string): string {
@@ -138,6 +160,8 @@ export default function MemberEmailPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deliveryModeById, setDeliveryModeById] = useState<Record<string, DeliveryMode>>({});
   const [defaultNewRecipientMode, setDefaultNewRecipientMode] = useState<DeliveryMode>("to");
+  const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_EMAIL_SORT_RULES);
+  const [showSortPanel, setShowSortPanel] = useState(false);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [contentMode, setContentMode] = useState<"plain" | "html">("plain");
@@ -309,6 +333,77 @@ export default function MemberEmailPage() {
     return map;
   }, [assignmentsByMemberName, team]);
 
+  const projectSortMetaByMemberId = useMemo(() => {
+    const map = new Map<string, { count: number; key: string }>();
+    for (const member of team) {
+      const assignments = memberAssignmentsById.get(member.id) ?? [];
+      const sortedCodes = assignments.map((item) => item.code).sort((a, b) => a.localeCompare(b));
+      map.set(member.id, {
+        count: assignments.length,
+        key: sortedCodes.join(" "),
+      });
+    }
+    return map;
+  }, [memberAssignmentsById, team]);
+
+  const compareMemberByCol = useCallback((a: TeamMember, b: TeamMember, col: number): number => {
+    switch (col) {
+      case 0: {
+        const statusRank = (member: TeamMember) => {
+          if (isInactiveMember(member)) return 2;
+          const count = (memberAssignmentsById.get(member.id) ?? []).length;
+          return count > 0 ? 0 : 1;
+        };
+        const rankCmp = statusRank(a) - statusRank(b);
+        return rankCmp !== 0 ? rankCmp : (a.name || "").localeCompare(b.name || "");
+      }
+      case 1: {
+        const trackCmp = TRACK_SORT_ORDER[getMemberTrack(a)] - TRACK_SORT_ORDER[getMemberTrack(b)];
+        return trackCmp !== 0 ? trackCmp : (a.name || "").localeCompare(b.name || "");
+      }
+      case 2: {
+        const aMeta = projectSortMetaByMemberId.get(a.id) ?? { count: 0, key: "" };
+        const bMeta = projectSortMetaByMemberId.get(b.id) ?? { count: 0, key: "" };
+        if (aMeta.count !== bMeta.count) return aMeta.count - bMeta.count;
+        return aMeta.key.localeCompare(bMeta.key);
+      }
+      case 3:
+        return (a.name || "").localeCompare(b.name || "");
+      case 4:
+        return (a.email || "").localeCompare(b.email || "");
+      case 5:
+        return (a.school || "").localeCompare(b.school || "");
+      case 6:
+        return (a.grade || "").localeCompare(b.grade || "");
+      default:
+        return 0;
+    }
+  }, [memberAssignmentsById, projectSortMetaByMemberId]);
+
+  const addSortRule = () => {
+    const usedCols = new Set(sortRules.map((rule) => rule.col));
+    const next = EMAIL_SORT_OPTIONS.find((option) => !usedCols.has(option.value));
+    if (!next) return;
+    setSortRules((prev) => [...prev, { col: next.value, dir: "asc" }]);
+  };
+
+  const removeSortRule = (idx: number) => {
+    setSortRules((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length === 0 ? [...DEFAULT_EMAIL_SORT_RULES] : next;
+    });
+  };
+
+  const updateSortRule = (idx: number, field: "col" | "dir", value: number | string) => {
+    setSortRules((prev) =>
+      prev.map((rule, i) => {
+        if (i !== idx) return rule;
+        if (field === "col") return { ...rule, col: Number(value) };
+        return { ...rule, dir: value as "asc" | "desc" };
+      }),
+    );
+  };
+
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
     if (isInactiveMember(member)) return { colorClass: "bg-red-400", label: "Inactive" };
     const memberAssignments = memberAssignmentsById.get(member.id) ?? [];
@@ -336,21 +431,39 @@ export default function MemberEmailPage() {
           .join(" ");
         const textMatch = normalizedSearch.length === 0 || searchable.includes(normalizedSearch);
         return textMatch;
-      }).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
+      }),
     [team, normalizedSearch],
   );
 
+  const sortedFilteredMembers = useMemo(
+    () =>
+      [...filteredMembers].sort((a, b) => {
+        for (const rule of sortRules) {
+          const cmp = compareMemberByCol(a, b, rule.col);
+          if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
+        }
+        return 0;
+      }),
+    [filteredMembers, sortRules, compareMemberByCol],
+  );
+
   const selectableFilteredMembers = useMemo(
-    () => filteredMembers.filter((member) => !isInactiveMember(member)),
-    [filteredMembers],
+    () => sortedFilteredMembers.filter((member) => !isInactiveMember(member)),
+    [sortedFilteredMembers],
   );
 
   const selectedMembers = useMemo(() => {
     const selectedSet = new Set(selectedIds);
     return team
       .filter((member) => selectedSet.has(member.id) && !isInactiveMember(member))
-      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
-  }, [selectedIds, team]);
+      .sort((a, b) => {
+        for (const rule of sortRules) {
+          const cmp = compareMemberByCol(a, b, rule.col);
+          if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
+        }
+        return 0;
+      });
+  }, [selectedIds, team, sortRules, compareMemberByCol]);
 
   const selectedRecipients = useMemo(() => {
     return selectedMembers
@@ -442,7 +555,7 @@ export default function MemberEmailPage() {
   };
 
   const clearFiltered = () => {
-    const removeSet = new Set(filteredMembers.map((member) => member.id));
+    const removeSet = new Set(sortedFilteredMembers.map((member) => member.id));
     setSelectedIds((prev) => prev.filter((id) => !removeSet.has(id)));
   };
 
@@ -452,7 +565,7 @@ export default function MemberEmailPage() {
       return <span className="text-white/35">—</span>;
     }
     return (
-      <div className="members-assignments-scroll w-[148px] max-w-[148px] overflow-x-auto overflow-y-hidden pb-0.5">
+      <div className="members-assignments-scroll w-[88px] max-w-[88px] overflow-x-auto overflow-y-hidden pb-0.5">
         <div className="inline-flex min-w-max items-center gap-1 pr-1">
           {assignments.map((item) => (
             <a
@@ -556,11 +669,11 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="members-table-shell members-scroll-hidden max-h-[240px] overflow-x-auto overflow-y-auto bg-[#11151D]">
-              <table className="members-grid-table members-email-grid w-full min-w-[1480px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="members-grid-table members-email-grid w-full min-w-[1390px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#10131A] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[200px]">Projects</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[110px]">Projects</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[300px]">School</th>
@@ -635,8 +748,8 @@ export default function MemberEmailPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="text-white/55">
-                {totalSelected} selected · {filteredMembers.length} matching search
-                {filteredMembers.length !== selectableFilteredMembers.length ? ` · ${filteredMembers.length - selectableFilteredMembers.length} inactive` : ""}
+                {totalSelected} selected · {sortedFilteredMembers.length} matching search
+                {sortedFilteredMembers.length !== selectableFilteredMembers.length ? ` · ${sortedFilteredMembers.length - selectableFilteredMembers.length} inactive` : ""}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-white/40">Default mode:</span>
@@ -649,13 +762,78 @@ export default function MemberEmailPage() {
                   <option value="cc">CC</option>
                   <option value="bcc">BCC</option>
                 </select>
-                <Btn size="sm" variant="secondary" onClick={selectAllFiltered} disabled={filteredMembers.length === 0}>
+                <div className="relative">
+                  <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
+                    Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
+                  </Btn>
+                  {showSortPanel && (
+                    <div className="absolute top-full right-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 w-[360px] max-w-[min(92vw,360px)]">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] text-white/45 uppercase tracking-wide">Sort Rules</p>
+                        <button
+                          type="button"
+                          className="text-[10px] text-white/55 hover:text-white transition-colors"
+                          onClick={() => setShowSortPanel(false)}
+                        >
+                          Close
+                        </button>
+                      </div>
+                      {sortRules.map((rule, idx) => (
+                        <div key={idx} className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] text-white/45 w-[54px]">{idx === 0 ? "Sort by" : "Then by"}</span>
+                          <select
+                            value={rule.col}
+                            onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
+                            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                          >
+                            {EMAIL_SORT_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={rule.dir}
+                            onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
+                            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[72px]"
+                          >
+                            <option value="asc">A→Z</option>
+                            <option value="desc">Z→A</option>
+                          </select>
+                          {sortRules.length > 1 && (
+                            <button
+                              onClick={() => removeSortRule(idx)}
+                              className="members-icon-btn members-icon-btn-danger h-6 w-6 text-xs"
+                              aria-label="Remove sort rule"
+                              title="Remove sort rule"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <div className="mt-2 flex items-center justify-between">
+                        {sortRules.length < EMAIL_SORT_OPTIONS.length ? (
+                          <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+                            + Add sort level
+                          </button>
+                        ) : <span />}
+                        <button
+                          type="button"
+                          className="text-[10px] text-white/50 hover:text-white/80 transition-colors"
+                          onClick={() => setSortRules([...DEFAULT_EMAIL_SORT_RULES])}
+                        >
+                          Reset default
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <Btn size="sm" variant="secondary" onClick={selectAllFiltered} disabled={sortedFilteredMembers.length === 0}>
                   Select filtered
                 </Btn>
                 <Btn
                   size="sm"
                   variant="secondary"
-                  disabled={filteredMembers.length === 0}
+                  disabled={sortedFilteredMembers.length === 0}
                   className="!text-red-300 !border-red-400/30 !bg-red-500/10 hover:!bg-red-500/20"
                   onClick={clearFiltered}
                 >
@@ -665,11 +843,11 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="members-table-shell members-scroll-hidden max-h-[420px] overflow-x-auto overflow-y-auto">
-              <table className="members-grid-table members-email-grid w-full min-w-[1460px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="members-grid-table members-email-grid w-full min-w-[1390px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[200px]">Projects</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[110px]">Projects</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[320px]">School</th>
@@ -677,7 +855,7 @@ export default function MemberEmailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {filteredMembers.map((member) => {
+                  {sortedFilteredMembers.map((member) => {
                     const checked = selectedIds.includes(member.id);
                     const inactive = isInactiveMember(member);
                     const indicator = getMemberIndicator(member);
@@ -711,7 +889,7 @@ export default function MemberEmailPage() {
                       </tr>
                     );
                   })}
-                  {filteredMembers.length === 0 && (
+                  {sortedFilteredMembers.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-3 py-6 text-center text-white/35">
                         {normalizedSearch ? "No members match this search." : "No members found."}
