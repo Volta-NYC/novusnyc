@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
@@ -284,10 +283,8 @@ export default function TeamPage() {
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
-  const router = useRouter();
   const canEdit = authRole === "admin";
   const isMemberRestricted = authRole === "member";
-  const [emailSelectionIds, setEmailSelectionIds] = useState<string[]>([]);
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
@@ -346,35 +343,6 @@ export default function TeamPage() {
     setEditingMember(null);
     setShowAlternateEmail(false);
     setModal("create");
-  };
-
-  useEffect(() => {
-    setEmailSelectionIds((prev) =>
-      prev.filter((id) => {
-        const member = team.find((entry) => entry.id === id);
-        return !!member && normalizeKey(member.status ?? "") !== "inactive" && !!normalizeText(member.email ?? "");
-      }),
-    );
-  }, [team]);
-
-  const toggleEmailSelection = (member: TeamMember) => {
-    const hasPrimaryEmail = !!normalizeText(member.email ?? "");
-    const inactive = normalizeKey(member.status ?? "") === "inactive";
-    if (!hasPrimaryEmail || inactive) return;
-    setEmailSelectionIds((prev) => (
-      prev.includes(member.id)
-        ? prev.filter((id) => id !== member.id)
-        : [...prev, member.id]
-    ));
-  };
-
-  const openEmailPanelWithSelection = () => {
-    const validIds = emailSelectionIds.filter((id) => {
-      const member = team.find((entry) => entry.id === id);
-      return !!member && normalizeKey(member.status ?? "") !== "inactive" && !!normalizeText(member.email ?? "");
-    });
-    if (validIds.length === 0) return;
-    router.push(`/members/email?prefill=${encodeURIComponent(validIds.join(","))}`);
   };
 
   const handleImportCsv = async (file: File) => {
@@ -931,7 +899,6 @@ export default function TeamPage() {
     return memberAssignments.length > 0;
   }).length;
   const totalApplicantsCount = applications.length;
-  const selectedEmailCount = emailSelectionIds.length;
 
   const renderAssignmentCell = (memberAssignments: MemberAssignmentLink[], keyPrefix: string) => {
     if (memberAssignments.length === 0) {
@@ -990,12 +957,8 @@ export default function TeamPage() {
         title="Team Directory"
         action={canEdit ? (
           <div className="flex gap-2">
-            <Btn
-              variant="secondary"
-              onClick={openEmailPanelWithSelection}
-              disabled={selectedEmailCount === 0 || importingCsv}
-            >
-              Email Selected ({selectedEmailCount})
+            <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importingCsv}>
+              {importingCsv ? "Importing..." : "Import CSV"}
             </Btn>
             <Btn variant="primary" onClick={openCreate}>+ Add Member</Btn>
           </div>
@@ -1206,8 +1169,6 @@ export default function TeamPage() {
                 const indicator = getMemberIndicator(member);
                 const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
                 const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
-                const directEmail = (member.email ?? member.alternateEmail ?? "").trim();
-                const inactive = normalizeKey(member.status ?? "") === "inactive";
                 const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
                 return (
                   <tr
@@ -1270,29 +1231,6 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
                       <div className="flex gap-1 flex-nowrap">
-                        {directEmail && (
-                          <Btn
-                            size="sm"
-                            variant="secondary"
-                            className="members-pill-btn whitespace-nowrap"
-                            onClick={() => { window.location.href = `mailto:${directEmail}`; }}
-                            disabled={inactive}
-                          >
-                            Email
-                          </Btn>
-                        )}
-                        {canEdit && (
-                          <Btn
-                            size="sm"
-                            variant={emailSelectionIds.includes(member.id) ? "primary" : "secondary"}
-                            className="members-pill-btn whitespace-nowrap"
-                            onClick={() => toggleEmailSelection(member)}
-                            disabled={inactive || !normalizeText(member.email ?? "")}
-                            title={!normalizeText(member.email ?? "") ? "Primary email required" : inactive ? "Inactive members are excluded from mass email" : undefined}
-                          >
-                            {emailSelectionIds.includes(member.id) ? "Selected" : "Select"}
-                          </Btn>
-                        )}
                         {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
                       </div>
                     </td>
