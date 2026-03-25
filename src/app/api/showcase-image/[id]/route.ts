@@ -4,7 +4,7 @@ import { getAdminDB } from "@/lib/firebaseAdmin";
 export const dynamic = "force-dynamic";
 
 type RouteContext = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 function readText(value: unknown): string {
@@ -43,7 +43,8 @@ function decodeDataUrl(input: string): { mime: string; body: ArrayBuffer } | nul
 }
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
-  const id = decodeURIComponent(params.id ?? "").trim();
+  const { id: rawId } = await params;
+  const id = decodeURIComponent(rawId ?? "").trim();
   if (!id) {
     return NextResponse.json({ error: "missing_id" }, { status: 400 });
   }

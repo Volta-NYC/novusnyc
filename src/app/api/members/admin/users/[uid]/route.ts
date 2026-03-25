@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth, getAdminDB } from "@/lib/firebaseAdmin";
 
-type Params = { params: { uid: string } };
+type RouteContext = { params: Promise<{ uid: string }> };
 
 function getBearerToken(req: NextRequest): string {
   const authHeader = req.headers.get("authorization") ?? "";
@@ -9,8 +9,9 @@ function getBearerToken(req: NextRequest): string {
   return authHeader.slice("Bearer ".length).trim();
 }
 
-export async function DELETE(req: NextRequest, { params }: Params) {
-  const targetUid = params.uid?.trim();
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
+  const { uid } = await params;
+  const targetUid = uid?.trim();
   if (!targetUid) {
     return NextResponse.json({ error: "missing_uid" }, { status: 400 });
   }

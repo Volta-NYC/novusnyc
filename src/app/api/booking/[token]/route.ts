@@ -28,7 +28,7 @@ import {
   sendInterviewRescheduledEmail,
 } from "@/lib/server/interviewEmail";
 
-type Params = { params: { token: string } };
+type RouteContext = { params: Promise<{ token: string }> };
 export const runtime = "nodejs";
 
 // ── DB helpers — Admin SDK preferred, REST API fallback ───────────────────────
@@ -283,8 +283,9 @@ async function syncApplicationInterviewScheduled(params: {
 // ── GET /api/booking/[token] ──────────────────────────────────────────────────
 // Returns { invite, slots, zoomLink } for a valid, unexpired booking token.
 
-export async function GET(_req: NextRequest, { params }: Params) {
-  const cleanToken = normalizeBookingId(params.token);
+export async function GET(_req: NextRequest, { params }: RouteContext) {
+  const { token } = await params;
+  const cleanToken = normalizeBookingId(token);
   if (!cleanToken) {
     return NextResponse.json({ error: "invalid_token" }, { status: 400 });
   }
@@ -359,8 +360,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // ── POST /api/booking/[token] ─────────────────────────────────────────────────
 // Books a slot. Body: { slotId, bookerName, bookerEmail }
 
-export async function POST(req: NextRequest, { params }: Params) {
-  const cleanToken = normalizeBookingId(params.token);
+export async function POST(req: NextRequest, { params }: RouteContext) {
+  const { token } = await params;
+  const cleanToken = normalizeBookingId(token);
   if (!cleanToken) {
     return NextResponse.json({ error: "invalid_token" }, { status: 400 });
   }

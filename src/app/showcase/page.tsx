@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
+import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
 import { projects as fallbackProjects } from "@/data";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
@@ -49,15 +49,6 @@ const SHOWCASE_COLOR_CLASS: Record<string, string> = {
   "green-mid": "bg-lime-500",
   "green-deep": "bg-lime-700",
 };
-
-const NeighborhoodMap = nextDynamic(() => import("@/components/NeighborhoodMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-full w-full bg-v-border/30 flex items-center justify-center">
-      <p className="font-body text-sm text-v-muted">Loading map…</p>
-    </div>
-  ),
-});
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
 
