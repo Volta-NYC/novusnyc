@@ -104,6 +104,7 @@ type MemberAssignmentLink = {
   kind: "Business Project" | "Finance Assignment";
   title: string;
   topic?: string;
+  teamNames: string[];
   codePrefix: AssignmentCodePrefix;
   code: string;
   status: string;
@@ -277,6 +278,7 @@ export default function TeamPage() {
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
+  const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -729,6 +731,7 @@ export default function TeamPage() {
 
   const assignmentsByMemberName = useMemo(() => {
     const map = new Map<string, MemberAssignmentLink[]>();
+    const teamNameById = new Map(team.map((member) => [member.id, String(member.name ?? "").trim()]));
     const pushForMemberKey = (memberKey: string, item: Omit<MemberAssignmentLink, "code">) => {
       const key = normalizeKey(memberKey);
       if (!key) return;
@@ -768,6 +771,7 @@ export default function TeamPage() {
           kind: "Business Project",
           title: business.name || "Untitled Project",
           topic: "Website project",
+          teamNames: legacyAssignedNames,
           codePrefix: "W",
           status,
           deadline: "—",
@@ -801,6 +805,7 @@ export default function TeamPage() {
           kind: "Business Project",
           title: business.name || "Untitled Project",
           topic,
+          teamNames: assignedNames,
           codePrefix,
           status,
           deadline: "—",
@@ -825,11 +830,16 @@ export default function TeamPage() {
           .find(Boolean)
         : "";
       const deadline = firstDeadlineDate || assignment.deadline || assignment.finalDueDate || assignment.firstDraftDueDate || assignment.interviewDueDate || "—";
+      const assignmentTeamNames = Array.from(new Set([
+        ...readAssignmentIds(assignment).map((memberId) => teamNameById.get(memberId) ?? "").filter(Boolean),
+        ...readAssignmentNames(assignment),
+      ]));
       const entry: Omit<MemberAssignmentLink, "code"> = {
         id: assignment.id,
         kind: "Finance Assignment",
         title: assignmentDisplayTitle,
         topic: "",
+        teamNames: assignmentTeamNames,
         codePrefix,
         status: assignment.status || "—",
         deadline,
@@ -861,7 +871,7 @@ export default function TeamPage() {
       );
     }
     return map;
-  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment]);
+  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment, team]);
 
   const projectSortMetaByMemberKey = useMemo(() => {
     const map = new Map<string, { count: number; key: string }>();
@@ -899,6 +909,19 @@ export default function TeamPage() {
     return assignmentsByMemberName.get(normalizeKey(assignmentDetailMember.name ?? "")) ?? [];
   }, [assignmentDetailMember, assignmentsByMemberName]);
 
+  useEffect(() => {
+    if (expandAssignments) setAssignmentQuickView(null);
+  }, [expandAssignments]);
+
+  const assignmentQuickViewRestTeam = useMemo(() => {
+    if (!assignmentQuickView) return [];
+    const currentMemberKey = normalizeKey(assignmentQuickView.memberName);
+    return assignmentQuickView.item.teamNames
+      .map((name) => String(name ?? "").trim())
+      .filter(Boolean)
+      .filter((name) => normalizeKey(name) !== currentMemberKey);
+  }, [assignmentQuickView]);
+
   const totalMembersCount = team.length;
   const inactiveMembersCount = team.filter((member) => normalizeKey(member.status ?? "") === "inactive").length;
   const assignedMembersCount = team.filter((member) => {
@@ -908,7 +931,7 @@ export default function TeamPage() {
   }).length;
   const totalApplicantsCount = applications.length;
 
-  const renderAssignmentCell = (memberAssignments: MemberAssignmentLink[], keyPrefix: string) => {
+  const renderAssignmentCell = (memberAssignments: MemberAssignmentLink[], keyPrefix: string, memberName: string) => {
     if (memberAssignments.length === 0) {
       return <span className="text-white/35">—</span>;
     }
@@ -919,14 +942,32 @@ export default function TeamPage() {
         <div className={`members-assignments-scroll ${projectsViewportClass} overflow-x-auto overflow-y-hidden pb-0.5`}>
           <div className="inline-flex min-w-max items-center gap-1 pr-1">
             {memberAssignments.map((item) => (
-              <a
+              <button
                 key={`${keyPrefix}-code-${item.id}-${item.code}`}
-                href={item.href}
-                className="inline-flex h-5 w-10 items-center justify-center rounded-full border border-white/15 bg-[#11141A] px-1 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
+                type="button"
+                className={`inline-flex h-5 w-10 items-center justify-center rounded-full border bg-[#11141A] px-1 text-[10px] font-semibold transition-colors ${
+                  assignmentQuickView?.item.id === item.id && assignmentQuickView?.item.code === item.code
+                    ? "border-[#85CC17]/65 text-[#C4F135]"
+                    : "border-white/15 text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135]"
+                }`}
                 title={`${item.code} · ${item.title}`}
+                onClick={() => {
+                  if (expandAssignments) {
+                    window.location.href = item.href;
+                    return;
+                  }
+                  const sameAsOpen =
+                    assignmentQuickView?.item.id === item.id
+                    && assignmentQuickView?.item.code === item.code;
+                  if (sameAsOpen) {
+                    window.location.href = item.href;
+                    return;
+                  }
+                  setAssignmentQuickView({ item, memberName });
+                }}
               >
                 {item.code}
-              </a>
+              </button>
             ))}
           </div>
         </div>
@@ -1097,7 +1138,7 @@ export default function TeamPage() {
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
                     <td className="px-2 py-1 whitespace-nowrap">
-                      {renderAssignmentCell(memberAssignments, `member-${member.id}`)}
+                      {renderAssignmentCell(memberAssignments, `member-${member.id}`, member.name)}
                     </td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
@@ -1184,7 +1225,7 @@ export default function TeamPage() {
                     className="hover:bg-white/3 transition-colors align-middle"
                   >
                     <td className="px-2 py-1 whitespace-nowrap">
-                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`)}
+                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`, member.name)}
                     </td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
@@ -1257,6 +1298,40 @@ export default function TeamPage() {
           action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first member</Btn> : undefined}
         />
       )}
+
+      <Modal
+        open={!!assignmentQuickView}
+        onClose={() => setAssignmentQuickView(null)}
+        title={assignmentQuickView ? `${assignmentQuickView.item.code} · ${assignmentQuickView.item.title}` : "Assignment"}
+      >
+        {assignmentQuickView && (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2">
+              <p className="text-[11px] text-white/55">
+                {assignmentQuickView.item.kind}{assignmentQuickView.item.topic ? ` · ${assignmentQuickView.item.topic}` : ""}
+              </p>
+              <p className="text-[11px] text-white/50 mt-1">
+                Status: {assignmentQuickView.item.status || "—"}
+                {assignmentQuickView.item.deadline && assignmentQuickView.item.deadline !== "—" ? ` · Due ${assignmentQuickView.item.deadline}` : ""}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white/80">Rest of team</p>
+              {assignmentQuickViewRestTeam.length === 0 ? (
+                <p className="text-xs text-white/45 mt-1">No other members listed.</p>
+              ) : (
+                <p className="text-xs text-white/60 mt-1">{assignmentQuickViewRestTeam.join(", ")}</p>
+              )}
+            </div>
+            <p className="text-[11px] text-white/45">
+              Click {assignmentQuickView.item.code} again to open the full project popup.
+            </p>
+          </div>
+        )}
+        <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setAssignmentQuickView(null)}>Close</Btn>
+        </div>
+      </Modal>
 
       <Modal
         open={!!assignmentDetailMember}
