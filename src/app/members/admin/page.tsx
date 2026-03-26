@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
@@ -80,9 +80,32 @@ function AccessCodesTab({ uid }: { uid: string }) {
   const [newRole, setNewRole] = useState<AuthRole>("member");
   const [expireDays, setExpireDays] = useState("7");
   const [copiedCodeId, setCopiedCodeId] = useState("");
+  const { user } = useAuth();
   const { ask, Dialog } = useConfirm();
 
   useEffect(() => subscribeInviteCodes(setCodes), []);
+
+  const ensureRotatingInviteCode = useCallback(async () => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      await fetch("/api/members/admin/ensure-rotating-invite", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+    } catch {
+      // Keep invite code UI usable even if ensure call fails.
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void ensureRotatingInviteCode();
+    const timer = window.setInterval(() => {
+      void ensureRotatingInviteCode();
+    }, 5 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, [ensureRotatingInviteCode]);
 
   const handleGenerate = async () => {
     const code      = generateInviteCode();
