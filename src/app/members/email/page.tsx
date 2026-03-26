@@ -589,7 +589,7 @@ export default function MemberEmailPage() {
       return <span className="text-white/35">—</span>;
     }
     return (
-      <div className="members-assignments-scroll w-[88px] max-w-[88px] overflow-x-auto overflow-y-hidden pb-0.5">
+      <div className="members-assignments-scroll w-[108px] max-w-[108px] overflow-x-auto overflow-y-hidden pb-0.5">
         <div className="inline-flex min-w-max items-center gap-1 pr-1">
           {assignments.map((item) => (
             <a
@@ -697,7 +697,7 @@ export default function MemberEmailPage() {
                 <thead className="bg-[#10131A] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[110px]">Projects</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[124px]">Projects</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[300px]">School</th>
@@ -876,7 +876,7 @@ export default function MemberEmailPage() {
                 <thead className="bg-[#141821] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[110px]">Projects</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[124px]">Projects</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[320px]">School</th>

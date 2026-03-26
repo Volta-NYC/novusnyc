@@ -935,7 +935,7 @@ export default function TeamPage() {
     if (memberAssignments.length === 0) {
       return <span className="text-white/35">—</span>;
     }
-    const projectsViewportClass = expandAssignments ? "w-[460px] max-w-[460px]" : "w-[88px] max-w-[88px]";
+    const projectsViewportClass = expandAssignments ? "w-[460px] max-w-[460px]" : "w-[108px] max-w-[108px]";
 
     return (
       <div className="min-w-0">
@@ -1109,7 +1109,7 @@ export default function TeamPage() {
       {isMemberRestricted ? (
         <div className="members-table-shell relative select-text">
           {(() => {
-            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[96px]";
+            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[116px]";
             return (
           <table className="members-grid-table w-full min-w-[880px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
@@ -1172,7 +1172,7 @@ export default function TeamPage() {
       ) : (
         <div className="members-table-shell relative select-text">
           {(() => {
-            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[96px]";
+            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[116px]";
             return (
           <table className="members-grid-table w-full min-w-[1460px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
