@@ -8,6 +8,7 @@ import { projects as fallbackProjects } from "@/data";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import ExpandableDescription from "@/components/ExpandableDescription";
+import MasonryGrid from "@/components/MasonryGrid";
 
 export const dynamic = "force-dynamic";
 
@@ -284,14 +285,14 @@ export default async function Showcase() {
               </div>
             </div>
 
-            <div className="hidden lg:block columns-1 md:columns-2 lg:columns-3 2xl:columns-4 3xl:columns-5 [column-gap:1.5rem]">
-              {projects.map((p, i) => (
-                <AnimatedSection
-                  key={`desktop-${p.name}`}
-                  delay={i * 0.07}
-                  className="inline-block w-full break-inside-avoid mb-6 align-top"
-                >
-                  <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+            <div className="hidden lg:block">
+              <MasonryGrid
+                itemIds={projects.map((p) => p.name)}
+                itemWidth={290}
+                gap={24}
+              >
+                {projects.map((p) => (
+                  <div key={`desktop-${p.name}`} className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                     <div className={`${p.colorClass} h-2`} />
                     {p.imageUrl ? (
                       <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg overflow-hidden">
@@ -310,7 +311,7 @@ export default async function Showcase() {
                         <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                       </div>
                     )}
-                    <div className="p-7 flex-1 flex flex-col">
+                    <div className="p-7 flex flex-col">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex gap-2 flex-wrap">
                           {p.services.map((s) => (
@@ -331,7 +332,7 @@ export default async function Showcase() {
                       </div>
                       <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
                       <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
-                      <ExpandableDescription desc={p.desc} className="flex-1" />
+                      <ExpandableDescription desc={p.desc} />
                       {p.quote && (
                         <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
                           &ldquo;{p.quote}&rdquo;
@@ -355,8 +356,8 @@ export default async function Showcase() {
                       </div>
                     </div>
                   </div>
-                </AnimatedSection>
-              ))}
+                ))}
+              </MasonryGrid>
             </div>
           </>
 
