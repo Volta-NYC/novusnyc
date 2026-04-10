@@ -26,6 +26,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        "3xl": "1920px",
+      },
       colors: {
         "v-green": "#85CC17",
         "v-green-dark": "#6aaa10",

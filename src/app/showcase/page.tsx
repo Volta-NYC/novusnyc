@@ -7,6 +7,7 @@ import { MapPinIcon } from "@/components/Icons";
 import { projects as fallbackProjects } from "@/data";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
+import ExpandableDescription from "@/components/ExpandableDescription";
 
 export const dynamic = "force-dynamic";
 
@@ -254,7 +255,7 @@ export default async function Showcase() {
                         </div>
                         <h3 className="font-display font-bold text-v-ink text-lg mb-1">{p.name}</h3>
                         <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
-                        <p className="font-body text-sm text-v-ink/70 leading-relaxed flex-1">{p.desc}</p>
+                        <ExpandableDescription desc={p.desc} className="flex-1" />
                         {p.quote && (
                           <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
                             &ldquo;{p.quote}&rdquo;
@@ -283,7 +284,7 @@ export default async function Showcase() {
               </div>
             </div>
 
-            <div className="hidden lg:block columns-1 md:columns-2 lg:columns-3 [column-gap:1.5rem]">
+            <div className="hidden lg:block columns-1 md:columns-2 lg:columns-3 2xl:columns-4 3xl:columns-5 [column-gap:1.5rem]">
               {projects.map((p, i) => (
                 <AnimatedSection
                   key={`desktop-${p.name}`}
@@ -330,7 +331,7 @@ export default async function Showcase() {
                       </div>
                       <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
                       <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
-                      <p className="font-body text-sm text-v-ink/70 leading-relaxed flex-1">{p.desc}</p>
+                      <ExpandableDescription desc={p.desc} className="flex-1" />
                       {p.quote && (
                         <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
                           &ldquo;{p.quote}&rdquo;

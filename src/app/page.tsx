@@ -6,6 +6,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
 import { homeStats, currentProjects as fallbackCurrentProjects, joinTracks } from "@/data";
+import ExpandableDescription from "@/components/ExpandableDescription";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
@@ -59,6 +60,7 @@ type HomeProject = {
   colorClass: string;
   url?: string;
   imageUrl?: string;
+  desc?: string;
 };
 
 function getServiceTagClass(service: string): string {
@@ -89,6 +91,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
       colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
       url: card.url,
       imageUrl: card.imageUrl,
+      desc: card.desc,
     }))
     : (publicShowcase.length === 0
       ? fallbackCurrentProjects.slice(0, 6).map((project) => ({
@@ -98,6 +101,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
       colorClass: project.color,
       url: project.url,
       imageUrl: undefined as string | undefined,
+      desc: project.desc,
       }))
       : []);
 
@@ -177,6 +181,7 @@ async function CurrentProjectsSection() {
                         <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
                           <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
                         </p>
+                        {p.desc && <ExpandableDescription desc={p.desc} className="mt-3" />}
                       </div>
                     </div>
                   </AnimatedSection>
@@ -184,7 +189,7 @@ async function CurrentProjectsSection() {
               </div>
             </div>
 
-            <div className="hidden sm:block columns-1 md:columns-2 xl:columns-3 [column-gap:1.25rem]">
+            <div className="hidden sm:block columns-1 md:columns-2 xl:columns-3 2xl:columns-4 3xl:columns-5 [column-gap:1.25rem]">
               {homeProjects.map((p, i) => (
                 <AnimatedSection
                   key={`desktop-${p.name}`}
@@ -220,6 +225,7 @@ async function CurrentProjectsSection() {
                       <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
                         <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
                       </p>
+                      {p.desc && <ExpandableDescription desc={p.desc} className="mt-3" />}
                     </div>
                   </div>
                 </AnimatedSection>
