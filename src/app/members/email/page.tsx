@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, Field, TextArea, Btn, Empty,
+  PageHeader, Field, Btn, Empty,
 } from "@/components/members/ui";
+import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeTeam,
   subscribeBusinesses,
@@ -165,7 +166,7 @@ export default function MemberEmailPage() {
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [contentMode, setContentMode] = useState<"plain" | "html">("plain");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [prefillIds, setPrefillIds] = useState<string[]>([]);
@@ -625,21 +626,21 @@ export default function MemberEmailPage() {
     setStatus("Sending…");
     try {
       const token = await user.getIdToken();
+      const formData = new FormData();
+      formData.append("fromAddress", fromAddress);
+      formData.append("subject", subject.trim());
+      formData.append("message", message.trim());
+      formData.append("contentMode", "html");
+      toRecipients.forEach((e) => formData.append("toRecipients", e));
+      ccRecipients.forEach((e) => formData.append("ccRecipients", e));
+      bccRecipients.forEach((e) => formData.append("bccRecipients", e));
+      attachments.forEach((f) => formData.append("attachments", f, f.name));
       const response = await fetch("/api/members/team-email", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          fromAddress,
-          subject: subject.trim(),
-          message: message.trim(),
-          contentMode,
-          toRecipients,
-          ccRecipients,
-          bccRecipients,
-        }),
+        body: formData,
       });
       if (!response.ok) {
         setStatus("Could not send email.");
@@ -954,26 +955,14 @@ export default function MemberEmailPage() {
             ))}
           </select>
         </Field>
-        <Field label="Message Format" required>
-          <select
-            value={contentMode}
-            onChange={(e) => setContentMode(e.target.value === "html" ? "html" : "plain")}
-            className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-          >
-            <option value="plain">Plain Text</option>
-            <option value="html">HTML (links/images supported)</option>
-          </select>
-        </Field>
         <Field label="Message" required>
-          <TextArea
-            rows={10}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={
-              contentMode === "html"
-                ? "<p>Hi team,</p><p>Update with <a href=\"https://...\">link</a>.</p><img src=\"https://...\" alt=\"\" />"
-                : "Write your email..."
-            }
+          <RichTextEditor
+            content={message}
+            onChange={setMessage}
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            placeholder="Write your email..."
+            minHeight={280}
           />
         </Field>
 

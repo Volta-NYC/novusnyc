@@ -2,18 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 
-type SendBody = {
-  fromAddress?: string;
-  subject?: string;
-  message?: string;
-  contentMode?: "plain" | "html";
-  deliveryMode?: "to" | "cc" | "bcc";
-  recipients?: string[];
-  toRecipients?: string[];
-  ccRecipients?: string[];
-  bccRecipients?: string[];
-};
-
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -35,16 +23,25 @@ export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["admin"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
-  const body = (await req.json()) as SendBody;
-  const requestedFrom = normalizeEmail(String(body.fromAddress ?? ""));
-  const subject = (body.subject ?? "").trim();
-  const message = (body.message ?? "").trim();
-  const contentMode: "plain" | "html" = body.contentMode === "html" ? "html" : "plain";
-  const deliveryMode = body.deliveryMode === "to" || body.deliveryMode === "cc" ? body.deliveryMode : "bcc";
-  const incoming = Array.isArray(body.recipients) ? body.recipients : [];
-  const incomingTo = Array.isArray(body.toRecipients) ? body.toRecipients : [];
-  const incomingCc = Array.isArray(body.ccRecipients) ? body.ccRecipients : [];
-  const incomingBcc = Array.isArray(body.bccRecipients) ? body.bccRecipients : [];
+  const formData = await req.formData();
+  const requestedFrom = normalizeEmail(String(formData.get("fromAddress") ?? ""));
+  const subject = String(formData.get("subject") ?? "").trim();
+  const message = String(formData.get("message") ?? "").trim();
+  const contentMode: "plain" | "html" = formData.get("contentMode") === "plain" ? "plain" : "html";
+  const incomingTo = formData.getAll("toRecipients").map(String);
+  const incomingCc = formData.getAll("ccRecipients").map(String);
+  const incomingBcc = formData.getAll("bccRecipients").map(String);
+  // Handle attachments
+  const attachmentFiles = formData.getAll("attachments").filter(
+    (v): v is File => v instanceof File && v.size > 0,
+  );
+  const attachments = await Promise.all(
+    attachmentFiles.map(async (file) => ({
+      filename: file.name,
+      content: Buffer.from(await file.arrayBuffer()),
+      contentType: file.type || "application/octet-stream",
+    })),
+  );
 
   if (!subject || !message) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
@@ -62,14 +59,6 @@ export async function POST(req: NextRequest) {
   const dedupedTo = dedupeEmails(incomingTo);
   const dedupedCc = dedupeEmails(incomingCc);
   const dedupedBcc = dedupeEmails(incomingBcc);
-
-  // Backward compatibility for existing callers that pass only "recipients".
-  if ((dedupedTo.length + dedupedCc.length + dedupedBcc.length) === 0 && incoming.length > 0) {
-    const fallbackRecipients = dedupeEmails(incoming);
-    if (deliveryMode === "to") dedupedTo.push(...fallbackRecipients);
-    else if (deliveryMode === "cc") dedupedCc.push(...fallbackRecipients);
-    else dedupedBcc.push(...fallbackRecipients);
-  }
 
   const totalRecipients = dedupedTo.length + dedupedCc.length + dedupedBcc.length;
 
@@ -123,6 +112,7 @@ export async function POST(req: NextRequest) {
       subject,
       text: textBody,
       html: htmlBody,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
   } catch (err) {
     console.error("Bulk email error:", err);
