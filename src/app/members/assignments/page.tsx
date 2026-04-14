@@ -13,18 +13,21 @@ import {
   Field,
   Input,
   Select,
-  TextArea,
   StatCard,
   useConfirm,
 } from "@/components/members/ui";
+import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeTeam,
   subscribeApplications,
+  subscribeBusinesses,
+  type Business,
   type FinanceAssignment,
   type FinanceAssignmentStatus,
   type TeamMember,
   type ApplicationRecord,
 } from "@/lib/members/storage";
+import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 
 const ASSIGNMENT_TYPES = ["Report", "Case Study", "Grant"] as const;
@@ -170,7 +173,7 @@ export default function FinanceAssignmentsPage() {
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [emailFrom, setEmailFrom] = useState("info@voltanyc.org");
-  const [emailMode, setEmailMode] = useState<"plain" | "html">("plain");
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
   const [emailRecipientOverride, setEmailRecipientOverride] = useState<string[] | null>(null);
@@ -200,6 +203,7 @@ export default function FinanceAssignmentsPage() {
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeApplications(setApplications), []);
+  useEffect(() => subscribeBusinesses(setBusinesses), []);
 
   const fetchAssignments = async () => {
     if (!user) return;
@@ -231,6 +235,11 @@ export default function FinanceAssignmentsPage() {
     void fetchAssignments();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, canEdit]);
+
+  const globalCodeMaps = useMemo(
+    () => computeGlobalCodes(businesses, assignments),
+    [businesses, assignments]
+  );
 
   const memberNameOptions = useMemo(
     () =>
@@ -509,7 +518,6 @@ export default function FinanceAssignmentsPage() {
     setEmailRecipientOverride(resolved.emails);
     setEmailRecipientLabel(`All ${group.label}s (${group.items.length} assignments, ${resolved.emails.length} recipients)`);
     setEmailFrom("info@voltanyc.org");
-    setEmailMode("plain");
     setEmailSubject(`${group.label} Update — Volta NYC`);
     setEmailMessage("");
     setEmailStatus(null);
@@ -520,7 +528,6 @@ export default function FinanceAssignmentsPage() {
     setEmailRecipientOverride(null);
     setEmailRecipientLabel(null);
     setEmailFrom("info@voltanyc.org");
-    setEmailMode("plain");
     setEmailSubject(`${getAssignmentDisplayTitle(item)} — Assignment Update`);
     setEmailMessage("");
     setEmailStatus(null);
@@ -567,7 +574,7 @@ export default function FinanceAssignmentsPage() {
       formData.append("fromAddress", emailFrom);
       formData.append("subject", emailSubject.trim());
       formData.append("message", emailMessage.trim());
-      formData.append("contentMode", emailMode);
+      formData.append("contentMode", "html");
       emailRecipients.emails.forEach((email) => formData.append("bccRecipients", email));
 
       const res = await fetch("/api/members/team-email", {
@@ -721,8 +728,15 @@ export default function FinanceAssignmentsPage() {
                         <div className="truncate">{item.type}</div>
                         <div className="text-[10px] text-white/45 truncate">{item.region || "—"}</div>
                       </td>
-                      <td className="px-2 py-1.5 text-[11px] text-white/90 whitespace-nowrap max-w-[300px] truncate" title={item.topic || "—"}>
-                        <p id={`finance-assignment-${item.id}`} className="truncate font-medium">{item.topic || "—"}</p>
+                      <td className="px-2 py-1.5 text-[11px] text-white/90 max-w-[300px]" title={item.topic || "—"}>
+                        <div className="flex items-center gap-1.5">
+                          {globalCodeMaps.assignmentCode.get(item.id) && (
+                            <span className="inline-flex items-center rounded-full bg-[#85CC17]/10 border border-[#85CC17]/25 px-1.5 py-0.5 text-[10px] font-semibold text-[#85CC17] font-mono flex-shrink-0">
+                              {globalCodeMaps.assignmentCode.get(item.id)}
+                            </span>
+                          )}
+                          <p id={`finance-assignment-${item.id}`} className="truncate font-medium">{item.topic || "—"}</p>
+                        </div>
                       </td>
                       <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[300px]" title={(item.assignedMemberNames ?? []).join(", ")}>
                         {(item.assignedMemberNames ?? []).length === 0 ? (
@@ -854,26 +868,12 @@ export default function FinanceAssignmentsPage() {
               ))}
             </select>
           </Field>
-          <Field label="Message Format" required>
-            <select
-              value={emailMode}
-              onChange={(event) => setEmailMode(event.target.value === "html" ? "html" : "plain")}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-            >
-              <option value="plain">Plain Text</option>
-              <option value="html">HTML (links/images supported)</option>
-            </select>
-          </Field>
           <Field label="Message" required>
-            <TextArea
-              rows={8}
-              value={emailMessage}
-              onChange={(event) => setEmailMessage(event.target.value)}
-              placeholder={
-                emailMode === "html"
-                  ? "<p>Assignment update...</p>"
-                  : "Write your email..."
-              }
+            <RichTextEditor
+              content={emailMessage}
+              onChange={setEmailMessage}
+              placeholder="Write your email..."
+              minHeight={200}
             />
           </Field>
           {emailStatus && <p className="text-xs text-white/60">{emailStatus}</p>}

@@ -9,6 +9,7 @@ import {
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, subscribeApplications, type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
 } from "@/lib/members/storage";
+import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
@@ -729,6 +730,11 @@ export default function TeamPage() {
     return map;
   }, [financeAssignments, team]);
 
+  const globalCodeMaps = useMemo(
+    () => computeGlobalCodes(businesses, financeAssignments),
+    [businesses, financeAssignments]
+  );
+
   const assignmentsByMemberName = useMemo(() => {
     const map = new Map<string, MemberAssignmentLink[]>();
     const teamNameById = new Map(team.map((member) => [member.id, String(member.name ?? "").trim()]));
@@ -850,28 +856,46 @@ export default function TeamPage() {
       }
     }
 
-    const prefixOrder: Record<AssignmentCodePrefix, number> = { W: 0, M: 1, R: 2, C: 3 };
+    // Assign global codes using globalCodeMaps
     for (const [key, items] of Array.from(map.entries())) {
       map.set(
         key,
         items
           .slice()
-          .sort((a, b) => {
-            const prefixCmp = prefixOrder[a.codePrefix] - prefixOrder[b.codePrefix];
-            if (prefixCmp !== 0) return prefixCmp;
-            return a.title.localeCompare(b.title);
+          .map((item) => {
+            // Try to look up from globalCodeMaps
+            // Finance assignment: id is assignmentId
+            const fromAssignment = globalCodeMaps.assignmentCode.get(item.id);
+            if (fromAssignment) return { ...item, code: fromAssignment };
+            // Business with no track: id is businessId
+            const fromBusiness = globalCodeMaps.businessTrackCode.get(item.id);
+            if (fromBusiness) return { ...item, code: fromBusiness };
+            // Business with track: id is "businessId-trackname" (lowercase), global key is "businessId-Track" (Title case)
+            // Reconstruct the capitalized key
+            const dashIdx = item.id.lastIndexOf("-");
+            if (dashIdx >= 0) {
+              const bizId = item.id.slice(0, dashIdx);
+              const trackLower = item.id.slice(dashIdx + 1);
+              const track = trackLower.charAt(0).toUpperCase() + trackLower.slice(1);
+              const fromTrack = globalCodeMaps.businessTrackCode.get(`${bizId}-${track}`);
+              if (fromTrack) return { ...item, code: fromTrack };
+            }
+            // Fallback: use prefix-based relative code
+            return { ...item, code: `${item.codePrefix}?` };
           })
-          .map((item, index, arr) => {
-            const seen = arr.slice(0, index).filter((entry) => entry.codePrefix === item.codePrefix).length;
-            return {
-              ...item,
-              code: `${item.codePrefix}${seen + 1}`,
-            };
+          .sort((a, b) => {
+            const prefixOrder: Record<string, number> = { W: 0, M: 1, R: 2, C: 3, G: 4 };
+            const pa = prefixOrder[a.codePrefix] ?? 9;
+            const pb = prefixOrder[b.codePrefix] ?? 9;
+            if (pa !== pb) return pa - pb;
+            const na = parseInt(a.code.slice(1)) || 0;
+            const nb = parseInt(b.code.slice(1)) || 0;
+            return na - nb;
           }),
       );
     }
     return map;
-  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment, team]);
+  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment, team, globalCodeMaps]);
 
   const projectSortMetaByMemberKey = useMemo(() => {
     const map = new Map<string, { count: number; key: string }>();

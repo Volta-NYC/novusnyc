@@ -1,15 +1,19 @@
 "use client";
 
-import { Fragment, useState, useEffect, useRef } from "react";
+import { Fragment, useState, useEffect, useMemo, useRef } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
   Empty, StatCard, AutocompleteInput, useConfirm,
 } from "@/components/members/ui";
+import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeBusinesses, subscribeTeam, createBusiness, updateBusiness, deleteBusiness, type Business, type TeamMember,
+  subscribeBusinesses, subscribeTeam, subscribeFinanceAssignments,
+  createBusiness, updateBusiness, deleteBusiness,
+  type Business, type TeamMember, type FinanceAssignment,
 } from "@/lib/members/storage";
+import { computeGlobalCodes, type GlobalCodeMaps } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
@@ -321,6 +325,19 @@ function stripDecoratedName(value: string): string {
   return value.replace(/\s*\([^()]*\)\s*$/, "").trim();
 }
 
+function getBusinessCodes(businessId: string, tracks: string[], globalCodeMaps: GlobalCodeMaps): string[] {
+  const codes: string[] = [];
+  for (const track of tracks) {
+    const code = globalCodeMaps.businessTrackCode.get(`${businessId}-${track}`);
+    if (code) codes.push(code);
+  }
+  if (codes.length === 0) {
+    const code = globalCodeMaps.businessTrackCode.get(businessId);
+    if (code) codes.push(code);
+  }
+  return codes;
+}
+
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   ownerName: "",
@@ -387,7 +404,7 @@ export default function BusinessesPage() {
   const [projectEmailSubject, setProjectEmailSubject] = useState("");
   const [projectEmailMessage, setProjectEmailMessage] = useState("");
   const [projectEmailFrom, setProjectEmailFrom] = useState("info@voltanyc.org");
-  const [projectEmailMode, setProjectEmailMode] = useState<"plain" | "html">("plain");
+  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [projectEmailSending, setProjectEmailSending] = useState(false);
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
@@ -429,6 +446,7 @@ export default function BusinessesPage() {
     []
   );
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
   useEffect(() => {
     if (normalizedLegacyColorsRef.current) return;
     if (!canEdit || businesses.length === 0) return;
@@ -1099,7 +1117,6 @@ export default function BusinessesPage() {
       setProjectEmailStatus(null);
     }
     setProjectEmailFrom("info@voltanyc.org");
-    setProjectEmailMode("plain");
     setProjectEmailSubject(`${project.name} — Project Update`);
     setProjectEmailMessage("");
   };
@@ -1144,6 +1161,11 @@ export default function BusinessesPage() {
       }))
     : [];
 
+  const globalCodeMaps = useMemo(
+    () => computeGlobalCodes(businesses, financeAssignments),
+    [businesses, financeAssignments]
+  );
+
   const sendProjectEmail = async () => {
     if (!emailModalProject) return;
     if (!projectEmailSubject.trim() || !projectEmailMessage.trim()) {
@@ -1163,32 +1185,22 @@ export default function BusinessesPage() {
     setProjectEmailStatus("Sending…");
     try {
       const token = await user.getIdToken();
+      const formData = new FormData();
+      formData.append("fromAddress", projectEmailFrom);
+      formData.append("subject", projectEmailSubject.trim());
+      formData.append("message", projectEmailMessage.trim());
+      formData.append("contentMode", "html");
+      projectEmailRecipients.emails.forEach((email) => formData.append("bccRecipients", email));
       const res = await fetch("/api/members/team-email", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fromAddress: projectEmailFrom,
-          subject: projectEmailSubject.trim(),
-          message: projectEmailMessage.trim(),
-          contentMode: projectEmailMode,
-          recipients: projectEmailRecipients.emails,
-        }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
-      if (!res.ok) {
-        setProjectEmailStatus("Could not send email.");
-        return;
-      }
-      const payload = await res.json() as { sent?: number; failed?: string[] };
+      if (!res.ok) { setProjectEmailStatus("Could not send email."); return; }
+      const payload = await res.json() as { sent?: number; failed?: string[]; counts?: Record<string, number> };
       const sentCount = payload.sent ?? 0;
       const failedCount = payload.failed?.length ?? 0;
-      setProjectEmailStatus(
-        failedCount > 0
-          ? `Sent to ${sentCount}. Failed: ${failedCount}.`
-          : `Sent to ${sentCount} members.`,
-      );
+      setProjectEmailStatus(failedCount > 0 ? `Sent to ${sentCount}. Failed: ${failedCount}.` : `Sent to ${sentCount} members.`);
     } catch {
       setProjectEmailStatus("Could not send email.");
     } finally {
@@ -1266,6 +1278,16 @@ export default function BusinessesPage() {
           </span>
           {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
           {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
+          <div className="flex flex-wrap gap-0.5 mt-0.5">
+            {getBusinessCodes(b.id, b.projectTracks ?? [], globalCodeMaps).map((code) => (
+              <span
+                key={code}
+                className="inline-flex items-center rounded-full bg-[#85CC17]/10 border border-[#85CC17]/25 px-1.5 py-0.5 text-[10px] font-semibold text-[#85CC17] font-mono"
+              >
+                {code}
+              </span>
+            ))}
+          </div>
         </td>
         <td className="px-2 py-1.5 text-[11px] text-white/80 whitespace-nowrap max-w-[150px] truncate" title={b.ownerName || "—"}>
           {b.ownerName || "—"}
@@ -1772,26 +1794,12 @@ export default function BusinessesPage() {
               ))}
             </select>
           </Field>
-          <Field label="Message Format" required>
-            <select
-              value={projectEmailMode}
-              onChange={(e) => setProjectEmailMode(e.target.value === "html" ? "html" : "plain")}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-            >
-              <option value="plain">Plain Text</option>
-              <option value="html">HTML (links/images supported)</option>
-            </select>
-          </Field>
           <Field label="Message" required>
-            <TextArea
-              rows={8}
-              value={projectEmailMessage}
-              onChange={(e) => setProjectEmailMessage(e.target.value)}
-              placeholder={
-                projectEmailMode === "html"
-                  ? "<p>Team update…</p>"
-                  : "Write your email..."
-              }
+            <RichTextEditor
+              content={projectEmailMessage}
+              onChange={setProjectEmailMessage}
+              placeholder="Write your email..."
+              minHeight={200}
             />
           </Field>
           {projectEmailStatus && <p className="text-xs text-white/60">{projectEmailStatus}</p>}

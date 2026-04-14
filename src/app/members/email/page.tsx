@@ -14,6 +14,7 @@ import {
   type Business,
   type FinanceAssignment,
 } from "@/lib/members/storage";
+import { computeGlobalCodes, getMemberCodes, type AssignmentCode } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
@@ -22,16 +23,7 @@ const TEAM_EMAIL_FROM_OPTIONS = [
 ];
 
 type DeliveryMode = "to" | "cc" | "bcc";
-type AssignmentCodePrefix = "W" | "M" | "R" | "C";
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
-
-type MemberAssignmentLink = {
-  id: string;
-  title: string;
-  codePrefix: AssignmentCodePrefix;
-  code: string;
-  href: string;
-};
 
 const DEFAULT_EMAIL_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 3, dir: "asc" },
@@ -125,29 +117,6 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function readAssignmentNames(assignment: FinanceAssignment): string[] {
-  const raw = (assignment as { assignedMemberNames?: unknown }).assignedMemberNames;
-  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
-  if (raw && typeof raw === "object") {
-    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
-  }
-  if (typeof raw === "string") {
-    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-}
-
-function readAssignmentIds(assignment: FinanceAssignment): string[] {
-  const raw = (assignment as { assignedMemberIds?: unknown }).assignedMemberIds;
-  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
-  if (raw && typeof raw === "object") {
-    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
-  }
-  if (typeof raw === "string") {
-    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-}
 
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
@@ -183,157 +152,19 @@ export default function MemberEmailPage() {
     setPrefillIds(ids);
   }, []);
 
-  const resolvedFinanceMemberKeysByAssignment = useMemo(() => {
-    const map = new Map<string, string[]>();
-    const teamRows = team.map((member) => {
-      const full = normalizeToken(member.name ?? "");
-      const first = normalizeToken((member.name ?? "").split(/\s+/)[0] ?? "");
-      return { id: member.id, full, first };
-    }).filter((row) => row.full);
-    const fullById = new Map(teamRows.map((row) => [row.id, row.full]));
-
-    const resolveName = (rawName: string): string[] => {
-      const rawKey = normalizeToken(rawName ?? "");
-      if (!rawKey) return [];
-      const exactFull = teamRows.filter((row) => row.full === rawKey);
-      if (exactFull.length === 1) return [exactFull[0].full];
-      if (exactFull.length > 1) return exactFull.map((row) => row.full);
-      const firstMatches = teamRows.filter((row) => row.first && row.first === rawKey);
-      if (firstMatches.length === 1) return [firstMatches[0].full];
-      const containsMatches = teamRows.filter((row) => row.full.includes(rawKey) || rawKey.includes(row.full));
-      if (containsMatches.length === 1) return [containsMatches[0].full];
-      return [rawKey];
-    };
-
-    for (const assignment of financeAssignments) {
-      const keySet = new Set<string>();
-      for (const memberId of readAssignmentIds(assignment)) {
-        const memberKey = fullById.get(memberId);
-        if (memberKey) keySet.add(memberKey);
-      }
-      for (const memberName of readAssignmentNames(assignment)) {
-        for (const resolved of resolveName(memberName)) keySet.add(resolved);
-      }
-      map.set(assignment.id, Array.from(keySet));
-    }
-    return map;
-  }, [financeAssignments, team]);
-
-  const assignmentsByMemberName = useMemo(() => {
-    const map = new Map<string, MemberAssignmentLink[]>();
-    const pushForMemberName = (memberName: string, item: Omit<MemberAssignmentLink, "code">) => {
-      const key = normalizeToken(memberName);
-      if (!key) return;
-      const current = map.get(key) ?? [];
-      current.push({ ...item, code: "" });
-      map.set(key, current);
-    };
-
-    for (const business of businesses) {
-      const legacyAssignedNames = [...(business.teamMembers ?? []), business.teamLead ?? ""]
-        .map((name) => String(name ?? "").trim())
-        .filter(Boolean)
-        .filter((name, index, arr) => arr.indexOf(name) === index);
-      const trackProjects = business.trackProjects ?? {};
-      const requestedTracks = Array.isArray(business.projectTracks)
-        ? business.projectTracks.map((track) => String(track ?? "").trim()).filter(Boolean)
-        : [];
-      const explicitTracks = Object.keys(trackProjects).map((track) => String(track ?? "").trim()).filter(Boolean);
-      const allTracks = Array.from(new Set([...requestedTracks, ...explicitTracks]));
-      const trackOrder: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
-      const hasTrackSpecificAssignments = allTracks.length > 0;
-      const hasAnyExplicitTrackTeamMembers = trackOrder.some((track) => {
-        if (!allTracks.includes(track)) return false;
-        const info = (trackProjects as Record<string, unknown>)[track];
-        if (!info || typeof info !== "object") return false;
-        const raw = (info as { teamMembers?: unknown }).teamMembers;
-        return Array.isArray(raw);
-      });
-
-      if (!hasTrackSpecificAssignments) {
-        const entry: Omit<MemberAssignmentLink, "code"> = {
-          id: business.id,
-          title: business.name || "Untitled Project",
-          codePrefix: "W",
-          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
-        };
-        for (const memberName of legacyAssignedNames) pushForMemberName(memberName, entry);
-        continue;
-      }
-
-      for (const track of trackOrder) {
-        if (!allTracks.includes(track)) continue;
-        const trackInfo = (trackProjects as Record<string, unknown>)[track];
-        const rawMembers = trackInfo && typeof trackInfo === "object"
-          ? (trackInfo as { teamMembers?: unknown }).teamMembers
-          : [];
-        const trackMembers = Array.isArray(rawMembers)
-          ? rawMembers.map((name) => String(name ?? "").trim()).filter(Boolean)
-          : [];
-        const fallbackMembers = hasAnyExplicitTrackTeamMembers ? [] : legacyAssignedNames;
-        const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : fallbackMembers));
-        if (assignedNames.length === 0) continue;
-        const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : "W";
-        const entry: Omit<MemberAssignmentLink, "code"> = {
-          id: `${business.id}-${track.toLowerCase()}`,
-          title: business.name || "Untitled Project",
-          codePrefix,
-          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
-        };
-        for (const memberName of assignedNames) pushForMemberName(memberName, entry);
-      }
-    }
-
-    for (const assignment of financeAssignments) {
-      const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
-      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
-      const assignmentTypeLabel =
-        assignmentType === "case study" ? "Case Study"
-          : assignmentType === "grant" ? "Grant"
-            : "Report";
-      const region = String(assignment.region ?? "").trim();
-      const assignmentDisplayTitle = region ? `${region} ${assignmentTypeLabel}` : assignmentTypeLabel;
-      const entry: Omit<MemberAssignmentLink, "code"> = {
-        id: assignment.id,
-        title: assignmentDisplayTitle,
-        codePrefix,
-        href: `/members/assignments?assignmentId=${encodeURIComponent(assignment.id)}#finance-assignment-${assignment.id}`,
-      };
-      for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
-        pushForMemberName(memberKey, entry);
-      }
-    }
-
-    const prefixOrder: Record<AssignmentCodePrefix, number> = { W: 0, M: 1, R: 2, C: 3 };
-    for (const [key, items] of Array.from(map.entries())) {
-      map.set(
-        key,
-        items
-          .slice()
-          .sort((a, b) => {
-            const prefixCmp = prefixOrder[a.codePrefix] - prefixOrder[b.codePrefix];
-            if (prefixCmp !== 0) return prefixCmp;
-            return a.title.localeCompare(b.title);
-          })
-          .map((item, index, arr) => {
-            const seen = arr.slice(0, index).filter((entry) => entry.codePrefix === item.codePrefix).length;
-            return {
-              ...item,
-              code: `${item.codePrefix}${seen + 1}`,
-            };
-          }),
-      );
-    }
-    return map;
-  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment]);
+  const globalCodeMaps = useMemo(
+    () => computeGlobalCodes(businesses, financeAssignments),
+    [businesses, financeAssignments]
+  );
 
   const memberAssignmentsById = useMemo(() => {
-    const map = new Map<string, MemberAssignmentLink[]>();
+    const map = new Map<string, AssignmentCode[]>();
     for (const member of team) {
-      map.set(member.id, assignmentsByMemberName.get(normalizeToken(member.name ?? "")) ?? []);
+      const codes = getMemberCodes(member.name ?? "", businesses, financeAssignments, globalCodeMaps);
+      map.set(member.id, codes);
     }
     return map;
-  }, [assignmentsByMemberName, team]);
+  }, [team, businesses, financeAssignments, globalCodeMaps]);
 
   const projectSortMetaByMemberId = useMemo(() => {
     const map = new Map<string, { count: number; key: string }>();
@@ -594,7 +425,7 @@ export default function MemberEmailPage() {
         <div className="inline-flex min-w-max items-center gap-1 pr-1">
           {assignments.map((item) => (
             <a
-              key={`${keyPrefix}-${item.id}-${item.code}`}
+              key={`${keyPrefix}-${item.entityKey}-${item.code}`}
               href={item.href}
               className="inline-flex h-5 w-10 items-center justify-center rounded-full border border-white/15 bg-[#11141A] px-1 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
               title={`${item.code} · ${item.title}`}
