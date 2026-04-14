@@ -706,7 +706,7 @@ export default function FinanceAssignmentsPage() {
                           className="text-[10px] text-white/50 hover:text-white/80 border border-white/10 hover:border-white/25 rounded px-2 py-0.5 transition-colors"
                           title={`Email all members assigned to ${group.label.toLowerCase()} assignments`}
                         >
-                          Email All {group.label}s
+                          Email All
                         </button>
                       )}
                     </div>
