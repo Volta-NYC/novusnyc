@@ -21,6 +21,7 @@ import {
   subscribeTeam,
   subscribeApplications,
   type FinanceAssignment,
+  type FinanceAssignmentStatus,
   type TeamMember,
   type ApplicationRecord,
 } from "@/lib/members/storage";
@@ -175,6 +176,8 @@ export default function FinanceAssignmentsPage() {
   const [emailRecipientOverride, setEmailRecipientOverride] = useState<string[] | null>(null);
   const [emailRecipientLabel, setEmailRecipientLabel] = useState<string | null>(null);
   const [memberPickerSearch, setMemberPickerSearch] = useState("");
+  const [openStatusPopoverId, setOpenStatusPopoverId] = useState<string | null>(null);
+  const [emailModalTitle, setEmailModalTitle] = useState<string | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const router = useRouter();
@@ -471,10 +474,44 @@ export default function FinanceAssignmentsPage() {
     );
   };
 
+  const handleQuickStatusChange = async (id: string, newStatus: FinanceAssignmentStatus) => {
+    if (!user) return;
+    setOpenStatusPopoverId(null);
+    const token = await user.getIdToken();
+    await fetch("/api/members/finance-assignments", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, patch: { status: newStatus } }),
+    });
+    await fetchAssignments();
+  };
+
+  useEffect(() => {
+    if (!openStatusPopoverId) return;
+    const close = () => setOpenStatusPopoverId(null);
+    const timerId = setTimeout(() => document.addEventListener("click", close), 0);
+    return () => { clearTimeout(timerId); document.removeEventListener("click", close); };
+  }, [openStatusPopoverId]);
+
   const closeEmailModal = () => {
     setEmailModalAssignment(null);
     setEmailRecipientOverride(null);
     setEmailRecipientLabel(null);
+    setEmailModalTitle(null);
+    setEmailStatus(null);
+  };
+
+  const openGroupEmailModal = (group: { label: string; items: FinanceAssignment[] }) => {
+    const allNames = Array.from(new Set(group.items.flatMap((item) => item.assignedMemberNames ?? [])));
+    const resolved = resolveRecipientsFromNames(allNames);
+    setEmailModalAssignment(group.items[0] ?? null);
+    setEmailModalTitle(`Email All ${group.label}s`);
+    setEmailRecipientOverride(resolved.emails);
+    setEmailRecipientLabel(`All ${group.label}s (${group.items.length} assignments, ${resolved.emails.length} recipients)`);
+    setEmailFrom("info@voltanyc.org");
+    setEmailMode("plain");
+    setEmailSubject(`${group.label} Update — Volta NYC`);
+    setEmailMessage("");
     setEmailStatus(null);
   };
 
@@ -526,25 +563,23 @@ export default function FinanceAssignmentsPage() {
     setEmailStatus("Sending...");
     try {
       const token = await user.getIdToken();
+      const formData = new FormData();
+      formData.append("fromAddress", emailFrom);
+      formData.append("subject", emailSubject.trim());
+      formData.append("message", emailMessage.trim());
+      formData.append("contentMode", emailMode);
+      emailRecipients.emails.forEach((email) => formData.append("bccRecipients", email));
+
       const res = await fetch("/api/members/team-email", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fromAddress: emailFrom,
-          subject: emailSubject.trim(),
-          message: emailMessage.trim(),
-          contentMode: emailMode,
-          recipients: emailRecipients.emails,
-        }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
       if (!res.ok) {
         setEmailStatus("Could not send email.");
         return;
       }
-      const payload = await res.json() as { sent?: number; failed?: string[] };
+      const payload = await res.json() as { sent?: number; failed?: string[]; counts?: { to?: number; cc?: number; bcc?: number } };
       const sentCount = payload.sent ?? 0;
       const failedCount = payload.failed?.length ?? 0;
       setEmailStatus(
@@ -659,8 +694,22 @@ export default function FinanceAssignmentsPage() {
             {groupedFiltered.map((group) => (
               <Fragment key={`assignment-group-${group.label}`}>
                 <tr className="bg-[#12151B] border-b border-white/8">
-                  <td colSpan={6} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
-                    {group.label} · {group.items.length}
+                  <td colSpan={6} className="px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
+                        {group.label} · {group.items.length}
+                      </span>
+                      {canEdit && group.items.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => openGroupEmailModal(group)}
+                          className="text-[10px] text-white/50 hover:text-white/80 border border-white/10 hover:border-white/25 rounded px-2 py-0.5 transition-colors"
+                          title={`Email all members assigned to ${group.label.toLowerCase()} assignments`}
+                        >
+                          Email All {group.label}s
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
                 {group.items.map((item) => {
@@ -713,7 +762,34 @@ export default function FinanceAssignmentsPage() {
                         )}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap">
-                        <Badge label={item.status} />
+                        {canEdit ? (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setOpenStatusPopoverId(openStatusPopoverId === item.id ? null : item.id)}
+                              className="cursor-pointer"
+                              title="Click to change status"
+                            >
+                              <Badge label={item.status} />
+                            </button>
+                            {openStatusPopoverId === item.id && (
+                              <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]">
+                                {STATUSES.map((status) => (
+                                  <button
+                                    key={status}
+                                    type="button"
+                                    onClick={() => void handleQuickStatusChange(item.id, status)}
+                                    className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${item.status === status ? "text-[#85CC17]" : "text-white/70"}`}
+                                  >
+                                    {status}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge label={item.status} />
+                        )}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-left w-[160px]">
                         {canEdit ? (
@@ -750,7 +826,7 @@ export default function FinanceAssignmentsPage() {
       <Modal
         open={!!emailModalAssignment}
         onClose={closeEmailModal}
-        title={`${emailRecipientLabel ? "Email Member" : "Email Team"}${emailModalAssignment ? ` · ${getAssignmentDisplayTitle(emailModalAssignment)}` : ""}`}
+        title={emailModalTitle ?? `${emailRecipientLabel ? "Email Member" : "Email Team"}${emailModalAssignment ? ` · ${getAssignmentDisplayTitle(emailModalAssignment)}` : ""}`}
       >
         <div className="space-y-4">
           <p className="text-xs text-white/55">
@@ -937,15 +1013,6 @@ export default function FinanceAssignmentsPage() {
             </Field>
           </div>
 
-          <div className="md:col-span-2">
-            <Field label="Deliverable Link">
-              <Input
-                value={form.deliverableUrl ?? ""}
-                onChange={(event) => setField("deliverableUrl", event.target.value)}
-                placeholder="https://docs.google.com/..."
-              />
-            </Field>
-          </div>
         </div>
         <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
           {editingAssignment ? (

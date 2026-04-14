@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Badge, Empty, PageHeader } from "@/components/members/ui";
 import { useAuth } from "@/lib/members/authContext";
-import { subscribeBusinesses, subscribeTeam, type Business, type TeamMember } from "@/lib/members/storage";
+import { subscribeBusinesses, subscribeTeam, subscribeFinanceAssignments, type Business, type TeamMember, type FinanceAssignment } from "@/lib/members/storage";
 
 const TRACK_ORDER = ["Tech", "Marketing", "Finance"] as const;
 type TrackDivision = (typeof TRACK_ORDER)[number];
@@ -12,6 +12,7 @@ type ProjectStatus = "Ongoing" | "Upcoming" | "Completed";
 type TrackProjectInfo = {
   projectStatus: ProjectStatus;
   teamMembers: string[];
+  deadlines?: Array<{ label: string; date: string }>;
   notes: string;
 };
 type TrackProjectMap = Partial<Record<TrackDivision, TrackProjectInfo>>;
@@ -21,6 +22,8 @@ const TRACK_META: Record<TrackDivision, { label: string; chip: string }> = {
   Marketing: { label: "Marketing & Strategy", chip: "bg-lime-500/15 text-lime-300 border-lime-400/30" },
   Finance: { label: "Finance & Operations", chip: "bg-amber-500/15 text-amber-300 border-amber-400/30" },
 };
+
+const SHARED_DRIVE_URL = "https://drive.google.com/drive/folders/1eJm7eh5yl-_QWKugOhVPhwt8CDgJ3U9_?usp=sharing";
 
 function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -67,11 +70,21 @@ function normalizeProjectStatus(value: unknown): ProjectStatus {
 function normalizeTrackProjectInfo(value: unknown): TrackProjectInfo | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
+  const deadlines = Array.isArray(row.deadlines)
+    ? (row.deadlines as unknown[])
+        .map((d) => {
+          if (!d || typeof d !== "object") return null;
+          const de = d as Record<string, unknown>;
+          return { label: String(de.label ?? "").trim(), date: String(de.date ?? "").trim() };
+        })
+        .filter((d): d is { label: string; date: string } => !!d)
+    : undefined;
   return {
     projectStatus: normalizeProjectStatus(row.projectStatus),
     teamMembers: Array.isArray(row.teamMembers)
       ? row.teamMembers.map((member) => String(member ?? "").trim()).filter(Boolean)
       : [],
+    deadlines,
     notes: String(row.notes ?? "").trim(),
   };
 }
@@ -126,6 +139,32 @@ function deriveOverallStatus(trackProjects: TrackProjectMap, projectTracks: Trac
   return "Completed";
 }
 
+function normalizeAssignmentDeadlines(fa: FinanceAssignment): Array<{ label: string; date: string }> {
+  if (Array.isArray(fa.deadlines) && fa.deadlines.length > 0) {
+    return fa.deadlines
+      .map((d) => ({ label: String(d.label ?? "").trim(), date: String(d.date ?? "").trim() }))
+      .filter((d) => d.label || d.date);
+  }
+  const legacy: Array<{ label: string; date: string }> = [];
+  if (fa.finalDueDate) legacy.push({ label: "Final Deadline", date: fa.finalDueDate });
+  if (fa.deadline && fa.deadline !== fa.finalDueDate) legacy.push({ label: "1st Deadline", date: fa.deadline });
+  if (fa.firstDraftDueDate && fa.firstDraftDueDate !== fa.finalDueDate && fa.firstDraftDueDate !== fa.deadline) {
+    legacy.push({ label: "Draft Deadline", date: fa.firstDraftDueDate });
+  }
+  return legacy;
+}
+
+function lookupMember(name: string, teamByName: Map<string, TeamMember>): TeamMember | null {
+  const key = normalizeName(name);
+  return teamByName.get(key) ?? null;
+}
+
+function getTypeChip(type: string): string {
+  if (type === "Case Study") return "bg-emerald-500/15 text-emerald-300 border-emerald-400/30";
+  if (type === "Grant") return "bg-amber-500/15 text-amber-300 border-amber-400/30";
+  return "bg-blue-500/15 text-blue-300 border-blue-400/30";
+}
+
 type AssignedBusiness = {
   business: Business;
   projectTracks: TrackDivision[];
@@ -137,9 +176,11 @@ export default function MembersDashboardPage() {
   const { user, userProfile } = useAuth();
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
 
   const primaryEmail = canonicalEmail(user?.email ?? userProfile?.email ?? "");
   const secondaryEmail = canonicalEmail(userProfile?.email ?? "");
@@ -158,6 +199,14 @@ export default function MembersDashboardPage() {
     }) ?? null,
     [primaryEmail, secondaryEmail, team],
   );
+
+  const teamByName = useMemo(() => {
+    const map = new Map<string, TeamMember>();
+    for (const member of team) {
+      map.set(normalizeName(member.name ?? ""), member);
+    }
+    return map;
+  }, [team]);
 
   const assignedBusinesses = useMemo<AssignedBusiness[]>(() => {
     if (!myMember || !primaryEmail) return [];
@@ -183,102 +232,248 @@ export default function MembersDashboardPage() {
       .sort((a, b) => a.business.name.localeCompare(b.business.name));
   }, [businesses, myMember, primaryEmail]);
 
+  const myFinanceAssignments = useMemo<FinanceAssignment[]>(() => {
+    if (!myMember) return [];
+    const myName = normalizeName(myMember.name ?? "");
+    return financeAssignments.filter((fa) =>
+      (fa.assignedMemberNames ?? []).some((n) => normalizeName(n) === myName)
+    );
+  }, [financeAssignments, myMember]);
+
+  const initials = (myMember?.name ?? "?")[0]?.toUpperCase() ?? "?";
+
+  const hasBusinesses = assignedBusinesses.length > 0;
+  const hasFinance = myFinanceAssignments.length > 0;
+
+  const financeTypeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const fa of myFinanceAssignments) {
+      counts[fa.type] = (counts[fa.type] ?? 0) + 1;
+    }
+    return counts;
+  }, [myFinanceAssignments]);
+
+  const financeTypeBreakdown = Object.entries(financeTypeCounts)
+    .map(([type, count]) => `${count} ${type}${count !== 1 ? "s" : ""}`)
+    .join(" · ");
+
   return (
     <MembersLayout>
-      <PageHeader
-        title="Dashboard"
-      />
+      <PageHeader title="Dashboard" />
 
       {!myMember ? (
         <Empty message="Your login email is not linked to a member record yet. Ask an admin to match your portal account in Members." />
       ) : (
-        <div className="space-y-4">
-          <div className="bg-[#1C1F26] border border-white/10 rounded-xl p-4">
-            <p className="text-white text-sm font-semibold">{myMember.name}</p>
-            <p className="text-white/50 text-xs mt-1">
-              {(myMember.divisions ?? []).join(", ") || "No track assigned"}
-              {myMember.pod ? ` · ${myMember.pod}` : ""}
-            </p>
-            <p className="text-white/35 text-xs mt-1">{myMember.email}</p>
+        <div className="space-y-6">
+          {/* Section A: Profile card */}
+          <div className="bg-[#1C1F26] border border-white/10 rounded-xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-[#85CC17]/15 flex items-center justify-center flex-shrink-0">
+              <span className="text-[#85CC17] font-bold text-lg">{initials}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-semibold text-sm">{myMember.name}</p>
+              <p className="text-white/50 text-xs mt-0.5">
+                {(myMember.divisions ?? []).join(", ") || "No track assigned"}
+                {myMember.pod ? ` · ${myMember.pod}` : ""}
+              </p>
+              <p className="text-white/35 text-xs mt-0.5 font-mono">{myMember.email}</p>
+            </div>
           </div>
 
-          {assignedBusinesses.length === 0 ? (
-            <Empty message="No assigned projects yet. Once a business is assigned to your team, it will appear here." />
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {assignedBusinesses.map(({ business, projectTracks, trackProjects, assignedTracks }) => {
-                const overallStatus = deriveOverallStatus(trackProjects, projectTracks);
-                return (
-                  <article key={business.id} className="bg-[#1C1F26] border border-white/10 rounded-xl p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="text-white font-semibold text-sm">{business.name}</h3>
-                        <p className="text-white/40 text-xs mt-1">
-                          {business.neighborhood ? `${business.neighborhood} · ` : ""}
-                          {business.address || "Address not set"}
-                        </p>
+          {/* Section B: Business Projects */}
+          {hasBusinesses && (
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <h2 className="text-white font-semibold text-sm">Business Projects</h2>
+                <span className="text-xs text-white/35 bg-white/5 px-2 py-0.5 rounded-full">{assignedBusinesses.length}</span>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {assignedBusinesses.map(({ business, projectTracks, trackProjects, assignedTracks }) => {
+                  const overallStatus = deriveOverallStatus(trackProjects, projectTracks);
+                  return (
+                    <article key={business.id} className="bg-[#1C1F26] border border-white/10 rounded-xl p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="text-white font-semibold text-sm">{business.name}</h3>
+                          <p className="text-white/40 text-xs mt-0.5">
+                            {business.neighborhood ? `${business.neighborhood} · ` : ""}
+                            {business.address || "Address not set"}
+                          </p>
+                        </div>
+                        <Badge label={overallStatus} />
                       </div>
-                      <Badge label={overallStatus} />
-                    </div>
 
-                    <div className="grid grid-cols-1 gap-2 text-xs">
-                      <p className="text-white/75">
-                        Owner: <span className="text-white">{business.ownerName || "Not set"}</span>
+                      <p className="text-white/60 text-xs">
+                        Owner: <span className="text-white/80">{business.ownerName || "Not set"}</span>
+                        {business.ownerEmail && (
+                          <> · <a href={`mailto:${business.ownerEmail}`} className="text-[#85CC17] hover:underline">{business.ownerEmail}</a></>
+                        )}
+                        {business.phone && (
+                          <> · <a href={`tel:${business.phone}`} className="text-[#85CC17] hover:underline">{business.phone}</a></>
+                        )}
                       </p>
-                      <p className="text-white/75 break-all">
-                        Email: {business.ownerEmail ? <a className="text-[#85CC17] hover:underline" href={`mailto:${business.ownerEmail}`}>{business.ownerEmail}</a> : <span className="text-white">Not set</span>}
-                      </p>
-                      {business.ownerAlternateEmail && (
-                        <p className="text-white/75 break-all">
-                          Alt Email: <a className="text-[#85CC17] hover:underline" href={`mailto:${business.ownerAlternateEmail}`}>{business.ownerAlternateEmail}</a>
-                        </p>
-                      )}
-                      <p className="text-white/75">
-                        Phone: {business.phone ? <a className="text-[#85CC17] hover:underline" href={`tel:${business.phone}`}>{business.phone}</a> : <span className="text-white">Not set</span>}
-                      </p>
-                      {business.alternatePhone && (
-                        <p className="text-white/75">
-                          Alt Phone: <a className="text-[#85CC17] hover:underline" href={`tel:${business.alternatePhone}`}>{business.alternatePhone}</a>
-                        </p>
-                      )}
-                      {business.website && (
-                        <p className="text-white/75 break-all">
-                          Website: <a className="text-[#85CC17] hover:underline" href={business.website} target="_blank" rel="noreferrer">Open link</a>
-                        </p>
-                      )}
-                    </div>
 
-                    <div className="space-y-2">
-                      {assignedTracks.map((track) => {
-                        const info = trackProjects[track];
-                        const members = info?.teamMembers ?? [];
-                        return (
-                          <div key={`${business.id}-${track}`} className="border border-white/8 rounded-lg p-3">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${TRACK_META[track].chip}`}>
-                                {TRACK_META[track].label}
-                              </span>
-                              <Badge label={info?.projectStatus ?? "Upcoming"} />
+                      <div className="space-y-2">
+                        {assignedTracks.map((track) => {
+                          const info = trackProjects[track];
+                          const members = info?.teamMembers ?? [];
+                          const deadlines = info?.deadlines ?? [];
+                          return (
+                            <div key={`${business.id}-${track}`} className="border border-white/8 rounded-lg p-3 space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${TRACK_META[track].chip}`}>
+                                  {TRACK_META[track].label}
+                                </span>
+                                <Badge label={info?.projectStatus ?? "Upcoming"} />
+                              </div>
+
+                              {/* Deadlines */}
+                              {deadlines.length > 0 ? (
+                                <div className="mt-2 space-y-0.5">
+                                  {deadlines.map((d, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-xs">
+                                      <span className="text-white/35 min-w-[90px]">{d.label || "Deadline"}:</span>
+                                      <span className="text-white/70">{d.date || "TBD"}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-white/25 text-xs mt-2">No deadlines set</p>
+                              )}
+
+                              {/* Team members */}
+                              {members.length > 0 && (
+                                <div className="mt-2 space-y-1.5">
+                                  {members.map((rawName, i) => {
+                                    const cleanName = stripDecoratedMemberName(rawName);
+                                    const found = lookupMember(cleanName, teamByName);
+                                    return (
+                                      <div key={i} className="flex items-center gap-2 text-xs">
+                                        <div className="w-5 h-5 rounded-full bg-white/8 flex items-center justify-center flex-shrink-0 text-[10px] text-white/50 font-bold">
+                                          {cleanName[0]?.toUpperCase() ?? "?"}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <span className="text-white/80 font-medium">{cleanName}</span>
+                                          {found?.school && (
+                                            <span className="text-white/40 ml-1.5">· {found.school}</span>
+                                          )}
+                                          {found?.email && (
+                                            <a href={`mailto:${found.email}`} className="text-[#85CC17]/70 hover:text-[#85CC17] ml-1.5 transition-colors">
+                                              {found.email}
+                                            </a>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
-                            <p className="text-white/35 text-xs mt-2">
-                              Team: {members.length > 0 ? members.map((entry) => stripDecoratedMemberName(entry)).join(", ") : "Not assigned"}
-                            </p>
-                            {info?.notes && (
-                              <p className="text-white/60 text-xs mt-2 whitespace-pre-wrap">{info.notes}</p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {business.notes && (
-                      <p className="text-white/45 text-xs whitespace-pre-wrap border-t border-white/8 pt-3">
-                        {business.notes}
-                      </p>
-                    )}
-                  </article>
-                );
-              })}
+                          );
+                        })}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             </div>
+          )}
+
+          {/* Section C: Independent Assignments */}
+          {hasFinance && (
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <h2 className="text-white font-semibold text-sm">My Assignments</h2>
+                <span className="text-xs text-white/35 bg-white/5 px-2 py-0.5 rounded-full">{myFinanceAssignments.length}</span>
+                {financeTypeBreakdown && (
+                  <span className="text-xs text-white/35">{financeTypeBreakdown}</span>
+                )}
+              </div>
+              <div className="space-y-3">
+                {myFinanceAssignments.map((assignment) => {
+                  const deadlines = normalizeAssignmentDeadlines(assignment);
+                  const members = assignment.assignedMemberNames ?? [];
+                  return (
+                    <div key={assignment.id} className="bg-[#1C1F26] border border-white/10 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${getTypeChip(assignment.type)}`}>
+                          {assignment.type}
+                        </span>
+                        <span className="text-white font-medium text-sm flex-1">{assignment.topic || assignment.title || "Untitled"}</span>
+                        <Badge label={assignment.status} />
+                      </div>
+
+                      {assignment.region && (
+                        <p className="text-white/40 text-xs">{assignment.region}</p>
+                      )}
+
+                      {/* Deadlines */}
+                      {deadlines.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {deadlines.map((d, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs">
+                              <span className="text-white/35 min-w-[90px]">{d.label || "Deadline"}:</span>
+                              <span className="text-white/70">{d.date || "TBD"}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-white/25 text-xs">No deadlines set</p>
+                      )}
+
+                      {/* Team members */}
+                      {members.length > 0 && (
+                        <div className="space-y-1.5">
+                          {members.map((rawName, i) => {
+                            const found = lookupMember(rawName, teamByName);
+                            return (
+                              <div key={i} className="flex items-center gap-2 text-xs">
+                                <div className="w-5 h-5 rounded-full bg-white/8 flex items-center justify-center flex-shrink-0 text-[10px] text-white/50 font-bold">
+                                  {rawName[0]?.toUpperCase() ?? "?"}
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="text-white/80 font-medium">{rawName}</span>
+                                  {found?.school && (
+                                    <span className="text-white/40 ml-1.5">· {found.school}</span>
+                                  )}
+                                  {found?.email && (
+                                    <a href={`mailto:${found.email}`} className="text-[#85CC17]/70 hover:text-[#85CC17] ml-1.5 transition-colors">
+                                      {found.email}
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Google Drive button */}
+                      <div>
+                        <a
+                          href={SHARED_DRIVE_URL}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#85CC17]/10 border border-[#85CC17]/25 text-[#85CC17] text-xs font-medium hover:bg-[#85CC17]/20 hover:border-[#85CC17]/45 transition-colors"
+                        >
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                          </svg>
+                          Upload Work to Shared Drive
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Section D: Empty state */}
+          {!hasBusinesses && !hasFinance && (
+            <Empty message="No assigned projects yet. Once a business or assignment is assigned to you, it will appear here." />
           )}
         </div>
       )}
