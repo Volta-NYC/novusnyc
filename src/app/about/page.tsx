@@ -31,7 +31,7 @@ export default async function About() {
 
   return (
     <>
-      <section className="bg-v-bg pt-32 pb-20 relative overflow-hidden">
+      <section className="bg-v-bg pt-32 pb-14 relative overflow-hidden">
         <div className="absolute inset-0 dot-grid opacity-40" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-v-green/8 rounded-full blur-3xl" />
         <div className="relative max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
@@ -59,7 +59,7 @@ export default async function About() {
         </div>
       </section>
 
-      <section className="py-20 bg-v-dark">
+      <section className="py-14 bg-v-dark">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-6">Our mission</p>
@@ -73,7 +73,7 @@ export default async function About() {
               what&apos;s possible — and then we make it happen.
             </p>
           </AnimatedSection>
-          <AnimatedSection className="mt-14 flex justify-center">
+          <AnimatedSection className="mt-10 flex justify-center">
             <div className="rounded-2xl overflow-hidden border border-white/10 shadow-xl w-full max-w-sm">
               <iframe
                 src="https://www.instagram.com/p/DVBS-6LDvk9/embed/"
@@ -88,9 +88,9 @@ export default async function About() {
         </div>
       </section>
 
-      <section className="py-20 bg-v-bg overflow-hidden">
+      <section className="py-14 bg-v-bg overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-14">
+          <AnimatedSection className="mb-8">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">What drives us</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
@@ -131,16 +131,16 @@ export default async function About() {
       </section>
 
       {/* Timeline */}
-      <section className="py-20 bg-white">
+      <section className="py-14 bg-white">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
+          <AnimatedSection className="mb-8">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we got here</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
           </AnimatedSection>
           <div>
             {aboutTimeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.12}>
-                <div className={`relative flex gap-6 md:gap-10 ${i < aboutTimeline.length - 1 ? "pb-10 md:pb-12" : ""}`}>
+                <div className={`relative flex gap-6 md:gap-10 ${i < aboutTimeline.length - 1 ? "pb-8 md:pb-10" : ""}`}>
                   {i < aboutTimeline.length - 1 && (
                     <div className="absolute left-8 top-16 bottom-0 -translate-x-1/2 w-0.5 bg-v-border" />
                   )}
@@ -160,7 +160,7 @@ export default async function About() {
       </section>
 
       {/* Team */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-14 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>

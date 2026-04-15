@@ -8,7 +8,7 @@ import {
   DollarIcon,
   SearchIcon,
   TrendingUpIcon,
-  CreditCardIcon,
+  PencilIcon,
 } from "@/components/Icons";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 
@@ -28,7 +28,7 @@ const SERVICE_AREAS = [
   {
     icon: GlobeIcon,
     title: "Website Design & Development",
-    summary: "Custom websites that are mobile-friendly, fast, and built for real business goals.",
+    summary: "We build your website from scratch, or fix the one you have.",
     color: "text-v-blue",
     bg: "bg-blue-50",
     details: [
@@ -40,7 +40,7 @@ const SERVICE_AREAS = [
   {
     icon: SearchIcon,
     title: "SEO & Online Visibility",
-    summary: "Better discoverability across search, maps, and local listing platforms.",
+    summary: "Show up when customers search for you on Google and Maps.",
     color: "text-v-blue",
     bg: "bg-blue-50",
     details: [
@@ -52,7 +52,7 @@ const SERVICE_AREAS = [
   {
     icon: SmartphoneIcon,
     title: "Social Media & Content",
-    summary: "Practical social strategy with content systems your team can actually sustain.",
+    summary: "A posting plan and real content — not a strategy deck you'll never use.",
     color: "text-v-green",
     bg: "bg-lime-50",
     details: [
@@ -62,11 +62,23 @@ const SERVICE_AREAS = [
     ],
   },
   {
-    icon: TrendingUpIcon,
-    title: "Sales & Financial Analysis",
-    summary: "Owner-facing analysis that turns raw sales numbers into decisions.",
+    icon: PencilIcon,
+    title: "Graphic Design",
+    summary: "Print and digital materials your customers actually take home.",
     color: "text-v-green",
     bg: "bg-lime-50",
+    details: [
+      "Design menus, flyers, and promotional materials for print or digital use",
+      "Create branded graphics for social media and in-store signage",
+      "Deliver print-ready files so you can order exactly what you need",
+    ],
+  },
+  {
+    icon: TrendingUpIcon,
+    title: "Sales & Financial Analysis",
+    summary: "We go through your numbers and tell you what they actually mean.",
+    color: "text-amber-500",
+    bg: "bg-amber-50",
     details: [
       "Break down sales and revenue trends by time period and category",
       "Compare nearby competitors and pricing",
@@ -76,25 +88,13 @@ const SERVICE_AREAS = [
   {
     icon: DollarIcon,
     title: "Grant Research & Writing",
-    summary: "We identify eligible grants and draft complete application-ready materials.",
+    summary: "We find the grants, write the application, and hand it to you to sign.",
     color: "text-amber-500",
     bg: "bg-amber-50",
     details: [
       "Find grants your business is actually eligible for",
       "Draft the writing, budget, and required materials",
       "Track deadlines and prepare final submission documents",
-    ],
-  },
-  {
-    icon: CreditCardIcon,
-    title: "Digital Payment Setup",
-    summary: "Support moving from cash-heavy workflows to modern payment options.",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-    details: [
-      "Set up card, tap, and online payment options",
-      "Help configure online ordering and loyalty tools",
-      "Train owner and staff on day-to-day use",
     ],
   },
 ] as const;
@@ -154,7 +154,7 @@ export default function Partners() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="bg-v-dark pt-32 pb-24 relative overflow-hidden">
+      <section className="bg-v-dark pt-32 pb-24 relative overflow-hidden" data-home-dark-end="true">
         <div className="absolute inset-0 dot-grid opacity-[0.06]" />
         <div className="relative max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
@@ -332,44 +332,6 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ── BID SECTION ──────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <AnimatedSection direction="left">
-              <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
-                For BIDs & district organizations
-              </p>
-              <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-5">
-                We coordinate<br />through your district.
-              </h2>
-              <p className="font-body text-v-muted leading-relaxed mb-6">
-                We partner with Business Improvement Districts to coordinate
-                neighborhood-level operations — identifying businesses that need
-                support, making introductions, and ensuring follow-through on every
-                project. We&apos;re also open to a quick Zoom chat to discuss fit.
-              </p>
-              <p className="font-body text-sm text-v-ink leading-relaxed">
-                To get started, fill out the form above and tell us a little about what your businesses need.
-              </p>
-            </AnimatedSection>
-            <AnimatedSection direction="right">
-              <div className="bg-white border border-v-border rounded-2xl p-8">
-                <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
-                  Currently active
-                </p>
-                <p className="font-display font-bold text-v-ink text-6xl leading-none mb-1">{formatStat(VOLTA_STATS.bidPartners)}</p>
-                <p className="font-body text-v-muted mb-6">BID partnerships across NYC</p>
-                <div className="pt-6 border-t border-v-border">
-                  <p className="font-body text-sm text-v-muted">
-                    Active across {formatStat(VOLTA_STATS.bidPartners)} neighborhoods in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
-                  </p>
-                </div>
-              </div>
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
     </>
   );
 }
