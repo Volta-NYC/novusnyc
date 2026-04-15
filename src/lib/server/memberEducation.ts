@@ -269,3 +269,20 @@ export async function getMemberEducationSnapshot(): Promise<EducationSnapshot> {
     return fallbackSnapshot();
   }
 }
+
+export async function getTotalMemberCount(): Promise<number> {
+  const db = getAdminDB();
+  if (!db) return 0;
+
+  try {
+    const [teamSnap, applicationSnap] = await Promise.all([
+      db.ref("team").get(),
+      db.ref("applications").get(),
+    ]);
+    const teamCount = teamSnap.exists() ? Object.keys(teamSnap.val() as Record<string, unknown>).length : 0;
+    const appCount = applicationSnap.exists() ? Object.keys(applicationSnap.val() as Record<string, unknown>).length : 0;
+    return teamCount + appCount;
+  } catch {
+    return 0;
+  }
+}

@@ -59,6 +59,15 @@ export interface PublicImpactStats {
   financeProjects: number;
 }
 
+export interface PublicLiveStats {
+  totalBusinesses: number;
+  websiteProjects: number;   // W# count
+  marketingProjects: number; // M# count
+  caseStudies: number;       // C# count
+  educationalReports: number;// R# count
+  bidPartners: number;
+}
+
 function resolvePublicShowcaseImageUrl(
   id: string,
   row: Record<string, unknown>,
@@ -456,6 +465,85 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
   }
 
   return { totalProjects, websiteProjects, socialMediaProjects, seoProjects, grantProjects, financeProjects };
+}
+
+export async function getPublicLiveStats(): Promise<PublicLiveStats> {
+  const db = getAdminDB();
+  if (!db) {
+    return { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, caseStudies: 0, educationalReports: 0, bidPartners: 0 };
+  }
+
+  const [businessesSnap, financeSnap, bidsSnap] = await Promise.all([
+    db.ref("businesses").get(),
+    db.ref("financeAssignments").get(),
+    db.ref("bids").get(),
+  ]);
+
+  // Count total businesses (all statuses)
+  let totalBusinesses = 0;
+  const businesses: Array<{ id: string; name: string; projectTracks?: string[]; trackProjects?: Record<string, unknown> }> = [];
+
+  if (businessesSnap.exists()) {
+    const rows = businessesSnap.val() as Record<string, Record<string, unknown>>;
+    for (const [id, row] of Object.entries(rows)) {
+      const name = asText(row.showcaseName) || asText(row.name);
+      if (!name) continue;
+      totalBusinesses++;
+      businesses.push({
+        id,
+        name,
+        projectTracks: Array.isArray(row.projectTracks) ? row.projectTracks as string[] : undefined,
+        trackProjects: typeof row.trackProjects === "object" && row.trackProjects !== null
+          ? row.trackProjects as Record<string, unknown>
+          : undefined,
+      });
+    }
+  }
+
+  // Count W# and M# from business tracks (same logic as computeGlobalCodes)
+  let wCount = 0;
+  let mCount = 0;
+
+  const sorted = [...businesses].sort((a, b) => a.name.localeCompare(b.name));
+  for (const business of sorted) {
+    const requestedTracks = (business.projectTracks ?? []) as string[];
+    const explicitTracks = Object.keys(business.trackProjects ?? {});
+    const allTracks = [...new Set([...requestedTracks, ...explicitTracks])].filter(
+      (t) => t === "Tech" || t === "Marketing" || t === "Finance"
+    );
+
+    if (allTracks.length === 0) {
+      // Legacy no-track → W
+      wCount++;
+    } else {
+      for (const track of allTracks) {
+        if (track === "Marketing") mCount++;
+        else wCount++; // Tech and Finance both get W
+      }
+    }
+  }
+
+  // Count C# and R# from finance assignments
+  let caseStudies = 0;
+  let educationalReports = 0;
+
+  if (financeSnap.exists()) {
+    const assignments = financeSnap.val() as Record<string, Record<string, unknown>>;
+    for (const [, row] of Object.entries(assignments)) {
+      const type = asText(row.type);
+      if (type === "Case Study") caseStudies++;
+      else if (type === "Report") educationalReports++;
+    }
+  }
+
+  // Count BID partners
+  let bidPartners = 0;
+  if (bidsSnap.exists()) {
+    const bids = bidsSnap.val() as Record<string, Record<string, unknown>>;
+    bidPartners = Object.keys(bids).length;
+  }
+
+  return { totalBusinesses, websiteProjects: wCount, marketingProjects: mCount, caseStudies, educationalReports, bidPartners };
 }
 
 export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {

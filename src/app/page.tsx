@@ -6,11 +6,12 @@ import AnimatedSection from "@/components/AnimatedSection";
 import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
-import { homeStats, currentProjects as fallbackCurrentProjects, joinTracks } from "@/data";
+import { currentProjects as fallbackCurrentProjects, joinTracks } from "@/data";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
-import { getPublicShowcaseCards, getPublicMapEntries } from "@/lib/server/publicShowcase";
+import { getPublicShowcaseCards, getPublicMapEntries, getPublicLiveStats } from "@/lib/server/publicShowcase";
+import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
 export const revalidate = 300;
@@ -291,6 +292,22 @@ async function HomeBidSection() {
   );
 }
 
+async function LiveHomeStats() {
+  const [liveStats, memberCount] = await Promise.all([
+    getPublicLiveStats(),
+    getTotalMemberCount(),
+  ]);
+
+  const liveHomeStats = [
+    { value: liveStats.totalBusinesses, suffix: "", label: "Businesses Supported" },
+    { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
+    { value: memberCount, suffix: "", label: "Student Members" },
+    { value: liveStats.bidPartners, suffix: "", label: "BID Partners" },
+  ];
+
+  return <HomeStats stats={liveHomeStats} />;
+}
+
 export default function Home() {
 
   return (
@@ -314,7 +331,7 @@ export default function Home() {
 
           {/* ── STATS ─────────────────────────────────────────────── */}
           <section data-home-dark-end="true" className="relative py-14">
-            <HomeStats stats={homeStats} />
+            <LiveHomeStats />
           </section>
         </div>
       </section>

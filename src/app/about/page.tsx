@@ -5,7 +5,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
 import { aboutValues, aboutTimeline, teamMembers } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
-import { getPublicImpactStats } from "@/lib/server/publicShowcase";
+import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 
 export const revalidate = 3600;
 
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default async function About() {
   const education = await getMemberEducationSnapshot();
-  const impact = await getPublicImpactStats();
+  const liveStats = await getPublicLiveStats();
 
   return (
     <>
@@ -62,12 +62,12 @@ export default async function About() {
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-10">Our impact</p>
             <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
               {[
-                { value: impact.totalProjects, label: "Total\nprojects", color: "text-v-green" },
-                { value: impact.websiteProjects, label: "Websites\nbuilt", color: "text-blue-400" },
-                { value: impact.socialMediaProjects, label: "Social media\ncampaigns", color: "text-lime-400" },
-                { value: impact.seoProjects, label: "SEO &\nvisibility", color: "text-amber-400" },
-                { value: impact.grantProjects, label: "Grant\napplications", color: "text-pink-400" },
-                { value: impact.financeProjects, label: "Finance &\noperations", color: "text-purple-400" },
+                { value: liveStats.totalBusinesses, label: "Total\nbusinesses", color: "text-v-green" },
+                { value: liveStats.websiteProjects, label: "Website\nprojects (W#)", color: "text-blue-400" },
+                { value: liveStats.marketingProjects, label: "Marketing\nprojects (M#)", color: "text-lime-400" },
+                { value: liveStats.caseStudies, label: "Case\nstudies (C#)", color: "text-pink-400" },
+                { value: liveStats.educationalReports, label: "Educational\nreports (R#)", color: "text-amber-400" },
+                { value: liveStats.bidPartners, label: "BID & org\npartners", color: "text-purple-400" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06}>
                   <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
@@ -82,22 +82,22 @@ export default async function About() {
       </section>
 
       {/* ── MISSION ─────────────────────────────────────────── */}
-      <section className="py-20 bg-v-dark border-t border-white/5">
+      <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-6">Our mission</p>
-            <blockquote className="font-display font-bold text-white leading-tight" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
+            <blockquote className="font-display font-bold text-v-ink leading-tight" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
               &ldquo;To close the digital and financial equity gap for small businesses
               by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
             </blockquote>
-            <p className="font-body text-white/60 text-lg leading-relaxed mt-8 max-w-2xl">
+            <p className="font-body text-v-muted text-lg leading-relaxed mt-8 max-w-2xl">
               Most small business owners know what they need. What they lack is the
               time, bandwidth, and connections to make it happen. We help them see
               what&apos;s possible — and then we make it happen.
             </p>
           </AnimatedSection>
           <AnimatedSection className="mt-14 flex justify-center">
-            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-xl w-full max-w-sm">
+            <div className="rounded-2xl overflow-hidden border border-v-border shadow-xl w-full max-w-sm bg-white">
               <iframe
                 src="https://www.instagram.com/p/DVBS-6LDvk9/embed/"
                 width="400"
