@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
-import ExpandableDescription from "@/components/ExpandableDescription";
 import {
   GlobeIcon,
   SmartphoneIcon,
@@ -11,10 +10,7 @@ import {
   SearchIcon,
   TrendingUpIcon,
   PencilIcon,
-  MapPinIcon,
 } from "@/components/Icons";
-import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
-import { projects as fallbackProjects } from "@/data";
 import storefrontPhoto from "../../../public/petite-dumpling-storefront.jpg";
 
 export const metadata: Metadata = {
@@ -127,78 +123,7 @@ const PARTNER_FAQS = [
   },
 ];
 
-type ShowcaseProject = {
-  name: string;
-  neighborhood: string;
-  services: string[];
-  colorClass: string;
-  url?: string;
-  imageUrl?: string;
-  desc: string;
-};
-
-const SHOWCASE_COLOR_CLASS: Record<string, string> = {
-  "blue-soft": "bg-blue-300",
-  "blue-mid": "bg-blue-500",
-  "blue-deep": "bg-blue-700",
-  "lime-soft": "bg-lime-300",
-  "lime-mid": "bg-lime-500",
-  "lime-deep": "bg-lime-700",
-  "amber-soft": "bg-amber-300",
-  "amber-mid": "bg-amber-500",
-  "amber-deep": "bg-amber-700",
-  "pink-soft": "bg-pink-300",
-  "pink-mid": "bg-pink-500",
-  "pink-deep": "bg-pink-700",
-  "purple-mid": "bg-purple-500",
-  "red-soft": "bg-red-300",
-  "red-mid": "bg-red-500",
-  "red-deep": "bg-red-700",
-  green: "bg-lime-500",
-  blue: "bg-blue-500",
-  orange: "bg-red-500",
-  amber: "bg-amber-500",
-  pink: "bg-pink-500",
-  purple: "bg-purple-500",
-  "green-soft": "bg-lime-300",
-  "green-mid": "bg-lime-500",
-  "green-deep": "bg-lime-700",
-};
-
-async function getShowcaseProjects(): Promise<ShowcaseProject[]> {
-  const publicShowcase = await getPublicShowcaseCards();
-  const cards = publicShowcase.length > 0
-    ? publicShowcase.slice(0, 4)
-    : fallbackProjects.filter((p) => p.status !== "Upcoming").slice(0, 4);
-
-  return cards.map((card) => ({
-    name: card.name,
-    neighborhood: card.neighborhood,
-    services: card.services,
-    colorClass: SHOWCASE_COLOR_CLASS[(card as { color?: string }).color ?? ""] ?? "bg-blue-500",
-    url: (card as { url?: string }).url,
-    imageUrl: (card as { imageUrl?: string }).imageUrl,
-    desc: card.desc,
-  }));
-}
-
-function getServiceTagClass(service: string): string {
-  const key = service.trim().toLowerCase();
-  if (key.includes("website") || key.includes("seo") || key.includes("google")) {
-    return "bg-blue-100 text-blue-700 border-blue-200";
-  }
-  if (key.includes("social")) {
-    return "bg-lime-100 text-lime-700 border-lime-200";
-  }
-  if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
-    return "bg-amber-100 text-amber-700 border-amber-200";
-  }
-  return "bg-v-border text-v-muted border-v-border";
-}
-
 export default async function Partners() {
-  const showcaseProjects = await getShowcaseProjects();
-
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -270,9 +195,9 @@ export default async function Partners() {
       </section>
 
       {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-16 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
+          <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
               Six ways we can help
             </h2>
@@ -316,68 +241,27 @@ export default async function Partners() {
         </div>
       </section>
 
-      {/* ── SHOWCASE STRIP ─────────────────────────────────── */}
-      <section className="py-16 bg-v-bg border-y border-v-border">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-8 flex items-end justify-between flex-wrap gap-3">
-            <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">Businesses we&apos;ve helped</h2>
-            <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
-              See all projects →
-            </Link>
+      {/* ── CONTACT FORM ─────────────────────────────────────── */}
+      <section className="py-16 bg-white" id="contact">
+        <div className="max-w-3xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-8">
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
+              Work with us
+            </h2>
+            <p className="font-body text-v-muted max-w-xl">
+              Tell us about your business and what you need. Switch the form to your
+              preferred language using the toggle below. If you were referred by a BID,
+              mention that in your message. We&apos;re also open to a quick Zoom chat.
+            </p>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {showcaseProjects.map((p, i) => (
-              <AnimatedSection key={p.name} delay={i * 0.06}>
-                <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card h-full flex flex-col">
-                  <div className={`${p.colorClass} h-1.5`} />
-                  {p.imageUrl ? (
-                    <div className="mx-3 mt-3 rounded-lg border border-v-border bg-v-bg overflow-hidden">
-                      <Image
-                        src={p.imageUrl}
-                        alt={`${p.name} project`}
-                        width={800}
-                        height={500}
-                        unoptimized
-                        className="block w-full h-auto"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className="mx-3 mt-3 rounded-lg border border-v-border bg-v-bg h-24 flex items-center justify-center">
-                      <span className="font-body text-[10px] text-v-muted uppercase tracking-wider">Photo coming soon</span>
-                    </div>
-                  )}
-                  <div className="p-4 flex-1 flex flex-col">
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {p.services.slice(0, 2).map((s) => (
-                        <span key={`${p.name}-${s}`} className={`tag border text-[10px] px-1.5 py-0.5 ${getServiceTagClass(s)}`}>{s}</span>
-                      ))}
-                    </div>
-                    <h3 className="font-display font-bold text-v-ink text-base mb-0.5">{p.name}</h3>
-                    <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5 mb-2">
-                      <MapPinIcon className="w-3 h-3 flex-shrink-0" /> {p.neighborhood}
-                    </p>
-                    {p.desc && <ExpandableDescription desc={p.desc} className="flex-1" />}
-                    {p.url && (
-                      <a
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-body text-xs font-semibold text-v-blue hover:underline mt-3 inline-block"
-                      >
-                        View live site →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+          <AnimatedSection>
+            <ContactForm />
+          </AnimatedSection>
         </div>
       </section>
 
       {/* ── PROCESS ─────────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-16 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
@@ -416,25 +300,6 @@ export default async function Partners() {
         </div>
       </section>
 
-      {/* ── CONTACT FORM ─────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg" id="contact">
-        <div className="max-w-3xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
-              Work with us
-            </h2>
-            <p className="font-body text-v-muted max-w-xl">
-              Tell us about your business and what you need. Switch the form to your
-              preferred language using the toggle below. If you were referred by a BID,
-              mention that in your message. We&apos;re also open to a quick Zoom chat.
-            </p>
-          </AnimatedSection>
-          <AnimatedSection>
-            <ContactForm />
-          </AnimatedSection>
-        </div>
-      </section>
-
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
       <section className="py-16 bg-v-bg">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
@@ -460,12 +325,9 @@ export default async function Partners() {
       </section>
 
       {/* ── BOTTOM CTA ─────────────────────────────────────── */}
-      <section className="py-20 bg-v-dark text-center">
+      <section className="py-16 bg-v-dark text-center">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">
-              Ready to get started?
-            </p>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
               Your business could be next.
             </h2>
