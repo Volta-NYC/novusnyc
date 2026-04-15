@@ -305,13 +305,13 @@ export default async function Join() {
               <AnimatedSection key={group.category} delay={gi * 0.08}>
                 <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">{group.category}</h3>
                 <div className="bg-white border border-v-border rounded-2xl px-5 py-5 md:px-6 md:py-6">
-                  <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2 list-disc pl-5">
-                    {group.schools.map((school) => (
-                      <li key={school} className="font-body text-sm text-v-ink marker:text-v-green">
-                        {school}
-                      </li>
+                  <div className="flex flex-wrap gap-x-3 gap-y-2">
+                    {group.schools.map((school, si) => (
+                      <span key={school} className="font-body text-sm text-v-ink">
+                        {si > 0 && <span className="text-v-green/40 mx-1.5">·</span>}{school}
+                      </span>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </AnimatedSection>
             ))}
