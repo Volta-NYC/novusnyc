@@ -5,7 +5,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { joinTracks, joinFaqs, joinGains } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { UsersIcon } from "@/components/Icons";
-import cornellPhoto from "../../public/cornell-campus-photo.jpg";
+import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
   title: "Get Involved | Volta NYC",

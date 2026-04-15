@@ -16,7 +16,7 @@ import {
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import { projects as fallbackProjects } from "@/data";
-import storefrontPhoto from "../../public/petite-dumpling-storefront.jpg";
+import storefrontPhoto from "../../../public/petite-dumpling-storefront.jpg";
 
 export const metadata: Metadata = {
   title: "Free Help for NYC Small Businesses | Volta NYC",
