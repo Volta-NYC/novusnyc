@@ -33,7 +33,7 @@ export const homeStats = [
   { value: VOLTA_STATS.businessesServed.value, suffix: VOLTA_STATS.businessesServed.suffix, label: "Businesses Supported" },
   { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
   { value: VOLTA_STATS.studentMembers.value, suffix: VOLTA_STATS.studentMembers.suffix, label: "Student Members" },
-  { value: VOLTA_STATS.serviceTracks.value, suffix: VOLTA_STATS.serviceTracks.suffix, label: "Service Tracks" },
+  { value: VOLTA_STATS.bidPartners.value, suffix: VOLTA_STATS.bidPartners.suffix, label: "BID Partners" },
 ];
 
 export const homeTracks = [
@@ -204,11 +204,11 @@ export const aboutValues = [
   },
   {
     title: "Community-rooted",
-    desc: "We work through local BIDs and community organizations because trust in a neighborhood takes time to build.",
+    desc: "We work through local BIDs and community organizations because trust in a neighborhood takes time to build. We show up in person, learn the context behind each business, and stay engaged through the full project lifecycle.",
   },
   {
     title: "Transparent",
-    desc: "Our students gain hands-on experience and build their portfolios, while businesses receive dedicated, high-quality support.",
+    desc: "Every project comes with a defined scope, clear timelines, and regular check-ins. Business owners always know who is on their team, what's being worked on, and when to expect deliverables.",
   },
 ];
 
@@ -230,6 +230,12 @@ export const aboutTimeline = [
     year: "2026",
     label: "Spring Cohort — NYC",
     desc: `Cohort expands to ${formatStat(VOLTA_STATS.studentMembers)} students across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City.`,
+  },
+  {
+    month: "Summer",
+    year: "2026",
+    label: "Deeper engagements",
+    desc: "Volta expands into longer-term client engagements, structured in-person neighborhood tours, and exploratory paid internship tracks for returning members.",
   },
 ];
 
@@ -458,8 +464,8 @@ export const partnerServices = [
     icon: TrendingUpIcon,
     title: "Sales & Financial Analysis",
     desc: "Sales and revenue analysis, competitor benchmarking, pricing strategy, and owner-facing reporting.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
+    color: "text-amber-500",
+    bg: "bg-amber-50",
   },
   {
     icon: CreditCardIcon,

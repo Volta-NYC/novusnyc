@@ -296,7 +296,7 @@ export default function Home() {
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
-              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems in addition to frontend execution, with sustainability and continued support built into how each client project is maintained over time.
+              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems alongside frontend execution — with ongoing client support built into every engagement.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
@@ -344,7 +344,7 @@ export default function Home() {
           <AnimatedSection className="mb-10">
             <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">Our reach</p>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-              Across all five boroughs.
+              Across all five boroughs
             </h2>
             <p className="font-body text-white/50 text-lg max-w-xl mx-auto">
               We operate through trusted neighborhood partners and place teams where businesses are ready to launch and improve quickly.
@@ -352,16 +352,16 @@ export default function Home() {
           </AnimatedSection>
           <div className="flex flex-wrap justify-center gap-3 mt-8">
             {[
-              { name: "Brooklyn", cls: "border-lime-500/30 text-lime-400 bg-lime-500/10" },
-              { name: "Queens", cls: "border-blue-400/30 text-blue-300 bg-blue-400/10" },
-              { name: "Manhattan", cls: "border-amber-400/30 text-amber-400 bg-amber-400/10" },
-              { name: "The Bronx", cls: "border-purple-400/30 text-purple-400 bg-purple-400/10" },
-              { name: "Staten Island", cls: "border-rose-400/30 text-rose-400 bg-rose-400/10" },
+              { name: "Brooklyn", cls: "border-lime-500/30 text-lime-400 bg-lime-500/10 hover:bg-lime-500/20" },
+              { name: "Queens", cls: "border-blue-400/30 text-blue-300 bg-blue-400/10 hover:bg-blue-400/20" },
+              { name: "Manhattan", cls: "border-amber-400/30 text-amber-400 bg-amber-400/10 hover:bg-amber-400/20" },
+              { name: "The Bronx", cls: "border-purple-400/30 text-purple-400 bg-purple-400/10 hover:bg-purple-400/20" },
+              { name: "Staten Island", cls: "border-rose-400/30 text-rose-400 bg-rose-400/10 hover:bg-rose-400/20" },
             ].map((b, i) => (
               <AnimatedSection key={b.name} delay={i * 0.08}>
-                <span className={`inline-block border rounded-full px-6 py-2.5 font-display font-bold text-base ${b.cls}`}>
+                <Link href="/showcase" className={`inline-block border rounded-full px-6 py-2.5 font-display font-bold text-base transition-colors ${b.cls}`}>
                   {b.name}
-                </span>
+                </Link>
               </AnimatedSection>
             ))}
           </div>

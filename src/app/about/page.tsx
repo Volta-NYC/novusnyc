@@ -11,14 +11,14 @@ const ABOUT_VALUE_BADGE_STYLES = [
   { bg: "bg-lime-100", text: "text-lime-700" }, // Brooklyn
   { bg: "bg-blue-100", text: "text-blue-700" }, // Queens
   { bg: "bg-amber-100", text: "text-amber-700" }, // Manhattan
-  { bg: "bg-violet-100", text: "text-violet-700" }, // Bronx
+  { bg: "bg-purple-100", text: "text-purple-700" }, // Bronx
   { bg: "bg-rose-100", text: "text-rose-700" }, // Staten Island
 ] as const;
 
 export const metadata: Metadata = {
   title: "About Us | Volta NYC",
   description:
-    "Volta NYC is a registered 501(c)(3) nonprofit run by students at Stuyvesant High School and CUNY institutions. Learn about our history, values, and the team behind the work.",
+    "Volta NYC is a registered 501(c)(3) nonprofit run by students from Stuyvesant High School, Baruch College, Cornell University, Stony Brook University, and other schools. Learn about our history, values, and the team behind the work.",
   openGraph: {
     title: "About Volta NYC",
     description: "A student-run nonprofit built on the belief that digital equity is economic equity.",
@@ -39,7 +39,7 @@ export default async function About() {
             <AnimatedSection>
               <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">About Volta</p>
               <h1 className="font-display font-bold text-v-ink leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
-                Students who<br /><span className="text-v-green">give back</span><br />by doing real work.
+                Students building<br /><span className="text-v-green">real skills</span><br />through real work.
               </h1>
             </AnimatedSection>
           </div>
@@ -48,7 +48,7 @@ export default async function About() {
               Volta is a nonprofit run entirely by high school and college students.
               We believe that digital equity is economic equity — and that the family-owned
               restaurants, flower shops, and community businesses that define NYC&apos;s
-              neighborhoods deserve the same digital tools and funding access as larger businesses.
+              neighborhoods deserve the same digital tools and access to grants and financial resources as larger businesses.
             </p>
             <p className="font-body text-v-muted text-base leading-relaxed">
               Our members build websites, grow social media audiences, and win grants for
@@ -81,6 +81,7 @@ export default async function About() {
                 height="505"
                 frameBorder="0"
                 scrolling="no"
+                loading="lazy"
                 style={{ display: "block", width: "100%", height: 505 }}
               />
             </div>
@@ -135,7 +136,7 @@ export default async function About() {
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we got here</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our history</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we started</h2>
           </AnimatedSection>
           <div>
             {aboutTimeline.map((t, i) => (
@@ -164,11 +165,25 @@ export default async function About() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Who runs Volta NYC</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our Leadership</h2>
             <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed [text-wrap:balance]">
               A team of students from high schools and colleges across NYC and across the country.
             </p>
           </AnimatedSection>
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {[
+              { label: "High Schools", value: education.highSchoolCount },
+              { label: "Colleges", value: education.collegeCount },
+              { label: "States Represented", value: education.stateCount },
+            ].map((stat, i) => (
+              <AnimatedSection key={stat.label} delay={i * 0.08}>
+                <div className="rounded-xl border border-v-border bg-white px-6 py-7 text-center">
+                  <p className="font-display font-bold text-v-green text-4xl leading-none">{stat.value}</p>
+                  <p className="font-body text-xs text-v-muted uppercase tracking-[0.16em] mt-3">{stat.label}</p>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
@@ -177,7 +192,9 @@ export default async function About() {
                     {m.photo ? (
                       <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-top" />
                     ) : (
-                      <span className="font-display font-bold text-v-muted/40 text-6xl">{m.initial}</span>
+                      <div className="w-24 h-24 rounded-full bg-v-green/15 border-2 border-v-green/25 flex items-center justify-center">
+                        <span className="font-display font-bold text-v-green text-3xl">{m.initial}</span>
+                      </div>
                     )}
                   </div>
                   <div className="p-4 flex flex-col flex-1">
@@ -188,20 +205,6 @@ export default async function About() {
                       <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
                     </a>
                   </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-          <div className="grid md:grid-cols-3 gap-4 mt-8">
-            {[
-              { label: "High Schools", value: education.highSchoolCount },
-              { label: "Colleges", value: education.collegeCount },
-              { label: "States Represented", value: education.stateCount },
-            ].map((stat, i) => (
-              <AnimatedSection key={stat.label} delay={i * 0.08}>
-                <div className="rounded-xl border border-v-border bg-white px-6 py-7 text-center">
-                  <p className="font-display font-bold text-v-green text-4xl leading-none">{stat.value}</p>
-                  <p className="font-body text-xs text-v-muted uppercase tracking-[0.16em] mt-3">{stat.label}</p>
                 </div>
               </AnimatedSection>
             ))}

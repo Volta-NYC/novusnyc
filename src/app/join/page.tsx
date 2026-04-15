@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
-import { joinTracks, joinFaqs } from "@/data";
+import { joinTracks, joinFaqs, joinGains } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 
 export const metadata: Metadata = {
@@ -98,10 +98,10 @@ export default async function Join() {
               <span className="text-v-green">hands-on projects for local businesses.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              You&apos;ll work on websites, marketing, or finance projects that local businesses actually use.
-              It&apos;s practical, fast-moving, and built to help you ship work with visible outcomes quickly.
+              You&apos;ll work on websites, marketing, or finance projects for real NYC businesses —
+              with clear deliverables, real clients, and outcomes you can point to.
               In Tech, that includes backend workflows and production integrations, not just static pages.
-              All levels of experience welcome.
+              All experience levels welcome.
             </p>
             <div className="flex gap-4 flex-wrap mb-3">
               <Link
@@ -118,7 +118,7 @@ export default async function Join() {
               </a>
             </div>
             <p className="font-body text-sm text-white/50">
-              Takes 5 minutes · Rolling admissions.
+              Takes 5 minutes · Apply anytime.
             </p>
           </AnimatedSection>
         </div>
@@ -127,10 +127,10 @@ export default async function Join() {
       <section id="tracks" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Choose your track</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
-              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems in addition to frontend execution, with sustainability and continued support built into how each client project is maintained over time.
+              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems alongside frontend execution — with ongoing client support built into every engagement.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
@@ -171,6 +171,26 @@ export default async function Join() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
+            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">What you gain</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Built for your resume — and beyond</h2>
+            <p className="font-body text-v-muted mt-3 max-w-xl">
+              Volta is designed around real outcomes — the kind that hold up in interviews and on applications.
+            </p>
+          </AnimatedSection>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-20">
+            {joinGains.map((g, i) => (
+              <AnimatedSection key={g.title} delay={i * 0.06}>
+                <div className={`border border-v-border rounded-2xl p-6 h-full ${g.bg}`}>
+                  <div className={`w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center mb-4`}>
+                    <g.icon className={`w-5 h-5 ${g.color}`} />
+                  </div>
+                  <h3 className="font-display font-bold text-v-ink text-base mb-2">{g.title}</h3>
+                  <p className="font-body text-sm text-v-muted leading-relaxed">{g.desc}</p>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Our members</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where our members come from</h2>
           </AnimatedSection>
@@ -199,7 +219,7 @@ export default async function Join() {
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">How you grow</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
-              There&apos;s no ceiling. Strong contributors move up fast because we always need more leaders.
+              We promote on merit, not tenure. Strong contributors advance quickly — we&apos;re always building new leaders.
             </p>
           </AnimatedSection>
           <div className="relative">
@@ -234,7 +254,7 @@ export default async function Join() {
       <section className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl">Questions</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl">Frequently Asked Questions</h2>
           </AnimatedSection>
           <div className="space-y-4">
             {joinFaqs.map((f, i) => (

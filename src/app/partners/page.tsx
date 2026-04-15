@@ -65,8 +65,8 @@ const SERVICE_AREAS = [
     icon: TrendingUpIcon,
     title: "Sales & Financial Analysis",
     summary: "Owner-facing analysis that turns raw sales numbers into decisions.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
+    color: "text-amber-500",
+    bg: "bg-amber-50",
     details: [
       "Break down sales and revenue trends by time period and category",
       "Compare nearby competitors and pricing",
@@ -165,8 +165,8 @@ export default function Partners() {
               className="font-display font-bold text-white leading-none tracking-tight mb-6"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
-              A dedicated team<br />
-              <span className="text-v-green">for your business.</span>
+              Free student consulting<br />
+              <span className="text-v-green">for your NYC business.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
               Volta places student teams on real projects for NYC small businesses —
@@ -200,7 +200,7 @@ export default function Partners() {
               What we deliver
             </p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
-              Six service areas.
+              Six service areas
             </h2>
           </AnimatedSection>
           <div className="space-y-3">
@@ -219,9 +219,11 @@ export default function Partners() {
                         {service.summary}
                       </span>
                     </span>
-                    <span className="text-v-muted text-xs mt-2 group-open:rotate-180 transition-transform">⌄</span>
+                    <svg className="w-4 h-4 text-v-muted mt-1.5 shrink-0 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </summary>
-                  <div className="mt-3 pl-[3.25rem]">
+                  <div className="accordion-body mt-3 pl-[3.25rem]">
                     <ul className="list-disc pl-5 space-y-1.5 font-body text-sm text-v-muted">
                       {service.details.map((detail) => (
                         <li key={detail}>{detail}</li>
@@ -265,7 +267,7 @@ export default function Partners() {
               How engagement works
             </p>
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
-              Three simple steps, on your schedule
+              Three simple steps
             </h2>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-4">
@@ -292,7 +294,7 @@ export default function Partners() {
                 <div className="w-8 h-8 rounded-full bg-amber-200 text-amber-700 font-display font-bold text-sm flex items-center justify-center mb-3">3</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Build</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
-                  A dedicated student team is assigned and starts work right away, with clear timelines and regular updates.
+                  A dedicated student team is assigned within a few days and starts work with clear timelines and regular progress updates.
                 </p>
               </div>
             </AnimatedSection>
@@ -308,11 +310,10 @@ export default function Partners() {
               Practical resources
             </p>
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl mb-3">
-              Owner guides, case studies, and practical references.
+              Owner guides, case studies, and practical references
             </h2>
             <p className="font-body text-v-muted leading-relaxed mb-5 max-w-3xl">
-              We publish concise resources on websites, marketing, operations, and real field learnings from business work across neighborhoods.
-              You can use them whether or not you work with us directly.
+              We publish free step-by-step guides on building a social media presence, improving your Google Maps ranking, writing grant applications, and more — all based on real work we&apos;ve done with businesses across NYC. Use them whether or not you work with us.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link

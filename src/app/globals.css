@@ -416,6 +416,16 @@ main {
 ::-webkit-scrollbar-track { background: #F7F7F2; }
 ::-webkit-scrollbar-thumb { background: #d1d1cc; border-radius: 3px; }
 
+/* Accordion animation for details/summary elements */
+.accordion-body {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.28s ease;
+}
+details[open] > .accordion-body {
+  max-height: 600px;
+}
+
 /* Keep Leaflet map layers beneath nav/dropdowns on mobile and desktop */
 .leaflet-container {
   z-index: 0;
