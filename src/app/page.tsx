@@ -259,7 +259,6 @@ async function HomeBidSection() {
     <section className="py-14 bg-v-bg border-b border-v-border">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-6">
-          <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-2">Trusted partners</p>
           <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
             {formatStat(VOLTA_STATS.bidPartners)} BID partnerships across NYC
           </h2>
@@ -344,7 +343,6 @@ export default function Home() {
       <section className="py-24 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we work</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
               Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems alongside frontend execution — with ongoing client support built into every engagement.
@@ -393,7 +391,6 @@ export default function Home() {
       <section className="py-20 bg-v-dark">
         <div className="max-w-4xl mx-auto px-5 md:px-8 text-center">
           <AnimatedSection className="mb-10">
-            <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">Our reach</p>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
               Across all five boroughs
             </h2>

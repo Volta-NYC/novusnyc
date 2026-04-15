@@ -401,9 +401,6 @@ export default function ShowcaseClient({
       <section className="py-20 bg-v-dark text-center">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-xs font-semibold text-v-green uppercase tracking-widest mb-3">
-              For business owners
-            </p>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
               Your business could be next.
             </h2>

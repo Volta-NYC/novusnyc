@@ -229,6 +229,7 @@ export const aboutTimeline = [
     year: "2026",
     label: "Deeper engagements",
     desc: "Volta expands into longer-term client engagements, structured in-person neighborhood tours, and exploratory paid internship tracks for returning members.",
+    tentative: true,
   },
 ];
 

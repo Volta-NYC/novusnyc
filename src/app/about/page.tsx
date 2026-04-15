@@ -59,7 +59,7 @@ export default async function About() {
       <section className="py-16 bg-v-dark overflow-x-auto">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-10">Our impact</p>
+            <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-10">Our impact</h2>
             <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
               {[
                 { value: liveStats.totalBusinesses, label: "Total\nbusinesses", color: "text-v-green" },
@@ -83,30 +83,33 @@ export default async function About() {
 
       {/* ── MISSION ─────────────────────────────────────────── */}
       <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-5 md:px-8">
+        <div className="max-w-6xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-6">Our mission</p>
-            <blockquote className="font-display font-bold text-v-ink leading-tight" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
-              &ldquo;To close the digital and financial equity gap for small businesses
-              by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
-            </blockquote>
-            <p className="font-body text-v-muted text-lg leading-relaxed mt-8 max-w-2xl">
-              Most small business owners know what they need. What they lack is the
-              time, bandwidth, and connections to make it happen. We help them see
-              what&apos;s possible — and then we make it happen.
-            </p>
-          </AnimatedSection>
-          <AnimatedSection className="mt-14 flex justify-center">
-            <div className="rounded-2xl overflow-hidden border border-v-border shadow-xl w-full max-w-sm bg-white">
-              <iframe
-                src="https://www.instagram.com/p/DVBS-6LDvk9/embed/"
-                width="400"
-                height="505"
-                frameBorder="0"
-                scrolling="no"
-                loading="lazy"
-                style={{ display: "block", width: "100%", height: 505 }}
-              />
+            <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+              <div>
+                <blockquote className="font-display font-bold text-v-ink leading-tight mb-6" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)" }}>
+                  &ldquo;To close the digital and financial equity gap for small businesses
+                  by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
+                </blockquote>
+                <p className="font-body text-v-muted text-base leading-relaxed">
+                  Most small business owners know what they need. What they lack is the
+                  time, bandwidth, and connections to make it happen. We help them see
+                  what&apos;s possible — and then we make it happen.
+                </p>
+              </div>
+              <div className="flex justify-center md:justify-end">
+                <div className="rounded-2xl overflow-hidden border border-v-border shadow-xl w-full max-w-sm bg-white">
+                  <iframe
+                    src="https://www.instagram.com/p/DVBS-6LDvk9/embed/"
+                    width="400"
+                    height="505"
+                    frameBorder="0"
+                    scrolling="no"
+                    loading="lazy"
+                    style={{ display: "block", width: "100%", height: 505 }}
+                  />
+                </div>
+              </div>
             </div>
           </AnimatedSection>
         </div>
@@ -116,7 +119,6 @@ export default async function About() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our Leadership</h2>
             <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed [text-wrap:balance]">
               A team of students from high schools and colleges across NYC and across the country.
@@ -173,7 +175,6 @@ export default async function About() {
       <section className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">What drives us</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
 
@@ -200,15 +201,16 @@ export default async function About() {
 
       {/* ── HISTORY / TIMELINE ─────────────────────────────── */}
       <section className="py-20 bg-v-bg">
-        <div className="max-w-4xl mx-auto px-5 md:px-8">
+        <div className="max-w-6xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we got here</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we started</h2>
           </AnimatedSection>
-          <div>
+
+          {/* Mobile: vertical timeline */}
+          <div className="md:hidden">
             {aboutTimeline.map((t, i) => (
               <AnimatedSection key={t.label} delay={i * 0.12}>
-                <div className={`relative flex gap-6 md:gap-10 ${i < aboutTimeline.length - 1 ? "pb-10 md:pb-12" : ""}`}>
+                <div className={`relative flex gap-6 ${i < aboutTimeline.length - 1 ? "pb-10" : ""}`}>
                   {i < aboutTimeline.length - 1 && (
                     <div className="absolute left-8 top-16 bottom-0 -translate-x-1/2 w-0.5 bg-v-border" />
                   )}
@@ -219,10 +221,38 @@ export default async function About() {
                   <div className="flex-1 pt-3 min-w-0">
                     <h3 className="font-display font-bold text-v-ink text-xl mb-2">{t.label}</h3>
                     <p className="font-body text-v-muted text-base leading-relaxed">{t.desc}</p>
+                    {t.tentative && (
+                      <p className="font-body text-xs text-v-muted/60 italic mt-1">Tentative</p>
+                    )}
                   </div>
                 </div>
               </AnimatedSection>
             ))}
+          </div>
+
+          {/* Desktop: horizontal timeline */}
+          <div className="hidden md:block">
+            <div className="relative">
+              {/* Connector line */}
+              <div className="absolute top-10 left-0 right-0 h-0.5 bg-v-border" />
+              <div className="grid grid-cols-4 gap-6">
+                {aboutTimeline.map((t, i) => (
+                  <AnimatedSection key={t.label} delay={i * 0.1}>
+                    <div className="relative flex flex-col items-center text-center pt-0">
+                      <div className="w-20 h-20 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 mb-5">
+                        <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
+                        <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
+                      </div>
+                      <h3 className="font-display font-bold text-v-ink text-base mb-2">{t.label}</h3>
+                      <p className="font-body text-sm text-v-muted leading-relaxed">{t.desc}</p>
+                      {t.tentative && (
+                        <p className="font-body text-xs text-v-muted/60 italic mt-1">Tentative</p>
+                      )}
+                    </div>
+                  </AnimatedSection>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>

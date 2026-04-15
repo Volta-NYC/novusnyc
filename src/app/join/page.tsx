@@ -160,7 +160,6 @@ export default async function Join() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Why Volta?</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Built for your resume — and beyond</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
               Volta is designed around real outcomes — the kind that hold up in interviews and on applications.
@@ -186,7 +185,6 @@ export default async function Join() {
       <section id="tracks" className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Choose your track</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
               Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems alongside frontend execution — with ongoing client support built into every engagement.
@@ -311,7 +309,6 @@ export default async function Join() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">Our members</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where our members come from</h2>
           </AnimatedSection>
           <div className="space-y-10">
@@ -338,7 +335,6 @@ export default async function Join() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">How you grow</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
               We promote on merit, not tenure. Strong contributors advance quickly — we&apos;re always building new leaders.

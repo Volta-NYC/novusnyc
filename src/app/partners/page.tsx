@@ -273,9 +273,6 @@ export default async function Partners() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
-              What we deliver
-            </p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
               Six ways we can help
             </h2>
@@ -323,10 +320,7 @@ export default async function Partners() {
       <section className="py-16 bg-v-bg border-y border-v-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8 flex items-end justify-between flex-wrap gap-3">
-            <div>
-              <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-2">Recent work</p>
-              <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">Businesses we&apos;ve helped</h2>
-            </div>
+            <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">Businesses we&apos;ve helped</h2>
             <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
               See all projects →
             </Link>
@@ -386,9 +380,6 @@ export default async function Partners() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-2">
-              How engagement works
-            </p>
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
               Three simple steps
             </h2>
@@ -429,9 +420,6 @@ export default async function Partners() {
       <section className="py-20 bg-v-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
-              Request support
-            </p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
               Work with us
             </h2>
@@ -451,7 +439,6 @@ export default async function Partners() {
       <section className="py-16 bg-v-bg">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-2">Common questions</p>
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
           </AnimatedSection>
           <div className="space-y-2">
