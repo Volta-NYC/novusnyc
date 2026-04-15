@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
 import { aboutValues, aboutTimeline, teamMembers } from "@/data";
@@ -164,11 +163,6 @@ export default async function About() {
               </AnimatedSection>
             ))}
           </div>
-          <AnimatedSection>
-            <Link href="/join" className="inline-block font-body text-sm font-semibold text-v-green hover:underline">
-              Join our team →
-            </Link>
-          </AnimatedSection>
         </div>
       </section>
 
@@ -182,15 +176,15 @@ export default async function About() {
           <div className="border-t border-v-border">
             {aboutValues.map((v, i) => (
               <AnimatedSection key={v.title} delay={i * 0.08}>
-                <div className="group border-b border-v-border py-8 md:py-10 grid grid-cols-[3.5rem_1fr] md:grid-cols-[5rem_18rem_1fr] gap-x-6 md:gap-x-12 gap-y-3 items-start transition-colors duration-200 hover:bg-v-bg/60">
+                <div className="group border-b border-v-border py-8 md:py-10 grid grid-cols-[3.5rem_1fr] md:grid-cols-[5rem_18rem_1fr] gap-x-6 md:gap-x-12 gap-y-3 items-center transition-colors duration-200 hover:bg-v-bg/60">
                   <span className="font-display font-bold text-v-green/35 group-hover:text-v-green/55 transition-colors duration-200 leading-none select-none"
                     style={{ fontSize: "clamp(2.6rem, 5vw, 3.8rem)" }}>
-                    {String(i + 1).padStart(2, "0")}
+                    {i + 1}
                   </span>
-                  <h3 className="font-display font-bold text-v-ink text-2xl md:text-3xl leading-tight pt-1 md:pt-2">
+                  <h3 className="font-display font-bold text-v-ink text-2xl md:text-3xl leading-tight">
                     {v.title}
                   </h3>
-                  <p className="font-body text-v-muted leading-relaxed text-base col-span-2 md:col-span-1 md:pt-2">
+                  <p className="font-body text-v-muted leading-relaxed text-base">
                     {v.desc}
                   </p>
                 </div>
