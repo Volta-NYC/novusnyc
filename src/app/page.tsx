@@ -9,7 +9,7 @@ import { homeStats, currentProjects as fallbackCurrentProjects, joinTracks } fro
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
-import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
+import { getPublicShowcaseCards, getPublicMapEntries } from "@/lib/server/publicShowcase";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
 export const revalidate = 300;
@@ -245,6 +245,51 @@ async function CurrentProjectsSection() {
   );
 }
 
+async function HomeBidSection() {
+  const mapEntries = await getPublicMapEntries();
+  const bidPartners = mapEntries
+    .filter((e) => e.source === "bid")
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (bidPartners.length === 0) return null;
+
+  return (
+    <section className="py-14 bg-white border-b border-v-border">
+      <div className="max-w-7xl mx-auto px-5 md:px-8">
+        <AnimatedSection className="mb-6">
+          <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-2">Trusted partners</p>
+          <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
+            {formatStat(VOLTA_STATS.bidPartners)} BID partnerships across NYC
+          </h2>
+          <p className="font-body text-v-muted mt-2 max-w-xl">
+            We coordinate through Business Improvement Districts to reach the businesses that need us most.
+          </p>
+        </AnimatedSection>
+        <div className="flex flex-wrap gap-2">
+          {bidPartners.slice(0, 12).map((bid) => (
+            <div
+              key={bid.id}
+              className="px-3 py-2 border rounded-xl bg-v-bg border-v-border"
+            >
+              <p className="font-display font-bold text-[11px] uppercase tracking-wide leading-tight text-v-ink">
+                {bid.name}
+              </p>
+              {bid.borough && (
+                <p className="font-body text-[10px] text-v-muted mt-0.5">{bid.borough}</p>
+              )}
+            </div>
+          ))}
+          {bidPartners.length > 12 && (
+            <Link href="/showcase" className="px-3 py-2 border rounded-xl bg-v-bg border-v-border font-body text-xs text-v-blue hover:underline self-center">
+              +{bidPartners.length - 12} more →
+            </Link>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
 
   return (
@@ -288,6 +333,10 @@ export default function Home() {
           </section>
         </div>
       </section>
+
+      <Suspense fallback={null}>
+        <HomeBidSection />
+      </Suspense>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
       <section className="py-24 bg-v-bg">
@@ -352,14 +401,14 @@ export default function Home() {
           </AnimatedSection>
           <div className="flex flex-wrap justify-center gap-3 mt-8">
             {[
-              { name: "Brooklyn", cls: "border-lime-500/30 text-lime-400 bg-lime-500/10 hover:bg-lime-500/20" },
-              { name: "Queens", cls: "border-blue-400/30 text-blue-300 bg-blue-400/10 hover:bg-blue-400/20" },
-              { name: "Manhattan", cls: "border-amber-400/30 text-amber-400 bg-amber-400/10 hover:bg-amber-400/20" },
-              { name: "The Bronx", cls: "border-purple-400/30 text-purple-400 bg-purple-400/10 hover:bg-purple-400/20" },
-              { name: "Staten Island", cls: "border-rose-400/30 text-rose-400 bg-rose-400/10 hover:bg-rose-400/20" },
+              { name: "Brooklyn", href: "/showcase?borough=Brooklyn", cls: "border-lime-500/30 text-lime-400 bg-lime-500/10 hover:bg-lime-500/20" },
+              { name: "Queens", href: "/showcase?borough=Queens", cls: "border-blue-400/30 text-blue-300 bg-blue-400/10 hover:bg-blue-400/20" },
+              { name: "Manhattan", href: "/showcase?borough=Manhattan", cls: "border-amber-400/30 text-amber-400 bg-amber-400/10 hover:bg-amber-400/20" },
+              { name: "The Bronx", href: "/showcase?borough=Bronx", cls: "border-purple-400/30 text-purple-400 bg-purple-400/10 hover:bg-purple-400/20" },
+              { name: "Staten Island", href: "/showcase?borough=Staten Island", cls: "border-rose-400/30 text-rose-400 bg-rose-400/10 hover:bg-rose-400/20" },
             ].map((b, i) => (
               <AnimatedSection key={b.name} delay={i * 0.08}>
-                <Link href="/showcase" className={`inline-block border rounded-full px-6 py-2.5 font-display font-bold text-base transition-colors ${b.cls}`}>
+                <Link href={b.href} className={`inline-block border rounded-full px-6 py-2.5 font-display font-bold text-base transition-colors ${b.cls}`}>
                   {b.name}
                 </Link>
               </AnimatedSection>

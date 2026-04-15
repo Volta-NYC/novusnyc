@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
 import { aboutValues, aboutTimeline, teamMembers } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
+import { getPublicImpactStats } from "@/lib/server/publicShowcase";
 
 export const revalidate = 3600;
 
@@ -28,9 +30,11 @@ export const metadata: Metadata = {
 
 export default async function About() {
   const education = await getMemberEducationSnapshot();
+  const impact = await getPublicImpactStats();
 
   return (
     <>
+      {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="bg-v-bg pt-32 pb-20 relative overflow-hidden">
         <div className="absolute inset-0 dot-grid opacity-40" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-v-green/8 rounded-full blur-3xl" />
@@ -59,7 +63,43 @@ export default async function About() {
         </div>
       </section>
 
-      <section className="py-20 bg-v-dark">
+      {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
+      <section className="py-14 bg-v-dark">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection>
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-6 text-center">Our impact</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
+                <p className="font-display font-bold text-v-green text-4xl md:text-5xl leading-none mb-1">{impact.totalProjects}+</p>
+                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Total projects</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
+                <p className="font-display font-bold text-blue-400 text-4xl md:text-5xl leading-none mb-1">{impact.websiteProjects}+</p>
+                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Websites built</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
+                <p className="font-display font-bold text-lime-400 text-4xl md:text-5xl leading-none mb-1">{impact.socialMediaProjects}+</p>
+                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Social media campaigns</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
+                <p className="font-display font-bold text-amber-400 text-4xl md:text-5xl leading-none mb-1">{impact.seoProjects}+</p>
+                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">SEO & visibility</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
+                <p className="font-display font-bold text-pink-400 text-4xl md:text-5xl leading-none mb-1">{impact.grantProjects}+</p>
+                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Grant applications</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
+                <p className="font-display font-bold text-purple-400 text-4xl md:text-5xl leading-none mb-1">{impact.financeProjects}+</p>
+                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Finance & operations</p>
+              </div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── MISSION ─────────────────────────────────────────── */}
+      <section className="py-20 bg-v-dark border-t border-white/5">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-6">Our mission</p>
@@ -89,6 +129,64 @@ export default async function About() {
         </div>
       </section>
 
+      {/* ── TEAM ────────────────────────────────────────────── */}
+      <section className="py-20 bg-v-bg">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10">
+            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our Leadership</h2>
+            <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed [text-wrap:balance]">
+              A team of students from high schools and colleges across NYC and across the country.
+            </p>
+          </AnimatedSection>
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {[
+              { label: "High Schools", value: education.highSchoolCount },
+              { label: "Colleges", value: education.collegeCount },
+              { label: "States Represented", value: education.stateCount },
+            ].map((stat, i) => (
+              <AnimatedSection key={stat.label} delay={i * 0.08}>
+                <div className="rounded-xl border border-v-border bg-white px-6 py-7 text-center">
+                  <p className="font-display font-bold text-v-green text-4xl leading-none">{stat.value}</p>
+                  <p className="font-body text-xs text-v-muted uppercase tracking-[0.16em] mt-3">{stat.label}</p>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            {teamMembers.map((m, i) => (
+              <AnimatedSection key={m.email} delay={i * 0.08}>
+                <div className="bg-white border border-v-border rounded-xl overflow-hidden project-card h-full flex flex-col">
+                  <div className="aspect-[4/5] bg-v-border flex items-center justify-center overflow-hidden">
+                    {m.photo ? (
+                      <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-top" />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-v-green/15 border-2 border-v-green/25 flex items-center justify-center">
+                        <span className="font-display font-bold text-v-green text-3xl">{m.initial}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="font-display font-bold text-v-ink text-base leading-tight">{m.name}</h3>
+                    <p className="font-body text-xs text-v-muted mt-1">{m.role}</p>
+                    {m.desc && <p className="font-body text-xs text-v-muted/60 italic mt-2 leading-relaxed flex-1">{m.desc}</p>}
+                    <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-3 font-body text-xs text-v-blue hover:underline break-all">
+                      <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
+                    </a>
+                  </div>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <AnimatedSection>
+            <Link href="/join" className="inline-block font-body text-sm font-semibold text-v-green hover:underline">
+              Join our team →
+            </Link>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── HOW WE OPERATE ─────────────────────────────────── */}
       <section className="py-20 bg-v-bg overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-14">
@@ -131,7 +229,7 @@ export default async function About() {
         </div>
       </section>
 
-      {/* Timeline */}
+      {/* ── HISTORY / TIMELINE ─────────────────────────────── */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
@@ -152,58 +250,6 @@ export default async function About() {
                   <div className="flex-1 pt-3 min-w-0">
                     <h3 className="font-display font-bold text-v-ink text-xl mb-2">{t.label}</h3>
                     <p className="font-body text-v-muted text-base leading-relaxed">{t.desc}</p>
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Leadership</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our Leadership</h2>
-            <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed [text-wrap:balance]">
-              A team of students from high schools and colleges across NYC and across the country.
-            </p>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-4 mb-8">
-            {[
-              { label: "High Schools", value: education.highSchoolCount },
-              { label: "Colleges", value: education.collegeCount },
-              { label: "States Represented", value: education.stateCount },
-            ].map((stat, i) => (
-              <AnimatedSection key={stat.label} delay={i * 0.08}>
-                <div className="rounded-xl border border-v-border bg-white px-6 py-7 text-center">
-                  <p className="font-display font-bold text-v-green text-4xl leading-none">{stat.value}</p>
-                  <p className="font-body text-xs text-v-muted uppercase tracking-[0.16em] mt-3">{stat.label}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {teamMembers.map((m, i) => (
-              <AnimatedSection key={m.email} delay={i * 0.08}>
-                <div className="bg-white border border-v-border rounded-xl overflow-hidden project-card h-full flex flex-col">
-                  <div className="aspect-[4/5] bg-v-border flex items-center justify-center overflow-hidden">
-                    {m.photo ? (
-                      <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-top" />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-v-green/15 border-2 border-v-green/25 flex items-center justify-center">
-                        <span className="font-display font-bold text-v-green text-3xl">{m.initial}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 flex flex-col flex-1">
-                    <h3 className="font-display font-bold text-v-ink text-base leading-tight">{m.name}</h3>
-                    <p className="font-body text-xs text-v-muted mt-1">{m.role}</p>
-                    {m.desc && <p className="font-body text-xs text-v-muted/60 italic mt-2 leading-relaxed flex-1">{m.desc}</p>}
-                    <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-3 font-body text-xs text-v-blue hover:underline break-all">
-                      <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
-                    </a>
                   </div>
                 </div>
               </AnimatedSection>

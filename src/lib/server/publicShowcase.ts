@@ -50,6 +50,15 @@ export interface PublicMapEntry {
   source: "business" | "bid";
 }
 
+export interface PublicImpactStats {
+  totalProjects: number;
+  websiteProjects: number;
+  socialMediaProjects: number;
+  seoProjects: number;
+  grantProjects: number;
+  financeProjects: number;
+}
+
 function resolvePublicShowcaseImageUrl(
   id: string,
   row: Record<string, unknown>,
@@ -341,6 +350,13 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
+function hasService(services: string[], keywords: string[]): boolean {
+  return services.some((s) => {
+    const lower = s.toLowerCase();
+    return keywords.some((kw) => lower.includes(kw));
+  });
+}
+
 export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
   const db = getAdminDB();
   if (!db) return [];
@@ -399,6 +415,47 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     .filter((card) => card.status !== "Upcoming")
     .sort(compareCards)
     .slice(0, 12);
+}
+
+export async function getPublicImpactStats(): Promise<PublicImpactStats> {
+  const db = getAdminDB();
+  if (!db) {
+    return { totalProjects: 0, websiteProjects: 0, socialMediaProjects: 0, seoProjects: 0, grantProjects: 0, financeProjects: 0 };
+  }
+
+  const snap = await db.ref("businesses").get();
+  if (!snap.exists()) {
+    return { totalProjects: 0, websiteProjects: 0, socialMediaProjects: 0, seoProjects: 0, grantProjects: 0, financeProjects: 0 };
+  }
+
+  const rows = snap.val() as Record<string, Record<string, unknown>>;
+  let totalProjects = 0;
+  let websiteProjects = 0;
+  let socialMediaProjects = 0;
+  let seoProjects = 0;
+  let grantProjects = 0;
+  let financeProjects = 0;
+
+  for (const [, row] of Object.entries(rows)) {
+    const name = asText(row.showcaseName) || asText(row.name);
+    if (!name) continue;
+
+    const status = mapBusinessStatusToShowcase(row.projectStatus);
+    if (status === "Upcoming") continue;
+
+    totalProjects++;
+    const services = asStringArray(row.showcaseServices);
+    const division = inferDivision(row.division, row);
+    const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
+
+    if (hasService(mergedServices, ["website", "web design", "web development"])) websiteProjects++;
+    if (hasService(mergedServices, ["social"])) socialMediaProjects++;
+    if (hasService(mergedServices, ["seo", "google"])) seoProjects++;
+    if (hasService(mergedServices, ["grant"])) grantProjects++;
+    if (division === "Finance") financeProjects++;
+  }
+
+  return { totalProjects, websiteProjects, socialMediaProjects, seoProjects, grantProjects, financeProjects };
 }
 
 export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
