@@ -338,6 +338,20 @@ function getBusinessCodes(businessId: string, tracks: string[], globalCodeMaps: 
   return codes;
 }
 
+function getBusinessCodesWithTrack(businessId: string, tracks: string[], globalCodeMaps: GlobalCodeMaps): Array<{ code: string; track: TrackDivision }> {
+  const result: Array<{ code: string; track: TrackDivision }> = [];
+  for (const track of TRACK_ORDER) {
+    if (!tracks.includes(track)) continue;
+    const code = globalCodeMaps.businessTrackCode.get(`${businessId}-${track}`);
+    if (code) result.push({ code, track });
+  }
+  if (result.length === 0) {
+    const code = globalCodeMaps.businessTrackCode.get(businessId);
+    if (code) result.push({ code, track: "Tech" });
+  }
+  return result;
+}
+
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   ownerName: "",
@@ -1264,34 +1278,33 @@ export default function BusinessesPage() {
     const normalizedStatus = normalizeProjectStatus(b.projectStatus);
     const trackAssignments = getTrackAssignments(b);
     const deadlineLines = getTrackDeadlineLines(b);
+    const codesWithTrack = getBusinessCodesWithTrack(b.id, b.projectTracks ?? [], globalCodeMaps);
+
+    const codeColorClass = (track: TrackDivision) => {
+      switch (track) {
+        case "Tech": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
+        case "Marketing": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
+        case "Finance": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
+      }
+    };
 
     return (
       <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
         <td className="px-2 py-1.5 text-[11px] text-white/90 whitespace-nowrap max-w-[220px] truncate" title={b.name}>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1">
-              {trackAssignments.map((assignment) => (
-                <span
-                  key={`${b.id}-${assignment.track}`}
-                  className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META[assignment.track].dotClass}`}
-                  title={TRACK_META[assignment.track].label}
-                />
-              ))}
-            </span>
-            <span>{b.name}</span>
-          </span>
-          {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
-          {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
-          <div className="flex flex-wrap gap-0.5 mt-0.5">
-            {getBusinessCodes(b.id, b.projectTracks ?? [], globalCodeMaps).map((code) => (
+            {codesWithTrack.map(({ code, track }) => (
               <span
-                key={code}
-                className="inline-flex items-center rounded-full bg-[#85CC17]/10 border border-[#85CC17]/25 px-1.5 py-0.5 text-[10px] font-semibold text-[#85CC17] font-mono"
+                key={`code-${code}`}
+                className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono ${codeColorClass(track)}`}
+                title={TRACK_META[track].label}
               >
                 {code}
               </span>
             ))}
-          </div>
+            <span>{b.name}</span>
+          </span>
+          {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
+          {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
         </td>
         <td className="px-2 py-1.5 text-[11px] text-white/80 whitespace-nowrap max-w-[150px] truncate" title={b.ownerName || "—"}>
           {b.ownerName || "—"}
