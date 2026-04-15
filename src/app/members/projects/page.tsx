@@ -409,6 +409,7 @@ export default function BusinessesPage() {
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
   const [projectEmailRecipientLabel, setProjectEmailRecipientLabel] = useState<string | null>(null);
+  const [projectEmailAttachments, setProjectEmailAttachments] = useState<File[]>([]);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
 
@@ -1097,6 +1098,7 @@ export default function BusinessesPage() {
     setProjectEmailRecipientOverride(null);
     setProjectEmailRecipientLabel(null);
     setProjectEmailStatus(null);
+    setProjectEmailAttachments([]);
   };
 
   const openProjectEmailModal = (project: Business, options?: { memberNames?: string[]; label?: string }) => {
@@ -1119,6 +1121,7 @@ export default function BusinessesPage() {
     setProjectEmailFrom("info@voltanyc.org");
     setProjectEmailSubject(`${project.name} — Project Update`);
     setProjectEmailMessage("");
+    setProjectEmailAttachments([]);
   };
 
   const openProjectTeamEmailModal = (project: Business) => {
@@ -1191,6 +1194,7 @@ export default function BusinessesPage() {
       formData.append("message", projectEmailMessage.trim());
       formData.append("contentMode", "html");
       projectEmailRecipients.emails.forEach((email) => formData.append("bccRecipients", email));
+      projectEmailAttachments.forEach((f) => formData.append("attachments", f, f.name));
       const res = await fetch("/api/members/team-email", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -1798,6 +1802,8 @@ export default function BusinessesPage() {
             <RichTextEditor
               content={projectEmailMessage}
               onChange={setProjectEmailMessage}
+              attachments={projectEmailAttachments}
+              onAttachmentsChange={setProjectEmailAttachments}
               placeholder="Write your email..."
               minHeight={200}
             />

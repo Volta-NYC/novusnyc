@@ -24,7 +24,7 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 
 const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
-type AssignmentCodePrefix = "W" | "M" | "R" | "C";
+type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C" | "G";
 
 function getMemberTrack(member: TeamMember): TrackKey {
   const divisions = member.divisions ?? [];
@@ -799,12 +799,12 @@ export default function TeamPage() {
         const fallbackMembers = hasAnyExplicitTrackTeamMembers ? [] : legacyAssignedNames;
         const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : fallbackMembers));
         if (assignedNames.length === 0) continue;
-        const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : "W";
+        const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : track === "Finance" ? "F" : "W";
         const topic =
           track === "Marketing"
             ? "Marketing project"
             : track === "Finance"
-              ? "Operations project"
+              ? "Finance project"
               : "Website project";
         const entry: Omit<MemberAssignmentLink, "code"> = {
           id: `${business.id}-${track.toLowerCase()}`,
@@ -823,7 +823,7 @@ export default function TeamPage() {
 
     for (const assignment of financeAssignments) {
       const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
-      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
+      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : assignmentType === "grant" ? "G" : "R";
       const assignmentTypeLabel =
         assignmentType === "case study" ? "Case Study"
           : assignmentType === "grant" ? "Grant"
@@ -884,7 +884,7 @@ export default function TeamPage() {
             return { ...item, code: `${item.codePrefix}?` };
           })
           .sort((a, b) => {
-            const prefixOrder: Record<string, number> = { W: 0, M: 1, R: 2, C: 3, G: 4 };
+            const prefixOrder: Record<string, number> = { W: 0, M: 1, F: 2, R: 3, C: 4, G: 5 };
             const pa = prefixOrder[a.codePrefix] ?? 9;
             const pb = prefixOrder[b.codePrefix] ?? 9;
             if (pa !== pb) return pa - pb;

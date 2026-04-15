@@ -178,6 +178,7 @@ export default function FinanceAssignmentsPage() {
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
   const [emailRecipientOverride, setEmailRecipientOverride] = useState<string[] | null>(null);
   const [emailRecipientLabel, setEmailRecipientLabel] = useState<string | null>(null);
+  const [emailAttachments, setEmailAttachments] = useState<File[]>([]);
   const [memberPickerSearch, setMemberPickerSearch] = useState("");
   const [openStatusPopoverId, setOpenStatusPopoverId] = useState<string | null>(null);
   const [emailModalTitle, setEmailModalTitle] = useState<string | null>(null);
@@ -508,6 +509,7 @@ export default function FinanceAssignmentsPage() {
     setEmailRecipientLabel(null);
     setEmailModalTitle(null);
     setEmailStatus(null);
+    setEmailAttachments([]);
   };
 
   const openGroupEmailModal = (group: { label: string; items: FinanceAssignment[] }) => {
@@ -521,6 +523,7 @@ export default function FinanceAssignmentsPage() {
     setEmailSubject(`${group.label} Update — Volta NYC`);
     setEmailMessage("");
     setEmailStatus(null);
+    setEmailAttachments([]);
   };
 
   const openAssignmentTeamEmailModal = (item: FinanceAssignment) => {
@@ -531,6 +534,7 @@ export default function FinanceAssignmentsPage() {
     setEmailSubject(`${getAssignmentDisplayTitle(item)} — Assignment Update`);
     setEmailMessage("");
     setEmailStatus(null);
+    setEmailAttachments([]);
   };
 
   const openAssignmentMemberEmailModal = (item: FinanceAssignment, memberName: string) => {
@@ -576,6 +580,7 @@ export default function FinanceAssignmentsPage() {
       formData.append("message", emailMessage.trim());
       formData.append("contentMode", "html");
       emailRecipients.emails.forEach((email) => formData.append("bccRecipients", email));
+      emailAttachments.forEach((f) => formData.append("attachments", f, f.name));
 
       const res = await fetch("/api/members/team-email", {
         method: "POST",
@@ -872,6 +877,8 @@ export default function FinanceAssignmentsPage() {
             <RichTextEditor
               content={emailMessage}
               onChange={setEmailMessage}
+              attachments={emailAttachments}
+              onAttachmentsChange={setEmailAttachments}
               placeholder="Write your email..."
               minHeight={200}
             />

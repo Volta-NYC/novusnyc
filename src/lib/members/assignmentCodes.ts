@@ -1,9 +1,9 @@
 import type { Business, FinanceAssignment } from "@/lib/members/storage";
 
-export type CodePrefix = "W" | "M" | "R" | "C" | "G";
+export type CodePrefix = "W" | "M" | "F" | "R" | "C" | "G";
 
 export interface AssignmentCode {
-  code: string;           // "W1", "M2", "R3", "C1", "G2"
+  code: string;           // "W1", "M2", "F3", "R1", "C1", "G2"
   prefix: CodePrefix;
   entityKey: string;      // unique key: "businessId-Tech", "businessId-Marketing", or assignmentId
   title: string;          // display name for tooltip
@@ -67,6 +67,7 @@ export function computeGlobalCodes(
 
   let wCount = 0;
   let mCount = 0;
+  let fCount = 0;
 
   const sorted = sortBusinesses(businesses);
   for (const business of sorted) {
@@ -101,8 +102,21 @@ export function computeGlobalCodes(
             businessId: business.id,
             track: "Marketing",
           });
+        } else if (track === "Finance") {
+          fCount++;
+          const code = `F${fCount}`;
+          businessTrackCode.set(key, code);
+          allCodes.push({
+            code,
+            prefix: "F",
+            entityKey: key,
+            title: `${business.name || "Untitled"} (Finance)`,
+            href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
+            businessId: business.id,
+            track: "Finance",
+          });
         } else {
-          // Tech or Finance → W
+          // Tech → W
           wCount++;
           const code = `W${wCount}`;
           businessTrackCode.set(key, code);
@@ -110,7 +124,7 @@ export function computeGlobalCodes(
             code,
             prefix: "W",
             entityKey: key,
-            title: `${business.name || "Untitled"}${track !== "Tech" ? ` (${track})` : ""}`,
+            title: `${business.name || "Untitled"}`,
             href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
             businessId: business.id,
             track,
@@ -225,8 +239,8 @@ export function getMemberCodes(
     }
   }
 
-  // Sort: W first, then M, then R, then C, then G; within prefix by number
-  const prefixOrder: Record<string, number> = { W: 0, M: 1, R: 2, C: 3, G: 4 };
+  // Sort: W first, then M, then F, then R, then C, then G; within prefix by number
+  const prefixOrder: Record<string, number> = { W: 0, M: 1, F: 2, R: 3, C: 4, G: 5 };
   return result.sort((a, b) => {
     const pa = prefixOrder[a.prefix] ?? 9;
     const pb = prefixOrder[b.prefix] ?? 9;
