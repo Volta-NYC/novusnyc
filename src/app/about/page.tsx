@@ -9,14 +9,6 @@ import { getPublicImpactStats } from "@/lib/server/publicShowcase";
 
 export const revalidate = 3600;
 
-const ABOUT_VALUE_BADGE_STYLES = [
-  { bg: "bg-lime-100", text: "text-lime-700" }, // Brooklyn
-  { bg: "bg-blue-100", text: "text-blue-700" }, // Queens
-  { bg: "bg-amber-100", text: "text-amber-700" }, // Manhattan
-  { bg: "bg-purple-100", text: "text-purple-700" }, // Bronx
-  { bg: "bg-rose-100", text: "text-rose-700" }, // Staten Island
-] as const;
-
 export const metadata: Metadata = {
   title: "About Us | Volta NYC",
   description:
@@ -64,35 +56,26 @@ export default async function About() {
       </section>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
-      <section className="py-14 bg-v-dark">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
+      <section className="py-16 bg-v-dark overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-6 text-center">Our impact</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
-                <p className="font-display font-bold text-v-green text-4xl md:text-5xl leading-none mb-1">{impact.totalProjects}+</p>
-                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Total projects</p>
-              </div>
-              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
-                <p className="font-display font-bold text-blue-400 text-4xl md:text-5xl leading-none mb-1">{impact.websiteProjects}+</p>
-                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Websites built</p>
-              </div>
-              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
-                <p className="font-display font-bold text-lime-400 text-4xl md:text-5xl leading-none mb-1">{impact.socialMediaProjects}+</p>
-                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Social media campaigns</p>
-              </div>
-              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
-                <p className="font-display font-bold text-amber-400 text-4xl md:text-5xl leading-none mb-1">{impact.seoProjects}+</p>
-                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">SEO & visibility</p>
-              </div>
-              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
-                <p className="font-display font-bold text-pink-400 text-4xl md:text-5xl leading-none mb-1">{impact.grantProjects}+</p>
-                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Grant applications</p>
-              </div>
-              <div className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-5 py-6 text-center">
-                <p className="font-display font-bold text-purple-400 text-4xl md:text-5xl leading-none mb-1">{impact.financeProjects}+</p>
-                <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-2">Finance & operations</p>
-              </div>
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-10">Our impact</p>
+            <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
+              {[
+                { value: impact.totalProjects, label: "Total\nprojects", color: "text-v-green" },
+                { value: impact.websiteProjects, label: "Websites\nbuilt", color: "text-blue-400" },
+                { value: impact.socialMediaProjects, label: "Social media\ncampaigns", color: "text-lime-400" },
+                { value: impact.seoProjects, label: "SEO &\nvisibility", color: "text-amber-400" },
+                { value: impact.grantProjects, label: "Grant\napplications", color: "text-pink-400" },
+                { value: impact.financeProjects, label: "Finance &\noperations", color: "text-purple-400" },
+              ].map((s, i) => (
+                <AnimatedSection key={s.label} delay={i * 0.06}>
+                  <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
+                    <p className={`font-display font-bold text-4xl md:text-5xl leading-none mb-3 ${s.color}`}>{s.value}+</p>
+                    <p className="font-body text-[10px] text-white/45 uppercase tracking-widest whitespace-pre-line leading-relaxed">{s.label}</p>
+                  </div>
+                </AnimatedSection>
+              ))}
             </div>
           </AnimatedSection>
         </div>
@@ -187,44 +170,30 @@ export default async function About() {
       </section>
 
       {/* ── HOW WE OPERATE ─────────────────────────────────── */}
-      <section className="py-20 bg-v-bg overflow-hidden">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-14">
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">What drives us</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
 
-          <div className="relative">
-            <div className="hidden lg:block absolute left-[8%] right-[8%] top-8 border-t-2 border-dashed border-v-green/45" />
-            <div className="relative grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-5">
-              {aboutValues.map((v, i) => (
-                <AnimatedSection key={v.title} delay={i * 0.1}>
-                  <div className="h-full bg-white border border-v-border rounded-2xl p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-3">
-                      {(() => {
-                        const style = ABOUT_VALUE_BADGE_STYLES[i % ABOUT_VALUE_BADGE_STYLES.length];
-                        return (
-                          <span
-                            className={`w-9 h-9 rounded-full ${style.bg} ${style.text} font-display font-bold text-sm flex items-center justify-center flex-shrink-0`}
-                          >
-                            {i + 1}
-                          </span>
-                        );
-                      })()}
-                      <h3 className="font-display font-bold text-v-ink text-xl leading-snug">
-                        {v.title}
-                      </h3>
-                    </div>
-                    <p className="font-body text-v-muted leading-relaxed text-sm md:text-base">{v.desc}</p>
-                  </div>
-                  {i < aboutValues.length - 1 && (
-                    <div className="lg:hidden flex justify-center py-2">
-                      <span className="h-6 w-0 border-l-2 border-dashed border-v-green/45" />
-                    </div>
-                  )}
-                </AnimatedSection>
-              ))}
-            </div>
+          <div className="border-t border-v-border">
+            {aboutValues.map((v, i) => (
+              <AnimatedSection key={v.title} delay={i * 0.08}>
+                <div className="group border-b border-v-border py-8 md:py-10 grid grid-cols-[3.5rem_1fr] md:grid-cols-[5rem_18rem_1fr] gap-x-6 md:gap-x-12 gap-y-3 items-start transition-colors duration-200 hover:bg-v-bg/60">
+                  <span className="font-display font-bold text-v-green/35 group-hover:text-v-green/55 transition-colors duration-200 leading-none select-none"
+                    style={{ fontSize: "clamp(2.6rem, 5vw, 3.8rem)" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="font-display font-bold text-v-ink text-2xl md:text-3xl leading-tight pt-1 md:pt-2">
+                    {v.title}
+                  </h3>
+                  <p className="font-body text-v-muted leading-relaxed text-base col-span-2 md:col-span-1 md:pt-2">
+                    {v.desc}
+                  </p>
+                </div>
+              </AnimatedSection>
+            ))}
           </div>
         </div>
       </section>
