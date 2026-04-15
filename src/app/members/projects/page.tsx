@@ -325,19 +325,6 @@ function stripDecoratedName(value: string): string {
   return value.replace(/\s*\([^()]*\)\s*$/, "").trim();
 }
 
-function getBusinessCodes(businessId: string, tracks: string[], globalCodeMaps: GlobalCodeMaps): string[] {
-  const codes: string[] = [];
-  for (const track of tracks) {
-    const code = globalCodeMaps.businessTrackCode.get(`${businessId}-${track}`);
-    if (code) codes.push(code);
-  }
-  if (codes.length === 0) {
-    const code = globalCodeMaps.businessTrackCode.get(businessId);
-    if (code) codes.push(code);
-  }
-  return codes;
-}
-
 function getBusinessCodesWithTrack(businessId: string, tracks: string[], globalCodeMaps: GlobalCodeMaps): Array<{ code: string; track: TrackDivision }> {
   const result: Array<{ code: string; track: TrackDivision }> = [];
   for (const track of TRACK_ORDER) {
