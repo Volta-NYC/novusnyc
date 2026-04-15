@@ -1,47 +1,64 @@
 ## High Schools
 - Stuyvesant High School
+- Bronx High School of Science
+- Brooklyn Technical High School
+- The Brooklyn Latin School
 - Leon M. Goldstein High School for the Sciences
-- Syosset High School
+- Manhattan Center for Science and Mathematics
+- Manhattan Hunter Science High School
 - Midwood High School
+- James Madison High School
+- Great Neck South High School
+- Syosset High School
+- New Explorations into Science, Technology and Math (NEST+m)
+- PS 184 Shuang Wen
 - CSI High School for International Studies
 - Staten Island Technical High School
-- Marvin Ridge High School
-- Manhattan Hunter Science High School
-- Manhattan Center for Science and Mathematics
 - Staten Island Academy
-- Brooklyn Technical High School
-- Great Neck South High School
-- New Explorations into Science, Technology and Math (NEST+m)
-- Marriott's Ridge High School
-- Skyline High School
-- Seminole High School
-- South Brunswick High School
-- Virtual Virginia Academy
-- Seattle VocTech
-- Spain Park High School
-- Burlingame High School
+- Bard High School Early College
+- Academy for Mathematics, Science, and Engineering
 - Academy of Greatness and Excellence
-- Rouse High School
-- The Brooklyn Latin School
+- Briar Woods High School
+- Brunswick High School
+- Burlingame High School
+- Cherry Hill East High School
+- Coppell High School
+- Garnet Valley High School
+- Independence High School
+- Marriott's Ridge High School
+- Marvin Ridge High School
+- Millburn High School
 - North Forsyth High School
 - Prosper High School
-- Bard High School Early College
-- Garnet Valley High School
-- Academy for Mathematics, Science, and Engineering
+- Robbinsville High School
+- Rouse High School
+- Seminole High School
+- Skyline High School
+- South Brunswick High School
+- Spain Park High School
+- Virtual Virginia Academy
+- Seattle VocTech
+- Round Rock High School
+- Brighton College Abu Dhabi
+- Daly College
+- High School of American Studies at Lehman College
+- International Academy East
 
 ## Colleges & Universities
-- Binghamton University
-- Queens College
-- Brooklyn College
-- Hunter College
+- Cornell University
+- Bard College
 - Baruch College
+- Binghamton University
 - Borough of Manhattan Community College
-- Queensborough Community College
+- Brooklyn College
 - CUNY School of Professional Studies
-- Rochester Institute of Technology
+- Hunter College
+- Lehman College
 - New Jersey Institute of Technology
 - Penn State University
-- The City College of New York
-- Lehman College
+- Queens College
+- Queensborough Community College
+- Rochester Institute of Technology
 - Stevens Institute of Technology
+- The City College of New York
 - University of Rochester

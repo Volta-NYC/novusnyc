@@ -100,6 +100,7 @@ export const marqueeSchools = [
   "North Forsyth High School",
   "Prosper High School",
   "Bard High School Early College",
+  "Cornell University",
   "Binghamton University",
   "Hunter College",
   "Baruch College",
