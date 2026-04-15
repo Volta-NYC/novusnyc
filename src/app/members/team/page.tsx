@@ -955,6 +955,18 @@ export default function TeamPage() {
   }).length;
   const totalApplicantsCount = applications.length;
 
+  const pillColorClass = (prefix: string): string => {
+    switch (prefix) {
+      case "W": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
+      case "M": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
+      case "F":
+      case "R":
+      case "C":
+      case "G": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
+      default: return "bg-[#11141A] border-white/15 text-white/80";
+    }
+  };
+
   const renderAssignmentCell = (memberAssignments: MemberAssignmentLink[], keyPrefix: string, memberName: string) => {
     if (memberAssignments.length === 0) {
       return <span className="text-white/35">—</span>;
@@ -965,14 +977,16 @@ export default function TeamPage() {
       <div className="min-w-0">
         <div className={`members-assignments-scroll ${projectsViewportClass} overflow-x-auto overflow-y-hidden pb-0.5`}>
           <div className="inline-flex min-w-max items-center gap-1 pr-1">
-            {memberAssignments.map((item) => (
+            {memberAssignments.map((item) => {
+              const isActive = assignmentQuickView?.item.id === item.id && assignmentQuickView?.item.code === item.code;
+              return (
               <button
                 key={`${keyPrefix}-code-${item.id}-${item.code}`}
                 type="button"
-                className={`inline-flex h-5 w-10 items-center justify-center rounded-full border bg-[#11141A] px-1 text-[10px] font-semibold transition-colors ${
-                  assignmentQuickView?.item.id === item.id && assignmentQuickView?.item.code === item.code
+                className={`inline-flex h-5 w-10 items-center justify-center rounded-full border px-1 text-[10px] font-semibold transition-colors ${
+                  isActive
                     ? "border-[#85CC17]/65 text-[#C4F135]"
-                    : "border-white/15 text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135]"
+                    : pillColorClass(item.codePrefix) + " hover:border-[#85CC17]/55 hover:text-[#C4F135]"
                 }`}
                 title={`${item.code} · ${item.title}`}
                 onClick={() => {
@@ -992,7 +1006,8 @@ export default function TeamPage() {
               >
                 {item.code}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
         {expandAssignments && (

@@ -420,6 +420,17 @@ export default function MemberEmailPage() {
     if (assignments.length === 0) {
       return <span className="text-white/35">—</span>;
     }
+    const pillColorClass = (prefix: string): string => {
+      switch (prefix) {
+        case "W": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
+        case "M": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
+        case "F":
+        case "R":
+        case "C":
+        case "G": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
+        default: return "border-white/15 bg-[#11141A] text-white/80";
+      }
+    };
     return (
       <div className="members-assignments-scroll w-[108px] max-w-[108px] overflow-x-auto overflow-y-hidden pb-0.5">
         <div className="inline-flex min-w-max items-center gap-1 pr-1">
@@ -427,7 +438,7 @@ export default function MemberEmailPage() {
             <a
               key={`${keyPrefix}-${item.entityKey}-${item.code}`}
               href={item.href}
-              className="inline-flex h-5 w-10 items-center justify-center rounded-full border border-white/15 bg-[#11141A] px-1 text-[10px] font-semibold text-white/80 hover:border-[#85CC17]/55 hover:text-[#C4F135] transition-colors"
+              className={`inline-flex h-5 w-10 items-center justify-center rounded-full border px-1 text-[10px] font-semibold transition-colors ${pillColorClass(item.prefix)} hover:border-[#85CC17]/55 hover:text-[#C4F135]`}
               title={`${item.code} · ${item.title}`}
             >
               {item.code}
