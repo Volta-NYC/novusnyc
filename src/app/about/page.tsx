@@ -63,11 +63,11 @@ export default async function About() {
             <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
               {[
                 { value: liveStats.totalBusinesses, label: "Total\nbusinesses", color: "text-v-green" },
-                { value: liveStats.websiteProjects, label: "Website\nprojects (W#)", color: "text-blue-400" },
-                { value: liveStats.marketingProjects, label: "Marketing\nprojects (M#)", color: "text-lime-400" },
-                { value: liveStats.caseStudies, label: "Case\nstudies (C#)", color: "text-pink-400" },
-                { value: liveStats.educationalReports, label: "Educational\nreports (R#)", color: "text-amber-400" },
-                { value: liveStats.bidPartners, label: "BID & org\npartners", color: "text-purple-400" },
+                { value: liveStats.websiteProjects, label: "Website\nprojects", color: "text-blue-400" },
+                { value: liveStats.marketingProjects, label: "Marketing\nprojects", color: "text-lime-400" },
+                { value: liveStats.caseStudies, label: "Case studies\nby students", color: "text-pink-400" },
+                { value: liveStats.educationalReports, label: "Educational guides\nfor merchants", color: "text-amber-400" },
+                { value: liveStats.bidPartners, label: "Organization\npartners", color: "text-purple-400" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06}>
                   <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
@@ -87,6 +87,7 @@ export default async function About() {
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
               <div>
+                <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Our mission</p>
                 <blockquote className="font-display font-bold text-v-ink leading-tight mb-6" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)" }}>
                   &ldquo;To close the digital and financial equity gap for small businesses
                   by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
