@@ -24,6 +24,7 @@ export default function MasonryGrid({
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [positions, setPositions] = useState<Record<string, Position>>({});
   const [containerHeight, setContainerHeight] = useState(0);
+  const [colWidth, setColWidth] = useState(itemWidth);
   const [isReady, setIsReady] = useState(false);
 
   const calculateLayout = useCallback(() => {
@@ -33,9 +34,11 @@ export default function MasonryGrid({
     const availableWidth = container.offsetWidth;
     if (availableWidth === 0) return; // hidden via display:none (mobile breakpoint)
 
+    // Use itemWidth as the minimum column width to decide how many columns fit,
+    // then stretch all columns to fill the full container width.
     const columnCount = Math.max(1, Math.floor((availableWidth + gap) / (itemWidth + gap)));
-    const totalColumnsWidth = columnCount * itemWidth + (columnCount - 1) * gap;
-    const startX = Math.max(0, (availableWidth - totalColumnsWidth) / 2);
+    const actualColWidth = (availableWidth - (columnCount - 1) * gap) / columnCount;
+
     const columnHeights = new Array(columnCount).fill(0);
     const newPositions: Record<string, Position> = {};
 
@@ -47,7 +50,7 @@ export default function MasonryGrid({
       const shortestCol = columnHeights.indexOf(Math.min(...columnHeights));
 
       newPositions[id] = {
-        x: startX + shortestCol * (itemWidth + gap),
+        x: shortestCol * (actualColWidth + gap),
         y: columnHeights[shortestCol],
       };
       columnHeights[shortestCol] += height + gap;
@@ -56,6 +59,7 @@ export default function MasonryGrid({
     const maxHeight = Math.max(0, Math.max(...columnHeights) - gap);
     setPositions(newPositions);
     setContainerHeight(maxHeight);
+    setColWidth(actualColWidth);
     setIsReady(true);
   }, [itemIds, itemWidth, gap]);
 
@@ -107,7 +111,7 @@ export default function MasonryGrid({
             style={{
               left: pos ? `${pos.x}px` : 0,
               top: pos ? `${pos.y}px` : 0,
-              width: `${itemWidth}px`,
+              width: `${colWidth}px`,
               opacity: isReady ? 1 : 0,
               transition: isReady
                 ? `opacity 0.4s ease ${Math.min(i, 8) * 0.06}s`
