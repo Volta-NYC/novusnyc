@@ -16,6 +16,7 @@ import {
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import { projects as fallbackProjects } from "@/data";
+import storefrontPhoto from "../../public/petite-dumpling-storefront.jpg";
 
 export const metadata: Metadata = {
   title: "Free Help for NYC Small Businesses | Volta NYC",
@@ -219,9 +220,20 @@ export default async function Partners() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="bg-v-dark pt-32 pb-24 relative overflow-hidden">
-        <div className="absolute inset-0 dot-grid opacity-[0.06]" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-v-green/5 rounded-full blur-3xl" />
+      <section className="relative pt-32 pb-24 overflow-hidden">
+        <Image
+          src={storefrontPhoto}
+          alt="Petite Dumpling restaurant storefront in Park Slope, Brooklyn"
+          fill
+          priority
+          fetchPriority="high"
+          placeholder="blur"
+          quality={75}
+          sizes="(max-width: 768px) 100vw, 1920px"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1a1e24]/70" />
+        <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">

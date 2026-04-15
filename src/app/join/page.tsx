@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import { joinTracks, joinFaqs, joinGains } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { UsersIcon } from "@/components/Icons";
+import cornellPhoto from "../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
   title: "Get Involved | Volta NYC",
@@ -84,10 +86,20 @@ export default async function Join() {
       />
 
       {/* ── HERO ───────────────────────────────────────────── */}
-      <section className="bg-v-dark pt-32 pb-24 relative overflow-hidden">
-        <div className="absolute inset-0 dot-grid opacity-[0.06]" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-v-blue/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-v-green/5 rounded-full blur-3xl" />
+      <section className="relative pt-32 pb-24 overflow-hidden">
+        <Image
+          src={cornellPhoto}
+          alt="Cornell University campus"
+          fill
+          priority
+          fetchPriority="high"
+          placeholder="blur"
+          quality={75}
+          sizes="(max-width: 768px) 100vw, 1920px"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1a1e24]/75" />
+        <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
