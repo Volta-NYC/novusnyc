@@ -1,11 +1,21 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center overflow-hidden pt-16">
       {/* Logo + Title */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center">
+      <motion.div
+        className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.65, ease: EASE }}
+      >
         <h1
           className="font-display font-bold leading-none tracking-tight"
           style={{
@@ -29,10 +39,15 @@ export default function HeroSection() {
             <span className="text-v-green">VOLTA</span>
           </span>
         </h1>
-      </div>
+      </motion.div>
 
       {/* Subtitle + CTAs — centered under the title */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center">
+      <motion.div
+        className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center"
+        initial={{ opacity: 0, y: 28 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.65, delay: 0.12, ease: EASE }}
+      >
         <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-black/35 backdrop-blur-[2px] px-6 py-6 md:px-8 md:py-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
           <p className="font-body text-lg md:text-xl text-white/95 max-w-2xl mx-auto leading-relaxed mb-3">
             Digital equity is economic equity. Join a team of students building
@@ -58,7 +73,7 @@ export default function HeroSection() {
             </Link>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

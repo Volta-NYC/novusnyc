@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
+import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
 import { homeStats, currentProjects as fallbackCurrentProjects, joinTracks } from "@/data";
@@ -313,23 +314,7 @@ export default function Home() {
 
           {/* ── STATS ─────────────────────────────────────────────── */}
           <section data-home-dark-end="true" className="relative py-14">
-            <div className="max-w-6xl mx-auto px-5 md:px-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                {homeStats.map((s) => (
-                  <div
-                    key={s.label}
-                    className="rounded-2xl border border-white/20 bg-black/35 backdrop-blur-sm px-4 py-5 md:px-6 md:py-6 text-center shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
-                  >
-                    <div className="font-display font-bold text-3xl md:text-4xl text-v-green mb-1.5">
-                      {s.value}{s.suffix}
-                    </div>
-                    <div className="font-body text-[10px] md:text-xs uppercase tracking-[0.14em] text-white/75">
-                      {s.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <HomeStats stats={homeStats} />
           </section>
         </div>
       </section>
