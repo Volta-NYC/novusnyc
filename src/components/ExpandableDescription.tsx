@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Props {
   desc: string;
@@ -9,29 +9,35 @@ interface Props {
 
 export default function ExpandableDescription({ desc, className = "" }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [isClamped, setIsClamped] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
 
-  const raw = desc.trim();
-  // Avoid lookbehind regex (no Safari <16.4 support): split on ". " then re-attach period
-  const tokens = raw.split(". ");
-  const parts = tokens.map((t, i) => (i < tokens.length - 1 ? t + ". " : t));
-  const LIMIT = 2;
-  const needsToggle = parts.length > LIMIT;
-  const visible = needsToggle && !expanded ? parts.slice(0, LIMIT).join("") : raw;
+  // After the paragraph renders with line-clamp-3 applied, check whether the
+  // text actually overflows. scrollHeight > clientHeight means content is cut.
+  // Only re-run when desc changes (not on expand/collapse — expanded is handled
+  // by the (isClamped || expanded) guard below).
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    setIsClamped(el.scrollHeight > el.clientHeight + 2);
+  }, [desc]);
 
   return (
-    <p className={`font-body text-sm text-v-ink/70 leading-relaxed ${className}`}>
-      {visible}
-      {needsToggle && (
-        <>
-          {" "}
-          <button
-            onClick={() => setExpanded((e) => !e)}
-            className="font-semibold text-v-green hover:underline focus:outline-none"
-          >
-            {expanded ? "Less" : "More"}
-          </button>
-        </>
+    <div className={className}>
+      <p
+        ref={ref}
+        className={`font-body text-sm text-v-ink/70 leading-relaxed${expanded ? "" : " line-clamp-3"}`}
+      >
+        {desc}
+      </p>
+      {(isClamped || expanded) && (
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="mt-1.5 font-body text-xs font-semibold text-v-green hover:underline focus:outline-none"
+        >
+          {expanded ? "Less" : "More"}
+        </button>
       )}
-    </p>
+    </div>
   );
 }
