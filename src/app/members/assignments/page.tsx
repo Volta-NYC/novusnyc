@@ -735,11 +735,23 @@ export default function FinanceAssignmentsPage() {
                       </td>
                       <td className="px-2 py-1.5 text-[11px] text-white/90 max-w-[300px]" title={item.topic || "—"}>
                         <div className="flex items-center gap-1.5">
-                          {globalCodeMaps.assignmentCode.get(item.id) && (
-                            <span className="inline-flex items-center rounded-full bg-[#85CC17]/10 border border-[#85CC17]/25 px-1.5 py-0.5 text-[10px] font-semibold text-[#85CC17] font-mono flex-shrink-0">
-                              {globalCodeMaps.assignmentCode.get(item.id)}
-                            </span>
-                          )}
+                          {(() => {
+                            const code = globalCodeMaps.assignmentCode.get(item.id);
+                            if (!code) return null;
+                            const prefix = code.replace(/\d+$/, "");
+                            const pillClass = prefix === "R"
+                              ? "bg-blue-500/10 border-blue-400/25 text-blue-300"
+                              : prefix === "C"
+                                ? "bg-emerald-500/10 border-emerald-400/25 text-emerald-300"
+                                : prefix === "G"
+                                  ? "bg-amber-500/10 border-amber-400/25 text-amber-300"
+                                  : "bg-[#85CC17]/10 border-[#85CC17]/25 text-[#85CC17]";
+                            return (
+                              <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 ${pillClass}`}>
+                                {code}
+                              </span>
+                            );
+                          })()}
                           <p id={`finance-assignment-${item.id}`} className="truncate font-medium">{item.topic || "—"}</p>
                         </div>
                       </td>
