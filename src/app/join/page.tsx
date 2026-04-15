@@ -97,7 +97,7 @@ export default async function Join() {
               className="font-display font-bold text-white leading-none tracking-tight mb-6"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
-              Build your resume on
+              Build your resume with
               <br />
               <span className="text-v-blue">real projects for real businesses.</span>
             </h1>
@@ -131,7 +131,7 @@ export default async function Join() {
       </section>
 
       {/* ── WHY VOLTA / RESUME VALUE ───────────────────────── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Why Volta?</p>
@@ -202,7 +202,7 @@ export default async function Join() {
       </section>
 
       {/* ── COLLEGE SECTION ────────────────────────────────── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <AnimatedSection direction="left">
@@ -308,7 +308,7 @@ export default async function Join() {
       </section>
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">How you grow</p>

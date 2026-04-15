@@ -259,7 +259,7 @@ export default async function Partners() {
       </section>
 
       {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
@@ -415,7 +415,7 @@ export default async function Partners() {
       </section>
 
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
-      <section className="py-20 bg-white" id="contact">
+      <section className="py-20 bg-v-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
@@ -462,7 +462,7 @@ export default async function Partners() {
       </section>
 
       {/* ── BID SECTION ──────────────────────────────────────── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <AnimatedSection direction="left">

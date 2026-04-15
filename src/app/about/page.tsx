@@ -230,7 +230,7 @@ export default async function About() {
       </section>
 
       {/* ── HISTORY / TIMELINE ─────────────────────────────── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-v-bg">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">How we got here</p>

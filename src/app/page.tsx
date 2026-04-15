@@ -111,7 +111,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
 
 function CurrentProjectsFallback() {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-v-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -133,7 +133,7 @@ async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-v-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -254,7 +254,7 @@ async function HomeBidSection() {
   if (bidPartners.length === 0) return null;
 
   return (
-    <section className="py-14 bg-white border-b border-v-border">
+    <section className="py-14 bg-v-bg border-b border-v-border">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-6">
           <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-2">Trusted partners</p>

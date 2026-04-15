@@ -39,7 +39,7 @@ const config: Config = {
         "v-muted": "#6B7280",
         "v-border": "#E5E5DF",
         "v-card": "#FFFFFF",
-        "v-dark": "#111110",
+        "v-dark": "#1a1e24",
       },
       fontFamily: {
         display: ["var(--font-space-grotesk)", "sans-serif"],
