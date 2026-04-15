@@ -26,7 +26,7 @@ export default function ExpandableDescription({ desc, className = "" }: Props) {
     <div className={className}>
       <p
         ref={ref}
-        className={`font-body text-sm text-v-ink/70 leading-relaxed${expanded ? "" : " line-clamp-3"}`}
+        className={`font-body text-sm text-v-ink/70 leading-relaxed ${expanded ? "line-clamp-none" : "line-clamp-3"}`}
       >
         {desc}
       </p>
