@@ -10,7 +10,7 @@ import {
   DollarIcon,
   SearchIcon,
   TrendingUpIcon,
-  CreditCardIcon,
+  PencilIcon,
   MapPinIcon,
 } from "@/components/Icons";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
@@ -67,6 +67,18 @@ const SERVICES = [
     ],
   },
   {
+    icon: PencilIcon,
+    title: "Graphic Design",
+    summary: "Print-ready and digital design for the materials your business actually hands to customers.",
+    color: "text-v-green",
+    bg: "bg-lime-50",
+    details: [
+      "Menu design and layout for restaurants and cafés",
+      "Flyers, signage, and promotional materials",
+      "Business cards, loyalty cards, and branded templates",
+    ],
+  },
+  {
     icon: TrendingUpIcon,
     title: "Sales & Financial Analysis",
     summary: "Owner-facing analysis that turns raw sales numbers into clear pricing and operations decisions.",
@@ -88,18 +100,6 @@ const SERVICES = [
       "Grant eligibility research for your business",
       "Full application drafting — writing, budget, materials",
       "Deadline tracking and final submission prep",
-    ],
-  },
-  {
-    icon: CreditCardIcon,
-    title: "Digital Payment Setup",
-    summary: "Move from cash-only to modern payment options — card, tap, online ordering, and loyalty tools.",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-    details: [
-      "Card, tap, and online payment setup",
-      "Online ordering and loyalty tool configuration",
-      "Day-to-day training for you and your staff",
     ],
   },
 ] as const;
