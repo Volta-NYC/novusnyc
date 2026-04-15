@@ -13,7 +13,6 @@ import {
   CreditCardIcon,
   MapPinIcon,
 } from "@/components/Icons";
-import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import { projects as fallbackProjects } from "@/data";
 import storefrontPhoto from "../../../public/petite-dumpling-storefront.jpg";
@@ -469,45 +468,6 @@ export default async function Partners() {
                 </details>
               </AnimatedSection>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── BID SECTION ──────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <AnimatedSection direction="left">
-              <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
-                For BIDs & district organizations
-              </p>
-              <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-5">
-                We coordinate<br />through your district.
-              </h2>
-              <p className="font-body text-v-muted leading-relaxed mb-6">
-                We partner with Business Improvement Districts to coordinate
-                neighborhood-level operations — identifying businesses that need
-                support, making introductions, and ensuring follow-through on every
-                project. We&apos;re also open to a quick Zoom chat to discuss fit.
-              </p>
-              <p className="font-body text-sm text-v-ink leading-relaxed">
-                To get started, fill out the form above and tell us a little about what your businesses need.
-              </p>
-            </AnimatedSection>
-            <AnimatedSection direction="right">
-              <div className="bg-v-bg border border-v-border rounded-2xl p-8">
-                <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">
-                  Currently active
-                </p>
-                <p className="font-display font-bold text-v-ink text-6xl leading-none mb-1">{formatStat(VOLTA_STATS.bidPartners)}</p>
-                <p className="font-body text-v-muted mb-6">BID partnerships across NYC</p>
-                <div className="pt-6 border-t border-v-border">
-                  <p className="font-body text-sm text-v-muted">
-                    Active across {formatStat(VOLTA_STATS.bidPartners)} neighborhoods in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
-                  </p>
-                </div>
-              </div>
-            </AnimatedSection>
           </div>
         </div>
       </section>
