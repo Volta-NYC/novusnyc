@@ -83,27 +83,19 @@ export const homeTracks = [
 ];
 
 export const marqueeSchools = [
-  "Stuyvesant High School",
-  "Brooklyn Technical High School",
-  "The Brooklyn Latin School",
-  "Manhattan Hunter Science High School",
-  "Staten Island Technical High School",
-  "Marriott's Ridge High School",
-  "Skyline High School",
-  "Seminole High School",
-  "South Brunswick High School",
-  "Virtual Virginia Academy",
-  "Seattle VocTech",
-  "Spain Park High School",
-  "Burlingame High School",
-  "Rouse High School",
-  "North Forsyth High School",
-  "Prosper High School",
-  "Bard High School Early College",
   "Cornell University",
+  "Stuyvesant High School",
   "Binghamton University",
-  "Hunter College",
+  "Bronx High School of Science",
+  "Penn State University",
+  "Academy for Mathematics, Science, and Engineering",
   "Baruch College",
+  "Brooklyn Technical High School",
+  "University of Rochester",
+  "NEST+m",
+  "Stevens Institute of Technology",
+  "Staten Island Technical High School",
+  "International Academy East",
 ];
 
 // ─── Projects ─────────────────────────────────────────────────────────────────

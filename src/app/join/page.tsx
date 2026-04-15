@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
-import { joinTracks, joinFaqs, joinGains } from "@/data";
+import { joinTracks, joinFaqs, joinGains, marqueeSchools } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { UsersIcon } from "@/components/Icons";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
@@ -139,6 +139,20 @@ export default async function Join() {
               Takes 5 minutes · Apply anytime.
             </p>
           </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── SCHOOL MARQUEE ─────────────────────────────────── */}
+      <section className="py-10 bg-v-dark border-b border-white/5 overflow-hidden">
+        <div className="marquee-track">
+          {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
+            <span
+              key={`${school}-${i}`}
+              className="font-body text-sm text-white/30 whitespace-nowrap px-6 select-none"
+            >
+              {school}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -305,10 +319,11 @@ export default async function Join() {
               <AnimatedSection key={group.category} delay={gi * 0.08}>
                 <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">{group.category}</h3>
                 <div className="bg-white border border-v-border rounded-2xl px-5 py-5 md:px-6 md:py-6">
-                  <div className="flex flex-wrap gap-x-3 gap-y-2">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     {group.schools.map((school, si) => (
-                      <span key={school} className="font-body text-sm text-v-ink">
-                        {si > 0 && <span className="text-v-green/40 mx-1.5">·</span>}{school}
+                      <span key={school} className="inline-flex items-center gap-4">
+                        {si > 0 && <span className="text-v-green/60 text-sm leading-none select-none">·</span>}
+                        <span className="font-body text-sm text-v-ink">{school}</span>
                       </span>
                     ))}
                   </div>
