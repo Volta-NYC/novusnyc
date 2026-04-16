@@ -280,8 +280,18 @@ export async function getTotalMemberCount(): Promise<number> {
       db.ref("applications").get(),
     ]);
     const teamCount = teamSnap.exists() ? Object.keys(teamSnap.val() as Record<string, unknown>).length : 0;
-    const appCount = applicationSnap.exists() ? Object.keys(applicationSnap.val() as Record<string, unknown>).length : 0;
-    return teamCount + appCount;
+
+    // Only count "New" applicants to avoid double-counting accepted applicants
+    // who are already in the team count.
+    let newAppCount = 0;
+    if (applicationSnap.exists()) {
+      const apps = applicationSnap.val() as Record<string, Record<string, unknown>>;
+      for (const [, app] of Object.entries(apps)) {
+        if (app.status === "New") newAppCount++;
+      }
+    }
+
+    return teamCount + newAppCount;
   } catch {
     return 0;
   }
