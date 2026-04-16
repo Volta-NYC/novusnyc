@@ -67,23 +67,23 @@ export default async function About() {
       </section>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
-      <section className="py-16 bg-v-dark overflow-x-auto">
+      <section className="py-16 bg-white overflow-x-auto">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-10">Our impact</h2>
-            <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-10">Our impact</h2>
+            <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-v-border border border-v-border rounded-2xl overflow-hidden">
               {[
                 { value: liveStats.totalBusinesses, label: "Total\nbusinesses", color: "text-v-green" },
-                { value: liveStats.websiteProjects, label: "Website\nprojects", color: "text-blue-400" },
-                { value: liveStats.marketingProjects, label: "Marketing\nprojects", color: "text-lime-400" },
-                { value: liveStats.caseStudies, label: "Case studies\nby students", color: "text-pink-400" },
-                { value: liveStats.educationalReports, label: "Educational guides\nfor merchants", color: "text-amber-400" },
-                { value: liveStats.bidPartners, label: "Community\norganizations", color: "text-purple-400" },
+                { value: liveStats.websiteProjects, label: "Website\nprojects", color: "text-blue-500" },
+                { value: liveStats.marketingProjects, label: "Marketing\nprojects", color: "text-lime-600" },
+                { value: liveStats.caseStudies, label: "Case studies\nby students", color: "text-pink-500" },
+                { value: liveStats.educationalReports, label: "Educational guides\nfor merchants", color: "text-amber-500" },
+                { value: liveStats.bidPartners, label: "Community\norganizations", color: "text-purple-500" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06}>
                   <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
                     <p className={`font-display font-bold text-4xl md:text-5xl leading-none mb-3 ${s.color}`}>{s.value}</p>
-                    <p className="font-body text-[10px] text-white/45 uppercase tracking-widest whitespace-pre-line leading-relaxed">{s.label}</p>
+                    <p className="font-body text-[10px] text-v-muted uppercase tracking-widest whitespace-pre-line leading-relaxed">{s.label}</p>
                   </div>
                 </AnimatedSection>
               ))}

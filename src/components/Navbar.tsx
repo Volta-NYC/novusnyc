@@ -166,7 +166,7 @@ export default function Navbar() {
 
             <Link
               href="/apply"
-              className="bg-v-blue text-white font-display font-bold text-sm px-5 py-2.5 rounded-full hover:bg-v-blue-dark transition-colors"
+              className="bg-v-green text-v-ink font-display font-bold text-sm px-5 py-2.5 rounded-full hover:bg-v-green-dark transition-colors"
             >
               Apply Now
             </Link>
@@ -224,7 +224,7 @@ export default function Navbar() {
 
             <Link
               href="/apply"
-              className="bg-v-blue text-white font-display font-bold text-lg px-6 py-4 rounded-xl text-center mt-2"
+              className="bg-v-green text-v-ink font-display font-bold text-lg px-6 py-4 rounded-xl text-center mt-2"
             >
               Apply Now
             </Link>
