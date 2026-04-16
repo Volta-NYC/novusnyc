@@ -60,11 +60,6 @@ export const revalidate = 3600;
 
 export default async function Join() {
   const education = await getMemberEducationSnapshot();
-  const schoolGroups = [
-    { category: "High Schools", schools: education.highSchools },
-    { category: "Colleges & Universities", schools: education.colleges },
-  ];
-
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -119,7 +114,7 @@ export default async function Join() {
               you can point to, with real clients and measurable outcomes.
             </p>
             <p className="font-body text-white/65 text-sm mb-8">
-              High school and college students from {education.highSchoolCount}+ schools across NYC and beyond.
+              Join {education.memberCount}+ students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.
             </p>
             <div className="flex gap-4 flex-wrap mb-3">
               <Link
@@ -146,7 +141,7 @@ export default async function Join() {
             {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
               <span
                 key={`${school}-${i}`}
-                className="font-body text-xs text-white/50 whitespace-nowrap px-5 select-none"
+                className="font-body text-xs text-white/70 whitespace-nowrap px-5 select-none"
               >
                 {school}
               </span>
@@ -255,32 +250,6 @@ export default async function Join() {
               </div>
             </div>
           </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ── WHERE MEMBERS COME FROM ────────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where our members come from</h2>
-          </AnimatedSection>
-          <div className="space-y-10">
-            {schoolGroups.map((group, gi) => (
-              <AnimatedSection key={group.category} delay={gi * 0.08}>
-                <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">{group.category}</h3>
-                <div className="bg-white border border-v-border rounded-2xl px-5 py-5 md:px-6 md:py-6">
-                  <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
-                    {group.schools.map((school, si) => (
-                      <span key={school} className="inline-flex items-center gap-1">
-                        {si > 0 && <span className="text-v-green/50 text-base leading-none select-none px-1">·</span>}
-                        <span className="font-body text-sm text-v-ink">{school}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
         </div>
       </section>
 
