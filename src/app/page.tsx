@@ -263,13 +263,13 @@ async function LiveHomeStats() {
     liveStats.caseStudies + liveStats.educationalReports;
 
   const liveHomeStats = [
+    { value: roundDisplayStat(memberCount), suffix: "+", label: "Student Members" },
     { value: roundDisplayStat(liveStats.totalBusinesses), suffix: "+", label: "Businesses Supported" },
     {
       value: roundDisplayStat(studentPublicationsAndResearchProjects),
       suffix: "+",
       label: "Student Publications and Research Projects",
     },
-    { value: roundDisplayStat(memberCount), suffix: "+", label: "Student Members" },
     { value: roundDisplayStat(liveStats.bidPartners), suffix: "+", label: "Community Organizations" },
   ];
 
