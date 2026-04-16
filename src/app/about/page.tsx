@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
-import { MailIcon } from "@/components/Icons";
 import { aboutValues, aboutTimeline, teamMembers } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
@@ -150,26 +149,22 @@ export default async function About() {
               </AnimatedSection>
             ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
-                <div className="bg-white border border-v-border rounded-xl overflow-hidden project-card h-full flex flex-col">
+                <div className="bg-white border border-v-border rounded-xl overflow-hidden h-full flex flex-col">
                   <div className="aspect-[4/5] bg-v-border flex items-center justify-center overflow-hidden">
                     {m.photo ? (
                       <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-top" />
                     ) : (
-                      <div className="w-24 h-24 rounded-full bg-v-green/15 border-2 border-v-green/25 flex items-center justify-center">
-                        <span className="font-display font-bold text-v-green text-3xl">{m.initial}</span>
+                      <div className="w-12 h-12 rounded-full bg-v-green/15 border-2 border-v-green/25 flex items-center justify-center">
+                        <span className="font-display font-bold text-v-green text-xl">{m.initial}</span>
                       </div>
                     )}
                   </div>
-                  <div className="p-4 flex flex-col flex-1">
-                    <h3 className="font-display font-bold text-v-ink text-base leading-tight">{m.name}</h3>
-                    <p className="font-body text-xs text-v-muted mt-1">{m.role}</p>
-                    {m.desc && <p className="font-body text-xs text-v-muted/60 italic mt-2 leading-relaxed flex-1">{m.desc}</p>}
-                    <a href={`mailto:${m.email}`} className="flex items-center gap-2 mt-3 font-body text-xs text-v-blue hover:underline break-all">
-                      <MailIcon className="w-4 h-4 flex-shrink-0" />{m.email}
-                    </a>
+                  <div className="p-2.5 flex flex-col flex-1">
+                    <h3 className="font-display font-bold text-v-ink text-xs leading-tight">{m.name}</h3>
+                    <p className="font-body text-[10px] text-v-muted mt-0.5 leading-snug">{m.role}</p>
                   </div>
                 </div>
               </AnimatedSection>
