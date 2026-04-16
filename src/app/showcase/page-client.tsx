@@ -6,7 +6,6 @@ import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
-import { VOLTA_STATS, formatStat } from "@/data/stats";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
 
@@ -79,6 +78,9 @@ export default function ShowcaseClient({
   projects,
   mapProjects,
   bidPartners,
+  totalBusinesses,
+  memberCount,
+  orgPartners,
 }: {
   projects: ShowcaseProject[];
   mapProjects: Array<{
@@ -87,6 +89,9 @@ export default function ShowcaseClient({
     url?: string; colorClass: string; source?: "business" | "bid";
   }>;
   bidPartners: Array<{ id: string; name: string; borough: string }>;
+  totalBusinesses: number;
+  memberCount: number;
+  orgPartners: number;
 }) {
   const [boroughFilter, setBoroughFilter] = useState("All Boroughs");
   const [serviceFilter, setServiceFilter] = useState("All Services");
@@ -132,9 +137,9 @@ export default function ShowcaseClient({
               </h1>
               <div className="flex gap-8 md:pb-2">
                 {[
-                  { value: formatStat(VOLTA_STATS.businessesServed), label: "Businesses" },
-                  { value: formatStat(VOLTA_STATS.nycNeighborhoods), label: "Neighborhoods" },
-                  { value: formatStat(VOLTA_STATS.bidPartners), label: "BID partners" },
+                  { value: `${totalBusinesses}+`, label: "Businesses" },
+                  { value: `${memberCount}+`, label: "Members" },
+                  { value: `${orgPartners}+`, label: "Organization partners" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>
@@ -373,7 +378,7 @@ export default function ShowcaseClient({
           {/* ── BID PARTNERS ─────────────────────────────────── */}
           <AnimatedSection className="mt-14 mb-6">
             <h3 className="font-display font-bold text-v-ink text-xl md:text-2xl">
-              All of our organization partners
+              Our Organization Partners
             </h3>
           </AnimatedSection>
           {filteredBidPartners.length > 0 ? (

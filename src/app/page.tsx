@@ -10,7 +10,7 @@ import { currentProjects as fallbackCurrentProjects, joinTracks } from "@/data";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
-import { getPublicShowcaseCards, getPublicMapEntries, getPublicLiveStats } from "@/lib/server/publicShowcase";
+import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
@@ -247,50 +247,6 @@ async function CurrentProjectsSection() {
   );
 }
 
-async function HomeBidSection() {
-  const mapEntries = await getPublicMapEntries();
-  const bidPartners = mapEntries
-    .filter((e) => e.source === "bid")
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  if (bidPartners.length === 0) return null;
-
-  return (
-    <section className="py-14 bg-v-bg border-b border-v-border">
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <AnimatedSection className="mb-6">
-          <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
-            {formatStat(VOLTA_STATS.bidPartners)} BID partnerships across NYC
-          </h2>
-          <p className="font-body text-v-muted mt-2 max-w-xl">
-            We coordinate through Business Improvement Districts to reach the businesses that need us most.
-          </p>
-        </AnimatedSection>
-        <div className="flex flex-wrap gap-2">
-          {bidPartners.slice(0, 12).map((bid) => (
-            <div
-              key={bid.id}
-              className="px-3 py-2 border rounded-xl bg-v-bg border-v-border"
-            >
-              <p className="font-display font-bold text-[11px] uppercase tracking-wide leading-tight text-v-ink">
-                {bid.name}
-              </p>
-              {bid.borough && (
-                <p className="font-body text-[10px] text-v-muted mt-0.5">{bid.borough}</p>
-              )}
-            </div>
-          ))}
-          {bidPartners.length > 12 && (
-            <Link href="/showcase" className="px-3 py-2 border rounded-xl bg-v-bg border-v-border font-body text-xs text-v-blue hover:underline self-center">
-              +{bidPartners.length - 12} more →
-            </Link>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 async function LiveHomeStats() {
   const [liveStats, memberCount] = await Promise.all([
     getPublicLiveStats(),
@@ -334,10 +290,6 @@ export default function Home() {
           </section>
         </div>
       </section>
-
-      <Suspense fallback={null}>
-        <HomeBidSection />
-      </Suspense>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
       <section className="py-24 bg-v-bg">
