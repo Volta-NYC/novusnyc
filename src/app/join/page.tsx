@@ -124,7 +124,7 @@ export default async function Join() {
             <div className="flex gap-4 flex-wrap mb-3">
               <Link
                 href="/apply"
-                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-colors"
+                className="bg-v-blue text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-blue-dark transition-colors"
               >
                 Apply Now →
               </Link>
@@ -143,7 +143,7 @@ export default async function Join() {
       </section>
 
       {/* ── SCHOOL MARQUEE ─────────────────────────────────── */}
-      <section className="py-10 bg-v-dark border-b border-white/5 overflow-hidden">
+      <section className="py-10 bg-v-dark border-b border-white/5 overflow-hidden" data-home-dark-end="true">
         <div className="marquee-track">
           {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
             <span

@@ -7,7 +7,7 @@ import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, subscribeApplications, type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
+  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, type TeamMember, type UserProfile, type Business, type FinanceAssignment,
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
@@ -268,7 +268,6 @@ export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
   const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
-  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -292,7 +291,6 @@ export default function TeamPage() {
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeApplications(setApplications), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
   useEffect(() => {
     let mounted = true;
@@ -953,7 +951,6 @@ export default function TeamPage() {
     const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
     return memberAssignments.length > 0;
   }).length;
-  const totalApplicantsCount = applications.length;
 
   const pillColorClass = (prefix: string): string => {
     switch (prefix) {
@@ -1056,9 +1053,6 @@ export default function TeamPage() {
         <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
         <span>Assigned: <span className="text-emerald-300 font-semibold">{assignedMembersCount}</span></span>
         <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
-        {canEdit && (
-          <span>Total Applicants: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
-        )}
       </div>
       <SectionTabs tabs={PEOPLE_GROUP_TABS} />
       {importMessage && (

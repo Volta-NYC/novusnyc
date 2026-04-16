@@ -12,21 +12,31 @@ export default function ExpandableDescription({ desc, className = "" }: Props) {
   const [isClamped, setIsClamped] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
 
-  // After the paragraph renders with line-clamp-3 applied, check whether the
-  // text actually overflows. scrollHeight > clientHeight means content is cut.
-  // Only re-run when desc changes (not on expand/collapse — expanded is handled
-  // by the (isClamped || expanded) guard below).
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    setIsClamped(el.scrollHeight > el.clientHeight + 2);
+    const check = () => setIsClamped(el.scrollHeight > el.clientHeight + 2);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [desc]);
 
   return (
     <div className={className}>
       <p
         ref={ref}
-        className={`font-body text-sm text-v-ink/70 leading-relaxed ${expanded ? "line-clamp-none" : "line-clamp-3"}`}
+        className="font-body text-sm text-v-ink/70 leading-relaxed"
+        style={
+          expanded
+            ? undefined
+            : ({
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              } as React.CSSProperties)
+        }
       >
         {desc}
       </p>
