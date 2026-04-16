@@ -189,19 +189,19 @@ export const showcaseStats = [
 export const aboutValues = [
   {
     title: "Equity-first",
-    desc: "We focus on neighborhoods and businesses that don't have the resources to hire consultants or the capacity to manage everything on their own. Our goal is to broaden what's possible by showing new opportunities for growth and efficiency.",
+    desc: "We focus on businesses that can't afford to hire consultants or keep up with digital marketing on their own. We show them what's possible and help them get there.",
   },
   {
     title: "Student-led",
-    desc: "Every project, from initial outreach to final delivery, is led by our diverse team from across the five boroughs.",
+    desc: "Every project is designed and delivered by students, from the first outreach call to the final handoff.",
   },
   {
     title: "Community-rooted",
-    desc: "We work through local BIDs and community organizations because trust in a neighborhood takes time to build. We show up in person, learn the context behind each business, and stay engaged through the full project lifecycle.",
+    desc: "We work through local business improvement districts because trust in a neighborhood takes time. We show up in person, learn the story behind each business, and stay involved through the whole project.",
   },
   {
     title: "Transparent",
-    desc: "Every project comes with a defined scope, clear timelines, and regular check-ins. Business owners always know who is on their team, what's being worked on, and when to expect deliverables.",
+    desc: "Every project has a clear scope, set timeline, and regular updates. Business owners know who is on their team, what's being built, and when to expect it.",
   },
 ];
 
@@ -210,13 +210,13 @@ export const aboutTimeline = [
     month: "Nov",
     year: "2025",
     label: "NYC branch launched",
-    desc: "Volta NYC is established, beginning outreach to Business Improvement Districts across Brooklyn and Queens.",
+    desc: "Volta NYC is founded, with outreach to business improvement districts across Brooklyn and Queens.",
   },
   {
     month: "Jan",
     year: "2026",
     label: "First NYC projects",
-    desc: "First website and social media projects kick off — Petite Dumpling, Higher Learning, and Anatolico.",
+    desc: "First projects launch: Petite Dumpling, Higher Learning, and Anatolico.",
   },
   {
     month: "Spring",
@@ -228,7 +228,7 @@ export const aboutTimeline = [
     month: "Summer",
     year: "2026",
     label: "Deeper engagements",
-    desc: "Volta expands into longer-term client engagements, structured in-person neighborhood tours, and exploratory paid internship tracks for returning members.",
+    desc: "Longer-term client work, in-person neighborhood tours, and paid internship tracks for returning members.",
     tentative: true,
   },
 ];
@@ -257,42 +257,42 @@ export const joinGains = [
   {
     icon: MonitorIcon,
     title: "Real deliverables",
-    desc: "Deployed websites, live social media campaigns, submitted grant applications — work you can point to.",
+    desc: "Deployed websites, live social media campaigns, submitted grant applications. Work you can show in an interview.",
     color: "text-v-blue",
     bg: "bg-blue-50",
   },
   {
     icon: FolderIcon,
     title: "A portfolio that holds up",
-    desc: "Tell interviewers exactly what you built, for which business, and what the result was.",
+    desc: "You can tell an interviewer exactly what you built, for which business, and what changed as a result.",
     color: "text-v-green",
     bg: "bg-lime-50",
   },
   {
     icon: AwardIcon,
     title: "References that count",
-    desc: "Work directly with project directors and team leads who can speak to your specific contributions.",
+    desc: "Your team leads and project directors know your work firsthand and can speak to it specifically.",
     color: "text-amber-500",
     bg: "bg-amber-50",
   },
   {
     icon: UsersIcon,
-    title: "Mentorship",
-    desc: "Get guidance from experienced team leads and project directors throughout your time at Volta.",
+    title: "Feedback on your work",
+    desc: "Experienced members review your work and give you direct feedback as you go.",
     color: "text-purple-500",
     bg: "bg-purple-50",
   },
   {
     icon: ArrowUpRightIcon,
     title: "Fast path to leadership",
-    desc: "Strong contributors move into team lead and pod manager roles quickly — we always need more of them.",
+    desc: "Strong contributors move into lead roles quickly. We promote based on work, not time.",
     color: "text-v-blue",
     bg: "bg-blue-50",
   },
   {
     icon: BuildingIcon,
     title: "Real community impact",
-    desc: "The businesses you help are real — family-owned restaurants, flower shops, tutoring centers across NYC.",
+    desc: "The businesses you work with are real. Family-owned restaurants, flower shops, tutoring centers across NYC.",
     color: "text-v-green",
     bg: "bg-lime-50",
   },
@@ -342,16 +342,16 @@ export const joinTracks = [
     iconColor: "text-amber-500",
     iconBg: "bg-amber-100",
     skills: [
-      "Comfort reading financial and tax documents",
-      "Strong spreadsheet and structured-analysis skills",
-      "Grant writing or research experience (preferred, not required)",
-      "Interest in finance, accounting, or nonprofit work",
+      "Comfortable reading financial documents or spreadsheets",
+      "Some experience with structured analysis or research",
+      "Grant writing experience is a plus but not required",
+      "Interest in finance, accounting, or nonprofit operations",
     ],
     doWhat: [
       "Research and write grant applications for small businesses",
-      "Analyze sales and revenue data",
-      "Run competitor analysis and market benchmarking",
-      "Write practical business reports for owners (see /guides)",
+      "Analyze sales and revenue data to find growth opportunities",
+      "Run competitor research and market benchmarking",
+      "Write plain-language business reports for owners",
       "Support nonprofit financial filings and documentation",
     ],
   },
@@ -363,16 +363,16 @@ export const joinTracks = [
     iconColor: "text-v-blue",
     iconBg: "bg-blue-100",
     skills: [
-      "React.js/TypeScript with some backend or API experience",
-      "Familiarity with GitHub and deployment workflows",
-      "Interest in full-stack development and production systems",
+      "React.js or TypeScript, with some backend or API experience",
+      "Comfortable with GitHub and basic deployment workflows",
+      "Interest in working on full-stack production systems",
     ],
     doWhat: [
       "Build and launch websites for client businesses",
-      "Build backend workflows (forms, databases, auth, automations)",
-      "Set up and optimize Google Maps and Yelp listings",
-      "Implement SEO improvements and web accessibility",
-      "Deploy and manage code in a shared GitHub repo",
+      "Set up backend workflows: forms, databases, auth, automations",
+      "Optimize Google Maps and Yelp listings for search visibility",
+      "Implement SEO improvements and accessibility fixes",
+      "Deploy and maintain code in a shared production repo",
     ],
   },
   {
@@ -383,15 +383,15 @@ export const joinTracks = [
     iconColor: "text-v-green",
     iconBg: "bg-lime-100",
     skills: [
-      "Social media or content creation experience",
-      "Design skills (Canva, Adobe, Figma)",
-      "Strong writing and communication",
+      "Experience with social media or content creation",
+      "Design skills in Canva, Adobe, or Figma",
+      "Strong writing and clear communication",
     ],
     doWhat: [
-      "Manage Instagram accounts for real businesses",
-      "Develop content strategies and posting calendars",
-      "Film and edit founder interview content",
-      "Run analytics and audience growth campaigns",
+      "Manage Instagram accounts for active client businesses",
+      "Build content strategies and weekly posting calendars",
+      "Film and edit founder interview videos",
+      "Track performance and run audience growth campaigns",
     ],
   },
 ];
@@ -399,27 +399,27 @@ export const joinTracks = [
 export const joinFaqs = [
   {
     q: "Is this paid?",
-    a: "No — Volta is a nonprofit and all positions are volunteer. You gain experience, portfolio work, mentorship, references, and leadership opportunities.",
+    a: "No. Volta is a nonprofit and all roles are volunteer. You get real project experience, portfolio work, references, and the opportunity to move into a leadership role.",
   },
   {
     q: "Do I need prior experience?",
-    a: "It depends on the track. Tech requires some coding experience. Finance and marketing are more open to students still developing their skills.",
+    a: "It depends on the track. Tech requires coding experience. Finance and marketing are more open to students who are still building their skills.",
   },
   {
     q: "Is it remote?",
-    a: "Yes. All work is remote-friendly. Some NYC members may choose to do in-person client visits, but it's not required.",
+    a: "Yes. All work is remote. Some NYC members choose to join in-person client visits, but it is not required.",
   },
   {
     q: "How much time does it take?",
-    a: "2–4 hours per week, depending on the project phase. Some weeks are lighter, some are heavier around deliverable deadlines.",
+    a: "About 2 to 4 hours per week. Some weeks are lighter, some are busier when deadlines are close.",
   },
   {
     q: "How long is a project?",
-    a: "Projects are ongoing and vary in scope. There's no fixed contract or semester commitment. You work on a project until it's delivered.",
+    a: "It varies. There is no fixed semester commitment. You work on a project until it ships, then you can take on another.",
   },
   {
     q: "Can college students apply?",
-    a: "Yes. We actively recruit from CUNY schools and other NYC colleges. College students often move into team lead roles.",
+    a: "Yes. We recruit from CUNY schools and colleges across the country. College students often move into team lead roles.",
   },
 ];
 

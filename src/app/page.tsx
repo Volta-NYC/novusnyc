@@ -311,7 +311,7 @@ export default function Home() {
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
-              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems alongside frontend execution — with ongoing client support built into every engagement.
+              Every project is staffed by students across our three tracks. Work ships to production quickly and includes ongoing support after delivery.
             </p>
           </AnimatedSection>
           <AnimatedSection>

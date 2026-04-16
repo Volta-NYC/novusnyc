@@ -103,23 +103,23 @@ const SERVICES = [
 const PARTNER_FAQS = [
   {
     q: "Is this really free?",
-    a: "Yes, completely free. Volta NYC is a registered 501(c)(3) nonprofit. There is no cost, no hidden fees, and no catch. Our student teams do all the work at no charge to your business.",
+    a: "Yes. Volta NYC is a registered 501(c)(3) nonprofit. There are no fees, no contracts, and no catch. Our student teams do everything at no cost to your business.",
   },
   {
     q: "How long does a project take?",
-    a: "Most projects run 4–8 weeks from scoping to delivery, depending on complexity. Websites typically take longer than social media or SEO projects. We give you a clear timeline upfront.",
+    a: "Most projects take 4 to 8 weeks from scoping to delivery. Websites tend to take longer than social media or SEO work. We give you a timeline before we start.",
   },
   {
     q: "What do I need to provide?",
-    a: "Just your time — about 30 minutes for an initial conversation to discuss your needs and goals. After that, our student team handles the heavy lifting and keeps you updated along the way.",
+    a: "Just 30 minutes for an initial conversation to go over your needs. After that, we handle the work and keep you updated along the way.",
   },
   {
     q: "Who will be working on my project?",
-    a: "A dedicated team of high school and college students from across NYC, led by an experienced project director. You'll know exactly who's on your team and what they're working on.",
+    a: "A team of high school and college students from across NYC, led by a project director. You will know who is on your team and what they are working on.",
   },
   {
     q: "Do I need to be tech-savvy?",
-    a: "Not at all. We handle all the technical work and train you on how to use and maintain everything we build. Our goal is to make this as easy as possible for you.",
+    a: "Not at all. We handle the technical work and walk you through how to use and maintain what we build.",
   },
 ];
 
@@ -171,10 +171,8 @@ export default async function Partners() {
               <span className="text-v-green">for your business.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              Volta NYC places student teams on real projects for NYC small businesses —
-              websites, social media, grant writing, SEO, and financial operations.
-              We scope with you first, then execute with clear deliverables, timelines,
-              and regular updates. Professional-grade work, no cost to you.
+              Volta NYC assigns student teams to work on real projects for NYC small businesses: websites, social media, grant writing, SEO, and financial analysis.
+              We scope every project with you first and work with clear timelines and regular updates. No cost, ever.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a
@@ -274,7 +272,7 @@ export default async function Partners() {
                 <div className="w-8 h-8 rounded-full bg-v-green/15 text-v-green font-display font-bold text-sm flex items-center justify-center mb-3">1</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Apply</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
-                  Leave your contact information, and we&apos;ll get back to you via text or email within a few days.
+                  Fill out the form below and we will follow up by text or email within a few days.
                 </p>
               </div>
             </AnimatedSection>
@@ -292,7 +290,7 @@ export default async function Partners() {
                 <div className="w-8 h-8 rounded-full bg-amber-500/15 text-amber-600 font-display font-bold text-sm flex items-center justify-center mb-3">3</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Build</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
-                  A dedicated student team is assigned within a few days and starts work with clear timelines and regular progress updates.
+                  A student team is assigned and gets to work. You will have a clear timeline and regular updates throughout.
                 </p>
               </div>
             </AnimatedSection>

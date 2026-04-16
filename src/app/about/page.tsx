@@ -52,14 +52,14 @@ export default async function About() {
           <AnimatedSection direction="right" className="flex-1 pt-4 md:pt-16">
             <p className="font-body text-white/70 text-lg leading-relaxed mb-5">
               Volta is a nonprofit run entirely by high school and college students.
-              We believe that digital equity is economic equity — and that the family-owned
-              restaurants, flower shops, and community businesses that define NYC&apos;s
-              neighborhoods deserve the same digital tools and access to grants and financial resources as larger businesses.
+              We believe digital access and economic opportunity go together, and that the family-owned
+              restaurants, flower shops, and community businesses that make up NYC&apos;s neighborhoods
+              deserve the same tools and resources as larger ones.
             </p>
             <p className="font-body text-white/65 text-base leading-relaxed">
-              Our members build websites, grow social media audiences, and win grants for
-              businesses across the city. They develop professional skills, earn meaningful
-              portfolio work, and contribute directly to the communities around them.
+              Our members build websites, grow social media audiences, and write grants for
+              businesses across the city. In the process, they build real professional skills
+              and portfolios they can stand behind.
             </p>
           </AnimatedSection>
         </div>
@@ -103,9 +103,9 @@ export default async function About() {
                   by connecting them with the next generation of tech, finance, and marketing talent.&rdquo;
                 </blockquote>
                 <p className="font-body text-v-muted text-base leading-relaxed">
-                  Most small business owners know what they need. What they lack is the
-                  time, bandwidth, and connections to make it happen. We help them see
-                  what&apos;s possible — and then we make it happen.
+                  Most small business owners know what they need. What they lack is time
+                  and the right connections. We help them figure out what is possible
+                  and then do the work.
                 </p>
               </div>
               <div className="flex justify-center md:justify-end">
