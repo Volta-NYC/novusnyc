@@ -148,14 +148,14 @@ async function CurrentProjectsSection() {
         {homeProjects.length > 0 ? (
           <>
             <div className="sm:hidden -mx-5 px-5 overflow-x-auto pb-2">
-              <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory">
+              <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory items-start">
                 {homeProjects.map((p, i) => (
                   <AnimatedSection
                     key={`mobile-${p.name}`}
                     delay={i * 0.05}
                     className="snap-start shrink-0 w-[82vw] max-w-[360px]"
                   >
-                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg h-full">
+                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
                         <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">

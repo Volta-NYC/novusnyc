@@ -219,14 +219,14 @@ export default function ShowcaseClient({
           ) : (
             <>
               <div className="lg:hidden -mx-5 px-5 overflow-x-auto pb-2">
-                <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory">
+                <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory items-start">
                   {filteredProjects.map((p, i) => (
                     <AnimatedSection
                       key={`mobile-${p.name}`}
                       delay={i * 0.05}
                       className="snap-start shrink-0 w-[84vw] max-w-[380px]"
                     >
-                      <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col h-full">
+                      <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                         <div className={`${p.colorClass} h-2`} />
                         {p.imageUrl ? (
                           <div className="mx-4 mt-5 rounded-xl border border-v-border bg-v-bg overflow-hidden">
