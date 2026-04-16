@@ -6,7 +6,7 @@ import { aboutValues, aboutTimeline, teamMembers } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 
-export const revalidate = 3600;
+export const revalidate = 900;
 
 export const metadata: Metadata = {
   title: "About Us | Volta NYC",
@@ -66,11 +66,11 @@ export default async function About() {
                 { value: liveStats.marketingProjects, label: "Marketing\nprojects", color: "text-lime-400" },
                 { value: liveStats.caseStudies, label: "Case studies\nby students", color: "text-pink-400" },
                 { value: liveStats.educationalReports, label: "Educational guides\nfor merchants", color: "text-amber-400" },
-                { value: liveStats.bidPartners, label: "Organization\npartners", color: "text-purple-400" },
+                { value: liveStats.bidPartners, label: "Community\norganizations", color: "text-purple-400" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06}>
                   <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
-                    <p className={`font-display font-bold text-4xl md:text-5xl leading-none mb-3 ${s.color}`}>{s.value}+</p>
+                    <p className={`font-display font-bold text-4xl md:text-5xl leading-none mb-3 ${s.color}`}>{s.value}</p>
                     <p className="font-body text-[10px] text-white/45 uppercase tracking-widest whitespace-pre-line leading-relaxed">{s.label}</p>
                   </div>
                 </AnimatedSection>

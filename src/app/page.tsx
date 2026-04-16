@@ -14,7 +14,7 @@ import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicS
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 export const metadata: Metadata = {
   title: "Volta NYC — Free Consulting for NYC Small Businesses",
@@ -253,11 +253,24 @@ async function LiveHomeStats() {
     getTotalMemberCount(),
   ]);
 
+  const roundDisplayStat = (value: number): number => {
+    if (!Number.isFinite(value)) return 0;
+    if (value <= 20) return Math.max(0, Math.floor(value));
+    return Math.ceil(value / 10) * 10;
+  };
+
+  const studentPublicationsAndResearchProjects =
+    liveStats.caseStudies + liveStats.educationalReports;
+
   const liveHomeStats = [
-    { value: liveStats.totalBusinesses, suffix: "+", label: "Businesses Supported" },
-    { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
-    { value: memberCount, suffix: "+", label: "Student Members" },
-    { value: liveStats.bidPartners, suffix: "+", label: "Organization Partners" },
+    { value: roundDisplayStat(liveStats.totalBusinesses), suffix: "+", label: "Businesses Supported" },
+    {
+      value: roundDisplayStat(studentPublicationsAndResearchProjects),
+      suffix: "+",
+      label: "Student Publications and Research Projects",
+    },
+    { value: roundDisplayStat(memberCount), suffix: "+", label: "Student Members" },
+    { value: roundDisplayStat(liveStats.bidPartners), suffix: "+", label: "Community Organizations" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;
