@@ -212,14 +212,18 @@ function normalizeTrackProjectsFromBusiness(business: Business): { projectTracks
 
   if (projectTracks.length === 0) {
     const legacyMembers = (business.teamMembers ?? []).map((name) => String(name ?? "").trim()).filter(Boolean);
-    const fallbackTrack: TrackDivision = legacyMembers.length > 0 ? "Tech" : normalizeDivision(business.division);
-    projectTracks = [fallbackTrack];
-    normalizedMap[fallbackTrack] = {
-      projectStatus: normalizeProjectStatus(business.projectStatus),
-      teamMembers: legacyMembers,
-      deadlines: [...TRACK_DEADLINE_DEFAULT],
-      notes: String(business.notes ?? "").trim(),
-    };
+    if (legacyMembers.length > 0) {
+      const fallbackTrack: TrackDivision = "Tech";
+      projectTracks = [fallbackTrack];
+      normalizedMap[fallbackTrack] = {
+        projectStatus: normalizeProjectStatus(business.projectStatus),
+        teamMembers: legacyMembers,
+        deadlines: [...TRACK_DEADLINE_DEFAULT],
+        notes: String(business.notes ?? "").trim(),
+      };
+    } else {
+      return { projectTracks: [], trackProjects: normalizedMap };
+    }
   }
 
   for (const track of projectTracks) {
@@ -237,6 +241,7 @@ function normalizeTrackProjectsFromBusiness(business: Business): { projectTracks
 }
 
 function deriveOverallStatus(trackProjects: TrackProjectMap, projectTracks: TrackDivision[]): ProjectStatusValue {
+  if (projectTracks.length === 0) return "Upcoming";
   const statuses = projectTracks.map((track) => trackProjects[track]?.projectStatus ?? "Upcoming");
   if (statuses.includes("Ongoing")) return "Ongoing";
   if (statuses.includes("Upcoming")) return "Upcoming";
@@ -244,6 +249,7 @@ function deriveOverallStatus(trackProjects: TrackProjectMap, projectTracks: Trac
 }
 
 function derivePrimaryDivision(projectTracks: TrackDivision[]): TrackDivision {
+  if (projectTracks.length === 0) return "Tech";
   if (projectTracks.includes("Tech")) return "Tech";
   if (projectTracks.includes("Marketing")) return "Marketing";
   return "Finance";
@@ -355,15 +361,8 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   notes: "",
   division: "Tech",
   teamMembers: [],
-  projectTracks: ["Tech"],
-  trackProjects: {
-    Tech: {
-      projectStatus: "Upcoming",
-      teamMembers: [],
-      deadlines: [...TRACK_DEADLINE_DEFAULT],
-      notes: "",
-    },
-  },
+  projectTracks: [],
+  trackProjects: {},
   showcaseEnabled: false,
   showcaseFeaturedOnHome: false,
   showcaseType: "Digital & Tech",
@@ -775,7 +774,6 @@ export default function BusinessesPage() {
     const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : [])
       .map((track) => normalizeDivision(track))
       .filter((track, index, arr) => arr.indexOf(track) === index);
-    if (selectedTracks.length === 0) return;
 
     const nextTrackProjects: TrackProjectMap = {};
     for (const track of selectedTracks) {
@@ -1412,7 +1410,6 @@ export default function BusinessesPage() {
     const currentTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
     const formTrackProjects = normalizedFormTrackProjects();
     const hasTrack = currentTracks.includes(track);
-    if (hasTrack && currentTracks.length === 1) return;
 
     if (hasTrack) {
       const nextTracks = currentTracks.filter((item) => item !== track);
@@ -1936,10 +1933,10 @@ export default function BusinessesPage() {
           {/* ── Project Info ── */}
           <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
             <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Project Info</p>
-            <p className="text-white/45 text-xs font-body">Select one or more tracks, then configure each track project below.</p>
+            <p className="text-white/45 text-xs font-body">Tracks are optional. Use this section when work is assigned.</p>
           </div>
           <div className="lg:col-span-2">
-            <Field label="Tracks" required>
+            <Field label="Tracks">
               <div className="flex flex-wrap gap-2">
                 {TRACK_ORDER.map((track) => {
                   const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
