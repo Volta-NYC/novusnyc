@@ -299,7 +299,7 @@ export default async function Partners() {
       </section>
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>

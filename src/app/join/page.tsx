@@ -150,8 +150,8 @@ export default async function Join() {
       </section>
 
       {/* ── WHY VOLTA / RESUME VALUE ───────────────────────── */}
-      <section className="py-16 bg-v-bg">
-        <div className="max-w-4xl mx-auto px-5 md:px-8">
+      <section className="py-14 bg-v-bg">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Built for your resume — and beyond</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
@@ -175,8 +175,8 @@ export default async function Join() {
       </section>
 
       {/* ── TRACKS ─────────────────────────────────────────── */}
-      <section id="tracks" className="py-16 bg-v-bg">
-        <div className="max-w-4xl mx-auto px-5 md:px-8">
+      <section id="tracks" className="py-14 bg-white">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
@@ -190,9 +190,9 @@ export default async function Join() {
       </section>
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-14 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
+          <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
               We promote based on the work you do, not how long you have been here. Strong contributors move up quickly.
@@ -230,7 +230,7 @@ export default async function Join() {
       </section>
 
       {/* ── FAQ ────────────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-14 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl">Frequently Asked Questions</h2>

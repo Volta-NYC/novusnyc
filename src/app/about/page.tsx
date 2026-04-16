@@ -66,7 +66,7 @@ export default async function About() {
       </section>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
-      <section className="py-16 bg-white overflow-x-auto">
+      <section className="py-14 bg-white overflow-x-auto">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-10">Our impact</h2>
@@ -92,8 +92,8 @@ export default async function About() {
       </section>
 
       {/* ── MISSION ─────────────────────────────────────────── */}
-      <section className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-5 md:px-8">
+      <section className="py-16 bg-v-bg">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
               <div>
@@ -127,7 +127,7 @@ export default async function About() {
       </section>
 
       {/* ── TEAM ────────────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -176,16 +176,16 @@ export default async function About() {
       </section>
 
       {/* ── HOW WE OPERATE ─────────────────────────────────── */}
-      <section className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
+      <section className="py-16 bg-v-bg">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
 
           <div className="border-t border-v-border">
             {aboutValues.map((v, i) => (
               <AnimatedSection key={v.title} delay={i * 0.08}>
-                <div className="group border-b border-v-border py-8 md:py-10 grid grid-cols-[3.5rem_1fr] md:grid-cols-[5rem_18rem_1fr] gap-x-6 md:gap-x-12 gap-y-3 items-center transition-colors duration-200 hover:bg-v-bg/60">
+                <div className="group border-b border-v-border py-8 md:py-10 grid grid-cols-[3.5rem_1fr] md:grid-cols-[5rem_18rem_1fr] gap-x-6 md:gap-x-12 gap-y-3 items-center transition-colors duration-200 hover:bg-black/[0.03]">
                   <span className="font-display font-bold text-v-green/35 group-hover:text-v-green/55 transition-colors duration-200 leading-none select-none"
                     style={{ fontSize: "clamp(2.6rem, 5vw, 3.8rem)" }}>
                     {i + 1}
@@ -204,9 +204,9 @@ export default async function About() {
       </section>
 
       {/* ── HISTORY / TIMELINE ─────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-6xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
+      <section className="py-16 bg-white">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we started</h2>
           </AnimatedSection>
 
@@ -218,7 +218,7 @@ export default async function About() {
                   {i < aboutTimeline.length - 1 && (
                     <div className="absolute left-8 top-16 bottom-0 -translate-x-1/2 w-0.5 bg-v-border" />
                   )}
-                  <div className="w-16 h-16 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-v-bg border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 flex-shrink-0">
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
                     <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
                   </div>
@@ -243,7 +243,7 @@ export default async function About() {
                 {aboutTimeline.map((t, i) => (
                   <AnimatedSection key={t.label} delay={i * 0.1}>
                     <div className="relative flex flex-col items-center text-center pt-0">
-                      <div className="w-20 h-20 rounded-full bg-white border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 mb-5">
+                      <div className="w-20 h-20 rounded-full bg-v-bg border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 mb-5">
                         <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
                         <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
                       </div>

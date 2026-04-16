@@ -114,7 +114,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
 
 function CurrentProjectsFallback() {
   return (
-    <section className="py-20 bg-v-bg">
+    <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -136,7 +136,7 @@ async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
   return (
-    <section className="py-20 bg-v-bg">
+    <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -306,8 +306,8 @@ export default function Home() {
       </section>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-4xl mx-auto px-5 md:px-8">
+      <section className="py-16 bg-v-bg">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">

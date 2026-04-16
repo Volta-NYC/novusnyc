@@ -155,7 +155,7 @@ export default function ShowcaseClient({
       </section>
 
       {/* ── FILTERS + PROJECT CARDS ─────────────────────────── */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-16 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-6 flex items-end justify-between flex-wrap gap-3">
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
