@@ -225,52 +225,6 @@ export default async function Join() {
         </div>
       </section>
 
-      {/* ── COLLEGE SECTION ────────────────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <AnimatedSection direction="left">
-              <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
-                For college students
-              </p>
-              <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-5">
-                Long-term projects,<br />
-                <span className="text-v-blue">real portfolio depth.</span>
-              </h2>
-              <p className="font-body text-v-muted leading-relaxed mb-6">
-                College students — including our team at Cornell — take on longer engagements that span
-                multiple months. You&apos;ll own workstreams end to end, iterate on live production systems,
-                and build the kind of portfolio depth that stands out in technical interviews and grad school applications.
-              </p>
-              <p className="font-body text-v-muted leading-relaxed">
-                Many of our college members move into Project Lead roles within their first semester,
-                managing teams and serving as the primary client-facing owner.
-              </p>
-            </AnimatedSection>
-            <AnimatedSection direction="right">
-              <div className="bg-v-bg border border-v-border rounded-2xl p-8">
-                <div className="space-y-6">
-                  <div>
-                    <p className="font-display font-bold text-v-ink text-2xl leading-none mb-1">{education.collegeCount}+</p>
-                    <p className="font-body text-sm text-v-muted">Colleges & universities represented</p>
-                  </div>
-                  <div className="pt-6 border-t border-v-border">
-                    <p className="font-body text-sm text-v-muted leading-relaxed">
-                      College students typically commit 3–5 hours per week and take on leadership roles faster than high school members.
-                    </p>
-                  </div>
-                  <div className="pt-4 border-t border-v-border">
-                    <p className="font-body text-sm text-v-muted leading-relaxed">
-                      Our Cornell team runs long-term client engagements including full website builds, grant applications, and ongoing social media management.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
-
       {/* ── SCHOOL AMBASSADOR CALLOUT ──────────────────────── */}
       <section className="py-16 bg-v-dark">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
@@ -316,10 +270,10 @@ export default async function Join() {
               <AnimatedSection key={group.category} delay={gi * 0.08}>
                 <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">{group.category}</h3>
                 <div className="bg-white border border-v-border rounded-2xl px-5 py-5 md:px-6 md:py-6">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
                     {group.schools.map((school, si) => (
-                      <span key={school} className="inline-flex items-center gap-4">
-                        {si > 0 && <span className="text-v-green/60 text-sm leading-none select-none">·</span>}
+                      <span key={school} className="inline-flex items-center gap-1">
+                        {si > 0 && <span className="text-v-green/50 text-base leading-none select-none px-1">·</span>}
                         <span className="font-body text-sm text-v-ink">{school}</span>
                       </span>
                     ))}
@@ -345,6 +299,10 @@ export default async function Join() {
               {leadershipSteps.map((step, i) => (
                 <AnimatedSection key={step.role} delay={i * 0.1}>
                   <div className="relative flex flex-col items-start md:items-center">
+                    {/* Connector lines between steps on desktop */}
+                    {i < leadershipSteps.length - 1 && (
+                      <div className="hidden md:block absolute top-5 left-[calc(50%+1.25rem)] w-[calc(100%-2.5rem)] h-0.5 bg-v-green/30 z-0" />
+                    )}
                     <div className="w-10 h-10 rounded-full bg-v-green flex items-center justify-center mb-4 z-10 flex-shrink-0">
                       <span className="font-display font-bold text-v-ink text-sm">{i + 1}</span>
                     </div>
@@ -359,7 +317,7 @@ export default async function Join() {
             <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">Other roles</h3>
             <div className="grid md:grid-cols-3 gap-4">
               {otherRoles.map((role) => (
-                <div key={role.role} className="bg-v-bg border border-v-border rounded-2xl p-5">
+                <div key={role.role} className="bg-white border border-v-border rounded-2xl p-5">
                   <h4 className="font-display font-bold text-v-ink text-base mb-2">{role.role}</h4>
                   <p className="font-body text-sm text-v-muted leading-relaxed">{role.desc}</p>
                 </div>
