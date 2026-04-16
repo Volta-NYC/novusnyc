@@ -392,6 +392,7 @@ export const joinTracks = [
       "Build content strategies and weekly posting calendars",
       "Film and edit founder interview videos",
       "Track performance and run audience growth campaigns",
+      "Design print and digital materials: menus, business cards, flyers, and branded templates",
     ],
   },
 ];
