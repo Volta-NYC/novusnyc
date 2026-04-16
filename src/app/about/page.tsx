@@ -130,25 +130,27 @@ export default async function About() {
       <section className="py-20 bg-v-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our Leadership</h2>
-            <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed [text-wrap:balance]">
-              A team of students from high schools and colleges across NYC and across the country.
-            </p>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div>
+                <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our Leadership</h2>
+                <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed [text-wrap:balance]">
+                  A team of students from high schools and colleges across NYC and across the country.
+                </p>
+              </div>
+              <div className="flex gap-8 md:pb-1 shrink-0">
+                {[
+                  { label: "High Schools", value: education.highSchoolCount },
+                  { label: "Colleges", value: education.collegeCount },
+                  { label: "States", value: education.stateCount },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>
+                    <p className="font-body text-xs text-v-muted uppercase tracking-widest mt-1">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-4 mb-8">
-            {[
-              { label: "High Schools", value: education.highSchoolCount },
-              { label: "Colleges", value: education.collegeCount },
-              { label: "States Represented", value: education.stateCount },
-            ].map((stat, i) => (
-              <AnimatedSection key={stat.label} delay={i * 0.08}>
-                <div className="rounded-xl border border-v-border bg-white px-6 py-7 text-center">
-                  <p className="font-display font-bold text-v-green text-4xl leading-none">{stat.value}</p>
-                  <p className="font-body text-xs text-v-muted uppercase tracking-[0.16em] mt-3">{stat.label}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
             {teamMembers.map((m, i) => (
               <AnimatedSection key={m.email} delay={i * 0.08}>
