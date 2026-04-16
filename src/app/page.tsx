@@ -114,7 +114,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
 
 function CurrentProjectsFallback() {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-v-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -136,7 +136,7 @@ async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-v-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -156,7 +156,7 @@ async function CurrentProjectsSection() {
                     delay={i * 0.05}
                     className="snap-start shrink-0 w-[82vw] max-w-[360px]"
                   >
-                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
+                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-white">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
                         <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
@@ -171,7 +171,7 @@ async function CurrentProjectsSection() {
                           />
                         </div>
                       ) : (
-                        <div className="mx-4 mt-5 rounded-xl border border-v-border h-36 flex items-center justify-center bg-white">
+                        <div className="mx-4 mt-5 rounded-xl border border-v-border h-36 flex items-center justify-center bg-v-bg">
                           <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                         </div>
                       )}
@@ -200,7 +200,7 @@ async function CurrentProjectsSection() {
                 gap={20}
               >
                 {homeProjects.map((p) => (
-                  <div key={`desktop-${p.name}`} className="border border-v-border rounded-2xl overflow-hidden project-card bg-v-bg">
+                  <div key={`desktop-${p.name}`} className="border border-v-border rounded-2xl overflow-hidden project-card bg-white">
                     <div className={`${p.colorClass} h-2`} />
                     {p.imageUrl ? (
                       <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
@@ -215,7 +215,7 @@ async function CurrentProjectsSection() {
                         />
                       </div>
                     ) : (
-                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-white">
+                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-v-bg">
                         <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                       </div>
                     )}
@@ -306,7 +306,7 @@ export default function Home() {
       </section>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>

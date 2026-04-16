@@ -150,7 +150,7 @@ export default async function Join() {
       </section>
 
       {/* ── WHY VOLTA / RESUME VALUE ───────────────────────── */}
-      <section className="py-14 bg-v-bg">
+      <section className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Built for your resume — and beyond</h2>
@@ -175,7 +175,7 @@ export default async function Join() {
       </section>
 
       {/* ── TRACKS ─────────────────────────────────────────── */}
-      <section id="tracks" className="py-14 bg-white">
+      <section id="tracks" className="py-14 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
@@ -190,7 +190,7 @@ export default async function Join() {
       </section>
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
-      <section className="py-14 bg-v-bg">
+      <section className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
@@ -219,7 +219,7 @@ export default async function Join() {
             <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">Other roles</h3>
             <div className="grid md:grid-cols-3 gap-4">
               {otherRoles.map((role) => (
-                <div key={role.role} className="bg-white border border-v-border rounded-2xl p-5">
+                <div key={role.role} className="bg-v-bg border border-v-border rounded-2xl p-5">
                   <h4 className="font-display font-bold text-v-ink text-base mb-2">{role.role}</h4>
                   <p className="font-body text-sm text-v-muted leading-relaxed">{role.desc}</p>
                 </div>
@@ -230,7 +230,7 @@ export default async function Join() {
       </section>
 
       {/* ── FAQ ────────────────────────────────────────────── */}
-      <section className="py-14 bg-white">
+      <section className="py-14 bg-v-bg">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl">Frequently Asked Questions</h2>

@@ -193,7 +193,7 @@ export default async function Partners() {
       </section>
 
       {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
@@ -206,7 +206,7 @@ export default async function Partners() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SERVICES.map((service, i) => (
               <AnimatedSection key={service.title} delay={i * 0.06}>
-                <details className="group bg-white border border-v-border rounded-2xl px-5 py-5 h-full">
+                <details className="group bg-v-bg border border-v-border rounded-2xl px-5 py-5 h-full">
                   <summary className="list-none cursor-pointer">
                     <div className="flex items-start gap-3">
                       <span className={`w-10 h-10 rounded-xl ${service.bg} flex items-center justify-center shrink-0`}>
@@ -240,7 +240,7 @@ export default async function Partners() {
       </section>
 
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
-      <section className="py-16 bg-white" id="contact">
+      <section className="py-16 bg-v-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
@@ -259,7 +259,7 @@ export default async function Partners() {
       </section>
 
       {/* ── PROCESS ─────────────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
@@ -268,7 +268,7 @@ export default async function Partners() {
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-4">
             <AnimatedSection>
-              <div className="border border-v-border rounded-xl p-5 h-full bg-white">
+              <div className="border border-v-border rounded-xl p-5 h-full bg-v-bg">
                 <div className="w-8 h-8 rounded-full bg-v-green/15 text-v-green font-display font-bold text-sm flex items-center justify-center mb-3">1</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Apply</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
@@ -277,7 +277,7 @@ export default async function Partners() {
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.06}>
-              <div className="border border-v-border rounded-xl p-5 h-full bg-white">
+              <div className="border border-v-border rounded-xl p-5 h-full bg-v-bg">
                 <div className="w-8 h-8 rounded-full bg-v-blue/15 text-v-blue font-display font-bold text-sm flex items-center justify-center mb-3">2</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Meet</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
@@ -286,7 +286,7 @@ export default async function Partners() {
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.12}>
-              <div className="border border-v-border rounded-xl p-5 h-full bg-white">
+              <div className="border border-v-border rounded-xl p-5 h-full bg-v-bg">
                 <div className="w-8 h-8 rounded-full bg-amber-500/15 text-amber-600 font-display font-bold text-sm flex items-center justify-center mb-3">3</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Build</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
@@ -299,7 +299,7 @@ export default async function Partners() {
       </section>
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-v-bg">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>

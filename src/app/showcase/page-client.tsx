@@ -155,7 +155,7 @@ export default function ShowcaseClient({
       </section>
 
       {/* ── FILTERS + PROJECT CARDS ─────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-6 flex items-end justify-between flex-wrap gap-3">
             <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
@@ -226,10 +226,10 @@ export default function ShowcaseClient({
                       delay={i * 0.05}
                       className="snap-start shrink-0 w-[84vw] max-w-[380px]"
                     >
-                      <div className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+                      <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                         <div className={`${p.colorClass} h-2`} />
                         {p.imageUrl ? (
-                          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-v-bg overflow-hidden">
+                          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
                             <Image
                               src={p.imageUrl}
                               alt={`${p.name} project`}
@@ -241,7 +241,7 @@ export default function ShowcaseClient({
                             />
                           </div>
                         ) : (
-                          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-v-bg h-36 flex items-center justify-center">
+                          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white h-36 flex items-center justify-center">
                             <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                           </div>
                         )}
@@ -302,10 +302,10 @@ export default function ShowcaseClient({
                   gap={24}
                 >
                   {filteredProjects.map((p) => (
-                    <div key={`desktop-${p.name}`} className="bg-white border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+                    <div key={`desktop-${p.name}`} className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
-                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg overflow-hidden">
+                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
                           <Image
                             src={p.imageUrl}
                             alt={`${p.name} project`}
@@ -317,7 +317,7 @@ export default function ShowcaseClient({
                           />
                         </div>
                       ) : (
-                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-v-bg h-40 flex items-center justify-center">
+                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
                           <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                         </div>
                       )}
