@@ -177,8 +177,7 @@ export default async function Showcase() {
               <div className="flex gap-8 md:pb-2">
                 {[
                   { value: formatStat(VOLTA_STATS.businessesServed), label: "Businesses" },
-                  { value: formatStat(VOLTA_STATS.nycNeighborhoods), label: "Neighborhoods" },
-                  { value: formatStat(VOLTA_STATS.bidPartners), label: "BID partners" },
+                  { value: formatStat(VOLTA_STATS.bidPartners), label: "Organization partners" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>

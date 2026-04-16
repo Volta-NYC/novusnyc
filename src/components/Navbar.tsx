@@ -34,7 +34,7 @@ export default function Navbar() {
       const darkRegionEnd = document.querySelector<HTMLElement>('[data-home-dark-end="true"]');
       if (darkRegionEnd) {
         const darkRegionBottom = darkRegionEnd.getBoundingClientRect().bottom;
-        setScrolled(darkRegionBottom <= 72);
+        setScrolled(darkRegionBottom <= 0);
         return;
       }
       if (pathname === "/") {

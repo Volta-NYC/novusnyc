@@ -86,7 +86,7 @@ export default async function Join() {
       />
 
       {/* ── HERO ───────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-20 overflow-hidden" data-home-dark-end="true">
+      <section className="relative pt-32 pb-20 overflow-hidden">
         <Image
           src={cornellPhoto}
           alt="Cornell University campus"
@@ -124,7 +124,7 @@ export default async function Join() {
             <div className="flex gap-4 flex-wrap mb-3">
               <Link
                 href="/apply"
-                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-colors"
+                className="bg-v-blue text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-blue-dark transition-colors"
               >
                 Apply Now →
               </Link>
@@ -143,7 +143,7 @@ export default async function Join() {
       </section>
 
       {/* ── SCHOOL MARQUEE ─────────────────────────────────── */}
-      <section className="py-6 bg-v-dark border-b border-white/5 overflow-hidden">
+      <section className="py-6 bg-v-dark border-b border-white/5 overflow-hidden" data-home-dark-end="true">
         <div className="marquee-track">
           {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
             <span
@@ -294,22 +294,42 @@ export default async function Join() {
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">How you grow</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
-            <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
-              We promote on merit, not tenure. Strong contributors advance quickly — we&apos;re always building new leaders.
-            </p>
           </AnimatedSection>
           <div className="relative">
-            {/* Connecting line on desktop */}
-            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-0.5 bg-v-green/20" />
-            <div className="grid md:grid-cols-5 gap-6">
+            {/* Desktop circles with connecting lines */}
+            <div className="hidden md:flex items-center mb-6">
+              {leadershipSteps.map((step, i) => (
+                <>
+                  <div key={`circle-${step.role}`} className="w-10 h-10 rounded-full bg-v-green flex items-center justify-center flex-shrink-0 relative z-10">
+                    <span className="font-display font-bold text-v-ink text-sm">{i + 1}</span>
+                  </div>
+                  {i < leadershipSteps.length - 1 && (
+                    <div key={`line-${i}`} className="flex-1 h-px bg-v-green/20" />
+                  )}
+                </>
+              ))}
+            </div>
+            {/* Desktop text labels */}
+            <div className="hidden md:grid md:grid-cols-5 gap-6 mb-2">
+              {leadershipSteps.map((step) => (
+                <div key={step.role} className="text-center">
+                  <h3 className="font-display font-bold text-v-ink text-base mb-1">{step.role}</h3>
+                  <p className="font-body text-sm text-v-muted leading-relaxed">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+            {/* Mobile list */}
+            <div className="md:hidden grid gap-4">
               {leadershipSteps.map((step, i) => (
                 <AnimatedSection key={step.role} delay={i * 0.1}>
-                  <div className="relative flex flex-col items-start md:items-center">
-                    <div className="w-10 h-10 rounded-full bg-v-green flex items-center justify-center mb-4 z-10 flex-shrink-0">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-v-green flex items-center justify-center flex-shrink-0">
                       <span className="font-display font-bold text-v-ink text-sm">{i + 1}</span>
                     </div>
-                    <h3 className="font-display font-bold text-v-ink text-base mb-2 md:text-center">{step.role}</h3>
-                    <p className="font-body text-sm text-v-muted leading-relaxed md:text-center">{step.desc}</p>
+                    <div>
+                      <h3 className="font-display font-bold text-v-ink text-base mb-1">{step.role}</h3>
+                      <p className="font-body text-sm text-v-muted leading-relaxed">{step.desc}</p>
+                    </div>
                   </div>
                 </AnimatedSection>
               ))}
