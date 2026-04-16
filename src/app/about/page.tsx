@@ -4,6 +4,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { MailIcon } from "@/components/Icons";
 import { aboutValues, aboutTimeline, teamMembers } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
+import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
 
 export const revalidate = 3600;
 
@@ -31,26 +32,37 @@ export default async function About() {
 
   return (
     <>
-      <section className="bg-v-bg pt-32 pb-14 relative overflow-hidden">
-        <div className="absolute inset-0 dot-grid opacity-40" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-v-green/8 rounded-full blur-3xl" />
+      <section className="relative pt-32 pb-14 overflow-hidden" data-home-dark-end="true">
+        <Image
+          src={brooklynBridgePhoto}
+          alt="Brooklyn Bridge"
+          fill
+          priority
+          fetchPriority="high"
+          placeholder="blur"
+          quality={75}
+          sizes="(max-width: 768px) 100vw, 1920px"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1a1e24]/75" />
+        <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
           <div className="flex-1">
             <AnimatedSection>
               <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">About Volta</p>
-              <h1 className="font-display font-bold text-v-ink leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
+              <h1 className="font-display font-bold text-white leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
                 Students who<br /><span className="text-v-green">give back</span><br />by doing real work.
               </h1>
             </AnimatedSection>
           </div>
           <AnimatedSection direction="right" className="flex-1 pt-4 md:pt-16">
-            <p className="font-body text-v-ink text-lg leading-relaxed mb-5">
+            <p className="font-body text-white/70 text-lg leading-relaxed mb-5">
               Volta is a nonprofit run entirely by high school and college students.
               We believe that digital equity is economic equity — and that the family-owned
               restaurants, flower shops, and community businesses that define NYC&apos;s
               neighborhoods deserve the same digital tools and funding access as larger businesses.
             </p>
-            <p className="font-body text-v-muted text-base leading-relaxed">
+            <p className="font-body text-white/50 text-base leading-relaxed">
               Our members build websites, grow social media audiences, and win grants for
               businesses across the city. They develop professional skills, earn meaningful
               portfolio work, and contribute directly to the communities around them.
