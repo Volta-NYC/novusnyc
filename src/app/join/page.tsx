@@ -85,8 +85,8 @@ export default async function Join() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      {/* ── HERO ───────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-24 overflow-hidden">
+      {/* ── HERO + MARQUEE ─────────────────────────────────── */}
+      <section className="relative pt-32 overflow-hidden" data-home-dark-end="true">
         <Image
           src={cornellPhoto}
           alt="Cornell University campus"
@@ -100,7 +100,7 @@ export default async function Join() {
         />
         <div className="absolute inset-0 bg-[#1a1e24]/75" />
         <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8 pb-16">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
               For Students
@@ -140,19 +140,18 @@ export default async function Join() {
             </p>
           </AnimatedSection>
         </div>
-      </section>
-
-      {/* ── SCHOOL MARQUEE ─────────────────────────────────── */}
-      <section className="py-10 bg-v-dark border-b border-white/5 overflow-hidden" data-home-dark-end="true">
-        <div className="marquee-track">
-          {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
-            <span
-              key={`${school}-${i}`}
-              className="font-body text-sm text-white/45 whitespace-nowrap px-6 select-none"
-            >
-              {school}
-            </span>
-          ))}
+        {/* Marquee sits over photo, separated by a subtle top border */}
+        <div className="relative border-t border-white/10 overflow-hidden py-3">
+          <div className="marquee-track">
+            {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
+              <span
+                key={`${school}-${i}`}
+                className="font-body text-xs text-white/50 whitespace-nowrap px-5 select-none"
+              >
+                {school}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
