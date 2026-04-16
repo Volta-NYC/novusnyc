@@ -6,7 +6,8 @@ import AnimatedSection from "@/components/AnimatedSection";
 import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
-import { currentProjects as fallbackCurrentProjects, joinTracks } from "@/data";
+import { currentProjects as fallbackCurrentProjects } from "@/data";
+import TracksTabbed from "@/components/TracksTabbed";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
@@ -305,46 +306,17 @@ export default function Home() {
       </section>
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
-      <section className="py-24 bg-v-bg">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-14">
+      <section className="py-20 bg-v-bg">
+        <div className="max-w-4xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
               Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems alongside frontend execution — with ongoing client support built into every engagement.
             </p>
           </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-6">
-            {joinTracks.map((t, i) => (
-              <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className={`border rounded-2xl p-8 h-full flex flex-col ${t.color}`}>
-                  <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
-                    <t.icon className={`w-5 h-5 ${t.iconColor}`} />
-                  </div>
-                  <h3 className="font-display font-bold text-v-ink text-xl mb-5">{t.name}</h3>
-
-                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3">What you&apos;ll do</p>
-                  <ul className="space-y-2 mb-6">
-                    {t.doWhat.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${t.iconColor.replace("text-", "bg-")}`} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3 mt-auto pt-4 border-t border-black/6">Who fits in</p>
-                  <ul className="space-y-2">
-                    {t.skills.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                        <span className="w-1.5 h-1.5 rounded-full bg-v-muted/30 flex-shrink-0 mt-1.5" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+          <AnimatedSection>
+            <TracksTabbed />
+          </AnimatedSection>
         </div>
       </section>
 

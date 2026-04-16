@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
-import { joinTracks, joinFaqs, joinGains, marqueeSchools } from "@/data";
+import TracksTabbed from "@/components/TracksTabbed";
+import { joinFaqs, joinGains, marqueeSchools } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { UsersIcon } from "@/components/Icons";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
@@ -141,9 +142,10 @@ export default async function Join() {
             {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
               <span
                 key={`${school}-${i}`}
-                className="font-body text-xs text-white/70 whitespace-nowrap px-5 select-none"
+                className="inline-flex items-center gap-4 font-body text-xs text-white/75 whitespace-nowrap px-2 select-none"
               >
                 {school}
+                <span className="w-1.5 h-1.5 rounded-full bg-v-blue opacity-80 flex-shrink-0" />
               </span>
             ))}
           </div>
@@ -151,23 +153,23 @@ export default async function Join() {
       </section>
 
       {/* ── WHY VOLTA / RESUME VALUE ───────────────────────── */}
-      <section className="py-20 bg-v-bg">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-12">
+      <section className="py-16 bg-v-bg">
+        <div className="max-w-4xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Built for your resume — and beyond</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
               Volta is designed around real outcomes — the kind that hold up in interviews and on applications.
             </p>
           </AnimatedSection>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 gap-x-12 gap-y-6">
             {joinGains.map((g, i) => (
-              <AnimatedSection key={g.title} delay={i * 0.06}>
-                <div className={`border border-v-border rounded-2xl p-6 h-full ${g.bg}`}>
-                  <div className={`w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center mb-4`}>
-                    <g.icon className={`w-5 h-5 ${g.color}`} />
+              <AnimatedSection key={g.title} delay={i * 0.04}>
+                <div className="flex gap-3 items-start">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[0.4rem] ${g.color.replace("text-", "bg-")}`} />
+                  <div>
+                    <p className="font-display font-bold text-v-ink text-sm">{g.title}</p>
+                    <p className="font-body text-sm text-v-muted mt-0.5 leading-relaxed">{g.desc}</p>
                   </div>
-                  <h3 className="font-display font-bold text-v-ink text-base mb-2">{g.title}</h3>
-                  <p className="font-body text-sm text-v-muted leading-relaxed">{g.desc}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -176,46 +178,17 @@ export default async function Join() {
       </section>
 
       {/* ── TRACKS ─────────────────────────────────────────── */}
-      <section id="tracks" className="py-20 bg-v-bg">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-14">
+      <section id="tracks" className="py-16 bg-v-bg">
+        <div className="max-w-4xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
-              Every project is staffed by students across our three tracks. Work is fast-paced, goes live quickly, and includes backend systems alongside frontend execution — with ongoing client support built into every engagement.
+              Every project is staffed by students across our three tracks. Pick the one that fits your skills and interests.
             </p>
           </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-6">
-            {joinTracks.map((t, i) => (
-              <AnimatedSection key={t.name} delay={i * 0.1}>
-                <div className={`border rounded-2xl p-8 h-full flex flex-col ${t.color}`}>
-                  <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-5`}>
-                    <t.icon className={`w-5 h-5 ${t.iconColor}`} />
-                  </div>
-                  <h3 className="font-display font-bold text-v-ink text-xl mb-5">{t.name}</h3>
-
-                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3">What you&apos;ll do</p>
-                  <ul className="space-y-2 mb-6">
-                    {t.doWhat.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${t.iconColor.replace("text-", "bg-")}`} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3 mt-auto pt-4 border-t border-black/6">Who fits in</p>
-                  <ul className="space-y-2">
-                    {t.skills.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted">
-                        <span className="w-1.5 h-1.5 rounded-full bg-v-muted/30 flex-shrink-0 mt-1.5" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+          <AnimatedSection>
+            <TracksTabbed />
+          </AnimatedSection>
         </div>
       </section>
 
