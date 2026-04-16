@@ -189,7 +189,7 @@ export const showcaseStats = [
 export const aboutValues = [
   {
     title: "Equity-first",
-    desc: "We focus on businesses that can't afford to hire consultants or keep up with digital marketing on their own. We show them what's possible and help them get there.",
+    desc: "We focus on businesses that can't afford to hire consultants or keep up with digital marketing on their own. We help them see what's possible, then work to make it happen.",
   },
   {
     title: "Student-led",
@@ -228,7 +228,7 @@ export const aboutTimeline = [
     month: "Summer",
     year: "2026",
     label: "Deeper engagements",
-    desc: "Longer-term client work, in-person neighborhood tours, and paid internship tracks for returning members.",
+    desc: "Volta moves into longer-term client engagements, adds structured in-person neighborhood tours, and launches paid internship tracks for returning members.",
     tentative: true,
   },
 ];
@@ -342,16 +342,16 @@ export const joinTracks = [
     iconColor: "text-amber-500",
     iconBg: "bg-amber-100",
     skills: [
-      "Comfortable reading financial documents or spreadsheets",
-      "Some experience with structured analysis or research",
+      "Comfort reading financial documents and working in spreadsheets",
+      "Some background in structured analysis or research",
       "Grant writing experience is a plus but not required",
       "Interest in finance, accounting, or nonprofit operations",
     ],
     doWhat: [
       "Research and write grant applications for small businesses",
-      "Analyze sales and revenue data to find growth opportunities",
+      "Analyze sales and revenue data to identify growth opportunities",
       "Run competitor research and market benchmarking",
-      "Write plain-language business reports for owners",
+      "Write clear, actionable reports for business owners",
       "Support nonprofit financial filings and documentation",
     ],
   },

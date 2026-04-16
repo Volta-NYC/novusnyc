@@ -52,7 +52,7 @@ export default async function About() {
           <AnimatedSection direction="right" className="flex-1 pt-4 md:pt-16">
             <p className="font-body text-white/70 text-lg leading-relaxed mb-5">
               Volta is a nonprofit run entirely by high school and college students.
-              We believe digital access and economic opportunity go together, and that the family-owned
+              We believe digital access and economic opportunity are inseparable, and that the family-owned
               restaurants, flower shops, and community businesses that make up NYC&apos;s neighborhoods
               deserve the same tools and resources as larger ones.
             </p>
@@ -104,8 +104,8 @@ export default async function About() {
                 </blockquote>
                 <p className="font-body text-v-muted text-base leading-relaxed">
                   Most small business owners know what they need. What they lack is time
-                  and the right connections. We help them figure out what is possible
-                  and then do the work.
+                  and the right connections. We help them see what is possible,
+                  then we do the work.
                 </p>
               </div>
               <div className="flex justify-center md:justify-end">

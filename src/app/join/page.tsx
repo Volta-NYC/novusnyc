@@ -25,7 +25,7 @@ const leadershipSteps = [
   },
   {
     role: "Senior Analyst",
-    desc: "Own your workstream and help newer analysts with their work.",
+    desc: "Own your workstream and mentor newer analysts on execution quality.",
   },
   {
     role: "Associate",
@@ -44,11 +44,15 @@ const leadershipSteps = [
 const otherRoles = [
   {
     role: "Neighborhood Liaison",
-    desc: "Act as the link between our project teams and local business owners. You do outreach, join BID visits, and help us build real relationships in the neighborhood.",
+    desc: "Bridge our project teams and local business owners. You do outreach, join BID visits, and build the on-the-ground relationships that make our work possible.",
+  },
+  {
+    role: "School Ambassador",
+    desc: "Represent Volta at your school. You recruit new members, run info sessions, and serve as the main point of contact between your campus and Volta leadership.",
   },
   {
     role: "Head of City Expansion",
-    desc: "Launch Volta in a new city. You build local partnerships and set up the first student teams and operating structure.",
+    desc: "Launch Volta in a new city. You build local partnerships and establish the first student teams and operating structure from scratch.",
   },
 ];
 

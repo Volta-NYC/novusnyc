@@ -171,8 +171,8 @@ export default async function Partners() {
               <span className="text-v-green">for your business.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              Volta NYC assigns student teams to work on real projects for NYC small businesses: websites, social media, grant writing, SEO, and financial analysis.
-              We scope every project with you first and work with clear timelines and regular updates. No cost, ever.
+              Volta NYC places student teams on real projects for NYC small businesses: websites, social media, grant writing, SEO, and financial analysis.
+              We scope every project with you first and work to clear timelines with regular updates. All at no cost to you.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a
