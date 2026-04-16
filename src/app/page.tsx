@@ -298,10 +298,10 @@ async function LiveHomeStats() {
   ]);
 
   const liveHomeStats = [
-    { value: liveStats.totalBusinesses, suffix: "", label: "Businesses Supported" },
+    { value: liveStats.totalBusinesses, suffix: "+", label: "Businesses Supported" },
     { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
-    { value: memberCount, suffix: "", label: "Student Members" },
-    { value: liveStats.bidPartners, suffix: "", label: "BID Partners" },
+    { value: memberCount, suffix: "+", label: "Student Members" },
+    { value: liveStats.bidPartners, suffix: "+", label: "Organization Partners" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;
