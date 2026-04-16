@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { projects as fallbackProjects } from "@/data";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
-import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import ShowcaseClient from "./page-client";
 
 export const dynamic = "force-dynamic";
@@ -143,10 +142,7 @@ export default async function Showcase() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const [liveStats, memberCount] = await Promise.all([
-    getPublicLiveStats(),
-    getTotalMemberCount(),
-  ]);
+  const liveStats = await getPublicLiveStats();
 
   return (
     <ShowcaseClient
@@ -154,7 +150,6 @@ export default async function Showcase() {
       mapProjects={mapProjects}
       bidPartners={bidPartners}
       totalBusinesses={liveStats.totalBusinesses}
-      memberCount={memberCount}
       orgPartners={liveStats.bidPartners}
     />
   );

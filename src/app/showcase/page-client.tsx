@@ -79,7 +79,6 @@ export default function ShowcaseClient({
   mapProjects,
   bidPartners,
   totalBusinesses,
-  memberCount,
   orgPartners,
 }: {
   projects: ShowcaseProject[];
@@ -90,7 +89,6 @@ export default function ShowcaseClient({
   }>;
   bidPartners: Array<{ id: string; name: string; borough: string }>;
   totalBusinesses: number;
-  memberCount: number;
   orgPartners: number;
 }) {
   const [boroughFilter, setBoroughFilter] = useState("All Boroughs");
@@ -138,8 +136,7 @@ export default function ShowcaseClient({
               <div className="flex gap-8 md:pb-2">
                 {[
                   { value: `${totalBusinesses}+`, label: "Businesses" },
-                  { value: `${memberCount}+`, label: "Members" },
-                  { value: `${orgPartners}+`, label: "Organization partners" },
+                  { value: `${orgPartners}+`, label: "Community organizations" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>
