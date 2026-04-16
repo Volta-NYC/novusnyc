@@ -42,7 +42,7 @@ function getServiceTagClass(service: string): string {
   if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
     return "bg-amber-100 text-amber-700 border-amber-200";
   }
-  return "bg-v-border text-v-muted border-v-border";
+  return "bg-slate-100 text-slate-600 border-slate-200";
 }
 
 function boroughCardClass(borough: string) {
@@ -140,7 +140,7 @@ export default function ShowcaseClient({
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>
-                    <p className="font-body text-xs text-white/40 uppercase tracking-widest mt-1">{s.label}</p>
+                    <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-1">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -258,7 +258,7 @@ export default function ShowcaseClient({
                                   ? "bg-lime-100 text-lime-700"
                                   : p.status === "Ongoing"
                                   ? "bg-blue-100 text-blue-700"
-                                  : "bg-v-border text-v-muted"
+                                  : "bg-slate-100 text-slate-600"
                               }`}
                             >
                               {p.status}
@@ -334,7 +334,7 @@ export default function ShowcaseClient({
                                 ? "bg-lime-100 text-lime-700"
                                 : p.status === "Ongoing"
                                 ? "bg-blue-100 text-blue-700"
-                                : "bg-v-border text-v-muted"
+                                : "bg-slate-100 text-slate-600"
                             }`}
                           >
                             {p.status}
@@ -411,7 +411,7 @@ export default function ShowcaseClient({
             </p>
             <Link
               href="/partners#contact"
-              className="inline-flex items-center justify-center rounded-full bg-v-green px-8 py-3.5 font-display text-base font-bold text-v-ink transition-colors hover:bg-[#9EDC2F]"
+              className="inline-flex items-center justify-center rounded-full bg-v-green px-8 py-3.5 font-display text-base font-bold text-v-ink transition-colors hover:bg-v-green-dark"
             >
               Work with us
             </Link>

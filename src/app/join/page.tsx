@@ -118,7 +118,7 @@ export default async function Join() {
               looking for portfolio work that holds up in interviews — Volta gives you deliverables
               you can point to, with real clients and measurable outcomes.
             </p>
-            <p className="font-body text-white/50 text-sm mb-8">
+            <p className="font-body text-white/65 text-sm mb-8">
               High school and college students from {education.highSchoolCount}+ schools across NYC and beyond.
             </p>
             <div className="flex gap-4 flex-wrap mb-3">
@@ -135,7 +135,7 @@ export default async function Join() {
                 See tracks
               </a>
             </div>
-            <p className="font-body text-sm text-white/50">
+            <p className="font-body text-sm text-white/60">
               Takes 5 minutes · Apply anytime.
             </p>
           </AnimatedSection>
@@ -148,7 +148,7 @@ export default async function Join() {
           {[...marqueeSchools, ...marqueeSchools].map((school, i) => (
             <span
               key={`${school}-${i}`}
-              className="font-body text-sm text-white/30 whitespace-nowrap px-6 select-none"
+              className="font-body text-sm text-white/45 whitespace-nowrap px-6 select-none"
             >
               {school}
             </span>

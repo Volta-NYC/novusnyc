@@ -156,7 +156,7 @@ export default async function Partners() {
           sizes="(max-width: 768px) 100vw, 1920px"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-[#1a1e24]/70" />
+        <div className="absolute inset-0 bg-[#1a1e24]/75" />
         <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
@@ -208,7 +208,7 @@ export default async function Partners() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SERVICES.map((service, i) => (
               <AnimatedSection key={service.title} delay={i * 0.06}>
-                <details className="group bg-v-bg border border-v-border rounded-2xl px-5 py-5 h-full">
+                <details className="group bg-white border border-v-border rounded-2xl px-5 py-5 h-full">
                   <summary className="list-none cursor-pointer">
                     <div className="flex items-start gap-3">
                       <span className={`w-10 h-10 rounded-xl ${service.bg} flex items-center justify-center shrink-0`}>
@@ -289,7 +289,7 @@ export default async function Partners() {
             </AnimatedSection>
             <AnimatedSection delay={0.12}>
               <div className="border border-v-border rounded-xl p-5 h-full bg-white">
-                <div className="w-8 h-8 rounded-full bg-amber-200 text-amber-700 font-display font-bold text-sm flex items-center justify-center mb-3">3</div>
+                <div className="w-8 h-8 rounded-full bg-amber-500/15 text-amber-600 font-display font-bold text-sm flex items-center justify-center mb-3">3</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Build</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
                   A dedicated student team is assigned within a few days and starts work with clear timelines and regular progress updates.

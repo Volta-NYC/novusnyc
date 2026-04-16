@@ -57,7 +57,7 @@ export default async function About() {
               restaurants, flower shops, and community businesses that define NYC&apos;s
               neighborhoods deserve the same digital tools and access to grants and financial resources as larger businesses.
             </p>
-            <p className="font-body text-white/50 text-base leading-relaxed">
+            <p className="font-body text-white/65 text-base leading-relaxed">
               Our members build websites, grow social media audiences, and win grants for
               businesses across the city. They develop professional skills, earn meaningful
               portfolio work, and contribute directly to the communities around them.

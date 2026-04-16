@@ -359,7 +359,7 @@ export default function Home() {
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
               Across all five boroughs
             </h2>
-            <p className="font-body text-white/50 text-lg max-w-xl mx-auto">
+            <p className="font-body text-white/70 text-lg max-w-xl mx-auto">
               We operate through trusted neighborhood partners and place teams where businesses are ready to launch and improve quickly.
             </p>
           </AnimatedSection>
