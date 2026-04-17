@@ -266,10 +266,10 @@ export default function BookPage() {
     <div className="min-h-screen bg-[#0F1014] flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-2">
+          <a href="/" className="inline-flex items-center gap-2 mb-2 group">
             <Image src="/logo.png" alt="Volta" width={32} height={32} className="object-contain" />
-            <span className="text-white font-bold text-lg tracking-tight">VOLTA NYC</span>
-          </div>
+            <span className="text-white font-bold text-lg tracking-tight group-hover:text-white/80 transition-colors">VOLTA NYC</span>
+          </a>
           <p className="text-white/40 text-sm font-body">Interview Scheduling</p>
         </div>
 

@@ -116,6 +116,9 @@ export default function Navbar() {
               onMouseLeave={() => setMoreOpen(false)}
             >
               <button
+                onClick={() => setMoreOpen((v) => !v)}
+                aria-expanded={moreOpen}
+                aria-haspopup="true"
                 className={`font-body text-sm font-semibold transition-colors flex items-center gap-1 ${
                   moreActive
                     ? "text-v-green"
@@ -198,7 +201,9 @@ export default function Navbar() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="font-display font-bold text-2xl text-v-ink border-b border-v-border pb-4"
+                className={`font-display font-bold text-2xl border-b border-v-border pb-4 ${
+                  pathname === l.href ? "text-v-green" : "text-v-ink"
+                }`}
               >
                 {l.label}
               </Link>

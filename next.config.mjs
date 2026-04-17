@@ -29,7 +29,10 @@ const SECURITY_HEADERS = [
 const nextConfig = {
   poweredByHeader: false,
   images: {
-    domains: [],
+    // remotePatterns replaces the deprecated domains[]. Add entries here when
+    // showcase image URLs move to an external CDN (e.g. firebasestorage.googleapis.com).
+    // Showcase images currently use unoptimized={true} for external URLs.
+    remotePatterns: [],
   },
   async headers() {
     return [

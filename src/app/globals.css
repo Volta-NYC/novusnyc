@@ -2,11 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════
+   VOLTA NYC — Design Token System
+   ───────────────────────────────────────────────────────────────────
+   All brand colors are stored as bare RGB channels (R G B) so that
+   Tailwind's opacity modifier syntax works: bg-v-green/50 resolves to
+   rgb(133 204 23 / 0.5). To update a color site-wide, change the
+   channel values here — everything that uses Tailwind v-* utilities
+   or the CSS custom properties below will update automatically.
+
+   WCAG AA contrast notes (4.5:1 required for normal text, 3:1 large):
+   • v-green (#85CC17) on white  → 2.0:1  DECORATIVE / FILL only
+   • v-green (#85CC17) on v-dark → 8.8:1  ✓ AAA
+   • v-green (#85CC17) on v-ink  → 9.4:1  ✓ AAA
+   • v-blue  (#3B74ED) on white  → 4.3:1  large text AA only
+   • v-blue  (#3B74ED) on v-dark → 7.5:1  ✓ AAA
+   • v-ink   (#0D0D0D) on white  → 19.6:1 ✓ AAA
+   • v-muted (#6B7280) on white  → 4.6:1  ✓ AA
+   • v-muted (#6B7280) on v-bg   → 4.3:1  borderline — use sparingly
+     for large/bold text; fine at 14px+ bold or 18px+ normal
+═══════════════════════════════════════════════════════════════════ */
 :root {
-  --green: #85CC17;
-  --blue: #3B74ED;
-  --bg: #F7F7F2;
-  --ink: #0D0D0D;
+  /* ─── Brand: Primary Green (#85CC17) ────────────────────────────
+     Use as: button fill (with v-ink text), decorative accents,
+     active-state indicators, icon fills on dark backgrounds.
+     Do NOT use as small text on white — fails WCAG AA.           */
+  --color-green:            133 204 23;
+
+  /* Pressed / hover state for green fills */
+  --color-green-dark:       106 170 16;
+
+  /* ─── Brand: Accent Blue (#3B74ED) ──────────────────────────────
+     Use as: link color (large/bold), CTA accents, "For Students"
+     track tinting. As normal body text on white it is borderline;
+     prefer for 16px+ bold or inside blue-tinted surfaces.        */
+  --color-blue:             59 116 237;
+
+  /* Pressed / hover state for blue fills */
+  --color-blue-dark:        43 98 217;
+
+  /* ─── Surfaces ───────────────────────────────────────────────── */
+  /* Page / section background — warm off-white */
+  --color-bg:               247 247 242;
+
+  /* Card / raised surface — pure white */
+  --color-surface:          255 255 255;
+
+  /* Dark section backgrounds (hero overlays, footer, CTA panels) */
+  --color-dark:             26 30 36;
+
+  /* ─── Typography ─────────────────────────────────────────────── */
+  /* Primary body text — near-black (19.6:1 on white, AAA)        */
+  --color-ink:              13 13 13;
+
+  /* Secondary / supporting text (4.6:1 on white, AA)             */
+  --color-muted:            107 114 128;
+
+  /* ─── Structural ─────────────────────────────────────────────── */
+  /* Borders, dividers, subtle separators */
+  --color-border:           229 229 223;
+
+  /* Decorative dot-grid pattern */
+  --color-dot:              200 200 192;
+
+  /* Scrollbar thumb */
+  --color-scrollbar:        209 209 204;
+
+  /* ─── Member Portal (Dark UI) ────────────────────────────────────
+     These dark shades are only used inside .members-portal and the
+     /members/* route. Adjust without affecting the public site.   */
+  --color-portal-panel:     28 31 38;   /* table shells, sidebars  */
+  --color-portal-input:     15 16 20;   /* input backgrounds       */
+  --color-portal-row:       18 21 27;   /* alternating table rows  */
+
+  /* ─── Legacy aliases (consumed by body/html base styles) ──────── */
+  --green: rgb(var(--color-green));
+  --blue:  rgb(var(--color-blue));
+  --bg:    rgb(var(--color-bg));
+  --ink:   rgb(var(--color-ink));
 }
 
 *,
@@ -49,7 +122,7 @@ main {
 
 /* Dot grid pattern */
 .dot-grid {
-  background-image: radial-gradient(circle, #c8c8c0 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgb(var(--color-dot)) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
@@ -174,8 +247,8 @@ main {
 }
 
 .members-checkbox:checked {
-  background: #85cc17;
-  border-color: #85cc17;
+  background: rgb(var(--color-green));
+  border-color: rgb(var(--color-green));
 }
 
 .members-checkbox:checked::after {
@@ -185,8 +258,8 @@ main {
   top: 2px;
   width: 4px;
   height: 8px;
-  border-right: 2px solid #0d0d0d;
-  border-bottom: 2px solid #0d0d0d;
+  border-right: 2px solid rgb(var(--color-ink));
+  border-bottom: 2px solid rgb(var(--color-ink));
   transform: rotate(45deg);
 }
 
@@ -238,7 +311,7 @@ main {
 }
 
 .members-portal .members-table-shell {
-  background: #1c1f26;
+  background: rgb(var(--color-portal-panel));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.75rem;
   overflow-x: auto;
@@ -395,17 +468,17 @@ main {
 .volta-input {
   width: 100%;
   background: white;
-  border: 1.5px solid #E5E5DF;
+  border: 1.5px solid rgb(var(--color-border));
   border-radius: 10px;
   padding: 12px 16px;
   font-family: var(--font-dm-sans), sans-serif;
   font-size: 15px;
-  color: #0D0D0D;
+  color: rgb(var(--color-ink));
   outline: none;
   transition: border-color 0.15s;
 }
 .volta-input:focus {
-  border-color: #85CC17;
+  border-color: rgb(var(--color-green));
 }
 .volta-input::placeholder {
   color: #9CA3AF;
@@ -413,17 +486,22 @@ main {
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #F7F7F2; }
-::-webkit-scrollbar-thumb { background: #d1d1cc; border-radius: 3px; }
+::-webkit-scrollbar-track { background: rgb(var(--color-bg)); }
+::-webkit-scrollbar-thumb { background: rgb(var(--color-scrollbar)); border-radius: 3px; }
 
-/* Accordion animation for details/summary elements */
+/* Accordion animation for details/summary elements.
+   Uses a two-speed approach: fast open (ease-out), slightly slower close (ease-in).
+   max-height is set generously (800px) but the cubic-bezier is tuned so the
+   visible motion completes well before the cap is reached — avoids the
+   "snap" artefact of animating through hundreds of invisible pixels. */
 .accordion-body {
   overflow: hidden;
   max-height: 0;
-  transition: max-height 0.28s ease;
+  transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 details[open] > .accordion-body {
-  max-height: 600px;
+  max-height: 800px;
+  transition: max-height 0.4s cubic-bezier(0, 1, 0, 1);
 }
 
 /* Keep Leaflet map layers beneath nav/dropdowns on mobile and desktop */

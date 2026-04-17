@@ -200,13 +200,13 @@ export default async function Join() {
           </AnimatedSection>
           <div className="relative">
             {/* Single connecting line behind all circles */}
-            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-0.5 bg-v-green/30 z-0" />
+            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-0.5 bg-v-blue/30 z-0" />
             <div className="grid md:grid-cols-5 gap-6">
               {leadershipSteps.map((step, i) => (
                 <AnimatedSection key={step.role} delay={i * 0.1}>
                   <div className="relative flex flex-col items-start md:items-center">
-                    <div className="w-10 h-10 rounded-full bg-v-green flex items-center justify-center mb-4 z-10 flex-shrink-0">
-                      <span className="font-display font-bold text-v-ink text-sm">{i + 1}</span>
+                    <div className="w-10 h-10 rounded-full bg-v-blue flex items-center justify-center mb-4 z-10 flex-shrink-0">
+                      <span className="font-display font-bold text-white text-sm">{i + 1}</span>
                     </div>
                     <h3 className="font-display font-bold text-v-ink text-base mb-2 md:text-center">{step.role}</h3>
                     <p className="font-body text-sm text-v-muted leading-relaxed md:text-center">{step.desc}</p>

@@ -272,7 +272,7 @@ export default async function Partners() {
                 <div className="w-8 h-8 rounded-full bg-v-green/15 text-v-green font-display font-bold text-sm flex items-center justify-center mb-3">1</div>
                 <p className="font-display font-bold text-v-ink text-lg mb-2">Apply</p>
                 <p className="font-body text-sm text-v-muted leading-relaxed">
-                  Fill out the form below and we will follow up by text or email within a few days.
+                  Fill out the form above and we will follow up by text or email within a few days.
                 </p>
               </div>
             </AnimatedSection>

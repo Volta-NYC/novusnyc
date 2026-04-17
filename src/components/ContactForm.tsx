@@ -17,12 +17,12 @@ const LANG_LABELS: Record<Lang, string> = {
 const LANG_ORDER: Lang[] = ["en", "es", "fr", "zh", "ko", "ar"];
 
 const SERVICES_BY_LANG: Record<Lang, string[]> = {
-  en: ["Website Design & Development", "Social Media & Content", "Grant Research & Writing", "SEO & Google Maps Visibility", "Sales & Financial Analysis", "Digital Payment Setup", "Other"],
-  es: ["Diseño y desarrollo web", "Redes sociales y contenido", "Investigación y redacción de becas", "SEO y visibilidad en Google Maps", "Análisis de ventas y finanzas", "Configuración de pagos digitales", "Otro"],
-  zh: ["网站设计与开发", "社交媒体与内容", "助款研究与撰写", "SEO与谷歌地图优化", "销售与财务分析", "数字支付设置", "其他"],
-  ko: ["웹사이트 디자인 및 개발", "소셜 미디어 및 콘텐츠", "보조금 연구 및 작성", "SEO 및 구글 지도 가시성", "매출 및 재무 분석", "디지털 결제 설정", "기타"],
-  ar: ["تصميم وتطوير المواقع", "وسائل التواصل الاجتماعي والمحتوى", "البحث عن المنح وكتابتها", "تحسين محركات البحث وخرائط جوجل", "تحليل المبيعات والمالية", "إعداد الدفع الرقمي", "أخرى"],
-  fr: ["Conception et développement web", "Médias sociaux et contenu", "Recherche et rédaction de subventions", "Référencement et visibilité Google Maps", "Analyse des ventes et finances", "Mise en place de paiement numérique", "Autre"],
+  en: ["Website Design & Development", "Social Media & Content", "Graphic Design", "Grant Research & Writing", "SEO & Google Maps Visibility", "Sales & Financial Analysis", "Other"],
+  es: ["Diseño y desarrollo web", "Redes sociales y contenido", "Diseño gráfico", "Investigación y redacción de becas", "SEO y visibilidad en Google Maps", "Análisis de ventas y finanzas", "Otro"],
+  zh: ["网站设计与开发", "社交媒体与内容", "平面设计", "助款研究与撰写", "SEO与谷歌地图优化", "销售与财务分析", "其他"],
+  ko: ["웹사이트 디자인 및 개발", "소셜 미디어 및 콘텐츠", "그래픽 디자인", "보조금 연구 및 작성", "SEO 및 구글 지도 가시성", "매출 및 재무 분석", "기타"],
+  ar: ["تصميم وتطوير المواقع", "وسائل التواصل الاجتماعي والمحتوى", "التصميم الجرافيكي", "البحث عن المنح وكتابتها", "تحسين محركات البحث وخرائط جوجل", "تحليل المبيعات والمالية", "أخرى"],
+  fr: ["Conception et développement web", "Médias sociaux et contenu", "Design graphique", "Recherche et rédaction de subventions", "Référencement et visibilité Google Maps", "Analyse des ventes et finances", "Autre"],
 };
 
 const COPY: Record<Lang, {
@@ -126,8 +126,18 @@ export default function ContactForm() {
             key={l}
             type="button"
             onClick={() => {
+              // Preserve selections by index so switching language keeps the
+              // same items checked (e.g. slot 2 in EN maps to slot 2 in ES).
+              setFormData((p) => {
+                const oldList = SERVICES_BY_LANG[lang];
+                const newList = SERVICES_BY_LANG[l];
+                const preserved = p.services
+                  .map((s) => oldList.indexOf(s))
+                  .filter((i) => i >= 0 && i < newList.length)
+                  .map((i) => newList[i]);
+                return { ...p, services: preserved };
+              });
               setLang(l);
-              setFormData((p) => ({ ...p, services: [] }));
               setErrors({});
             }}
             className={`px-4 py-1.5 rounded-full border font-body text-sm font-medium transition-all ${lang === l ? "bg-v-ink text-white border-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
@@ -214,7 +224,7 @@ export default function ContactForm() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="w-full bg-v-blue text-white font-display font-bold text-base py-4 rounded-xl hover:bg-v-blue-dark transition-colors disabled:opacity-60"
+          className="w-full bg-v-green text-v-ink font-display font-bold text-base py-4 rounded-xl hover:bg-v-green-dark transition-colors disabled:opacity-60"
         >
           {status === "loading" ? c.submitting : c.submit}
         </button>
