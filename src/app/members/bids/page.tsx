@@ -126,7 +126,7 @@ export default function BIDTrackerPage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (opts?: { addAnother?: boolean }) => {
     if (!form.name.trim()) return;
     const address = (form.address ?? "").trim();
     const zipCode = (form.zipCode ?? "").trim();
@@ -158,7 +158,15 @@ export default function BIDTrackerPage() {
         sortIndex: nextSortIndex(bids),
       } as Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline">);
     }
-    setModal(null);
+
+    if (opts?.addAnother && !editingBID) {
+      // Carry the borough selection over since BID tours are typically within one borough.
+      setForm({ ...BLANK_FORM, borough });
+      setEditingBID(null);
+      setModal("create");
+    } else {
+      setModal(null);
+    }
   };
 
   const handleDeleteFromEdit = async () => {
@@ -521,14 +529,30 @@ export default function BIDTrackerPage() {
 
         </div>
 
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          {editingBID && (
-            <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
-              Delete BID
+        <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-white/8">
+          <div>
+            {editingBID && (
+              <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
+                Delete BID
+              </Btn>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            {!editingBID && (
+              <Btn
+                variant="secondary"
+                onClick={() => void handleSave({ addAnother: true })}
+                disabled={!form.name.trim()}
+                title="Save this BID and open a new form with the same borough"
+              >
+                Save &amp; Add Another
+              </Btn>
+            )}
+            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim()}>
+              {editingBID ? "Save Changes" : "Create BID"}
             </Btn>
-          )}
-          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave}>{editingBID ? "Save Changes" : "Create BID"}</Btn>
+          </div>
         </div>
       </Modal>
     </MembersLayout>

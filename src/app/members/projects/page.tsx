@@ -410,6 +410,8 @@ export default function BusinessesPage() {
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
   const [projectEmailRecipientLabel, setProjectEmailRecipientLabel] = useState<string | null>(null);
   const [projectEmailAttachments, setProjectEmailAttachments] = useState<File[]>([]);
+  // Tracks the neighborhood pre-filled when opening the modal from a group's + button.
+  const [presetNeighborhood, setPresetNeighborhood] = useState<string | null>(null);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
 
@@ -527,8 +529,10 @@ export default function BusinessesPage() {
     return out;
   };
 
-  const openCreate = () => {
-    setForm({ ...BLANK_FORM });
+  // Pass `neighborhood` to pre-fill the field (e.g. when clicking + on a group header).
+  const openCreate = (neighborhood?: string) => {
+    setForm({ ...BLANK_FORM, ...(neighborhood !== undefined ? { neighborhood } : {}) });
+    setPresetNeighborhood(neighborhood ?? null);
     setEditingBusiness(null);
     setShowOwnerAltEmail(false);
     setShowAlternatePhone(false);
@@ -572,6 +576,7 @@ export default function BusinessesPage() {
       showcaseColor: normalizeColorToken((b.showcaseColor as string) ?? ""),
     });
     setEditingBusiness(b);
+    setPresetNeighborhood(null);
     setShowOwnerAltEmail(!!(b.ownerAlternateEmail ?? "").trim());
     setShowAlternatePhone(!!(b.alternatePhone ?? "").trim());
     const savedImageData = (b.showcaseImageData ?? "").trim();
@@ -769,7 +774,7 @@ export default function BusinessesPage() {
     resetImageCrop();
   };
 
-  const handleSave = async () => {
+  const handleSave = async (opts?: { addAnother?: boolean }) => {
     if (!form.name.trim()) return;
     const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : [])
       .map((track) => normalizeDivision(track))
@@ -866,7 +871,13 @@ export default function BusinessesPage() {
         sortIndex: nextSortIndex(businesses),
       } as Omit<Business, "id" | "createdAt" | "updatedAt">);
     }
-    setModal(null);
+
+    // "Save & Add Another" re-opens the modal with the same neighborhood pre-filled.
+    if (opts?.addAnother && !editingBusiness) {
+      openCreate(neighborhood || undefined);
+    } else {
+      setModal(null);
+    }
   };
 
   const handleDeleteFromEdit = async () => {
@@ -1670,7 +1681,20 @@ export default function BusinessesPage() {
                   <Fragment key={`my-${group.label}`}>
                     <tr className="bg-[#12151B] border-b border-white/8">
                       <td colSpan={8} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
-                        {group.label} · {group.items.length}
+                        <div className="flex items-center justify-between pr-1">
+                          <span>{group.label} · {group.items.length}</span>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => openCreate(group.label === "Unspecified location" ? "" : group.label)}
+                              className="h-5 w-5 rounded flex items-center justify-center text-[#85CC17]/60 hover:text-[#85CC17] hover:bg-[#85CC17]/12 transition-colors text-sm leading-none"
+                              title={`Add business to ${group.label}`}
+                              aria-label={`Add business to ${group.label}`}
+                            >
+                              +
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                     {group.items.map(renderProjectCompactRow)}
@@ -1705,7 +1729,20 @@ export default function BusinessesPage() {
               <Fragment key={`all-${group.label}`}>
                 <tr className="bg-[#12151B] border-b border-white/8">
                   <td colSpan={8} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
-                    {group.label} · {group.items.length}
+                    <div className="flex items-center justify-between pr-1">
+                      <span>{group.label} · {group.items.length}</span>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => openCreate(group.label === "Unspecified location" ? "" : group.label)}
+                          className="h-5 w-5 rounded flex items-center justify-center text-[#85CC17]/60 hover:text-[#85CC17] hover:bg-[#85CC17]/12 transition-colors text-sm leading-none"
+                          title={`Add business to ${group.label}`}
+                          aria-label={`Add business to ${group.label}`}
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
                 {group.items.map(renderProjectCompactRow)}
@@ -1927,6 +1964,9 @@ export default function BusinessesPage() {
                 onChange={e => setField("neighborhood", e.target.value)}
                 placeholder="e.g. Flushing, Queens"
               />
+              {!editingBusiness && presetNeighborhood !== null && presetNeighborhood !== "" && (
+                <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from &ldquo;{presetNeighborhood}&rdquo; group</p>
+              )}
             </Field>
           </div>
 
@@ -2176,14 +2216,30 @@ export default function BusinessesPage() {
             </>
           )}
         </div>
-        <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          {editingBusiness && (
-            <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
-              Delete Project
+        <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-white/8">
+          <div>
+            {editingBusiness && (
+              <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
+                Delete Project
+              </Btn>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            {!editingBusiness && (
+              <Btn
+                variant="secondary"
+                onClick={() => void handleSave({ addAnother: true })}
+                disabled={!form.name.trim()}
+                title="Save this business and immediately open a new form with the same neighborhood"
+              >
+                Save &amp; Add Another
+              </Btn>
+            )}
+            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim()}>
+              {editingBusiness ? "Save" : "Create"}
             </Btn>
-          )}
-          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave}>{editingBusiness ? "Save" : "Create"}</Btn>
+          </div>
         </div>
       </Modal>
     </MembersLayout>
