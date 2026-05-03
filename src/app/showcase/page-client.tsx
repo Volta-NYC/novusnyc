@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -93,6 +93,8 @@ export default function ShowcaseClient({
 }) {
   const [boroughFilter, setBoroughFilter] = useState("All Boroughs");
   const [serviceFilter, setServiceFilter] = useState("All Services");
+  const [activeMobileCard, setActiveMobileCard] = useState(0);
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
 
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
@@ -113,6 +115,20 @@ export default function ShowcaseClient({
   const filteredBidPartners = useMemo(() => {
     return bidPartners.filter((bid) => matchesBorough(bid.borough, boroughFilter));
   }, [bidPartners, boroughFilter]);
+
+  const handleMobileScroll = useCallback(() => {
+    const el = mobileScrollRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const slotWidth = el.scrollWidth / filteredProjects.length;
+    const idx = Math.round(el.scrollLeft / slotWidth);
+    setActiveMobileCard(Math.max(0, Math.min(idx, filteredProjects.length - 1)));
+  }, [filteredProjects.length]);
+
+  // Reset carousel position when filters change
+  useEffect(() => {
+    setActiveMobileCard(0);
+    if (mobileScrollRef.current) mobileScrollRef.current.scrollLeft = 0;
+  }, [boroughFilter, serviceFilter]);
 
   const activeFilterCount = (boroughFilter !== "All Boroughs" ? 1 : 0) + (serviceFilter !== "All Services" ? 1 : 0);
 
@@ -218,14 +234,30 @@ export default function ShowcaseClient({
             </div>
           ) : (
             <>
-              <div className="lg:hidden -mx-5 px-5 overflow-x-auto pb-2">
-                <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory items-start">
-                  {filteredProjects.map((p, i) => (
-                    <AnimatedSection
-                      key={`mobile-${p.name}`}
-                      delay={i * 0.05}
-                      className="snap-start shrink-0 w-[84vw] max-w-[380px]"
-                    >
+              <div className="lg:hidden">
+                {/* Swipe affordance hint */}
+                <p className="flex items-center gap-2 px-5 mb-3 font-body text-xs text-v-muted/70 select-none" aria-hidden="true">
+                  <span>Swipe to browse</span>
+                  <span className="flex-1 border-t border-dashed border-v-border" />
+                  <span>→</span>
+                </p>
+
+                {/* Scroll area — right-edge gradient hints at more content */}
+                <div className="relative">
+                  <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-white to-transparent" />
+                  <div
+                    ref={mobileScrollRef}
+                    onScroll={handleMobileScroll}
+                    className="-mx-5 overflow-x-auto pb-3 snap-x snap-mandatory scroll-pl-5 [&::-webkit-scrollbar]:hidden"
+                    style={{ scrollbarWidth: "none" }}
+                  >
+                    <div className="flex gap-4 pl-5 pr-8 items-start">
+                      {filteredProjects.map((p, i) => (
+                        <AnimatedSection
+                          key={`mobile-${p.name}`}
+                          delay={i * 0.05}
+                          className="snap-start shrink-0 w-[78vw] max-w-[340px]"
+                        >
                       <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                         <div className={`${p.colorClass} h-2`} />
                         {p.imageUrl ? (
@@ -290,9 +322,27 @@ export default function ShowcaseClient({
                           </div>
                         </div>
                       </div>
-                    </AnimatedSection>
-                  ))}
+                        </AnimatedSection>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Dot progress indicators */}
+                {filteredProjects.length > 1 && (
+                  <div className="flex items-center justify-center gap-1.5 mt-4 px-5" aria-hidden="true">
+                    {filteredProjects.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`rounded-full transition-all duration-300 ${
+                          i === activeMobileCard
+                            ? "w-5 h-1.5 bg-v-green"
+                            : "w-1.5 h-1.5 bg-v-border"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="hidden lg:block">
