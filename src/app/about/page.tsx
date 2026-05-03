@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import { aboutValues, aboutTimeline, teamMembers } from "@/data";
+import { formatCounter } from "@/lib/formatCounter";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
@@ -72,12 +73,12 @@ export default async function About() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-10">Our impact</h2>
             <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-v-border border border-v-border rounded-2xl overflow-hidden">
               {[
-                { value: liveStats.totalBusinesses, label: "Total\nbusinesses", color: "text-v-green" },
-                { value: liveStats.websiteProjects, label: "Website\nprojects", color: "text-blue-500" },
-                { value: liveStats.marketingProjects, label: "Marketing\nprojects", color: "text-lime-600" },
-                { value: liveStats.caseStudies, label: "Case studies\nby students", color: "text-pink-500" },
-                { value: liveStats.educationalReports, label: "Educational guides\nfor merchants", color: "text-amber-500" },
-                { value: liveStats.bidPartners, label: "Community\norganizations", color: "text-purple-500" },
+                { value: formatCounter(liveStats.totalBusinesses), label: "Total\nbusinesses", color: "text-v-green" },
+                { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects", color: "text-blue-500" },
+                { value: formatCounter(liveStats.marketingProjects), label: "Marketing\nprojects", color: "text-lime-600" },
+                { value: formatCounter(liveStats.caseStudies), label: "Case studies\nby students", color: "text-pink-500" },
+                { value: formatCounter(liveStats.educationalReports), label: "Educational guides\nfor merchants", color: "text-amber-500" },
+                { value: formatCounter(liveStats.bidPartners), label: "Community\norganizations", color: "text-purple-500" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06}>
                   <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
