@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckIcon } from "@/components/Icons";
 import { validateContactForm, type ContactFormValues } from "@/lib/schemas";
 
@@ -48,6 +48,16 @@ export default function ContactForm() {
   const [formData, setFormData] = useState<ContactFormValues>(EMPTY);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [neighborhoodOptions, setNeighborhoodOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/public/neighborhoods")
+      .then((r) => r.json())
+      .then((data: { neighborhoods?: string[] }) => {
+        if (Array.isArray(data.neighborhoods)) setNeighborhoodOptions(data.neighborhoods);
+      })
+      .catch(() => { /* non-fatal — falls back to plain text input */ });
+  }, []);
 
   const c = COPY[lang];
   const serviceList = SERVICES_BY_LANG[lang];
@@ -190,10 +200,16 @@ export default function ContactForm() {
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.neighborhood}</label>
             <input
+              list="neighborhood-options"
               value={formData.neighborhood}
               onChange={(e) => setFormData((p) => ({ ...p, neighborhood: e.target.value }))}
               className="volta-input"
             />
+            {neighborhoodOptions.length > 0 && (
+              <datalist id="neighborhood-options">
+                {neighborhoodOptions.map((n) => <option key={n} value={n} />)}
+              </datalist>
+            )}
           </div>
         </div>
         <div>

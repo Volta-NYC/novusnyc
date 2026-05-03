@@ -517,6 +517,38 @@ export default function BusinessesPage() {
     })();
   }, [businesses, canEdit]);
 
+  // One-time migration: strip borough suffix ("Park Slope, Brooklyn" → "Park Slope").
+  const trimmedNeighborhoodRef = useRef(false);
+  useEffect(() => {
+    if (trimmedNeighborhoodRef.current) return;
+    if (!canEdit || businesses.length === 0) return;
+    trimmedNeighborhoodRef.current = true;
+    void (async () => {
+      for (const business of businesses) {
+        const raw = String(business.neighborhood ?? "").trim();
+        const commaIdx = raw.indexOf(",");
+        if (commaIdx < 0) continue; // no borough suffix, skip
+        const trimmed = raw.slice(0, commaIdx).trim();
+        if (trimmed === raw || !trimmed) continue;
+        // eslint-disable-next-line no-await-in-loop
+        await updateBusiness(business.id, { neighborhood: trimmed, showcaseNeighborhood: trimmed });
+      }
+    })();
+  }, [businesses, canEdit]);
+
+  // Sorted, deduplicated list of neighborhoods from existing businesses.
+  const neighborhoodOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          businesses
+            .map((b) => String(b.neighborhood ?? "").trim())
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b)),
+    [businesses]
+  );
+
   const setField = (key: string, value: unknown) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
@@ -1959,10 +1991,12 @@ export default function BusinessesPage() {
           </div>
           <div className="lg:col-span-2">
             <Field label="Neighborhood">
-              <Input
+              <AutocompleteInput
                 value={form.neighborhood ?? ""}
-                onChange={e => setField("neighborhood", e.target.value)}
-                placeholder="e.g. Flushing, Queens"
+                onChange={(v) => setField("neighborhood", v)}
+                options={neighborhoodOptions}
+                placeholder="Select or type a neighborhood"
+                showOnEmpty
               />
               {!editingBusiness && presetNeighborhood !== null && presetNeighborhood !== "" && (
                 <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from &ldquo;{presetNeighborhood}&rdquo; group</p>
