@@ -1620,7 +1620,7 @@ export default function BusinessesPage() {
         action={
           canEdit ? (
             <div className="flex gap-2">
-              <Btn variant="primary" onClick={openCreate}>+ New Project</Btn>
+              <Btn variant="primary" onClick={() => openCreate()}>+ New Project</Btn>
             </div>
           ) : undefined
         }
@@ -1754,7 +1754,7 @@ export default function BusinessesPage() {
           <div className="p-4">
             <Empty
               message="No projects found."
-              action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first project</Btn> : undefined}
+              action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first project</Btn> : undefined}
             />
           </div>
         )}

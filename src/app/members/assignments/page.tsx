@@ -137,6 +137,31 @@ function normalizeDeadlines(item: Partial<FinanceAssignment>): DeadlineItem[] {
     : [{ label: "Final Deadline", date: "" }];
 }
 
+function generateCaseStudyEmailHtml(firstName: string, interviewDisplay: string, finalDisplay: string): string {
+  return [
+    `<p>Hey ${firstName},</p>`,
+    `<p>Over the next few weeks, you'll be working on a short business case study for Volta. It's a project where you'll go out, talk to business owners, and write about what you learn.</p>`,
+    `<p>If you know anyone else who'd want to work on this with you, feel free to bring them in.</p>`,
+    `<p>The assignment is to find a small business near you and interview the owner. Aim for something interesting: a newer business, a unique pop-up, something with a story.</p>`,
+    `<p>You have a lot of leeway in how you want to structure and develop this, but in general it should cover:</p>`,
+    `<ol>`,
+    `<li>What the business does, how long it has been around, and a bit about the owner.</li>`,
+    `<li>How things are going: sales, foot traffic, day-to-day challenges.</li>`,
+    `<li>How the owner uses (or avoids) technology and digital tools, and why.</li>`,
+    `<li>What they have learned from running the business.</li>`,
+    `<li>Where Volta could help, particularly with AI or digital tools.</li>`,
+    `</ol>`,
+    `<p>Try to highlight what makes your area unique. Whether you're in a dense NYC neighborhood or a more suburban area, the most interesting reports capture things that are specific to where you are: how customers find businesses, what resources owners know about or don't, how the community around the business works. If you're outside NYC, pay attention to the contrasts with a big urban environment: foot traffic vs. cars, access to city programs, how much word-of-mouth matters, market size.</p>`,
+    `<p>Be specific: use quotes, anecdotes, and concrete details. Avoid including filler introductions, restating the prompt, or writing conclusions that just summarize what you already said.</p>`,
+    `<p>On AI: Use it sparingly. It should not be writing your analysis, observations, or narrative. Please especially avoid writing that sounds plausible but says nothing specific.</p>`,
+    `<p>These will be published as business highlights on our website and potentially our social media. If the owner is comfortable being featured, document your visit with notes, photos, or video. We can help turn it into content and post it, which is a good way to get yourself out there. If you'd rather just submit the report, that's perfectly fine.</p>`,
+    `<p><strong>Timeline:</strong><br/>Interview due ${interviewDisplay}.<br/>Final report due ${finalDisplay}.</p>`,
+    `<p><strong>Submission Guidelines:</strong><br/>Submit as a Google Doc.<br/>The file should be named in this format "[First + Last Name] - [Business Name] Case Study" e.g. "Andrew Chin - Petite Dumpling Case Study".<br/>Sharing access should allow "Anyone with the link" to view the document.</p>`,
+    `<p>Please reply with any questions!</p>`,
+    `<p>Best,<br/>Ethan</p>`,
+  ].join("\n");
+}
+
 function normalizeDateForSort(value: string | undefined): number {
   if (!value) return Number.MAX_SAFE_INTEGER;
   const ms = Date.parse(value);
@@ -182,6 +207,12 @@ export default function FinanceAssignmentsPage() {
   const [memberPickerSearch, setMemberPickerSearch] = useState("");
   const [openStatusPopoverId, setOpenStatusPopoverId] = useState<string | null>(null);
   const [emailModalTitle, setEmailModalTitle] = useState<string | null>(null);
+  const [caseStudyModal, setCaseStudyModal] = useState(false);
+  const [caseStudySelected, setCaseStudySelected] = useState<string[]>([]);
+  const [caseStudyPickerSearch, setCaseStudyPickerSearch] = useState("");
+  const [caseStudySendEmail, setCaseStudySendEmail] = useState(true);
+  const [caseStudyWorking, setCaseStudyWorking] = useState(false);
+  const [caseStudyStatus, setCaseStudyStatus] = useState<string | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const router = useRouter();
@@ -293,6 +324,21 @@ export default function FinanceAssignmentsPage() {
     return map;
   }, [team]);
 
+  const activeTeamList = useMemo(
+    () =>
+      team
+        .filter((m) => normalizeLoose(m.status ?? "") !== "inactive" && String(m.name ?? "").trim())
+        .sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? ""))),
+    [team]
+  );
+
+  const caseStudyFilteredMembers = useMemo(() => {
+    const q = caseStudyPickerSearch.trim().toLowerCase();
+    return q
+      ? activeTeamList.filter((m) => String(m.name ?? "").toLowerCase().includes(q))
+      : activeTeamList;
+  }, [activeTeamList, caseStudyPickerSearch]);
+
   const resolveRecipientsFromNames = (rawNames: string[]): { emails: string[]; unresolved: string[] } => {
     const emails = new Set<string>();
     const unresolved = new Set<string>();
@@ -394,7 +440,7 @@ export default function FinanceAssignmentsPage() {
   }, [assignments, canEdit, deepLinkedAssignmentId]);
 
   const handleSave = async () => {
-    if (!form.topic.trim()) return;
+    if (form.type !== "Case Study" && !form.topic.trim()) return;
 
     const normalizedMemberNames = (form.assignedMemberNames ?? [])
       .map((name) => String(name ?? "").trim())
@@ -466,6 +512,99 @@ export default function FinanceAssignmentsPage() {
     }
     await fetchAssignments();
     setModal(null);
+  };
+
+  const handleBulkCaseStudy = async () => {
+    if (caseStudySelected.length === 0 || !user) return;
+    setCaseStudyWorking(true);
+    setCaseStudyStatus(null);
+
+    const today = new Date();
+    const interviewDate = new Date(today);
+    interviewDate.setDate(today.getDate() + 14);
+    const finalDate = new Date(today);
+    finalDate.setDate(today.getDate() + 28);
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const toDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const toDisplayStr = (d: Date) =>
+      d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+    const interviewDateStr = toDateStr(interviewDate);
+    const finalDateStr = toDateStr(finalDate);
+    const interviewDisplay = toDisplayStr(interviewDate);
+    const finalDisplay = toDisplayStr(finalDate);
+
+    const token = await user.getIdToken();
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const memberName of caseStudySelected) {
+      const memberId = memberIdByName.get(memberName.toLowerCase()) ?? "";
+      const assignmentPayload = {
+        type: "Case Study" as FinanceAssignment["type"],
+        title: "Case Study",
+        topic: "",
+        teamLabel: "",
+        region: "",
+        assignedMemberNames: [memberName],
+        assignedMemberIds: memberId ? [memberId] : [],
+        deadlines: [
+          { label: "Interview Deadline", date: interviewDateStr },
+          { label: "Final Deadline", date: finalDateStr },
+        ],
+        deadline: interviewDateStr,
+        interviewDueDate: interviewDateStr,
+        firstDraftDueDate: "",
+        finalDueDate: finalDateStr,
+        deliverableUrl: "",
+        status: "Ongoing" as FinanceAssignmentStatus,
+        notes: "",
+      };
+
+      try {
+        const res = await fetch("/api/members/finance-assignments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(assignmentPayload),
+        });
+        if (!res.ok) { errorCount++; continue; }
+        successCount++;
+      } catch {
+        errorCount++;
+        continue;
+      }
+
+      if (caseStudySendEmail) {
+        const matches = activeTeamByName.get(normalizeKey(memberName)) ?? [];
+        const memberEmail = String(matches[0]?.email ?? "").trim().toLowerCase();
+        if (memberEmail) {
+          const firstName = memberName.trim().split(/\s+/)[0] ?? memberName;
+          const htmlBody = generateCaseStudyEmailHtml(firstName, interviewDisplay, finalDisplay);
+          const fd = new FormData();
+          fd.append("fromAddress", "info@voltanyc.org");
+          fd.append("subject", "Your Case Study Assignment — Volta NYC");
+          fd.append("message", htmlBody);
+          fd.append("contentMode", "html");
+          fd.append("bccRecipients", memberEmail);
+          try {
+            await fetch("/api/members/team-email", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              body: fd,
+            });
+          } catch { /* non-fatal: assignment still created */ }
+        }
+      }
+    }
+
+    await fetchAssignments();
+    setCaseStudyWorking(false);
+    setCaseStudyStatus(
+      errorCount > 0
+        ? `Created ${successCount} assignment(s). ${errorCount} failed.`
+        : `Done — created ${successCount} assignment(s)${caseStudySendEmail ? " and sent emails" : ""}.`
+    );
   };
 
   const handleDeleteFromEdit = async () => {
@@ -653,7 +792,22 @@ export default function FinanceAssignmentsPage() {
 
       <PageHeader
         title="Assignments"
-        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn> : undefined}
+        action={canEdit ? (
+          <div className="flex items-center gap-2">
+            <Btn
+              variant="secondary"
+              onClick={() => {
+                setCaseStudySelected([]);
+                setCaseStudyPickerSearch("");
+                setCaseStudyStatus(null);
+                setCaseStudyModal(true);
+              }}
+            >
+              Assign Case Study
+            </Btn>
+            <Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>
+          </div>
+        ) : undefined}
       />
 
       {(loadingAssignments || loadError) && (
@@ -933,15 +1087,17 @@ export default function FinanceAssignmentsPage() {
             />
           </Field>
 
-          <div className="md:col-span-2">
-            <Field label="Topic / Focus" required>
-              <Input
-                value={form.topic}
-                onChange={(event) => setField("topic", event.target.value)}
-                placeholder="What this assignment should cover."
-              />
-            </Field>
-          </div>
+          {form.type !== "Case Study" && (
+            <div className="md:col-span-2">
+              <Field label="Topic / Focus" required>
+                <Input
+                  value={form.topic}
+                  onChange={(event) => setField("topic", event.target.value)}
+                  placeholder="What this assignment should cover."
+                />
+              </Field>
+            </div>
+          )}
 
           <div className="md:col-span-2">
             <Field label="Region">
@@ -1043,6 +1199,108 @@ export default function FinanceAssignmentsPage() {
             <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
             <Btn variant="primary" onClick={handleSave}>
               {editingAssignment ? "Save Changes" : "Create Assignment"}
+            </Btn>
+          </div>
+        </div>
+      </Modal>
+      {/* ── Bulk Case Study Assignment Modal ─────────────────────────────── */}
+      <Modal
+        open={caseStudyModal}
+        onClose={() => { if (!caseStudyWorking) setCaseStudyModal(false); }}
+        title="Assign Case Study"
+      >
+        <div className="space-y-4">
+          {/* Deadline preview */}
+          {(() => {
+            const today = new Date();
+            const iDate = new Date(today); iDate.setDate(today.getDate() + 14);
+            const fDate = new Date(today); fDate.setDate(today.getDate() + 28);
+            const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+            return (
+              <div className="bg-[#0F1014] border border-white/10 rounded-lg px-4 py-3 text-xs text-white/60 space-y-1">
+                <p className="text-white/40 uppercase tracking-wider text-[10px] font-semibold mb-2">Auto-filled deadlines</p>
+                <p><span className="text-white/80">Interview Deadline:</span> {fmt(iDate)}</p>
+                <p><span className="text-white/80">Final Deadline:</span> {fmt(fDate)}</p>
+              </div>
+            );
+          })()}
+
+          {/* Member search */}
+          <Field label={`Select Members (${caseStudySelected.length} selected)`}>
+            <input
+              value={caseStudyPickerSearch}
+              onChange={(e) => setCaseStudyPickerSearch(e.target.value)}
+              placeholder="Search active members..."
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/35 focus:outline-none focus:border-[#85CC17]/45 mb-2"
+            />
+            <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-[#0F1014] divide-y divide-white/5">
+              {caseStudyFilteredMembers.length === 0 && (
+                <p className="px-3 py-3 text-xs text-white/40">No active members found.</p>
+              )}
+              {caseStudyFilteredMembers.map((m) => {
+                const name = String(m.name ?? "").trim();
+                const checked = caseStudySelected.includes(name);
+                return (
+                  <button
+                    key={m.id ?? name}
+                    type="button"
+                    onClick={() =>
+                      setCaseStudySelected((prev) =>
+                        checked ? prev.filter((n) => n !== name) : [...prev, name]
+                      )
+                    }
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${checked ? "bg-[#85CC17]/10 text-white" : "text-white/65 hover:bg-white/5"}`}
+                  >
+                    <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] font-bold transition-colors ${checked ? "bg-[#85CC17] border-[#85CC17] text-black" : "border-white/25"}`}>
+                      {checked && "✓"}
+                    </span>
+                    <span className="truncate">{name}</span>
+                    {m.email && <span className="ml-auto text-[10px] text-white/30 truncate max-w-[140px]">{m.email}</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {caseStudySelected.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setCaseStudySelected([])}
+                className="text-xs text-white/40 hover:text-white/70 mt-1.5 transition-colors"
+              >
+                Clear selection
+              </button>
+            )}
+          </Field>
+
+          {/* Email toggle */}
+          <button
+            type="button"
+            onClick={() => setCaseStudySendEmail((v) => !v)}
+            className="flex items-center gap-3 text-sm text-white/70 hover:text-white transition-colors"
+          >
+            <span className={`w-5 h-5 rounded border flex items-center justify-center text-[10px] font-bold transition-colors ${caseStudySendEmail ? "bg-[#85CC17] border-[#85CC17] text-black" : "border-white/25"}`}>
+              {caseStudySendEmail && "✓"}
+            </span>
+            Send email notification to each member
+          </button>
+
+          {caseStudyStatus && (
+            <p className={`text-xs ${caseStudyStatus.includes("failed") ? "text-red-400" : "text-[#85CC17]"}`}>
+              {caseStudyStatus}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+            <Btn variant="ghost" onClick={() => setCaseStudyModal(false)} disabled={caseStudyWorking}>
+              {caseStudyStatus ? "Close" : "Cancel"}
+            </Btn>
+            <Btn
+              variant="primary"
+              onClick={() => void handleBulkCaseStudy()}
+              disabled={caseStudySelected.length === 0 || caseStudyWorking}
+            >
+              {caseStudyWorking
+                ? "Creating..."
+                : `Create ${caseStudySelected.length > 0 ? caseStudySelected.length : ""} Assignment${caseStudySelected.length !== 1 ? "s" : ""}`}
             </Btn>
           </div>
         </div>
