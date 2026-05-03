@@ -586,7 +586,7 @@ export default function FinanceAssignmentsPage() {
           fd.append("subject", "Your Case Study Assignment — Volta NYC");
           fd.append("message", htmlBody);
           fd.append("contentMode", "html");
-          fd.append("bccRecipients", memberEmail);
+          fd.append("toRecipients", memberEmail);
           try {
             await fetch("/api/members/team-email", {
               method: "POST",
@@ -718,7 +718,8 @@ export default function FinanceAssignmentsPage() {
       formData.append("subject", emailSubject.trim());
       formData.append("message", emailMessage.trim());
       formData.append("contentMode", "html");
-      emailRecipients.emails.forEach((email) => formData.append("bccRecipients", email));
+      const recipientField = emailRecipients.emails.length === 1 ? "toRecipients" : "bccRecipients";
+      emailRecipients.emails.forEach((email) => formData.append(recipientField, email));
       emailAttachments.forEach((f) => formData.append("attachments", f, f.name));
 
       const res = await fetch("/api/members/team-email", {
@@ -970,106 +971,110 @@ export default function FinanceAssignmentsPage() {
 
       {/* ── Case Studies table ───────────────────────────────────────────── */}
       {(caseStudyFilteredItems.length > 0 || (!filterType && !filterStatus && !search)) && (
-        <div className="members-table-shell mb-6">
-          <table className="members-grid-table w-full min-w-[900px] table-fixed text-left [&_td]:overflow-hidden">
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Code</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[35%]">Member</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[30%]">Deadlines</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Status</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-left w-[15%]">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="bg-[#12151B] border-b border-white/8">
-                <td colSpan={5} className="px-2 py-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-400">
-                      Case Studies · {caseStudyFilteredItems.length}
-                    </span>
-                    {canEdit && caseStudyFilteredItems.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => openGroupEmailModal({ label: "Case Study", items: caseStudyFilteredItems })}
-                        className="text-[10px] text-white/50 hover:text-white/80 border border-white/10 hover:border-white/25 rounded px-2 py-0.5 transition-colors"
-                      >
-                        Email All
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-              {caseStudyFilteredItems.length === 0 ? (
+        <div className="mb-6">
+          {/* Group label sits above the column headers */}
+          <div className="flex items-center justify-between gap-2 px-2 py-2 bg-[#12151B] border border-white/8 rounded-t-lg border-b-0">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-400">
+              Case Studies · {caseStudyFilteredItems.length}
+            </span>
+            {canEdit && caseStudyFilteredItems.length > 0 && (
+              <button
+                type="button"
+                onClick={() => openGroupEmailModal({ label: "Case Study", items: caseStudyFilteredItems })}
+                className="text-[10px] text-white/50 hover:text-white/80 border border-white/10 hover:border-white/25 rounded px-2 py-0.5 transition-colors"
+              >
+                Email All
+              </button>
+            )}
+          </div>
+          <div className="members-table-shell rounded-tl-none rounded-tr-none">
+            <table className="members-grid-table w-full min-w-[900px] table-fixed text-left [&_td]:overflow-hidden">
+              <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
-                  <td colSpan={5} className="px-2 py-4 text-center text-white/35 text-sm">No case studies found.</td>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Code / Region</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[30%]">Members</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[27%]">Deadlines</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Status</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-left w-[13%]">Actions</th>
                 </tr>
-              ) : (
-                caseStudyFilteredItems.map((item) => {
-                  const deadlineLines = formatDeadlineLabel(item);
-                  const code = globalCodeMaps.assignmentCode.get(item.id);
-                  return (
-                    <tr key={item.id} className="border-b border-white/8 hover:bg-white/[0.03]">
-                      <td className="px-2 py-1.5 text-[11px]">
-                        {code ? (
-                          <span className="inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono bg-emerald-500/10 border-emerald-400/25 text-emerald-300">
-                            {code}
-                          </span>
-                        ) : <span className="text-white/25">—</span>}
-                      </td>
-                      <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[300px]" title={(item.assignedMemberNames ?? []).join(", ")}>
-                        {(item.assignedMemberNames ?? []).length === 0 ? (
-                          <span className="text-white/35">—</span>
-                        ) : (
-                          <div className="truncate">
-                            {(item.assignedMemberNames ?? []).map((memberName, idx) => (
-                              <span key={`cs-${item.id}-${memberName}-${idx}`}>
-                                {idx > 0 && <span className="text-white/40">, </span>}
-                                {canEdit ? (
-                                  <button type="button" className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline" onClick={() => openAssignmentMemberEmailModal(item, memberName)} title={`Email ${memberName}`}>
-                                    {memberName}
-                                  </button>
-                                ) : <span>{memberName}</span>}
+              </thead>
+              <tbody>
+                {caseStudyFilteredItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-2 py-4 text-center text-white/35 text-sm">No case studies found.</td>
+                  </tr>
+                ) : (
+                  caseStudyFilteredItems.map((item) => {
+                    const deadlineLines = formatDeadlineLabel(item);
+                    const code = globalCodeMaps.assignmentCode.get(item.id);
+                    return (
+                      <tr key={item.id} className="border-b border-white/8 hover:bg-white/[0.03]">
+                        <td className="px-2 py-1.5 text-[11px]">
+                          {code ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="inline-flex items-center self-start rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono bg-emerald-500/10 border-emerald-400/25 text-emerald-300">
+                                {code}
                               </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-2 py-1.5 text-[11px] text-white/75 max-w-[300px]" title={deadlineLines.join(" · ") || "—"}>
-                        {deadlineLines.length === 0 ? <span className="text-white/35">—</span> : (
-                          <div className="space-y-0.5">
-                            {deadlineLines.slice(0, 2).map((line, idx) => <div key={`cs-${item.id}-dl-${idx}`} className="truncate">{line}</div>)}
-                            {deadlineLines.length > 2 && <div className="text-white/40">+{deadlineLines.length - 2} more</div>}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap">
-                        {canEdit ? (
-                          <div className="relative">
-                            <button type="button" onClick={() => setOpenStatusPopoverId(openStatusPopoverId === item.id ? null : item.id)} className="cursor-pointer" title="Click to change status">
-                              <Badge label={item.status} />
-                            </button>
-                            {openStatusPopoverId === item.id && (
-                              <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]">
-                                {STATUSES.map((status) => (
-                                  <button key={status} type="button" onClick={() => void handleQuickStatusChange(item.id, status)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${item.status === status ? "text-[#85CC17]" : "text-white/70"}`}>{status}</button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ) : <Badge label={item.status} />}
-                      </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-left">
-                        {canEdit ? (
-                          <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEdit(item)}>Edit</Btn>
-                        ) : <span className="text-white/35 text-xs">View only</span>}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                              {item.region && (
+                                <div className="text-[10px] text-white/45 truncate">{item.region}</div>
+                              )}
+                            </div>
+                          ) : <span className="text-white/25">—</span>}
+                        </td>
+                        <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[300px]" title={(item.assignedMemberNames ?? []).join(", ")}>
+                          {(item.assignedMemberNames ?? []).length === 0 ? (
+                            <span className="text-white/35">—</span>
+                          ) : (
+                            <div className="truncate">
+                              {(item.assignedMemberNames ?? []).map((memberName, idx) => (
+                                <span key={`cs-${item.id}-${memberName}-${idx}`}>
+                                  {idx > 0 && <span className="text-white/40">, </span>}
+                                  {canEdit ? (
+                                    <button type="button" className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline" onClick={() => openAssignmentMemberEmailModal(item, memberName)} title={`Email ${memberName}`}>
+                                      {memberName}
+                                    </button>
+                                  ) : <span>{memberName}</span>}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 text-[11px] text-white/75 max-w-[300px]" title={deadlineLines.join(" · ") || "—"}>
+                          {deadlineLines.length === 0 ? <span className="text-white/35">—</span> : (
+                            <div className="space-y-0.5">
+                              {deadlineLines.slice(0, 2).map((line, idx) => <div key={`cs-${item.id}-dl-${idx}`} className="truncate">{line}</div>)}
+                              {deadlineLines.length > 2 && <div className="text-white/40">+{deadlineLines.length - 2} more</div>}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">
+                          {canEdit ? (
+                            <div className="relative">
+                              <button type="button" onClick={() => setOpenStatusPopoverId(openStatusPopoverId === item.id ? null : item.id)} className="cursor-pointer" title="Click to change status">
+                                <Badge label={item.status} />
+                              </button>
+                              {openStatusPopoverId === item.id && (
+                                <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]">
+                                  {STATUSES.map((status) => (
+                                    <button key={status} type="button" onClick={() => void handleQuickStatusChange(item.id, status)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${item.status === status ? "text-[#85CC17]" : "text-white/70"}`}>{status}</button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : <Badge label={item.status} />}
+                        </td>
+                        <td className="px-2 py-1.5 whitespace-nowrap text-left">
+                          {canEdit ? (
+                            <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEdit(item)}>Edit</Btn>
+                          ) : <span className="text-white/35 text-xs">View only</span>}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
