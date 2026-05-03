@@ -188,7 +188,7 @@ export default async function About() {
               return (
                 <AnimatedSection key={v.title} delay={i * 0.1}>
                   <div className="flex flex-col gap-4 bg-white rounded-2xl border border-v-border p-7 hover:shadow-md transition-shadow duration-200 h-full">
-                    <div className="flex items-baseline gap-4">
+                    <div className="flex items-center gap-6">
                       <span
                         className={`font-display font-bold leading-none select-none flex-shrink-0 ${numColor}`}
                         style={{ fontSize: "clamp(3rem, 7vw, 4.5rem)" }}
