@@ -11,6 +11,7 @@ import TracksTabbed from "@/components/TracksTabbed";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
 import { VOLTA_STATS, formatStat } from "@/data/stats";
+import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
@@ -254,24 +255,17 @@ async function LiveHomeStats() {
     getTotalMemberCount(),
   ]);
 
-  const roundDisplayStat = (value: number): number => {
-    if (!Number.isFinite(value)) return 0;
-    if (value <= 20) return Math.max(0, Math.floor(value));
-    return Math.ceil(value / 10) * 10;
-  };
-
   const studentPublicationsAndResearchProjects =
     liveStats.caseStudies + liveStats.educationalReports;
 
   const liveHomeStats = [
-    { value: roundDisplayStat(memberCount), suffix: "+", label: "Student Members" },
-    { value: roundDisplayStat(liveStats.totalBusinesses), suffix: "+", label: "Businesses Supported" },
+    { value: formatCounter(memberCount), label: "Student Members" },
+    { value: formatCounter(liveStats.totalBusinesses), label: "Businesses Supported" },
     {
-      value: roundDisplayStat(studentPublicationsAndResearchProjects),
-      suffix: "+",
+      value: formatCounter(studentPublicationsAndResearchProjects),
       label: "Student Publications and Research Projects",
     },
-    { value: roundDisplayStat(liveStats.bidPartners), suffix: "+", label: "Community Organizations" },
+    { value: formatCounter(liveStats.bidPartners), label: "Community Organizations" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;

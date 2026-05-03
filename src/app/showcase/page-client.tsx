@@ -8,6 +8,7 @@ import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
+import { formatCounter } from "@/lib/formatCounter";
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
 
@@ -151,8 +152,8 @@ export default function ShowcaseClient({
               </h1>
               <div className="flex gap-8 md:pb-2">
                 {[
-                  { value: `${totalBusinesses}+`, label: "Businesses" },
-                  { value: `${orgPartners}+`, label: "Community organizations" },
+                  { value: formatCounter(totalBusinesses), label: "Businesses" },
+                  { value: formatCounter(orgPartners), label: "Community organizations" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>

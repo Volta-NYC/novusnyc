@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
@@ -607,29 +607,6 @@ export default function FinanceAssignmentsPage() {
     );
   };
 
-  const handleClearCaseStudyTopics = async () => {
-    if (!user) return;
-    const toFix = assignments.filter(
-      (a) => a.type === "Case Study" && String(a.topic ?? "").trim().length > 0
-    );
-    if (toFix.length === 0) {
-      setCaseStudyStatus("All case study topics are already clear.");
-      return;
-    }
-    setCaseStudyWorking(true);
-    const token = await user.getIdToken();
-    for (const a of toFix) {
-      await fetch("/api/members/finance-assignments", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id: a.id, patch: { topic: "" } }),
-      });
-    }
-    await fetchAssignments();
-    setCaseStudyWorking(false);
-    setCaseStudyStatus(`Cleared topics for ${toFix.length} case study assignment(s).`);
-  };
-
   const handleDeleteFromEdit = async () => {
     if (!editingAssignment || !user) return;
     await ask(
@@ -876,133 +853,119 @@ export default function FinanceAssignmentsPage() {
         </div>
       </div>
 
-      {/* ── Reports / Grants table ──────────────────────────────────────── */}
-      {(otherGroups.length > 0 || filtered.length === 0) && (
-        <div className="members-table-shell mb-6">
-          <table className="members-grid-table w-full min-w-[1100px] table-fixed text-left [&_td]:overflow-hidden">
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Type / Region</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[26%]">Topic / Focus</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Members</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Deadlines</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[9%]">Status</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-left w-[140px]">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {otherGroups.map((group) => (
-                <Fragment key={`assignment-group-${group.label}`}>
-                  <tr className="bg-[#12151B] border-b border-white/8">
-                    <td colSpan={6} className="px-2 py-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
-                          {group.label} · {group.items.length}
-                        </span>
-                        {canEdit && group.items.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => openGroupEmailModal(group)}
-                            className="text-[10px] text-white/50 hover:text-white/80 border border-white/10 hover:border-white/25 rounded px-2 py-0.5 transition-colors"
-                          >
-                            Email All
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                  {group.items.map((item) => {
-                    const rowRecipients = resolveRecipientsFromNames(item.assignedMemberNames ?? []);
-                    const deadlineLines = formatDeadlineLabel(item);
-                    return (
-                      <tr key={item.id} className="border-b border-white/8 hover:bg-white/[0.03]">
-                        <td className="px-2 py-1.5 text-[11px] text-white/85 whitespace-nowrap max-w-[220px] truncate" title={`${item.type}${item.region ? ` · ${item.region}` : ""}`}>
-                          <div className="truncate">{item.type}</div>
-                          <div className="text-[10px] text-white/45 truncate">{item.region || "—"}</div>
-                        </td>
-                        <td className="px-2 py-1.5 text-[11px] text-white/90 max-w-[300px]" title={item.topic || "—"}>
-                          <div className="flex items-center gap-1.5">
-                            {(() => {
-                              const code = globalCodeMaps.assignmentCode.get(item.id);
-                              if (!code) return null;
-                              const prefix = code.replace(/\d+$/, "");
-                              const pillClass = prefix === "R"
-                                ? "bg-blue-500/10 border-blue-400/25 text-blue-300"
-                                : prefix === "G"
-                                  ? "bg-amber-500/10 border-amber-400/25 text-amber-300"
-                                  : "bg-[#85CC17]/10 border-[#85CC17]/25 text-[#85CC17]";
-                              return (
-                                <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 ${pillClass}`}>
-                                  {code}
-                                </span>
-                              );
-                            })()}
-                            <p id={`finance-assignment-${item.id}`} className="truncate font-medium">{item.topic || "—"}</p>
+      {/* ── Reports / Grants — one table per group, label above headers ── */}
+      {otherGroups.map((group) => (
+        <div key={`group-block-${group.label}`} className="mb-6">
+          {/* Group label sits above the column headers */}
+          <div className="flex items-center justify-between gap-2 px-2 py-2 bg-[#12151B] border border-white/8 rounded-t-lg border-b-0">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
+              {group.label} · {group.items.length}
+            </span>
+            {canEdit && group.items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => openGroupEmailModal(group)}
+                className="text-[10px] text-white/50 hover:text-white/80 border border-white/10 hover:border-white/25 rounded px-2 py-0.5 transition-colors"
+              >
+                Email All
+              </button>
+            )}
+          </div>
+          <div className="members-table-shell rounded-tl-none rounded-tr-none">
+            <table className="members-grid-table w-full min-w-[960px] table-fixed text-left [&_td]:overflow-hidden">
+              <thead className="bg-[#0F1014] border-b border-white/8">
+                <tr>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[34%]">Topic / Focus</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[24%]">Members</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[20%]">Deadlines</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-left w-[12%]">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.items.map((item) => {
+                  const rowRecipients = resolveRecipientsFromNames(item.assignedMemberNames ?? []);
+                  const deadlineLines = formatDeadlineLabel(item);
+                  return (
+                    <tr key={item.id} className="border-b border-white/8 hover:bg-white/[0.03]">
+                      <td className="px-2 py-1.5 text-[11px] text-white/90 max-w-[400px]" title={item.topic || "—"}>
+                        <div className="flex items-center gap-1.5">
+                          {(() => {
+                            const code = globalCodeMaps.assignmentCode.get(item.id);
+                            if (!code) return null;
+                            const prefix = code.replace(/\d+$/, "");
+                            const pillClass = prefix === "R"
+                              ? "bg-blue-500/10 border-blue-400/25 text-blue-300"
+                              : prefix === "G"
+                                ? "bg-amber-500/10 border-amber-400/25 text-amber-300"
+                                : "bg-[#85CC17]/10 border-[#85CC17]/25 text-[#85CC17]";
+                            return (
+                              <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 ${pillClass}`}>
+                                {code}
+                              </span>
+                            );
+                          })()}
+                          <p id={`finance-assignment-${item.id}`} className="truncate font-medium">{item.topic || "—"}</p>
+                        </div>
+                      </td>
+                      <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[300px]" title={(item.assignedMemberNames ?? []).join(", ")}>
+                        {(item.assignedMemberNames ?? []).length === 0 ? (
+                          <span className="text-white/35">—</span>
+                        ) : (
+                          <div className="truncate">
+                            {(item.assignedMemberNames ?? []).map((memberName, idx) => (
+                              <span key={`${item.id}-${memberName}-${idx}`}>
+                                {idx > 0 && <span className="text-white/40">, </span>}
+                                {canEdit ? (
+                                  <button type="button" className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline" onClick={() => openAssignmentMemberEmailModal(item, memberName)} title={`Email ${memberName}`}>{memberName}</button>
+                                ) : <span>{memberName}</span>}
+                              </span>
+                            ))}
                           </div>
-                        </td>
-                        <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[300px]" title={(item.assignedMemberNames ?? []).join(", ")}>
-                          {(item.assignedMemberNames ?? []).length === 0 ? (
-                            <span className="text-white/35">—</span>
-                          ) : (
-                            <div className="truncate">
-                              {(item.assignedMemberNames ?? []).map((memberName, idx) => (
-                                <span key={`${item.id}-${memberName}-${idx}`}>
-                                  {idx > 0 && <span className="text-white/40">, </span>}
-                                  {canEdit ? (
-                                    <button type="button" className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline" onClick={() => openAssignmentMemberEmailModal(item, memberName)} title={`Email ${memberName}`}>
-                                      {memberName}
-                                    </button>
-                                  ) : <span>{memberName}</span>}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5 text-[11px] text-white/75 max-w-[260px]" title={deadlineLines.join(" · ") || "—"}>
-                          {deadlineLines.length === 0 ? <span className="text-white/35">—</span> : (
-                            <div className="space-y-0.5">
-                              {deadlineLines.slice(0, 2).map((line, idx) => <div key={`${item.id}-dl-${idx}`} className="truncate">{line}</div>)}
-                              {deadlineLines.length > 2 && <div className="text-white/40">+{deadlineLines.length - 2} more</div>}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap">
-                          {canEdit ? (
-                            <div className="relative">
-                              <button type="button" onClick={() => setOpenStatusPopoverId(openStatusPopoverId === item.id ? null : item.id)} className="cursor-pointer" title="Click to change status">
-                                <Badge label={item.status} />
-                              </button>
-                              {openStatusPopoverId === item.id && (
-                                <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]">
-                                  {STATUSES.map((status) => (
-                                    <button key={status} type="button" onClick={() => void handleQuickStatusChange(item.id, status)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${item.status === status ? "text-[#85CC17]" : "text-white/70"}`}>{status}</button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : <Badge label={item.status} />}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap text-left w-[140px]">
-                          {canEdit ? (
-                            <div className="flex justify-start gap-1.5">
-                              <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openAssignmentTeamEmailModal(item)} disabled={rowRecipients.emails.length === 0}>Email Team</Btn>
-                              <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEdit(item)}>Edit</Btn>
-                            </div>
-                          ) : <span className="text-white/35 text-xs">View only</span>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-          {otherGroups.length === 0 && (
-            <div className="p-4">
-              <p className="text-center text-white/35 text-sm">No reports or grants found.</p>
-            </div>
-          )}
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5 text-[11px] text-white/75 max-w-[260px]" title={deadlineLines.join(" · ") || "—"}>
+                        {deadlineLines.length === 0 ? <span className="text-white/35">—</span> : (
+                          <div className="space-y-0.5">
+                            {deadlineLines.slice(0, 2).map((line, idx) => <div key={`${item.id}-dl-${idx}`} className="truncate">{line}</div>)}
+                            {deadlineLines.length > 2 && <div className="text-white/40">+{deadlineLines.length - 2} more</div>}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">
+                        {canEdit ? (
+                          <div className="relative">
+                            <button type="button" onClick={() => setOpenStatusPopoverId(openStatusPopoverId === item.id ? null : item.id)} className="cursor-pointer" title="Click to change status">
+                              <Badge label={item.status} />
+                            </button>
+                            {openStatusPopoverId === item.id && (
+                              <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]">
+                                {STATUSES.map((status) => (
+                                  <button key={status} type="button" onClick={() => void handleQuickStatusChange(item.id, status)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${item.status === status ? "text-[#85CC17]" : "text-white/70"}`}>{status}</button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : <Badge label={item.status} />}
+                      </td>
+                      <td className="px-2 py-1.5 whitespace-nowrap text-left">
+                        {canEdit ? (
+                          <div className="flex justify-start gap-1.5">
+                            <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openAssignmentTeamEmailModal(item)} disabled={rowRecipients.emails.length === 0}>Email Team</Btn>
+                            <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEdit(item)}>Edit</Btn>
+                          </div>
+                        ) : <span className="text-white/35 text-xs">View only</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
+      ))}
+      {otherGroups.length === 0 && filtered.length === 0 && (
+        <p className="text-center text-white/35 text-sm mb-6">No assignments found.</p>
       )}
 
       {/* ── Case Studies table ───────────────────────────────────────────── */}
@@ -1390,24 +1353,6 @@ export default function FinanceAssignmentsPage() {
               {caseStudyStatus}
             </p>
           )}
-
-          {(() => {
-            const withTopic = assignments.filter((a) => a.type === "Case Study" && String(a.topic ?? "").trim().length > 0);
-            if (withTopic.length === 0) return null;
-            return (
-              <div className="bg-amber-500/10 border border-amber-400/20 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3">
-                <p className="text-xs text-amber-300">{withTopic.length} case study assignment{withTopic.length !== 1 ? "s" : ""} still have a topic set.</p>
-                <button
-                  type="button"
-                  onClick={() => void handleClearCaseStudyTopics()}
-                  disabled={caseStudyWorking}
-                  className="text-xs text-amber-300 hover:text-amber-200 border border-amber-400/30 rounded px-2 py-1 transition-colors flex-shrink-0 disabled:opacity-50"
-                >
-                  Clear All
-                </button>
-              </div>
-            );
-          })()}
 
           <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
             <Btn variant="ghost" onClick={() => setCaseStudyModal(false)} disabled={caseStudyWorking}>
