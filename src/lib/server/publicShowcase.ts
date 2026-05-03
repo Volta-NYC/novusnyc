@@ -208,9 +208,7 @@ function normalizeNeighborhood(value: unknown, row: Record<string, unknown>): st
 }
 
 function normalizeDescription(value: unknown): string {
-  const text = asText(value);
-  if (!text) return "";
-  return text.length > 240 ? `${text.slice(0, 237)}...` : text;
+  return asText(value);
 }
 
 function compareCards(a: PublicShowcaseCard, b: PublicShowcaseCard): number {

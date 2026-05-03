@@ -178,19 +178,22 @@ export default async function About() {
       {/* ── HOW WE OPERATE ─────────────────────────────────── */}
       <section className="py-16 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-8">
+          <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
           </AnimatedSection>
 
-          <div className="border-t border-v-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
             {aboutValues.map((v, i) => (
-              <AnimatedSection key={v.title} delay={i * 0.08}>
-                <div className="group border-b border-v-border py-8 md:py-10 grid grid-cols-[3.5rem_1fr] md:grid-cols-[5rem_18rem_1fr] gap-x-6 md:gap-x-12 gap-y-3 items-center transition-colors duration-200 hover:bg-black/[0.03]">
-                  <span className="font-display font-bold text-v-green/35 group-hover:text-v-green/55 transition-colors duration-200 leading-none select-none"
-                    style={{ fontSize: "clamp(2.6rem, 5vw, 3.8rem)" }}>
-                    {i + 1}
+              <AnimatedSection key={v.title} delay={i * 0.1}>
+                <div className="flex flex-col gap-4 bg-white rounded-2xl border border-v-border p-7 hover:shadow-md transition-shadow duration-200 h-full">
+                  <span
+                    className="font-display font-bold text-v-green leading-none select-none"
+                    style={{ fontSize: "clamp(3rem, 7vw, 4.5rem)" }}
+                    aria-hidden="true"
+                  >
+                    {String(i + 1).padStart(2, "0")}
                   </span>
-                  <h3 className="font-display font-bold text-v-ink text-2xl md:text-3xl leading-tight">
+                  <h3 className="font-display font-bold text-v-ink text-xl md:text-2xl leading-tight">
                     {v.title}
                   </h3>
                   <p className="font-body text-v-muted leading-relaxed text-base">
