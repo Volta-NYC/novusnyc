@@ -125,9 +125,25 @@ const SORT_OPTIONS = [
   { value: 3, label: "Email" },
   { value: 4, label: "School" },
   { value: 5, label: "Grade" },
-  { value: 6, label: "Date Accepted" },
-  { value: 7, label: "Account Created" },
+  { value: 6, label: "Role" },
+  { value: 7, label: "Date Accepted" },
+  { value: 8, label: "Account Created" },
 ];
+
+const ROLE_OPTIONS = ["Team Lead", "Member", "Associate", "Advisor"] as const;
+type RoleOption = (typeof ROLE_OPTIONS)[number];
+
+function normalizeRoleValue(value: unknown): RoleOption {
+  const raw = String(value ?? "").trim();
+  return (ROLE_OPTIONS as readonly string[]).includes(raw) ? (raw as RoleOption) : "Member";
+}
+
+const ROLE_SORT_ORDER: Record<RoleOption, number> = {
+  "Team Lead": 0,
+  Member: 1,
+  Associate: 2,
+  Advisor: 3,
+};
 
 function normalizeText(v: string): string {
   return v.trim().replace(/\s+/g, " ");
@@ -276,6 +292,7 @@ export default function TeamPage() {
   const [showAlternateEmail, setShowAlternateEmail] = useState(false);
   const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_SORT_RULES);
   const [showSortPanel, setShowSortPanel] = useState(false);
+  const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
@@ -292,6 +309,20 @@ export default function TeamPage() {
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
+
+  // Close the inline role-edit popover on any document click outside it.
+  useEffect(() => {
+    if (!openRolePopoverId) return;
+    const close = () => setOpenRolePopoverId(null);
+    const timerId = setTimeout(() => document.addEventListener("click", close), 0);
+    return () => { clearTimeout(timerId); document.removeEventListener("click", close); };
+  }, [openRolePopoverId]);
+
+  const handleQuickRoleChange = async (member: TeamMember, nextRole: RoleOption) => {
+    setOpenRolePopoverId(null);
+    if (normalizeRoleValue(member.role) === nextRole) return;
+    await updateTeamMember(member.id, { role: nextRole });
+  };
   useEffect(() => {
     let mounted = true;
     let timer: number | null = null;
@@ -606,7 +637,7 @@ export default function TeamPage() {
     return map;
   }, [userProfiles]);
 
-  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "Grade", "Date Accepted", "Account Created"];
+  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "Grade", "Role", "Date Accepted", "Account Created"];
 
   const compareMemberByCol = (a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
@@ -624,8 +655,12 @@ export default function TeamPage() {
       case 3: return (a.email || "").localeCompare(b.email || "");
       case 4: return (a.school || "").localeCompare(b.school || "");
       case 5: return (a.grade || "").localeCompare(b.grade || "");
-      case 6: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
-      case 7: {
+      case 6: {
+        const roleCmp = ROLE_SORT_ORDER[normalizeRoleValue(a.role)] - ROLE_SORT_ORDER[normalizeRoleValue(b.role)];
+        return roleCmp !== 0 ? roleCmp : a.name.localeCompare(b.name);
+      }
+      case 7: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
+      case 8: {
         const aProfile = profileByEmail.get(normalizeKey(a.email ?? "")) ?? profileByEmail.get(normalizeKey(a.alternateEmail ?? ""));
         const bProfile = profileByEmail.get(normalizeKey(b.email ?? "")) ?? profileByEmail.get(normalizeKey(b.alternateEmail ?? ""));
         return (aProfile?.createdAt || "").localeCompare(bProfile?.createdAt || "");
@@ -1144,17 +1179,18 @@ export default function TeamPage() {
           {(() => {
             const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[116px]";
             return (
-          <table className="members-grid-table w-full min-w-[880px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[1000px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Projects", "Name", "School", "Grade"].map((col) => (
+                {["Projects", "Name", "School", "Grade", "Role"].map((col) => (
                   <th
                     key={col}
                     className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
                       col === "Projects" ? projectsColWidthClass :
                       col === "Name" ? "w-[250px]" :
-                      col === "School" ? "w-[360px]" :
-                      "w-[90px]"
+                      col === "School" ? "w-[340px]" :
+                      col === "Grade" ? "w-[80px]" :
+                      "w-[110px]"
                     }`}
                   >
                     {col}
@@ -1194,6 +1230,9 @@ export default function TeamPage() {
                     <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{member.grade || "—"}</span>
                     </td>
+                    <td className="px-2 py-1 whitespace-nowrap">
+                      <span className="text-white/60">{normalizeRoleValue(member.role)}</span>
+                    </td>
                   </tr>
                 );
               })}
@@ -1207,7 +1246,7 @@ export default function TeamPage() {
           {(() => {
             const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[116px]";
             return (
-          <table className="members-grid-table w-full min-w-[1460px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[1580px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {[
@@ -1215,10 +1254,11 @@ export default function TeamPage() {
                   { label: "Name", sortCol: 2, width: "w-[250px]" },
                   { label: "Email", sortCol: 3, width: "w-[330px]" },
                   { label: "School", sortCol: 4, width: "w-[260px]" },
-                  { label: "Grade", sortCol: 5, width: "w-[92px]" },
-                  { label: "Date Accepted", sortCol: 6, width: "w-[116px]" },
-                  { label: "Account Created", sortCol: 7, width: "w-[116px]" },
-                  { label: "Actions", sortCol: null, width: "w-[124px]" },
+                  { label: "Grade", sortCol: 5, width: "w-[80px]" },
+                  { label: "Role", sortCol: 6, width: "w-[120px]" },
+                  { label: "Date Accepted", sortCol: 7, width: "w-[116px]" },
+                  { label: "Account Created", sortCol: 8, width: "w-[116px]" },
+                  { label: "Actions", sortCol: null, width: "w-[100px]" },
                 ].map((col) => {
                   const sortable = typeof col.sortCol === "number";
                   const primaryRule = sortRules[0];
@@ -1304,6 +1344,44 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{member.grade || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1 whitespace-nowrap">
+                      {canEdit ? (
+                        <div className="relative inline-block">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenRolePopoverId(openRolePopoverId === member.id ? null : member.id);
+                            }}
+                            className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#85CC17]/45 hover:bg-[#85CC17]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
+                            title="Click to change role"
+                          >
+                            {normalizeRoleValue(member.role)}
+                          </button>
+                          {openRolePopoverId === member.id && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]"
+                            >
+                              {ROLE_OPTIONS.map((roleOption) => (
+                                <button
+                                  key={roleOption}
+                                  type="button"
+                                  onClick={() => void handleQuickRoleChange(member, roleOption)}
+                                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${
+                                    normalizeRoleValue(member.role) === roleOption ? "text-[#85CC17]" : "text-white/70"
+                                  }`}
+                                >
+                                  {roleOption}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-white/50">{normalizeRoleValue(member.role)}</span>
+                      )}
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{member.acceptedDate || "—"}</span>
