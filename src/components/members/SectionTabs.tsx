@@ -1,16 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export type SectionTab = {
   href: string;
   label: string;
   matchRoots?: string[];
+  // When set, this tab is active only when the URL's `tab` query param equals this value.
+  // Use "" for the default tab on a path (when no `tab` query param is present).
+  matchTab?: string;
 };
 
-function isTabActive(pathname: string, tab: SectionTab): boolean {
-  const roots = tab.matchRoots?.length ? tab.matchRoots : [tab.href];
+function getBasePath(href: string): string {
+  const idx = href.indexOf("?");
+  return idx >= 0 ? href.slice(0, idx) : href;
+}
+
+function isTabActive(pathname: string, currentTab: string, tab: SectionTab): boolean {
+  if (tab.matchTab !== undefined) {
+    const basePath = getBasePath(tab.href);
+    return pathname === basePath && currentTab === tab.matchTab;
+  }
+  const roots = tab.matchRoots?.length ? tab.matchRoots : [getBasePath(tab.href)];
   return roots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
@@ -22,12 +34,14 @@ export default function SectionTabs({
   className?: string;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = (searchParams?.get("tab") ?? "").toLowerCase();
 
   return (
     <div className={`mb-4 overflow-x-auto pb-1 ${className}`}>
       <div className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-[#12151B] p-1 min-w-max">
         {tabs.map((tab) => {
-          const active = isTabActive(pathname, tab);
+          const active = isTabActive(pathname, currentTab, tab);
           return (
             <Link
               key={tab.href}
@@ -48,9 +62,10 @@ export default function SectionTabs({
 }
 
 export const PROJECT_GROUP_TABS: SectionTab[] = [
-  { href: "/members/projects", label: "Business Projects" },
-  { href: "/members/assignments", label: "Independent Projects" },
-  { href: "/members/grants", label: "Grant Library" },
+  { href: "/members/projects", label: "Tech Projects", matchTab: "" },
+  { href: "/members/projects?tab=marketing", label: "Marketing Projects", matchTab: "marketing" },
+  { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
+  { href: "/members/assignments", label: "Finance Projects" },
 ];
 
 export const PEOPLE_GROUP_TABS: SectionTab[] = [

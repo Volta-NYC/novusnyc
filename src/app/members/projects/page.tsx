@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
@@ -13,14 +14,13 @@ import {
   createBusiness, updateBusiness, deleteBusiness,
   type Business, type TeamMember, type FinanceAssignment,
 } from "@/lib/members/storage";
-import { computeGlobalCodes, type GlobalCodeMaps } from "@/lib/members/assignmentCodes";
+import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
 const STATUSES  = ["Upcoming", "Ongoing", "Completed"] as const;
-const DIVISIONS = ["Tech", "Marketing", "Finance"] as const;
-type TrackDivision = (typeof DIVISIONS)[number];
+type TrackDivision = "Tech" | "Marketing" | "Finance";
 type ProjectStatusValue = (typeof STATUSES)[number];
 type DeadlineItem = {
   label: string;
@@ -331,20 +331,6 @@ function stripDecoratedName(value: string): string {
   return value.replace(/\s*\([^()]*\)\s*$/, "").trim();
 }
 
-function getBusinessCodesWithTrack(businessId: string, tracks: string[], globalCodeMaps: GlobalCodeMaps): Array<{ code: string; track: TrackDivision }> {
-  const result: Array<{ code: string; track: TrackDivision }> = [];
-  for (const track of TRACK_ORDER) {
-    if (!tracks.includes(track)) continue;
-    const code = globalCodeMaps.businessTrackCode.get(`${businessId}-${track}`);
-    if (code) result.push({ code, track });
-  }
-  if (result.length === 0) {
-    const code = globalCodeMaps.businessTrackCode.get(businessId);
-    if (code) result.push({ code, track: "Tech" });
-  }
-  return result;
-}
-
 const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   ownerName: "",
@@ -377,11 +363,35 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
+type ProjectTab = "tech" | "marketing" | "discovery";
+
+function normalizeProjectTab(value: string | null | undefined): ProjectTab {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (raw === "marketing") return "marketing";
+  if (raw === "discovery") return "discovery";
+  return "tech";
+}
+
+const TAB_TRACK: Record<Exclude<ProjectTab, "discovery">, TrackDivision> = {
+  tech: "Tech",
+  marketing: "Marketing",
+};
+
+const TAB_TITLE: Record<ProjectTab, string> = {
+  tech: "Tech Projects",
+  marketing: "Marketing Projects",
+  discovery: "Discovery",
+};
+
 export default function BusinessesPage() {
+  const searchParams = useSearchParams();
+  const activeTab = normalizeProjectTab(searchParams?.get("tab"));
+
   const [businesses, setBusinesses]           = useState<Business[]>([]);
   const [team, setTeam]                       = useState<TeamMember[]>([]);
   const [search, setSearch]                   = useState("");
-  const [filterDiv, setFilterDiv]             = useState("");
+  const [openStatusPopoverId, setOpenStatusPopoverId] = useState<string | null>(null);
+  const [openMovePopoverId, setOpenMovePopoverId] = useState<string | null>(null);
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -924,16 +934,9 @@ export default function BusinessesPage() {
     );
   };
 
-  const getNeighborhoodGroupLabel = (project: Business) => {
+  const getNeighborhoodLabel = (project: Business): string => {
     const neighborhood = (project.neighborhood ?? project.showcaseNeighborhood ?? "").trim();
-    return neighborhood || "Unspecified location";
-  };
-
-  const compareNeighborhoodLabels = (a: string, b: string) => {
-    const aUnspecified = a.toLowerCase() === "unspecified location";
-    const bUnspecified = b.toLowerCase() === "unspecified location";
-    if (aUnspecified !== bUnspecified) return aUnspecified ? 1 : -1;
-    return a.localeCompare(b);
+    return neighborhood;
   };
 
   const matchesSearch = (project: Business) => {
@@ -952,23 +955,30 @@ export default function BusinessesPage() {
       || (project.teamLead ?? "").toLowerCase().includes(query);
   };
 
-  const sortBusinesses = (list: Business[]) => {
+  // Status sort puts Ongoing on top, then Upcoming, then Completed; tie-break by business name.
+  const sortByStatusThenName = (list: Business[]) => {
     return [...list].sort((a, b) => {
-      const neighborhoodA = getNeighborhoodGroupLabel(a);
-      const neighborhoodB = getNeighborhoodGroupLabel(b);
-      if (neighborhoodA !== neighborhoodB) return compareNeighborhoodLabels(neighborhoodA, neighborhoodB);
       const statusDelta = PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(a.projectStatus)] - PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(b.projectStatus)];
       if (statusDelta !== 0) return statusDelta;
       return a.name.localeCompare(b.name);
     });
   };
 
-  const divisionScoped = businesses.filter((business) => {
-    if (!filterDiv) return true;
+  const businessHasTrack = (business: Business, track: TrackDivision): boolean => {
     const normalized = normalizeTrackProjectsFromBusiness(business);
-    return normalized.projectTracks.includes(normalizeDivision(filterDiv));
+    return normalized.projectTracks.includes(track);
+  };
+
+  const isDiscoveryBusiness = (business: Business): boolean => {
+    const normalized = normalizeTrackProjectsFromBusiness(business);
+    return normalized.projectTracks.length === 0;
+  };
+
+  const tabScoped = businesses.filter((business) => {
+    if (activeTab === "discovery") return isDiscoveryBusiness(business);
+    return businessHasTrack(business, TAB_TRACK[activeTab]);
   });
-  const filtered = sortBusinesses(divisionScoped.filter(matchesSearch));
+  const filtered = sortByStatusThenName(tabScoped.filter(matchesSearch));
 
   const teamNameCounts = new Map<string, number>();
   team.forEach((member) => {
@@ -1048,28 +1058,6 @@ export default function BusinessesPage() {
         members: Array.from(new Set(members)),
       };
     });
-  };
-
-  const getTrackDeadlineLines = (project: Business): string[] => {
-    const normalized = normalizeTrackProjectsFromBusiness(project);
-    const lines: Array<{ date: string; line: string }> = [];
-    for (const track of normalized.projectTracks) {
-      const deadlines = sortDeadlinesMostRecentFirst(normalized.trackProjects[track]?.deadlines ?? []);
-      for (const item of deadlines) {
-        const date = String(item.date ?? "").trim();
-        if (!date) continue;
-        const label = String(item.label ?? "").trim() || "Deadline";
-        lines.push({ date, line: `${TRACK_META[track].label} ${label}: ${date}` });
-      }
-    }
-    return lines
-      .sort((a, b) => {
-        const aMs = Date.parse(a.date);
-        const bMs = Date.parse(b.date);
-        if (Number.isFinite(aMs) && Number.isFinite(bMs) && aMs !== bMs) return bMs - aMs;
-        return a.line.localeCompare(b.line);
-      })
-      .map((row) => row.line);
   };
 
   const resolveRecipientsFromAssignedNames = (inputNames: string[]): { emails: string[]; unresolved: string[] } => {
@@ -1258,6 +1246,70 @@ export default function BusinessesPage() {
   const upcomingCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Upcoming").length;
   const completedCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Completed").length;
 
+  // Inline status pill change for the active track (Tech/Marketing tabs); writes the new
+  // status to that track and recomputes the overall projectStatus.
+  const handleQuickStatusChange = async (business: Business, newStatus: ProjectStatusValue) => {
+    setOpenStatusPopoverId(null);
+    if (activeTab === "discovery") return;
+    const track = TAB_TRACK[activeTab];
+    const normalized = normalizeTrackProjectsFromBusiness(business);
+    const currentInfo = normalized.trackProjects[track] ?? {
+      projectStatus: "Upcoming" as ProjectStatusValue,
+      teamMembers: [],
+      deadlines: [...TRACK_DEADLINE_DEFAULT],
+      notes: "",
+    };
+    const nextTrackProjects: TrackProjectMap = {
+      ...normalized.trackProjects,
+      [track]: { ...currentInfo, projectStatus: newStatus },
+    };
+    const overallStatus = deriveOverallStatus(nextTrackProjects, normalized.projectTracks);
+    await updateBusiness(business.id, {
+      trackProjects: nextTrackProjects,
+      projectStatus: overallStatus,
+    });
+  };
+
+  // Move a Discovery business onto a track. Seeds an empty track project and updates derived fields.
+  const handleMoveToTrack = async (business: Business, targetTrack: TrackDivision) => {
+    setOpenMovePopoverId(null);
+    const normalized = normalizeTrackProjectsFromBusiness(business);
+    if (normalized.projectTracks.includes(targetTrack)) return;
+    const nextTracks = [...normalized.projectTracks, targetTrack];
+    const nextTrackProjects: TrackProjectMap = {
+      ...normalized.trackProjects,
+      [targetTrack]: normalized.trackProjects[targetTrack] ?? {
+        projectStatus: "Upcoming",
+        teamMembers: [],
+        deadlines: [...TRACK_DEADLINE_DEFAULT],
+        notes: "",
+      },
+    };
+    const overallStatus = deriveOverallStatus(nextTrackProjects, nextTracks);
+    const primaryDivision = derivePrimaryDivision(nextTracks);
+    const flattenedTeamMembers = TRACK_ORDER.flatMap((t) => nextTrackProjects[t]?.teamMembers ?? []);
+    await updateBusiness(business.id, {
+      projectTracks: nextTracks,
+      trackProjects: nextTrackProjects,
+      projectStatus: overallStatus,
+      division: primaryDivision,
+      teamMembers: flattenedTeamMembers,
+    });
+  };
+
+  useEffect(() => {
+    if (!openStatusPopoverId && !openMovePopoverId) return;
+    const close = () => {
+      setOpenStatusPopoverId(null);
+      setOpenMovePopoverId(null);
+    };
+    const timerId = setTimeout(() => document.addEventListener("click", close), 0);
+    return () => {
+      clearTimeout(timerId);
+      document.removeEventListener("click", close);
+    };
+  }, [openStatusPopoverId, openMovePopoverId]);
+
   const myEmail = normalizeLoose(userProfile?.email ?? user?.email ?? "");
   const teamMatchByEmail = myEmail ? team.find((m) => normalizeLoose(m.email ?? "") === myEmail) : undefined;
   const myNameSet = new Set(
@@ -1277,20 +1329,6 @@ export default function BusinessesPage() {
   const isMemberRestricted = authRole === "member";
   const myProjects = isNonAdminMember ? filtered.filter(isProjectMine) : [];
   const otherProjects = isNonAdminMember ? filtered.filter((p) => !isProjectMine(p)) : filtered;
-  const groupProjectsByNeighborhood = (list: Business[]) => {
-    const grouped = new Map<string, Business[]>();
-    for (const project of list) {
-      const label = getNeighborhoodGroupLabel(project);
-      const current = grouped.get(label) ?? [];
-      current.push(project);
-      grouped.set(label, current);
-    }
-    return Array.from(grouped.entries())
-      .sort(([labelA], [labelB]) => compareNeighborhoodLabels(labelA, labelB))
-      .map(([label, items]) => ({ label, items }));
-  };
-  const groupedMyProjects = groupProjectsByNeighborhood(myProjects);
-  const groupedOtherProjects = groupProjectsByNeighborhood(otherProjects);
 
   const copyText = async (value: string) => {
     const safe = value.trim();
@@ -1302,50 +1340,64 @@ export default function BusinessesPage() {
     }
   };
 
-  const renderProjectCompactRow = (b: Business) => {
-    const normalizedStatus = normalizeProjectStatus(b.projectStatus);
-    const trackAssignments = getTrackAssignments(b);
-    const deadlineLines = getTrackDeadlineLines(b);
-    const codesWithTrack = getBusinessCodesWithTrack(b.id, b.projectTracks ?? [], globalCodeMaps);
+  const codeColorClass = (track: TrackDivision) => {
+    switch (track) {
+      case "Tech": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
+      case "Marketing": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
+      case "Finance": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
+    }
+  };
 
-    const codeColorClass = (track: TrackDivision) => {
-      switch (track) {
-        case "Tech": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
-        case "Marketing": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
-        case "Finance": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
-      }
-    };
+  // Renders a row for the Tech or Marketing tab. Status pill is clickable; members and deadlines
+  // are scoped to the current track so each tab shows that track's timeline only.
+  const renderTrackRow = (b: Business, track: TrackDivision) => {
+    const normalized = normalizeTrackProjectsFromBusiness(b);
+    const trackInfo = normalized.trackProjects[track];
+    const trackStatus: ProjectStatusValue = trackInfo?.projectStatus ?? normalizeProjectStatus(b.projectStatus);
+    const members = (trackInfo?.teamMembers ?? [])
+      .map((value) => resolveTeamMemberFromInput(value) ?? stripDecoratedName(String(value ?? "")))
+      .filter(Boolean);
+    const dedupedMembers = Array.from(new Set(members));
+    const deadlines = sortDeadlinesMostRecentFirst(trackInfo?.deadlines ?? [])
+      .filter((entry) => String(entry.date ?? "").trim());
+    const code = globalCodeMaps.businessTrackCode.get(`${b.id}-${track}`)
+      ?? globalCodeMaps.businessTrackCode.get(b.id);
+    const neighborhood = getNeighborhoodLabel(b);
 
     return (
-      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03]">
-        <td className="px-2 py-1.5 text-[11px] text-white/90 whitespace-nowrap max-w-[220px] truncate" title={b.name}>
-          <span className="inline-flex items-center gap-1.5">
-            {codesWithTrack.map(({ code, track }) => (
+      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03] align-top">
+        <td className="px-2 py-2 text-[11px] text-white/90 align-top">
+          <div className="flex items-start gap-1.5 min-w-0">
+            {code && (
               <span
-                key={`code-${code}`}
-                className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono ${codeColorClass(track)}`}
+                className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 ${codeColorClass(track)}`}
                 title={TRACK_META[track].label}
               >
                 {code}
               </span>
-            ))}
-            <span>{b.name}</span>
-          </span>
-          {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
-          {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
+            )}
+            <span className="font-medium leading-snug break-words">
+              {b.name}
+              {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
+              {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
+            </span>
+          </div>
         </td>
-        <td className="px-2 py-1.5 text-[11px] text-white/80 whitespace-nowrap max-w-[150px] truncate" title={b.ownerName || "—"}>
-          {b.ownerName || "—"}
+        <td className="px-2 py-2 text-[11px] text-white/65 break-words align-top">
+          {neighborhood || <span className="text-white/30">—</span>}
         </td>
-        <td className="px-2 py-1.5 text-[11px] whitespace-nowrap">
+        <td className="px-2 py-2 text-[11px] text-white/80 break-words align-top">
+          {b.ownerName || <span className="text-white/30">—</span>}
+        </td>
+        <td className="px-2 py-2 text-[11px] align-top">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
-            <div className="inline-flex items-center gap-1.5">
-              <span className="text-[#85CC17]/80 max-w-[160px] truncate" title={b.ownerEmail}>{b.ownerEmail}</span>
+            <div className="flex items-start gap-1.5 min-w-0">
+              <span className="text-[#85CC17]/80 break-all" title={b.ownerEmail}>{b.ownerEmail}</span>
               <button
                 type="button"
-                className="members-copy-btn"
+                className="members-copy-btn flex-shrink-0"
                 onClick={() => void copyText(b.ownerEmail)}
                 title="Copy primary email"
                 aria-label="Copy primary email"
@@ -1357,21 +1409,141 @@ export default function BusinessesPage() {
               </button>
             </div>
           ) : (
-            <span className="text-white/40">—</span>
+            <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-2 py-1.5 text-[11px] whitespace-nowrap">
-          {isMemberRestricted ? (
-            <span className="text-white/40">—</span>
-          ) : b.phone ? (
-            <div className="inline-flex items-center gap-1.5">
-              <span className="text-white/75 max-w-[120px] truncate" title={b.phone}>{b.phone}</span>
+        <td className="px-2 py-2 align-top">
+          {canEdit ? (
+            <div className="relative inline-block">
               <button
                 type="button"
-                className="members-copy-btn"
-                onClick={() => void copyText(b.phone)}
-                title="Copy primary phone number"
-                aria-label="Copy primary phone number"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenStatusPopoverId(openStatusPopoverId === b.id ? null : b.id);
+                }}
+                className="cursor-pointer"
+                title="Click to change status"
+              >
+                <Badge label={trackStatus} />
+              </button>
+              {openStatusPopoverId === b.id && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]"
+                >
+                  {STATUSES.map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => void handleQuickStatusChange(b, status)}
+                      className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${
+                        trackStatus === status ? "text-[#85CC17]" : "text-white/70"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Badge label={trackStatus} />
+          )}
+        </td>
+        <td className="px-2 py-2 text-[11px] text-white/80 align-top">
+          {dedupedMembers.length === 0 ? (
+            <span className="text-white/30">—</span>
+          ) : (
+            <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+              {dedupedMembers.map((memberName, idx) => (
+                <span key={`${b.id}-${track}-${memberName}-${idx}`}>
+                  {idx > 0 && <span className="text-white/40">,&nbsp;</span>}
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
+                      onClick={() => openProjectMemberEmailModal(b, memberName)}
+                      title={`Email ${memberName}`}
+                    >
+                      {memberName}
+                    </button>
+                  ) : (
+                    <span>{memberName}</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+        </td>
+        <td className="px-2 py-2 text-[11px] text-white/75 align-top">
+          {deadlines.length === 0 ? (
+            <span className="text-white/30">—</span>
+          ) : (
+            <div className="space-y-0.5">
+              {deadlines.slice(0, 2).map((entry, idx) => (
+                <div key={`${b.id}-deadline-${idx}`} className="leading-snug">
+                  <span className="text-white/50">{entry.label || "Deadline"}:</span>{" "}
+                  <span className="text-white/85">{entry.date}</span>
+                </div>
+              ))}
+              {deadlines.length > 2 && (
+                <div className="text-white/40">+{deadlines.length - 2} more</div>
+              )}
+            </div>
+          )}
+        </td>
+        <td className="px-2 py-2 align-top">
+          {canEdit && (
+            <div className="flex flex-wrap gap-1.5">
+              <Btn
+                size="sm"
+                variant="secondary"
+                onClick={() => openProjectTeamEmailModal(b)}
+                disabled={resolveProjectRecipients(b).emails.length === 0}
+              >
+                Email
+              </Btn>
+              <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
+            </div>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
+  // Renders a row for the Discovery tab. Highlights website-form intake and adds a quick
+  // "Move to..." action so an admin can promote the entry into Tech/Marketing/Finance without
+  // opening the full edit modal.
+  const renderDiscoveryRow = (b: Business) => {
+    const neighborhood = getNeighborhoodLabel(b);
+    const fromWebsite = b.intakeSource === "website_form";
+    return (
+      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03] align-top">
+        <td className="px-2 py-2 text-[11px] text-white/90 align-top">
+          <span className="font-medium leading-snug break-words">
+            {b.name}
+            {fromWebsite && <span className="text-amber-300 ml-1" title="Submitted via website business interest form">★</span>}
+            {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
+          </span>
+        </td>
+        <td className="px-2 py-2 text-[11px] text-white/65 break-words align-top">
+          {neighborhood || <span className="text-white/30">—</span>}
+        </td>
+        <td className="px-2 py-2 text-[11px] text-white/80 break-words align-top">
+          {b.ownerName || <span className="text-white/30">—</span>}
+        </td>
+        <td className="px-2 py-2 text-[11px] align-top">
+          {isMemberRestricted ? (
+            <span className="text-white/40">—</span>
+          ) : b.ownerEmail ? (
+            <div className="flex items-start gap-1.5 min-w-0">
+              <span className="text-[#85CC17]/80 break-all" title={b.ownerEmail}>{b.ownerEmail}</span>
+              <button
+                type="button"
+                className="members-copy-btn flex-shrink-0"
+                onClick={() => void copyText(b.ownerEmail)}
+                title="Copy primary email"
+                aria-label="Copy primary email"
               >
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <rect x="9" y="9" width="11" height="11" rx="2" />
@@ -1380,67 +1552,60 @@ export default function BusinessesPage() {
               </button>
             </div>
           ) : (
+            <span className="text-white/30">—</span>
+          )}
+        </td>
+        <td className="px-2 py-2 text-[11px] text-white/75 align-top">
+          {isMemberRestricted ? (
             <span className="text-white/40">—</span>
-          )}
-        </td>
-        <td className="px-2 py-1.5 whitespace-nowrap">
-          <Badge label={normalizedStatus} />
-        </td>
-        <td className="px-2 py-1.5 text-[11px] text-white/80 max-w-[260px]" title={trackAssignments.map((assignment) => `${formatTrackTeamLabel(assignment.track)}: ${assignment.members.join(", ") || "—"}`).join(" · ")}>
-          {trackAssignments.every((assignment) => assignment.members.length === 0) ? (
-            <span className="text-white/40">—</span>
+          ) : b.phone ? (
+            <span className="break-all">{b.phone}</span>
           ) : (
-            <div className="space-y-0.5">
-              {trackAssignments.map((assignment) => (
-                <div key={`${b.id}-${assignment.track}`} className="truncate">
-                  <span className="text-white/55">{formatTrackTeamLabel(assignment.track)}:</span>{" "}
-                  {assignment.members.length === 0 ? (
-                    <span className="text-white/40">—</span>
-                  ) : assignment.members.map((memberName, idx) => (
-                    <span key={`${b.id}-${assignment.track}-${memberName}-${idx}`}>
-                      {idx > 0 && <span className="text-white/40">, </span>}
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
-                          onClick={() => openProjectMemberEmailModal(b, memberName)}
-                          title={`Email ${memberName}`}
-                        >
-                          {memberName}
-                        </button>
-                      ) : (
-                        <span>{memberName}</span>
-                      )}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
+            <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-2 py-1.5 text-[11px] text-white/75 max-w-[240px]" title={deadlineLines.join(" · ") || "—"}>
-          {deadlineLines.length === 0 ? (
-            <span className="text-white/35">—</span>
+        <td className="px-2 py-2 text-[11px] align-top">
+          {fromWebsite ? (
+            <span className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
+              Website form
+            </span>
           ) : (
-            <div className="space-y-0.5">
-              {deadlineLines.slice(0, 2).map((line, idx) => (
-                <div key={`${b.id}-deadline-line-${idx}`} className="truncate">{line}</div>
-              ))}
-              {deadlineLines.length > 2 && <div className="text-white/40">+{deadlineLines.length - 2} more</div>}
-            </div>
+            <span className="text-white/30">Manual</span>
           )}
         </td>
-        <td className="px-2 py-1.5 whitespace-nowrap text-left w-[160px]">
+        <td className="px-2 py-2 align-top">
           {canEdit && (
-            <div className="flex justify-start gap-1.5">
-              <Btn
-                size="sm"
-                variant="secondary"
-                onClick={() => openProjectTeamEmailModal(b)}
-                disabled={resolveProjectRecipients(b).emails.length === 0}
-              >
-                Email Team
-              </Btn>
+            <div className="flex flex-wrap gap-1.5">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMovePopoverId(openMovePopoverId === b.id ? null : b.id);
+                  }}
+                  className="rounded-md border border-white/15 hover:border-[#85CC17]/45 bg-[#11141A] hover:bg-[#85CC17]/10 px-2 py-1 text-[11px] text-white/80 hover:text-white transition-colors"
+                >
+                  Move to…
+                </button>
+                {openMovePopoverId === b.id && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
+                  >
+                    {TRACK_ORDER.map((track) => (
+                      <button
+                        key={`move-${b.id}-${track}`}
+                        type="button"
+                        onClick={() => void handleMoveToTrack(b, track)}
+                        className="w-full text-left px-3 py-2 text-xs text-white/75 hover:bg-white/8 transition-colors flex items-center gap-2"
+                      >
+                        <span className={`inline-block h-2 w-2 rounded-full ${TRACK_META[track].dotClass}`} />
+                        {TRACK_META[track].label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
             </div>
           )}
@@ -1648,7 +1813,7 @@ export default function BusinessesPage() {
       <SectionTabs tabs={PROJECT_GROUP_TABS} />
 
       <PageHeader
-        title="Projects"
+        title={TAB_TITLE[activeTab]}
         action={
           canEdit ? (
             <div className="flex gap-2">
@@ -1661,136 +1826,114 @@ export default function BusinessesPage() {
         <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
         <span className="mx-2">·</span>
         <span className="text-blue-300 font-semibold">◆</span> Visible on public home/showcase.
-        <span className="mx-2">·</span>
-        <span className="inline-flex items-center gap-1 align-middle">
-          <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META.Tech.dotClass}`} />
-          <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META.Marketing.dotClass}`} />
-          <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META.Finance.dotClass}`} />
-        </span>{" "}
-        Track assignments (Tech / Marketing / Finance).
+        {activeTab !== "discovery" && (
+          <>
+            <span className="mx-2">·</span>
+            <span className="inline-flex items-center gap-1 align-middle">
+              <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META[TAB_TRACK[activeTab]].dotClass}`} />
+            </span>{" "}
+            {TRACK_META[TAB_TRACK[activeTab]].label} track.
+          </>
+        )}
       </p>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatCard label="Ongoing" value={ongoingCount} color="text-green-400" />
-        <StatCard label="Upcoming" value={upcomingCount} color="text-blue-400" />
-        <StatCard label="Completed" value={completedCount} color="text-violet-400" />
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder={isMemberRestricted ? "Search business names…" : "Search businesses, owners, leads…"} />
-        <select
-          value={filterDiv}
-          onChange={e => setFilterDiv(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white/70 focus:outline-none appearance-none"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff66' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center" }}
-        >
-          <option value="">All divisions</option>
-          {DIVISIONS.map(d => <option key={d}>{d}</option>)}
-        </select>
-      </div>
-
-      {isNonAdminMember && myProjects.length > 0 && (
-        <div className="mb-4">
-          <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
-          <div className="members-table-shell">
-            <table className="members-grid-table w-full min-w-[1320px] table-fixed text-left [&_td]:overflow-hidden">
-              <thead className="bg-[#0F1014] border-b border-white/8">
-                <tr>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Owner Name</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Primary Email</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Primary Phone</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Track Teams</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Deadlines</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-left w-[160px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groupedMyProjects.map((group) => (
-                  <Fragment key={`my-${group.label}`}>
-                    <tr className="bg-[#12151B] border-b border-white/8">
-                      <td colSpan={8} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
-                        <div className="flex items-center justify-between pr-1">
-                          <span>{group.label} · {group.items.length}</span>
-                          {canEdit && (
-                            <button
-                              type="button"
-                              onClick={() => openCreate(group.label === "Unspecified location" ? "" : group.label)}
-                              className="h-5 w-5 rounded flex items-center justify-center text-[#85CC17]/60 hover:text-[#85CC17] hover:bg-[#85CC17]/12 transition-colors text-sm leading-none"
-                              title={`Add business to ${group.label}`}
-                              aria-label={`Add business to ${group.label}`}
-                            >
-                              +
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    {group.items.map(renderProjectCompactRow)}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {activeTab !== "discovery" && (
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <StatCard label="Ongoing" value={ongoingCount} color="text-green-400" />
+          <StatCard label="Upcoming" value={upcomingCount} color="text-blue-400" />
+          <StatCard label="Completed" value={completedCount} color="text-violet-400" />
         </div>
       )}
 
-      {isNonAdminMember && myProjects.length > 0 && (
-        <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-2">Other Projects</h2>
-      )}
-
-      <div className="members-table-shell mb-6">
-        <table className="members-grid-table w-full min-w-[1320px] table-fixed text-left [&_td]:overflow-hidden">
-          <thead className="bg-[#0F1014] border-b border-white/8">
-            <tr>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[22%]">Business Name</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Owner Name</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Primary Email</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Primary Phone</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Track Teams</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Deadlines</th>
-              <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 text-left w-[160px]">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {groupedOtherProjects.map((group) => (
-              <Fragment key={`all-${group.label}`}>
-                <tr className="bg-[#12151B] border-b border-white/8">
-                  <td colSpan={8} className="px-2 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-[#85CC17]">
-                    <div className="flex items-center justify-between pr-1">
-                      <span>{group.label} · {group.items.length}</span>
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={() => openCreate(group.label === "Unspecified location" ? "" : group.label)}
-                          className="h-5 w-5 rounded flex items-center justify-center text-[#85CC17]/60 hover:text-[#85CC17] hover:bg-[#85CC17]/12 transition-colors text-sm leading-none"
-                          title={`Add business to ${group.label}`}
-                          aria-label={`Add business to ${group.label}`}
-                        >
-                          +
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-                {group.items.map(renderProjectCompactRow)}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <div className="p-4">
-            <Empty
-              message="No projects found."
-              action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first project</Btn> : undefined}
-            />
-          </div>
-        )}
+      <div className="flex gap-3 mb-4 flex-wrap">
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder={isMemberRestricted ? "Search business names…" : "Search businesses, owners, leads…"}
+        />
       </div>
+
+      {activeTab === "discovery" ? (
+        <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-[#0F1014] border-b border-white/8">
+              <tr>
+                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Business Name</th>
+                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Neighborhood</th>
+                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Owner</th>
+                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[20%]">Primary Email</th>
+                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Phone</th>
+                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Source</th>
+                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Actions</th>
+              </tr>
+            </thead>
+            <tbody>{filtered.map(renderDiscoveryRow)}</tbody>
+          </table>
+          {filtered.length === 0 && (
+            <div className="p-6">
+              <Empty
+                message="No discovery entries. New website-form submissions and any unassigned businesses will land here."
+                action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first project</Btn> : undefined}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {isNonAdminMember && myProjects.length > 0 && (
+            <div className="mb-4">
+              <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
+              <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-[#0F1014] border-b border-white/8">
+                    <tr>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Business Name</th>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Neighborhood</th>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Owner</th>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Primary Email</th>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Members</th>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Deadlines</th>
+                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>{myProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab]))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {isNonAdminMember && myProjects.length > 0 && (
+            <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-2">Other Projects</h2>
+          )}
+
+          <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-[#0F1014] border-b border-white/8">
+                <tr>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Business Name</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Neighborhood</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Owner</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Primary Email</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Members</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Deadlines</th>
+                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Actions</th>
+                </tr>
+              </thead>
+              <tbody>{otherProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab]))}</tbody>
+            </table>
+            {filtered.length === 0 && (
+              <div className="p-6">
+                <Empty
+                  message={`No ${TAB_TITLE[activeTab].toLowerCase()} found.`}
+                  action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first project</Btn> : undefined}
+                />
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       <Modal
         open={!!projectTeamPickerProject}
@@ -2053,7 +2196,19 @@ export default function BusinessesPage() {
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setField("showcaseEnabled", checked);
-                  if (!checked) setField("showcaseFeaturedOnHome", false);
+                  if (!checked) {
+                    setField("showcaseFeaturedOnHome", false);
+                  } else {
+                    // When enabling showcase on a multi-track business, default the public-facing
+                    // work to the Tech track's website so the user lands on a sensible default.
+                    const tracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((t) => normalizeDivision(t));
+                    const hasTech = tracks.includes("Tech");
+                    const currentService = (form.showcaseServices ?? [])[0]?.trim() ?? "";
+                    if (hasTech && !currentService) {
+                      setField("showcaseServices", ["Website"]);
+                      setField("showcaseType", DIVISION_PUBLIC_LABEL.Tech);
+                    }
+                  }
                 }}
               />
               Show this project on the public site

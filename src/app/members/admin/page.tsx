@@ -65,7 +65,6 @@ const EXPORT_OPTIONS = [
   { key: "applicants", label: "Applicants" },
   { key: "bids", label: "BIDs" },
   { key: "interviews", label: "Interview Slots" },
-  { key: "grants", label: "Grant Library" },
   { key: "calendar", label: "Calendar Events" },
   { key: "users", label: "Portal Users" },
   { key: "inviteCodes", label: "Invite Codes" },

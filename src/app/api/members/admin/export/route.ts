@@ -9,7 +9,6 @@ const EXPORT_SECTION_PATHS = {
   applicants: "applications",
   bids: "bids",
   interviews: "interviewSlots",
-  grants: "grants",
   calendar: "calendarEvents",
   users: "userProfiles",
   inviteCodes: "inviteCodes",

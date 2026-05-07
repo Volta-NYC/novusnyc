@@ -24,7 +24,7 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/projects",
     label: "Projects",
-    activeMatchRoots: ["/members/projects", "/members/assignments", "/members/grants"],
+    activeMatchRoots: ["/members/projects", "/members/assignments"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
   },
   {
@@ -92,7 +92,6 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
     return [
       "/members/projects",
       "/members/assignments",
-      "/members/grants",
       "/members/bids",
       "/members/team",
       "/members/applicants",

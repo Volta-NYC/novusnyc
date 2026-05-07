@@ -147,25 +147,6 @@ export interface Task {
   completedAt: string;
 }
 
-export interface Grant {
-  id: string;
-  name: string;
-  funder: string;
-  amount: string;
-  deadline: string;
-  businessIds: string[];          // may be undefined if Firebase omitted empty array
-  neighborhoodFocus: string[];    // may be undefined if Firebase omitted empty array
-  category: "Government" | "Foundation" | "Corporate" | "CDFI" | "Other";
-  status: "Researched" | "Application In Progress" | "Submitted" | "Awarded" | "Rejected" | "Cycle Closed";
-  assignedResearcher: string;
-  likelihood: "High" | "Medium" | "Low";
-  requirements: string;
-  applicationUrl: string;
-  notes: string;
-  cycleFrequency: "Annual" | "Biannual" | "Rolling" | "One-Time";
-  createdAt: string;
-}
-
 export interface TeamMember {
   id: string;
   name: string;
@@ -548,7 +529,6 @@ function normalizeAuthRoleValue(value: unknown): AuthRole {
 export const subscribeBIDs        = makeSubscriber<BID>("bids");
 export const subscribeBusinesses  = makeSubscriber<Business>("businesses");
 export const subscribeTasks       = makeSubscriber<Task>("tasks");
-export const subscribeGrants      = makeSubscriber<Grant>("grants");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
 export const subscribeFinanceAssignments = makeSubscriber<FinanceAssignment>("financeAssignments");
@@ -710,44 +690,6 @@ export async function deleteTask(id: string): Promise<void> {
   await writeAuditLog(db, {
     action: "delete",
     collection: "tasks",
-    recordId: id,
-  });
-}
-
-// ── Grants ────────────────────────────────────────────────────────────────────
-
-export async function createGrant(data: Omit<Grant, "id" | "createdAt">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const grantRef = push(ref(db, "grants"));
-  await set(grantRef, { ...data, createdAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "grants",
-    recordId: grantRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
-}
-
-export async function updateGrant(id: string, data: Partial<Grant>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `grants/${id}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "grants",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
-}
-
-export async function deleteGrant(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `grants/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "grants",
     recordId: id,
   });
 }
