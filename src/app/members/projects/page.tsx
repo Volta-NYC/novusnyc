@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { Suspense, useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
@@ -383,7 +383,17 @@ const TAB_TITLE: Record<ProjectTab, string> = {
   discovery: "Discovery",
 };
 
+// Wrap the page body in Suspense so static prerendering doesn't bail on the
+// useSearchParams() call inside BusinessesPageInner.
 export default function BusinessesPage() {
+  return (
+    <Suspense fallback={null}>
+      <BusinessesPageInner />
+    </Suspense>
+  );
+}
+
+function BusinessesPageInner() {
   const searchParams = useSearchParams();
   const activeTab = normalizeProjectTab(searchParams?.get("tab"));
 
