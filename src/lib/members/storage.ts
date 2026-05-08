@@ -162,11 +162,17 @@ export interface TeamMember {
   slackHandle: string;
   email: string;
   alternateEmail?: string;
-  status: "Active" | "On Leave" | "Alumni" | "Inactive";
+  // Reserve = headcount-only, gray dot, removed from the active credit system.
+  // Inactive remains as a legacy value treated equivalently to Reserve at display time.
+  status: "Active" | "On Leave" | "Alumni" | "Inactive" | "Reserve";
   skills: string[];       // may be undefined if Firebase omitted empty array
   joinDate: string;
   notes: string;
   createdAt: string;
+  // Automation bookkeeping — populated by the cycle sweep so warnings/strikes
+  // are issued at most once per cycle per member.
+  lastWarningCycleId?: string;
+  lastAutoStrikeCycleId?: string;
 }
 
 export type ApplicationStatus =
@@ -349,6 +355,98 @@ export interface EmailTemplate {
   active: boolean;
   updatedAt: string;
   updatedBy: string;               // uid or email of the last admin to edit
+}
+
+// ── Assignment catalog (credit-system marketplace) ────────────────────────────
+// An Assignment is the *catalog entry* for work members can claim. AssignmentClaim
+// records the member→assignment relationship and carries the lifecycle status.
+// Together they replace the older finance-assignment model for credit purposes.
+
+export type AssignmentDifficulty = string; // admin-configurable, free-form
+
+export type AssignmentStatus =
+  | "open"          // visible in marketplace, accepting claims
+  | "claimed"       // capacity reached but work hasn't been submitted
+  | "in_progress"   // mostly informational; admin can still close/duplicate
+  | "submitted"     // at least one claim is awaiting approval
+  | "approved"      // all claims approved (closed naturally)
+  | "closed";       // admin-closed; no longer browseable
+
+export interface Assignment {
+  id: string;
+  title: string;
+  description: string;             // HTML (rich-text)
+  primaryTrack: CycleTrack;        // for credit accounting + code prefix
+  visibleTracks: CycleTrack[];     // who sees this in their marketplace; defaults to [primaryTrack]
+  credits: number;
+  difficulty: AssignmentDifficulty;
+  estimatedHours: number;
+  minRole: CycleRole;              // gate — Analyst / Sr Analyst / Associate
+  businessId?: string;             // optional link to a business
+  capacity: number;                // how many members can claim simultaneously
+  deadline?: string;               // ISO date
+  status: AssignmentStatus;
+  cycleId: string;                 // cycle this assignment is scoped to
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;               // uid or email
+}
+
+export type AssignmentClaimStatus =
+  | "claimed"
+  | "in_progress"
+  | "submitted"
+  | "approved"
+  | "rejected";
+
+export interface AssignmentClaim {
+  id: string;
+  assignmentId: string;
+  memberId: string;
+  memberName: string;              // denormalized for display
+  cycleId: string;
+  status: AssignmentClaimStatus;
+  deliverableUrl?: string;
+  submissionNotes?: string;
+  claimedAt: string;
+  submittedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectReason?: string;
+  // Awarded credits — usually equal to assignment.credits at approval time, but
+  // approver can adjust (e.g. partial completion). Drives the credit ledger.
+  creditsAwarded?: number;
+  approvedBy?: string;
+}
+
+// ── Member strikes + credit adjustments ───────────────────────────────────────
+// Strikes are point-bearing infractions issued against a member; thresholds on
+// the active cycle convert points → strike count (warning / demotion / reserve).
+
+export interface MemberStrike {
+  id: string;
+  memberId: string;
+  memberName: string;              // denormalized for display
+  cycleId: string;
+  infractionId: string;            // catalog reference
+  infractionName: string;          // denormalized in case the catalog row is retired
+  severity: InfractionSeverity;
+  points: number;
+  issuedAt: string;
+  issuedBy: string;
+  note: string;
+  source: "manual" | "auto_pace";  // how it was issued (manual or by automation)
+}
+
+export interface MemberCreditAdjustment {
+  id: string;
+  memberId: string;
+  memberName: string;
+  cycleId: string;
+  points: number;                  // can be negative
+  reason: string;
+  createdAt: string;
+  createdBy: string;
 }
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
@@ -627,6 +725,10 @@ export const subscribeFinanceAssignments = makeSubscriber<FinanceAssignment>("fi
 export const subscribeCycles      = makeSubscriber<Cycle>("cycles");
 export const subscribeInfractions = makeSubscriber<Infraction>("infractions");
 export const subscribeEmailTemplates = makeSubscriber<EmailTemplate>("emailTemplates");
+export const subscribeAssignments = makeSubscriber<Assignment>("assignmentCatalog");
+export const subscribeAssignmentClaims = makeSubscriber<AssignmentClaim>("assignmentClaims");
+export const subscribeMemberStrikes = makeSubscriber<MemberStrike>("memberStrikes");
+export const subscribeMemberCreditAdjustments = makeSubscriber<MemberCreditAdjustment>("memberCreditAdjustments");
 export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
 
 export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
@@ -1509,6 +1611,175 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
   await writeAuditLog(db, {
     action: "delete",
     collection: "emailTemplates",
+    recordId: id,
+  });
+}
+
+// ── Assignment catalog ────────────────────────────────────────────────────────
+
+export async function createAssignment(
+  data: Omit<Assignment, "id" | "createdAt" | "updatedAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "assignmentCatalog"));
+  const id = r.key ?? "";
+  await set(r, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "assignmentCatalog",
+    recordId: id,
+    details: { title: data.title, primaryTrack: data.primaryTrack },
+  });
+  return id;
+}
+
+export async function updateAssignment(id: string, data: Partial<Assignment>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `assignmentCatalog/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "assignmentCatalog",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteAssignment(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `assignmentCatalog/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "assignmentCatalog",
+    recordId: id,
+  });
+}
+
+// ── Assignment claims ─────────────────────────────────────────────────────────
+
+export async function createAssignmentClaim(
+  data: Omit<AssignmentClaim, "id">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "assignmentClaims"));
+  const id = r.key ?? "";
+  await set(r, data);
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "assignmentClaims",
+    recordId: id,
+    details: { assignmentId: data.assignmentId, memberId: data.memberId },
+  });
+  return id;
+}
+
+export async function updateAssignmentClaim(id: string, data: Partial<AssignmentClaim>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `assignmentClaims/${id}`), data);
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "assignmentClaims",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteAssignmentClaim(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `assignmentClaims/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "assignmentClaims",
+    recordId: id,
+  });
+}
+
+// ── Member strikes ────────────────────────────────────────────────────────────
+
+export async function createMemberStrike(
+  data: Omit<MemberStrike, "id" | "issuedAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "memberStrikes"));
+  const id = r.key ?? "";
+  await set(r, { ...data, issuedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "memberStrikes",
+    recordId: id,
+    details: {
+      memberId: data.memberId,
+      infractionId: data.infractionId,
+      points: data.points,
+      source: data.source,
+    },
+  });
+  return id;
+}
+
+export async function deleteMemberStrike(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `memberStrikes/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "memberStrikes",
+    recordId: id,
+  });
+}
+
+// Admin-only "clear strikes" — wipes every strike for a member in a cycle.
+export async function clearMemberStrikes(
+  strikeIds: string[],
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  if (strikeIds.length === 0) return;
+  const updates: Record<string, unknown> = {};
+  for (const sid of strikeIds) {
+    updates[`memberStrikes/${sid}`] = null;
+  }
+  await update(ref(db), updates);
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "memberStrikes",
+    recordId: "bulk",
+    details: { count: strikeIds.length, ids: strikeIds },
+  });
+}
+
+// ── Member credit adjustments ─────────────────────────────────────────────────
+
+export async function createMemberCreditAdjustment(
+  data: Omit<MemberCreditAdjustment, "id" | "createdAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "memberCreditAdjustments"));
+  const id = r.key ?? "";
+  await set(r, { ...data, createdAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "memberCreditAdjustments",
+    recordId: id,
+    details: { memberId: data.memberId, points: data.points },
+  });
+  return id;
+}
+
+export async function deleteMemberCreditAdjustment(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `memberCreditAdjustments/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "memberCreditAdjustments",
     recordId: id,
   });
 }

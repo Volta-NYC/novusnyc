@@ -7,11 +7,20 @@ import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, subscribeApplications, type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
+  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
+  subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, subscribeApplications,
+  subscribeCycles, subscribeAssignments, subscribeAssignmentClaims, subscribeMemberStrikes,
+  subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
+  type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
+  type Cycle, type Assignment, type AssignmentClaim, type MemberStrike, type MemberCreditAdjustment,
+  type EmailTemplate, type Infraction,
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 import { CLASS_GRADE_OPTIONS, gradeToClassOf, isLegacyGrade } from "@/lib/grades";
+import MemberDrawer from "@/components/members/MemberDrawer";
+import { classifyMember, computeCreditLedger, computeDot, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
+import { runCycleSweep } from "@/lib/members/cycleAutomation";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -330,6 +339,16 @@ export default function TeamPage() {
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const boardMigrationRef = useRef(false);
   const gradeMigrationRef = useRef(false);
+  // Credit-system inputs for the dot color computation + drawer.
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [creditAssignments, setCreditAssignments] = useState<Assignment[]>([]);
+  const [creditClaims, setCreditClaims] = useState<AssignmentClaim[]>([]);
+  const [creditStrikes, setCreditStrikes] = useState<MemberStrike[]>([]);
+  const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [infractionCatalog, setInfractionCatalog] = useState<Infraction[]>([]);
+  const [drawerMember, setDrawerMember] = useState<TeamMember | null>(null);
+  const sweepRanRef = useRef(false);
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
@@ -346,6 +365,47 @@ export default function TeamPage() {
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
+  useEffect(() => subscribeCycles(setCycles), []);
+  useEffect(() => subscribeAssignments(setCreditAssignments), []);
+  useEffect(() => subscribeAssignmentClaims(setCreditClaims), []);
+  useEffect(() => subscribeMemberStrikes(setCreditStrikes), []);
+  useEffect(() => subscribeMemberCreditAdjustments(setCreditAdjustments), []);
+  useEffect(() => subscribeEmailTemplates(setEmailTemplates), []);
+  useEffect(() => subscribeInfractions(setInfractionCatalog), []);
+
+  // One-shot automation sweep: when admin loads this page with full cycle data,
+  // walk every active member and fire warnings/auto-strikes if their dot just
+  // crossed the orange or red threshold. The sweep itself is idempotent per
+  // cycle via the lastWarningCycleId / lastAutoStrikeCycleId flags.
+  useEffect(() => {
+    if (sweepRanRef.current) return;
+    if (!canEdit || !user) return;
+    if (team.length === 0) return;
+    if (cycles.length === 0) return;
+    sweepRanRef.current = true;
+    void (async () => {
+      try {
+        const idToken = await user.getIdToken();
+        await runCycleSweep({
+          team,
+          cycles,
+          assignments: creditAssignments,
+          claims: creditClaims,
+          strikes: creditStrikes,
+          adjustments: creditAdjustments,
+          templates: emailTemplates,
+          infractions: infractionCatalog,
+          idToken,
+          reviewerLabel: "system (auto)",
+        });
+      } catch {
+        // Non-fatal: never block the directory render.
+      }
+    })();
+  }, [
+    canEdit, user, team, cycles, creditAssignments, creditClaims, creditStrikes,
+    creditAdjustments, emailTemplates, infractionCatalog,
+  ]);
   useEffect(() => subscribeApplications(setApplications), []);
 
   // Close the inline role-edit popover on any document click outside it.
@@ -1035,15 +1095,43 @@ export default function TeamPage() {
     return 0;
   });
 
+  const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
+
+  // Dot color is driven by the credit-system pace computation. Falls back to a
+  // gray "no cycle" state when there's no active cycle to anchor the math.
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
-    if (normalizeKey(member.status ?? "") === "inactive") {
-      return { colorClass: "bg-red-400", label: "Inactive" };
-    }
-    const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
-    if (memberAssignments.length > 0) {
-      return { colorClass: "bg-emerald-400", label: "Assigned to at least one project or assignment" };
-    }
-    return { colorClass: "bg-yellow-400", label: "No project or assignment linked" };
+    const memberClaims = creditClaims.filter(
+      (c) => c.memberId === member.id && (!activeCycle || c.cycleId === activeCycle.id),
+    );
+    const memberAdjustments = creditAdjustments.filter(
+      (a) => a.memberId === member.id && (!activeCycle || a.cycleId === activeCycle.id),
+    );
+    const credits = new Map<string, number>();
+    for (const a of creditAssignments) credits.set(a.id, a.credits);
+    const ledger = computeCreditLedger({
+      claims: memberClaims,
+      adjustments: memberAdjustments,
+      assignmentCredits: credits,
+    });
+    const classification = classifyMember(member);
+    const primaryTrack = pickPrimaryTrack(member);
+    const target = activeCycle && classification.cycleRole
+      ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
+      : 0;
+    const dot = computeDot({
+      cycle: activeCycle,
+      member,
+      earnedCredits: ledger.total,
+      targetCredits: target,
+      hasAnyClaims: memberClaims.length > 0,
+    });
+    const colorClass =
+      dot.color === "green" ? "bg-emerald-400"
+        : dot.color === "yellow" ? "bg-yellow-400"
+        : dot.color === "orange" ? "bg-orange-400"
+        : dot.color === "red" ? "bg-red-500"
+        : "bg-gray-400";
+    return { colorClass, label: dot.label };
   };
 
   const selectedMemberAssignments = useMemo(() => {
@@ -1491,7 +1579,8 @@ export default function TeamPage() {
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
                       <div className="flex gap-1 flex-nowrap">
-                        {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
+                        {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
+                        {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
                       </div>
                     </td>
                   </tr>
@@ -1682,6 +1771,14 @@ export default function TeamPage() {
           </div>
         </div>
       </Modal>
+
+      {drawerMember && (
+        <MemberDrawer
+          member={drawerMember}
+          reviewerLabel={user?.email || user?.uid || "admin"}
+          onClose={() => setDrawerMember(null)}
+        />
+      )}
     </MembersLayout>
   );
 }

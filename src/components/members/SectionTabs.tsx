@@ -83,6 +83,8 @@ export const PEOPLE_GROUP_TABS: SectionTab[] = [
 export const ADMIN_GROUP_TABS: SectionTab[] = [
   { href: "/members/admin", label: "Admin Tools", exact: true },
   { href: "/members/admin/cycles", label: "Cycles" },
+  { href: "/members/admin/assignments-catalog", label: "Assignments Catalog" },
+  { href: "/members/admin/approvals", label: "Approvals" },
   { href: "/members/admin/infractions", label: "Infractions" },
   { href: "/members/admin/email-templates", label: "Email Templates" },
 ];
