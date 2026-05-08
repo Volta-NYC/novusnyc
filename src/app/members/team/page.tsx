@@ -11,6 +11,7 @@ import {
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
+import { CLASS_GRADE_OPTIONS, gradeToClassOf, isLegacyGrade } from "@/lib/grades";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -22,7 +23,7 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
   email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "", notes: "",
 };
 
-const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
+const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C" | "G";
 
@@ -327,6 +328,7 @@ export default function TeamPage() {
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const boardMigrationRef = useRef(false);
+  const gradeMigrationRef = useRef(false);
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
@@ -357,6 +359,23 @@ export default function TeamPage() {
     if (String(member.role ?? "").trim() === nextRole) return;
     await updateTeamMember(member.id, { role: nextRole });
   };
+
+  // One-time backfill: replace legacy grade labels (Freshman/Junior/...) with the
+  // matching class-of-YYYY value so the data stops drifting each fall.
+  useEffect(() => {
+    if (gradeMigrationRef.current) return;
+    if (!canEdit || team.length === 0) return;
+    gradeMigrationRef.current = true;
+    void (async () => {
+      for (const member of team) {
+        if (!isLegacyGrade(member.grade)) continue;
+        const next = gradeToClassOf(member.grade);
+        if (!next || next === member.grade) continue;
+        // eslint-disable-next-line no-await-in-loop
+        await updateTeamMember(member.id, { grade: next });
+      }
+    })();
+  }, [team, canEdit]);
 
   // One-time backfill: stamp the Board role onto the named leadership members
   // whose stored role hasn't already been set to Board. Runs once per session
@@ -627,7 +646,9 @@ export default function TeamPage() {
     setForm({
       name:        member.name,
       school:      member.school,
-      grade:       member.grade ?? "",
+      // Coerce any legacy "Senior"/"Junior" value into the matching Class-of label
+      // so the dropdown lands on the right option when editing older records.
+      grade:       gradeToClassOf(member.grade ?? ""),
       // Guard against undefined: Firebase omits empty arrays when storing.
       divisions:   member.divisions ?? [],
       pod:         "",
@@ -674,7 +695,7 @@ export default function TeamPage() {
       || member.email.toLowerCase().includes(search.toLowerCase())
       || (member.alternateEmail ?? "").toLowerCase().includes(search.toLowerCase())
       || member.school.toLowerCase().includes(search.toLowerCase())
-      || (member.grade ?? "").toLowerCase().includes(search.toLowerCase());
+      || gradeToClassOf(member.grade ?? "").toLowerCase().includes(search.toLowerCase());
     return matchesSearch;
   });
 
@@ -1280,7 +1301,7 @@ export default function TeamPage() {
                       <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 64) : "—"}</span>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/50">{member.grade || "—"}</span>
+                      <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/60">{displayRoleValue(member.role)}</span>
@@ -1395,7 +1416,7 @@ export default function TeamPage() {
                       <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 72) : "—"}</span>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/50">{member.grade || "—"}</span>
+                      <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
                       {canEdit ? (

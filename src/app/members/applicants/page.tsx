@@ -15,6 +15,7 @@ import {
   subscribeInterviewSlots,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { gradeToClassOf, isLegacyGrade } from "@/lib/grades";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "New",
@@ -233,6 +234,35 @@ export default function ApplicantsPage() {
     return () => clearInterval(timer);
   }, [fetchApplicantsData, canView]);
 
+  // One-time backfill: rewrite legacy grade labels on applicant records so the
+  // value stops needing manual annual updates. Admins only — interviewers can't
+  // PATCH the grade field.
+  const gradeMigrationRef = useRef(false);
+  useEffect(() => {
+    if (gradeMigrationRef.current) return;
+    if (!canEdit || applications.length === 0) return;
+    gradeMigrationRef.current = true;
+    void (async () => {
+      let touched = false;
+      for (const app of applications) {
+        if (!isLegacyGrade(app.grade)) continue;
+        const next = gradeToClassOf(app.grade);
+        if (!next || next === app.grade) continue;
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await updateApplicantServer(app.id, { grade: next });
+          touched = true;
+        } catch {
+          // Non-fatal: a single failure shouldn't stop the rest.
+        }
+      }
+      if (touched) await fetchApplicantsData();
+    })();
+  // updateApplicantServer is stable (defined inline below) and intentionally omitted
+  // from deps — including it would re-trigger the migration on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applications, canEdit, fetchApplicantsData]);
+
   const bookedSlots = useMemo(
     () => [...slots]
       .filter((slot) => !slot.available)
@@ -448,7 +478,7 @@ export default function ApplicantsPage() {
         fullName: app.fullName,
         email: app.email,
         schoolName: app.schoolName,
-        grade: app.grade,
+        grade: gradeToClassOf(app.grade),
         role,
         tracksSelected: app.tracksSelected,
       }),
@@ -861,12 +891,14 @@ export default function ApplicantsPage() {
                             <span className="block truncate" title={app.schoolName || ""}>{app.schoolName || "—"}</span>
                           </td>
                         );
-                      case "grade":
+                      case "grade": {
+                        const display = gradeToClassOf(app.grade);
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/55 whitespace-nowrap">
-                            <span className="block truncate" title={app.grade || ""}>{app.grade || "—"}</span>
+                            <span className="block truncate" title={display || ""}>{display || "—"}</span>
                           </td>
                         );
+                      }
                       case "cityState":
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/50 whitespace-nowrap">

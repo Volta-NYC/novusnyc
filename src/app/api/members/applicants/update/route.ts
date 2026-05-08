@@ -17,6 +17,9 @@ const ALLOWED_FIELDS = new Set([
   "interviewScheduledAt",
   "finalDecisionRole",
   "interviewEvaluations",
+  // Allow admin tooling to migrate legacy grade labels (e.g. "Senior") to the
+  // class-of-YYYY equivalent so applicant records stop drifting each fall.
+  "grade",
 ]);
 
 export async function POST(req: NextRequest) {

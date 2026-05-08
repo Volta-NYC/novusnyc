@@ -4,9 +4,10 @@ import { useState, useRef } from "react";
 import { CheckIcon } from "@/components/Icons";
 import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schemas";
 import { TRACK_NAMES } from "@/data";
+import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Online", "Referral", "Other"];
-const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College Freshman", "College Sophomore", "College Junior", "College Senior"];
+const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
 
 const EMPTY: ApplicationFormValues = {
   fullName: "", email: "", city: "", schoolName: "", grade: "", referral: "",

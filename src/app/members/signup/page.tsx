@@ -9,8 +9,9 @@ import { signUp } from "@/lib/members/firebaseAuth";
 import {
   getInviteCodeByValue, setUserProfileRecord, type AuthRole,
 } from "@/lib/members/storage";
+import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
 
-const GRADE_OPTIONS = ["Freshman", "Sophomore", "Junior", "Senior", "College"];
+const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
 
 function isInviteCodeExpired(expiresAt: string): boolean {
   const raw = expiresAt.trim().toLowerCase();
