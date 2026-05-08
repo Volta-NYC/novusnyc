@@ -614,7 +614,7 @@ export default function ApplicantsPage() {
               onChange={(e) => setAcceptRole(e.target.value)}
               className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
-              {["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Project Lead"].map((role) => (
+              {["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Board"].map((role) => (
                 <option key={role} value={role}>{role}</option>
               ))}
             </select>

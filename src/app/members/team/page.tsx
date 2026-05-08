@@ -18,7 +18,7 @@ import { useAuth } from "@/lib/members/authContext";
 const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
   grade: "",
   acceptedDate: "",
-  name: "", school: "", divisions: [], pod: "", role: "Member", slackHandle: "",
+  name: "", school: "", divisions: [], pod: "", role: "Analyst", slackHandle: "",
   email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "", notes: "",
 };
 
@@ -130,20 +130,53 @@ const SORT_OPTIONS = [
   { value: 8, label: "Account Created" },
 ];
 
-const ROLE_OPTIONS = ["Team Lead", "Member", "Associate", "Advisor"] as const;
+// Roles offered in the inline role-edit popover. Board is an internal designation
+// for leadership; the rest mirror the labels used on the applicant acceptance form.
+const ROLE_OPTIONS = ["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Board"] as const;
 type RoleOption = (typeof ROLE_OPTIONS)[number];
 
-function normalizeRoleValue(value: unknown): RoleOption {
+// Display the role exactly as stored, so legacy entries (e.g. "Project Lead",
+// "Member") still show up faithfully even though they aren't selectable in the popover.
+function displayRoleValue(value: unknown): string {
   const raw = String(value ?? "").trim();
-  return (ROLE_OPTIONS as readonly string[]).includes(raw) ? (raw as RoleOption) : "Member";
+  return raw || "—";
 }
 
-const ROLE_SORT_ORDER: Record<RoleOption, number> = {
-  "Team Lead": 0,
-  Member: 1,
+const ROLE_SORT_ORDER: Record<string, number> = {
+  Board: 0,
+  "Senior Associate": 1,
   Associate: 2,
-  Advisor: 3,
+  "Senior Analyst": 3,
+  Analyst: 4,
 };
+
+function roleSortKey(value: unknown): number {
+  const raw = String(value ?? "").trim();
+  return raw in ROLE_SORT_ORDER ? ROLE_SORT_ORDER[raw] : 99;
+}
+
+// Members who should hold the Board role regardless of what they were originally
+// accepted with. Compared loosely against name + email so casing/spacing in
+// stored data doesn't cause a miss.
+const BOARD_MEMBERS: Array<{ name: string; emails: string[] }> = [
+  { name: "Ethan Zhang", emails: ["ethan@voltanyc.org"] },
+  { name: "Andrew Chin", emails: [] },
+  { name: "Tahmid Islam", emails: [] },
+  { name: "Ellie Mak", emails: [] },
+  { name: "Joseph Long", emails: [] },
+];
+
+function isBoardMember(member: TeamMember): boolean {
+  const memberName = String(member.name ?? "").trim().toLowerCase();
+  const memberEmails = [member.email, member.alternateEmail]
+    .map((value) => String(value ?? "").trim().toLowerCase())
+    .filter(Boolean);
+  return BOARD_MEMBERS.some((entry) => {
+    if (entry.name.toLowerCase() === memberName) return true;
+    if (entry.emails.length === 0) return false;
+    return entry.emails.some((emailMatch) => memberEmails.includes(emailMatch.toLowerCase()));
+  });
+}
 
 function normalizeText(v: string): string {
   return v.trim().replace(/\s+/g, " ");
@@ -293,6 +326,7 @@ export default function TeamPage() {
   const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_SORT_RULES);
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
+  const boardMigrationRef = useRef(false);
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
@@ -320,9 +354,26 @@ export default function TeamPage() {
 
   const handleQuickRoleChange = async (member: TeamMember, nextRole: RoleOption) => {
     setOpenRolePopoverId(null);
-    if (normalizeRoleValue(member.role) === nextRole) return;
+    if (String(member.role ?? "").trim() === nextRole) return;
     await updateTeamMember(member.id, { role: nextRole });
   };
+
+  // One-time backfill: stamp the Board role onto the named leadership members
+  // whose stored role hasn't already been set to Board. Runs once per session
+  // for admins so old "Member"/"Project Lead" entries get corrected.
+  useEffect(() => {
+    if (boardMigrationRef.current) return;
+    if (!canEdit || team.length === 0) return;
+    boardMigrationRef.current = true;
+    void (async () => {
+      for (const member of team) {
+        if (!isBoardMember(member)) continue;
+        if (String(member.role ?? "").trim() === "Board") continue;
+        // eslint-disable-next-line no-await-in-loop
+        await updateTeamMember(member.id, { role: "Board" });
+      }
+    })();
+  }, [team, canEdit]);
   useEffect(() => {
     let mounted = true;
     let timer: number | null = null;
@@ -545,7 +596,7 @@ export default function TeamPage() {
           acceptedDate: "",
           divisions: entry.track === "—" ? [] : [entry.track],
           pod: "",
-          role: "Member",
+          role: "Analyst",
           slackHandle: "",
           status: "Active",
           skills: [],
@@ -656,8 +707,9 @@ export default function TeamPage() {
       case 4: return (a.school || "").localeCompare(b.school || "");
       case 5: return (a.grade || "").localeCompare(b.grade || "");
       case 6: {
-        const roleCmp = ROLE_SORT_ORDER[normalizeRoleValue(a.role)] - ROLE_SORT_ORDER[normalizeRoleValue(b.role)];
-        return roleCmp !== 0 ? roleCmp : a.name.localeCompare(b.name);
+        const roleCmp = roleSortKey(a.role) - roleSortKey(b.role);
+        if (roleCmp !== 0) return roleCmp;
+        return String(a.role ?? "").localeCompare(String(b.role ?? "")) || a.name.localeCompare(b.name);
       }
       case 7: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
       case 8: {
@@ -1231,7 +1283,7 @@ export default function TeamPage() {
                       <span className="text-white/50">{member.grade || "—"}</span>
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/60">{normalizeRoleValue(member.role)}</span>
+                      <span className="text-white/60">{displayRoleValue(member.role)}</span>
                     </td>
                   </tr>
                 );
@@ -1357,12 +1409,12 @@ export default function TeamPage() {
                             className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#85CC17]/45 hover:bg-[#85CC17]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
                             title="Click to change role"
                           >
-                            {normalizeRoleValue(member.role)}
+                            {displayRoleValue(member.role)}
                           </button>
                           {openRolePopoverId === member.id && (
                             <div
                               onClick={(e) => e.stopPropagation()}
-                              className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]"
+                              className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[150px]"
                             >
                               {ROLE_OPTIONS.map((roleOption) => (
                                 <button
@@ -1370,7 +1422,7 @@ export default function TeamPage() {
                                   type="button"
                                   onClick={() => void handleQuickRoleChange(member, roleOption)}
                                   className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${
-                                    normalizeRoleValue(member.role) === roleOption ? "text-[#85CC17]" : "text-white/70"
+                                    String(member.role ?? "").trim() === roleOption ? "text-[#85CC17]" : "text-white/70"
                                   }`}
                                 >
                                   {roleOption}
@@ -1380,7 +1432,7 @@ export default function TeamPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-white/50">{normalizeRoleValue(member.role)}</span>
+                        <span className="text-white/50">{displayRoleValue(member.role)}</span>
                       )}
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">

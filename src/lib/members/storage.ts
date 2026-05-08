@@ -155,7 +155,10 @@ export interface TeamMember {
   acceptedDate?: string;
   divisions: string[];    // may be undefined if Firebase omitted empty array
   pod: string;
-  role: "Team Lead" | "Member" | "Associate" | "Advisor";
+  // Role label as captured at acceptance (e.g. "Analyst", "Senior Analyst",
+  // "Associate", "Senior Associate", "Board") — kept as a free-form string so
+  // legacy values from earlier role taxonomies still display verbatim.
+  role: string;
   slackHandle: string;
   email: string;
   alternateEmail?: string;
