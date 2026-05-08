@@ -262,6 +262,95 @@ export interface FinanceAssignment {
   updatedAt: string;
 }
 
+// ── Credit cycle types ────────────────────────────────────────────────────────
+//
+// A Cycle defines a credit-earning period (typically a quarter). Targets are
+// per-track × per-role. Senior Associate and Board are intentionally excluded
+// from the credit/strike system — they run it.
+
+export type CycleTrack = "Tech" | "Marketing" | "Finance";
+export type CycleRole = "Analyst" | "Senior Analyst" | "Associate";
+
+export interface CycleCreditTargets {
+  Tech: Record<CycleRole, number>;
+  Marketing: Record<CycleRole, number>;
+  Finance: Record<CycleRole, number>;
+}
+
+export interface CycleStrikeThresholds {
+  warning: number;       // points to first strike
+  demotion: number;      // points to second strike
+  reserve: number;       // points to third strike
+}
+
+export interface Cycle {
+  id: string;
+  name: string;                       // e.g. "Summer 2026"
+  startDate: string;                  // ISO date (YYYY-MM-DD)
+  endDate: string;                    // ISO date (YYYY-MM-DD)
+  active: boolean;                    // exactly one cycle is active at a time
+  pacingPercentPerCheckin: number;    // default 20 — drives biweekly nudge + dot
+  creditTargets: CycleCreditTargets;
+  strikeThresholds: CycleStrikeThresholds;
+  // Whether each role auto-demotes on second strike. Sr Associate / Board never
+  // auto-demote (handled case-by-case) and aren't represented here.
+  autoDemote: Record<CycleRole, boolean>;
+  // When true, cross-track work counts toward primary-track target. Defaults
+  // true per spec (all members share the same target regardless of track).
+  crossTrackCountsTowardTarget: boolean;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Infraction catalog ────────────────────────────────────────────────────────
+// One row per *type* of infraction. Issued instances live separately on a
+// member's record.
+
+export type InfractionSeverity = "minor" | "major" | "severe";
+
+export interface Infraction {
+  id: string;
+  name: string;
+  description: string;
+  points: number;                  // point penalty when issued
+  severity: InfractionSeverity;
+  active: boolean;                 // retired entries stay for historical record
+  sortIndex: number;               // display order on the rules card
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Email templates ───────────────────────────────────────────────────────────
+// Admin-editable copy for every automated email. Hardcoding is intentionally
+// avoided — admins control wording without a deploy.
+
+export type EmailTemplateKey =
+  | "orange_pace_warning"
+  | "red_pace_strike"
+  | "demotion_notice"
+  | "cycle_start"
+  | "cycle_end_summary"
+  | "assignment_approved"
+  | "assignment_rejected"
+  | "infraction_notice"
+  | "monthly_portal_reminder";
+
+export interface EmailTemplate {
+  id: string;
+  key: EmailTemplateKey;           // stable key referenced by automation
+  label: string;                   // human-readable name
+  description: string;             // when this template fires
+  subject: string;                 // mustache-style {{variable}} tokens supported
+  body: string;                    // HTML, same token style
+  // The set of variable tokens this template understands. Drives the preview
+  // panel's sample-data substitution and the variable-insert helper.
+  availableVariables: string[];
+  active: boolean;
+  updatedAt: string;
+  updatedBy: string;               // uid or email of the last admin to edit
+}
+
 // ── Auth and invite types ─────────────────────────────────────────────────────
 
 export type AuthRole = "admin" | "interviewer" | "member";
@@ -535,6 +624,9 @@ export const subscribeTasks       = makeSubscriber<Task>("tasks");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
 export const subscribeFinanceAssignments = makeSubscriber<FinanceAssignment>("financeAssignments");
+export const subscribeCycles      = makeSubscriber<Cycle>("cycles");
+export const subscribeInfractions = makeSubscriber<Infraction>("infractions");
+export const subscribeEmailTemplates = makeSubscriber<EmailTemplate>("emailTemplates");
 export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
 
 export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
@@ -1276,5 +1368,147 @@ export async function updateInterviewSettings(data: Partial<InterviewSettings>):
     collection: "interviewSettings",
     recordId: "singleton",
     details: { fields: Object.keys(data) },
+  });
+}
+
+// ── Cycles ────────────────────────────────────────────────────────────────────
+
+export async function createCycle(
+  data: Omit<Cycle, "id" | "createdAt" | "updatedAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const cycleRef = push(ref(db, "cycles"));
+  const id = cycleRef.key ?? "";
+  await set(cycleRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "cycles",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+  return id;
+}
+
+export async function updateCycle(id: string, data: Partial<Cycle>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `cycles/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "cycles",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteCycle(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `cycles/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "cycles",
+    recordId: id,
+  });
+}
+
+// Activates one cycle and deactivates every other one in a single multi-path
+// update so the "exactly one active cycle" invariant holds atomically.
+export async function activateCycleExclusive(id: string, allCycleIds: string[]): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const updates: Record<string, unknown> = {};
+  const ts = nowISO();
+  for (const cycleId of allCycleIds) {
+    updates[`cycles/${cycleId}/active`] = cycleId === id;
+    updates[`cycles/${cycleId}/updatedAt`] = ts;
+  }
+  await update(ref(db), updates);
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "cycles",
+    recordId: id,
+    details: { activated: true, deactivated: allCycleIds.filter((c) => c !== id) },
+  });
+}
+
+// ── Infractions ───────────────────────────────────────────────────────────────
+
+export async function createInfraction(
+  data: Omit<Infraction, "id" | "createdAt" | "updatedAt">,
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const infRef = push(ref(db, "infractions"));
+  await set(infRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "infractions",
+    recordId: infRef.key ?? "",
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function updateInfraction(id: string, data: Partial<Infraction>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `infractions/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "infractions",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteInfraction(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `infractions/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "infractions",
+    recordId: id,
+  });
+}
+
+// ── Email templates ───────────────────────────────────────────────────────────
+
+export async function createEmailTemplate(
+  data: Omit<EmailTemplate, "id" | "updatedAt">,
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const tmplRef = push(ref(db, "emailTemplates"));
+  await set(tmplRef, { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "emailTemplates",
+    recordId: tmplRef.key ?? "",
+    details: { key: data.key },
+  });
+}
+
+export async function updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `emailTemplates/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "emailTemplates",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteEmailTemplate(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `emailTemplates/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "emailTemplates",
+    recordId: id,
   });
 }

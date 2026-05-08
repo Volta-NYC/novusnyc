@@ -10,6 +10,9 @@ export type SectionTab = {
   // When set, this tab is active only when the URL's `tab` query param equals this value.
   // Use "" for the default tab on a path (when no `tab` query param is present).
   matchTab?: string;
+  // When true, the pathname must equal a root exactly — no prefix match. Use this
+  // for landing pages like /members/admin that share a parent path with sub-pages.
+  exact?: boolean;
 };
 
 function getBasePath(href: string): string {
@@ -23,6 +26,7 @@ function isTabActive(pathname: string, currentTab: string, tab: SectionTab): boo
     return pathname === basePath && currentTab === tab.matchTab;
   }
   const roots = tab.matchRoots?.length ? tab.matchRoots : [getBasePath(tab.href)];
+  if (tab.exact) return roots.some((root) => pathname === root);
   return roots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
@@ -72,4 +76,13 @@ export const PEOPLE_GROUP_TABS: SectionTab[] = [
   { href: "/members/team", label: "Members" },
   { href: "/members/applicants", label: "Applicants" },
   { href: "/members/interviews", label: "Interviews" },
+];
+
+// Sub-page tabs for the admin section. Top-level /members/admin keeps existing
+// tools (access codes, exports); these tabs cover the new credit-system config.
+export const ADMIN_GROUP_TABS: SectionTab[] = [
+  { href: "/members/admin", label: "Admin Tools", exact: true },
+  { href: "/members/admin/cycles", label: "Cycles" },
+  { href: "/members/admin/infractions", label: "Infractions" },
+  { href: "/members/admin/email-templates", label: "Email Templates" },
 ];

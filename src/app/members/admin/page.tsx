@@ -9,6 +9,7 @@ import {
   type InviteCode, type UserProfile, type AuthRole,
 } from "@/lib/members/storage";
 import { Btn, Badge, Table, Field, Select, useConfirm } from "@/components/members/ui";
+import SectionTabs, { ADMIN_GROUP_TABS } from "@/components/members/SectionTabs";
 import { useRouter } from "next/navigation";
 
 // ── INVITE CODE HELPERS ───────────────────────────────────────────────────────
@@ -423,6 +424,8 @@ function AdminContent() {
 
   return (
     <>
+      <SectionTabs tabs={ADMIN_GROUP_TABS} />
+
       <div className="mb-6">
         <h1 className="font-display font-bold text-white text-2xl">Admin</h1>
         <p className="text-white/40 text-sm mt-1">Manage access, users, and data.</p>
