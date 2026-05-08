@@ -7,7 +7,7 @@ import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, type TeamMember, type UserProfile, type Business, type FinanceAssignment,
+  subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember, subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, subscribeApplications, type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
@@ -319,6 +319,7 @@ export default function TeamPage() {
   const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -345,6 +346,7 @@ export default function TeamPage() {
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeUserProfiles(setUserProfiles), []);
+  useEffect(() => subscribeApplications(setApplications), []);
 
   // Close the inline role-edit popover on any document click outside it.
   useEffect(() => {
@@ -708,6 +710,16 @@ export default function TeamPage() {
     }
     return map;
   }, [userProfiles]);
+
+  const resumeUrlByEmail = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const app of applications) {
+      if (!app.resumeUrl) continue;
+      const email = normalizeKey(app.email ?? "");
+      if (email) map.set(email, app.resumeUrl);
+    }
+    return map;
+  }, [applications]);
 
   const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "Grade", "Role", "Date Accepted", "Account Created"];
 
@@ -1319,7 +1331,7 @@ export default function TeamPage() {
           {(() => {
             const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[116px]";
             return (
-          <table className="members-grid-table w-full min-w-[1580px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[1680px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {[
@@ -1329,6 +1341,7 @@ export default function TeamPage() {
                   { label: "School", sortCol: 4, width: "w-[260px]" },
                   { label: "Grade", sortCol: 5, width: "w-[80px]" },
                   { label: "Role", sortCol: 6, width: "w-[120px]" },
+                  { label: "Resume", sortCol: null, width: "w-[80px]" },
                   { label: "Date Accepted", sortCol: 7, width: "w-[116px]" },
                   { label: "Account Created", sortCol: 8, width: "w-[116px]" },
                   { label: "Actions", sortCol: null, width: "w-[100px]" },
@@ -1455,6 +1468,20 @@ export default function TeamPage() {
                       ) : (
                         <span className="text-white/50">{displayRoleValue(member.role)}</span>
                       )}
+                    </td>
+                    <td className="px-2 py-1 whitespace-nowrap">
+                      {(() => {
+                        const emailKey = normalizeKey(member.email ?? "");
+                        const altEmailKey = normalizeKey(member.alternateEmail ?? "");
+                        const resumeUrl = resumeUrlByEmail.get(emailKey) ?? resumeUrlByEmail.get(altEmailKey);
+                        return resumeUrl ? (
+                          <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline whitespace-nowrap">
+                            Resume
+                          </a>
+                        ) : (
+                          <span className="text-white/30">—</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-2 py-1 whitespace-nowrap">
                       <span className="text-white/50">{member.acceptedDate || "—"}</span>
