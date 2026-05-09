@@ -81,6 +81,41 @@
     "auditLogs": {
       ".read": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'",
       ".write": "auth != null"
+    },
+
+    "cycles": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'"
+    },
+
+    "infractions": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'"
+    },
+
+    "emailTemplates": {
+      ".read": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'"
+    },
+
+    "assignmentCatalog": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'"
+    },
+
+    "assignmentClaims": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "memberStrikes": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'"
+    },
+
+    "memberCreditAdjustments": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'"
     }
   }
 }
