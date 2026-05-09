@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
+import SectionTabs, { MEMBERS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
@@ -1262,7 +1262,7 @@ export default function TeamPage() {
         <span>Assigned: <span className="text-emerald-300 font-semibold">{assignedMembersCount}</span></span>
         <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
       </div>
-      <SectionTabs tabs={PEOPLE_GROUP_TABS} />
+      <SectionTabs tabs={MEMBERS_GROUP_TABS} />
       {importMessage && (
         <p className="text-xs text-white/55 mb-4">{importMessage}</p>
       )}

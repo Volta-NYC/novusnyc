@@ -72,19 +72,20 @@ export const PROJECT_GROUP_TABS: SectionTab[] = [
   { href: "/members/assignments", label: "Finance Projects" },
 ];
 
-export const PEOPLE_GROUP_TABS: SectionTab[] = [
-  { href: "/members/team", label: "Members" },
-  { href: "/members/applicants", label: "Applicants" },
-  { href: "/members/interviews", label: "Interviews" },
+// Members directory + Infractions live on the same Members page.
+export const MEMBERS_GROUP_TABS: SectionTab[] = [
+  { href: "/members/team", label: "Members", exact: true },
+  { href: "/members/team/infractions", label: "Infractions" },
 ];
 
-// Sub-page tabs for the admin section. Top-level /members/admin keeps existing
-// tools (access codes, exports); these tabs cover the new credit-system config.
-export const ADMIN_GROUP_TABS: SectionTab[] = [
-  { href: "/members/admin", label: "Admin Tools", exact: true },
-  { href: "/members/admin/cycles", label: "Cycles" },
-  { href: "/members/admin/assignments-catalog", label: "Assignments Catalog" },
-  { href: "/members/admin/approvals", label: "Approvals" },
-  { href: "/members/admin/infractions", label: "Infractions" },
-  { href: "/members/admin/email-templates", label: "Email Templates" },
+// Applicants + Interviews live on the same Applicants page.
+export const APPLICANTS_GROUP_TABS: SectionTab[] = [
+  { href: "/members/applicants", label: "Applicants", exact: true },
+  { href: "/members/applicants/interviews", label: "Interviews" },
+];
+
+// Project Management contains Assignments Catalog + Approvals.
+export const PROJECT_MGMT_TABS: SectionTab[] = [
+  { href: "/members/project-management/catalog", label: "Assignments Catalog" },
+  { href: "/members/project-management/approvals", label: "Approvals" },
 ];

@@ -3,16 +3,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, Field, Btn, Empty,
+  PageHeader, Field, Btn, Empty, Modal, Input, useConfirm,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeTeam,
   subscribeBusinesses,
   subscribeFinanceAssignments,
+  subscribeEmailTemplates,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate,
   type TeamMember,
   type Business,
   type FinanceAssignment,
+  type EmailTemplate,
 } from "@/lib/members/storage";
 import { computeGlobalCodes, getMemberCodes, type AssignmentCode } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
@@ -20,6 +25,99 @@ import { useAuth } from "@/lib/members/authContext";
 const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "info@voltanyc.org", label: "info@voltanyc.org" },
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
+];
+
+// System email templates seeded on first admin visit. Keys here match the
+// EmailTemplateKey union; automation looks them up by key. Edit copy at any
+// time from the templates panel — automation reads the live row.
+const SYSTEM_TEMPLATE_SEEDS: Array<{
+  key: string;
+  label: string;
+  description: string;
+  subject: string;
+  body: string;
+  variables: string[];
+}> = [
+  {
+    key: "orange_pace_warning",
+    label: "Pace warning (orange)",
+    description: "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    subject: "Heads up — you're behind pace on {{cycleName}}",
+    body: "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "checkInsBehind", "daysRemaining"],
+  },
+  {
+    key: "red_pace_strike",
+    label: "Pace strike (red)",
+    description: "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    subject: "Strike issued — {{cycleName}}",
+    body: "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "strikeReason", "strikeCount"],
+  },
+  {
+    key: "biweekly_checkin",
+    label: "Biweekly check-in reminder",
+    description: "Fires automatically every two weeks during an active cycle.",
+    subject: "{{cycleName}} — biweekly check-in",
+    body: "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "pacingPercent"],
+  },
+  {
+    key: "demotion_notice",
+    label: "Demotion notice",
+    description: "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    subject: "Role change — {{cycleName}}",
+    body: "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    variables: ["memberName", "previousRole", "newRole", "cycleName"],
+  },
+  {
+    key: "cycle_start",
+    label: "Cycle start announcement",
+    description: "Mass email at the start of a new cycle.",
+    subject: "{{cycleName}} starts now",
+    body: "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    variables: ["cycleName", "startDate", "endDate", "creditsTarget", "pacingPercent"],
+  },
+  {
+    key: "cycle_end_summary",
+    label: "Cycle end summary",
+    description: "Per-member email at cycle close summarizing earned credits.",
+    subject: "{{cycleName}} — your wrap-up",
+    body: "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "outcome", "strikeCount"],
+  },
+  {
+    key: "assignment_approved",
+    label: "Assignment approved",
+    description: "Sent when an approver accepts a submitted claim.",
+    subject: "Approved — {{assignmentTitle}}",
+    body: "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    variables: ["memberName", "assignmentTitle", "creditsAwarded", "businessName"],
+  },
+  {
+    key: "assignment_rejected",
+    label: "Assignment rejected",
+    description: "Sent when a submission is rejected. Includes the reviewer's reason.",
+    subject: "Resubmit needed — {{assignmentTitle}}",
+    body: "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    variables: ["memberName", "assignmentTitle", "rejectionReason"],
+  },
+  {
+    key: "infraction_notice",
+    label: "Infraction notice",
+    description: "Sent when an admin manually issues an infraction.",
+    subject: "Infraction logged — {{infractionName}}",
+    body: "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    variables: ["memberName", "infractionName", "points", "totalPoints", "issuedBy", "note"],
+  },
+  {
+    key: "monthly_portal_reminder",
+    label: "Monthly portal reminder",
+    description: "Replaces per-assignment emails. Reminds members to check the portal.",
+    subject: "{{cycleName}} — check the portal",
+    body: "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "openAssignmentCount"],
+  },
 ];
 
 type DeliveryMode = "to" | "cc" | "bcc";
@@ -140,9 +238,114 @@ export default function MemberEmailPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [prefillIds, setPrefillIds] = useState<string[]>([]);
 
+  // Templates state — drives the "load / save / delete" panel above compose.
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveModalLabel, setSaveModalLabel] = useState("");
+  const [manageOpen, setManageOpen] = useState(false);
+  const { ask, Dialog: ConfirmDialog } = useConfirm();
+
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
+  useEffect(() => subscribeEmailTemplates(setTemplates), []);
+
+  // Seed system templates on first admin visit so they're editable from this
+  // page. Each system template has a stable key referenced by automation; we
+  // only create the row if it doesn't already exist.
+  const [seededSystemTemplates, setSeededSystemTemplates] = useState(false);
+  useEffect(() => {
+    if (seededSystemTemplates) return;
+    if (!canUseEmail || !user) return;
+    if (templates === null) return;
+    setSeededSystemTemplates(true);
+    void (async () => {
+      const existingKeys = new Set(templates.map((t) => t.key));
+      const updatedBy = user.email || user.uid || "system";
+      for (const def of SYSTEM_TEMPLATE_SEEDS) {
+        if (existingKeys.has(def.key)) continue;
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await createEmailTemplate({
+            key: def.key,
+            label: def.label,
+            description: def.description,
+            subject: def.subject,
+            body: def.body,
+            availableVariables: def.variables,
+            active: true,
+            updatedBy,
+          });
+        } catch { /* non-fatal */ }
+      }
+    })();
+  }, [seededSystemTemplates, canUseEmail, user, templates]);
+
+  // Sort templates: system ones (well-known keys) first, then user-created
+  // alphabetically by label.
+  const sortedTemplates = useMemo(() => {
+    return [...templates].sort((a, b) => {
+      const aSystem = !a.key.startsWith("custom_") ? 0 : 1;
+      const bSystem = !b.key.startsWith("custom_") ? 0 : 1;
+      if (aSystem !== bSystem) return aSystem - bSystem;
+      return (a.label || "").localeCompare(b.label || "");
+    });
+  }, [templates]);
+
+  const loadedTemplate = loadedTemplateId ? templates.find((t) => t.id === loadedTemplateId) ?? null : null;
+
+  const loadTemplate = (template: EmailTemplate) => {
+    setSubject(template.subject || "");
+    setMessage(template.body || "");
+    setLoadedTemplateId(template.id);
+  };
+
+  const startSaveAsNew = () => {
+    setSaveModalLabel("");
+    setSaveModalOpen(true);
+  };
+
+  const submitSaveAsNew = async () => {
+    const label = saveModalLabel.trim();
+    if (!label) return;
+    if (!user) return;
+    const updatedBy = user.email || user.uid || "admin";
+    // Custom keys are namespaced so they never collide with system templates.
+    const key = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await createEmailTemplate({
+      key,
+      label,
+      description: "Saved from the Email page",
+      subject,
+      body: message,
+      availableVariables: [],
+      active: true,
+      updatedBy,
+    });
+    setSaveModalOpen(false);
+    setSaveModalLabel("");
+  };
+
+  const saveChangesToLoaded = async () => {
+    if (!loadedTemplate || !user) return;
+    const updatedBy = user.email || user.uid || "admin";
+    await updateEmailTemplate(loadedTemplate.id, {
+      subject,
+      body: message,
+      updatedBy,
+    });
+  };
+
+  const deleteTemplate = async (template: EmailTemplate) => {
+    await ask(
+      async () => {
+        await deleteEmailTemplate(template.id);
+        if (loadedTemplateId === template.id) setLoadedTemplateId(null);
+      },
+      `Delete template “${template.label}”?${template.key.startsWith("custom_") ? "" : " This is a system template — automation will fall back to built-in defaults."}`,
+    );
+  };
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = new URLSearchParams(window.location.search).get("prefill");
@@ -779,6 +982,63 @@ export default function MemberEmailPage() {
           </div>
         </div>
 
+        <ConfirmDialog />
+
+        {/* ── Templates panel ── */}
+        <div className="rounded-2xl border border-white/10 bg-[#13161D] p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">Templates</p>
+              <p className="text-xs text-white/55 mt-0.5">
+                {loadedTemplate
+                  ? <>Loaded: <span className="text-white/85 font-medium">{loadedTemplate.label}</span> — edits will modify this template if you click Save changes.</>
+                  : "Pick a template to load it into compose, or write from scratch and save as a new template."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Btn size="sm" variant="ghost" onClick={() => setManageOpen(true)}>Manage…</Btn>
+              {loadedTemplate && (
+                <Btn size="sm" variant="secondary" onClick={() => void saveChangesToLoaded()}>
+                  Save changes
+                </Btn>
+              )}
+              <Btn size="sm" variant="primary" onClick={startSaveAsNew} disabled={!subject.trim() && !message.trim()}>
+                Save as new template
+              </Btn>
+              {loadedTemplate && (
+                <Btn size="sm" variant="ghost" onClick={() => { setLoadedTemplateId(null); setSubject(""); setMessage(""); }}>
+                  Clear
+                </Btn>
+              )}
+            </div>
+          </div>
+
+          {sortedTemplates.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
+              {sortedTemplates.map((t) => {
+                const selected = loadedTemplateId === t.id;
+                const isSystem = !t.key.startsWith("custom_");
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => loadTemplate(t)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      selected
+                        ? "border-[#85CC17]/55 bg-[#85CC17]/10 text-[#9BE22B]"
+                        : "border-white/15 bg-[#11141A] text-white/75 hover:border-white/35"
+                    }`}
+                    title={t.description || (isSystem ? "System template" : "Custom template")}
+                  >
+                    {isSystem && <span className="text-[9px] uppercase tracking-wider text-white/45">sys</span>}
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <Field label="Subject" required>
           <input
             value={subject}
@@ -819,6 +1079,72 @@ export default function MemberEmailPage() {
             {sending ? "Sending..." : `Send Emails (${totalSelected})`}
           </Btn>
         </div>
+
+        {/* Save-as-new template modal */}
+        <Modal open={saveModalOpen} onClose={() => setSaveModalOpen(false)} title="Save as new template">
+          <Field label="Template name" required>
+            <Input
+              value={saveModalLabel}
+              onChange={(e) => setSaveModalLabel(e.target.value)}
+              placeholder="e.g. Welcome to summer cycle"
+            />
+          </Field>
+          <p className="text-[11px] text-white/45 mt-2">
+            Saves the current subject and message as a reusable template. Add as many as you like.
+          </p>
+          <div className="flex justify-end gap-2 mt-5 pt-3 border-t border-white/8">
+            <Btn variant="ghost" onClick={() => setSaveModalOpen(false)}>Cancel</Btn>
+            <Btn variant="primary" onClick={() => void submitSaveAsNew()} disabled={!saveModalLabel.trim()}>
+              Save
+            </Btn>
+          </div>
+        </Modal>
+
+        {/* Manage all templates modal */}
+        <Modal open={manageOpen} onClose={() => setManageOpen(false)} title="Manage templates">
+          {sortedTemplates.length === 0 ? (
+            <p className="text-sm text-white/55">No templates yet.</p>
+          ) : (
+            <ul className="divide-y divide-white/8 max-h-[55vh] overflow-y-auto">
+              {sortedTemplates.map((t) => {
+                const isSystem = !t.key.startsWith("custom_");
+                return (
+                  <li key={t.id} className="py-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-white/90 font-medium truncate">{t.label}</p>
+                        {isSystem && (
+                          <span className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-1.5 py-0.5 text-[9px] font-semibold text-white/55">
+                            system
+                          </span>
+                        )}
+                      </div>
+                      {t.description && <p className="text-xs text-white/45 mt-0.5">{t.description}</p>}
+                      {t.subject && (
+                        <p className="text-[11px] text-white/35 mt-1 truncate">Subject: {t.subject}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                      <Btn size="sm" variant="secondary" onClick={() => { loadTemplate(t); setManageOpen(false); }}>
+                        Load
+                      </Btn>
+                      <button
+                        type="button"
+                        onClick={() => void deleteTemplate(t)}
+                        className="text-[11px] text-red-300/80 hover:text-red-200"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
+            <Btn variant="ghost" onClick={() => setManageOpen(false)}>Close</Btn>
+          </div>
+        </Modal>
       </div>
     </MembersLayout>
   );

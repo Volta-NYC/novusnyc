@@ -36,11 +36,13 @@ function daysBetween(now: Date, target: string): number | null {
   return Math.ceil((ms - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-const SEVERITY_PILL: Record<string, string> = {
-  minor: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  major: "bg-orange-100 text-orange-800 border-orange-300",
-  severe: "bg-red-100 text-red-800 border-red-300",
-};
+// Severity is implicit in point value: 1 = minor (yellow), 2 = major (orange),
+// 3+ = severe (red). Used for the rules-card pill.
+function pointsPill(points: number): string {
+  if (points >= 3) return "bg-red-100 text-red-800 border-red-300";
+  if (points >= 2) return "bg-orange-100 text-orange-800 border-orange-300";
+  return "bg-yellow-100 text-yellow-800 border-yellow-300";
+}
 
 const DOT_COLOR_HEX: Record<string, string> = {
   green: "#16A34A",
@@ -187,11 +189,10 @@ export default function MemberDashboardPage() {
       .map((entry) => entry.a);
   }, [assignments, claims, myClaims, me, primaryTrack, activeCycle, now]);
 
-  // Active rules visible on the catalog (sorted, active-only).
+  // Rules card: sort by points (low→high), then by name. No active/sortIndex
+  // anymore — admins delete what they don't want, and order is canonical.
   const visibleInfractions = useMemo(
-    () => infractions
-      .filter((i) => i.active)
-      .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0)),
+    () => [...infractions].sort((a, b) => (a.points - b.points) || a.name.localeCompare(b.name)),
     [infractions],
   );
 
@@ -320,7 +321,7 @@ export default function MemberDashboardPage() {
                           <div className="min-w-0">
                             <p className="text-black/85 text-sm font-medium truncate">{s.infractionName}</p>
                             <p className="text-black/45 text-xs">
-                              {new Date(s.issuedAt).toLocaleDateString()} · {s.severity}
+                              {new Date(s.issuedAt).toLocaleDateString()}
                               {s.note ? ` · ${s.note}` : ""}
                             </p>
                           </div>
@@ -437,10 +438,9 @@ export default function MemberDashboardPage() {
                         {i.description && <p className="text-xs text-black/55 mt-0.5">{i.description}</p>}
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${SEVERITY_PILL[i.severity] ?? ""}`}>
-                          {i.severity}
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${pointsPill(i.points)}`}>
+                          {i.points} pt{i.points === 1 ? "" : "s"}
                         </span>
-                        <span className="text-xs text-black/65 font-mono">{i.points} pts</span>
                       </div>
                     </div>
                   ))}

@@ -1,15 +1,15 @@
 "use client";
 
-// Admin page A6 — Approval Queue. Where Sr Associate / Board approve or reject
-// member submissions. Approved claims move credits from Pending → Approved on
-// the member's ledger; rejected claims send an email and let the member resubmit.
+// Project Management → Approvals. Sr Associate / Board review submitted claims
+// here. Approved claims migrate to the Catalog's "completed" view; rejected
+// claims send a templated email and let the member resubmit.
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { ADMIN_GROUP_TABS } from "@/components/members/SectionTabs";
+import SectionTabs, { PROJECT_MGMT_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Btn, Modal, Field, Input, TextArea, Select, Empty, useConfirm, SearchBar,
+  PageHeader, Btn, Modal, Field, Input, TextArea, Empty, useConfirm, SearchBar,
 } from "@/components/members/ui";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeEmailTemplates,
@@ -18,6 +18,10 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
+
+const VOLTA_INTERNAL_ID = "__volta_internal__";
+
+const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
 
 interface ReviewInput {
   claim: AssignmentClaim;
@@ -37,7 +41,6 @@ export default function ApprovalsPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
 
   const [search, setSearch] = useState("");
-  const [trackFilter, setTrackFilter] = useState<"" | CycleTrack>("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [rejectingClaim, setRejectingClaim] = useState<ReviewInput | null>(null);
@@ -57,26 +60,39 @@ export default function ApprovalsPage() {
   const assignmentById = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
   const businessById = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
 
-  // Pending review = claims in submitted state.
   const queue = useMemo(() => {
     const q = search.trim().toLowerCase();
     return claims
       .filter((c) => c.status === "submitted")
       .filter((c) => {
-        const a = assignmentById.get(c.assignmentId);
-        if (trackFilter && a?.primaryTrack !== trackFilter) return false;
         if (!q) return true;
-        const business = a?.businessId ? businessById.get(a.businessId) : undefined;
+        const a = assignmentById.get(c.assignmentId);
+        const business = a?.businessId === VOLTA_INTERNAL_ID
+          ? { name: "Volta Internal", neighborhood: "" }
+          : a?.businessId
+            ? businessById.get(a.businessId)
+            : undefined;
         return [
           c.memberName,
           a?.title,
+          a?.description?.replace(/<[^>]+>/g, " "),
           business?.name,
           c.deliverableUrl,
           c.submissionNotes,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       })
-      .sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? ""));
-  }, [claims, assignmentById, businessById, search, trackFilter]);
+      // Sort same as catalog: status (all submitted here, so no-op),
+      // then track, then credits low→high, then title alpha.
+      .sort((a, b) => {
+        const aA = assignmentById.get(a.assignmentId);
+        const bA = assignmentById.get(b.assignmentId);
+        const tCmp = (TRACK_RANK[aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.primaryTrack ?? "Tech"] ?? 9);
+        if (tCmp !== 0) return tCmp;
+        const cCmp = (aA?.credits ?? 0) - (bA?.credits ?? 0);
+        if (cCmp !== 0) return cCmp;
+        return (aA?.title ?? "").localeCompare(bA?.title ?? "");
+      });
+  }, [claims, assignmentById, businessById, search]);
 
   const recentDecisions = useMemo(() => {
     return claims
@@ -93,7 +109,11 @@ export default function ApprovalsPage() {
 
   const buildReviewInput = (claim: AssignmentClaim): ReviewInput => {
     const assignment = assignmentById.get(claim.assignmentId);
-    const business = assignment?.businessId ? businessById.get(assignment.businessId) : undefined;
+    const business = assignment?.businessId === VOLTA_INTERNAL_ID
+      ? undefined
+      : assignment?.businessId
+        ? businessById.get(assignment.businessId)
+        : undefined;
     return { claim, assignment, business, memberEmail: "" };
   };
 
@@ -109,22 +129,12 @@ export default function ApprovalsPage() {
   };
 
   const confirmApprove = async (claim: AssignmentClaim, awarded: number) => {
-    const a = assignmentById.get(claim.assignmentId);
     await updateAssignmentClaim(claim.id, {
       status: "approved",
       approvedAt: new Date().toISOString(),
       approvedBy: reviewerLabel,
       creditsAwarded: awarded,
     });
-    if (user) {
-      try {
-        const idToken = await user.getIdToken();
-        // We don't have the member's email on the claim; look up via team list
-        // is more involved — for now skip auto-email if not directly known.
-        // Approval emails require a future enhancement: claims should denormalize memberEmail.
-        void idToken; void a; // referenced to silence unused warnings for now
-      } catch { /* non-fatal */ }
-    }
   };
 
   const handleBulkApprove = async () => {
@@ -161,7 +171,6 @@ export default function ApprovalsPage() {
       approvedBy: reviewerLabel,
       rejectReason: rejectReason.trim(),
     });
-    // Best-effort send rejection email
     if (user && rejectingClaim.memberEmail) {
       try {
         const idToken = await user.getIdToken();
@@ -206,32 +215,27 @@ export default function ApprovalsPage() {
   return (
     <MembersLayout>
       <Dialog />
-      <SectionTabs tabs={ADMIN_GROUP_TABS} />
+      <SectionTabs tabs={PROJECT_MGMT_TABS} />
 
       <PageHeader
-        title="Approvals"
-        subtitle={`${queue.length} submission${queue.length === 1 ? "" : "s"} awaiting review.`}
+        title="Project Management"
+        subtitle={`Approvals — solely for current assignments awaiting review. ${queue.length} submission${queue.length === 1 ? "" : "s"} pending.`}
         action={
-          <div className="flex gap-2">
-            <Btn
-              variant="secondary"
-              disabled={selectedIds.size === 0}
-              onClick={() => void handleBulkApprove()}
-            >
-              Approve {selectedIds.size > 0 ? `(${selectedIds.size})` : ""}
-            </Btn>
-          </div>
+          <Btn
+            variant="secondary"
+            disabled={selectedIds.size === 0}
+            onClick={() => void handleBulkApprove()}
+          >
+            Approve {selectedIds.size > 0 ? `(${selectedIds.size})` : ""}
+          </Btn>
         }
       />
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search member, assignment, business…" />
-        <Select
-          options={["Tech", "Marketing", "Finance"] as CycleTrack[]}
-          value={trackFilter}
-          onChange={(e) => setTrackFilter(e.target.value as typeof trackFilter)}
-          emptyLabel="All tracks"
-          className="min-w-[160px]"
+      <div className="mb-4">
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search member, assignment, business…"
         />
       </div>
 
@@ -311,7 +315,7 @@ export default function ApprovalsPage() {
 
         {queue.length === 0 && (
           <div className="p-6">
-            <Empty message="Nothing waiting on review. Inbox zero." />
+            <Empty message={search ? "Nothing matches your search." : "Nothing waiting on review. Inbox zero."} />
           </div>
         )}
       </div>

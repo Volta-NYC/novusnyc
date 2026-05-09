@@ -166,7 +166,7 @@ export default function MyRecordPage() {
                     <div className="min-w-0">
                       <p className="text-sm text-black/85 font-medium">{s.infractionName}</p>
                       <p className="text-xs text-black/45">
-                        {new Date(s.issuedAt).toLocaleDateString()} · {s.severity} · issued by {s.issuedBy}
+                        {new Date(s.issuedAt).toLocaleDateString()} · issued by {s.issuedBy}
                       </p>
                       {s.note && <p className="text-xs text-black/65 mt-1">{s.note}</p>}
                     </div>

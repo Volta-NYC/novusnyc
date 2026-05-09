@@ -117,8 +117,10 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
       })
     : null;
 
+  // Sort the infraction picker by points (low→high) then by name to match the
+  // member-facing rules card.
   const activeInfractions = useMemo(
-    () => infractions.filter((i) => i.active).sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0)),
+    () => [...infractions].sort((a, b) => (a.points - b.points) || a.name.localeCompare(b.name)),
     [infractions],
   );
 
@@ -137,7 +139,6 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
       cycleId: activeCycle.id,
       infractionId: selectedInfraction.id,
       infractionName: selectedInfraction.name,
-      severity: selectedInfraction.severity,
       points,
       issuedBy: reviewerLabel,
       note: issueNote.trim(),
@@ -266,7 +267,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                       <div className="min-w-0">
                         <p className="text-white/85">{s.infractionName}</p>
                         <p className="text-white/45">
-                          {new Date(s.issuedAt).toLocaleDateString()} · {s.severity} · {s.source === "auto_pace" ? "auto" : s.issuedBy}
+                          {new Date(s.issuedAt).toLocaleDateString()} · {s.source === "auto_pace" ? "auto" : s.issuedBy}
                         </p>
                         {s.note && <p className="text-white/65 mt-0.5">{s.note}</p>}
                       </div>
@@ -392,7 +393,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                 <option value="">— Select —</option>
                 {activeInfractions.map((i) => (
                   <option key={i.id} value={i.id}>
-                    {i.name} ({i.points} pts · {i.severity})
+                    {i.name} ({i.points} pt{i.points === 1 ? "" : "s"})
                   </option>
                 ))}
               </select>

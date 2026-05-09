@@ -1,14 +1,15 @@
 "use client";
 
-// Admin page A1 — Cycles. One cycle per quarter. Active cycle is pinned at the
-// top in expanded edit mode; older cycles collapse below as one-line summaries.
+// Cycles page (top-level, admin-only). One quarterly cycle drives the entire
+// credit/strike system. Active cycle pinned at top in expanded inline-edit mode;
+// older cycles collapse below. Targets, pacing, and strike thresholds are
+// fully editable post-creation.
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { ADMIN_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Btn, Field, Input, TextArea, Empty, useConfirm,
+  PageHeader, Btn, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
   subscribeCycles, createCycle, updateCycle, deleteCycle, activateCycleExclusive,
@@ -19,9 +20,9 @@ import { useAuth } from "@/lib/members/authContext";
 const TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
-// Sensible starting point for a fresh cycle. Targets are placeholders the admin
-// will tune; pacing default of 20% mirrors the spec (6 biweekly check-ins, 100%
-// reachable by check-in 5 with the 6th as buffer).
+// Default starting point for a fresh cycle. Targets are placeholders; thresholds
+// follow the spec — 1st strike at 3 points (one severe / two majors / three minors),
+// 2nd at 6, 3rd at 9.
 const BLANK_CYCLE: Omit<Cycle, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   startDate: "",
@@ -33,10 +34,7 @@ const BLANK_CYCLE: Omit<Cycle, "id" | "createdAt" | "updatedAt"> = {
     Marketing: { Analyst: 10, "Senior Analyst": 14, Associate: 18 },
     Finance:   { Analyst: 10, "Senior Analyst": 14, Associate: 18 },
   },
-  strikeThresholds: { warning: 5, demotion: 10, reserve: 15 },
-  autoDemote: { Analyst: true, "Senior Analyst": true, Associate: true },
-  crossTrackCountsTowardTarget: true,
-  notes: "",
+  strikeThresholds: { warning: 3, demotion: 6, reserve: 9 },
 };
 
 function todayISO(): string {
@@ -63,11 +61,9 @@ export default function CyclesPage() {
   const { ask, Dialog } = useConfirm();
 
   const [cycles, setCycles] = useState<Cycle[]>([]);
-  // editing state keyed by cycle id; null entry = not editing.
   const [editing, setEditing] = useState<Record<string, Cycle>>({});
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState<Omit<Cycle, "id" | "createdAt" | "updatedAt">>(BLANK_CYCLE);
-  // Older cycles collapse by default; expanded set tracks which to show full.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -76,8 +72,6 @@ export default function CyclesPage() {
 
   useEffect(() => subscribeCycles(setCycles), []);
 
-  // Active cycle pinned at top; remaining cycles ordered by startDate desc so
-  // the most recent past cycle sits closest to the active card.
   const sortedCycles = useMemo(() => {
     const active = cycles.filter((c) => c.active);
     const inactive = cycles
@@ -97,6 +91,9 @@ export default function CyclesPage() {
   const patchEdit = (id: string, patch: Partial<Cycle>) =>
     setEditing((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], ...patch } } : prev));
 
+  // Save edits — every cycle field stays editable post-creation (targets,
+  // thresholds, dates, pacing). Activation status is managed separately via the
+  // dedicated button so the "exactly one active" invariant stays atomic.
   const saveEdit = async (id: string) => {
     const draft = editing[id];
     if (!draft) return;
@@ -107,9 +104,6 @@ export default function CyclesPage() {
       pacingPercentPerCheckin: draft.pacingPercentPerCheckin,
       creditTargets: draft.creditTargets,
       strikeThresholds: draft.strikeThresholds,
-      autoDemote: draft.autoDemote,
-      crossTrackCountsTowardTarget: draft.crossTrackCountsTowardTarget,
-      notes: draft.notes,
     });
     cancelEdit(id);
   };
@@ -120,7 +114,7 @@ export default function CyclesPage() {
       async () => {
         await activateCycleExclusive(cycle.id, allIds);
       },
-      `Activate “${cycle.name || "untitled cycle"}”? This will deactivate any other active cycle.`,
+      `Activate “${cycle.name || "untitled cycle"}”? This deactivates any other active cycle.`,
     );
   };
 
@@ -152,16 +146,11 @@ export default function CyclesPage() {
   return (
     <MembersLayout>
       <Dialog />
-      <SectionTabs tabs={ADMIN_GROUP_TABS} />
 
       <PageHeader
         title="Cycles"
-        subtitle="Define quarterly credit targets, pacing, and strike thresholds. Exactly one cycle is active at a time."
-        action={
-          <Btn variant="primary" onClick={() => setCreating(true)}>
-            + New Cycle
-          </Btn>
-        }
+        subtitle="Quarterly periods that drive credit targets, pacing, and strike thresholds. Exactly one cycle is active at a time. Every field is editable after creation."
+        action={<Btn variant="primary" onClick={() => setCreating(true)}>+ New Cycle</Btn>}
       />
 
       {creating && (
@@ -200,7 +189,7 @@ export default function CyclesPage() {
               cycle={cycle}
               expanded={expanded}
               onToggle={() => {
-                if (cycle.active) return; // active card stays expanded
+                if (cycle.active) return;
                 setExpandedIds((prev) => {
                   const next = new Set(prev);
                   if (next.has(cycle.id)) next.delete(cycle.id);
@@ -297,19 +286,16 @@ function CycleSummary({ cycle }: { cycle: Cycle }) {
           <span className="text-[#85CC17]">{cycle.pacingPercentPerCheckin}%</span> of their target every 2 weeks.
         </p>
         <p className="text-white/45 text-xs mt-1">
-          Cross-track work {cycle.crossTrackCountsTowardTarget ? "counts toward" : "does not count toward"} the primary-track target.
+          Bi-weekly check-in reminder emails fire automatically (template editable on the Email page).
         </p>
       </SummaryBlock>
 
       <SummaryBlock title="Strike thresholds">
-        <p className="text-white/70">
-          Warning at <span className="text-[#85CC17]">{cycle.strikeThresholds.warning}</span> ·
-          Demotion at <span className="text-[#85CC17]"> {cycle.strikeThresholds.demotion}</span> ·
-          Reserve at <span className="text-[#85CC17]"> {cycle.strikeThresholds.reserve}</span>
-        </p>
-        <p className="text-white/45 text-xs mt-1">
-          Auto-demote on demotion threshold:{" "}
-          {ROLES.filter((r) => cycle.autoDemote[r]).join(", ") || "none"}
+        <p className="text-white/70 text-xs leading-relaxed">
+          1st strike at <span className="text-[#85CC17]">{cycle.strikeThresholds.warning}</span> pts (warning) ·
+          2nd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.demotion}</span> pts (auto-demote
+          for Analyst → Reserve, Sr Analyst → Analyst, Associate → Sr Analyst) ·
+          3rd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.reserve}</span> pts (Reserve)
         </p>
       </SummaryBlock>
 
@@ -339,12 +325,6 @@ function CycleSummary({ cycle }: { cycle: Cycle }) {
           </table>
         </div>
       </SummaryBlock>
-
-      {cycle.notes && (
-        <SummaryBlock title="Notes" className="md:col-span-2 lg:col-span-3">
-          <p className="text-white/70 whitespace-pre-line">{cycle.notes}</p>
-        </SummaryBlock>
-      )}
     </div>
   );
 }
@@ -390,10 +370,6 @@ function CycleEditor({
   const setThreshold = (key: keyof Cycle["strikeThresholds"], raw: string) => {
     const value = Math.max(0, Number(raw) || 0);
     onChange({ strikeThresholds: { ...draft.strikeThresholds, [key]: value } });
-  };
-
-  const toggleAutoDemote = (role: CycleRole) => {
-    onChange({ autoDemote: { ...draft.autoDemote, [role]: !draft.autoDemote[role] } });
   };
 
   return (
@@ -481,85 +457,46 @@ function CycleEditor({
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-white/40 mt-1.5">
-            Senior Associate and Board are intentionally excluded — they run the system rather than participate in it.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Field label="Warning threshold (points)">
-            <Input
-              type="number"
-              min="0"
-              value={String(draft.strikeThresholds.warning)}
-              onChange={(e) => setThreshold("warning", e.target.value)}
-            />
-          </Field>
-          <Field label="Demotion threshold (points)">
-            <Input
-              type="number"
-              min="0"
-              value={String(draft.strikeThresholds.demotion)}
-              onChange={(e) => setThreshold("demotion", e.target.value)}
-            />
-          </Field>
-          <Field label="Reserve threshold (points)">
-            <Input
-              type="number"
-              min="0"
-              value={String(draft.strikeThresholds.reserve)}
-              onChange={(e) => setThreshold("reserve", e.target.value)}
-            />
-          </Field>
         </div>
 
         <div>
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Auto-demote on demotion threshold</p>
-          <div className="flex flex-wrap gap-2">
-            {ROLES.map((role) => {
-              const on = draft.autoDemote[role];
-              return (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => toggleAutoDemote(role)}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    on
-                      ? "border-[#85CC17]/45 bg-[#85CC17]/10 text-[#9BE22B]"
-                      : "border-white/15 bg-[#11141A] text-white/65 hover:border-white/35"
-                  }`}
-                >
-                  <span className={`inline-block h-2 w-2 rounded-full ${on ? "bg-[#85CC17]" : "bg-white/30"}`} />
-                  {role}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-white/40 mt-1.5">
-            Senior Associate and Board are handled case-by-case and do not auto-demote.
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Strike thresholds (points)</p>
+          <p className="text-[11px] text-white/55 mb-3 leading-relaxed">
+            Members accumulate points from infractions. Each level triggers an action:
+            <br/>
+            • <span className="text-yellow-300">1st strike</span> — warning email.
+            <br/>
+            • <span className="text-orange-300">2nd strike</span> — auto-demotion (Associate → Sr Analyst, Sr Analyst → Analyst, Analyst → Reserve).
+            <br/>
+            • <span className="text-red-300">3rd strike</span> — moved to Reserve regardless of role.
           </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Field label="1st strike threshold">
+              <Input
+                type="number"
+                min="0"
+                value={String(draft.strikeThresholds.warning)}
+                onChange={(e) => setThreshold("warning", e.target.value)}
+              />
+            </Field>
+            <Field label="2nd strike threshold">
+              <Input
+                type="number"
+                min="0"
+                value={String(draft.strikeThresholds.demotion)}
+                onChange={(e) => setThreshold("demotion", e.target.value)}
+              />
+            </Field>
+            <Field label="3rd strike threshold">
+              <Input
+                type="number"
+                min="0"
+                value={String(draft.strikeThresholds.reserve)}
+                onChange={(e) => setThreshold("reserve", e.target.value)}
+              />
+            </Field>
+          </div>
         </div>
-
-        <Field label="Cross-track credits">
-          <label className="inline-flex items-center gap-2.5 text-sm text-white/80 rounded-lg border border-white/10 bg-[#11141A] px-3 py-2">
-            <input
-              type="checkbox"
-              className="members-checkbox"
-              checked={draft.crossTrackCountsTowardTarget}
-              onChange={(e) => onChange({ crossTrackCountsTowardTarget: e.target.checked })}
-            />
-            Cross-track work counts toward primary-track target
-          </label>
-        </Field>
-
-        <Field label="Notes">
-          <TextArea
-            rows={3}
-            value={draft.notes}
-            onChange={(e) => onChange({ notes: e.target.value })}
-            placeholder="Optional context for this cycle (e.g. test run, summer pacing, etc.)"
-          />
-        </Field>
 
         <div className="flex justify-end gap-2 pt-3 border-t border-white/8">
           <Btn variant="ghost" onClick={onCancel}>Cancel</Btn>

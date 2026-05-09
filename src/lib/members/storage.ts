@@ -170,9 +170,12 @@ export interface TeamMember {
   notes: string;
   createdAt: string;
   // Automation bookkeeping — populated by the cycle sweep so warnings/strikes
-  // are issued at most once per cycle per member.
+  // are issued at most once per cycle per member, and biweekly check-ins fire
+  // exactly once per 14-day mark.
   lastWarningCycleId?: string;
   lastAutoStrikeCycleId?: string;
+  lastBiweeklyCheckinMark?: number;     // floor(daysSinceCycleStart / 14)
+  lastBiweeklyCheckinCycleId?: string;  // resets when cycle changes
 }
 
 export type ApplicationStatus =
@@ -298,31 +301,20 @@ export interface Cycle {
   pacingPercentPerCheckin: number;    // default 20 — drives biweekly nudge + dot
   creditTargets: CycleCreditTargets;
   strikeThresholds: CycleStrikeThresholds;
-  // Whether each role auto-demotes on second strike. Sr Associate / Board never
-  // auto-demote (handled case-by-case) and aren't represented here.
-  autoDemote: Record<CycleRole, boolean>;
-  // When true, cross-track work counts toward primary-track target. Defaults
-  // true per spec (all members share the same target regardless of track).
-  crossTrackCountsTowardTarget: boolean;
-  notes: string;
   createdAt: string;
   updatedAt: string;
 }
 
 // ── Infraction catalog ────────────────────────────────────────────────────────
 // One row per *type* of infraction. Issued instances live separately on a
-// member's record.
-
-export type InfractionSeverity = "minor" | "major" | "severe";
+// member's record. Severity is implicit in the point value: 1 = minor,
+// 2 = major, 3 = severe. To retire an infraction, just delete it.
 
 export interface Infraction {
   id: string;
   name: string;
   description: string;
-  points: number;                  // point penalty when issued
-  severity: InfractionSeverity;
-  active: boolean;                 // retired entries stay for historical record
-  sortIndex: number;               // display order on the rules card
+  points: number;                  // 1 (minor), 2 (major), 3 (severe)
   createdAt: string;
   updatedAt: string;
 }
@@ -331,7 +323,9 @@ export interface Infraction {
 // Admin-editable copy for every automated email. Hardcoding is intentionally
 // avoided — admins control wording without a deploy.
 
-export type EmailTemplateKey =
+// Stable keys referenced by automation. Custom (admin-authored) templates use
+// arbitrary strings — typically `custom_<id>` — and never collide with these.
+export type SystemEmailTemplateKey =
   | "orange_pace_warning"
   | "red_pace_strike"
   | "demotion_notice"
@@ -340,13 +334,17 @@ export type EmailTemplateKey =
   | "assignment_approved"
   | "assignment_rejected"
   | "infraction_notice"
-  | "monthly_portal_reminder";
+  | "monthly_portal_reminder"
+  | "biweekly_checkin";
+
+// Aliased for back-compat with earlier callers — same shape, just any string allowed.
+export type EmailTemplateKey = SystemEmailTemplateKey | (string & {});
 
 export interface EmailTemplate {
   id: string;
-  key: EmailTemplateKey;           // stable key referenced by automation
-  label: string;                   // human-readable name
-  description: string;             // when this template fires
+  key: string;                     // SystemEmailTemplateKey for system; arbitrary for custom
+  label: string;                   // human-readable name (admin-editable for custom)
+  description: string;             // when this template fires (or what it's for)
   subject: string;                 // mustache-style {{variable}} tokens supported
   body: string;                    // HTML, same token style
   // The set of variable tokens this template understands. Drives the preview
@@ -430,8 +428,7 @@ export interface MemberStrike {
   cycleId: string;
   infractionId: string;            // catalog reference
   infractionName: string;          // denormalized in case the catalog row is retired
-  severity: InfractionSeverity;
-  points: number;
+  points: number;                  // 1 minor, 2 major, 3 severe — matches Infraction.points
   issuedAt: string;
   issuedBy: string;
   note: string;

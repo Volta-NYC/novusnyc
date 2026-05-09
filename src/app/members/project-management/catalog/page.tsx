@@ -1,13 +1,13 @@
 "use client";
 
-// Admin page A3 — Assignments Catalog. The workhorse for spinning up work
-// during a cycle. Members claim entries from this catalog through the
-// marketplace; admins author, edit, and close them here.
+// Project Management → Assignment Catalog. Full record of past, present, and
+// future assignments. Awaiting-approval claims show up on the sibling Approvals
+// tab and disappear from there once approved.
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { ADMIN_GROUP_TABS } from "@/components/members/SectionTabs";
+import SectionTabs, { PROJECT_MGMT_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, Btn, Modal, Field, Input, Select, Empty, useConfirm, SearchBar,
 } from "@/components/members/ui";
@@ -22,8 +22,11 @@ import { useAuth } from "@/lib/members/authContext";
 const TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 const STATUS_OPTIONS: AssignmentStatus[] = ["open", "claimed", "in_progress", "submitted", "approved", "closed"];
-// Default difficulty list — admins can type any string; this is just a starter.
 const DEFAULT_DIFFICULTIES = ["Starter", "Standard", "Stretch"];
+
+// "Volta Internal" is a sentinel businessId for assignments not tied to any
+// outside business — common for finance work, internal templates, etc.
+const VOLTA_INTERNAL_ID = "__volta_internal__";
 
 const STATUS_STYLES: Record<AssignmentStatus, string> = {
   open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
@@ -40,6 +43,18 @@ const TRACK_DOT: Record<CycleTrack, string> = {
   Finance: "bg-amber-500",
 };
 
+const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
+
+// Status sort: active/upcoming first, then completed/closed. Lower number sorts higher.
+const STATUS_RANK: Record<AssignmentStatus, number> = {
+  open: 0,
+  claimed: 1,
+  in_progress: 2,
+  submitted: 3,
+  approved: 4,
+  closed: 5,
+};
+
 interface FormState {
   title: string;
   description: string;
@@ -49,7 +64,7 @@ interface FormState {
   difficulty: string;
   estimatedHours: number;
   minRole: CycleRole;
-  businessId: string;
+  businessId: string;       // "" or VOLTA_INTERNAL_ID or real business id
   capacity: number;
   deadline: string;
   status: AssignmentStatus;
@@ -64,13 +79,13 @@ const BLANK_FORM: FormState = {
   difficulty: "Standard",
   estimatedHours: 1,
   minRole: "Analyst",
-  businessId: "",
+  businessId: VOLTA_INTERNAL_ID,
   capacity: 1,
   deadline: "",
   status: "open",
 };
 
-export default function AssignmentsCatalogPage() {
+export default function CatalogPage() {
   const { authRole, user, userProfile, loading } = useAuth();
   const router = useRouter();
   const { ask, Dialog } = useConfirm();
@@ -81,10 +96,6 @@ export default function AssignmentsCatalogPage() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
 
   const [search, setSearch] = useState("");
-  const [filterTrack, setFilterTrack] = useState<"" | CycleTrack>("");
-  const [filterStatus, setFilterStatus] = useState<"" | AssignmentStatus>("");
-  const [filterBusiness, setFilterBusiness] = useState("");
-
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Assignment | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
@@ -101,7 +112,6 @@ export default function AssignmentsCatalogPage() {
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
   const businessById = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
 
-  // Claim count per assignment, used for capacity readouts.
   const claimsByAssignment = useMemo(() => {
     const map = new Map<string, AssignmentClaim[]>();
     for (const c of claims) {
@@ -112,25 +122,58 @@ export default function AssignmentsCatalogPage() {
     return map;
   }, [claims]);
 
+  // Resolve the displayed business name for an assignment, including the
+  // "Volta Internal" sentinel.
+  const resolveBusinessLabel = (assignment: Assignment): { name: string; neighborhood?: string } | null => {
+    if (!assignment.businessId) return null;
+    if (assignment.businessId === VOLTA_INTERNAL_ID) return { name: "Volta Internal" };
+    const business = businessById.get(assignment.businessId);
+    if (!business) return null;
+    return { name: business.name, neighborhood: business.neighborhood };
+  };
+
+  // Search across title, description (stripped HTML), business name, and any
+  // claimer's member name.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return assignments
-      .filter((a) => {
-        if (filterTrack && a.primaryTrack !== filterTrack) return false;
-        if (filterStatus && a.status !== filterStatus) return false;
-        if (filterBusiness && a.businessId !== filterBusiness) return false;
-        if (!q) return true;
-        const business = a.businessId ? businessById.get(a.businessId) : undefined;
-        return [
-          a.title,
-          a.description?.replace(/<[^>]+>/g, " "),
-          a.difficulty,
-          business?.name ?? "",
-          business?.neighborhood ?? "",
-        ].some((v) => String(v ?? "").toLowerCase().includes(q));
-      })
-      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
-  }, [assignments, search, filterTrack, filterStatus, filterBusiness, businessById]);
+    if (!q) return assignments;
+    return assignments.filter((a) => {
+      const business = resolveBusinessLabel(a);
+      const claimerNames = (claimsByAssignment.get(a.id) ?? [])
+        .map((c) => String(c.memberName ?? "").toLowerCase());
+      return [
+        a.title,
+        a.description?.replace(/<[^>]+>/g, " "),
+        a.difficulty,
+        business?.name ?? "",
+        business?.neighborhood ?? "",
+        ...claimerNames,
+      ].some((v) => String(v ?? "").toLowerCase().includes(q));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignments, search, businessById, claimsByAssignment]);
+
+  // Sort: status first (active/upcoming → completed/closed), then track
+  // (Tech → Marketing → Finance), then credits (low→high), then title alphabetical.
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const sCmp = (STATUS_RANK[a.status] ?? 9) - (STATUS_RANK[b.status] ?? 9);
+      if (sCmp !== 0) return sCmp;
+      const tCmp = (TRACK_RANK[a.primaryTrack] ?? 9) - (TRACK_RANK[b.primaryTrack] ?? 9);
+      if (tCmp !== 0) return tCmp;
+      const cCmp = a.credits - b.credits;
+      if (cCmp !== 0) return cCmp;
+      return a.title.localeCompare(b.title);
+    });
+  }, [filtered]);
+
+  // Summary counters at the top.
+  const counts = {
+    open: assignments.filter((a) => a.status === "open").length,
+    claimed: claims.filter((c) => c.status === "claimed" || c.status === "in_progress").length,
+    awaitingApproval: claims.filter((c) => c.status === "submitted").length,
+    completed: claims.filter((c) => c.status === "approved").length + assignments.filter((a) => a.status === "approved" || a.status === "closed").length,
+  };
 
   const businessOptions = useMemo(
     () => businesses
@@ -139,8 +182,6 @@ export default function AssignmentsCatalogPage() {
     [businesses],
   );
 
-  // Difficulty suggestions derived from existing rows + defaults so admins
-  // get a small autocomplete list without having to maintain a managed taxonomy.
   const difficultyOptions = useMemo(() => {
     const set = new Set<string>(DEFAULT_DIFFICULTIES);
     for (const a of assignments) if (a.difficulty) set.add(a.difficulty);
@@ -163,7 +204,7 @@ export default function AssignmentsCatalogPage() {
       difficulty: a.difficulty ?? "Standard",
       estimatedHours: a.estimatedHours ?? 0,
       minRole: a.minRole,
-      businessId: a.businessId ?? "",
+      businessId: a.businessId ?? VOLTA_INTERNAL_ID,
       capacity: a.capacity ?? 1,
       deadline: a.deadline ?? "",
       status: a.status,
@@ -182,7 +223,7 @@ export default function AssignmentsCatalogPage() {
       difficulty: a.difficulty ?? "Standard",
       estimatedHours: a.estimatedHours ?? 0,
       minRole: a.minRole,
-      businessId: a.businessId ?? "",
+      businessId: a.businessId ?? VOLTA_INTERNAL_ID,
       capacity: a.capacity ?? 1,
       deadline: a.deadline ?? "",
       status: "open",
@@ -204,7 +245,7 @@ export default function AssignmentsCatalogPage() {
       difficulty: form.difficulty.trim() || "Standard",
       estimatedHours: Math.max(0, Number(form.estimatedHours) || 0),
       minRole: form.minRole,
-      businessId: form.businessId || undefined,
+      businessId: form.businessId || VOLTA_INTERNAL_ID,
       capacity: Math.max(1, Number(form.capacity) || 1),
       deadline: form.deadline || undefined,
       status: form.status,
@@ -216,13 +257,10 @@ export default function AssignmentsCatalogPage() {
   const handleSave = async (opts?: { addAnother?: boolean }) => {
     const payload = buildPayload();
     if (!payload) return;
-    if (editing) {
-      await updateAssignment(editing.id, payload);
-    } else {
-      await createAssignment(payload);
-    }
+    if (editing) await updateAssignment(editing.id, payload);
+    else await createAssignment(payload);
     if (opts?.addAnother && !editing) {
-      setForm((prev) => ({ ...prev, title: "", credits: prev.credits, businessId: prev.businessId }));
+      setForm((prev) => ({ ...prev, title: "" }));
     } else {
       setModal(null);
     }
@@ -235,7 +273,7 @@ export default function AssignmentsCatalogPage() {
         await deleteAssignment(editing.id);
         setModal(null);
       },
-      `Delete “${editing.title}”? This permanently removes the catalog entry. Existing claims still keep credit history.`,
+      `Delete “${editing.title}”? This permanently removes the catalog entry. Existing claims keep their credit history.`,
     );
   };
 
@@ -260,68 +298,49 @@ export default function AssignmentsCatalogPage() {
   return (
     <MembersLayout>
       <Dialog />
-      <SectionTabs tabs={ADMIN_GROUP_TABS} />
+      <SectionTabs tabs={PROJECT_MGMT_TABS} />
 
       <PageHeader
-        title="Assignments Catalog"
-        subtitle={
-          activeCycle
-            ? `Active cycle: ${activeCycle.name}. New assignments scope to this cycle automatically.`
-            : "No active cycle — create one first so assignments scope correctly."
-        }
-        action={
-          <Btn variant="primary" onClick={openCreate} disabled={!activeCycle && !editing}>
-            + New Assignment
-          </Btn>
-        }
+        title="Project Management"
+        subtitle="Assignment catalog — full record of past, present, and future assignments. Submitted ones also appear under Approvals until they're reviewed."
+        action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
       />
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search title, description, business…" />
-        <Select
-          options={TRACKS}
-          value={filterTrack}
-          onChange={(e) => setFilterTrack(e.target.value as typeof filterTrack)}
-          emptyLabel="All tracks"
-          className="min-w-[160px]"
+      {/* Summary counters at the very top */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <SummaryStat label="Open" value={counts.open} accent="text-[#85CC17]" />
+        <SummaryStat label="Claimed / In Progress" value={counts.claimed} accent="text-blue-300" />
+        <SummaryStat label="Awaiting approval" value={counts.awaitingApproval} accent="text-yellow-300" />
+        <SummaryStat label="Completed" value={counts.completed} accent="text-violet-300" />
+      </div>
+
+      {/* Search only — no track/status/business filters per spec; sorting is fixed. */}
+      <div className="mb-4">
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search title, description, business, member who claimed…"
         />
-        <Select
-          options={STATUS_OPTIONS}
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-          emptyLabel="All statuses"
-          className="min-w-[160px]"
-        />
-        <select
-          value={filterBusiness}
-          onChange={(e) => setFilterBusiness(e.target.value)}
-          className="bg-[#1C1F26] border border-white/8 rounded-lg pl-3 pr-10 py-2.5 text-sm text-white/70 focus:outline-none min-w-[180px]"
-        >
-          <option value="">All businesses</option>
-          {businessOptions.map((b) => (
-            <option key={b.id} value={b.id}>{b.name}</option>
-          ))}
-        </select>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[24%]">Title</th>
+              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[26%]">Assignment</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Track</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Credits</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Difficulty</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Business</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Capacity</th>
+              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]" title="How many members can claim this assignment simultaneously">Slots</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Deadline</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Status</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[6%]">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((a) => {
-              const business = a.businessId ? businessById.get(a.businessId) : undefined;
+            {sorted.map((a) => {
+              const business = resolveBusinessLabel(a);
               const claimList = claimsByAssignment.get(a.id) ?? [];
               const activeClaims = claimList.filter((c) => c.status !== "rejected").length;
               return (
@@ -371,11 +390,11 @@ export default function AssignmentsCatalogPage() {
           </tbody>
         </table>
 
-        {filtered.length === 0 && (
+        {sorted.length === 0 && (
           <div className="p-6">
             <Empty
-              message="No assignments match these filters."
-              action={<Btn variant="primary" onClick={openCreate} disabled={!activeCycle}>+ New Assignment</Btn>}
+              message={search ? "No assignments match your search." : "No assignments in the catalog yet."}
+              action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
             />
           </div>
         )}
@@ -465,7 +484,7 @@ export default function AssignmentsCatalogPage() {
                 onChange={(e) => setForm((p) => ({ ...p, estimatedHours: Number(e.target.value) || 0 }))}
               />
             </Field>
-            <Field label="Capacity">
+            <Field label="Slots (how many members can claim this)">
               <Input
                 type="number"
                 min="1"
@@ -483,19 +502,20 @@ export default function AssignmentsCatalogPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Linked business">
+            <Field label="Business / context">
               <select
                 value={form.businessId}
                 onChange={(e) => setForm((p) => ({ ...p, businessId: e.target.value }))}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
               >
-                <option value="">— None —</option>
+                <option value={VOLTA_INTERNAL_ID}>Volta Internal</option>
                 {businessOptions.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}{b.neighborhood ? ` · ${b.neighborhood}` : ""}
                   </option>
                 ))}
               </select>
+              <p className="text-[11px] text-white/40 mt-1.5">Use Volta Internal for finance work, internal templates, sponsor outreach, etc.</p>
             </Field>
             <Field label="Deadline">
               <Input
@@ -536,44 +556,15 @@ export default function AssignmentsCatalogPage() {
           </div>
         </div>
       </Modal>
-
-      <ClaimSummary claims={claims} assignments={assignments} />
     </MembersLayout>
   );
 }
 
-// ── Light claim summary at the bottom: tells admins how many claims are
-// currently outstanding so they know if approvals are piling up.
-
-function ClaimSummary({ claims, assignments }: { claims: AssignmentClaim[]; assignments: Assignment[] }) {
-  const counts = claims.reduce<Record<string, number>>((acc, c) => {
-    acc[c.status] = (acc[c.status] ?? 0) + 1;
-    return acc;
-  }, {});
-  const totals = {
-    open: assignments.filter((a) => a.status === "open").length,
-    submitted: counts.submitted ?? 0,
-    in_progress: counts.in_progress ?? 0,
-    claimed: counts.claimed ?? 0,
-  };
+function SummaryStat({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-      <div className="rounded-xl border border-white/8 bg-[#13161D] p-3.5">
-        <p className="text-[10px] uppercase tracking-wider text-white/40">Catalog open</p>
-        <p className="text-2xl font-bold text-[#85CC17] mt-1">{totals.open}</p>
-      </div>
-      <div className="rounded-xl border border-white/8 bg-[#13161D] p-3.5">
-        <p className="text-[10px] uppercase tracking-wider text-white/40">Claimed</p>
-        <p className="text-2xl font-bold text-blue-300 mt-1">{totals.claimed}</p>
-      </div>
-      <div className="rounded-xl border border-white/8 bg-[#13161D] p-3.5">
-        <p className="text-[10px] uppercase tracking-wider text-white/40">In progress</p>
-        <p className="text-2xl font-bold text-cyan-300 mt-1">{totals.in_progress}</p>
-      </div>
-      <div className="rounded-xl border border-white/8 bg-[#13161D] p-3.5">
-        <p className="text-[10px] uppercase tracking-wider text-white/40">Awaiting approval</p>
-        <p className="text-2xl font-bold text-yellow-300 mt-1">{totals.submitted}</p>
-      </div>
+    <div className="rounded-xl border border-white/8 bg-[#13161D] p-3.5">
+      <p className="text-[10px] uppercase tracking-wider text-white/40">{label}</p>
+      <p className={`text-2xl font-bold mt-1 ${accent}`}>{value}</p>
     </div>
   );
 }
