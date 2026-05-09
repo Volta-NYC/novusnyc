@@ -1033,7 +1033,7 @@ export default function TeamPage() {
         codePrefix,
         status: assignment.status || "—",
         deadline,
-        href: `/members/assignments?assignmentId=${encodeURIComponent(assignment.id)}#finance-assignment-${assignment.id}`,
+        href: `/members/finance-assignments?assignmentId=${encodeURIComponent(assignment.id)}#finance-assignment-${assignment.id}`,
       };
       for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
         pushForMemberKey(memberKey, entry);

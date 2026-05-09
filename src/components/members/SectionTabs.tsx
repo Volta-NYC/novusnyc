@@ -68,7 +68,7 @@ export default function SectionTabs({
 export const PROJECT_GROUP_TABS: SectionTab[] = [
   { href: "/members/projects", label: "Tech Projects", matchTab: "" },
   { href: "/members/projects?tab=marketing", label: "Marketing Projects", matchTab: "marketing" },
-  { href: "/members/assignments", label: "Finance Projects" },
+  { href: "/members/finance-assignments", label: "Finance Projects" },
   { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
 ];
 
@@ -85,7 +85,7 @@ export const APPLICANTS_GROUP_TABS: SectionTab[] = [
 ];
 
 // Assignments contains the catalog and approvals queue.
-export const PROJECT_MGMT_TABS: SectionTab[] = [
-  { href: "/members/project-management/catalog", label: "Assignments Catalog" },
-  { href: "/members/project-management/approvals", label: "Approvals" },
+export const ASSIGNMENTS_TABS: SectionTab[] = [
+  { href: "/members/assignments/catalog", label: "Catalog" },
+  { href: "/members/assignments/for-review", label: "For Review" },
 ];

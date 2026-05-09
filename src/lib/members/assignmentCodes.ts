@@ -148,7 +148,7 @@ export function computeGlobalCodes(
     allCodes.push({
       code, prefix: "R", entityKey: a.id,
       title: a.topic || a.title || "Report",
-      href: `/members/assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
+      href: `/members/finance-assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
       assignmentId: a.id,
     });
   }
@@ -159,7 +159,7 @@ export function computeGlobalCodes(
     allCodes.push({
       code, prefix: "C", entityKey: a.id,
       title: a.topic || a.title || "Case Study",
-      href: `/members/assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
+      href: `/members/finance-assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
       assignmentId: a.id,
     });
   }
