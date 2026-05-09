@@ -8,9 +8,9 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
-  subscribeUserProfiles, subscribeBusinesses, subscribeFinanceAssignments, subscribeApplications,
-  subscribeCycles, subscribeAssignments, subscribeAssignmentClaims, subscribeMemberStrikes,
-  subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
+  getBusinessesList, getFinanceAssignmentsList, getApplicationsList,
+  getUserProfilesList, getCyclesList, getAssignmentsList, getAssignmentClaimsList,
+  getMemberStrikesList, getMemberCreditAdjustmentsList, getEmailTemplatesList, getInfractionsList,
   type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
   type Cycle, type Assignment, type AssignmentClaim, type MemberStrike, type MemberCreditAdjustment,
   type EmailTemplate, type Infraction,
@@ -380,15 +380,21 @@ export default function TeamPage() {
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeUserProfiles(setUserProfiles), []);
-  useEffect(() => subscribeCycles(setCycles), []);
-  useEffect(() => subscribeAssignments(setCreditAssignments), []);
-  useEffect(() => subscribeAssignmentClaims(setCreditClaims), []);
-  useEffect(() => subscribeMemberStrikes(setCreditStrikes), []);
-  useEffect(() => subscribeMemberCreditAdjustments(setCreditAdjustments), []);
-  useEffect(() => subscribeEmailTemplates(setEmailTemplates), []);
-  useEffect(() => subscribeInfractions(setInfractionCatalog), []);
+
+  // One-shot batch fetch for all supporting data — no persistent listeners needed.
+  useEffect(() => {
+    void Promise.all([
+      getBusinessesList().then(setBusinesses),
+      getUserProfilesList().then(setUserProfiles),
+      getCyclesList().then(setCycles),
+      getAssignmentsList().then(setCreditAssignments),
+      getAssignmentClaimsList().then(setCreditClaims),
+      getMemberStrikesList().then(setCreditStrikes),
+      getMemberCreditAdjustmentsList().then(setCreditAdjustments),
+      getEmailTemplatesList().then(setEmailTemplates),
+      getInfractionsList().then(setInfractionCatalog),
+    ]);
+  }, []);
 
   // One-shot automation sweep: when admin loads this page with full cycle data,
   // walk every active member and fire warnings/auto-strikes if their dot just
@@ -423,7 +429,7 @@ export default function TeamPage() {
     canEdit, user, team, cycles, creditAssignments, creditClaims, creditStrikes,
     creditAdjustments, emailTemplates, infractionCatalog,
   ]);
-  useEffect(() => subscribeApplications(setApplications), []);
+  useEffect(() => { void getApplicationsList().then(setApplications); }, []);
 
   // Close the inline role-edit popover on any document click outside it.
   useEffect(() => {
@@ -478,7 +484,8 @@ export default function TeamPage() {
     let timer: number | null = null;
 
     if (!canEdit || !user) {
-      return subscribeFinanceAssignments(setFinanceAssignments);
+      void getFinanceAssignmentsList().then(setFinanceAssignments);
+      return;
     }
 
     const loadAssignments = async () => {

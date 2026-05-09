@@ -266,7 +266,27 @@ function UsersTab() {
 function DataTab() {
   const [statusMessage, setStatusMessage] = useState("");
   const [selectedSections, setSelectedSections] = useState<ExportOptionKey[]>([]);
+  const [revalidating, setRevalidating] = useState(false);
   const { user } = useAuth();
+
+  const handleRevalidate = async () => {
+    if (!user) return;
+    setRevalidating(true);
+    setStatusMessage("");
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/members/admin/revalidate", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("revalidate_failed");
+      setStatusMessage("Public pages refreshed successfully.");
+    } catch {
+      setStatusMessage("Revalidation failed. Check admin access and try again.");
+    } finally {
+      setRevalidating(false);
+    }
+  };
 
   const toggleSection = (key: ExportOptionKey) => {
     setSelectedSections((prev) =>
@@ -318,6 +338,22 @@ function DataTab() {
 
   return (
     <div className="max-w-lg space-y-4">
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
+        <h2 className="font-display font-bold text-white mb-1">Public Stats</h2>
+        <p className="text-white/40 text-sm mb-4">Refresh the cached data shown on the public showcase, home, and about pages.</p>
+        <button
+          onClick={() => void handleRevalidate()}
+          disabled={revalidating}
+          className={`font-display font-bold px-5 py-2.5 rounded-xl transition-colors text-sm ${
+            revalidating
+              ? "bg-white/10 text-white/35 cursor-not-allowed"
+              : "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+          }`}
+        >
+          {revalidating ? "Refreshing…" : "Update All Stats"}
+        </button>
+      </div>
+
       <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
         <h2 className="font-display font-bold text-white mb-1">Export Data</h2>
         <p className="text-white/40 text-sm mb-4">Download a full JSON backup, or export selected datasets only.</p>

@@ -11,7 +11,7 @@ import {
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeBusinesses, subscribeTeam, subscribeFinanceAssignments,
-  createBusiness, updateBusiness, deleteBusiness,
+  createBusiness, updateBusiness, deleteBusiness, getBusinessImage,
   type Business, type TeamMember, type FinanceAssignment,
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
@@ -594,7 +594,7 @@ function BusinessesPageInner() {
     setModal("create");
   };
 
-  const openEdit = (b: Business) => {
+  const openEdit = async (b: Business) => {
     const normalized = normalizeTrackProjectsFromBusiness(b);
     const primaryDivision = derivePrimaryDivision(normalized.projectTracks);
     const overallStatus = deriveOverallStatus(normalized.trackProjects, normalized.projectTracks);
@@ -621,14 +621,18 @@ function BusinessesPageInner() {
       showcaseDescription: b.showcaseDescription ?? "",
       showcaseUrl: b.showcaseUrl ?? "",
       showcaseImageUrl: b.showcaseImageUrl ?? "",
-      showcaseImageData: b.showcaseImageData ?? "",
+      showcaseImageData: "",
       showcaseColor: normalizeColorToken((b.showcaseColor as string) ?? ""),
     });
     setEditingBusiness(b);
     setPresetNeighborhood(null);
     setShowOwnerAltEmail(!!(b.ownerAlternateEmail ?? "").trim());
     setShowAlternatePhone(!!(b.alternatePhone ?? "").trim());
-    const savedImageData = (b.showcaseImageData ?? "").trim();
+    // Load the image from the split businessImages node, falling back to the
+    // legacy inline field on records that haven't been re-saved yet.
+    const savedImageData = b.showcaseImageSet === true
+      ? (await getBusinessImage(b.id) ?? (b.showcaseImageData ?? "").trim())
+      : (b.showcaseImageData ?? "").trim();
     setShowcaseImageSource(savedImageData ? "upload" : "link");
     setUploadImageData(savedImageData);
     setCropRect(null);

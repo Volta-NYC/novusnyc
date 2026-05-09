@@ -9,9 +9,9 @@ import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  subscribeAssignmentClaims, subscribeAssignments, subscribeBusinesses,
-  subscribeCycles, subscribeInfractions, subscribeMemberCreditAdjustments,
-  subscribeMemberStrikes, subscribeTeam,
+  getAssignmentClaimsList, getAssignmentsList, getBusinessesList,
+  getCyclesList, getInfractionsList, getMemberCreditAdjustmentsList,
+  getMemberStrikesList, getTeamMembersList,
   type Assignment, type AssignmentClaim, type Business, type Cycle,
   type Infraction, type MemberCreditAdjustment, type MemberStrike, type TeamMember,
 } from "@/lib/members/storage";
@@ -66,14 +66,18 @@ export default function MemberOverviewPage() {
   const [rulesExpanded, setRulesExpanded] = useState(false);
   const [strikeDrawerOpen, setStrikeDrawerOpen] = useState(false);
 
-  useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribeCycles(setCycles), []);
-  useEffect(() => subscribeAssignments(setAssignments), []);
-  useEffect(() => subscribeAssignmentClaims(setClaims), []);
-  useEffect(() => subscribeMemberStrikes(setStrikes), []);
-  useEffect(() => subscribeMemberCreditAdjustments(setAdjustments), []);
-  useEffect(() => subscribeInfractions(setInfractions), []);
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => {
+    void Promise.all([
+      getTeamMembersList().then(setTeam),
+      getCyclesList().then(setCycles),
+      getAssignmentsList().then(setAssignments),
+      getAssignmentClaimsList().then(setClaims),
+      getMemberStrikesList().then(setStrikes),
+      getMemberCreditAdjustmentsList().then(setAdjustments),
+      getInfractionsList().then(setInfractions),
+      getBusinessesList().then(setBusinesses),
+    ]);
+  }, []);
 
   // Resolve which TeamMember corresponds to the signed-in user. Match on email
   // first, fall back to alternate email; if no match, render an onboarding prompt.

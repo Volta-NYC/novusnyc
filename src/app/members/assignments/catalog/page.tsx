@@ -13,7 +13,7 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
+  getAssignmentsList, getAssignmentClaimsList, getBusinessesList, getCyclesList,
   createAssignment, updateAssignment, deleteAssignment,
   type Assignment, type AssignmentClaim, type AssignmentStatus, type Business, type Cycle, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
@@ -127,10 +127,14 @@ export default function CatalogPage() {
     if (!loading && authRole !== "admin") router.replace("/members/projects");
   }, [authRole, loading, router]);
 
-  useEffect(() => subscribeAssignments(setAssignments), []);
-  useEffect(() => subscribeAssignmentClaims(setClaims), []);
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeCycles(setCycles), []);
+  useEffect(() => {
+    void Promise.all([
+      getAssignmentsList().then(setAssignments),
+      getAssignmentClaimsList().then(setClaims),
+      getBusinessesList().then(setBusinesses),
+      getCyclesList().then(setCycles),
+    ]);
+  }, []);
 
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
   const businessById = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);

@@ -9,8 +9,8 @@ import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  subscribeAssignmentClaims, subscribeAssignments, subscribeBusinesses,
-  subscribeCycles, subscribeMemberCreditAdjustments, subscribeMemberStrikes, subscribeTeam,
+  getAssignmentClaimsList, getAssignmentsList, getBusinessesList,
+  getCyclesList, getMemberCreditAdjustmentsList, getMemberStrikesList, getTeamMembersList,
   type Assignment, type AssignmentClaim, type Business, type Cycle,
   type MemberCreditAdjustment, type MemberStrike, type TeamMember,
 } from "@/lib/members/storage";
@@ -41,13 +41,17 @@ export default function MyRecordPage() {
   const [adjustments, setAdjustments] = useState<MemberCreditAdjustment[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
 
-  useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribeCycles(setCycles), []);
-  useEffect(() => subscribeAssignments(setAssignments), []);
-  useEffect(() => subscribeAssignmentClaims(setClaims), []);
-  useEffect(() => subscribeMemberStrikes(setStrikes), []);
-  useEffect(() => subscribeMemberCreditAdjustments(setAdjustments), []);
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => {
+    void Promise.all([
+      getTeamMembersList().then(setTeam),
+      getCyclesList().then(setCycles),
+      getAssignmentsList().then(setAssignments),
+      getAssignmentClaimsList().then(setClaims),
+      getMemberStrikesList().then(setStrikes),
+      getMemberCreditAdjustmentsList().then(setAdjustments),
+      getBusinessesList().then(setBusinesses),
+    ]);
+  }, []);
 
   const me = useMemo(() => {
     const email = normalizeKey(userProfile?.email ?? user?.email ?? "");

@@ -18,9 +18,9 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeTeam,
-  subscribeApplications,
-  subscribeBusinesses,
+  getTeamMembersList,
+  getApplicationsList,
+  getBusinessesList,
   type Business,
   type FinanceAssignment,
   type FinanceAssignmentStatus,
@@ -282,9 +282,13 @@ export default function FinanceAssignmentsPage() {
     }
   }, [authRole, router]);
 
-  useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribeApplications(setApplications), []);
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => {
+    void Promise.all([
+      getTeamMembersList().then(setTeam),
+      getApplicationsList().then(setApplications),
+      getBusinessesList().then(setBusinesses),
+    ]);
+  }, []);
   useEffect(() => {
     setAssignmentTemplates(readTemplates<AssignmentTemplate>(ASSIGNMENT_TEMPLATE_STORAGE_KEY));
     setEmailTemplates(readTemplates<AssignmentEmailTemplate>(ASSIGNMENT_EMAIL_TEMPLATE_STORAGE_KEY));

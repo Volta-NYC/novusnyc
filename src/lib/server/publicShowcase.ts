@@ -68,12 +68,36 @@ export interface PublicLiveStats {
   bidPartners: number;
 }
 
+// Module-level cache so parallel calls within the same ISR revalidation
+// (e.g. getPublicShowcaseCards + getPublicLiveStats on the home page) share
+// a single Firebase read instead of downloading the full businesses node twice.
+let businessesCache: {
+  data: Record<string, Record<string, unknown>>;
+  fetchedAt: number;
+} | null = null;
+const BUSINESSES_CACHE_TTL_MS = 60_000;
+
+async function fetchBusinesses(
+  db: NonNullable<ReturnType<typeof getAdminDB>>,
+): Promise<Record<string, Record<string, unknown>>> {
+  const now = Date.now();
+  if (businessesCache && now - businessesCache.fetchedAt < BUSINESSES_CACHE_TTL_MS) {
+    return businessesCache.data;
+  }
+  const snap = await db.ref("businesses").get();
+  const data = (snap.exists() ? snap.val() : {}) as Record<string, Record<string, unknown>>;
+  businessesCache = { data, fetchedAt: now };
+  return data;
+}
+
 function resolvePublicShowcaseImageUrl(
   id: string,
   row: Record<string, unknown>,
 ): string {
-  const inline = asText(row.showcaseImageData);
-  if (inline) return `/api/showcase-image/${encodeURIComponent(id)}`;
+  // Prefer the new split-node flag; fall back to the legacy inline field.
+  if (row.showcaseImageSet === true || asText(row.showcaseImageData)) {
+    return `/api/showcase-image/${encodeURIComponent(id)}`;
+  }
   return asText(row.showcaseImageUrl);
 }
 
@@ -368,10 +392,8 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
   const db = getAdminDB();
   if (!db) return [];
 
-  const snap = await db.ref("businesses").get();
-  if (!snap.exists()) return [];
-
-  const rows = snap.val() as Record<string, Record<string, unknown>>;
+  const rows = await fetchBusinesses(db);
+  if (Object.keys(rows).length === 0) return [];
   const explicitCards: PublicShowcaseCard[] = [];
   const fallbackCards: PublicShowcaseCard[] = [];
 
@@ -430,12 +452,10 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
     return { totalProjects: 0, websiteProjects: 0, socialMediaProjects: 0, seoProjects: 0, grantProjects: 0, financeProjects: 0 };
   }
 
-  const snap = await db.ref("businesses").get();
-  if (!snap.exists()) {
+  const rows = await fetchBusinesses(db);
+  if (Object.keys(rows).length === 0) {
     return { totalProjects: 0, websiteProjects: 0, socialMediaProjects: 0, seoProjects: 0, grantProjects: 0, financeProjects: 0 };
   }
-
-  const rows = snap.val() as Record<string, Record<string, unknown>>;
   let totalProjects = 0;
   let websiteProjects = 0;
   let socialMediaProjects = 0;
@@ -471,8 +491,8 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
     return { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, caseStudies: 0, educationalReports: 0, bidPartners: 0 };
   }
 
-  const [businessesSnap, financeSnap, bidsSnap] = await Promise.all([
-    db.ref("businesses").get(),
+  const [businessRows, financeSnap, bidsSnap] = await Promise.all([
+    fetchBusinesses(db),
     db.ref("financeAssignments").get(),
     db.ref("bids").get(),
   ]);
@@ -481,8 +501,8 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
   let totalBusinesses = 0;
   const businesses: Array<{ id: string; name: string; projectTracks?: string[]; trackProjects?: Record<string, unknown> }> = [];
 
-  if (businessesSnap.exists()) {
-    const rows = businessesSnap.val() as Record<string, Record<string, unknown>>;
+  if (Object.keys(businessRows).length > 0) {
+    const rows = businessRows;
     for (const [id, row] of Object.entries(rows)) {
       const name = asText(row.showcaseName) || asText(row.name);
       if (!name) continue;
@@ -548,8 +568,8 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   const db = getAdminDB();
   if (!db) return [];
 
-  const [businessesSnap, bidsSnap] = await Promise.all([
-    db.ref("businesses").get(),
+  const [businessRows, bidsSnap] = await Promise.all([
+    fetchBusinesses(db),
     db.ref("bids").get(),
   ]);
 
@@ -557,8 +577,8 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   const businessGeocodeWrites: Array<{ id: string; lat: number; lng: number }> = [];
   const businessesMissingCoords: Array<{ id: string; address: string; borough: string; entry: PublicMapEntry }> = [];
 
-  if (businessesSnap.exists()) {
-    const businesses = businessesSnap.val() as Record<string, Record<string, unknown>>;
+  if (Object.keys(businessRows).length > 0) {
+    const businesses = businessRows;
     for (const [id, row] of Object.entries(businesses)) {
       const name = asText(row.showcaseName) || asText(row.name);
       if (!name) continue;

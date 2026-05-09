@@ -9,8 +9,8 @@ import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  subscribeAssignmentClaims, subscribeAssignments, subscribeBusinesses,
-  subscribeCycles, subscribeTeam,
+  getAssignmentClaimsList, getAssignmentsList, getBusinessesList,
+  getCyclesList, getTeamMembersList,
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
@@ -49,11 +49,15 @@ export default function MarketplacePage() {
   const [difficultyFilter, setDifficultyFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("recommended");
 
-  useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribeCycles(setCycles), []);
-  useEffect(() => subscribeAssignments(setAssignments), []);
-  useEffect(() => subscribeAssignmentClaims(setClaims), []);
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => {
+    void Promise.all([
+      getTeamMembersList().then(setTeam),
+      getCyclesList().then(setCycles),
+      getAssignmentsList().then(setAssignments),
+      getAssignmentClaimsList().then(setClaims),
+      getBusinessesList().then(setBusinesses),
+    ]);
+  }, []);
 
   const me = useMemo(() => {
     const email = normalizeKey(userProfile?.email ?? user?.email ?? "");

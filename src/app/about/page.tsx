@@ -7,7 +7,6 @@ import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
 
-export const revalidate = 900;
 
 export const metadata: Metadata = {
   title: "About Us | Volta NYC",

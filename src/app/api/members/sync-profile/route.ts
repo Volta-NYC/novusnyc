@@ -53,24 +53,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_email" }, { status: 400 });
   }
 
-  const teamSnap = await db.ref("team").get();
-  const team = (teamSnap.exists() ? (teamSnap.val() as Record<string, Record<string, unknown>>) : {}) ?? {};
-
-  let targetId = "";
   const emailKey = norm(email);
-  for (const [id, raw] of Object.entries(team)) {
-    const memberEmail = typeof raw.email === "string" ? raw.email : "";
-    const memberAlt = typeof raw.alternateEmail === "string" ? raw.alternateEmail : "";
-    if (norm(memberEmail) === emailKey || norm(memberAlt) === emailKey) {
-      targetId = id;
-      break;
+
+  // Two targeted indexed queries instead of a full team scan.
+  let targetId = "";
+  let targetData: Record<string, unknown> | null = null;
+
+  const primarySnap = await db.ref("team").orderByChild("email").equalTo(emailKey).limitToFirst(1).get();
+  if (primarySnap.exists()) {
+    primarySnap.forEach((child) => {
+      targetId = child.key ?? "";
+      targetData = child.val() as Record<string, unknown>;
+      return true;
+    });
+  } else {
+    const altSnap = await db.ref("team").orderByChild("alternateEmail").equalTo(emailKey).limitToFirst(1).get();
+    if (altSnap.exists()) {
+      altSnap.forEach((child) => {
+        targetId = child.key ?? "";
+        targetData = child.val() as Record<string, unknown>;
+        return true;
+      });
     }
   }
 
   const nowIso = new Date().toISOString();
-  if (targetId) {
+  if (targetId && targetData) {
     const patch: Record<string, unknown> = {};
-    const target = team[targetId] ?? {};
+    const target = targetData as Record<string, unknown>;
     if (name && name !== (typeof target.name === "string" ? target.name : "")) patch.name = name;
     if (school && school !== (typeof target.school === "string" ? target.school : "")) patch.school = school;
     if (grade && grade !== (typeof target.grade === "string" ? target.grade : "")) patch.grade = grade;

@@ -12,7 +12,7 @@ import {
   PageHeader, Btn, Modal, Field, Input, TextArea, Empty, useConfirm, SearchBar,
 } from "@/components/members/ui";
 import {
-  subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeEmailTemplates,
+  getAssignmentsList, getAssignmentClaimsList, getBusinessesList, getEmailTemplatesList,
   updateAssignmentClaim,
   type Assignment, type AssignmentClaim, type Business, type EmailTemplate, type CycleTrack,
 } from "@/lib/members/storage";
@@ -84,10 +84,14 @@ export default function ForReviewPage() {
     if (!loading && authRole !== "admin") router.replace("/members/projects");
   }, [authRole, loading, router]);
 
-  useEffect(() => subscribeAssignmentClaims(setClaims), []);
-  useEffect(() => subscribeAssignments(setAssignments), []);
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeEmailTemplates(setTemplates), []);
+  useEffect(() => {
+    void Promise.all([
+      getAssignmentClaimsList().then(setClaims),
+      getAssignmentsList().then(setAssignments),
+      getBusinessesList().then(setBusinesses),
+      getEmailTemplatesList().then(setTemplates),
+    ]);
+  }, []);
 
   const assignmentById = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
   const businessById = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);

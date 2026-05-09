@@ -26,14 +26,14 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
 
   if (!businessName || !ownerName || !ownerEmail) return;
 
-  const businessesSnap = await db.ref("businesses").get();
+  // Indexed query: only fetch businesses from this owner email, then check name/ownerName in memory.
+  const byEmailSnap = await db.ref("businesses").orderByChild("ownerEmail").equalTo(ownerEmail).get();
   const now = Date.now();
-  if (businessesSnap.exists()) {
-    const entries = businessesSnap.val() as Record<string, Record<string, unknown>>;
+  if (byEmailSnap.exists()) {
+    const entries = byEmailSnap.val() as Record<string, Record<string, unknown>>;
     const duplicateRecent = Object.values(entries).some((entry) => {
       const existingName = asText(entry.name).toLowerCase();
       const existingOwner = asText(entry.ownerName).toLowerCase();
-      const existingEmail = asText(entry.ownerEmail).toLowerCase();
       const createdAt = Date.parse(asText(entry.createdAt));
       if (!createdAt) return false;
       const within24h = now - createdAt <= 24 * 60 * 60 * 1000;
@@ -41,7 +41,6 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
         within24h
         && existingName === businessName.toLowerCase()
         && existingOwner === ownerName.toLowerCase()
-        && existingEmail === ownerEmail
       );
     });
     if (duplicateRecent) return;

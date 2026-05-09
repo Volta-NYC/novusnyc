@@ -4,10 +4,6 @@ import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import ShowcaseClient from "./page-client";
 
-// Revalidate every 5 minutes — showcase data changes infrequently and
-// force-dynamic was causing a full Firebase read on every public request,
-// burning through the free-tier download quota.
-export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Our Work | Volta NYC",

@@ -16,7 +16,6 @@ import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicS
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
-export const revalidate = 900;
 
 export const metadata: Metadata = {
   title: "Volta NYC — Free Consulting for NYC Small Businesses",

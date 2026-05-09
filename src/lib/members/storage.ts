@@ -6,7 +6,7 @@
 // entirely on read. Every caller that uses array fields must guard with `?? []`
 // to avoid "Cannot read properties of undefined" crashes.
 
-import { ref, push, update, remove, onValue, get, set, off } from "firebase/database";
+import { ref, push, update, remove, onValue, get, set, off, query, orderByChild, equalTo, limitToFirst, limitToLast } from "firebase/database";
 import { getDB, getAuth } from "@/lib/firebase";
 import { normalizeTeamPod } from "@/lib/teamPod";
 
@@ -89,7 +89,11 @@ export interface Business {
   showcaseDescription?: string;
   showcaseUrl?: string;
   showcaseImageUrl?: string;
+  // showcaseImageData is no longer stored inline in businesses — it lives at
+  // businessImages/{id}. This field is kept for reading legacy records that
+  // haven't been re-saved yet. New writes go through setBusinessImage().
   showcaseImageData?: string;
+  showcaseImageSet?: boolean;   // true when an image exists in businessImages/{id}
   showcaseColor?:
     | "green"
     | "blue"
@@ -798,12 +802,26 @@ export async function deleteBIDTimelineEntry(bidId: string, entryId: string): Pr
 export async function createBusiness(data: Omit<Business, "id" | "createdAt" | "updatedAt">): Promise<void> {
   const db = getDB();
   if (!db) return;
+
+  const { showcaseImageData, ...rest } = data;
   const businessRef = push(ref(db, "businesses"));
-  await set(businessRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  const id = businessRef.key ?? "";
+
+  await set(businessRef, {
+    ...rest,
+    showcaseImageSet: !!showcaseImageData,
+    createdAt: nowISO(),
+    updatedAt: nowISO(),
+  });
+
+  if (showcaseImageData && id) {
+    await set(ref(db, `businessImages/${id}`), { data: showcaseImageData });
+  }
+
   await writeAuditLog(db, {
     action: "create",
     collection: "businesses",
-    recordId: businessRef.key ?? "",
+    recordId: id,
     details: { fields: Object.keys(data) },
   });
 }
@@ -811,7 +829,23 @@ export async function createBusiness(data: Omit<Business, "id" | "createdAt" | "
 export async function updateBusiness(id: string, data: Partial<Business>): Promise<void> {
   const db = getDB();
   if (!db) return;
-  await update(ref(db, `businesses/${id}`), { ...data, updatedAt: nowISO() });
+
+  // Intercept showcaseImageData and route it to the separate businessImages node
+  // so the main businesses collection stays lean.
+  const { showcaseImageData, ...rest } = data;
+  if (showcaseImageData !== undefined) {
+    if (showcaseImageData) {
+      await set(ref(db, `businessImages/${id}`), { data: showcaseImageData });
+      (rest as Partial<Business>).showcaseImageSet = true;
+    } else {
+      await set(ref(db, `businessImages/${id}`), null);
+      (rest as Partial<Business>).showcaseImageSet = false;
+    }
+    // Null out any legacy inline copy so old bytes don't stay in businesses.
+    (rest as Record<string, unknown>).showcaseImageData = null;
+  }
+
+  await update(ref(db, `businesses/${id}`), { ...rest, updatedAt: nowISO() });
   await writeAuditLog(db, {
     action: "update",
     collection: "businesses",
@@ -1088,11 +1122,120 @@ export async function getTeamMembersList(): Promise<TeamMember[]> {
   return snapToList<TeamMember>(snap);
 }
 
-export async function getAuditLogsList(): Promise<AuditLogEntry[]> {
+export async function getAuditLogsList(limit = 200): Promise<AuditLogEntry[]> {
   const db = getDB();
   if (!db) return [];
-  const snap = await get(ref(db, "auditLogs"));
-  return snapToList<AuditLogEntry>(snap);
+  const q = query(ref(db, "auditLogs"), orderByChild("timestamp"), limitToLast(limit));
+  const snap = await get(q);
+  return snapToList<AuditLogEntry>(snap).reverse();
+}
+
+// Returns the image data stored at businessImages/{id}, or null if none.
+export async function getBusinessImage(id: string): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const snap = await get(ref(db, `businessImages/${id}`));
+  if (!snap.exists()) return null;
+  const val = snap.val() as { data?: string } | null;
+  return val?.data ?? null;
+}
+
+// ── ONE-SHOT GET VARIANTS ─────────────────────────────────────────────────────
+// These fetch a collection once and return a plain array — no persistent
+// listener, no automatic updates. Use these on pages that don't need live sync.
+
+export async function getBusinessesList(): Promise<Business[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "businesses"));
+  return snapToList<Business>(snap);
+}
+
+export async function getBIDsList(): Promise<BID[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "bids"));
+  return snapToList<BID>(snap);
+}
+
+export async function getProjectsList(): Promise<Project[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "projects"));
+  return snapToList<Project>(snap);
+}
+
+export async function getFinanceAssignmentsList(): Promise<FinanceAssignment[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "financeAssignments"));
+  return snapToList<FinanceAssignment>(snap);
+}
+
+export async function getCyclesList(): Promise<Cycle[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "cycles"));
+  return snapToList<Cycle>(snap);
+}
+
+export async function getInfractionsList(): Promise<Infraction[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "infractions"));
+  return snapToList<Infraction>(snap);
+}
+
+export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "emailTemplates"));
+  return snapToList<EmailTemplate>(snap);
+}
+
+export async function getAssignmentsList(): Promise<Assignment[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "assignmentCatalog"));
+  return snapToList<Assignment>(snap);
+}
+
+export async function getAssignmentClaimsList(): Promise<AssignmentClaim[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "assignmentClaims"));
+  return snapToList<AssignmentClaim>(snap);
+}
+
+export async function getMemberStrikesList(): Promise<MemberStrike[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "memberStrikes"));
+  return snapToList<MemberStrike>(snap);
+}
+
+export async function getMemberCreditAdjustmentsList(): Promise<MemberCreditAdjustment[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "memberCreditAdjustments"));
+  return snapToList<MemberCreditAdjustment>(snap);
+}
+
+export async function getApplicationsList(): Promise<ApplicationRecord[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "applications"));
+  if (!snap.exists()) return [];
+  const val = snap.val() as Record<string, Record<string, unknown>> | null;
+  if (!val) return [];
+  return Object.entries(val).map(([id, row]) => normalizeApplicationRecord(id, row ?? {}));
+}
+
+export async function getCalendarEventsList(): Promise<CalendarEvent[]> {
+  const db = getDB();
+  if (!db) return [];
+  const snap = await get(ref(db, "calendarEvents"));
+  return snapToList<CalendarEvent>(snap);
 }
 
 // ── InviteCodes ───────────────────────────────────────────────────────────────
@@ -1314,12 +1457,22 @@ export async function deleteBookedInterview(slotId: string): Promise<void> {
   const bookedName = String(slot.bookerName ?? "").trim().toLowerCase();
   const bookedBy = String(slot.bookedBy ?? "").trim();
   if (bookedEmail) {
-    const appsSnap = await get(ref(db, "applications"));
+    const now = nowISO();
+    const terminal = new Set(["accepted", "not accepted", "rejected"]);
+
+    // Use an indexed query on `email` instead of fetching all applications.
+    const appsQuery = query(
+      ref(db, "applications"),
+      orderByChild("email"),
+      equalTo(bookedEmail),
+      limitToFirst(10),
+    );
+    const appsSnap = await get(appsQuery);
+
     if (appsSnap.exists()) {
       const entries = appsSnap.val() as Record<string, Record<string, unknown>>;
       const appEntries = Object.entries(entries).map(([id, row]) => ({ id, row: row ?? {} }));
-      const now = nowISO();
-      const terminal = new Set(["accepted", "not accepted", "rejected"]);
+
       let target = appEntries.find(({ row }) => {
         const token = String(row.interviewInviteToken ?? "").trim();
         return bookedBy && bookedBy !== "public-booking" && token === bookedBy;
@@ -1327,17 +1480,14 @@ export async function deleteBookedInterview(slotId: string): Promise<void> {
       if (!target) {
         target = appEntries.find(({ row }) => (
           String(row.interviewSlotId ?? "").trim() === slotId
-          && String(row.email ?? "").trim().toLowerCase() === bookedEmail
         ));
       }
       if (!target) {
-        const candidates = appEntries
-          .filter(({ row }) => String(row.email ?? "").trim().toLowerCase() === bookedEmail)
-          .sort((a, b) => {
-            const aTime = Date.parse(String(a.row.updatedAt ?? a.row.createdAt ?? ""));
-            const bTime = Date.parse(String(b.row.updatedAt ?? b.row.createdAt ?? ""));
-            return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
-          });
+        const candidates = appEntries.sort((a, b) => {
+          const aTime = Date.parse(String(a.row.updatedAt ?? a.row.createdAt ?? ""));
+          const bTime = Date.parse(String(b.row.updatedAt ?? b.row.createdAt ?? ""));
+          return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+        });
         target = candidates.find(({ row }) => String(row.fullName ?? "").trim().toLowerCase() === bookedName) ?? candidates[0];
       }
       if (target) {
