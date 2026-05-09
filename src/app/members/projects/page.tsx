@@ -1031,24 +1031,6 @@ function BusinessesPageInner() {
     return null;
   };
 
-  const resolveActiveMemberEmail = (raw: string): string | null => {
-    const value = raw.trim();
-    if (!value) return null;
-    const activeMembers = team.filter((member) => normalizeLoose(member.status ?? "") !== "inactive");
-
-    const decoratedEmail = normalizeKey(parseEmailFromDecoratedName(value));
-    if (decoratedEmail) {
-      const byEmail = activeMembers.find((member) => normalizeKey(member.email ?? "") === decoratedEmail);
-      if (byEmail?.email?.trim()) return byEmail.email.trim().toLowerCase();
-    }
-
-    const baseName = stripDecoratedName(value);
-    const key = normalizeKey(baseName);
-    const byName = activeMembers.find((member) => normalizeKey(member.name ?? "") === key);
-    if (byName?.email?.trim()) return byName.email.trim().toLowerCase();
-    return null;
-  };
-
   const getTrackAssignments = (project: Business): Array<{ track: TrackDivision; members: string[] }> => {
     const normalized = normalizeTrackProjectsFromBusiness(project);
     return normalized.projectTracks.map((track) => {
@@ -1177,18 +1159,6 @@ function BusinessesPageInner() {
       return;
     }
     openProjectEmailModal(project);
-  };
-
-  const openProjectMemberEmailModal = (project: Business, memberName: string) => {
-    openProjectEmailModal(project);
-    const memberEmail = resolveActiveMemberEmail(memberName);
-    setProjectEmailRecipientLabel(memberName);
-    if (memberEmail) {
-      setProjectEmailRecipientOverride([memberEmail]);
-      return;
-    }
-    setProjectEmailRecipientOverride([]);
-    setProjectEmailStatus(`No active email found for ${memberName}.`);
   };
 
   const projectTeamPickerOptions = projectTeamPickerProject
@@ -1373,34 +1343,32 @@ function BusinessesPageInner() {
     const neighborhood = getNeighborhoodLabel(b);
 
     return (
-      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03] align-top">
-        <td className="px-2 py-2 text-[11px] text-white/90 align-top">
-          <div className="flex items-start gap-1.5 min-w-0">
+      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+        <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
+          <div className="flex items-center gap-1.5 min-w-0">
             {code && (
               <span
-                className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 ${codeColorClass(track)}`}
+                className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 border ${codeColorClass(track)}`}
                 title={TRACK_META[track].label}
               >
                 {code}
               </span>
             )}
-            <span className="font-medium leading-snug break-words">
-              {b.name}
-            </span>
+            <span className="font-medium truncate" title={b.name}>{b.name}</span>
           </div>
         </td>
-        <td className="px-2 py-2 text-[11px] text-white/65 break-words align-top">
-          {neighborhood || <span className="text-white/30">—</span>}
+        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+          <span className="block truncate" title={neighborhood || ""}>{neighborhood || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-2 py-2 text-[11px] text-white/80 break-words align-top">
-          {b.ownerName || <span className="text-white/30">—</span>}
+        <td className="px-3 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
+          <span className="block truncate" title={b.ownerName || ""}>{b.ownerName || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-2 py-2 text-[11px] align-top">
+        <td className="px-3 py-0 h-9 text-[11px] align-middle overflow-hidden">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
-            <div className="flex items-start gap-1.5 min-w-0">
-              <span className="text-[#85CC17]/80 break-all" title={b.ownerEmail}>{b.ownerEmail}</span>
+            <div className="inline-flex items-center gap-1 min-w-0 max-w-full">
+              <span className="text-[#85CC17]/80 truncate block" title={b.ownerEmail}>{b.ownerEmail}</span>
               <button
                 type="button"
                 className="members-copy-btn flex-shrink-0"
@@ -1418,7 +1386,7 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-2 py-2 align-top">
+        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
           {canEdit ? (
             <div className="relative inline-block">
               <button
@@ -1456,51 +1424,35 @@ function BusinessesPageInner() {
             <Badge label={trackStatus} />
           )}
         </td>
-        <td className="px-2 py-2 text-[11px] text-white/80 align-top">
+        <td className="px-3 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
           {dedupedMembers.length === 0 ? (
             <span className="text-white/30">—</span>
           ) : (
-            <div className="flex flex-wrap gap-x-1 gap-y-0.5">
-              {dedupedMembers.map((memberName, idx) => (
-                <span key={`${b.id}-${track}-${memberName}-${idx}`}>
-                  {idx > 0 && <span className="text-white/40">,&nbsp;</span>}
-                  {canEdit ? (
-                    <button
-                      type="button"
-                      className="text-[#85CC17]/85 hover:text-[#9BE22B] underline-offset-2 hover:underline"
-                      onClick={() => openProjectMemberEmailModal(b, memberName)}
-                      title={`Email ${memberName}`}
-                    >
-                      {memberName}
-                    </button>
-                  ) : (
-                    <span>{memberName}</span>
-                  )}
-                </span>
-              ))}
-            </div>
+            <span
+              className="block truncate"
+              title={dedupedMembers.join(", ")}
+            >
+              {dedupedMembers[0]}{dedupedMembers.length > 1 && <span className="text-white/40"> +{dedupedMembers.length - 1}</span>}
+            </span>
           )}
         </td>
-        <td className="px-2 py-2 text-[11px] text-white/75 align-top">
+        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
           {deadlines.length === 0 ? (
             <span className="text-white/30">—</span>
           ) : (
-            <div className="space-y-0.5">
-              {deadlines.slice(0, 2).map((entry, idx) => (
-                <div key={`${b.id}-deadline-${idx}`} className="leading-snug">
-                  <span className="text-white/50">{entry.label || "Deadline"}:</span>{" "}
-                  <span className="text-white/85">{entry.date}</span>
-                </div>
-              ))}
-              {deadlines.length > 2 && (
-                <div className="text-white/40">+{deadlines.length - 2} more</div>
-              )}
-            </div>
+            <span
+              className="block truncate"
+              title={deadlines.map((d) => `${d.label || "Deadline"}: ${d.date}`).join(" · ")}
+            >
+              <span className="text-white/40">{deadlines[0].label || "Due"}:</span>{" "}
+              <span className="text-white/85">{deadlines[0].date}</span>
+              {deadlines.length > 1 && <span className="text-white/40"> +{deadlines.length - 1}</span>}
+            </span>
           )}
         </td>
-        <td className="px-2 py-2 align-top">
+        <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="members-row-actions">
               <Btn
                 size="sm"
                 variant="secondary"
@@ -1524,24 +1476,22 @@ function BusinessesPageInner() {
     const neighborhood = getNeighborhoodLabel(b);
     const fromWebsite = b.intakeSource === "website_form";
     return (
-      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/8 hover:bg-white/[0.03] align-top">
-        <td className="px-2 py-2 text-[11px] text-white/90 align-top">
-          <span className="font-medium leading-snug break-words">
-            {b.name}
-          </span>
+      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+        <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
+          <span className="font-medium truncate block" title={b.name}>{b.name}</span>
         </td>
-        <td className="px-2 py-2 text-[11px] text-white/65 break-words align-top">
-          {neighborhood || <span className="text-white/30">—</span>}
+        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+          <span className="block truncate" title={neighborhood || ""}>{neighborhood || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-2 py-2 text-[11px] text-white/80 break-words align-top">
-          {b.ownerName || <span className="text-white/30">—</span>}
+        <td className="px-3 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
+          <span className="block truncate" title={b.ownerName || ""}>{b.ownerName || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-2 py-2 text-[11px] align-top">
+        <td className="px-3 py-0 h-9 text-[11px] align-middle overflow-hidden">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
-            <div className="flex items-start gap-1.5 min-w-0">
-              <span className="text-[#85CC17]/80 break-all" title={b.ownerEmail}>{b.ownerEmail}</span>
+            <div className="inline-flex items-center gap-1 min-w-0 max-w-full">
+              <span className="text-[#85CC17]/80 truncate block" title={b.ownerEmail}>{b.ownerEmail}</span>
               <button
                 type="button"
                 className="members-copy-btn flex-shrink-0"
@@ -1559,25 +1509,25 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-2 py-2 text-[11px] text-white/75 align-top">
+        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.phone ? (
-            <span className="break-all">{b.phone}</span>
+            <span className="block truncate" title={b.phone}>{b.phone}</span>
           ) : (
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-2 py-2 text-[11px] align-top">
+        <td className="px-3 py-0 h-9 text-[11px] align-middle">
           {fromWebsite ? (
             <span className="text-white/65">Website form</span>
           ) : (
             <span className="text-white/30">In-person</span>
           )}
         </td>
-        <td className="px-2 py-2 align-top">
+        <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="members-row-actions">
               <div className="relative">
                 <button
                   type="button"
@@ -1840,17 +1790,17 @@ function BusinessesPageInner() {
       </div>
 
       {activeTab === "discovery" ? (
-        <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-hidden">
-          <table className="w-full text-left">
+        <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
+          <table className="table-fixed text-left" style={{width: "1110px"}}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Business Name</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Neighborhood</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Owner</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[20%]">Primary Email</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Phone</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Source</th>
-                <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[16%]">Actions</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Neighborhood</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Owner</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[230px]">Primary Email</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Phone</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Source</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Actions</th>
               </tr>
             </thead>
             <tbody>{filtered.map(renderDiscoveryRow)}</tbody>
@@ -1869,18 +1819,18 @@ function BusinessesPageInner() {
           {isNonAdminMember && myProjects.length > 0 && (
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
-              <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-hidden">
-                <table className="w-full text-left">
+              <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
+                <table className="table-fixed text-left" style={{width: "1240px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Business Name</th>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Neighborhood</th>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Owner</th>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Primary Email</th>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Members</th>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Deadlines</th>
-                      <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Actions</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Neighborhood</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Owner</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[230px]">Primary Email</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Status</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Members</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Deadlines</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>{myProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab]))}</tbody>
@@ -1893,18 +1843,18 @@ function BusinessesPageInner() {
             <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-2">Other Projects</h2>
           )}
 
-          <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-hidden">
-            <table className="w-full text-left">
+          <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
+            <table className="table-fixed text-left" style={{width: "1240px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Business Name</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Neighborhood</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Owner</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Primary Email</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Status</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Members</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Deadlines</th>
-                  <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Actions</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Neighborhood</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Owner</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[230px]">Primary Email</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Status</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Members</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Deadlines</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Actions</th>
                 </tr>
               </thead>
               <tbody>{otherProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab]))}</tbody>

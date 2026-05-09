@@ -32,6 +32,17 @@ const ASSIGNMENT_SORT_OPTIONS = [
   { value: 4, label: "Claimer Names" },
 ];
 
+const REVIEW_COLS = [
+  { key: "member",      label: "Member",      width: 160 },
+  { key: "assignment",  label: "Assignment",  width: 260 },
+  { key: "track",       label: "Track",       width: 90  },
+  { key: "credits",     label: "Credits",     width: 70  },
+  { key: "submitted",   label: "Submitted",   width: 110 },
+  { key: "deliverable", label: "Deliverable", width: 130 },
+  { key: "notes",       label: "Notes",       width: 200 },
+  { key: "actions",     label: "Actions",     width: 140 },
+];
+
 const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 2, dir: "asc" },
   { col: 1, dir: "asc" },
@@ -60,6 +71,8 @@ export default function ForReviewPage() {
   const [search, setSearch] = useState("");
   const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_ASSIGNMENT_SORT_RULES);
   const [showSortPanel, setShowSortPanel] = useState(false);
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const [colsMenuOpen, setColsMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [rejectingClaim, setRejectingClaim] = useState<ReviewInput | null>(null);
@@ -286,7 +299,7 @@ export default function ForReviewPage() {
         }
       />
 
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-2">
         <div className="flex-1">
           <SearchBar
             value={search}
@@ -295,7 +308,32 @@ export default function ForReviewPage() {
           />
         </div>
         <div className="relative">
-          <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
+          <Btn size="sm" variant="ghost" onClick={() => { setColsMenuOpen((v) => !v); setShowSortPanel(false); }}>
+            Columns{hiddenCols.size > 0 ? ` (${hiddenCols.size} hidden)` : ""}
+          </Btn>
+          {colsMenuOpen && (
+            <div className="members-col-panel">
+              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-white/40">Show / Hide Columns</p>
+              {REVIEW_COLS.filter((c) => c.key !== "actions").map((col) => (
+                <label key={col.key}>
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={!hiddenCols.has(col.key)}
+                    onChange={(e) => setHiddenCols((prev) => {
+                      const next = new Set(prev);
+                      if (e.target.checked) next.delete(col.key); else next.add(col.key);
+                      return next;
+                    })}
+                  />
+                  {col.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <Btn size="sm" variant="ghost" onClick={() => { setShowSortPanel((v) => !v); setColsMenuOpen(false); }}>
             Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
           </Btn>
           {showSortPanel && (
@@ -340,100 +378,95 @@ export default function ForReviewPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-[#0F1014] border-b border-white/8">
-            <tr>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[40px]">
-                <input
-                  type="checkbox"
-                  className="members-checkbox"
-                  checked={queue.length > 0 && queue.every((c) => selectedIds.has(c.id))}
-                  onChange={(e) => {
-                    if (e.target.checked) setSelectedIds(new Set(queue.map((c) => c.id)));
-                    else setSelectedIds(new Set());
-                  }}
-                />
-              </th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[18%]">Member</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[24%]">Assignment</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Track</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Credits</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Submitted</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Deliverable</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {queue.map((c) => {
-              const a = assignmentById.get(c.assignmentId);
-              return (
-                <tr key={c.id} className="border-b border-white/8 align-top hover:bg-white/[0.03]">
-                  <td className="px-3 py-2.5">
-                    <input
-                      type="checkbox"
-                      className="members-checkbox"
-                      checked={selectedIds.has(c.id)}
-                      onChange={() => toggleSelected(c.id)}
+      {(() => {
+        const visCols = REVIEW_COLS.filter((c) => !hiddenCols.has(c.key));
+        const tableWidth = 40 + visCols.reduce((s, c) => s + c.width, 0);
+        return (
+          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
+            <table className="table-fixed text-left" style={{ width: tableWidth }}>
+              <thead className="bg-[#0F1014] border-b border-white/8">
+                <tr>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[40px]">
+                    <input type="checkbox" className="members-checkbox"
+                      checked={queue.length > 0 && queue.every((c) => selectedIds.has(c.id))}
+                      onChange={(e) => { if (e.target.checked) setSelectedIds(new Set(queue.map((c) => c.id))); else setSelectedIds(new Set()); }}
                     />
-                  </td>
-                  <td className="px-3 py-2.5 text-sm text-white/90">{c.memberName}</td>
-                  <td className="px-3 py-2.5 text-sm text-white/85">
-                    <div className="font-medium">{a?.title ?? "Unknown assignment"}</div>
-                    {c.submissionNotes && (
-                      <div className="text-[11px] text-white/50 mt-0.5 line-clamp-2">{c.submissionNotes}</div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-white/65">{a?.primaryTrack ?? "—"}</td>
-                  <td className="px-3 py-2.5 text-sm text-[#85CC17] font-mono">{a?.credits ?? 0}</td>
-                  <td className="px-3 py-2.5 text-xs text-white/55">
-                    {c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : "—"}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs">
-                    {c.deliverableUrl ? (
-                      <a
-                        href={c.deliverableUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline truncate inline-block max-w-[160px]"
-                        title={c.deliverableUrl}
-                      >
-                        Open ↗
-                      </a>
-                    ) : <span className="text-white/30">—</span>}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex flex-wrap gap-1">
-                      <Btn size="sm" variant="primary" onClick={() => openApprove(c)}>Approve</Btn>
-                      <Btn size="sm" variant="danger" onClick={() => openReject(c)}>Reject</Btn>
-                    </div>
-                  </td>
+                  </th>
+                  {visCols.map((col) => (
+                    <th key={col.key} style={{ width: col.width }} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 whitespace-nowrap">
+                      <span className="inline-flex items-center">
+                        {col.label}
+                        {col.key !== "actions" && (
+                          <button className="members-col-hide-btn" onClick={() => setHiddenCols((p) => new Set([...p, col.key]))} title={`Hide ${col.label}`}>✕</button>
+                        )}
+                      </span>
+                    </th>
+                  ))}
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {queue.length === 0 && (
-          <div className="p-6">
-            <Empty message={search ? "Nothing matches your search." : "Nothing waiting on review. Inbox zero."} />
+              </thead>
+              <tbody>
+                {queue.map((c) => {
+                  const a = assignmentById.get(c.assignmentId);
+                  return (
+                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+                      <td className="px-3 py-0 h-9 align-middle">
+                        <input type="checkbox" className="members-checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelected(c.id)} />
+                      </td>
+                      {visCols.map((col) => {
+                        switch (col.key) {
+                          case "member": return <td key="member" className="px-3 py-0 h-9 text-[11px] text-white/85 align-middle overflow-hidden"><span className="block truncate" title={c.memberName ?? ""}>{c.memberName}</span></td>;
+                          case "assignment": return <td key="assignment" className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="font-medium block truncate" title={a?.title ?? ""}>{a?.title ?? "Unknown assignment"}</span></td>;
+                          case "track": return <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle">{a?.primaryTrack ?? "—"}</td>;
+                          case "credits": return <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a?.credits ?? 0}</td>;
+                          case "submitted": return <td key="submitted" className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : "—"}</td>;
+                          case "deliverable": return (
+                            <td key="deliverable" className="px-3 py-0 h-9 text-[11px] align-middle overflow-hidden">
+                              {c.deliverableUrl ? (
+                                <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer"
+                                  className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline block truncate"
+                                  title={c.deliverableUrl}>Open ↗</a>
+                              ) : <span className="text-white/30">—</span>}
+                            </td>
+                          );
+                          case "notes": return <td key="notes" className="px-3 py-0 h-9 text-[11px] text-white/45 align-middle overflow-hidden"><span className="block truncate" title={c.submissionNotes ?? ""}>{c.submissionNotes || <span className="text-white/25">—</span>}</span></td>;
+                          case "actions": return (
+                            <td key="actions" className="px-3 py-0 h-9 align-middle">
+                              <div className="members-row-actions">
+                                <Btn size="sm" variant="primary" onClick={() => openApprove(c)}>Approve</Btn>
+                                <Btn size="sm" variant="danger" onClick={() => openReject(c)}>Reject</Btn>
+                              </div>
+                            </td>
+                          );
+                          default: return null;
+                        }
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {queue.length === 0 && (
+              <div className="p-6">
+                <Empty message={search ? "Nothing matches your search." : "Nothing waiting on review. Inbox zero."} />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {recentDecisions.length > 0 && (
         <div className="mt-6">
           <h2 className="text-white/55 text-xs uppercase tracking-wider font-semibold mb-2">Recent decisions</h2>
-          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
-            <table className="w-full text-left">
+          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
+            <table className="table-fixed text-left" style={{ width: 870 }}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[20%]">Member</th>
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[28%]">Assignment</th>
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[12%]">Decision</th>
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Credits</th>
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[15%]">Reviewer</th>
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[15%]">When</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Member</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[250px]">Assignment</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Decision</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[70px]">Credits</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Reviewer</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">When</th>
                 </tr>
               </thead>
               <tbody>
@@ -441,21 +474,15 @@ export default function ForReviewPage() {
                   const a = assignmentById.get(c.assignmentId);
                   const when = c.approvedAt ?? c.rejectedAt ?? "";
                   return (
-                    <tr key={c.id} className="border-b border-white/8">
-                      <td className="px-3 py-2 text-sm text-white/85">{c.memberName}</td>
-                      <td className="px-3 py-2 text-sm text-white/75">{a?.title ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs">
-                        <span className={`inline-flex rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${
-                          c.status === "approved"
-                            ? "border-violet-400/30 bg-violet-400/10 text-violet-300"
-                            : "border-red-400/30 bg-red-400/10 text-red-300"
-                        }`}>{c.status}</span>
+                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+                      <td className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="block truncate">{c.memberName}</span></td>
+                      <td className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle overflow-hidden"><span className="block truncate" title={a?.title ?? ""}>{a?.title ?? "—"}</span></td>
+                      <td className="px-3 py-0 h-9 text-[11px] align-middle">
+                        <span className={`members-chip ${c.status === "approved" ? "border-violet-400/30 bg-violet-400/10 text-violet-300" : "border-red-400/30 bg-red-400/10 text-red-300"}`}>{c.status}</span>
                       </td>
-                      <td className="px-3 py-2 text-sm text-[#85CC17] font-mono">
-                        {c.status === "approved" ? c.creditsAwarded ?? "—" : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-white/55 truncate max-w-[160px]">{c.approvedBy ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs text-white/55">{when ? new Date(when).toLocaleString() : "—"}</td>
+                      <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{c.status === "approved" ? c.creditsAwarded ?? "—" : "—"}</td>
+                      <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle overflow-hidden"><span className="block truncate">{c.approvedBy ?? "—"}</span></td>
+                      <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{when ? new Date(when).toLocaleDateString() : "—"}</td>
                     </tr>
                   );
                 })}

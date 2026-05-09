@@ -139,6 +139,18 @@ const SORT_OPTIONS = [
   { value: 4, label: "Role" },
 ];
 
+const ADMIN_COLS = [
+  { key: "name",           label: "Name",            width: 270, sortCol: 2  as number | null },
+  { key: "email",          label: "Email",           width: 330, sortCol: null },
+  { key: "school",         label: "School",          width: 280, sortCol: 3  as number | null },
+  { key: "hsClass",        label: "HS Class",        width: 80,  sortCol: null },
+  { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
+  { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
+  { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: null },
+  { key: "accountCreated", label: "Account Created", width: 116, sortCol: null },
+  { key: "actions",        label: "Actions",         width: 100, sortCol: null },
+];
+
 // Roles offered in the inline role-edit popover. Board is an internal designation
 // for leadership; the rest mirror the labels used on the applicant acceptance form.
 const ROLE_OPTIONS = ["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Board"] as const;
@@ -340,6 +352,8 @@ export default function TeamPage() {
   const [showAlternateEmail, setShowAlternateEmail] = useState(false);
   const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_SORT_RULES);
   const [showSortPanel, setShowSortPanel] = useState(false);
+  const [hiddenAdminCols, setHiddenAdminCols] = useState<Set<string>>(new Set());
+  const [adminColsMenuOpen, setAdminColsMenuOpen] = useState(false);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const boardMigrationRef = useRef(false);
   const gradeMigrationRef = useRef(false);
@@ -1184,8 +1198,34 @@ export default function TeamPage() {
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive / reserve</span>
         </div>
         {!isMemberRestricted && (
+          <div className="flex items-center gap-2">
           <div className="relative">
-            <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
+            <Btn size="sm" variant="ghost" onClick={() => { setAdminColsMenuOpen((v) => !v); setShowSortPanel(false); }}>
+              Columns{hiddenAdminCols.size > 0 ? ` (${hiddenAdminCols.size} hidden)` : ""}
+            </Btn>
+            {adminColsMenuOpen && (
+              <div className="members-col-panel" onClick={(e) => e.stopPropagation()}>
+                <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-white/40">Show / Hide Columns</p>
+                {ADMIN_COLS.filter((c) => c.key !== "actions").map((col) => (
+                  <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 cursor-pointer text-xs text-white/70">
+                    <input
+                      type="checkbox"
+                      className="members-checkbox"
+                      checked={!hiddenAdminCols.has(col.key)}
+                      onChange={(e) => setHiddenAdminCols((prev) => {
+                        const next = new Set(prev);
+                        if (e.target.checked) next.delete(col.key); else next.add(col.key);
+                        return next;
+                      })}
+                    />
+                    {col.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <Btn size="sm" variant="ghost" onClick={() => { setShowSortPanel((v) => !v); setAdminColsMenuOpen(false); }}>
               Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
             </Btn>
             {showSortPanel && (
@@ -1249,6 +1289,7 @@ export default function TeamPage() {
               </div>
             )}
           </div>
+          </div>
         )}
       </div>
       {/* Team member list */}
@@ -1309,174 +1350,168 @@ export default function TeamPage() {
             </tbody>
           </table>
         </div>
-      ) : (
-        <div className="members-table-shell relative select-text">
-          <table className="members-grid-table w-full min-w-[1560px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
-                {[
-                  { label: "Name", sortCol: 2, width: "w-[270px]" },
-                  { label: "Email", sortCol: null, width: "w-[330px]" },
-                  { label: "School", sortCol: 3, width: "w-[280px]" },
-                  { label: "HS Class", sortCol: null, width: "w-[80px]" },
-                  { label: "Role", sortCol: 4, width: "w-[120px]" },
-                  { label: "Resume", sortCol: null, width: "w-[80px]" },
-                  { label: "Date Accepted", sortCol: null, width: "w-[116px]" },
-                  { label: "Account Created", sortCol: null, width: "w-[116px]" },
-                  { label: "Actions", sortCol: null, width: "w-[100px]" },
-                ].map((col) => {
-                  const sortable = typeof col.sortCol === "number";
-                  const primaryRule = sortRules[0];
-                  const isActive = sortable && primaryRule?.col === col.sortCol;
-                  const dir = isActive ? primaryRule.dir : "asc";
+      ) : (() => {
+        const visCols = ADMIN_COLS.filter((c) => !hiddenAdminCols.has(c.key));
+        const tableWidth = visCols.reduce((s, c) => s + c.width, 0);
+        return (
+          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto relative select-text">
+            <table className="table-fixed text-left text-[10px] leading-4" style={{ width: tableWidth }}>
+              <thead className="bg-[#0F1014] border-b border-white/8">
+                <tr>
+                  {visCols.map((col) => {
+                    const sortable = typeof col.sortCol === "number";
+                    const primaryRule = sortRules[0];
+                    const isActive = sortable && primaryRule?.col === col.sortCol;
+                    const dir = isActive ? primaryRule.dir : "asc";
+                    return (
+                      <th
+                        key={col.key}
+                        style={{ width: col.width }}
+                        className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""}`}
+                        onClick={() => sortable && handleSort(col.sortCol as number)}
+                      >
+                        <span className="inline-flex items-center gap-0.5">
+                          {col.label}
+                          {sortable && (
+                            <span className="inline-flex flex-col ml-0.5 leading-none align-middle">
+                              <span className={`text-[8px] ${isActive && dir === "asc" ? "text-white/80" : "text-white/20"}`}>▲</span>
+                              <span className={`text-[8px] ${isActive && dir === "desc" ? "text-white/80" : "text-white/20"}`}>▼</span>
+                            </span>
+                          )}
+                          {col.key !== "actions" && (
+                            <button className="members-col-hide-btn" onClick={(e) => { e.stopPropagation(); setHiddenAdminCols((p) => new Set([...p, col.key])); }} title={`Hide ${col.label}`}>✕</button>
+                          )}
+                        </span>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {sorted.map((member) => {
+                  const track = getMemberTrack(member);
+                  const avatar = getTrackAvatarStyles(track);
+                  const indicator = getMemberIndicator(member);
+                  const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
+                  const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
                   return (
-                    <th
-                      key={col.label}
-                      className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""} ${col.width}`}
-                      onClick={() => sortable && handleSort(col.sortCol as number)}
-                    >
-                      <span className="inline-flex items-center gap-0.5">
-                        {col.label}
-                        {sortable && (
-                          <span className="inline-flex flex-col ml-0.5 leading-none align-middle">
-                            <span className={`text-[8px] ${isActive && dir === "asc" ? "text-white/80" : "text-white/20"}`}>▲</span>
-                            <span className={`text-[8px] ${isActive && dir === "desc" ? "text-white/80" : "text-white/20"}`}>▼</span>
-                          </span>
-                        )}
-                      </span>
-                    </th>
+                    <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
+                      {visCols.map((col) => {
+                        switch (col.key) {
+                          case "name": return (
+                            <td key="name" className="px-2 py-0 h-9 align-middle overflow-hidden">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <button
+                                  type="button"
+                                  className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
+                                  title={`${indicator.label} · Click for progress summary`}
+                                  onClick={() => setCreditSummaryMember(member)}
+                                  aria-label={`View credit progress for ${member.name}`}
+                                />
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                                  <TrackAvatarIcon track={track} color={avatar.text} />
+                                </div>
+                                <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
+                              </div>
+                            </td>
+                          );
+                          case "email": return (
+                            <td key="email" className="px-2 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                              <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
+                                <span className="text-white/55 block truncate" title={[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}>
+                                  {truncateCell([member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—", 92)}
+                                </span>
+                                {(member.email || member.alternateEmail) && (
+                                  <button type="button" className="members-copy-btn" onClick={() => void copyText(member.email || member.alternateEmail || "")} title="Copy email" aria-label="Copy email">
+                                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                      <rect x="9" y="9" width="11" height="11" rx="2" />
+                                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          );
+                          case "school": return (
+                            <td key="school" className="px-2 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                              <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 72) : "—"}</span>
+                            </td>
+                          );
+                          case "hsClass": return (
+                            <td key="hsClass" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                              <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
+                            </td>
+                          );
+                          case "role": return (
+                            <td key="role" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                              {canEdit ? (
+                                <div className="relative inline-block">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setOpenRolePopoverId(openRolePopoverId === member.id ? null : member.id); }}
+                                    className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#85CC17]/45 hover:bg-[#85CC17]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
+                                    title="Click to change role"
+                                  >
+                                    {displayRoleValue(member.role)}
+                                  </button>
+                                  {openRolePopoverId === member.id && (
+                                    <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[150px]">
+                                      {ROLE_OPTIONS.map((roleOption) => (
+                                        <button key={roleOption} type="button" onClick={() => void handleQuickRoleChange(member, roleOption)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${String(member.role ?? "").trim() === roleOption ? "text-[#85CC17]" : "text-white/70"}`}>
+                                          {roleOption}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-white/50">{displayRoleValue(member.role)}</span>
+                              )}
+                            </td>
+                          );
+                          case "resume": return (
+                            <td key="resume" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                              {(() => {
+                                const emailKey = normalizeKey(member.email ?? "");
+                                const altEmailKey = normalizeKey(member.alternateEmail ?? "");
+                                const resumeUrl = resumeUrlByEmail.get(emailKey) ?? resumeUrlByEmail.get(altEmailKey);
+                                return resumeUrl ? (
+                                  <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline whitespace-nowrap">Resume</a>
+                                ) : (
+                                  <span className="text-white/30">—</span>
+                                );
+                              })()}
+                            </td>
+                          );
+                          case "acceptedDate": return (
+                            <td key="acceptedDate" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                              <span className="text-white/50">{member.acceptedDate || "—"}</span>
+                            </td>
+                          );
+                          case "accountCreated": return (
+                            <td key="accountCreated" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                              <span className="text-white/50">{accountCreated}</span>
+                            </td>
+                          );
+                          case "actions": return (
+                            <td key="actions" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                              <div className="members-row-actions">
+                                {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
+                                {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
+                              </div>
+                            </td>
+                          );
+                          default: return null;
+                        }
+                      })}
+                    </tr>
                   );
                 })}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {sorted.map((member) => {
-                const track = getMemberTrack(member);
-                const avatar = getTrackAvatarStyles(track);
-                const indicator = getMemberIndicator(member);
-                const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
-                const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
-                return (
-                  <tr
-                    key={member.id}
-                    className="hover:bg-white/3 transition-colors align-middle"
-                  >
-                    <td className="px-2 py-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <button
-                          type="button"
-                          className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
-                          title={`${indicator.label} · Click for progress summary`}
-                          onClick={() => setCreditSummaryMember(member)}
-                          aria-label={`View credit progress for ${member.name}`}
-                        />
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                          <TrackAvatarIcon track={track} color={avatar.text} />
-                        </div>
-                        <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
-                        <span
-                          className="text-white/55 block truncate"
-                          title={[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}
-                        >
-                          {truncateCell([member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—", 92)}
-                        </span>
-                        {(member.email || member.alternateEmail) && (
-                          <button
-                            type="button"
-                            className="members-copy-btn"
-                            onClick={() => void copyText(member.email || member.alternateEmail || "")}
-                            title="Copy email"
-                            aria-label="Copy email"
-                          >
-                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                              <rect x="9" y="9" width="11" height="11" rx="2" />
-                              <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 72) : "—"}</span>
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      {canEdit ? (
-                        <div className="relative inline-block">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenRolePopoverId(openRolePopoverId === member.id ? null : member.id);
-                            }}
-                            className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#85CC17]/45 hover:bg-[#85CC17]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
-                            title="Click to change role"
-                          >
-                            {displayRoleValue(member.role)}
-                          </button>
-                          {openRolePopoverId === member.id && (
-                            <div
-                              onClick={(e) => e.stopPropagation()}
-                              className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[150px]"
-                            >
-                              {ROLE_OPTIONS.map((roleOption) => (
-                                <button
-                                  key={roleOption}
-                                  type="button"
-                                  onClick={() => void handleQuickRoleChange(member, roleOption)}
-                                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${
-                                    String(member.role ?? "").trim() === roleOption ? "text-[#85CC17]" : "text-white/70"
-                                  }`}
-                                >
-                                  {roleOption}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-white/50">{displayRoleValue(member.role)}</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      {(() => {
-                        const emailKey = normalizeKey(member.email ?? "");
-                        const altEmailKey = normalizeKey(member.alternateEmail ?? "");
-                        const resumeUrl = resumeUrlByEmail.get(emailKey) ?? resumeUrlByEmail.get(altEmailKey);
-                        return resumeUrl ? (
-                          <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline whitespace-nowrap">
-                            Resume
-                          </a>
-                        ) : (
-                          <span className="text-white/30">—</span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/50">{member.acceptedDate || "—"}</span>
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      <span className="text-white/50">{accountCreated}</span>
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      <div className="flex gap-1 flex-nowrap">
-                        {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
-                        {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
       {filtered.length === 0 && (
         <Empty
           message="No team members."

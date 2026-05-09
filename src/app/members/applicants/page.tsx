@@ -108,7 +108,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "invite", label: "Invite" },
 ];
 
-// ── Column widths (tailwind-compatible) ────────────────────────────────────────
+// ── Column widths ──────────────────────────────────────────────────────────────
 
 const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
   status: "w-[195px]",
@@ -125,6 +125,23 @@ const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
   invite: "w-[170px]",
   interview: "w-[185px]",
   evals: "w-[56px]",
+};
+
+const COLUMN_WIDTH_PX: Record<ColumnKey, number> = {
+  status: 195,
+  actions: 310,
+  name: 170,
+  email: 240,
+  school: 230,
+  grade: 92,
+  cityState: 160,
+  referral: 150,
+  tracks: 220,
+  resume: 90,
+  applied: 170,
+  invite: 170,
+  interview: 185,
+  evals: 56,
 };
 
 
@@ -602,6 +619,11 @@ export default function ApplicantsPage() {
 
   const visibleColumns = ALL_COLUMNS.filter((col) => !hiddenColumns.has(col.key));
 
+  const tableMinWidth = visibleColumns.reduce(
+    (sum, col) => sum + (COLUMN_WIDTH_PX[col.key] ?? 150),
+    selectionMode !== "none" ? 32 : 0,
+  );
+
   const hideColumn = (key: ColumnKey) => {
     setHiddenColumns((prev) => {
       const next = new Set(prev);
@@ -794,7 +816,7 @@ export default function ApplicantsPage() {
       </div>
 
       <div className="members-table-shell">
-        <table className="members-grid-table w-full min-w-[2460px] table-fixed text-[10px] leading-4 [&_td]:overflow-hidden">
+        <table className="members-grid-table w-full table-fixed text-[10px] leading-4 [&_td]:overflow-hidden" style={{ minWidth: `${tableMinWidth}px` }}>
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
               {selectionMode !== "none" && (

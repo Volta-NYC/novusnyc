@@ -52,12 +52,25 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
   borough: "", address: "", zipCode: "", nextAction: "", notes: "", priority: "Medium",
 };
 
+// ── COLUMN DEFINITIONS (compact view) ─────────────────────────────────────────
+
+const BID_ALL_COLS = [
+  { key: "name",       label: "Name",        width: 280, restricted: false, adminOnly: false },
+  { key: "status",     label: "Status",      width: 140, restricted: false, adminOnly: false },
+  { key: "borough",    label: "Borough",     width: 170, restricted: false, adminOnly: false },
+  { key: "contact",    label: "Contact",     width: 300, restricted: true,  adminOnly: false },
+  { key: "nextAction", label: "Next Action", width: 240, restricted: true,  adminOnly: false },
+  { key: "actions",    label: "Actions",     width: 110, restricted: false, adminOnly: true  },
+] as const;
+
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
   const [search, setSearch]           = useState("");
   const [viewMode, setViewMode]       = useState<BidViewMode>("cards");
+  const [hiddenBidCols, setHiddenBidCols] = useState<Set<string>>(new Set());
+  const [bidColsMenuOpen, setBidColsMenuOpen] = useState(false);
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
@@ -265,8 +278,35 @@ export default function BIDTrackerPage() {
       </div>
 
       {/* Search and filter controls */}
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name or borough…" />
+        {viewMode === "compact" && (
+          <div className="relative">
+            <Btn size="sm" variant="ghost" onClick={() => setBidColsMenuOpen((v) => !v)}>
+              Columns{hiddenBidCols.size > 0 ? ` (${hiddenBidCols.size} hidden)` : ""}
+            </Btn>
+            {bidColsMenuOpen && (
+              <div className="members-col-panel" onClick={(e) => e.stopPropagation()}>
+                <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-white/40">Show / Hide Columns</p>
+                {BID_ALL_COLS.filter((c) => c.key !== "actions" && (!c.restricted || !isMemberRestricted) && (!c.adminOnly || canEdit)).map((col) => (
+                  <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 cursor-pointer text-xs text-white/70">
+                    <input
+                      type="checkbox"
+                      className="members-checkbox"
+                      checked={!hiddenBidCols.has(col.key)}
+                      onChange={(e) => setHiddenBidCols((prev) => {
+                        const next = new Set(prev);
+                        if (e.target.checked) next.delete(col.key); else next.add(col.key);
+                        return next;
+                      })}
+                    />
+                    {col.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
           <button
             onClick={() => setViewMode("cards")}
@@ -413,74 +453,80 @@ export default function BIDTrackerPage() {
         )}
       </div>
       )}
-      {viewMode === "compact" && (
-        <div className="members-table-shell mb-6">
-          <table className={`members-grid-table w-full table-fixed text-[10px] leading-4 [&_td]:overflow-hidden ${isMemberRestricted ? "min-w-[660px]" : "min-w-[1240px]"}`}>
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
-                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[280px]">Name</th>
-                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[140px]">Status</th>
-                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[170px]">Borough</th>
-                {!isMemberRestricted && (
-                  <>
-                    <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[300px]">Contact</th>
-                    <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[240px]">Next Action</th>
-                  </>
-                )}
-                {canEdit && (
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[110px]">Actions</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {sorted.map((bid) => (
-                <tr key={bid.id} className="hover:bg-white/3 transition-colors">
-                  <td className="px-2 py-1.5 text-white/90">
-                    <span className="block truncate" title={bid.name}>{bid.name}</span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Badge label={normalizeBidStatus(bid.status)} />
-                  </td>
-                  <td className="px-2 py-1.5 text-white/60 whitespace-nowrap">
-                    <span className="block truncate" title={[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}>
-                      {[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}
-                    </span>
-                  </td>
-                  {!isMemberRestricted && (
-                    <>
-                      <td className="px-2 py-1.5 text-white/55">
-                        <span className="block truncate" title={[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}>
-                          {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
-                        </span>
-                      </td>
-                      <td className="px-2 py-1.5 text-white/55">
-                        <span className="block truncate" title={bid.nextAction || bid.notes || "—"}>
-                          {bid.nextAction || bid.notes || "—"}
-                        </span>
-                      </td>
-                    </>
-                  )}
-                  {canEdit && (
-                    <td className="px-2 py-1.5">
-                      <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {sorted.length === 0 && (
+      {viewMode === "compact" && (() => {
+        const visCols = BID_ALL_COLS.filter((c) =>
+          !hiddenBidCols.has(c.key)
+          && (!c.restricted || !isMemberRestricted)
+          && (!c.adminOnly || canEdit)
+        );
+        const tableWidth = visCols.reduce((s, c) => s + c.width, 0);
+        return (
+          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto mb-6">
+            <table className="table-fixed text-left text-[11px]" style={{ width: tableWidth }}>
+              <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
-                  <td
-                    className="px-2 py-4 text-white/40 text-xs"
-                    colSpan={isMemberRestricted ? 3 : (canEdit ? 6 : 5)}
-                  >
-                    No BIDs match your filters.
-                  </td>
+                  {visCols.map((col) => (
+                    <th key={col.key} style={{ width: col.width }} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 whitespace-nowrap">
+                      <span className="inline-flex items-center">
+                        {col.label}
+                        {col.key !== "actions" && (
+                          <button className="members-col-hide-btn" onClick={() => setHiddenBidCols((p) => new Set([...p, col.key]))} title={`Hide ${col.label}`}>✕</button>
+                        )}
+                      </span>
+                    </th>
+                  ))}
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {sorted.map((bid) => (
+                  <tr key={bid.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+                    {visCols.map((col) => {
+                      switch (col.key) {
+                        case "name": return <td key="name" className="px-3 py-0 h-9 text-white/90 align-middle overflow-hidden"><span className="block truncate" title={bid.name}>{bid.name}</span></td>;
+                        case "status": return <td key="status" className="px-3 py-0 h-9 align-middle"><Badge label={normalizeBidStatus(bid.status)} /></td>;
+                        case "borough": return (
+                          <td key="borough" className="px-3 py-0 h-9 text-white/60 align-middle overflow-hidden">
+                            <span className="block truncate" title={[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}>
+                              {[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}
+                            </span>
+                          </td>
+                        );
+                        case "contact": return (
+                          <td key="contact" className="px-3 py-0 h-9 text-white/55 align-middle overflow-hidden">
+                            <span className="block truncate" title={[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}>
+                              {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
+                            </span>
+                          </td>
+                        );
+                        case "nextAction": return (
+                          <td key="nextAction" className="px-3 py-0 h-9 text-white/55 align-middle overflow-hidden">
+                            <span className="block truncate" title={bid.nextAction || bid.notes || "—"}>
+                              {bid.nextAction || bid.notes || "—"}
+                            </span>
+                          </td>
+                        );
+                        case "actions": return (
+                          <td key="actions" className="px-3 py-0 h-9 align-middle">
+                            <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
+                          </td>
+                        );
+                        default: return null;
+                      }
+                    })}
+                  </tr>
+                ))}
+                {sorted.length === 0 && (
+                  <tr>
+                    <td className="px-3 py-4 text-white/40 text-xs" colSpan={visCols.length}>
+                      No BIDs match your filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === "create" ? "New BID" : "Edit BID"}>

@@ -54,6 +54,18 @@ const ASSIGNMENT_SORT_OPTIONS = [
   { value: 4, label: "Claimer Names" },
 ];
 
+const CATALOG_COLS = [
+  { key: "title",      label: "Assignment",  width: 280 },
+  { key: "track",      label: "Track",       width: 90  },
+  { key: "credits",    label: "Credits",     width: 70  },
+  { key: "difficulty", label: "Difficulty",  width: 100 },
+  { key: "business",   label: "Business",    width: 190 },
+  { key: "slots",      label: "Slots",       width: 70  },
+  { key: "deadline",   label: "Deadline",    width: 110 },
+  { key: "status",     label: "Status",      width: 110 },
+  { key: "actions",    label: "Actions",     width: 140 },
+];
+
 const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 2, dir: "asc" },
   { col: 1, dir: "asc" },
@@ -105,6 +117,8 @@ export default function CatalogPage() {
   const [search, setSearch] = useState("");
   const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_ASSIGNMENT_SORT_RULES);
   const [showSortPanel, setShowSortPanel] = useState(false);
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const [colsMenuOpen, setColsMenuOpen] = useState(false);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Assignment | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
@@ -361,7 +375,7 @@ export default function CatalogPage() {
         <SummaryStat label="Completed" value={counts.completed} accent="text-violet-300" />
       </div>
 
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-2">
         <div className="flex-1">
           <SearchBar
             value={search}
@@ -370,7 +384,32 @@ export default function CatalogPage() {
           />
         </div>
         <div className="relative">
-          <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
+          <Btn size="sm" variant="ghost" onClick={() => { setColsMenuOpen((v) => !v); setShowSortPanel(false); }}>
+            Columns{hiddenCols.size > 0 ? ` (${hiddenCols.size} hidden)` : ""}
+          </Btn>
+          {colsMenuOpen && (
+            <div className="members-col-panel">
+              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-white/40">Show / Hide Columns</p>
+              {CATALOG_COLS.filter((c) => c.key !== "actions").map((col) => (
+                <label key={col.key}>
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={!hiddenCols.has(col.key)}
+                    onChange={(e) => setHiddenCols((prev) => {
+                      const next = new Set(prev);
+                      if (e.target.checked) next.delete(col.key); else next.add(col.key);
+                      return next;
+                    })}
+                  />
+                  {col.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <Btn size="sm" variant="ghost" onClick={() => { setShowSortPanel((v) => !v); setColsMenuOpen(false); }}>
             Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
           </Btn>
           {showSortPanel && (
@@ -415,82 +454,105 @@ export default function CatalogPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-[#0F1014] border-b border-white/8">
-            <tr>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[26%]">Assignment</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Track</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Credits</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Difficulty</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[14%]">Business</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]" title="How many members can claim this assignment simultaneously">Slots</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[10%]">Deadline</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[8%]">Status</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[6%]">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((a) => {
-              const business = resolveBusinessLabel(a);
-              const claimList = claimsByAssignment.get(a.id) ?? [];
-              const activeClaims = claimList.filter((c) => c.status !== "rejected").length;
-              return (
-                <tr key={a.id} className="border-b border-white/8 align-top hover:bg-white/[0.03]">
-                  <td className="px-3 py-2.5 text-sm text-white/90 break-words">
-                    <div className="font-medium">{a.title}</div>
-                    {a.description && (
-                      <div className="text-[11px] text-white/45 line-clamp-2 mt-0.5">
-                        {a.description.replace(/<[^>]+>/g, " ").trim()}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-white/75">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className={`inline-block h-2 w-2 rounded-full ${TRACK_DOT[a.primaryTrack]}`} />
-                      {a.primaryTrack}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 text-sm text-[#85CC17] font-mono">{a.credits}</td>
-                  <td className="px-3 py-2.5 text-xs text-white/70">{a.difficulty || "—"}</td>
-                  <td className="px-3 py-2.5 text-xs text-white/70 break-words">
-                    {business?.name ? (
-                      <span title={business.neighborhood ?? ""}>
-                        {business.name}
-                        {business.neighborhood && (
-                          <span className="block text-white/40 text-[11px]">{business.neighborhood}</span>
+      {(() => {
+        const visCols = CATALOG_COLS.filter((c) => !hiddenCols.has(c.key));
+        const tableWidth = visCols.reduce((s, c) => s + c.width, 0);
+        return (
+          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
+            <table className="table-fixed text-left" style={{ width: tableWidth }}>
+              <thead className="bg-[#0F1014] border-b border-white/8">
+                <tr>
+                  {visCols.map((col) => (
+                    <th key={col.key} style={{ width: col.width }} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 whitespace-nowrap">
+                      <span className="inline-flex items-center">
+                        {col.label}
+                        {col.key !== "actions" && (
+                          <button className="members-col-hide-btn" onClick={() => setHiddenCols((p) => new Set([...p, col.key]))} title={`Hide ${col.label}`}>✕</button>
                         )}
                       </span>
-                    ) : <span className="text-white/30">—</span>}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-white/70">{activeClaims} / {a.capacity}</td>
-                  <td className="px-3 py-2.5 text-xs text-white/70">{a.deadline || <span className="text-white/30">—</span>}</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${STATUS_STYLES[a.status]}`}>
-                      {a.status}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-1">
-                      <Btn size="sm" variant="secondary" onClick={() => openEdit(a)}>Edit</Btn>
-                      <Btn size="sm" variant="ghost" onClick={() => duplicateAssignment(a)}>Duplicate</Btn>
-                    </div>
-                  </td>
+                    </th>
+                  ))}
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {sorted.length === 0 && (
-          <div className="p-6">
-            <Empty
-              message={search ? "No assignments match your search." : "No assignments in the catalog yet."}
-              action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
-            />
+              </thead>
+              <tbody>
+                {sorted.map((a) => {
+                  const business = resolveBusinessLabel(a);
+                  const claimList = claimsByAssignment.get(a.id) ?? [];
+                  const activeClaims = claimList.filter((c) => c.status !== "rejected").length;
+                  return (
+                    <tr key={a.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+                      {visCols.map((col) => {
+                        switch (col.key) {
+                          case "title": return (
+                            <td key="title" className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
+                              <span className="font-medium block truncate" title={a.title}>{a.title}</span>
+                            </td>
+                          );
+                          case "track": return (
+                            <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[a.primaryTrack]}`} />
+                                {a.primaryTrack}
+                              </span>
+                            </td>
+                          );
+                          case "credits": return (
+                            <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a.credits}</td>
+                          );
+                          case "difficulty": return (
+                            <td key="difficulty" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+                              <span className="block truncate">{a.difficulty || "—"}</span>
+                            </td>
+                          );
+                          case "business": return (
+                            <td key="business" className="px-3 py-0 h-9 text-[11px] text-white/65 align-middle overflow-hidden">
+                              {business?.name ? (
+                                <span className="block truncate" title={[business.name, business.neighborhood].filter(Boolean).join(" · ")}>
+                                  {business.name}{business.neighborhood && <span className="text-white/40"> · {business.neighborhood}</span>}
+                                </span>
+                              ) : <span className="text-white/30">—</span>}
+                            </td>
+                          );
+                          case "slots": return (
+                            <td key="slots" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle">{activeClaims} / {a.capacity}</td>
+                          );
+                          case "deadline": return (
+                            <td key="deadline" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+                              <span className="block truncate">{a.deadline || <span className="text-white/30">—</span>}</span>
+                            </td>
+                          );
+                          case "status": return (
+                            <td key="status" className="px-3 py-0 h-9 align-middle">
+                              <span className={`members-chip ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                            </td>
+                          );
+                          case "actions": return (
+                            <td key="actions" className="px-3 py-0 h-9 align-middle">
+                              <div className="members-row-actions">
+                                <Btn size="sm" variant="secondary" onClick={() => openEdit(a)}>Edit</Btn>
+                                <Btn size="sm" variant="ghost" onClick={() => duplicateAssignment(a)}>Dup</Btn>
+                              </div>
+                            </td>
+                          );
+                          default: return null;
+                        }
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {sorted.length === 0 && (
+              <div className="p-6">
+                <Empty
+                  message={search ? "No assignments match your search." : "No assignments in the catalog yet."}
+                  action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       <Modal
         open={modal !== null}
