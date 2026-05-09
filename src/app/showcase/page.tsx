@@ -4,7 +4,10 @@ import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import ShowcaseClient from "./page-client";
 
-export const dynamic = "force-dynamic";
+// Revalidate every 5 minutes — showcase data changes infrequently and
+// force-dynamic was causing a full Firebase read on every public request,
+// burning through the free-tier download quota.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Our Work | Volta NYC",
@@ -66,8 +69,13 @@ function extractBoroughFromNeighborhood(neighborhood: string): string {
 }
 
 export default async function Showcase() {
-  const publicShowcase = await getPublicShowcaseCards();
-  const publicMapEntries = await getPublicMapEntries();
+  // Fetch all three collections in parallel — previously sequential, causing
+  // 3 independent Firebase reads that each downloaded the full businesses table.
+  const [publicShowcase, publicMapEntries, liveStats] = await Promise.all([
+    getPublicShowcaseCards(),
+    getPublicMapEntries(),
+    getPublicLiveStats(),
+  ]);
 
   const projects = publicShowcase.length > 0
     ? publicShowcase.map((card) => ({
@@ -141,8 +149,6 @@ export default async function Showcase() {
       borough: entry.borough || "",
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
-
-  const liveStats = await getPublicLiveStats();
 
   return (
     <ShowcaseClient

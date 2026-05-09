@@ -29,16 +29,48 @@ const SECURITY_HEADERS = [
 const nextConfig = {
   poweredByHeader: false,
   images: {
-    // remotePatterns replaces the deprecated domains[]. Add entries here when
-    // showcase image URLs move to an external CDN (e.g. firebasestorage.googleapis.com).
-    // Showcase images currently use unoptimized={true} for external URLs.
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        // Firebase Storage showcase images — allows Next.js image optimization
+        // and CDN caching instead of serving them unoptimized.
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        pathname: "/v0/b/**",
+      },
+    ],
+    // Serve WebP/AVIF where supported and cache optimized images on Vercel CDN.
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 3600,
   },
   async headers() {
     return [
+      // Security headers applied to every response.
       {
         source: "/:path*",
         headers: SECURITY_HEADERS,
+      },
+      // Long-lived immutable cache for hashed Next.js static chunks.
+      // Vercel sets this automatically but being explicit ensures it applies
+      // even when headers() runs after Vercel's built-in layer.
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      // Cache showcase images served through the local API route.
+      {
+        source: "/api/showcase-image/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800" },
+        ],
+      },
+      // Cache the OG image (generated per-deploy, stable content).
+      {
+        source: "/api/og",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=3600, s-maxage=86400" },
+        ],
       },
     ];
   },
