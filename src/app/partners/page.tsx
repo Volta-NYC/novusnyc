@@ -29,7 +29,7 @@ const SERVICES = [
   {
     icon: GlobeIcon,
     title: "Website Design & Development",
-    summary: "Custom, mobile-friendly websites built from scratch or redesigned from the ground up — fast, accessible, and maintained after launch.",
+    summary: "We build your website from scratch, or fix the one you have.",
     color: "text-v-blue",
     bg: "bg-blue-50",
     details: [
@@ -41,7 +41,7 @@ const SERVICES = [
   {
     icon: SearchIcon,
     title: "SEO & Online Visibility",
-    summary: "Get found on Google, Maps, and local listings — so customers can actually find you when they search.",
+    summary: "Show up when customers search for you on Google and Maps.",
     color: "text-v-blue",
     bg: "bg-blue-50",
     details: [
@@ -53,7 +53,7 @@ const SERVICES = [
   {
     icon: SmartphoneIcon,
     title: "Social Media & Content",
-    summary: "A practical posting plan, original video content, and a strategy your team can actually sustain week to week.",
+    summary: "A posting plan and real content — not a strategy deck you'll never use.",
     color: "text-v-green",
     bg: "bg-lime-50",
     details: [
@@ -65,7 +65,7 @@ const SERVICES = [
   {
     icon: PencilIcon,
     title: "Graphic Design",
-    summary: "Print-ready and digital design for the materials your business actually hands to customers.",
+    summary: "Print and digital materials your customers actually take home.",
     color: "text-v-green",
     bg: "bg-lime-50",
     details: [
@@ -77,7 +77,7 @@ const SERVICES = [
   {
     icon: TrendingUpIcon,
     title: "Sales & Financial Analysis",
-    summary: "Owner-facing analysis that turns raw sales numbers into clear pricing and operations decisions.",
+    summary: "We go through your numbers and tell you what they actually mean.",
     color: "text-amber-500",
     bg: "bg-amber-50",
     details: [
@@ -89,7 +89,7 @@ const SERVICES = [
   {
     icon: DollarIcon,
     title: "Grant Research & Writing",
-    summary: "We find eligible grants, draft the full application, and prepare submission materials — you just sign off.",
+    summary: "We find the grants, write the application, and hand it to you to sign.",
     color: "text-amber-500",
     bg: "bg-amber-50",
     details: [
