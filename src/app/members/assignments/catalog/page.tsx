@@ -45,15 +45,22 @@ const TRACK_DOT: Record<CycleTrack, string> = {
 
 const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
 
-// Status sort: active/upcoming first, then completed/closed. Lower number sorts higher.
-const STATUS_RANK: Record<AssignmentStatus, number> = {
-  open: 0,
-  claimed: 1,
-  in_progress: 2,
-  submitted: 3,
-  approved: 4,
-  closed: 5,
-};
+// col 0=Title, 1=Type/Difficulty, 2=Track, 3=Business Name, 4=Claimer Names
+const ASSIGNMENT_SORT_OPTIONS = [
+  { value: 0, label: "Title" },
+  { value: 1, label: "Type / Difficulty" },
+  { value: 2, label: "Track" },
+  { value: 3, label: "Business Name" },
+  { value: 4, label: "Claimer Names" },
+];
+
+const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
+  { col: 2, dir: "asc" },
+  { col: 1, dir: "asc" },
+  { col: 0, dir: "asc" },
+  { col: 3, dir: "asc" },
+  { col: 4, dir: "asc" },
+];
 
 interface FormState {
   title: string;
@@ -96,6 +103,8 @@ export default function CatalogPage() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
 
   const [search, setSearch] = useState("");
+  const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_ASSIGNMENT_SORT_RULES);
+  const [showSortPanel, setShowSortPanel] = useState(false);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Assignment | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
@@ -132,8 +141,6 @@ export default function CatalogPage() {
     return { name: business.name, neighborhood: business.neighborhood };
   };
 
-  // Search across title, description (stripped HTML), business name, and any
-  // claimer's member name.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return assignments;
@@ -143,8 +150,8 @@ export default function CatalogPage() {
         .map((c) => String(c.memberName ?? "").toLowerCase());
       return [
         a.title,
-        a.description?.replace(/<[^>]+>/g, " "),
         a.difficulty,
+        a.primaryTrack,
         business?.name ?? "",
         business?.neighborhood ?? "",
         ...claimerNames,
@@ -153,19 +160,59 @@ export default function CatalogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignments, search, businessById, claimsByAssignment]);
 
-  // Sort: status first (active/upcoming → completed/closed), then track
-  // (Tech → Marketing → Finance), then credits (low→high), then title alphabetical.
+  const compareAssignmentByCol = (a: Assignment, b: Assignment, col: number): number => {
+    switch (col) {
+      case 0: return (a.title || "").localeCompare(b.title || "");
+      case 1: return (a.difficulty || "").localeCompare(b.difficulty || "");
+      case 2: return (TRACK_RANK[a.primaryTrack] ?? 9) - (TRACK_RANK[b.primaryTrack] ?? 9);
+      case 3: {
+        const aB = resolveBusinessLabel(a)?.name ?? "";
+        const bB = resolveBusinessLabel(b)?.name ?? "";
+        return aB.localeCompare(bB);
+      }
+      case 4: {
+        const aNames = (claimsByAssignment.get(a.id) ?? []).map((c) => c.memberName ?? "").sort().join(", ");
+        const bNames = (claimsByAssignment.get(b.id) ?? []).map((c) => c.memberName ?? "").sort().join(", ");
+        return aNames.localeCompare(bNames);
+      }
+      default: return 0;
+    }
+  };
+
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      const sCmp = (STATUS_RANK[a.status] ?? 9) - (STATUS_RANK[b.status] ?? 9);
-      if (sCmp !== 0) return sCmp;
-      const tCmp = (TRACK_RANK[a.primaryTrack] ?? 9) - (TRACK_RANK[b.primaryTrack] ?? 9);
-      if (tCmp !== 0) return tCmp;
-      const cCmp = a.credits - b.credits;
-      if (cCmp !== 0) return cCmp;
-      return a.title.localeCompare(b.title);
+      for (const rule of sortRules) {
+        const cmp = compareAssignmentByCol(a, b, rule.col);
+        if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
+      }
+      return 0;
     });
-  }, [filtered]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, sortRules, businessById, claimsByAssignment]);
+
+  const addSortRule = () => {
+    const usedCols = new Set(sortRules.map((r) => r.col));
+    const next = ASSIGNMENT_SORT_OPTIONS.find((o) => !usedCols.has(o.value));
+    if (!next) return;
+    setSortRules((prev) => [...prev, { col: next.value, dir: "asc" }]);
+  };
+
+  const removeSortRule = (idx: number) => {
+    setSortRules((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length === 0 ? [...DEFAULT_ASSIGNMENT_SORT_RULES] : next;
+    });
+  };
+
+  const updateSortRule = (idx: number, field: "col" | "dir", value: number | string) => {
+    setSortRules((prev) =>
+      prev.map((rule, i) => {
+        if (i !== idx) return rule;
+        if (field === "col") return { ...rule, col: Number(value) };
+        return { ...rule, dir: value as "asc" | "desc" };
+      }),
+    );
+  };
 
   // Summary counters at the top.
   const counts = {
@@ -314,13 +361,58 @@ export default function CatalogPage() {
         <SummaryStat label="Completed" value={counts.completed} accent="text-violet-300" />
       </div>
 
-      {/* Search only — no track/status/business filters per spec; sorting is fixed. */}
-      <div className="mb-4">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search title, description, business, member who claimed…"
-        />
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex-1">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search title, type, track, business, neighborhood, claimer…"
+          />
+        </div>
+        <div className="relative">
+          <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
+            Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
+          </Btn>
+          {showSortPanel && (
+            <div className="absolute top-full right-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 w-[360px] max-w-[min(92vw,360px)]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] text-white/45 uppercase tracking-wide">Sort Rules</p>
+                <button type="button" className="text-[10px] text-white/55 hover:text-white transition-colors" onClick={() => setShowSortPanel(false)}>Close</button>
+              </div>
+              {sortRules.map((rule, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] text-white/45 w-[54px]">{idx === 0 ? "Sort by" : "Then by"}</span>
+                  <select
+                    value={rule.col}
+                    onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
+                    className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                  >
+                    {ASSIGNMENT_SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={rule.dir}
+                    onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
+                    className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[72px]"
+                  >
+                    <option value="asc">A→Z</option>
+                    <option value="desc">Z→A</option>
+                  </select>
+                  {sortRules.length > 1 && (
+                    <button onClick={() => removeSortRule(idx)} className="members-icon-btn members-icon-btn-danger h-6 w-6 text-xs" aria-label="Remove sort rule" title="Remove sort rule">✕</button>
+                  )}
+                </div>
+              ))}
+              <div className="mt-2 flex items-center justify-between">
+                {sortRules.length < ASSIGNMENT_SORT_OPTIONS.length ? (
+                  <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">+ Add sort level</button>
+                ) : <span />}
+                <button type="button" className="text-[10px] text-white/50 hover:text-white/80 transition-colors" onClick={() => setSortRules([...DEFAULT_ASSIGNMENT_SORT_RULES])}>Reset default</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">

@@ -11,6 +11,10 @@ import {
   subscribeBusinesses,
   subscribeFinanceAssignments,
   subscribeEmailTemplates,
+  subscribeCycles,
+  subscribeAssignments,
+  subscribeAssignmentClaims,
+  subscribeMemberCreditAdjustments,
   createEmailTemplate,
   updateEmailTemplate,
   deleteEmailTemplate,
@@ -18,8 +22,13 @@ import {
   type Business,
   type FinanceAssignment,
   type EmailTemplate,
+  type Cycle,
+  type Assignment,
+  type AssignmentClaim,
+  type MemberCreditAdjustment,
 } from "@/lib/members/storage";
 import { computeGlobalCodes, getMemberCodes, type AssignmentCode } from "@/lib/members/assignmentCodes";
+import { computeDot, computeCreditLedger, classifyMember, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { useAuth } from "@/lib/members/authContext";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
@@ -133,18 +142,45 @@ type DeliveryMode = "to" | "cc" | "bcc";
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
 const DEFAULT_EMAIL_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
-  { col: 3, dir: "asc" },
+  { col: 1, dir: "asc" },
+  { col: 4, dir: "asc" },
+  { col: 2, dir: "asc" },
 ];
 
+// col 0=Status(credit pace), 1=Track, 2=Name, 3=School, 4=Role
 const EMAIL_SORT_OPTIONS = [
   { value: 0, label: "Status" },
   { value: 1, label: "Track" },
-  { value: 2, label: "Projects" },
-  { value: 3, label: "Name" },
-  { value: 4, label: "Email" },
-  { value: 5, label: "School" },
-  { value: 6, label: "HS Class" },
+  { value: 2, label: "Name" },
+  { value: 3, label: "School" },
+  { value: 4, label: "Role" },
 ];
+
+const DOT_RANK: Record<string, number> = {
+  "bg-emerald-400": 0,
+  "bg-yellow-400": 1,
+  "bg-orange-400": 2,
+  "bg-red-500": 3,
+  "bg-gray-400": 4,
+};
+
+function roleSortKey(role: string | undefined | null): number {
+  switch (String(role ?? "").toLowerCase()) {
+    case "board": return 0;
+    case "senior associate": return 1;
+    case "associate": return 2;
+    case "junior associate": return 3;
+    default: return 4;
+  }
+}
+
+function gradeToClassOf(grade: string): string {
+  const match = grade.match(/^(\d+)$/);
+  if (!match) return grade;
+  const yr = parseInt(match[1], 10);
+  if (yr >= 9 && yr <= 12) return `Class of ${2024 + (12 - yr) + 1}`;
+  return grade;
+}
 
 const TRACK_SORT_ORDER: Record<TrackKey, number> = {
   Tech: 0,
@@ -231,6 +267,10 @@ export default function MemberEmailPage() {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [creditAssignments, setCreditAssignments] = useState<Assignment[]>([]);
+  const [creditClaims, setCreditClaims] = useState<AssignmentClaim[]>([]);
+  const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -261,6 +301,10 @@ export default function MemberEmailPage() {
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
   useEffect(() => subscribeEmailTemplates(setTemplates), []);
+  useEffect(() => subscribeCycles(setCycles), []);
+  useEffect(() => subscribeAssignments(setCreditAssignments), []);
+  useEffect(() => subscribeAssignmentClaims(setCreditClaims), []);
+  useEffect(() => subscribeMemberCreditAdjustments(setCreditAdjustments), []);
 
   // Seed system templates on first admin visit so they're editable from this
   // page. Each system template has a stable key referenced by automation; we
@@ -380,52 +424,53 @@ export default function MemberEmailPage() {
     return map;
   }, [team, businesses, financeAssignments, globalCodeMaps]);
 
-  const projectSortMetaByMemberId = useMemo(() => {
-    const map = new Map<string, { count: number; key: string }>();
-    for (const member of team) {
-      const assignments = memberAssignmentsById.get(member.id) ?? [];
-      const sortedCodes = assignments.map((item) => item.code).sort((a, b) => a.localeCompare(b));
-      map.set(member.id, {
-        count: assignments.length,
-        key: sortedCodes.join(" "),
-      });
-    }
-    return map;
-  }, [memberAssignmentsById, team]);
+const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
+
+  const getMemberIndicator = useCallback((member: TeamMember): { colorClass: string; label: string } => {
+    const memberClaims = creditClaims.filter(
+      (c) => c.memberId === member.id && (!activeCycle || c.cycleId === activeCycle.id),
+    );
+    const memberAdjustments = creditAdjustments.filter(
+      (a) => a.memberId === member.id && (!activeCycle || a.cycleId === activeCycle.id),
+    );
+    const credits = new Map<string, number>();
+    for (const a of creditAssignments) credits.set(a.id, a.credits);
+    const ledger = computeCreditLedger({ claims: memberClaims, adjustments: memberAdjustments, assignmentCredits: credits });
+    const classification = classifyMember(member);
+    const primaryTrack = pickPrimaryTrack(member);
+    const target = activeCycle && classification.cycleRole
+      ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
+      : 0;
+    const dot = computeDot({ cycle: activeCycle, member, earnedCredits: ledger.total, targetCredits: target, hasAnyClaims: memberClaims.length > 0 });
+    const colorClass =
+      dot.color === "green" ? "bg-emerald-400"
+        : dot.color === "yellow" ? "bg-yellow-400"
+        : dot.color === "orange" ? "bg-orange-400"
+        : dot.color === "red" ? "bg-red-500"
+        : "bg-gray-400";
+    return { colorClass, label: dot.label };
+  }, [activeCycle, creditClaims, creditAdjustments, creditAssignments]);
 
   const compareMemberByCol = useCallback((a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
-      case 0: {
-        const statusRank = (member: TeamMember) => {
-          if (isInactiveMember(member)) return 2;
-          const count = (memberAssignmentsById.get(member.id) ?? []).length;
-          return count > 0 ? 0 : 1;
-        };
-        const rankCmp = statusRank(a) - statusRank(b);
-        return rankCmp !== 0 ? rankCmp : (a.name || "").localeCompare(b.name || "");
-      }
+      case 0:
+        return (DOT_RANK[getMemberIndicator(a).colorClass] ?? 5) - (DOT_RANK[getMemberIndicator(b).colorClass] ?? 5);
       case 1: {
         const trackCmp = TRACK_SORT_ORDER[getMemberTrack(a)] - TRACK_SORT_ORDER[getMemberTrack(b)];
         return trackCmp !== 0 ? trackCmp : (a.name || "").localeCompare(b.name || "");
       }
-      case 2: {
-        const aMeta = projectSortMetaByMemberId.get(a.id) ?? { count: 0, key: "" };
-        const bMeta = projectSortMetaByMemberId.get(b.id) ?? { count: 0, key: "" };
-        if (aMeta.count !== bMeta.count) return aMeta.count - bMeta.count;
-        return aMeta.key.localeCompare(bMeta.key);
-      }
-      case 3:
+      case 2:
         return (a.name || "").localeCompare(b.name || "");
-      case 4:
-        return (a.email || "").localeCompare(b.email || "");
-      case 5:
+      case 3:
         return (a.school || "").localeCompare(b.school || "");
-      case 6:
-        return (a.grade || "").localeCompare(b.grade || "");
+      case 4: {
+        const roleCmp = roleSortKey(a.role) - roleSortKey(b.role);
+        return roleCmp !== 0 ? roleCmp : (a.name || "").localeCompare(b.name || "");
+      }
       default:
         return 0;
     }
-  }, [memberAssignmentsById, projectSortMetaByMemberId]);
+  }, [getMemberIndicator]);
 
   const addSortRule = () => {
     const usedCols = new Set(sortRules.map((rule) => rule.col));
@@ -451,33 +496,23 @@ export default function MemberEmailPage() {
     );
   };
 
-  const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
-    if (isInactiveMember(member)) return { colorClass: "bg-red-400", label: "Inactive" };
-    const memberAssignments = memberAssignmentsById.get(member.id) ?? [];
-    if (memberAssignments.length > 0) {
-      return { colorClass: "bg-emerald-400", label: "Assigned to at least one project or assignment" };
-    }
-    return { colorClass: "bg-yellow-400", label: "No project or assignment linked" };
-  };
-
   const normalizedSearch = memberSearch.trim().toLowerCase();
 
   const filteredMembers = useMemo(
     () =>
       team.filter((member) => {
-        const searchable = [
-          member.name,
-          member.email,
-          member.alternateEmail,
-          member.school,
-          member.grade,
-          member.status,
-          ...(member.divisions ?? []),
-        ]
-          .map((value) => String(value ?? "").toLowerCase())
-          .join(" ");
-        const textMatch = normalizedSearch.length === 0 || searchable.includes(normalizedSearch);
-        return textMatch;
+        if (!normalizedSearch) return true;
+        const q = normalizedSearch;
+        return (
+          (member.name ?? "").toLowerCase().includes(q)
+          || (member.school ?? "").toLowerCase().includes(q)
+          || (member.grade ?? "").toLowerCase().includes(q)
+          || gradeToClassOf(member.grade ?? "").toLowerCase().includes(q)
+          || getMemberTrack(member).toLowerCase().includes(q)
+          || String(member.role ?? "").toLowerCase().includes(q)
+          || (member.email ?? "").toLowerCase().includes(q)
+          || (member.alternateEmail ?? "").toLowerCase().includes(q)
+        );
       }),
     [team, normalizedSearch],
   );
@@ -609,59 +644,6 @@ export default function MemberEmailPage() {
     setDeliveryModeById((prev) => ({ ...prev, [id]: mode }));
   };
 
-  const selectAllFiltered = () => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      selectableFilteredMembers.forEach((member) => next.add(member.id));
-      return Array.from(next);
-    });
-    setDeliveryModeById((prev) => {
-      const next = { ...prev };
-      selectableFilteredMembers.forEach((member) => {
-        if (!next[member.id]) next[member.id] = defaultNewRecipientMode;
-      });
-      return next;
-    });
-  };
-
-  const clearFiltered = () => {
-    const removeSet = new Set(sortedFilteredMembers.map((member) => member.id));
-    setSelectedIds((prev) => prev.filter((id) => !removeSet.has(id)));
-  };
-
-  const renderProjectCodes = (member: TeamMember, keyPrefix: string) => {
-    const assignments = memberAssignmentsById.get(member.id) ?? [];
-    if (assignments.length === 0) {
-      return <span className="text-white/35">—</span>;
-    }
-    const pillColorClass = (prefix: string): string => {
-      switch (prefix) {
-        case "W": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
-        case "M": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
-        case "F":
-        case "R":
-        case "C":
-        case "G": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
-        default: return "border-white/15 bg-[#11141A] text-white/80";
-      }
-    };
-    return (
-      <div className="members-assignments-scroll w-[108px] max-w-[108px] overflow-x-auto overflow-y-hidden pb-0.5">
-        <div className="inline-flex min-w-max items-center gap-1 pr-1">
-          {assignments.map((item) => (
-            <a
-              key={`${keyPrefix}-${item.entityKey}-${item.code}`}
-              href={item.href}
-              className={`inline-flex h-5 w-10 items-center justify-center rounded-full border px-1 text-[10px] font-semibold transition-colors ${pillColorClass(item.prefix)} hover:border-[#85CC17]/55 hover:text-[#C4F135]`}
-              title={`${item.code} · ${item.title}`}
-            >
-              {item.code}
-            </a>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   const sendEmail = async () => {
     if (!subject.trim() || !message.trim()) {
@@ -762,16 +744,15 @@ export default function MemberEmailPage() {
             </div>
 
             <div className="members-table-shell members-scroll-hidden max-h-[240px] overflow-x-auto overflow-y-auto bg-[#11151D]">
-              <table className="members-grid-table members-email-grid w-full min-w-[1390px] table-fixed text-xs [&_td]:overflow-hidden">
+              <table className="members-grid-table members-email-grid w-full min-w-[960px] table-fixed text-xs [&_td]:overflow-hidden">
                 <thead className="bg-[#10131A] sticky top-0 z-[1]">
                   <tr>
                     <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[124px]">Projects</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[280px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[300px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Mode</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[280px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[100px]">HS Class</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[100px]">Mode</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -795,7 +776,6 @@ export default function MemberEmailPage() {
                             className="members-checkbox"
                           />
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">{renderProjectCodes(member, `selected-${member.id}`)}</td>
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
                           <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
@@ -809,22 +789,25 @@ export default function MemberEmailPage() {
                         <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
                         <td className="px-3 py-2 text-white/55 whitespace-nowrap">{member.grade || "—"}</td>
                         <td className="px-3 py-2">
-                          <select
-                            value={mode}
-                            onChange={(e) => setRecipientMode(member.id, (e.target.value as DeliveryMode) || "to")}
-                            className="members-no-cell-scroll h-8 w-full rounded-lg border border-white/10 bg-[#0F1014] px-2 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
-                          >
-                            <option value="to">To</option>
-                            <option value="cc">CC</option>
-                            <option value="bcc">BCC</option>
-                          </select>
+                          <div className="members-no-cell-scroll inline-flex rounded-lg border border-white/10 overflow-hidden text-[10px] font-semibold">
+                            {(["to", "cc", "bcc"] as const).map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setRecipientMode(member.id, m)}
+                                className={`px-2 py-1 uppercase transition-colors ${mode === m ? "bg-[#85CC17]/20 text-[#9BE22B]" : "text-white/40 hover:text-white/70 hover:bg-white/5"}`}
+                              >
+                                {m}
+                              </button>
+                            ))}
+                          </div>
                         </td>
                       </tr>
                     );
                   })}
                   {selectedMembers.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-3 py-6 text-center text-white/35">No recipients selected yet.</td>
+                      <td colSpan={6} className="px-3 py-6 text-center text-white/35">No recipients selected yet.</td>
                     </tr>
                   )}
                 </tbody>
@@ -839,7 +822,7 @@ export default function MemberEmailPage() {
               <input
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
-                placeholder="Search members by name, email, school, grade, or track…"
+                placeholder="Search members by name, school, or track…"
                 className="w-full h-12 rounded-lg border border-white/10 bg-[#0F1014] pl-11 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#85CC17]/45"
               />
             </div>
@@ -925,83 +908,69 @@ export default function MemberEmailPage() {
                     </div>
                   )}
                 </div>
-                <Btn size="sm" variant="secondary" onClick={selectAllFiltered} disabled={sortedFilteredMembers.length === 0}>
-                  Select filtered
-                </Btn>
-                <Btn
-                  size="sm"
-                  variant="secondary"
-                  disabled={sortedFilteredMembers.length === 0}
-                  className="!text-red-300 !border-red-400/30 !bg-red-500/10 hover:!bg-red-500/20"
-                  onClick={clearFiltered}
-                >
-                  Clear filtered
-                </Btn>
               </div>
             </div>
 
-            <div className="members-table-shell members-scroll-hidden max-h-[420px] overflow-x-auto overflow-y-auto">
-              <table className="members-grid-table members-email-grid w-full min-w-[1390px] table-fixed text-xs [&_td]:overflow-hidden">
-                <thead className="bg-[#141821] sticky top-0 z-[1]">
-                  <tr>
-                    <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                    <th className="text-left px-3 py-2 text-white/45 w-[124px]">Projects</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[320px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {sortedFilteredMembers.map((member) => {
-                    const checked = selectedIds.includes(member.id);
-                    const inactive = isInactiveMember(member);
-                    const indicator = getMemberIndicator(member);
-                    const track = getMemberTrack(member);
-                    const avatar = getTrackAvatarStyles(track);
-                    return (
-                      <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
-                        <td className="px-3 py-2">
-                          <input
-                            type="checkbox"
-                            checked={checked && !inactive}
-                            onChange={(e) => {
-                              const shiftKey = "shiftKey" in e.nativeEvent
-                                ? Boolean((e.nativeEvent as MouseEvent).shiftKey)
-                                : false;
-                              toggleSelected(member.id, e.target.checked, shiftKey);
-                            }}
-                            disabled={inactive}
-                            className="members-checkbox"
-                          />
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">{renderProjectCodes(member, `search-${member.id}`)}</td>
-                        <td className="px-3 py-2 text-white/75 whitespace-nowrap">
-                          <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
-                            <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                              <TrackAvatarIcon track={track} color={avatar.text} />
-                            </span>
-                            <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
-                          </span>
-                          {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
-                        </td>
-                        <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
-                        <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
-                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{member.grade || "—"}</td>
-                      </tr>
-                    );
-                  })}
-                  {sortedFilteredMembers.length === 0 && (
+            {normalizedSearch && (
+              <div className="members-table-shell members-scroll-hidden max-h-[420px] overflow-x-auto overflow-y-auto">
+                <table className="members-grid-table members-email-grid w-full min-w-[1020px] table-fixed text-xs [&_td]:overflow-hidden">
+                  <thead className="bg-[#141821] sticky top-0 z-[1]">
                     <tr>
-                      <td colSpan={6} className="px-3 py-6 text-center text-white/35">
-                        {normalizedSearch ? "No members match this search." : "No members found."}
-                      </td>
+                      <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
+                      <th className="text-left px-3 py-2 text-white/45 w-[280px]">Name</th>
+                      <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
+                      <th className="text-left px-3 py-2 text-white/45 w-[280px]">School</th>
+                      <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {sortedFilteredMembers.map((member) => {
+                      const checked = selectedIds.includes(member.id);
+                      const inactive = isInactiveMember(member);
+                      const indicator = getMemberIndicator(member);
+                      const track = getMemberTrack(member);
+                      const avatar = getTrackAvatarStyles(track);
+                      return (
+                        <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
+                          <td className="px-3 py-2">
+                            <input
+                              type="checkbox"
+                              checked={checked && !inactive}
+                              onChange={(e) => {
+                                const shiftKey = "shiftKey" in e.nativeEvent
+                                  ? Boolean((e.nativeEvent as MouseEvent).shiftKey)
+                                  : false;
+                                toggleSelected(member.id, e.target.checked, shiftKey);
+                              }}
+                              disabled={inactive}
+                              className="members-checkbox"
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-white/75 whitespace-nowrap">
+                            <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
+                              <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                              <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                                <TrackAvatarIcon track={track} color={avatar.text} />
+                              </span>
+                              <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
+                            </span>
+                            {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
+                          </td>
+                          <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
+                          <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
+                          <td className="px-3 py-2 text-white/55 whitespace-nowrap">{member.grade || "—"}</td>
+                        </tr>
+                      );
+                    })}
+                    {sortedFilteredMembers.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-6 text-center text-white/35">No members match this search.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 

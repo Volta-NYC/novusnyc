@@ -228,10 +228,7 @@ export default function BIDTrackerPage() {
     const query = search.trim().toLowerCase();
     if (!query) return true;
     return bid.name.toLowerCase().includes(query)
-      || bid.borough.toLowerCase().includes(query)
-      || bid.contactName.toLowerCase().includes(query)
-      || (bid.address ?? "").toLowerCase().includes(query)
-      || (bid.zipCode ?? "").toLowerCase().includes(query);
+      || bid.borough.toLowerCase().includes(query);
   };
 
   const sortBids = (list: BID[]) => {
@@ -269,7 +266,7 @@ export default function BIDTrackerPage() {
 
       {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder={isMemberRestricted ? "Search BID names…" : "Search BIDs, boroughs…"} />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or borough…" />
         <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
           <button
             onClick={() => setViewMode("cards")}

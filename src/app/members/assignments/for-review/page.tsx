@@ -23,6 +23,23 @@ const VOLTA_INTERNAL_ID = "__volta_internal__";
 
 const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
 
+// col 0=Title, 1=Type/Difficulty, 2=Track, 3=Business Name, 4=Claimer Names
+const ASSIGNMENT_SORT_OPTIONS = [
+  { value: 0, label: "Title" },
+  { value: 1, label: "Type / Difficulty" },
+  { value: 2, label: "Track" },
+  { value: 3, label: "Business Name" },
+  { value: 4, label: "Claimer Names" },
+];
+
+const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
+  { col: 2, dir: "asc" },
+  { col: 1, dir: "asc" },
+  { col: 0, dir: "asc" },
+  { col: 3, dir: "asc" },
+  { col: 4, dir: "asc" },
+];
+
 interface ReviewInput {
   claim: AssignmentClaim;
   assignment: Assignment | undefined;
@@ -41,6 +58,8 @@ export default function ForReviewPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
 
   const [search, setSearch] = useState("");
+  const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_ASSIGNMENT_SORT_RULES);
+  const [showSortPanel, setShowSortPanel] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [rejectingClaim, setRejectingClaim] = useState<ReviewInput | null>(null);
@@ -60,6 +79,21 @@ export default function ForReviewPage() {
   const assignmentById = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
   const businessById = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
 
+  const compareClaimByCol = (aC: AssignmentClaim, bC: AssignmentClaim, col: number): number => {
+    const aA = assignmentById.get(aC.assignmentId);
+    const bA = assignmentById.get(bC.assignmentId);
+    const aB = aA?.businessId === VOLTA_INTERNAL_ID ? { name: "Volta Internal" } : aA?.businessId ? businessById.get(aA.businessId) : undefined;
+    const bB = bA?.businessId === VOLTA_INTERNAL_ID ? { name: "Volta Internal" } : bA?.businessId ? businessById.get(bA.businessId) : undefined;
+    switch (col) {
+      case 0: return (aA?.title ?? "").localeCompare(bA?.title ?? "");
+      case 1: return (aA?.difficulty ?? "").localeCompare(bA?.difficulty ?? "");
+      case 2: return (TRACK_RANK[aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.primaryTrack ?? "Tech"] ?? 9);
+      case 3: return (aB?.name ?? "").localeCompare(bB?.name ?? "");
+      case 4: return (aC.memberName ?? "").localeCompare(bC.memberName ?? "");
+      default: return 0;
+    }
+  };
+
   const queue = useMemo(() => {
     const q = search.trim().toLowerCase();
     return claims
@@ -75,24 +109,44 @@ export default function ForReviewPage() {
         return [
           c.memberName,
           a?.title,
-          a?.description?.replace(/<[^>]+>/g, " "),
+          a?.difficulty,
+          a?.primaryTrack,
           business?.name,
-          c.deliverableUrl,
-          c.submissionNotes,
+          business?.neighborhood,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       })
-      // Sort same as catalog: status (all submitted here, so no-op),
-      // then track, then credits low→high, then title alpha.
       .sort((a, b) => {
-        const aA = assignmentById.get(a.assignmentId);
-        const bA = assignmentById.get(b.assignmentId);
-        const tCmp = (TRACK_RANK[aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.primaryTrack ?? "Tech"] ?? 9);
-        if (tCmp !== 0) return tCmp;
-        const cCmp = (aA?.credits ?? 0) - (bA?.credits ?? 0);
-        if (cCmp !== 0) return cCmp;
-        return (aA?.title ?? "").localeCompare(bA?.title ?? "");
+        for (const rule of sortRules) {
+          const cmp = compareClaimByCol(a, b, rule.col);
+          if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
+        }
+        return 0;
       });
-  }, [claims, assignmentById, businessById, search]);
+  }, [claims, assignmentById, businessById, search, sortRules]);
+
+  const addSortRule = () => {
+    const usedCols = new Set(sortRules.map((r) => r.col));
+    const next = ASSIGNMENT_SORT_OPTIONS.find((o) => !usedCols.has(o.value));
+    if (!next) return;
+    setSortRules((prev) => [...prev, { col: next.value, dir: "asc" }]);
+  };
+
+  const removeSortRule = (idx: number) => {
+    setSortRules((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length === 0 ? [...DEFAULT_ASSIGNMENT_SORT_RULES] : next;
+    });
+  };
+
+  const updateSortRule = (idx: number, field: "col" | "dir", value: number | string) => {
+    setSortRules((prev) =>
+      prev.map((rule, i) => {
+        if (i !== idx) return rule;
+        if (field === "col") return { ...rule, col: Number(value) };
+        return { ...rule, dir: value as "asc" | "desc" };
+      }),
+    );
+  };
 
   const recentDecisions = useMemo(() => {
     return claims
@@ -231,12 +285,58 @@ export default function ForReviewPage() {
         }
       />
 
-      <div className="mb-4">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search member, assignment, business…"
-        />
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex-1">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search title, type, track, business, neighborhood, claimer…"
+          />
+        </div>
+        <div className="relative">
+          <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
+            Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
+          </Btn>
+          {showSortPanel && (
+            <div className="absolute top-full right-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 w-[360px] max-w-[min(92vw,360px)]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] text-white/45 uppercase tracking-wide">Sort Rules</p>
+                <button type="button" className="text-[10px] text-white/55 hover:text-white transition-colors" onClick={() => setShowSortPanel(false)}>Close</button>
+              </div>
+              {sortRules.map((rule, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] text-white/45 w-[54px]">{idx === 0 ? "Sort by" : "Then by"}</span>
+                  <select
+                    value={rule.col}
+                    onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
+                    className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                  >
+                    {ASSIGNMENT_SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={rule.dir}
+                    onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
+                    className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[72px]"
+                  >
+                    <option value="asc">A→Z</option>
+                    <option value="desc">Z→A</option>
+                  </select>
+                  {sortRules.length > 1 && (
+                    <button onClick={() => removeSortRule(idx)} className="members-icon-btn members-icon-btn-danger h-6 w-6 text-xs" aria-label="Remove sort rule" title="Remove sort rule">✕</button>
+                  )}
+                </div>
+              ))}
+              <div className="mt-2 flex items-center justify-between">
+                {sortRules.length < ASSIGNMENT_SORT_OPTIONS.length ? (
+                  <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">+ Add sort level</button>
+                ) : <span />}
+                <button type="button" className="text-[10px] text-white/50 hover:text-white/80 transition-colors" onClick={() => setSortRules([...DEFAULT_ASSIGNMENT_SORT_RULES])}>Reset default</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">

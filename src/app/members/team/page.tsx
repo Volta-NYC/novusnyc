@@ -124,21 +124,19 @@ type MemberAssignmentLink = {
   href: string;
 };
 
+// col 0=Status(credit pace), 1=Track, 2=Name, 3=School, 4=Role
 const DEFAULT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
-  { col: 0, dir: "asc" },
+  { col: 1, dir: "asc" },
+  { col: 4, dir: "asc" },
   { col: 2, dir: "asc" },
 ];
 
 const SORT_OPTIONS = [
-  { value: 0, label: "Track (default grouping)" },
-  { value: 1, label: "Projects" },
+  { value: 0, label: "Status" },
+  { value: 1, label: "Track" },
   { value: 2, label: "Name" },
-  { value: 3, label: "Email" },
-  { value: 4, label: "School" },
-  { value: 5, label: "HS Class" },
-  { value: 6, label: "Role" },
-  { value: 7, label: "Date Accepted" },
-  { value: 8, label: "Account Created" },
+  { value: 3, label: "School" },
+  { value: 4, label: "Role" },
 ];
 
 // Roles offered in the inline role-edit popover. Board is an internal designation
@@ -358,6 +356,7 @@ export default function TeamPage() {
   const [expandAssignments, setExpandAssignments] = useState(false);
   const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
+  const [creditSummaryMember, setCreditSummaryMember] = useState<TeamMember | null>(null);
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -757,15 +756,17 @@ export default function TeamPage() {
     );
   };
 
-  // Filter by search text.
   const filtered = team.filter(member => {
-    const matchesSearch = !search
-      || member.name.toLowerCase().includes(search.toLowerCase())
-      || member.email.toLowerCase().includes(search.toLowerCase())
-      || (member.alternateEmail ?? "").toLowerCase().includes(search.toLowerCase())
-      || member.school.toLowerCase().includes(search.toLowerCase())
-      || gradeToClassOf(member.grade ?? "").toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return member.name.toLowerCase().includes(q)
+      || member.school.toLowerCase().includes(q)
+      || (member.grade ?? "").toLowerCase().includes(q)
+      || gradeToClassOf(member.grade ?? "").toLowerCase().includes(q)
+      || getMemberTrack(member).toLowerCase().includes(q)
+      || String(member.role ?? "").toLowerCase().includes(q)
+      || (member.email ?? "").toLowerCase().includes(q)
+      || (member.alternateEmail ?? "").toLowerCase().includes(q);
   });
 
   const profileByEmail = useMemo(() => {
@@ -788,55 +789,48 @@ export default function TeamPage() {
     return map;
   }, [applications]);
 
-  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "HS Class", "Role", "Date Accepted", "Account Created"];
+  // Status dot rank: green=0 (on pace) through gray=4 (inactive/reserve).
+  const DOT_RANK: Record<string, number> = {
+    "bg-emerald-400": 0,
+    "bg-yellow-400": 1,
+    "bg-orange-400": 2,
+    "bg-red-500": 3,
+    "bg-gray-400": 4,
+  };
 
+  // col 0=Status, 1=Track, 2=Name, 3=School, 4=Role
   const compareMemberByCol = (a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
       case 0: {
-        const trackCmp = TRACK_SORT_ORDER[getMemberTrack(a)] - TRACK_SORT_ORDER[getMemberTrack(b)];
-        return trackCmp !== 0 ? trackCmp : a.name.localeCompare(b.name);
+        const rankA = DOT_RANK[getMemberIndicator(a).colorClass] ?? 5;
+        const rankB = DOT_RANK[getMemberIndicator(b).colorClass] ?? 5;
+        return rankA - rankB;
       }
-      case 1: {
-        const aMeta = projectSortMetaByMemberKey.get(normalizeKey(a.name ?? "")) ?? { count: 0, key: "" };
-        const bMeta = projectSortMetaByMemberKey.get(normalizeKey(b.name ?? "")) ?? { count: 0, key: "" };
-        if (aMeta.count !== bMeta.count) return aMeta.count - bMeta.count;
-        return aMeta.key.localeCompare(bMeta.key);
-      }
-      case 2: return a.name.localeCompare(b.name);
-      case 3: return (a.email || "").localeCompare(b.email || "");
-      case 4: return (a.school || "").localeCompare(b.school || "");
-      case 5: return (a.grade || "").localeCompare(b.grade || "");
-      case 6: {
+      case 1: return (TRACK_SORT_ORDER[getMemberTrack(a)] ?? 9) - (TRACK_SORT_ORDER[getMemberTrack(b)] ?? 9);
+      case 2: return (a.name || "").localeCompare(b.name || "");
+      case 3: return (a.school || "").localeCompare(b.school || "");
+      case 4: {
         const roleCmp = roleSortKey(a.role) - roleSortKey(b.role);
-        if (roleCmp !== 0) return roleCmp;
-        return String(a.role ?? "").localeCompare(String(b.role ?? "")) || a.name.localeCompare(b.name);
-      }
-      case 7: return (a.acceptedDate || "").localeCompare(b.acceptedDate || "");
-      case 8: {
-        const aProfile = profileByEmail.get(normalizeKey(a.email ?? "")) ?? profileByEmail.get(normalizeKey(a.alternateEmail ?? ""));
-        const bProfile = profileByEmail.get(normalizeKey(b.email ?? "")) ?? profileByEmail.get(normalizeKey(b.alternateEmail ?? ""));
-        return (aProfile?.createdAt || "").localeCompare(bProfile?.createdAt || "");
+        return roleCmp !== 0 ? roleCmp : (a.name || "").localeCompare(b.name || "");
       }
       default: return 0;
     }
   };
 
   const handleSort = (i: number) => {
-    // Click on column header = reset to single-column sort
     const current = sortRules[0];
-    const defaultDir: "asc" | "desc" = i === 1 ? "desc" : "asc";
     if (current && current.col === i) {
       setSortRules([{ col: i, dir: current.dir === "asc" ? "desc" : "asc" }]);
     } else {
-      setSortRules([{ col: i, dir: defaultDir }]);
+      setSortRules([{ col: i, dir: "asc" }]);
     }
   };
 
   const addSortRule = () => {
     const usedCols = new Set(sortRules.map((r) => r.col));
-    const nextCol = SORT_COLUMNS.findIndex((_, i) => !usedCols.has(i));
-    if (nextCol === -1) return;
-    setSortRules((prev) => [...prev, { col: nextCol, dir: "asc" }]);
+    const next = SORT_OPTIONS.find((opt) => !usedCols.has(opt.value));
+    if (!next) return;
+    setSortRules((prev) => [...prev, { col: next.value, dir: "asc" }]);
   };
 
   const removeSortRule = (idx: number) => {
@@ -1276,13 +1270,12 @@ export default function TeamPage() {
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
         <div className="flex items-center gap-3 text-[10px] text-white/55">
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Active assignment</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Not assigned</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-400" /> Inactive</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> On pace</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> 1 check-in behind</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> 2–3 behind</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> 4+ behind / no activity</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive / reserve</span>
         </div>
-        <Btn size="sm" variant="ghost" onClick={() => setExpandAssignments((prev) => !prev)}>
-          {expandAssignments ? "Collapse Assignments" : "Expand Assignments"}
-        </Btn>
         {!isMemberRestricted && (
           <div className="relative">
             <Btn size="sm" variant="ghost" onClick={() => setShowSortPanel((v) => !v)}>
@@ -1333,7 +1326,7 @@ export default function TeamPage() {
                   </div>
                 ))}
                 <div className="mt-2 flex items-center justify-between">
-                  {sortRules.length < SORT_COLUMNS.length ? (
+                  {sortRules.length < SORT_OPTIONS.length ? (
                     <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
                       + Add sort level
                     </button>
@@ -1354,18 +1347,14 @@ export default function TeamPage() {
       {/* Team member list */}
       {isMemberRestricted ? (
         <div className="members-table-shell relative select-text">
-          {(() => {
-            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[116px]";
-            return (
-          <table className="members-grid-table w-full min-w-[1000px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[780px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Projects", "Name", "School", "HS Class", "Role"].map((col) => (
+                {["Name", "School", "HS Class", "Role"].map((col) => (
                   <th
                     key={col}
                     className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
-                      col === "Projects" ? projectsColWidthClass :
-                      col === "Name" ? "w-[250px]" :
+                      col === "Name" ? "w-[280px]" :
                       col === "School" ? "w-[340px]" :
                       col === "HS Class" ? "w-[80px]" :
                       "w-[110px]"
@@ -1381,20 +1370,16 @@ export default function TeamPage() {
                 const track = getMemberTrack(member);
                 const avatar = getTrackAvatarStyles(track);
                 const indicator = getMemberIndicator(member);
-                const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      {renderAssignmentCell(memberAssignments, `member-${member.id}`, member.name)}
-                    </td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
-                          title={`${indicator.label} · Click for assignments`}
-                          onClick={() => setAssignmentDetailMember(member)}
-                          aria-label={`View assignments for ${member.name}`}
+                          title={`${indicator.label} · Click for progress summary`}
+                          onClick={() => setCreditSummaryMember(member)}
+                          aria-label={`View credit progress for ${member.name}`}
                         />
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <TrackAvatarIcon track={track} color={avatar.text} />
@@ -1416,27 +1401,21 @@ export default function TeamPage() {
               })}
             </tbody>
           </table>
-            );
-          })()}
         </div>
       ) : (
         <div className="members-table-shell relative select-text">
-          {(() => {
-            const projectsColWidthClass = expandAssignments ? "w-[460px]" : "w-[116px]";
-            return (
-          <table className="members-grid-table w-full min-w-[1680px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+          <table className="members-grid-table w-full min-w-[1560px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 {[
-                  { label: "Projects", sortCol: 1, width: projectsColWidthClass },
-                  { label: "Name", sortCol: 2, width: "w-[250px]" },
-                  { label: "Email", sortCol: 3, width: "w-[330px]" },
-                  { label: "School", sortCol: 4, width: "w-[260px]" },
-                  { label: "HS Class", sortCol: 5, width: "w-[80px]" },
-                  { label: "Role", sortCol: 6, width: "w-[120px]" },
+                  { label: "Name", sortCol: 2, width: "w-[270px]" },
+                  { label: "Email", sortCol: null, width: "w-[330px]" },
+                  { label: "School", sortCol: 3, width: "w-[280px]" },
+                  { label: "HS Class", sortCol: null, width: "w-[80px]" },
+                  { label: "Role", sortCol: 4, width: "w-[120px]" },
                   { label: "Resume", sortCol: null, width: "w-[80px]" },
-                  { label: "Date Accepted", sortCol: 7, width: "w-[116px]" },
-                  { label: "Account Created", sortCol: 8, width: "w-[116px]" },
+                  { label: "Date Accepted", sortCol: null, width: "w-[116px]" },
+                  { label: "Account Created", sortCol: null, width: "w-[116px]" },
                   { label: "Actions", sortCol: null, width: "w-[100px]" },
                 ].map((col) => {
                   const sortable = typeof col.sortCol === "number";
@@ -1470,23 +1449,19 @@ export default function TeamPage() {
                 const indicator = getMemberIndicator(member);
                 const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
                 const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
-                const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
                 return (
                   <tr
                     key={member.id}
                     className="hover:bg-white/3 transition-colors align-middle"
                   >
-                    <td className="px-2 py-1 whitespace-nowrap">
-                      {renderAssignmentCell(memberAssignments, `admin-${member.id}`, member.name)}
-                    </td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
-                          title={`${indicator.label} · Click for assignments`}
-                          onClick={() => setAssignmentDetailMember(member)}
-                          aria-label={`View assignments for ${member.name}`}
+                          title={`${indicator.label} · Click for progress summary`}
+                          onClick={() => setCreditSummaryMember(member)}
+                          aria-label={`View credit progress for ${member.name}`}
                         />
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                           <TrackAvatarIcon track={track} color={avatar.text} />
@@ -1593,8 +1568,6 @@ export default function TeamPage() {
               })}
             </tbody>
           </table>
-            );
-          })()}
         </div>
       )}
       {filtered.length === 0 && (
@@ -1639,36 +1612,84 @@ export default function TeamPage() {
       </Modal>
 
       <Modal
-        open={!!assignmentDetailMember}
-        onClose={() => setAssignmentDetailMember(null)}
-        title={`Assignments · ${assignmentDetailMember?.name ?? ""}`}
+        open={!!creditSummaryMember}
+        onClose={() => setCreditSummaryMember(null)}
+        title={`Credit Progress · ${creditSummaryMember?.name ?? ""}`}
       >
-        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-2">
-          {selectedMemberAssignments.length === 0 ? (
-            <p className="text-sm text-white/45">No project assignments found for this member.</p>
-          ) : (
-            selectedMemberAssignments.map((item) => (
-              <a
-                key={`${item.kind}-${item.id}`}
-                href={item.href}
-                className="block rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 hover:border-[#85CC17]/45 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm text-white/90 font-medium">{item.title}</p>
-                    <p className="text-[11px] text-white/45 mt-0.5">
-                      {item.code} · {item.kind}{item.topic ? ` · ${item.topic}` : ""}
-                    </p>
+        {creditSummaryMember && (() => {
+          const m = creditSummaryMember;
+          const memberClaims = creditClaims.filter(
+            (c) => c.memberId === m.id && (!activeCycle || c.cycleId === activeCycle.id),
+          );
+          const memberAdjustments = creditAdjustments.filter(
+            (a) => a.memberId === m.id && (!activeCycle || a.cycleId === activeCycle.id),
+          );
+          const credits = new Map<string, number>();
+          for (const a of creditAssignments) credits.set(a.id, a.credits);
+          const ledger = computeCreditLedger({ claims: memberClaims, adjustments: memberAdjustments, assignmentCredits: credits });
+          const classification = classifyMember(m);
+          const primaryTrack = pickPrimaryTrack(m);
+          const target = activeCycle && classification.cycleRole
+            ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
+            : 0;
+          const dot = computeDot({ cycle: activeCycle, member: m, earnedCredits: ledger.total, targetCredits: target, hasAnyClaims: memberClaims.length > 0 });
+          const dotColorClass = dot.color === "green" ? "bg-emerald-400" : dot.color === "yellow" ? "bg-yellow-400" : dot.color === "orange" ? "bg-orange-400" : dot.color === "red" ? "bg-red-500" : "bg-gray-400";
+          const pendingClaims = memberClaims.filter((c) => c.status === "claimed" || c.status === "in_progress" || c.status === "submitted");
+          const approvedClaims = memberClaims.filter((c) => c.status === "approved");
+          return (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <span className={`h-3 w-3 rounded-full flex-shrink-0 ${dotColorClass}`} />
+                <span className="text-sm text-white/80">{dot.label}</span>
+              </div>
+              {activeCycle ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
+                    <p className="text-lg font-bold text-white">{ledger.total}</p>
+                    <p className="text-[10px] text-white/45 mt-0.5">Credits earned</p>
                   </div>
-                  <span className="text-[10px] text-white/50 whitespace-nowrap">{item.deadline !== "—" ? `Due ${item.deadline}` : "No deadline"}</span>
+                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
+                    <p className="text-lg font-bold text-white">{target}</p>
+                    <p className="text-[10px] text-white/45 mt-0.5">Target</p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
+                    <p className={`text-lg font-bold ${dot.checkInsBehind > 0 ? "text-red-400" : "text-emerald-400"}`}>{dot.checkInsBehind > 0 ? `-${dot.checkInsBehind}` : "On track"}</p>
+                    <p className="text-[10px] text-white/45 mt-0.5">Check-ins behind</p>
+                  </div>
                 </div>
-                <p className="text-[11px] text-white/55 mt-1">Status: {item.status || "—"}</p>
-              </a>
-            ))
-          )}
-        </div>
+              ) : (
+                <p className="text-xs text-white/45">No active cycle — credit tracking is paused.</p>
+              )}
+              {memberClaims.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-white/70 mb-1.5">Claims this cycle ({memberClaims.length})</p>
+                  <div className="max-h-[180px] overflow-y-auto space-y-1 pr-1">
+                    {memberClaims.map((claim) => {
+                      const assignment = creditAssignments.find((a) => a.id === claim.assignmentId);
+                      return (
+                        <div key={claim.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/8 bg-[#0F1014] px-3 py-2">
+                          <span className="text-xs text-white/70 truncate">{assignment?.title ?? claim.assignmentId}</span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-xs text-white/50">{credits.get(claim.assignmentId) ?? "?"} cr</span>
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${claim.status === "approved" ? "bg-emerald-500/15 text-emerald-300" : claim.status === "rejected" ? "bg-red-500/15 text-red-300" : "bg-yellow-500/15 text-yellow-300"}`}>
+                              {claim.status}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-white/35 mt-1.5">{approvedClaims.length} approved · {pendingClaims.length} pending</p>
+                </div>
+              )}
+              {memberClaims.length === 0 && activeCycle && (
+                <p className="text-xs text-white/45">No claims submitted this cycle.</p>
+              )}
+            </div>
+          );
+        })()}
         <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setAssignmentDetailMember(null)}>Close</Btn>
+          <Btn variant="ghost" onClick={() => setCreditSummaryMember(null)}>Close</Btn>
         </div>
       </Modal>
 

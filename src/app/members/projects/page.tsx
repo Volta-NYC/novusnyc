@@ -183,7 +183,7 @@ function normalizeTrackProjectInfo(value: unknown): TrackProjectInfo | null {
     projectStatus: normalizeProjectStatus(row.projectStatus),
     teamMembers: Array.isArray(row.teamMembers) ? row.teamMembers.map((item) => String(item ?? "").trim()).filter(Boolean) : [],
     deadlines: normalizeTrackDeadlines(row.deadlines),
-    notes: String(row.notes ?? "").trim(),
+    notes: String(row.notes ?? ""),
   };
 }
 
@@ -951,15 +951,11 @@ function BusinessesPageInner() {
     if (!query) return true;
     const trackAssignments = getTrackAssignments(project);
     const allTeamNames = trackAssignments.flatMap((assignment) => assignment.members);
-    const allTrackNotes = trackAssignments
-      .map((assignment) => String(project.trackProjects?.[assignment.track]?.notes ?? ""))
-      .join(" ");
+    const neighborhood = (project.neighborhood ?? project.showcaseNeighborhood ?? "").trim();
     return project.name.toLowerCase().includes(query)
       || project.ownerName.toLowerCase().includes(query)
-      || project.ownerEmail.toLowerCase().includes(query)
-      || allTeamNames.some((name) => name.toLowerCase().includes(query))
-      || allTrackNotes.toLowerCase().includes(query)
-      || (project.teamLead ?? "").toLowerCase().includes(query);
+      || neighborhood.toLowerCase().includes(query)
+      || allTeamNames.some((name) => name.toLowerCase().includes(query));
   };
 
   // Status sort puts Ongoing on top, then Upcoming, then Completed; tie-break by business name.
@@ -967,6 +963,10 @@ function BusinessesPageInner() {
     return [...list].sort((a, b) => {
       const statusDelta = PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(a.projectStatus)] - PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(b.projectStatus)];
       if (statusDelta !== 0) return statusDelta;
+      const aNeighborhood = (a.neighborhood ?? a.showcaseNeighborhood ?? "").trim();
+      const bNeighborhood = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim();
+      const neighborhoodDelta = aNeighborhood.localeCompare(bNeighborhood);
+      if (neighborhoodDelta !== 0) return neighborhoodDelta;
       return a.name.localeCompare(b.name);
     });
   };
@@ -981,11 +981,6 @@ function BusinessesPageInner() {
     return normalized.projectTracks.length === 0;
   };
 
-  const tabScoped = businesses.filter((business) => {
-    if (activeTab === "discovery") return isDiscoveryBusiness(business);
-    return businessHasTrack(business, TAB_TRACK[activeTab]);
-  });
-  const filtered = sortByStatusThenName(tabScoped.filter(matchesSearch));
 
   const teamNameCounts = new Map<string, number>();
   team.forEach((member) => {
@@ -1066,6 +1061,12 @@ function BusinessesPageInner() {
       };
     });
   };
+
+  const tabScoped = businesses.filter((business) => {
+    if (activeTab === "discovery") return isDiscoveryBusiness(business);
+    return businessHasTrack(business, TAB_TRACK[activeTab]);
+  });
+  const filtered = sortByStatusThenName(tabScoped.filter(matchesSearch));
 
   const resolveRecipientsFromAssignedNames = (inputNames: string[]): { emails: string[]; unresolved: string[] } => {
     const unresolved: string[] = [];
@@ -1571,7 +1572,7 @@ function BusinessesPageInner() {
           {fromWebsite ? (
             <span className="text-white/65">Website form</span>
           ) : (
-            <span className="text-white/30">Manual</span>
+            <span className="text-white/30">In-person</span>
           )}
         </td>
         <td className="px-2 py-2 align-top">
@@ -1834,7 +1835,7 @@ function BusinessesPageInner() {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder={isMemberRestricted ? "Search business names…" : "Search businesses, owners, leads…"}
+          placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
         />
       </div>
 
