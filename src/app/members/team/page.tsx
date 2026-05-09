@@ -1138,16 +1138,6 @@ export default function TeamPage() {
     return memberAssignments.length > 0;
   }).length;
 
-  const pillColorClass = (prefix: string): string => {
-    switch (prefix) {
-      case "W": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
-      case "M": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
-      case "F":
-      case "R":
-      case "C":
-      default: return "bg-[#11141A] border-white/15 text-white/80";
-    }
-  };
 
   return (
     <MembersLayout>
