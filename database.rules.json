@@ -1,0 +1,86 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "businesses": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "bids": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "team": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "tasks": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "projects": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "financeAssignments": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "calendarEvents": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "applications": {
+      ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin' || root.child('userProfiles').child(auth.uid).child('authRole').val() === 'interviewer')",
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin' || root.child('userProfiles').child(auth.uid).child('authRole').val() === 'interviewer')"
+    },
+
+    "userProfiles": {
+      ".read": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "inviteCodes": {
+      ".read": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'",
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'",
+      "$code": {
+        ".read": true
+      }
+    },
+
+    "interviewSlots": {
+      ".read": true,
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin' || root.child('userProfiles').child(auth.uid).child('authRole').val() === 'interviewer')"
+    },
+
+    "interviewInvites": {
+      ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin' || root.child('userProfiles').child(auth.uid).child('authRole').val() === 'interviewer')",
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin' || root.child('userProfiles').child(auth.uid).child('authRole').val() === 'interviewer')",
+      "$token": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
+    "interviewSettings": {
+      ".read": true,
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin' || root.child('userProfiles').child(auth.uid).child('authRole').val() === 'interviewer')"
+    },
+
+    "auditLogs": {
+      ".read": "auth != null && root.child('userProfiles').child(auth.uid).child('authRole').val() === 'admin'",
+      ".write": "auth != null"
+    }
+  }
+}
