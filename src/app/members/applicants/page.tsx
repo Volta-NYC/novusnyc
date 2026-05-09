@@ -15,7 +15,7 @@ import {
   subscribeInterviewSlots,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
-import { gradeToClassOf, isLegacyGrade } from "@/lib/grades";
+import { collegeClassToHighSchoolClass, gradeToClassOf, isLegacyGrade } from "@/lib/grades";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "New",
@@ -32,6 +32,7 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   "Interview Completed": "bg-purple-500/20 text-purple-200 border border-purple-400/35",
   "Accepted": "bg-emerald-500/20 text-emerald-200 border border-emerald-400/35",
 };
+const HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF = Date.parse("2026-05-09T00:00:00.000Z");
 
 function normalize(v: string): string {
   return v.trim().replace(/\s+/g, " ").toLowerCase();
@@ -81,6 +82,11 @@ function formatDateTime(value: string): string {
   });
 }
 
+function predatesHighSchoolClassMigration(value: string | undefined): boolean {
+  const ms = Date.parse(String(value ?? ""));
+  return Number.isFinite(ms) && ms < HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF;
+}
+
 // ── Column definitions ─────────────────────────────────────────────────────────
 
 type ColumnKey = "status" | "actions" | "name" | "email" | "school" | "grade" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals";
@@ -91,7 +97,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "name", label: "Name" },
   { key: "email", label: "Email" },
   { key: "school", label: "School Name" },
-  { key: "grade", label: "Grade" },
+  { key: "grade", label: "HS Class" },
   { key: "cityState", label: "City, State" },
   { key: "referral", label: "How They Heard" },
   { key: "tracks", label: "Tracks" },
@@ -246,7 +252,8 @@ export default function ApplicantsPage() {
       let touched = false;
       for (const app of applications) {
         if (!isLegacyGrade(app.grade)) continue;
-        const next = gradeToClassOf(app.grade);
+        if (!predatesHighSchoolClassMigration(app.createdAt)) continue;
+        const next = collegeClassToHighSchoolClass(app.grade);
         if (!next || next === app.grade) continue;
         try {
           // eslint-disable-next-line no-await-in-loop

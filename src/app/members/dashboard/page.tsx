@@ -353,6 +353,12 @@ export default function MemberDashboardPage() {
           )}
         </section>
 
+        <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-4">
+          <p className="text-sm text-black/60">
+            Credit guide: <span className="font-semibold text-black/80">1 credit is roughly 1 hour of expected work.</span>
+          </p>
+        </section>
+
         {/* ── My work ── */}
         {activeCycle && classification?.status === "participant" && (
           <section className="grid grid-cols-1 md:grid-cols-3 gap-3">

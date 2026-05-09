@@ -142,7 +142,7 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">Grade *</label>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">High School Class Year *</label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {GRADE_OPTIONS.map((grade) => {
             const active = form.grade === grade;

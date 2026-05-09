@@ -120,6 +120,15 @@ const SYSTEM_TEMPLATE_SEEDS: Array<{
   },
 ];
 
+const EMAIL_PLACEHOLDERS = [
+  "{{firstName}}",
+  "{{fullName}}",
+  "{{memberName}}",
+  "{{school}}",
+  "{{grade}}",
+  "{{projects}}",
+] as const;
+
 type DeliveryMode = "to" | "cc" | "bcc";
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
@@ -134,7 +143,7 @@ const EMAIL_SORT_OPTIONS = [
   { value: 3, label: "Name" },
   { value: 4, label: "Email" },
   { value: 5, label: "School" },
-  { value: 6, label: "Grade" },
+  { value: 6, label: "HS Class" },
 ];
 
 const TRACK_SORT_ORDER: Record<TrackKey, number> = {
@@ -215,7 +224,6 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
   const canUseEmail = authRole === "admin";
@@ -237,6 +245,9 @@ export default function MemberEmailPage() {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [prefillIds, setPrefillIds] = useState<string[]>([]);
+  const insertPlaceholder = (placeholder: string) => {
+    setMessage((current) => `${current}${current.trim() ? " " : ""}${placeholder}`);
+  };
 
   // Templates state — drives the "load / save / delete" panel above compose.
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -679,6 +690,18 @@ export default function MemberEmailPage() {
       toRecipients.forEach((e) => formData.append("toRecipients", e));
       ccRecipients.forEach((e) => formData.append("ccRecipients", e));
       bccRecipients.forEach((e) => formData.append("bccRecipients", e));
+      selectedRecipients.forEach((recipient) => {
+        const member = team.find((item) => item.id === recipient.id);
+        const assignments = member ? (memberAssignmentsById.get(member.id) ?? []).map((item) => item.code).join(", ") : "";
+        formData.append("recipientMeta", JSON.stringify({
+          email: recipient.email,
+          fullName: member?.name ?? recipient.name ?? "",
+          memberName: member?.name ?? recipient.name ?? "",
+          school: member?.school ?? "",
+          grade: member?.grade ?? "",
+          projects: assignments,
+        }));
+      });
       attachments.forEach((f) => formData.append("attachments", f, f.name));
       const response = await fetch("/api/members/team-email", {
         method: "POST",
@@ -747,7 +770,7 @@ export default function MemberEmailPage() {
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[300px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Grade</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[120px]">Mode</th>
                   </tr>
                 </thead>
@@ -926,7 +949,7 @@ export default function MemberEmailPage() {
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[320px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Grade</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -1058,6 +1081,18 @@ export default function MemberEmailPage() {
           </select>
         </Field>
         <Field label="Message" required>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            {EMAIL_PLACEHOLDERS.map((placeholder) => (
+              <button
+                key={placeholder}
+                type="button"
+                onClick={() => insertPlaceholder(placeholder)}
+                className="rounded-full border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-white/65 hover:border-[#85CC17]/35 hover:text-white transition-colors"
+              >
+                {placeholder}
+              </button>
+            ))}
+          </div>
           <RichTextEditor
             content={message}
             onChange={setMessage}
@@ -1070,7 +1105,8 @@ export default function MemberEmailPage() {
 
         {status && <p className="text-xs text-white/60">{status}</p>}
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span />
           <Btn
             variant="primary"
             onClick={sendEmail}

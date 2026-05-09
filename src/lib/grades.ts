@@ -1,50 +1,64 @@
-// Class-of-YYYY (college graduation year) replaces the legacy grade taxonomy
-// (Freshman/Sophomore/Junior/Senior). Storing the graduating-class year keeps
-// the value stable as a student progresses, so records don't drift each fall.
-//
-// The legacy → class-of mapping below is anchored to the 2025-26 academic year
-// (today the user reset the taxonomy in May 2026). High-school freshmen now
-// graduate college in 2033; high-school seniors in 2030. College-year labels
-// map analogously. Each year a new freshman class arrives, append a new entry
-// to CLASS_GRADE_OPTIONS — existing records continue to be correct as-is.
+// Class-of-YYYY is the student's high-school graduation year. Earlier versions
+// stored projected college graduation year. Callers that know a record is
+// legacy can convert those values by subtracting four years.
 
 export const CLASS_GRADE_OPTIONS = [
+  "Class of 2022",
+  "Class of 2023",
+  "Class of 2024",
+  "Class of 2025",
   "Class of 2026",
   "Class of 2027",
   "Class of 2028",
   "Class of 2029",
   "Class of 2030",
-  "Class of 2031",
-  "Class of 2032",
-  "Class of 2033",
-  "Class of 2034",
 ] as const;
 
 const LEGACY_GRADE_TO_CLASS: Record<string, string> = {
-  freshman: "Class of 2033",
-  sophomore: "Class of 2032",
-  junior: "Class of 2031",
-  senior: "Class of 2030",
-  "college freshman": "Class of 2029",
-  "college sophomore": "Class of 2028",
-  "college junior": "Class of 2027",
-  "college senior": "Class of 2026",
+  freshman: "Class of 2029",
+  sophomore: "Class of 2028",
+  junior: "Class of 2027",
+  senior: "Class of 2026",
+  "high school freshman": "Class of 2029",
+  "high school sophomore": "Class of 2028",
+  "high school junior": "Class of 2027",
+  "high school senior": "Class of 2026",
+  "college freshman": "Class of 2025",
+  "college sophomore": "Class of 2024",
+  "college junior": "Class of 2023",
+  "college senior": "Class of 2022",
 };
 
-// Convert a stored grade string to its class-of-YYYY equivalent. Already-converted
-// values pass through unchanged; unknown values (including the bare "College")
-// are returned as-is so we don't silently wipe data.
+function classYearFromValue(value: string): number | null {
+  const match = value.match(/^class of\s+(\d{4})$/i);
+  if (!match) return null;
+  const year = Number(match[1]);
+  return Number.isFinite(year) ? year : null;
+}
+
+// Convert any stored grade string to high-school class-of-YYYY. Unknown values
+// pass through so we do not silently wipe data.
 export function gradeToClassOf(value: string | null | undefined): string {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
-  if (raw.toLowerCase().startsWith("class of ")) return raw;
   const mapped = LEGACY_GRADE_TO_CLASS[raw.toLowerCase()];
-  return mapped ?? raw;
+  if (mapped) return mapped;
+  const classYear = classYearFromValue(raw);
+  if (classYear && classYear > 2030) return `Class of ${classYear - 4}`;
+  return raw;
 }
 
-// True iff the stored grade is a legacy label that has a known class-of mapping.
+export function collegeClassToHighSchoolClass(value: string | null | undefined): string {
+  const raw = String(value ?? "").trim();
+  const classYear = classYearFromValue(raw);
+  return classYear ? `Class of ${classYear - 4}` : gradeToClassOf(raw);
+}
+
+// True iff the stored grade should be rewritten to high-school class-of-YYYY.
 // Used by one-time migrations to decide whether to write through.
 export function isLegacyGrade(value: string | null | undefined): boolean {
   const raw = String(value ?? "").trim().toLowerCase();
-  return raw in LEGACY_GRADE_TO_CLASS;
+  if (raw in LEGACY_GRADE_TO_CLASS) return true;
+  const classYear = classYearFromValue(raw);
+  return !!classYear && classYear >= 2026 && classYear <= 2034;
 }

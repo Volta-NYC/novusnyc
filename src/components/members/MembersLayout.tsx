@@ -22,6 +22,11 @@ type NavItem = {
 
 const ADMIN_NAV_ITEMS: NavItem[] = [
   {
+    href: "/members/overview",
+    label: "Overview",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M14 21h7M14 13h7"/></svg>,
+  },
+  {
     href: "/members/projects",
     label: "Projects",
     activeMatchRoots: ["/members/projects", "/members/assignments"],
@@ -99,7 +104,7 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
 ];
 
 function getDefaultMembersPath(role: AuthRole | null): string {
-  if (role === "admin") return "/members/projects";
+  if (role === "admin") return "/members/overview";
   return "/members/dashboard";
 }
 
@@ -113,6 +118,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
   if (role === "admin") {
     return [
       "/members/projects",
+      "/members/overview",
       "/members/assignments",
       "/members/project-management",
       "/members/cycles",

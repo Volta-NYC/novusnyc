@@ -14,7 +14,7 @@ function normalizeAuthRole(value: unknown): "admin" | "interviewer" | "member" {
 }
 
 function defaultPathForRole(role: "admin" | "interviewer" | "member"): string {
-  if (role === "admin") return "/members/projects";
+  if (role === "admin") return "/members/overview";
   return "/members/dashboard";
 }
 
