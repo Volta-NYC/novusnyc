@@ -1385,7 +1385,6 @@ function BusinessesPageInner() {
             )}
             <span className="font-medium leading-snug break-words">
               {b.name}
-              {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
             </span>
           </div>
         </td>
@@ -1528,7 +1527,6 @@ function BusinessesPageInner() {
         <td className="px-2 py-2 text-[11px] text-white/90 align-top">
           <span className="font-medium leading-snug break-words">
             {b.name}
-            {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
           </span>
         </td>
         <td className="px-2 py-2 text-[11px] text-white/65 break-words align-top">
@@ -1571,9 +1569,7 @@ function BusinessesPageInner() {
         </td>
         <td className="px-2 py-2 text-[11px] align-top">
           {fromWebsite ? (
-            <span className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
-              Website form
-            </span>
+            <span className="text-white/65">Website form</span>
           ) : (
             <span className="text-white/30">Manual</span>
           )}
@@ -1826,10 +1822,6 @@ function BusinessesPageInner() {
           ) : undefined
         }
       />
-      <p className="text-xs text-white/45 mb-4">
-        <span className="text-blue-300 font-semibold">◆</span> Visible on public home/showcase.
-      </p>
-
       {activeTab !== "discovery" && (
         <div className="grid grid-cols-3 gap-3 mb-5">
           <StatCard label="Ongoing" value={ongoingCount} color="text-green-400" />

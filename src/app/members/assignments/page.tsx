@@ -884,11 +884,7 @@ export default function FinanceAssignmentsPage() {
     }
   };
 
-  // Drop legacy grant assignments from display — finance is not running grants right now.
-  const visibleAssignments = useMemo(
-    () => assignments.filter((item) => item.type !== "Grant"),
-    [assignments],
-  );
+  const visibleAssignments = assignments;
 
   const filtered = visibleAssignments.filter((item) => {
     if (!search.trim()) return true;

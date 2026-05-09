@@ -3,7 +3,6 @@ import { dbRead, verifyCaller } from "@/lib/server/adminApi";
 
 const EXPORT_SECTION_PATHS = {
   businesses: "businesses",
-  projects: "projects",
   financeAssignments: "financeAssignments",
   members: "team",
   applicants: "applications",

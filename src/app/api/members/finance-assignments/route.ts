@@ -11,9 +11,9 @@ function normalizeNameKey(value: unknown): string {
   return asText(value).replace(/\s+/g, " ").toLowerCase();
 }
 
-function normalizeAssignmentType(value: unknown): "Report" | "Case Study" | "Grant" {
+function normalizeAssignmentType(value: unknown): "Report" | "Case Study" {
   const raw = asText(value);
-  if (raw === "Report" || raw === "Case Study" || raw === "Grant") return raw;
+  if (raw === "Report" || raw === "Case Study") return raw;
   if (raw === "Business Case Study") return "Case Study";
   return "Report";
 }

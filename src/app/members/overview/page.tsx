@@ -56,7 +56,7 @@ export default function AdminOverviewPage() {
   const ongoingProjects = businesses.filter((business) => normalizeStatus(business.projectStatus) === "Ongoing").length;
   const upcomingProjects = businesses.filter((business) => normalizeStatus(business.projectStatus) === "Upcoming").length;
   const completedProjects = businesses.filter((business) => normalizeStatus(business.projectStatus) === "Completed").length;
-  const openFinanceAssignments = financeAssignments.filter((assignment) => assignment.status !== "Completed" && assignment.type !== "Grant").length;
+  const openFinanceAssignments = financeAssignments.filter((assignment) => assignment.status !== "Completed").length;
 
   return (
     <MembersLayout>

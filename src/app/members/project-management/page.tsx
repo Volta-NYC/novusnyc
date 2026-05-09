@@ -1,6 +1,6 @@
 "use client";
 
-// Default landing for the Project Management section — redirects to the catalog
+// Default landing for the Assignments section — redirects to the catalog
 // tab so the URL always lands on a meaningful view.
 
 import { useEffect } from "react";

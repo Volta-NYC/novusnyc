@@ -1,6 +1,6 @@
 "use client";
 
-// Project Management → Assignment Catalog. Full record of past, present, and
+// Assignments → Assignment Catalog. Full record of past, present, and
 // future assignments. Awaiting-approval claims show up on the sibling Approvals
 // tab and disappear from there once approved.
 
@@ -301,7 +301,7 @@ export default function CatalogPage() {
       <SectionTabs tabs={PROJECT_MGMT_TABS} />
 
       <PageHeader
-        title="Project Management"
+        title="Assignments"
         subtitle="Assignment catalog — full record of past, present, and future assignments. Submitted ones also appear under Approvals until they're reviewed."
         action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
       />

@@ -35,7 +35,7 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
 const HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF = Date.parse("2026-05-09T00:00:00.000Z");
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
-type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C" | "G";
+type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C";
 
 function getMemberTrack(member: TeamMember): TrackKey {
   const divisions = member.divisions ?? [];
@@ -1008,11 +1008,10 @@ export default function TeamPage() {
 
     for (const assignment of financeAssignments) {
       const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
-      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : assignmentType === "grant" ? "G" : "R";
+      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
       const assignmentTypeLabel =
         assignmentType === "case study" ? "Case Study"
-          : assignmentType === "grant" ? "Grant"
-            : "Report";
+          : "Report";
       const region = String(assignment.region ?? "").trim();
       const assignmentDisplayTitle = region ? `${region} ${assignmentTypeLabel}` : assignmentTypeLabel;
       const firstDeadlineDate = Array.isArray(assignment.deadlines)
@@ -1174,7 +1173,6 @@ export default function TeamPage() {
       case "F":
       case "R":
       case "C":
-      case "G": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
       default: return "bg-[#11141A] border-white/15 text-white/80";
     }
   };

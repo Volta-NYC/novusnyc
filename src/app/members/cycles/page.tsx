@@ -1,6 +1,6 @@
 "use client";
 
-// Cycles page (top-level, admin-only). One quarterly cycle drives the entire
+// Overview page (top-level, admin-only). One quarterly cycle drives the entire
 // credit/strike system. Active cycle pinned at top in expanded inline-edit mode;
 // older cycles collapse below. Targets, pacing, and strike thresholds are
 // fully editable post-creation.
@@ -55,7 +55,7 @@ function daysBetween(a: string, b: string): number | null {
   return Math.round((bMs - aMs) / (1000 * 60 * 60 * 24));
 }
 
-export default function CyclesPage() {
+export default function OverviewPage() {
   const { authRole, loading } = useAuth();
   const router = useRouter();
   const { ask, Dialog } = useConfirm();
@@ -148,7 +148,7 @@ export default function CyclesPage() {
       <Dialog />
 
       <PageHeader
-        title="Cycles"
+        title="Overview"
         subtitle="Quarterly periods that drive credit targets, pacing, and strike thresholds. Exactly one cycle is active at a time. Every field is editable after creation."
         action={<Btn variant="primary" onClick={() => setCreating(true)}>+ New Cycle</Btn>}
       />

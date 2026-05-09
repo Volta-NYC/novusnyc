@@ -1,6 +1,6 @@
 "use client";
 
-// Project Management → Approvals. Sr Associate / Board review submitted claims
+// Assignments → Approvals. Sr Associate / Board review submitted claims
 // here. Approved claims migrate to the Catalog's "completed" view; rejected
 // claims send a templated email and let the member resubmit.
 
@@ -218,7 +218,7 @@ export default function ApprovalsPage() {
       <SectionTabs tabs={PROJECT_MGMT_TABS} />
 
       <PageHeader
-        title="Project Management"
+        title="Assignments"
         subtitle={`Approvals — solely for current assignments awaiting review. ${queue.length} submission${queue.length === 1 ? "" : "s"} pending.`}
         action={
           <Btn

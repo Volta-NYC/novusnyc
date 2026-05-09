@@ -84,7 +84,7 @@ export const APPLICANTS_GROUP_TABS: SectionTab[] = [
   { href: "/members/applicants/interviews", label: "Interviews" },
 ];
 
-// Project Management contains Assignments Catalog + Approvals.
+// Assignments contains the catalog and approvals queue.
 export const PROJECT_MGMT_TABS: SectionTab[] = [
   { href: "/members/project-management/catalog", label: "Assignments Catalog" },
   { href: "/members/project-management/approvals", label: "Approvals" },

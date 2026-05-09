@@ -129,24 +129,6 @@ export interface Business {
   }>>;
 }
 
-export interface Task {
-  id: string;
-  name: string;
-  // "In Progress" and "Blocked" are legacy values retained for backward compatibility.
-  status: "To Do" | "On Hold" | "In Progress" | "Blocked" | "Done";
-  priority: "Urgent" | "High" | "Medium" | "Low";
-  assignedTo: string;
-  businessId: string;
-  division: "Tech" | "Marketing" | "Finance" | "Outreach";
-  dueDate: string;
-  week: string;
-  notes: string;
-  blocker: string;
-  sortIndex?: number;
-  createdAt: string;
-  completedAt: string;
-}
-
 export interface TeamMember {
   id: string;
   name: string;
@@ -243,7 +225,7 @@ export interface Project {
   updatedAt: string;
 }
 
-export type FinanceAssignmentType = "Report" | "Case Study" | "Grant";
+export type FinanceAssignmentType = "Report" | "Case Study";
 export type FinanceAssignmentStatus = "Upcoming" | "Ongoing" | "Completed";
 
 export interface FinanceAssignment {
@@ -715,7 +697,6 @@ function normalizeAuthRoleValue(value: unknown): AuthRole {
 
 export const subscribeBIDs        = makeSubscriber<BID>("bids");
 export const subscribeBusinesses  = makeSubscriber<Business>("businesses");
-export const subscribeTasks       = makeSubscriber<Task>("tasks");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
 export const subscribeFinanceAssignments = makeSubscriber<FinanceAssignment>("financeAssignments");
@@ -846,44 +827,6 @@ export async function deleteBusiness(id: string): Promise<void> {
   await writeAuditLog(db, {
     action: "delete",
     collection: "businesses",
-    recordId: id,
-  });
-}
-
-// ── Tasks ─────────────────────────────────────────────────────────────────────
-
-export async function createTask(data: Omit<Task, "id" | "createdAt">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const taskRef = push(ref(db, "tasks"));
-  await set(taskRef, { ...data, createdAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "tasks",
-    recordId: taskRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
-}
-
-export async function updateTask(id: string, data: Partial<Task>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `tasks/${id}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "tasks",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
-}
-
-export async function deleteTask(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `tasks/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "tasks",
     recordId: id,
   });
 }
