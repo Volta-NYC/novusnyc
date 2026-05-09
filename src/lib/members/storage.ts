@@ -129,24 +129,6 @@ export interface Business {
   }>>;
 }
 
-export interface Task {
-  id: string;
-  name: string;
-  // "In Progress" and "Blocked" are legacy values retained for backward compatibility.
-  status: "To Do" | "On Hold" | "In Progress" | "Blocked" | "Done";
-  priority: "Urgent" | "High" | "Medium" | "Low";
-  assignedTo: string;
-  businessId: string;
-  division: "Tech" | "Marketing" | "Finance" | "Outreach";
-  dueDate: string;
-  week: string;
-  notes: string;
-  blocker: string;
-  sortIndex?: number;
-  createdAt: string;
-  completedAt: string;
-}
-
 export interface TeamMember {
   id: string;
   name: string;
@@ -162,11 +144,20 @@ export interface TeamMember {
   slackHandle: string;
   email: string;
   alternateEmail?: string;
-  status: "Active" | "On Leave" | "Alumni" | "Inactive";
+  // Reserve = headcount-only, gray dot, removed from the active credit system.
+  // Inactive remains as a legacy value treated equivalently to Reserve at display time.
+  status: "Active" | "On Leave" | "Alumni" | "Inactive" | "Reserve";
   skills: string[];       // may be undefined if Firebase omitted empty array
   joinDate: string;
   notes: string;
   createdAt: string;
+  // Automation bookkeeping — populated by the cycle sweep so warnings/strikes
+  // are issued at most once per cycle per member, and biweekly check-ins fire
+  // exactly once per 14-day mark.
+  lastWarningCycleId?: string;
+  lastAutoStrikeCycleId?: string;
+  lastBiweeklyCheckinMark?: number;     // floor(daysSinceCycleStart / 14)
+  lastBiweeklyCheckinCycleId?: string;  // resets when cycle changes
 }
 
 export type ApplicationStatus =
@@ -234,7 +225,7 @@ export interface Project {
   updatedAt: string;
 }
 
-export type FinanceAssignmentType = "Report" | "Case Study" | "Grant";
+export type FinanceAssignmentType = "Report" | "Case Study";
 export type FinanceAssignmentStatus = "Upcoming" | "Ongoing" | "Completed";
 
 export interface FinanceAssignment {
@@ -260,6 +251,181 @@ export interface FinanceAssignment {
   notes: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// ── Credit cycle types ────────────────────────────────────────────────────────
+//
+// A Cycle defines a credit-earning period (typically a quarter). Targets are
+// per-track × per-role. Senior Associate and Board are intentionally excluded
+// from the credit/strike system — they run it.
+
+export type CycleTrack = "Tech" | "Marketing" | "Finance";
+export type CycleRole = "Analyst" | "Senior Analyst" | "Associate";
+
+export interface CycleCreditTargets {
+  Tech: Record<CycleRole, number>;
+  Marketing: Record<CycleRole, number>;
+  Finance: Record<CycleRole, number>;
+}
+
+export interface CycleStrikeThresholds {
+  warning: number;       // points to first strike
+  demotion: number;      // points to second strike
+  reserve: number;       // points to third strike
+}
+
+export interface Cycle {
+  id: string;
+  name: string;                       // e.g. "Summer 2026"
+  startDate: string;                  // ISO date (YYYY-MM-DD)
+  endDate: string;                    // ISO date (YYYY-MM-DD)
+  active: boolean;                    // exactly one cycle is active at a time
+  pacingPercentPerCheckin: number;    // default 20 — drives biweekly nudge + dot
+  creditTargets: CycleCreditTargets;
+  strikeThresholds: CycleStrikeThresholds;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Infraction catalog ────────────────────────────────────────────────────────
+// One row per *type* of infraction. Issued instances live separately on a
+// member's record. Severity is implicit in the point value: 1 = minor,
+// 2 = major, 3 = severe. To retire an infraction, just delete it.
+
+export interface Infraction {
+  id: string;
+  name: string;
+  description: string;
+  points: number;                  // 1 (minor), 2 (major), 3 (severe)
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Email templates ───────────────────────────────────────────────────────────
+// Admin-editable copy for every automated email. Hardcoding is intentionally
+// avoided — admins control wording without a deploy.
+
+// Stable keys referenced by automation. Custom (admin-authored) templates use
+// arbitrary strings — typically `custom_<id>` — and never collide with these.
+export type SystemEmailTemplateKey =
+  | "orange_pace_warning"
+  | "red_pace_strike"
+  | "demotion_notice"
+  | "cycle_start"
+  | "cycle_end_summary"
+  | "assignment_approved"
+  | "assignment_rejected"
+  | "infraction_notice"
+  | "monthly_portal_reminder"
+  | "biweekly_checkin";
+
+// Aliased for back-compat with earlier callers — same shape, just any string allowed.
+export type EmailTemplateKey = SystemEmailTemplateKey | (string & {});
+
+export interface EmailTemplate {
+  id: string;
+  key: string;                     // SystemEmailTemplateKey for system; arbitrary for custom
+  label: string;                   // human-readable name (admin-editable for custom)
+  description: string;             // when this template fires (or what it's for)
+  subject: string;                 // mustache-style {{variable}} tokens supported
+  body: string;                    // HTML, same token style
+  // The set of variable tokens this template understands. Drives the preview
+  // panel's sample-data substitution and the variable-insert helper.
+  availableVariables: string[];
+  active: boolean;
+  updatedAt: string;
+  updatedBy: string;               // uid or email of the last admin to edit
+}
+
+// ── Assignment catalog (credit-system marketplace) ────────────────────────────
+// An Assignment is the *catalog entry* for work members can claim. AssignmentClaim
+// records the member→assignment relationship and carries the lifecycle status.
+// Together they replace the older finance-assignment model for credit purposes.
+
+export type AssignmentDifficulty = string; // admin-configurable, free-form
+
+export type AssignmentStatus =
+  | "open"          // visible in marketplace, accepting claims
+  | "claimed"       // capacity reached but work hasn't been submitted
+  | "in_progress"   // mostly informational; admin can still close/duplicate
+  | "submitted"     // at least one claim is awaiting approval
+  | "approved"      // all claims approved (closed naturally)
+  | "closed";       // admin-closed; no longer browseable
+
+export interface Assignment {
+  id: string;
+  title: string;
+  description: string;             // HTML (rich-text)
+  primaryTrack: CycleTrack;        // for credit accounting + code prefix
+  visibleTracks: CycleTrack[];     // who sees this in their marketplace; defaults to [primaryTrack]
+  credits: number;
+  difficulty: AssignmentDifficulty;
+  estimatedHours: number;
+  minRole: CycleRole;              // gate — Analyst / Sr Analyst / Associate
+  businessId?: string;             // optional link to a business
+  capacity: number;                // how many members can claim simultaneously
+  deadline?: string;               // ISO date
+  status: AssignmentStatus;
+  cycleId: string;                 // cycle this assignment is scoped to
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;               // uid or email
+}
+
+export type AssignmentClaimStatus =
+  | "claimed"
+  | "in_progress"
+  | "submitted"
+  | "approved"
+  | "rejected";
+
+export interface AssignmentClaim {
+  id: string;
+  assignmentId: string;
+  memberId: string;
+  memberName: string;              // denormalized for display
+  cycleId: string;
+  status: AssignmentClaimStatus;
+  deliverableUrl?: string;
+  submissionNotes?: string;
+  claimedAt: string;
+  submittedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectReason?: string;
+  // Awarded credits — usually equal to assignment.credits at approval time, but
+  // approver can adjust (e.g. partial completion). Drives the credit ledger.
+  creditsAwarded?: number;
+  approvedBy?: string;
+}
+
+// ── Member strikes + credit adjustments ───────────────────────────────────────
+// Strikes are point-bearing infractions issued against a member; thresholds on
+// the active cycle convert points → strike count (warning / demotion / reserve).
+
+export interface MemberStrike {
+  id: string;
+  memberId: string;
+  memberName: string;              // denormalized for display
+  cycleId: string;
+  infractionId: string;            // catalog reference
+  infractionName: string;          // denormalized in case the catalog row is retired
+  points: number;                  // 1 minor, 2 major, 3 severe — matches Infraction.points
+  issuedAt: string;
+  issuedBy: string;
+  note: string;
+  source: "manual" | "auto_pace";  // how it was issued (manual or by automation)
+}
+
+export interface MemberCreditAdjustment {
+  id: string;
+  memberId: string;
+  memberName: string;
+  cycleId: string;
+  points: number;                  // can be negative
+  reason: string;
+  createdAt: string;
+  createdBy: string;
 }
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
@@ -531,10 +697,16 @@ function normalizeAuthRoleValue(value: unknown): AuthRole {
 
 export const subscribeBIDs        = makeSubscriber<BID>("bids");
 export const subscribeBusinesses  = makeSubscriber<Business>("businesses");
-export const subscribeTasks       = makeSubscriber<Task>("tasks");
 export const subscribeTeam        = makeSubscriber<TeamMember>("team");
 export const subscribeProjects    = makeSubscriber<Project>("projects");
 export const subscribeFinanceAssignments = makeSubscriber<FinanceAssignment>("financeAssignments");
+export const subscribeCycles      = makeSubscriber<Cycle>("cycles");
+export const subscribeInfractions = makeSubscriber<Infraction>("infractions");
+export const subscribeEmailTemplates = makeSubscriber<EmailTemplate>("emailTemplates");
+export const subscribeAssignments = makeSubscriber<Assignment>("assignmentCatalog");
+export const subscribeAssignmentClaims = makeSubscriber<AssignmentClaim>("assignmentClaims");
+export const subscribeMemberStrikes = makeSubscriber<MemberStrike>("memberStrikes");
+export const subscribeMemberCreditAdjustments = makeSubscriber<MemberCreditAdjustment>("memberCreditAdjustments");
 export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
 
 export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
@@ -655,44 +827,6 @@ export async function deleteBusiness(id: string): Promise<void> {
   await writeAuditLog(db, {
     action: "delete",
     collection: "businesses",
-    recordId: id,
-  });
-}
-
-// ── Tasks ─────────────────────────────────────────────────────────────────────
-
-export async function createTask(data: Omit<Task, "id" | "createdAt">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const taskRef = push(ref(db, "tasks"));
-  await set(taskRef, { ...data, createdAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "tasks",
-    recordId: taskRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
-}
-
-export async function updateTask(id: string, data: Partial<Task>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `tasks/${id}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "tasks",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
-}
-
-export async function deleteTask(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `tasks/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "tasks",
     recordId: id,
   });
 }
@@ -1276,5 +1410,316 @@ export async function updateInterviewSettings(data: Partial<InterviewSettings>):
     collection: "interviewSettings",
     recordId: "singleton",
     details: { fields: Object.keys(data) },
+  });
+}
+
+// ── Cycles ────────────────────────────────────────────────────────────────────
+
+export async function createCycle(
+  data: Omit<Cycle, "id" | "createdAt" | "updatedAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const cycleRef = push(ref(db, "cycles"));
+  const id = cycleRef.key ?? "";
+  await set(cycleRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "cycles",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+  return id;
+}
+
+export async function updateCycle(id: string, data: Partial<Cycle>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `cycles/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "cycles",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteCycle(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `cycles/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "cycles",
+    recordId: id,
+  });
+}
+
+// Activates one cycle and deactivates every other one in a single multi-path
+// update so the "exactly one active cycle" invariant holds atomically.
+export async function activateCycleExclusive(id: string, allCycleIds: string[]): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const updates: Record<string, unknown> = {};
+  const ts = nowISO();
+  for (const cycleId of allCycleIds) {
+    updates[`cycles/${cycleId}/active`] = cycleId === id;
+    updates[`cycles/${cycleId}/updatedAt`] = ts;
+  }
+  await update(ref(db), updates);
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "cycles",
+    recordId: id,
+    details: { activated: true, deactivated: allCycleIds.filter((c) => c !== id) },
+  });
+}
+
+// ── Infractions ───────────────────────────────────────────────────────────────
+
+export async function createInfraction(
+  data: Omit<Infraction, "id" | "createdAt" | "updatedAt">,
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const infRef = push(ref(db, "infractions"));
+  await set(infRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "infractions",
+    recordId: infRef.key ?? "",
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function updateInfraction(id: string, data: Partial<Infraction>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `infractions/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "infractions",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteInfraction(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `infractions/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "infractions",
+    recordId: id,
+  });
+}
+
+// ── Email templates ───────────────────────────────────────────────────────────
+
+export async function createEmailTemplate(
+  data: Omit<EmailTemplate, "id" | "updatedAt">,
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  const tmplRef = push(ref(db, "emailTemplates"));
+  await set(tmplRef, { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "emailTemplates",
+    recordId: tmplRef.key ?? "",
+    details: { key: data.key },
+  });
+}
+
+export async function updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `emailTemplates/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "emailTemplates",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteEmailTemplate(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `emailTemplates/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "emailTemplates",
+    recordId: id,
+  });
+}
+
+// ── Assignment catalog ────────────────────────────────────────────────────────
+
+export async function createAssignment(
+  data: Omit<Assignment, "id" | "createdAt" | "updatedAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "assignmentCatalog"));
+  const id = r.key ?? "";
+  await set(r, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "assignmentCatalog",
+    recordId: id,
+    details: { title: data.title, primaryTrack: data.primaryTrack },
+  });
+  return id;
+}
+
+export async function updateAssignment(id: string, data: Partial<Assignment>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `assignmentCatalog/${id}`), { ...data, updatedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "assignmentCatalog",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteAssignment(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `assignmentCatalog/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "assignmentCatalog",
+    recordId: id,
+  });
+}
+
+// ── Assignment claims ─────────────────────────────────────────────────────────
+
+export async function createAssignmentClaim(
+  data: Omit<AssignmentClaim, "id">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "assignmentClaims"));
+  const id = r.key ?? "";
+  await set(r, data);
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "assignmentClaims",
+    recordId: id,
+    details: { assignmentId: data.assignmentId, memberId: data.memberId },
+  });
+  return id;
+}
+
+export async function updateAssignmentClaim(id: string, data: Partial<AssignmentClaim>): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await update(ref(db, `assignmentClaims/${id}`), data);
+  await writeAuditLog(db, {
+    action: "update",
+    collection: "assignmentClaims",
+    recordId: id,
+    details: { fields: Object.keys(data) },
+  });
+}
+
+export async function deleteAssignmentClaim(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `assignmentClaims/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "assignmentClaims",
+    recordId: id,
+  });
+}
+
+// ── Member strikes ────────────────────────────────────────────────────────────
+
+export async function createMemberStrike(
+  data: Omit<MemberStrike, "id" | "issuedAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "memberStrikes"));
+  const id = r.key ?? "";
+  await set(r, { ...data, issuedAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "memberStrikes",
+    recordId: id,
+    details: {
+      memberId: data.memberId,
+      infractionId: data.infractionId,
+      points: data.points,
+      source: data.source,
+    },
+  });
+  return id;
+}
+
+export async function deleteMemberStrike(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `memberStrikes/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "memberStrikes",
+    recordId: id,
+  });
+}
+
+// Admin-only "clear strikes" — wipes every strike for a member in a cycle.
+export async function clearMemberStrikes(
+  strikeIds: string[],
+): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  if (strikeIds.length === 0) return;
+  const updates: Record<string, unknown> = {};
+  for (const sid of strikeIds) {
+    updates[`memberStrikes/${sid}`] = null;
+  }
+  await update(ref(db), updates);
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "memberStrikes",
+    recordId: "bulk",
+    details: { count: strikeIds.length, ids: strikeIds },
+  });
+}
+
+// ── Member credit adjustments ─────────────────────────────────────────────────
+
+export async function createMemberCreditAdjustment(
+  data: Omit<MemberCreditAdjustment, "id" | "createdAt">,
+): Promise<string | null> {
+  const db = getDB();
+  if (!db) return null;
+  const r = push(ref(db, "memberCreditAdjustments"));
+  const id = r.key ?? "";
+  await set(r, { ...data, createdAt: nowISO() });
+  await writeAuditLog(db, {
+    action: "create",
+    collection: "memberCreditAdjustments",
+    recordId: id,
+    details: { memberId: data.memberId, points: data.points },
+  });
+  return id;
+}
+
+export async function deleteMemberCreditAdjustment(id: string): Promise<void> {
+  const db = getDB();
+  if (!db) return;
+  await remove(ref(db, `memberCreditAdjustments/${id}`));
+  await writeAuditLog(db, {
+    action: "delete",
+    collection: "memberCreditAdjustments",
+    recordId: id,
   });
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
+import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   Btn, Empty, Modal, Field, PageHeader, SearchBar, useConfirm,
 } from "@/components/members/ui";
@@ -682,7 +682,7 @@ export default function ApplicantsPage() {
         <span>Accepted: <span className="text-emerald-300 font-semibold">{acceptedApplicantsCount}</span></span>
         <span>New: <span className="text-sky-300 font-semibold">{newApplicantsCount}</span></span>
       </div>
-      <SectionTabs tabs={PEOPLE_GROUP_TABS} />
+      <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
 
       {canEdit && (
         <div className="flex gap-2 mb-4 flex-wrap">

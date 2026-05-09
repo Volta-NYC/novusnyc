@@ -10,6 +10,9 @@ export type SectionTab = {
   // When set, this tab is active only when the URL's `tab` query param equals this value.
   // Use "" for the default tab on a path (when no `tab` query param is present).
   matchTab?: string;
+  // When true, the pathname must equal a root exactly — no prefix match. Use this
+  // for landing pages like /members/admin that share a parent path with sub-pages.
+  exact?: boolean;
 };
 
 function getBasePath(href: string): string {
@@ -23,6 +26,7 @@ function isTabActive(pathname: string, currentTab: string, tab: SectionTab): boo
     return pathname === basePath && currentTab === tab.matchTab;
   }
   const roots = tab.matchRoots?.length ? tab.matchRoots : [getBasePath(tab.href)];
+  if (tab.exact) return roots.some((root) => pathname === root);
   return roots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
@@ -64,12 +68,24 @@ export default function SectionTabs({
 export const PROJECT_GROUP_TABS: SectionTab[] = [
   { href: "/members/projects", label: "Tech Projects", matchTab: "" },
   { href: "/members/projects?tab=marketing", label: "Marketing Projects", matchTab: "marketing" },
-  { href: "/members/assignments", label: "Finance Projects" },
+  { href: "/members/finance-assignments", label: "Finance Projects" },
   { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
 ];
 
-export const PEOPLE_GROUP_TABS: SectionTab[] = [
-  { href: "/members/team", label: "Members" },
-  { href: "/members/applicants", label: "Applicants" },
-  { href: "/members/interviews", label: "Interviews" },
+// Members directory + Infractions live on the same Members page.
+export const MEMBERS_GROUP_TABS: SectionTab[] = [
+  { href: "/members/team", label: "Members", exact: true },
+  { href: "/members/team/infractions", label: "Infractions" },
+];
+
+// Applicants + Interviews live on the same Applicants page.
+export const APPLICANTS_GROUP_TABS: SectionTab[] = [
+  { href: "/members/applicants", label: "Applicants", exact: true },
+  { href: "/members/applicants/interviews", label: "Interviews" },
+];
+
+// Assignments contains the catalog and approvals queue.
+export const ASSIGNMENTS_TABS: SectionTab[] = [
+  { href: "/members/assignments/catalog", label: "Catalog" },
+  { href: "/members/assignments/for-review", label: "For Review" },
 ];

@@ -14,8 +14,8 @@ function normalizeAuthRole(value: unknown): "admin" | "interviewer" | "member" {
 }
 
 function defaultPathForRole(role: "admin" | "interviewer" | "member"): string {
-  if (role === "admin") return "/members/overview";
-  return "/members/dashboard";
+  if (role === "interviewer") return "/members/applicants/interviews";
+  return "/members/overview";
 }
 
 export default function MembersIndex() {
@@ -31,7 +31,7 @@ export default function MembersIndex() {
 
       const db = getDB();
       if (!db) {
-        router.replace("/members/dashboard");
+        router.replace("/members/overview");
         return;
       }
 
@@ -40,7 +40,7 @@ export default function MembersIndex() {
         const role = normalizeAuthRole(roleSnap.val());
         router.replace(defaultPathForRole(role));
       } catch {
-        router.replace("/members/dashboard");
+        router.replace("/members/overview");
       }
     });
     return unsub;

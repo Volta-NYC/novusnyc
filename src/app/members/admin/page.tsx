@@ -59,7 +59,6 @@ function getCodeStatusColor(status: string): string {
 
 const EXPORT_OPTIONS = [
   { key: "businesses", label: "Businesses" },
-  { key: "projects", label: "Projects (legacy collection)" },
   { key: "financeAssignments", label: "Finance Assignments" },
   { key: "members", label: "Member List" },
   { key: "applicants", label: "Applicants" },

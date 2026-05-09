@@ -24,13 +24,19 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/overview",
     label: "Overview",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M14 21h7M14 13h7"/></svg>,
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
   },
   {
     href: "/members/projects",
     label: "Projects",
-    activeMatchRoots: ["/members/projects", "/members/assignments"],
+    activeMatchRoots: ["/members/projects", "/members/finance-assignments"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
+  },
+  {
+    href: "/members/assignments/catalog",
+    label: "Assignments",
+    activeMatchRoots: ["/members/assignments"],
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
   },
   {
     href: "/members/bids",
@@ -40,18 +46,19 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/team",
     label: "Members",
-    activeMatchRoots: ["/members/team", "/members/applicants", "/members/interviews"],
+    activeMatchRoots: ["/members/team"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   },
   {
-    href: "/members/email",
-    label: "Emails",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>,
+    href: "/members/applicants",
+    label: "Applicants",
+    activeMatchRoots: ["/members/applicants"],
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
   },
   {
-    href: "/members/calendar",
-    label: "Calendar",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    href: "/members/email",
+    label: "Email",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>,
   },
   {
     href: "/members/admin",
@@ -62,12 +69,7 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
 
 const INTERVIEWER_NAV_ITEMS: NavItem[] = [
   {
-    href: "/members/dashboard",
-    label: "Dashboard",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
-  },
-  {
-    href: "/members/interviews",
+    href: "/members/applicants/interviews",
     label: "Interviews",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>,
   },
@@ -75,15 +77,25 @@ const INTERVIEWER_NAV_ITEMS: NavItem[] = [
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
   {
-    href: "/members/dashboard",
-    label: "Dashboard",
+    href: "/members/overview",
+    label: "Overview",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
+  },
+  {
+    href: "/members/me",
+    label: "My Profile",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  },
+  {
+    href: "/members/work",
+    label: "Available Work",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>,
   },
 ];
 
 function getDefaultMembersPath(role: AuthRole | null): string {
-  if (role === "admin") return "/members/overview";
-  return "/members/dashboard";
+  if (role === "interviewer") return "/members/applicants/interviews";
+  return "/members/overview";
 }
 
 function getNavItemsForRole(role: AuthRole | null): NavItem[] {
@@ -96,19 +108,18 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
   if (role === "admin") {
     return [
       "/members/projects",
+      "/members/finance-assignments",
       "/members/overview",
       "/members/assignments",
       "/members/bids",
       "/members/team",
       "/members/applicants",
-      "/members/interviews",
       "/members/email",
-      "/members/calendar",
       "/members/admin",
     ];
   }
-  if (role === "interviewer") return ["/members/dashboard", "/members/interviews"];
-  return ["/members/dashboard"];
+  if (role === "interviewer") return ["/members/applicants/interviews"];
+  return ["/members/overview", "/members/work", "/members/me"];
 }
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
@@ -164,8 +175,51 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     authRole === "interviewer" ? "Interviewer" :
     "Member";
 
+  // Members get the light theme so the surface they live in feels distinct
+  // and reputable; admin/interviewer keep the dense dark theme for power use.
+  const lightTheme = authRole === "member";
+  const tone = lightTheme
+    ? {
+        page: "bg-[#F5F6F8]",
+        sidebar: "bg-white border-r border-black/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+        sidebarLogoText: "text-[#5C9911]",
+        sidebarSubtle: "text-black/55",
+        sidebarBorder: "border-black/8",
+        navInactive: "text-black/55 hover:text-black/85 hover:bg-black/5",
+        navActive: "bg-[#85CC17]/15 text-[#5C9911]",
+        navIconInactive: "text-black/35",
+        navIconActive: "text-[#5C9911]",
+        userName: "text-black/75",
+        userRole: "text-black/35",
+        footerLink: "text-black/45 hover:text-black/70 hover:bg-black/5",
+        signOut: "text-red-600 hover:text-red-700 hover:bg-red-50",
+        mobileBar: "bg-white border-b border-black/8",
+        mobileBarText: "text-black/85",
+        mobileBarLink: "text-black/45 hover:text-black/70",
+        burgerText: "text-black/55",
+      }
+    : {
+        page: "bg-[#0F1014]",
+        sidebar: "bg-[#13151A] border-r border-white/6",
+        sidebarLogoText: "text-[#85CC17]",
+        sidebarSubtle: "text-white",
+        sidebarBorder: "border-white/6",
+        navInactive: "text-white/45 hover:text-white/80 hover:bg-white/4",
+        navActive: "bg-[#85CC17]/12 text-[#85CC17]",
+        navIconInactive: "text-white/25",
+        navIconActive: "text-[#85CC17]",
+        userName: "text-white/60",
+        userRole: "text-white/25",
+        footerLink: "text-white/30 hover:text-white/60 hover:bg-white/4",
+        signOut: "text-red-300/80 hover:text-red-200 hover:bg-red-500/10",
+        mobileBar: "bg-[#13151A] border-b border-white/6",
+        mobileBarText: "text-white",
+        mobileBarLink: "text-white/30 hover:text-white/60",
+        burgerText: "text-white/50",
+      };
+
   return (
-    <div className="members-portal min-h-screen bg-[#0F1014] flex">
+    <div className={`members-portal ${lightTheme ? "members-portal-light" : ""} min-h-screen ${tone.page} flex`}>
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
@@ -176,14 +230,14 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       )}
 
       {/* Sidebar — fixed so it doesn't participate in page width calculations */}
-      <aside className={`fixed left-0 top-0 h-full w-56 bg-[#13151A] border-r border-white/6 z-30 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+      <aside className={`fixed left-0 top-0 h-full w-56 ${tone.sidebar} z-30 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
 
         {/* Logo */}
-        <div className="px-4 py-4 border-b border-white/6 flex items-center gap-2.5">
+        <div className={`px-4 py-4 border-b ${tone.sidebarBorder} flex items-center gap-2.5`}>
           <Image src="/logo.png" alt="Volta" width={28} height={28} className="object-contain" />
           <div>
-            <p className="font-display font-bold text-[#85CC17] text-sm leading-none">VOLTA</p>
-            <p className="font-body text-[10px] text-white mt-0.5">Members Portal</p>
+            <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
+            <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
           </div>
         </div>
 
@@ -198,10 +252,10 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-body transition-colors ${
-                  isActive ? "bg-[#85CC17]/12 text-[#85CC17]" : "text-white/45 hover:text-white/80 hover:bg-white/4"
+                  isActive ? tone.navActive : tone.navInactive
                 }`}
               >
-                <span className={isActive ? "text-[#85CC17]" : "text-white/25"}>{item.icon}</span>
+                <span className={isActive ? tone.navIconActive : tone.navIconInactive}>{item.icon}</span>
                 {item.label}
               </Link>
             );
@@ -209,21 +263,21 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         </nav>
 
         {/* User info and footer actions */}
-        <div className="p-2 border-t border-white/6 space-y-0.5">
+        <div className={`p-2 border-t ${tone.sidebarBorder} space-y-0.5`}>
           <div className="px-3 py-2 mb-1">
-            <p className="text-white/60 text-xs font-body font-medium truncate">{memberDisplayName}</p>
-            <p className="text-white/25 text-[10px] font-body">{memberRoleLabel}</p>
+            <p className={`${tone.userName} text-xs font-body font-medium truncate`}>{memberDisplayName}</p>
+            <p className={`${tone.userRole} text-[10px] font-body`}>{memberRoleLabel}</p>
           </div>
           <Link
             href="/"
-            className="flex items-center gap-2 px-3 py-2 text-white/30 hover:text-white/60 text-xs font-body rounded-lg hover:bg-white/4 transition-colors"
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-body rounded-lg transition-colors ${tone.footerLink}`}
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Back to public site
           </Link>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-2 px-3 py-2 text-red-300/80 hover:text-red-200 text-xs font-body rounded-lg hover:bg-red-500/10 transition-colors"
+            className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-body rounded-lg transition-colors ${tone.signOut}`}
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign out
@@ -236,16 +290,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       <div className="flex-1 lg:pl-56 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
 
         {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-[#13151A] border-b border-white/6 sticky top-0 z-10">
-          <button onClick={() => setSidebarOpen(true)} className="text-white/50 p-1">
+        <div className={`lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-10 ${tone.mobileBar}`}>
+          <button onClick={() => setSidebarOpen(true)} className={`p-1 ${tone.burgerText}`}>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="12" x2="21" y2="12"/>
               <line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
           </button>
-          <span className="font-display font-bold text-white text-sm">Members Portal</span>
-          <Link href="/" className="ml-auto text-white/30 hover:text-white/60 text-xs font-body transition-colors">
+          <span className={`font-display font-bold text-sm ${tone.mobileBarText}`}>Members Portal</span>
+          <Link href="/" className={`ml-auto text-xs font-body transition-colors ${tone.mobileBarLink}`}>
             ← Site
           </Link>
         </div>

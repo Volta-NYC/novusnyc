@@ -1,9 +1,9 @@
 import type { Business, FinanceAssignment } from "@/lib/members/storage";
 
-export type CodePrefix = "W" | "M" | "F" | "R" | "C" | "G";
+export type CodePrefix = "W" | "M" | "F" | "R" | "C";
 
 export interface AssignmentCode {
-  code: string;           // "W1", "M2", "F3", "R1", "C1", "G2"
+  code: string;           // "W1", "M2", "F3", "R1", "C1"
   prefix: CodePrefix;
   entityKey: string;      // unique key: "businessId-Tech", "businessId-Marketing", or assignmentId
   title: string;          // display name for tooltip
@@ -134,14 +134,12 @@ export function computeGlobalCodes(
     }
   }
 
-  // Finance assignments: Reports → R#, Case Studies → C#, Grants → G#
+  // Finance assignments: Reports → R#, Case Studies → C#
   let rCount = 0;
   let cCount = 0;
-  let gCount = 0;
 
   const reports = sortAssignments(financeAssignments.filter((a) => a.type === "Report"));
   const caseStudies = sortAssignments(financeAssignments.filter((a) => a.type === "Case Study"));
-  const grants = sortAssignments(financeAssignments.filter((a) => a.type === "Grant"));
 
   for (const a of reports) {
     rCount++;
@@ -150,7 +148,7 @@ export function computeGlobalCodes(
     allCodes.push({
       code, prefix: "R", entityKey: a.id,
       title: a.topic || a.title || "Report",
-      href: `/members/assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
+      href: `/members/finance-assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
       assignmentId: a.id,
     });
   }
@@ -161,22 +159,10 @@ export function computeGlobalCodes(
     allCodes.push({
       code, prefix: "C", entityKey: a.id,
       title: a.topic || a.title || "Case Study",
-      href: `/members/assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
+      href: `/members/finance-assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
       assignmentId: a.id,
     });
   }
-  for (const a of grants) {
-    gCount++;
-    const code = `G${gCount}`;
-    assignmentCode.set(a.id, code);
-    allCodes.push({
-      code, prefix: "G", entityKey: a.id,
-      title: a.topic || a.title || "Grant",
-      href: `/members/assignments?assignmentId=${encodeURIComponent(a.id)}#finance-assignment-${a.id}`,
-      assignmentId: a.id,
-    });
-  }
-
   return { businessTrackCode, assignmentCode, allCodes };
 }
 

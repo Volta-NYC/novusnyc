@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { PEOPLE_GROUP_TABS } from "@/components/members/SectionTabs";
+import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeInterviewSlots,
@@ -1706,7 +1706,7 @@ function InterviewsContent() {
           All times are shown in New York time (EST/EDT).
         </p>
       </div>
-      <SectionTabs tabs={PEOPLE_GROUP_TABS} />
+      <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
 
       <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-6 w-fit">
         {TABS.map((tab) => (
