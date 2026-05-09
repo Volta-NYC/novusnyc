@@ -64,8 +64,8 @@ export default function SectionTabs({
 export const PROJECT_GROUP_TABS: SectionTab[] = [
   { href: "/members/projects", label: "Tech Projects", matchTab: "" },
   { href: "/members/projects?tab=marketing", label: "Marketing Projects", matchTab: "marketing" },
-  { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
   { href: "/members/assignments", label: "Finance Projects" },
+  { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
 ];
 
 export const PEOPLE_GROUP_TABS: SectionTab[] = [

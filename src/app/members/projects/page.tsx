@@ -31,21 +31,18 @@ const DIVISION_PUBLIC_LABEL: Record<string, string> = {
   Marketing: "Marketing & Strategy",
   Finance: "Finance & Operations",
 };
-const TRACK_META: Record<TrackDivision, { label: string; chipClass: string; dotClass: string }> = {
+const TRACK_META: Record<TrackDivision, { label: string; chipClass: string }> = {
   Tech: {
     label: "Tech",
     chipClass: "bg-blue-100 text-blue-700 border-blue-300",
-    dotClass: "bg-blue-500",
   },
   Marketing: {
     label: "Marketing",
     chipClass: "bg-lime-100 text-lime-700 border-lime-300",
-    dotClass: "bg-lime-500",
   },
   Finance: {
     label: "Finance",
     chipClass: "bg-amber-100 text-amber-700 border-amber-300",
-    dotClass: "bg-amber-500",
   },
 };
 const TRACK_ORDER: TrackDivision[] = ["Tech", "Marketing", "Finance"];
@@ -1388,7 +1385,6 @@ function BusinessesPageInner() {
             )}
             <span className="font-medium leading-snug break-words">
               {b.name}
-              {b.intakeSource === "website_form" && <span className="text-amber-300 ml-1">★</span>}
               {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
             </span>
           </div>
@@ -1532,7 +1528,6 @@ function BusinessesPageInner() {
         <td className="px-2 py-2 text-[11px] text-white/90 align-top">
           <span className="font-medium leading-snug break-words">
             {b.name}
-            {fromWebsite && <span className="text-amber-300 ml-1" title="Submitted via website business interest form">★</span>}
             {b.showcaseEnabled && <span className="text-blue-300 ml-1">◆</span>}
           </span>
         </td>
@@ -1607,9 +1602,8 @@ function BusinessesPageInner() {
                         key={`move-${b.id}-${track}`}
                         type="button"
                         onClick={() => void handleMoveToTrack(b, track)}
-                        className="w-full text-left px-3 py-2 text-xs text-white/75 hover:bg-white/8 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 text-xs text-white/75 hover:bg-white/8 transition-colors"
                       >
-                        <span className={`inline-block h-2 w-2 rounded-full ${TRACK_META[track].dotClass}`} />
                         {TRACK_META[track].label}
                       </button>
                     ))}
@@ -1833,18 +1827,7 @@ function BusinessesPageInner() {
         }
       />
       <p className="text-xs text-white/45 mb-4">
-        <span className="text-amber-300 font-semibold">★</span> Submitted via website business interest form.
-        <span className="mx-2">·</span>
         <span className="text-blue-300 font-semibold">◆</span> Visible on public home/showcase.
-        {activeTab !== "discovery" && (
-          <>
-            <span className="mx-2">·</span>
-            <span className="inline-flex items-center gap-1 align-middle">
-              <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META[TAB_TRACK[activeTab]].dotClass}`} />
-            </span>{" "}
-            {TRACK_META[TAB_TRACK[activeTab]].label} track.
-          </>
-        )}
       </p>
 
       {activeTab !== "discovery" && (
@@ -2179,7 +2162,6 @@ function BusinessesPageInner() {
                           : "border-white/20 text-white/65 bg-[#11141A] hover:border-white/35"
                       }`}
                     >
-                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${TRACK_META[track].dotClass}`} />
                       {TRACK_META[track].label}
                     </button>
                   );

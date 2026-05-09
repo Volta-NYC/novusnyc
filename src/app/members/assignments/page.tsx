@@ -36,10 +36,38 @@ const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "info@voltanyc.org", label: "info@voltanyc.org" },
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ] as const;
+const ASSIGNMENT_TEMPLATE_STORAGE_KEY = "volta.assignmentTemplates.v1";
+const ASSIGNMENT_EMAIL_TEMPLATE_STORAGE_KEY = "volta.assignmentEmailTemplates.v1";
+const ASSIGNMENT_PLACEHOLDERS = [
+  "{{memberName}}",
+  "{{firstName}}",
+  "{{assignmentTitle}}",
+  "{{assignmentCode}}",
+  "{{finalDeadline}}",
+  "{{region}}",
+] as const;
 
 type DeadlineItem = {
   label: string;
   date: string;
+};
+
+type AssignmentTemplate = {
+  id: string;
+  name: string;
+  form: {
+    type: FinanceAssignment["type"];
+    topic: string;
+    region: string;
+    deadlines: DeadlineItem[];
+  };
+};
+
+type AssignmentEmailTemplate = {
+  id: string;
+  name: string;
+  subject: string;
+  message: string;
 };
 
 const BLANK_FORM: Omit<FinanceAssignment, "id" | "createdAt" | "updatedAt"> = {
@@ -182,6 +210,25 @@ function formatDeadlineLabel(item: FinanceAssignment): string[] {
   return rows.map((row) => (row.label ? `${row.label}: ${row.date || "-"}` : `${row.date || "-"}`));
 }
 
+function readTemplates<T extends { id: string; name: string }>(key: string): T[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) ?? "[]") as T[];
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.id && item?.name) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeTemplates<T>(key: string, templates: T[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(key, JSON.stringify(templates));
+}
+
+function newId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
+}
+
 export default function FinanceAssignmentsPage() {
   const [assignments, setAssignments] = useState<FinanceAssignment[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -211,6 +258,10 @@ export default function FinanceAssignmentsPage() {
   const [caseStudySendEmail, setCaseStudySendEmail] = useState(true);
   const [caseStudyWorking, setCaseStudyWorking] = useState(false);
   const [caseStudyStatus, setCaseStudyStatus] = useState<string | null>(null);
+  const [assignmentTemplates, setAssignmentTemplates] = useState<AssignmentTemplate[]>([]);
+  const [assignmentTemplateName, setAssignmentTemplateName] = useState("");
+  const [emailTemplates, setEmailTemplates] = useState<AssignmentEmailTemplate[]>([]);
+  const [emailTemplateName, setEmailTemplateName] = useState("");
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const router = useRouter();
@@ -234,6 +285,10 @@ export default function FinanceAssignmentsPage() {
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeApplications(setApplications), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => {
+    setAssignmentTemplates(readTemplates<AssignmentTemplate>(ASSIGNMENT_TEMPLATE_STORAGE_KEY));
+    setEmailTemplates(readTemplates<AssignmentEmailTemplate>(ASSIGNMENT_EMAIL_TEMPLATE_STORAGE_KEY));
+  }, []);
 
   const fetchAssignments = async () => {
     if (!user) return;
@@ -364,6 +419,73 @@ export default function FinanceAssignmentsPage() {
 
   const setField = (key: keyof typeof form, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const persistAssignmentTemplates = (next: AssignmentTemplate[]) => {
+    setAssignmentTemplates(next);
+    writeTemplates(ASSIGNMENT_TEMPLATE_STORAGE_KEY, next);
+  };
+
+  const persistEmailTemplates = (next: AssignmentEmailTemplate[]) => {
+    setEmailTemplates(next);
+    writeTemplates(ASSIGNMENT_EMAIL_TEMPLATE_STORAGE_KEY, next);
+  };
+
+  const applyAssignmentTemplate = (id: string) => {
+    const template = assignmentTemplates.find((item) => item.id === id);
+    if (!template) return;
+    setForm((prev) => ({
+      ...prev,
+      type: template.form.type,
+      topic: template.form.topic,
+      region: template.form.region,
+      deadlines: template.form.deadlines,
+    }));
+  };
+
+  const saveAssignmentTemplate = () => {
+    const name = assignmentTemplateName.trim();
+    if (!name) return;
+    const template: AssignmentTemplate = {
+      id: newId(),
+      name,
+      form: {
+        type: form.type,
+        topic: form.topic,
+        region: form.region,
+        deadlines: normalizeDeadlines(form),
+      },
+    };
+    persistAssignmentTemplates([...assignmentTemplates.filter((item) => item.name !== name), template]);
+    setAssignmentTemplateName("");
+  };
+
+  const applyEmailTemplate = (id: string) => {
+    const template = emailTemplates.find((item) => item.id === id);
+    if (!template) return;
+    setEmailSubject(template.subject);
+    setEmailMessage(template.message);
+  };
+
+  const saveCurrentEmailTemplate = () => {
+    const name = emailTemplateName.trim();
+    if (!name || !emailSubject.trim() || !emailMessage.trim()) {
+      setEmailStatus("Add a template name, subject, and message before saving.");
+      return;
+    }
+    const template: AssignmentEmailTemplate = {
+      id: newId(),
+      name,
+      subject: emailSubject.trim(),
+      message: emailMessage,
+    };
+    persistEmailTemplates([...emailTemplates.filter((item) => item.name !== name), template]);
+    setEmailTemplateName("");
+    setEmailStatus(`Saved template "${name}".`);
+  };
+
+  const insertAssignmentPlaceholder = (placeholder: string) => {
+    setEmailMessage((current) => `${current}${current.trim() ? " " : ""}${placeholder}`);
   };
 
   const setDeadlineAt = (index: number, patch: Partial<DeadlineItem>) => {
@@ -716,6 +838,26 @@ export default function FinanceAssignmentsPage() {
       formData.append("contentMode", "html");
       const recipientField = emailRecipients.emails.length === 1 ? "toRecipients" : "bccRecipients";
       emailRecipients.emails.forEach((email) => formData.append(recipientField, email));
+      const assignmentCode = emailModalAssignment ? (globalCodeMaps.assignmentCode.get(emailModalAssignment.id) ?? "") : "";
+      const finalDeadline = emailModalAssignment
+        ? (normalizeDeadlines(emailModalAssignment).find((entry) => normalizeLoose(entry.label) === "final deadline")?.date ?? "")
+        : "";
+      (emailModalAssignment?.assignedMemberNames ?? []).forEach((name) => {
+        const members = activeTeamByName.get(normalizeKey(name)) ?? [];
+        members.forEach((member) => {
+          const email = String(member.email ?? "").trim().toLowerCase();
+          if (!email) return;
+          formData.append("recipientMeta", JSON.stringify({
+            email,
+            memberName: name,
+            fullName: name,
+            assignmentTitle: emailModalAssignment ? getAssignmentDisplayTitle(emailModalAssignment) : "",
+            assignmentCode,
+            finalDeadline,
+            region: emailModalAssignment?.region ?? "",
+          }));
+        });
+      });
       emailAttachments.forEach((f) => formData.append("attachments", f, f.name));
 
       const res = await fetch("/api/members/team-email", {
@@ -1085,6 +1227,31 @@ export default function FinanceAssignmentsPage() {
             </select>
           </Field>
           <Field label="Message" required>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <select
+                defaultValue=""
+                onChange={(event) => {
+                  applyEmailTemplate(event.target.value);
+                  event.currentTarget.value = "";
+                }}
+                className="h-8 rounded-lg border border-white/10 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+              >
+                <option value="">Apply template</option>
+                {emailTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>{template.name}</option>
+                ))}
+              </select>
+              {ASSIGNMENT_PLACEHOLDERS.map((placeholder) => (
+                <button
+                  key={placeholder}
+                  type="button"
+                  onClick={() => insertAssignmentPlaceholder(placeholder)}
+                  className="rounded-full border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-white/65 hover:border-[#85CC17]/35 hover:text-white transition-colors"
+                >
+                  {placeholder}
+                </button>
+              ))}
+            </div>
             <RichTextEditor
               content={emailMessage}
               onChange={setEmailMessage}
@@ -1096,7 +1263,17 @@ export default function FinanceAssignmentsPage() {
           </Field>
           {emailStatus && <p className="text-xs text-white/60">{emailStatus}</p>}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-[240px] flex-1 items-center gap-2">
+              <Input
+                value={emailTemplateName}
+                onChange={(event) => setEmailTemplateName(event.target.value)}
+                placeholder="Template name"
+                className="h-9 text-xs"
+              />
+              <Btn size="sm" variant="secondary" onClick={saveCurrentEmailTemplate}>Save Template</Btn>
+            </div>
+            <div className="flex justify-end gap-2">
             <Btn variant="ghost" onClick={closeEmailModal}>Close</Btn>
             <Btn
               variant="primary"
@@ -1105,6 +1282,7 @@ export default function FinanceAssignmentsPage() {
             >
               {emailSending ? "Sending..." : `Send Email (${emailRecipients.emails.length})`}
             </Btn>
+            </div>
           </div>
         </div>
       </Modal>
@@ -1115,6 +1293,28 @@ export default function FinanceAssignmentsPage() {
         title={editingAssignment ? "Edit Assignment" : "New Assignment"}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[68vh] overflow-y-auto pr-2">
+          <div className="md:col-span-2 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] p-2">
+            <select
+              defaultValue=""
+              onChange={(event) => {
+                applyAssignmentTemplate(event.target.value);
+                event.currentTarget.value = "";
+              }}
+              className="h-9 min-w-[180px] rounded-lg border border-white/10 bg-[#11141A] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              <option value="">Apply assignment template</option>
+              {assignmentTemplates.map((template) => (
+                <option key={template.id} value={template.id}>{template.name}</option>
+              ))}
+            </select>
+            <Input
+              value={assignmentTemplateName}
+              onChange={(event) => setAssignmentTemplateName(event.target.value)}
+              placeholder="Template name"
+              className="h-9 min-w-[180px] flex-1 text-xs"
+            />
+            <Btn size="sm" variant="secondary" onClick={saveAssignmentTemplate}>Save Template</Btn>
+          </div>
           <Field label="Assignment Type" required>
             <Select
               options={ASSIGNMENT_TYPES}

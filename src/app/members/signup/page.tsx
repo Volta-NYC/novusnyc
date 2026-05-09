@@ -252,7 +252,7 @@ export default function SignupPage() {
 
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-              Grade
+              High School Class Year
             </label>
             <select
               required
@@ -260,7 +260,7 @@ export default function SignupPage() {
               onChange={(e) => setGrade(e.target.value)}
               className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors"
             >
-              <option value="">Select grade</option>
+              <option value="">Select class year</option>
               {GRADE_OPTIONS.map((option) => (
                 <option key={option} value={option}>{option}</option>
               ))}

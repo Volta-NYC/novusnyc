@@ -11,7 +11,7 @@ import {
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
-import { CLASS_GRADE_OPTIONS, gradeToClassOf, isLegacyGrade } from "@/lib/grades";
+import { CLASS_GRADE_OPTIONS, collegeClassToHighSchoolClass, gradeToClassOf, isLegacyGrade } from "@/lib/grades";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -24,6 +24,7 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 };
 
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
+const HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF = Date.parse("2026-05-09T00:00:00.000Z");
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C" | "G";
 
@@ -125,7 +126,7 @@ const SORT_OPTIONS = [
   { value: 2, label: "Name" },
   { value: 3, label: "Email" },
   { value: 4, label: "School" },
-  { value: 5, label: "Grade" },
+  { value: 5, label: "HS Class" },
   { value: 6, label: "Role" },
   { value: 7, label: "Date Accepted" },
   { value: 8, label: "Account Created" },
@@ -141,6 +142,11 @@ type RoleOption = (typeof ROLE_OPTIONS)[number];
 function displayRoleValue(value: unknown): string {
   const raw = String(value ?? "").trim();
   return raw || "—";
+}
+
+function predatesHighSchoolClassMigration(value: string | undefined): boolean {
+  const ms = Date.parse(String(value ?? ""));
+  return Number.isFinite(ms) && ms < HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF;
 }
 
 const ROLE_SORT_ORDER: Record<string, number> = {
@@ -371,7 +377,8 @@ export default function TeamPage() {
     void (async () => {
       for (const member of team) {
         if (!isLegacyGrade(member.grade)) continue;
-        const next = gradeToClassOf(member.grade);
+        if (!predatesHighSchoolClassMigration(member.createdAt)) continue;
+        const next = collegeClassToHighSchoolClass(member.grade);
         if (!next || next === member.grade) continue;
         // eslint-disable-next-line no-await-in-loop
         await updateTeamMember(member.id, { grade: next });
@@ -721,7 +728,7 @@ export default function TeamPage() {
     return map;
   }, [applications]);
 
-  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "Grade", "Role", "Date Accepted", "Account Created"];
+  const SORT_COLUMNS = ["Track", "Projects", "Name", "Email", "School", "HS Class", "Role", "Date Accepted", "Account Created"];
 
   const compareMemberByCol = (a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
@@ -1267,14 +1274,14 @@ export default function TeamPage() {
           <table className="members-grid-table w-full min-w-[1000px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Projects", "Name", "School", "Grade", "Role"].map((col) => (
+                {["Projects", "Name", "School", "HS Class", "Role"].map((col) => (
                   <th
                     key={col}
                     className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
                       col === "Projects" ? projectsColWidthClass :
                       col === "Name" ? "w-[250px]" :
                       col === "School" ? "w-[340px]" :
-                      col === "Grade" ? "w-[80px]" :
+                      col === "HS Class" ? "w-[80px]" :
                       "w-[110px]"
                     }`}
                   >
@@ -1339,7 +1346,7 @@ export default function TeamPage() {
                   { label: "Name", sortCol: 2, width: "w-[250px]" },
                   { label: "Email", sortCol: 3, width: "w-[330px]" },
                   { label: "School", sortCol: 4, width: "w-[260px]" },
-                  { label: "Grade", sortCol: 5, width: "w-[80px]" },
+                  { label: "HS Class", sortCol: 5, width: "w-[80px]" },
                   { label: "Role", sortCol: 6, width: "w-[120px]" },
                   { label: "Resume", sortCol: null, width: "w-[80px]" },
                   { label: "Date Accepted", sortCol: 7, width: "w-[116px]" },
@@ -1621,13 +1628,13 @@ export default function TeamPage() {
           <Field label="School">
             <Input value={form.school} onChange={e => setField("school", e.target.value)} />
           </Field>
-          <Field label="Grade">
+          <Field label="High School Class Year">
             <select
               value={form.grade ?? ""}
               onChange={e => setField("grade", e.target.value)}
               className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
-              <option value="">Select grade</option>
+              <option value="">Select class year</option>
               {GRADE_OPTIONS.map((option) => (
                 <option key={option} value={option}>{option}</option>
               ))}

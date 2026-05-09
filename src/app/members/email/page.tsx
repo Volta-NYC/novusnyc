@@ -22,6 +22,22 @@ const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ];
 
+const EMAIL_TEMPLATE_STORAGE_KEY = "volta.memberEmailTemplates.v1";
+const EMAIL_PLACEHOLDERS = [
+  "{{firstName}}",
+  "{{fullName}}",
+  "{{school}}",
+  "{{grade}}",
+  "{{projects}}",
+] as const;
+
+type EmailTemplate = {
+  id: string;
+  name: string;
+  subject: string;
+  message: string;
+};
+
 type DeliveryMode = "to" | "cc" | "bcc";
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
@@ -36,7 +52,7 @@ const EMAIL_SORT_OPTIONS = [
   { value: 3, label: "Name" },
   { value: 4, label: "Email" },
   { value: 5, label: "School" },
-  { value: 6, label: "Grade" },
+  { value: 6, label: "HS Class" },
 ];
 
 const TRACK_SORT_ORDER: Record<TrackKey, number> = {
@@ -117,6 +133,21 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+function loadEmailTemplates(): EmailTemplate[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(EMAIL_TEMPLATE_STORAGE_KEY) ?? "[]") as EmailTemplate[];
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.id && item?.name) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveEmailTemplates(templates: EmailTemplate[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(EMAIL_TEMPLATE_STORAGE_KEY, JSON.stringify(templates));
+}
+
 
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
@@ -139,6 +170,43 @@ export default function MemberEmailPage() {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [prefillIds, setPrefillIds] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [templateName, setTemplateName] = useState("");
+
+  useEffect(() => setTemplates(loadEmailTemplates()), []);
+
+  const persistTemplates = (next: EmailTemplate[]) => {
+    setTemplates(next);
+    saveEmailTemplates(next);
+  };
+
+  const applyTemplate = (id: string) => {
+    const template = templates.find((item) => item.id === id);
+    if (!template) return;
+    setSubject(template.subject);
+    setMessage(template.message);
+  };
+
+  const saveCurrentTemplate = () => {
+    const name = templateName.trim();
+    if (!name || !subject.trim() || !message.trim()) {
+      setStatus("Add a template name, subject, and message before saving.");
+      return;
+    }
+    const nextTemplate: EmailTemplate = {
+      id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`,
+      name,
+      subject: subject.trim(),
+      message,
+    };
+    persistTemplates([...templates.filter((item) => item.name !== name), nextTemplate]);
+    setTemplateName("");
+    setStatus(`Saved template "${name}".`);
+  };
+
+  const insertPlaceholder = (placeholder: string) => {
+    setMessage((current) => `${current}${current.trim() ? " " : ""}${placeholder}`);
+  };
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
@@ -476,6 +544,18 @@ export default function MemberEmailPage() {
       toRecipients.forEach((e) => formData.append("toRecipients", e));
       ccRecipients.forEach((e) => formData.append("ccRecipients", e));
       bccRecipients.forEach((e) => formData.append("bccRecipients", e));
+      selectedRecipients.forEach((recipient) => {
+        const member = team.find((item) => item.id === recipient.id);
+        const assignments = member ? (memberAssignmentsById.get(member.id) ?? []).map((item) => item.code).join(", ") : "";
+        formData.append("recipientMeta", JSON.stringify({
+          email: recipient.email,
+          fullName: member?.name ?? recipient.name ?? "",
+          memberName: member?.name ?? recipient.name ?? "",
+          school: member?.school ?? "",
+          grade: member?.grade ?? "",
+          projects: assignments,
+        }));
+      });
       attachments.forEach((f) => formData.append("attachments", f, f.name));
       const response = await fetch("/api/members/team-email", {
         method: "POST",
@@ -544,7 +624,7 @@ export default function MemberEmailPage() {
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[300px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Grade</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[120px]">Mode</th>
                   </tr>
                 </thead>
@@ -723,7 +803,7 @@ export default function MemberEmailPage() {
                     <th className="text-left px-3 py-2 text-white/45 w-[260px]">Name</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
                     <th className="text-left px-3 py-2 text-white/45 w-[320px]">School</th>
-                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">Grade</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -798,6 +878,31 @@ export default function MemberEmailPage() {
           </select>
         </Field>
         <Field label="Message" required>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <select
+              defaultValue=""
+              onChange={(event) => {
+                applyTemplate(event.target.value);
+                event.currentTarget.value = "";
+              }}
+              className="h-8 rounded-lg border border-white/10 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              <option value="">Apply template</option>
+              {templates.map((template) => (
+                <option key={template.id} value={template.id}>{template.name}</option>
+              ))}
+            </select>
+            {EMAIL_PLACEHOLDERS.map((placeholder) => (
+              <button
+                key={placeholder}
+                type="button"
+                onClick={() => insertPlaceholder(placeholder)}
+                className="rounded-full border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-white/65 hover:border-[#85CC17]/35 hover:text-white transition-colors"
+              >
+                {placeholder}
+              </button>
+            ))}
+          </div>
           <RichTextEditor
             content={message}
             onChange={setMessage}
@@ -810,7 +915,16 @@ export default function MemberEmailPage() {
 
         {status && <p className="text-xs text-white/60">{status}</p>}
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-[240px] flex-1 items-center gap-2">
+            <input
+              value={templateName}
+              onChange={(event) => setTemplateName(event.target.value)}
+              placeholder="Template name"
+              className="h-9 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#0F1014] px-3 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-[#85CC17]/45"
+            />
+            <Btn size="sm" variant="secondary" onClick={saveCurrentTemplate}>Save Template</Btn>
+          </div>
           <Btn
             variant="primary"
             onClick={sendEmail}

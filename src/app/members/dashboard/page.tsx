@@ -280,6 +280,12 @@ export default function MembersDashboardPage() {
             </div>
           </div>
 
+          <div className="bg-[#1C1F26] border border-white/10 rounded-xl p-4">
+            <p className="text-white/65 text-sm">
+              Credit guide: <span className="text-white/90 font-semibold">1 credit is roughly 1 hour of expected work.</span>
+            </p>
+          </div>
+
           {/* Section B: Business Projects */}
           {hasBusinesses && (
             <div>
