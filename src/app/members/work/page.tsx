@@ -158,8 +158,8 @@ export default function MarketplacePage() {
               ) : "No active cycle yet."}
             </p>
           </div>
-          <Link href="/members/dashboard" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
-            ← Back to dashboard
+          <Link href="/members/overview" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+            ← Back to overview
           </Link>
         </header>
 

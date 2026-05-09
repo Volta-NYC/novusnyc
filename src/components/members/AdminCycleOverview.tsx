@@ -1,12 +1,11 @@
 "use client";
 
-// Overview page (top-level, admin-only). One quarterly cycle drives the entire
+// Admin overview. One quarterly cycle drives the entire
 // credit/strike system. Active cycle pinned at top in expanded inline-edit mode;
 // older cycles collapse below. Targets, pacing, and strike thresholds are
 // fully editable post-creation.
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, Btn, Field, Input, Empty, useConfirm,
@@ -15,7 +14,6 @@ import {
   subscribeCycles, createCycle, updateCycle, deleteCycle, activateCycleExclusive,
   type Cycle, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
-import { useAuth } from "@/lib/members/authContext";
 
 const TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
@@ -55,9 +53,7 @@ function daysBetween(a: string, b: string): number | null {
   return Math.round((bMs - aMs) / (1000 * 60 * 60 * 24));
 }
 
-export default function OverviewPage() {
-  const { authRole, loading } = useAuth();
-  const router = useRouter();
+export default function AdminCycleOverview() {
   const { ask, Dialog } = useConfirm();
 
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -65,10 +61,6 @@ export default function OverviewPage() {
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState<Omit<Cycle, "id" | "createdAt" | "updatedAt">>(BLANK_CYCLE);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!loading && authRole !== "admin") router.replace("/members/projects");
-  }, [authRole, loading, router]);
 
   useEffect(() => subscribeCycles(setCycles), []);
 
@@ -132,16 +124,6 @@ export default function OverviewPage() {
     setCreateForm(BLANK_CYCLE);
     setCreating(false);
   };
-
-  if (loading || authRole !== "admin") {
-    return (
-      <MembersLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
-        </div>
-      </MembersLayout>
-    );
-  }
 
   return (
     <MembersLayout>

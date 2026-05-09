@@ -1,6 +1,6 @@
 "use client";
 
-// Member-facing "My Record" — full receipt drawer for everything credit-system.
+// Member-facing "My Profile" — full receipt drawer for everything credit-system.
 // Light theme. Shows: ledger breakdown, every claim across cycles, every strike,
 // every credit adjustment. Read-only.
 
@@ -123,14 +123,14 @@ export default function MyRecordPage() {
       <div className="max-w-4xl mx-auto space-y-5">
         <header className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-display font-bold text-black text-2xl">My Record</h1>
+            <h1 className="font-display font-bold text-black text-2xl">My Profile</h1>
             <p className="text-sm text-black/55 mt-1">
               {me?.name ?? "—"}
               {me?.role && <span className="text-black/40"> · {me.role}</span>}
             </p>
           </div>
-          <Link href="/members/dashboard" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
-            ← Back to dashboard
+          <Link href="/members/overview" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+            ← Back to overview
           </Link>
         </header>
 

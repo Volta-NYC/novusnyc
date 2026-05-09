@@ -1,6 +1,6 @@
 "use client";
 
-// Member-facing dashboard. Light theme. Replaces the older project-summary page.
+// Member-facing overview. Light theme. Replaces the older project-summary page.
 // Centerpiece of the credit system: cycle status, my work, recommended work,
 // rules card. Goal — admin emails members once a month and points them here.
 
@@ -52,7 +52,7 @@ const DOT_COLOR_HEX: Record<string, string> = {
   gray: "#9CA3AF",
 };
 
-export default function MemberDashboardPage() {
+export default function MemberOverviewPage() {
   const { user, userProfile } = useAuth();
 
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -207,7 +207,7 @@ export default function MemberDashboardPage() {
             Your portal account is set up, but your email isn&apos;t linked to a team profile yet.
             Ask an admin to add{" "}
             <span className="text-[#5C9911] font-mono">{userProfile?.email ?? user.email}</span>{" "}
-            to your team record so your dashboard can populate.
+            to your team record so your overview can populate.
           </p>
         </div>
       </MembersLayout>

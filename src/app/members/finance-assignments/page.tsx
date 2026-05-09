@@ -278,7 +278,7 @@ export default function FinanceAssignmentsPage() {
 
   useEffect(() => {
     if (authRole && authRole !== "admin") {
-      router.replace("/members/dashboard");
+      router.replace("/members/overview");
     }
   }, [authRole, router]);
 
