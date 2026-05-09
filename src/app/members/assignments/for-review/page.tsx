@@ -122,6 +122,7 @@ export default function ForReviewPage() {
         }
         return 0;
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [claims, assignmentById, businessById, search, sortRules]);
 
   const addSortRule = () => {

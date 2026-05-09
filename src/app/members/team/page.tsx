@@ -353,8 +353,6 @@ export default function TeamPage() {
   const [infractionCatalog, setInfractionCatalog] = useState<Infraction[]>([]);
   const [drawerMember, setDrawerMember] = useState<TeamMember | null>(null);
   const sweepRanRef = useRef(false);
-  const [expandAssignments, setExpandAssignments] = useState(false);
-  const [assignmentDetailMember, setAssignmentDetailMember] = useState<TeamMember | null>(null);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
   const [creditSummaryMember, setCreditSummaryMember] = useState<TeamMember | null>(null);
   const [importingCsv, setImportingCsv] = useState(false);
@@ -1075,17 +1073,6 @@ export default function TeamPage() {
     return map;
   }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment, team, globalCodeMaps]);
 
-  const projectSortMetaByMemberKey = useMemo(() => {
-    const map = new Map<string, { count: number; key: string }>();
-    for (const [memberKey, assignments] of Array.from(assignmentsByMemberName.entries())) {
-      const sortedCodes = assignments.map((item) => item.code).sort((a, b) => a.localeCompare(b));
-      map.set(memberKey, {
-        count: assignments.length,
-        key: sortedCodes.join(" "),
-      });
-    }
-    return map;
-  }, [assignmentsByMemberName]);
 
   const sorted = [...filtered].sort((a, b) => {
     for (const rule of sortRules) {
@@ -1134,15 +1121,6 @@ export default function TeamPage() {
     return { colorClass, label: dot.label };
   };
 
-  const selectedMemberAssignments = useMemo(() => {
-    if (!assignmentDetailMember) return [];
-    return assignmentsByMemberName.get(normalizeKey(assignmentDetailMember.name ?? "")) ?? [];
-  }, [assignmentDetailMember, assignmentsByMemberName]);
-
-  useEffect(() => {
-    if (expandAssignments) setAssignmentQuickView(null);
-  }, [expandAssignments]);
-
   const assignmentQuickViewRestTeam = useMemo(() => {
     if (!assignmentQuickView) return [];
     const currentMemberKey = normalizeKey(assignmentQuickView.memberName);
@@ -1169,67 +1147,6 @@ export default function TeamPage() {
       case "C":
       default: return "bg-[#11141A] border-white/15 text-white/80";
     }
-  };
-
-  const renderAssignmentCell = (memberAssignments: MemberAssignmentLink[], keyPrefix: string, memberName: string) => {
-    if (memberAssignments.length === 0) {
-      return <span className="text-white/35">—</span>;
-    }
-    const projectsViewportClass = expandAssignments ? "w-[460px] max-w-[460px]" : "w-[108px] max-w-[108px]";
-
-    return (
-      <div className="min-w-0">
-        <div className={`members-assignments-scroll ${projectsViewportClass} overflow-x-auto overflow-y-hidden pb-0.5`}>
-          <div className="inline-flex min-w-max items-center gap-1 pr-1">
-            {memberAssignments.map((item) => {
-              const isActive = assignmentQuickView?.item.id === item.id && assignmentQuickView?.item.code === item.code;
-              return (
-              <button
-                key={`${keyPrefix}-code-${item.id}-${item.code}`}
-                type="button"
-                className={`inline-flex h-5 w-10 items-center justify-center rounded-full border px-1 text-[10px] font-semibold transition-colors ${
-                  isActive
-                    ? "border-[#85CC17]/65 text-[#C4F135]"
-                    : pillColorClass(item.codePrefix) + " hover:border-[#85CC17]/55 hover:text-[#C4F135]"
-                }`}
-                title={`${item.code} · ${item.title}`}
-                onClick={() => {
-                  if (expandAssignments) {
-                    window.location.href = item.href;
-                    return;
-                  }
-                  const sameAsOpen =
-                    assignmentQuickView?.item.id === item.id
-                    && assignmentQuickView?.item.code === item.code;
-                  if (sameAsOpen) {
-                    window.location.href = item.href;
-                    return;
-                  }
-                  setAssignmentQuickView({ item, memberName });
-                }}
-              >
-                {item.code}
-              </button>
-              );
-            })}
-          </div>
-        </div>
-        {expandAssignments && (
-          <div className="mt-1 space-y-0.5">
-            {memberAssignments.map((item) => (
-              <a
-                key={`${keyPrefix}-preview-${item.id}-${item.code}`}
-                href={item.href}
-                className="block text-[10px] leading-4 text-white/55 hover:text-[#C4F135] transition-colors"
-                title={`${item.code} · ${item.title} · ${item.status}`}
-              >
-                <span className="text-white/80">{item.code}</span> {item.title}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
