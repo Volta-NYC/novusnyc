@@ -43,7 +43,7 @@ function UsersTab() {
   const handleDelete = (user: UserProfile) => {
     ask(
       async () => deletePortalUserAccount(user.id),
-      `Delete ${user.email}? This removes both the Firebase Auth account and the portal user profile. They will not be able to sign in again unless a new account is created.`
+      `Delete ${user.email}? This removes both the Supabase Auth account and the portal user profile. They will not be able to sign in again unless a new account is created.`
     );
   };
 

@@ -16,7 +16,7 @@ import {
   subscribeInterviewSlots,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
-import { collegeClassToHighSchoolClass, gradeToClassOf, isLegacyGrade } from "@/lib/grades";
+import { gradeToClassOf } from "@/lib/grades";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "New",
@@ -33,8 +33,6 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   "Interview Completed": "bg-purple-500/20 text-purple-200 border border-purple-400/35",
   "Accepted": "bg-emerald-500/20 text-emerald-200 border border-emerald-400/35",
 };
-const HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF = Date.parse("2026-05-09T00:00:00.000Z");
-
 function normalize(v: string): string {
   return v.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -81,11 +79,6 @@ function formatDateTime(value: string): string {
     minute: "2-digit",
     timeZoneName: "short",
   });
-}
-
-function predatesHighSchoolClassMigration(value: string | undefined): boolean {
-  const ms = Date.parse(String(value ?? ""));
-  return Number.isFinite(ms) && ms < HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF;
 }
 
 // ── Column definitions ─────────────────────────────────────────────────────────
@@ -257,36 +250,6 @@ export default function ApplicantsPage() {
     const timer = setInterval(() => void fetchApplicantsData(), 15000);
     return () => clearInterval(timer);
   }, [fetchApplicantsData, canView]);
-
-  // One-time backfill: rewrite legacy grade labels on applicant records so the
-  // value stops needing manual annual updates. Admins only — interviewers can't
-  // PATCH the grade field.
-  const gradeMigrationRef = useRef(false);
-  useEffect(() => {
-    if (gradeMigrationRef.current) return;
-    if (!canEdit || applications.length === 0) return;
-    gradeMigrationRef.current = true;
-    void (async () => {
-      let touched = false;
-      for (const app of applications) {
-        if (!isLegacyGrade(app.grade)) continue;
-        if (!predatesHighSchoolClassMigration(app.createdAt)) continue;
-        const next = collegeClassToHighSchoolClass(app.grade);
-        if (!next || next === app.grade) continue;
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await updateApplicantServer(app.id, { grade: next });
-          touched = true;
-        } catch {
-          // Non-fatal: a single failure shouldn't stop the rest.
-        }
-      }
-      if (touched) await fetchApplicantsData();
-    })();
-  // updateApplicantServer is stable (defined inline below) and intentionally omitted
-  // from deps — including it would re-trigger the migration on every render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applications, canEdit, fetchApplicantsData]);
 
   const bookedSlots = useMemo(
     () => [...slots]

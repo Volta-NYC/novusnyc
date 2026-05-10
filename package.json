@@ -22,8 +22,6 @@
     "@tiptap/react": "^3.22.3",
     "@tiptap/starter-kit": "^3.22.3",
     "@vercel/analytics": "^1.6.1",
-    "firebase": "^12.11.0",
-    "firebase-admin": "^13.7.0",
     "framer-motion": "^11.3.0",
     "leaflet": "^1.9.4",
     "next": "^15.5.14",

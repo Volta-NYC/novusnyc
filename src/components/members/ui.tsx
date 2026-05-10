@@ -435,7 +435,7 @@ export function TagInput({
 }) {
   const [inputText, setInputText] = useState("");
 
-  // Guard: Firebase may return undefined for empty arrays
+  // Guard: legacy rows may return undefined for empty arrays.
   const safeValues = values ?? [];
 
   const addTag = (raw: string) => {

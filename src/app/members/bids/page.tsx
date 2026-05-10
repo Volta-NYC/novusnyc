@@ -230,7 +230,7 @@ export default function BIDTrackerPage() {
     ask(async () => deleteBIDTimelineEntry(bidId, entryId));
   };
 
-  // Build timeline array from the nested Firebase object, newest first.
+      // Build timeline array from the nested legacy object, newest first.
   const getTimeline = (bid: BID | null) => {
     if (!bid?.timeline) return [];
     return Object.entries(bid.timeline)

@@ -1,5 +1,4 @@
 // Supabase Postgres storage for the Volta NYC members portal.
-// Replaces the previous Firebase Realtime Database implementation.
 // All exported function signatures are unchanged — callers require no edits.
 //
 // Subscribe functions now do a one-shot fetch and call the callback immediately.
@@ -70,7 +69,7 @@ export interface Business {
   updatedAt: string;
   // Project-level fields (merged from Projects tab)
   division?: "Tech" | "Marketing" | "Finance";
-  teamMembers?: string[];     // may be undefined if Firebase omitted empty array
+  teamMembers?: string[];     // may be undefined on legacy rows
   githubUrl?: string;         // legacy field
   driveFolderUrl?: string;    // legacy field
   clientNotes?: string;       // legacy field
@@ -82,7 +81,7 @@ export interface Business {
   showcaseName?: string;
   showcaseType?: string;
   showcaseNeighborhood?: string;
-  showcaseServices?: string[]; // may be undefined if Firebase omitted empty array
+  showcaseServices?: string[]; // may be undefined on legacy rows
   showcaseStatus?: "In Progress" | "Active" | "Upcoming";
   showcaseDescription?: string;
   showcaseUrl?: string;
@@ -137,7 +136,7 @@ export interface TeamMember {
   school: string;
   grade?: string;
   acceptedDate?: string;
-  divisions: string[];    // may be undefined if Firebase omitted empty array
+  divisions: string[];    // may be undefined on legacy rows
   pod: string;
   // Role label as captured at acceptance (e.g. "Analyst", "Senior Analyst",
   // "Associate", "Senior Associate", "Board") — kept as a free-form string so
@@ -149,7 +148,7 @@ export interface TeamMember {
   // Reserve = headcount-only, gray dot, removed from the active credit system.
   // Inactive remains as a legacy value treated equivalently to Reserve at display time.
   status: "Active" | "On Leave" | "Alumni" | "Inactive" | "Reserve";
-  skills: string[];       // may be undefined if Firebase omitted empty array
+  skills: string[];       // may be undefined on legacy rows
   joinDate: string;
   notes: string;
   createdAt: string;
@@ -214,7 +213,7 @@ export interface Project {
   division: "Tech" | "Marketing" | "Finance";
   status: "Planning" | "Active" | "On Hold" | "Delivered" | "Complete";
   teamLead: string;
-  teamMembers: string[];  // may be undefined if Firebase omitted empty array
+  teamMembers: string[];  // may be undefined on legacy rows
   startDate: string;
   targetEndDate: string;
   actualEndDate: string;
@@ -239,8 +238,8 @@ export interface FinanceAssignment {
   topic: string;
   teamLabel: string;
   region: string;
-  assignedMemberNames: string[]; // may be undefined if Firebase omitted empty array
-  assignedMemberIds?: string[];  // may be undefined if Firebase omitted empty array
+  assignedMemberNames: string[]; // may be undefined on legacy rows
+  assignedMemberIds?: string[];  // may be undefined on legacy rows
   deadlines?: Array<{
     label: string;
     date: string;
@@ -436,7 +435,7 @@ export interface MemberCreditAdjustment {
 export type AuthRole = "admin" | "interviewer" | "member";
 
 export interface UserProfile {
-  id: string;       // Firebase Auth UID, set to the snapshot key by snapToList
+  id: string;
   email: string;
   authRole: AuthRole;
   name?: string;
@@ -466,7 +465,7 @@ export interface CalendarEvent {
 export type InterviewStatus = "pending" | "booked" | "expired" | "cancelled";
 
 export interface InterviewInvite {
-  id: string;             // the booking token used as the Firebase key
+  id: string;             // the booking token
   applicantName?: string; // only set for single-use invites
   applicantEmail?: string;
   role: string;
@@ -600,7 +599,7 @@ function toRow(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 // One-shot subscriber factory — fetches once, calls callback, returns no-op unsubscribe.
-// Preserves the same API as the old Firebase onValue-based subscribers.
+// Preserves the same API shape as the old realtime subscribers.
 function makeSubscriber<T>(table: string, transform?: (row: Record<string, unknown>) => T) {
   return (callback: (items: T[]) => void): (() => void) => {
     supabase

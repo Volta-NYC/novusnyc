@@ -1,5 +1,4 @@
 // Supabase Auth wrappers for the Volta NYC members portal.
-// Replaces firebaseAuth.ts — same sign-in / sign-out interface.
 
 import { supabase } from "@/lib/supabaseClient";
 
@@ -13,10 +12,18 @@ export async function signOut(): Promise<void> {
 }
 
 // Returns the current session's JWT access token, or "" if not signed in.
-// Use this wherever Firebase's user.getIdToken() was called.
 export async function getAuthToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? "";
+  if (!session) return "";
+
+  // Role changes live in app_metadata. Refresh before API calls so migrated
+  // accounts do not keep sending a stale JWT without auth_role.
+  const { data: refreshed, error } = await supabase.auth.refreshSession();
+  if (!error && refreshed.session?.access_token) {
+    return refreshed.session.access_token;
+  }
+
+  return session.access_token;
 }
 
 // Sends a password-reset email. Use on the login page's "Forgot password" link.

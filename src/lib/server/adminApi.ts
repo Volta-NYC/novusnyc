@@ -25,6 +25,10 @@ function normalizeCallerRole(value: unknown): string {
   return raw;
 }
 
+function normalizeEmail(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
 export function getBearerToken(req: NextRequest): string {
   const authHeader = req.headers.get("authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) return "";
@@ -63,16 +67,40 @@ export async function verifyCaller(
   }
 
   // Read auth_role from app_metadata — set server-side only, always in the JWT,
-  // no PostgREST schema-cache dependency.
+  // no PostgREST schema-cache dependency. Migrated/confirmed accounts may not
+  // have that metadata yet, so fall back to the linked team row.
   const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
-  const role = normalizeCallerRole(appMeta.auth_role ?? "");
+  let role = normalizeCallerRole(appMeta.auth_role ?? "");
+  let profileName = (user.user_metadata?.full_name as string | undefined) ?? "";
+
+  if (!role) {
+    const email = normalizeEmail(user.email);
+    const byUid = await sb
+      .from("team")
+      .select("name, auth_role")
+      .eq("auth_uid", user.id)
+      .maybeSingle();
+
+    let teamRow = byUid.data as Record<string, unknown> | null;
+    if (!teamRow && email) {
+      const byEmail = await sb
+        .from("team")
+        .select("name, auth_role")
+        .or(`email.eq.${email},alternate_email.eq.${email}`)
+        .limit(1);
+      teamRow = (byEmail.data?.[0] as Record<string, unknown> | undefined) ?? null;
+    }
+
+    role = normalizeCallerRole(teamRow?.auth_role ?? "");
+    profileName = profileName || String(teamRow?.name ?? "");
+  }
+
   if (!allowedRoles.includes(role)) {
     return { ok: false, status: 403, error: "forbidden" };
   }
 
-  const name = (user.user_metadata?.full_name as string | undefined) ?? "";
   return {
     ok: true,
-    caller: { uid: user.id, email: user.email ?? "", name, role, idToken },
+    caller: { uid: user.id, email: user.email ?? "", name: profileName, role, idToken },
   };
 }

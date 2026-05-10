@@ -13,7 +13,7 @@ export interface DispatchEmailInput {
   toEmail: string;                             // single recipient
   fromAddress?: string;                         // defaults to info@voltanyc.org
   variables: Record<string, string>;
-  idToken: string;                             // Firebase ID token of caller
+  idToken: string;                             // Supabase access token of caller
 }
 
 export interface DispatchEmailResult {

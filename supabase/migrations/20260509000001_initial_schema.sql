@@ -344,7 +344,7 @@ CREATE INDEX IF NOT EXISTS assignment_claims_member_id_idx     ON assignment_cla
 CREATE INDEX IF NOT EXISTS assignment_claims_assignment_id_idx ON assignment_claims (assignment_id);
 
 -- ---------------------------------------------------------------------------
--- user_profiles  (keyed by Firebase Auth UID)
+-- user_profiles
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_profiles (
   id         text PRIMARY KEY,   -- Firebase UID

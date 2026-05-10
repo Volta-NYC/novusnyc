@@ -31,6 +31,7 @@ import {
 import { computeGlobalCodes, getMemberCodes, type AssignmentCode } from "@/lib/members/assignmentCodes";
 import { computeDot, computeCreditLedger, classifyMember, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { useAuth } from "@/lib/members/authContext";
+import { gradeToClassOf } from "@/lib/grades";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "info@voltanyc.org", label: "info@voltanyc.org" },
@@ -173,14 +174,6 @@ function roleSortKey(role: string | undefined | null): number {
     case "junior associate": return 3;
     default: return 4;
   }
-}
-
-function gradeToClassOf(grade: string): string {
-  const match = grade.match(/^(\d+)$/);
-  if (!match) return grade;
-  const yr = parseInt(match[1], 10);
-  if (yr >= 9 && yr <= 12) return `Class of ${2024 + (12 - yr) + 1}`;
-  return grade;
 }
 
 const TRACK_SORT_ORDER: Record<TrackKey, number> = {

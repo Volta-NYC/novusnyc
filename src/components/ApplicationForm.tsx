@@ -7,7 +7,7 @@ import { TRACK_NAMES } from "@/data";
 import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Online", "Referral", "Other"];
-const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
+const GRADE_OPTIONS = CLASS_GRADE_OPTIONS.filter((grade) => grade !== "Class of 2022");
 
 const EMPTY: ApplicationFormValues = {
   fullName: "", email: "", city: "", schoolName: "", grade: "", referral: "",

@@ -219,7 +219,7 @@ function mapZoomSaveError(code: string): string {
     return "Could not save zoom link: your account is missing admin permissions.";
   }
   if (code.includes("db_patch_failed")) {
-    return "Could not save zoom link: server could not write interviewSettings in Firebase.";
+    return "Could not save zoom link: server could not write interview settings.";
   }
   return "Could not save zoom link. Try again.";
 }

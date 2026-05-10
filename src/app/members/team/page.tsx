@@ -18,7 +18,7 @@ import {
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
-import { CLASS_GRADE_OPTIONS, collegeClassToHighSchoolClass, gradeToClassOf, isLegacyGrade } from "@/lib/grades";
+import { CLASS_GRADE_OPTIONS, gradeToClassOf } from "@/lib/grades";
 import MemberDrawer from "@/components/members/MemberDrawer";
 import { classifyMember, computeCreditLedger, computeDot, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { runCycleSweep } from "@/lib/members/cycleAutomation";
@@ -34,7 +34,6 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 };
 
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
-const HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF = Date.parse("2026-05-09T00:00:00.000Z");
 type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C";
 
@@ -163,11 +162,6 @@ type RoleOption = (typeof ROLE_OPTIONS)[number];
 function displayRoleValue(value: unknown): string {
   const raw = String(value ?? "").trim();
   return raw || "—";
-}
-
-function predatesHighSchoolClassMigration(value: string | undefined): boolean {
-  const ms = Date.parse(String(value ?? ""));
-  return Number.isFinite(ms) && ms < HIGH_SCHOOL_CLASS_MIGRATION_CUTOFF;
 }
 
 const ROLE_SORT_ORDER: Record<string, number> = {
@@ -359,7 +353,6 @@ export default function TeamPage() {
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   const boardMigrationRef = useRef(false);
-  const gradeMigrationRef = useRef(false);
   // Credit-system inputs for the dot color computation + drawer.
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [creditAssignments, setCreditAssignments] = useState<Assignment[]>([]);
@@ -455,24 +448,6 @@ export default function TeamPage() {
     if (String(member.role ?? "").trim() === nextRole) return;
     await updateTeamMember(member.id, { role: nextRole });
   };
-
-  // One-time backfill: replace legacy grade labels (Freshman/Junior/...) with the
-  // matching class-of-YYYY value so the data stops drifting each fall.
-  useEffect(() => {
-    if (gradeMigrationRef.current) return;
-    if (!canEdit || team.length === 0) return;
-    gradeMigrationRef.current = true;
-    void (async () => {
-      for (const member of team) {
-        if (!isLegacyGrade(member.grade)) continue;
-        if (!predatesHighSchoolClassMigration(member.createdAt)) continue;
-        const next = collegeClassToHighSchoolClass(member.grade);
-        if (!next || next === member.grade) continue;
-        // eslint-disable-next-line no-await-in-loop
-        await updateTeamMember(member.id, { grade: next });
-      }
-    })();
-  }, [team, canEdit]);
 
   // One-time backfill: stamp the Board role onto the named leadership members
   // whose stored role hasn't already been set to Board. Runs once per session
@@ -747,7 +722,7 @@ export default function TeamPage() {
       // Coerce any legacy "Senior"/"Junior" value into the matching Class-of label
       // so the dropdown lands on the right option when editing older records.
       grade:       gradeToClassOf(member.grade ?? ""),
-      // Guard against undefined: Firebase omits empty arrays when storing.
+      // Guard against undefined arrays on legacy rows.
       divisions:   member.divisions ?? [],
       pod:         "",
       role:        member.role,

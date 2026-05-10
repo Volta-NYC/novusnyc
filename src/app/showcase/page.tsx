@@ -65,8 +65,7 @@ function extractBoroughFromNeighborhood(neighborhood: string): string {
 }
 
 export default async function Showcase() {
-  // Fetch all three collections in parallel — previously sequential, causing
-  // 3 independent Firebase reads that each downloaded the full businesses table.
+  // Fetch all public datasets in parallel so the showcase does not repeat work.
   const [publicShowcase, publicMapEntries, liveStats] = await Promise.all([
     getPublicShowcaseCards(),
     getPublicMapEntries(),

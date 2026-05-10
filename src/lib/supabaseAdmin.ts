@@ -76,7 +76,7 @@ function objToSnake(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// dbRead — mirrors Firebase Admin dbRead(path)
+// dbRead — reads a whole collection or one row by legacy path.
 // ---------------------------------------------------------------------------
 export async function dbRead(path: string): Promise<unknown> {
   const sb = getSupabaseAdmin();
@@ -107,7 +107,7 @@ export async function dbRead(path: string): Promise<unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// dbPatch — mirrors Firebase Admin dbPatch(path, data)
+// dbPatch — shallow patch using legacy path syntax.
 // Shallow patch: writes only the supplied fields.
 // ---------------------------------------------------------------------------
 export async function dbPatch(path: string, data: Record<string, unknown>): Promise<void> {
@@ -148,7 +148,7 @@ export async function dbPush(path: string, data: Record<string, unknown>): Promi
 }
 
 // ---------------------------------------------------------------------------
-// dbDelete — mirrors Firebase Admin dbDelete(path)
+// dbDelete — deletes one row by legacy path.
 // ---------------------------------------------------------------------------
 export async function dbDelete(path: string): Promise<void> {
   const sb = getSupabaseAdmin();
