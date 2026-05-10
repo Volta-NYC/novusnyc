@@ -45,24 +45,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadProfile(authUser: User) {
     try {
-      const { data } = await supabase
-        .from("team")
-        .select("id, email, name, active, auth_role")
-        .eq("auth_uid", authUser.id)
-        .single();
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      if (!token) { setUserProfile(null); return; }
 
-      if (data) {
-        setUserProfile({
-          id:       data.id,
-          email:    data.email ?? authUser.email ?? "",
-          name:     data.name ?? "",
-          authRole: normalizeAuthRole(data.auth_role),
-          active:   data.active !== false,
-        });
-      } else {
-        // Auth user exists but no linked team row yet (mid-signup or not yet linked).
-        setUserProfile(null);
-      }
+      const res = await fetch("/api/members/me", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!res.ok) { setUserProfile(null); return; }
+
+      const data = await res.json() as {
+        id: string; email: string; name: string; active: boolean; authRole: string;
+      };
+      setUserProfile({
+        id:       data.id,
+        email:    data.email || authUser.email || "",
+        name:     data.name,
+        authRole: normalizeAuthRole(data.authRole),
+        active:   data.active,
+      });
     } catch {
       setUserProfile(null);
     }
