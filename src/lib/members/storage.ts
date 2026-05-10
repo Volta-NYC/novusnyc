@@ -446,24 +446,6 @@ export interface UserProfile {
   createdAt: string;
 }
 
-export interface InviteCode {
-  id: string;
-  code: string;     // e.g. "VOLTA-AB3X7C"
-  role: AuthRole;
-  expiresAt: string;  // ISO date string, or "never"
-  used: boolean;
-  multiUse?: boolean;
-  active?: boolean;
-  source?: "manual" | "auto_rotation";
-  signupCount?: number;
-  lastUsedBy?: string;
-  lastUsedAt?: string;
-  usedBy?: string;    // email address of the user who redeemed it
-  usedAt?: string;
-  createdBy: string;  // uid of the admin who generated it
-  createdAt: string;
-}
-
 // ── Calendar event type ───────────────────────────────────────────────────────
 
 export interface CalendarEvent {
@@ -1206,48 +1188,6 @@ export async function getApplicationsList(): Promise<ApplicationRecord[]> {
 export async function getCalendarEventsList(): Promise<CalendarEvent[]> {
   const { data } = await supabase.from("calendar_events").select("*");
   return (data ?? []).map((r) => calendarEventFromRow(r as Record<string, unknown>));
-}
-
-// ── InviteCodes ───────────────────────────────────────────────────────────────
-
-export function subscribeInviteCodes(callback: (items: InviteCode[]) => void): (() => void) {
-  supabase.from("invite_codes").select("*").then(({ data, error }) => {
-    if (error || !data) { callback([]); return; }
-    callback((data as Record<string, unknown>[]).map((r) => ({
-      ...fromRow<InviteCode>(r),
-      role: normalizeAuthRoleValue(r.role),
-    })));
-  });
-  return () => {};
-}
-
-export async function createInviteCode(data: Omit<InviteCode, "id">): Promise<void> {
-  const normalized = { ...data, role: normalizeAuthRoleValue(data.role) };
-  // Use the code string as the primary key (id) so it can be looked up directly.
-  await supabase.from("invite_codes").upsert(toRow({ ...normalized, id: data.code }), { onConflict: "id" });
-  await writeAuditLog({ action: "create", collection: "inviteCodes", recordId: data.code, details: { role: normalized.role, expiresAt: data.expiresAt, source: data.source ?? "manual", multiUse: data.multiUse !== false } });
-}
-
-export async function getInviteCodeByValue(code: string): Promise<InviteCode | null> {
-  const { data } = await supabase.from("invite_codes").select("*").eq("id", code).maybeSingle();
-  if (!data) return null;
-  const r = data as Record<string, unknown>;
-  return { ...fromRow<InviteCode>(r), id: code, role: normalizeAuthRoleValue(r.role) };
-}
-
-export async function updateInviteCode(id: string, data: Partial<InviteCode>): Promise<void> {
-  await supabase.from("invite_codes").update(toRow(data as Record<string, unknown>)).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "inviteCodes", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteInviteCode(id: string): Promise<void> {
-  await supabase.from("invite_codes").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "inviteCodes", recordId: id });
-}
-
-export async function getInviteCodes(): Promise<InviteCode[]> {
-  const { data } = await supabase.from("invite_codes").select("*");
-  return (data ?? []).map((r) => ({ ...fromRow<InviteCode>(r as Record<string, unknown>), role: normalizeAuthRoleValue((r as Record<string, unknown>).role) }));
 }
 
 // ── CalendarEvents ────────────────────────────────────────────────────────────

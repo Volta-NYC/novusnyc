@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
     // Supabase's configured SMTP (custom SMTP set in Supabase dashboard).
     const { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${baseUrl}/members/signup`,
+      data: { full_name: name },
     });
     if (inviteErr) {
       return NextResponse.json({ error: "invite_failed", detail: inviteErr.message }, { status: 500 });

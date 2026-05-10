@@ -1,62 +1,15 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  subscribeInviteCodes, createInviteCode, deleteInviteCode,
   subscribeUserProfiles, updateUserProfile, deletePortalUserAccount,
-  type InviteCode, type UserProfile, type AuthRole,
+  type UserProfile, type AuthRole,
 } from "@/lib/members/storage";
-import { Btn, Badge, Table, Field, Select, useConfirm } from "@/components/members/ui";
+import { Btn, Table, useConfirm } from "@/components/members/ui";
 import { useRouter } from "next/navigation";
-
-// ── INVITE CODE HELPERS ───────────────────────────────────────────────────────
-
-// Generates a random invite code like "VOLTA-A3BX7M".
-function generateInviteCode(): string {
-  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  const suffix = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `VOLTA-${suffix}`;
-}
-
-// Returns a display string for the current state of an invite code.
-function isInviteCodeExpired(expiresAt?: string): boolean {
-  const value = String(expiresAt ?? "");
-  const raw = value.trim().toLowerCase();
-  if (raw === "never") return false;
-  const t = new Date(value).getTime();
-  if (Number.isNaN(t)) return true;
-  return t < Date.now();
-}
-
-function getCodeStatus(code: InviteCode): string {
-  if (code.active === false) return "Inactive";
-  if (isInviteCodeExpired(code.expiresAt)) return "Expired";
-  const isSingleUse = code.multiUse === false;
-  const signupCount = getSignupCount(code);
-  if (isSingleUse && (code.used || signupCount > 0)) return "Used";
-  return "Active";
-}
-
-function getSignupCount(code: InviteCode): number {
-  const count = Number(code.signupCount);
-  if (Number.isFinite(count) && count >= 0) return Math.trunc(count);
-  return code.used || !!code.usedBy ? 1 : 0;
-}
-
-function getSourceLabel(code: InviteCode): string {
-  return code.source === "auto_rotation" ? "Auto (3-day)" : "Manual";
-}
-
-// Returns a Tailwind text color class for an invite code status string.
-function getCodeStatusColor(status: string): string {
-  if (status === "Inactive") return "text-white/40";
-  if (status === "Used")    return "text-white/30";
-  if (status === "Expired") return "text-orange-400";
-  return "text-green-400";
-}
 
 const EXPORT_OPTIONS = [
   { key: "businesses", label: "Businesses" },
@@ -67,133 +20,9 @@ const EXPORT_OPTIONS = [
   { key: "interviews", label: "Interview Slots" },
   { key: "calendar", label: "Calendar Events" },
   { key: "users", label: "Portal Users" },
-  { key: "inviteCodes", label: "Invite Codes" },
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-
-// ── TAB: ACCESS CODES ─────────────────────────────────────────────────────────
-
-function AccessCodesTab({ uid }: { uid: string }) {
-  const [codes, setCodes]   = useState<InviteCode[]>([]);
-  const [newRole, setNewRole] = useState<AuthRole>("member");
-  const [expireDays, setExpireDays] = useState("7");
-  const [copiedCodeId, setCopiedCodeId] = useState("");
-  const { user } = useAuth();
-  const { ask, Dialog } = useConfirm();
-
-  useEffect(() => subscribeInviteCodes(setCodes), []);
-
-  const ensureRotatingInviteCode = useCallback(async () => {
-    if (!user) return;
-    try {
-      const token = await getAuthToken();
-      await fetch("/api/members/admin/ensure-rotating-invite", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-    } catch {
-      // Keep invite code UI usable even if ensure call fails.
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void ensureRotatingInviteCode();
-    const timer = window.setInterval(() => {
-      void ensureRotatingInviteCode();
-    }, 5 * 60 * 1000);
-    return () => window.clearInterval(timer);
-  }, [ensureRotatingInviteCode]);
-
-  const handleGenerate = async () => {
-    const code      = generateInviteCode();
-    const expiresAt = expireDays === "Never"
-      ? "never"
-      : new Date(Date.now() + parseInt(expireDays, 10) * 86400000).toISOString().split("T")[0];
-    await createInviteCode({
-      code,
-      role:      newRole,
-      expiresAt,
-      used:      false,
-      multiUse:  true,
-      active:    true,
-      source:    "manual",
-      signupCount: 0,
-      createdBy: uid,
-      createdAt: new Date().toISOString(),
-    });
-  };
-
-  const copySignupLink = (codeText: string, id: string) => {
-    const signupLink = `${window.location.origin}/members/signup?code=${encodeURIComponent(codeText)}`;
-    navigator.clipboard.writeText(signupLink);
-    setCopiedCodeId(id);
-    setTimeout(() => setCopiedCodeId(""), 2000);
-  };
-
-  // Display newest codes first.
-  const sortedCodes = [...codes].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  return (
-    <div className="space-y-5">
-      <Dialog />
-
-      {/* Code generator form */}
-      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
-        <h3 className="font-display font-bold text-white text-sm mb-4">Generate New Invite Code</h3>
-        <div className="flex flex-wrap gap-3 items-end">
-          <Field label="Role">
-            <Select
-              options={["member", "interviewer", "admin"]}
-              value={newRole}
-              onChange={e => setNewRole(e.target.value as AuthRole)}
-            />
-          </Field>
-          <Field label="Expires in">
-            <Select
-              options={["1", "3", "7", "14", "30", "Never"]}
-              value={expireDays}
-              onChange={e => setExpireDays(e.target.value)}
-            />
-          </Field>
-          <Btn variant="primary" onClick={handleGenerate}>Generate Code</Btn>
-        </div>
-      </div>
-
-      {/* Existing codes table */}
-      <Table
-        cols={["Code", "Accounts", "Role", "Source", "Expires", "Status", "Actions"]}
-        rows={sortedCodes.map(code => {
-          const status = getCodeStatus(code);
-          const expiresValue = String(code.expiresAt ?? "").trim();
-          return [
-            <span key="code" className="font-mono text-white tracking-widest text-sm whitespace-nowrap">{code.code}</span>,
-            <span key="count" className="text-xs text-white/80 whitespace-nowrap">{getSignupCount(code)}</span>,
-            <Badge key="role" label={code.role} />,
-            <span key="source" className="text-xs text-white/60 whitespace-nowrap">{getSourceLabel(code)}</span>,
-            <span key="exp" className="text-white/70 text-xs whitespace-nowrap">{expiresValue.toLowerCase() === "never" ? "Never" : (expiresValue || "—")}</span>,
-            <span key="status" className={`text-xs font-medium ${getCodeStatusColor(status)}`}>{status}</span>,
-            <div key="actions" className="flex gap-2">
-              <button
-                onClick={() => copySignupLink(code.code, code.id)}
-                className="text-xs text-[#85CC17]/80 hover:text-[#85CC17] transition-colors font-body whitespace-nowrap"
-              >
-                {copiedCodeId === code.id ? "Copied!" : "Copy Link"}
-              </button>
-              <Btn size="sm" variant="danger" onClick={() => ask(async () => deleteInviteCode(code.id))}>Delete</Btn>
-            </div>,
-          ];
-        })}
-      />
-      {codes.length === 0 && (
-        <p className="text-white/30 text-sm text-center py-6 font-body">No invite codes yet. Generate one above.</p>
-      )}
-    </div>
-  );
-}
 
 // ── TAB: USERS ────────────────────────────────────────────────────────────────
 
@@ -432,8 +261,8 @@ function DataTab() {
 // the page root, which is outside it.
 
 function AdminContent() {
-  const [activeTab, setActiveTab] = useState<"codes" | "users" | "data">("codes");
-  const { user, authRole, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState<"users" | "data">("users");
+  const { authRole, loading } = useAuth();
   const router = useRouter();
 
   // Redirect non-admins away from this page.
@@ -452,7 +281,6 @@ function AdminContent() {
   }
 
   const TABS: { key: typeof activeTab; label: string }[] = [
-    { key: "codes", label: "Access Codes" },
     { key: "users", label: "Users" },
     { key: "data",  label: "Data" },
   ];
@@ -479,7 +307,6 @@ function AdminContent() {
         ))}
       </div>
 
-      {activeTab === "codes" && <AccessCodesTab uid={user?.id ?? ""} />}
       {activeTab === "users" && <UsersTab />}
       {activeTab === "data"  && <DataTab />}
     </>

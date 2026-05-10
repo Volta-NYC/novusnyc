@@ -6,7 +6,7 @@ import {
   getDefaultReplyToAddress,
   resolveFromWithName,
 } from "@/lib/server/smtp";
-import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
+import { buildConfirmedAccountAcceptanceTemplate } from "@/lib/server/applicantEmails";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   pickPrimaryTrack,
@@ -64,49 +64,36 @@ async function sendAcceptanceEmail(input: {
   fromAddress?: string;
   to: string;
   applicantName: string;
-  notes?: string;
-  role: string;
-  tracks?: string;
   baseUrl: string;
 }) {
-  const allowedFrom = Array.from(
-    new Set(
-      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? "info@voltanyc.org,ethan@voltanyc.org")
-        .split(",")
-        .map((value) => normalizeEmail(value))
-        .filter(Boolean)
-    )
-  );
-  const defaultFrom = normalizeEmail(getDefaultFromAddress());
-  const from = normalizeEmail(input.fromAddress ?? "") || defaultFrom || allowedFrom[0] || "";
-  if (!from || !allowedFrom.includes(from)) return;
-  const transporter = createTransportForFrom(from).transporter;
-  const replyTo = getDefaultReplyToAddress(from);
-
-  // Generate a unique, one-time Supabase invite link for this applicant.
-  // We use generateLink (not inviteUserByEmail) so Volta controls the email content.
   const sb = getSupabaseAdmin();
-  const { data: linkData } = await sb.auth.admin.generateLink({
-    type: "invite",
-    email: input.to,
-    options: { redirectTo: `${input.baseUrl}/members/signup` },
-  });
-  const signupLink = linkData?.properties?.action_link ?? `${input.baseUrl}/members/signup`;
 
-  const tpl = buildAcceptanceTemplate({
-    name: input.applicantName,
-    role: input.role,
-    tracks: input.tracks ?? "",
-    signupLink,
-  });
-  await transporter.sendMail({
-    from: resolveFromWithName(from),
-    replyTo,
-    to: input.to,
-    subject: tpl.subject,
-    text: tpl.text,
-    html: tpl.html,
-  });
+  // Check if email already has a confirmed auth account.
+  let confirmedAccountExists = false;
+  try {
+    const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
+    const match = users.find(u => u.email?.toLowerCase() === input.to.toLowerCase());
+    confirmedAccountExists = !!(match?.email_confirmed_at);
+  } catch { /* treat as unconfirmed */ }
+
+  if (confirmedAccountExists) {
+    const from = normalizeEmail(getDefaultFromAddress());
+    const transporter = createTransportForFrom(from).transporter;
+    const tpl = buildConfirmedAccountAcceptanceTemplate({ name: input.applicantName });
+    await transporter.sendMail({
+      from: resolveFromWithName(from),
+      replyTo: getDefaultReplyToAddress(from),
+      to: input.to,
+      subject: tpl.subject,
+      text: tpl.text,
+      html: tpl.html,
+    });
+  } else {
+    await sb.auth.admin.inviteUserByEmail(input.to, {
+      redirectTo: `${input.baseUrl}/members/signup`,
+      data: { full_name: input.applicantName },
+    });
+  }
 }
 
 async function upsertTeamMember(params: {
@@ -302,9 +289,6 @@ export async function POST(req: NextRequest) {
           fromAddress: body.fromAddress,
           to: email,
           applicantName: fullName,
-          notes,
-          role: teamRole,
-          tracks,
           baseUrl,
         });
       } catch {

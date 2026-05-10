@@ -10,7 +10,6 @@ const EXPORT_SECTION_PATHS = {
   interviews: "interviewSlots",
   calendar: "calendarEvents",
   users: "userProfiles",
-  inviteCodes: "inviteCodes",
   interviewInvites: "interviewInvites",
 } as const;
 

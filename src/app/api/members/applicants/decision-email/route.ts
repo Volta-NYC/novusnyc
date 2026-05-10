@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyCaller, dbRead, dbPatch } from "@/lib/server/adminApi";
+import { verifyCaller } from "@/lib/server/adminApi";
+import { getSupabaseAdmin, writeAuditLog } from "@/lib/supabaseAdmin";
 import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
-import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
-import { getOrCreateRotatingInviteLink } from "@/lib/server/inviteCodes";
+import { buildConfirmedAccountAcceptanceTemplate } from "@/lib/server/applicantEmails";
 
-type Decision = "Accepted";
+export const runtime = "nodejs";
 
 type DecisionEmailBody = {
   applicantName?: string;
   applicantEmail?: string;
-  decision?: Decision;
-  notes?: string;
-  fromAddress?: string;
-  role?: string;
-  tracks?: string;
+  decision?: string;
 };
 
 function normalizeEmail(email: string): string {
@@ -25,12 +21,9 @@ export async function POST(req: NextRequest) {
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = (await req.json()) as DecisionEmailBody;
-  const applicantName = (body.applicantName ?? "").trim();
-  const applicantEmail = (body.applicantEmail ?? "").trim().toLowerCase();
+  const applicantName  = (body.applicantName  ?? "").trim();
+  const applicantEmail = normalizeEmail(body.applicantEmail ?? "");
   const decision = body.decision;
-  const requestedFrom = (body.fromAddress ?? "").trim().toLowerCase();
-  const role = (body.role ?? "").trim();
-  const tracks = (body.tracks ?? "").trim();
 
   if (!applicantName || !applicantEmail || !decision) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
@@ -42,69 +35,56 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });
   }
 
-  const allowedFrom = Array.from(
-    new Set(
-      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? "info@voltanyc.org,ethan@voltanyc.org")
-        .split(",")
-        .map((value) => normalizeEmail(value))
-        .filter(Boolean)
-    )
-  );
-  const defaultFrom = normalizeEmail(getDefaultFromAddress());
-  const from = requestedFrom || defaultFrom || allowedFrom[0] || "";
-  if (!from || !allowedFrom.includes(from)) {
-    return NextResponse.json({ error: "from_not_allowed" }, { status: 400 });
-  }
-  let transporter: ReturnType<typeof createTransportForFrom>["transporter"];
-  try {
-    transporter = createTransportForFrom(from).transporter;
-  } catch {
-    return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
-  }
-  const replyTo = getDefaultReplyToAddress(from);
+  const sb = getSupabaseAdmin();
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
-  const rotatingInvite = await getOrCreateRotatingInviteLink({
-    role: "member",
-    createdBy: verified.caller.uid,
-    baseUrl,
-    idToken: verified.caller.idToken,
-  });
-  const content = buildAcceptanceTemplate({
-    name: applicantName,
-    role: role || "Analyst",
-    tracks: tracks || "",
-    signupLink: rotatingInvite.link,
-  });
 
-  await transporter.sendMail({
-    from: resolveFromWithName(from),
-    replyTo,
-    to: applicantEmail,
-    subject: content.subject,
-    text: content.text,
-    html: content.html,
-  });
-
-  // Write Accepted status to Firebase application record
+  // Check if this email already has a confirmed auth account.
+  // inviteUserByEmail is unsafe on confirmed accounts; fall back to nodemailer.
+  let confirmedAccountExists = false;
   try {
-    const appsData = await dbRead("applications", verified.caller.idToken);
-    if (appsData && typeof appsData === "object") {
-      const apps = appsData as Record<string, Record<string, unknown>>;
-      for (const [appId, row] of Object.entries(apps)) {
-        const rowEmail = String(row.email ?? "").trim().toLowerCase();
-        if (rowEmail === applicantEmail) {
-          await dbPatch(`applications/${appId}`, {
-            status: "Accepted",
-            statusManualOverride: true,
-            updatedAt: new Date().toISOString(),
-          }, verified.caller.idToken);
-          break;
-        }
-      }
+    const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
+    const match = users.find(u => u.email?.toLowerCase() === applicantEmail);
+    confirmedAccountExists = !!(match?.email_confirmed_at);
+  } catch { /* treat as unconfirmed */ }
+
+  if (confirmedAccountExists) {
+    const from = getDefaultFromAddress();
+    let transporter: ReturnType<typeof createTransportForFrom>["transporter"];
+    try {
+      transporter = createTransportForFrom(from).transporter;
+    } catch {
+      return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
     }
-  } catch {
-    // Don't fail the request if Firebase write fails
+    const content = buildConfirmedAccountAcceptanceTemplate({ name: applicantName });
+    await transporter.sendMail({
+      from: resolveFromWithName(from),
+      replyTo: getDefaultReplyToAddress(from),
+      to: applicantEmail,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+    });
+  } else {
+    // No confirmed account — use inviteUserByEmail so Supabase sends the
+    // acceptance+invite email via its configured SMTP.
+    const { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(applicantEmail, {
+      redirectTo: `${baseUrl}/members/signup`,
+      data: { full_name: applicantName },
+    });
+    if (inviteErr) {
+      return NextResponse.json({ error: "invite_failed", detail: inviteErr.message }, { status: 500 });
+    }
   }
+
+  await writeAuditLog({
+    action: "decision_email",
+    collection: "applications",
+    recordId: applicantEmail,
+    actorUid: verified.caller.uid,
+    actorEmail: verified.caller.email,
+    actorName: verified.caller.name,
+    details: { decision, applicantEmail },
+  });
 
   return NextResponse.json({ success: true });
 }

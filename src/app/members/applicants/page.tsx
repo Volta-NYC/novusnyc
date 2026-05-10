@@ -519,9 +519,6 @@ export default function ApplicantsPage() {
           applicantName: app.fullName,
           applicantEmail: app.email,
           decision: "Accepted",
-          notes: "",
-          role: role,
-          tracks: app.tracksSelected || "",
         }),
       });
     }
