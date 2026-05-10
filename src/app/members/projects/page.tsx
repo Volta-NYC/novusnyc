@@ -1407,20 +1407,22 @@ function BusinessesPageInner() {
               {openStatusPopoverId === b.id && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[130px]"
+                  className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
                 >
-                  {STATUSES.map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      onClick={() => void handleQuickStatusChange(b, status)}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${
-                        trackStatus === status ? "text-[#85CC17]" : "text-white/70"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
+                  {STATUSES.map((status) => {
+                    const isActive = trackStatus === status;
+                    return (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => void handleQuickStatusChange(b, status)}
+                        className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
+                      >
+                        <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
+                        {status}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1795,7 +1797,7 @@ function BusinessesPageInner() {
 
       {activeTab === "discovery" ? (
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-          <table className="table-fixed text-left" style={{width: "1110px"}}>
+          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1110px"}}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
@@ -1824,7 +1826,7 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "1240px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1240px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
@@ -1848,7 +1850,7 @@ function BusinessesPageInner() {
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "1240px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1240px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>

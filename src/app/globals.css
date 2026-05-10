@@ -435,6 +435,12 @@ main {
 }
 
 /* ── Standardized table container — horizontal scroll, no column reflow on resize ── */
+/* Enforce vertical centering in every members-portal table cell globally */
+.members-portal table td,
+.members-portal table th {
+  vertical-align: middle;
+}
+
 .members-portal .members-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

@@ -1466,12 +1466,16 @@ export default function TeamPage() {
                                     {displayRoleValue(member.role)}
                                   </button>
                                   {openRolePopoverId === member.id && (
-                                    <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[150px]">
-                                      {ROLE_OPTIONS.map((roleOption) => (
-                                        <button key={roleOption} type="button" onClick={() => void handleQuickRoleChange(member, roleOption)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors ${String(member.role ?? "").trim() === roleOption ? "text-[#85CC17]" : "text-white/70"}`}>
-                                          {roleOption}
-                                        </button>
-                                      ))}
+                                    <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[160px]">
+                                      {ROLE_OPTIONS.map((roleOption) => {
+                                        const isActive = String(member.role ?? "").trim() === roleOption;
+                                        return (
+                                          <button key={roleOption} type="button" onClick={() => void handleQuickRoleChange(member, roleOption)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}>
+                                            <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
+                                            {roleOption}
+                                          </button>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
