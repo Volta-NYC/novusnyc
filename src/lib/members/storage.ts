@@ -160,6 +160,7 @@ export interface TeamMember {
   lastAutoStrikeCycleId?: string;
   lastBiweeklyCheckinMark?: number;     // floor(daysSinceCycleStart / 14)
   lastBiweeklyCheckinCycleId?: string;  // resets when cycle changes
+  authUid?: string;
 }
 
 export type ApplicationStatus =

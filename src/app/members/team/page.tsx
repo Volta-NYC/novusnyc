@@ -374,6 +374,7 @@ export default function TeamPage() {
   const [creditSummaryMember, setCreditSummaryMember] = useState<TeamMember | null>(null);
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ask, Dialog } = useConfirm();
@@ -783,6 +784,22 @@ export default function TeamPage() {
       },
       `Delete ${editingMember.name}? This permanently removes them from the member directory.`
     );
+  };
+
+  const handleSendInvite = async (member: TeamMember) => {
+    setInviteStatus(s => ({ ...s, [member.id]: "sending" }));
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/admin/invite-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ memberId: member.id }),
+      });
+      setInviteStatus(s => ({ ...s, [member.id]: res.ok ? "sent" : "error" }));
+      if (res.ok) setTimeout(() => setInviteStatus(s => { const n = { ...s }; delete n[member.id]; return n; }), 3000);
+    } catch {
+      setInviteStatus(s => ({ ...s, [member.id]: "error" }));
+    }
   };
 
   const filtered = team.filter(member => {
@@ -1533,6 +1550,20 @@ export default function TeamPage() {
                               <div className="members-row-actions">
                                 {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
                                 {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
+                                {canEdit && !member.authUid && (() => {
+                                  const st = inviteStatus[member.id];
+                                  return (
+                                    <Btn
+                                      size="sm"
+                                      variant="ghost"
+                                      className="members-pill-btn whitespace-nowrap"
+                                      disabled={st === "sending" || st === "sent"}
+                                      onClick={() => handleSendInvite(member)}
+                                    >
+                                      {st === "sending" ? "Sending…" : st === "sent" ? "✓ Sent" : st === "error" ? "Retry" : "Invite"}
+                                    </Btn>
+                                  );
+                                })()}
                               </div>
                             </td>
                           );
