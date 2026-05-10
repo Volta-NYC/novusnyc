@@ -14,7 +14,7 @@ import {
   createAssignmentClaim, updateAssignmentClaim, deleteAssignmentClaim,
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
-import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
+import { classifyMember } from "@/lib/members/cycleCompute";
 
 const TRACK_DOT: Record<CycleTrack, string> = {
   Tech: "bg-blue-500",
@@ -78,7 +78,6 @@ export default function AssignmentDetailPage() {
   const business = assignment?.businessId ? businesses.find((b) => b.id === assignment.businessId) : null;
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
   const classification = me ? classifyMember(me) : null;
-  const primaryTrack = me ? pickPrimaryTrack(me) : null;
 
   const assignmentClaims = useMemo(
     () => claims.filter((c) => c.assignmentId === id),
@@ -112,8 +111,6 @@ export default function AssignmentDetailPage() {
   const isReserve = classification?.status === "reserve";
   const isFull = activeClaims.length >= assignment.capacity;
   const cycleMatches = activeCycle && assignment.cycleId === activeCycle.id;
-  const visibleHere = (assignment.visibleTracks ?? [assignment.primaryTrack]).includes(primaryTrack as CycleTrack);
-
   const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate;
   const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "in_progress" || myClaim.status === "rejected");
   const canMarkInProgress = myClaim && myClaim.status === "claimed";
@@ -192,11 +189,6 @@ export default function AssignmentDetailPage() {
                 <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignment.primaryTrack]}`} />
                 {assignment.primaryTrack}
               </span>
-              {assignment.difficulty && (
-                <span className="inline-flex items-center rounded-full border border-black/12 bg-white px-2 py-0.5 text-[10px] font-semibold text-black/65">
-                  {assignment.difficulty}
-                </span>
-              )}
               <span className="text-[#5C9911] font-mono text-sm font-semibold">{assignment.credits} credits</span>
             </div>
             <h1 className="font-display font-bold text-black text-2xl">{assignment.title}</h1>
@@ -229,12 +221,6 @@ export default function AssignmentDetailPage() {
             This assignment requires <strong>{assignment.minRole}</strong> or higher.
           </div>
         )}
-        {!visibleHere && cycleMatches && !isLeadership && !isReserve && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-            This is a cross-track assignment outside your primary track. Cross-track work counts toward your target this cycle.
-          </div>
-        )}
-
         {/* Description */}
         <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
           <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-2">Overview</h2>
@@ -262,7 +248,6 @@ export default function AssignmentDetailPage() {
                 <div className="flex justify-between"><dt className="text-black/55">Deadline</dt><dd className="text-black/85">{assignment.deadline}</dd></div>
               )}
               <div className="flex justify-between"><dt className="text-black/55">Min role</dt><dd className="text-black/85">{assignment.minRole}</dd></div>
-              <div className="flex justify-between"><dt className="text-black/55">Visible to</dt><dd className="text-black/85">{(assignment.visibleTracks ?? [assignment.primaryTrack]).join(", ")}</dd></div>
             </dl>
           </div>
           <div className="rounded-2xl border border-black/8 bg-white shadow-sm p-4">

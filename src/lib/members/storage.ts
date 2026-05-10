@@ -360,8 +360,8 @@ export interface Assignment {
   id: string;
   title: string;
   description: string;             // HTML (rich-text)
-  primaryTrack: CycleTrack;        // for credit accounting + code prefix
-  visibleTracks: CycleTrack[];     // who sees this in their marketplace; defaults to [primaryTrack]
+  primaryTrack: CycleTrack;        // for assignment grouping + code prefix
+  visibleTracks: CycleTrack[];     // legacy field; assignments are surfaced to every member track
   credits: number;
   difficulty: AssignmentDifficulty;
   estimatedHours: number;

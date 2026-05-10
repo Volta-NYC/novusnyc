@@ -23,13 +23,12 @@ const VOLTA_INTERNAL_ID = "__volta_internal__";
 
 const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
 
-// col 0=Title, 1=Type/Difficulty, 2=Track, 3=Business Name, 4=Claimer Names
+// col 0=Title, 1=Track, 2=Business Name, 3=Claimer Names
 const ASSIGNMENT_SORT_OPTIONS = [
   { value: 0, label: "Title" },
-  { value: 1, label: "Type / Difficulty" },
-  { value: 2, label: "Track" },
-  { value: 3, label: "Business Name" },
-  { value: 4, label: "Claimer Names" },
+  { value: 1, label: "Track" },
+  { value: 2, label: "Business Name" },
+  { value: 3, label: "Claimer Names" },
 ];
 
 const REVIEW_COLS = [
@@ -44,11 +43,10 @@ const REVIEW_COLS = [
 ];
 
 const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
-  { col: 2, dir: "asc" },
   { col: 1, dir: "asc" },
   { col: 0, dir: "asc" },
+  { col: 2, dir: "asc" },
   { col: 3, dir: "asc" },
-  { col: 4, dir: "asc" },
 ];
 
 interface ReviewInput {
@@ -103,10 +101,9 @@ export default function ForReviewPage() {
     const bB = bA?.businessId === VOLTA_INTERNAL_ID ? { name: "Volta Internal" } : bA?.businessId ? businessById.get(bA.businessId) : undefined;
     switch (col) {
       case 0: return (aA?.title ?? "").localeCompare(bA?.title ?? "");
-      case 1: return (aA?.difficulty ?? "").localeCompare(bA?.difficulty ?? "");
-      case 2: return (TRACK_RANK[aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.primaryTrack ?? "Tech"] ?? 9);
-      case 3: return (aB?.name ?? "").localeCompare(bB?.name ?? "");
-      case 4: return (aC.memberName ?? "").localeCompare(bC.memberName ?? "");
+      case 1: return (TRACK_RANK[aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.primaryTrack ?? "Tech"] ?? 9);
+      case 2: return (aB?.name ?? "").localeCompare(bB?.name ?? "");
+      case 3: return (aC.memberName ?? "").localeCompare(bC.memberName ?? "");
       default: return 0;
     }
   };
@@ -126,7 +123,6 @@ export default function ForReviewPage() {
         return [
           c.memberName,
           a?.title,
-          a?.difficulty,
           a?.primaryTrack,
           business?.name,
           business?.neighborhood,

@@ -167,18 +167,12 @@ export default function MemberOverviewPage() {
       .filter((a) => a.cycleId === activeCycle.id)
       .filter((a) => !claimedAssignmentIds.has(a.id))
       .filter((a) => {
-        const visible = a.visibleTracks?.length ? a.visibleTracks : [a.primaryTrack];
-        return visible.includes(primaryTrack);
-      })
-      .filter((a) => {
         const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
         return taken < a.capacity;
       });
     const score = (a: Assignment) => {
       let s = 0;
       if (a.primaryTrack === primaryTrack) s += 10;
-      // Stretch bonus
-      if (String(a.difficulty).toLowerCase() === "stretch") s += 3;
       // Closer deadlines float higher
       if (a.deadline) {
         const days = daysBetween(now, a.deadline);

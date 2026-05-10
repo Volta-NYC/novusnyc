@@ -45,8 +45,6 @@ export default function MarketplacePage() {
 
   const [search, setSearch] = useState("");
   const [trackFilter, setTrackFilter] = useState<"" | CycleTrack>("");
-  const [showCrossTrack, setShowCrossTrack] = useState(false);
-  const [difficultyFilter, setDifficultyFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("recommended");
 
   useEffect(() => {
@@ -89,38 +87,24 @@ export default function MarketplacePage() {
     return set;
   }, [claims, me]);
 
-  const difficulties = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of assignments) if (a.difficulty) set.add(a.difficulty);
-    return Array.from(set).sort();
-  }, [assignments]);
-
   const filtered = useMemo(() => {
     if (!activeCycle) return [];
     const q = search.trim().toLowerCase();
     return assignments
       .filter((a) => a.cycleId === activeCycle.id)
       .filter((a) => a.status === "open" || a.status === "claimed")
-      .filter((a) => {
-        const visible = a.visibleTracks?.length ? a.visibleTracks : [a.primaryTrack];
-        if (trackFilter) return visible.includes(trackFilter);
-        if (!primaryTrack) return true;
-        if (showCrossTrack) return true;
-        return visible.includes(primaryTrack);
-      })
-      .filter((a) => !difficultyFilter || a.difficulty === difficultyFilter)
+      .filter((a) => !trackFilter || a.primaryTrack === trackFilter)
       .filter((a) => {
         if (!q) return true;
         const business = a.businessId ? businessById.get(a.businessId) : undefined;
         return [
           a.title,
           a.description?.replace(/<[^>]+>/g, " "),
-          a.difficulty,
           business?.name,
           business?.neighborhood,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       });
-  }, [assignments, activeCycle, primaryTrack, showCrossTrack, trackFilter, difficultyFilter, search, businessById]);
+  }, [assignments, activeCycle, trackFilter, search, businessById]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -155,9 +139,6 @@ export default function MarketplacePage() {
               {activeCycle ? (
                 <>
                   {activeCycle.name} · {sorted.length} assignment{sorted.length === 1 ? "" : "s"} for you
-                  {primaryTrack && !showCrossTrack && !trackFilter && (
-                    <span className="text-black/40"> in {primaryTrack}</span>
-                  )}
                 </>
               ) : "No active cycle yet."}
             </p>
@@ -210,42 +191,9 @@ export default function MarketplacePage() {
                 {t}
               </button>
             ))}
-
-            <label className="ml-2 inline-flex items-center gap-2 text-xs text-black/65">
-              <input
-                type="checkbox"
-                checked={showCrossTrack}
-                onChange={(e) => setShowCrossTrack(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-black/30"
-              />
-              Show cross-track work
-            </label>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mr-1">Difficulty</span>
-            <button
-              type="button"
-              onClick={() => setDifficultyFilter("")}
-              className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                !difficultyFilter ? "border-black/85 bg-black text-white" : "border-black/15 bg-white text-black/65 hover:border-black/35"
-              }`}
-            >
-              Any
-            </button>
-            {difficulties.map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDifficultyFilter(difficultyFilter === d ? "" : d)}
-                className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                  difficultyFilter === d ? "border-black/85 bg-black text-white" : "border-black/15 bg-white text-black/65 hover:border-black/35"
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-
-            <span className="ml-auto text-[10px] uppercase tracking-wider text-black/40 font-semibold">Sort</span>
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            <span className="text-[10px] uppercase tracking-wider text-black/40 font-semibold">Sort</span>
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
@@ -309,7 +257,6 @@ export default function MarketplacePage() {
                       <span>{taken} / {a.capacity} spots</span>
                       {a.estimatedHours > 0 && <span>·</span>}
                       {a.estimatedHours > 0 && <span>~{a.estimatedHours}h</span>}
-                      {a.difficulty && <span>· {a.difficulty}</span>}
                     </div>
                     {a.deadline && <span>Due {a.deadline}</span>}
                   </div>

@@ -19,10 +19,9 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
-const TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
+const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 const STATUS_OPTIONS: AssignmentStatus[] = ["open", "claimed", "in_progress", "submitted", "approved", "closed"];
-const DEFAULT_DIFFICULTIES = ["Starter", "Standard", "Stretch"];
 
 // "Volta Internal" is a sentinel businessId for assignments not tied to any
 // outside business — common for finance work, internal templates, etc.
@@ -45,20 +44,18 @@ const TRACK_DOT: Record<CycleTrack, string> = {
 
 const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
 
-// col 0=Title, 1=Type/Difficulty, 2=Track, 3=Business Name, 4=Claimer Names
+// col 0=Title, 1=Track, 2=Business Name, 3=Claimer Names
 const ASSIGNMENT_SORT_OPTIONS = [
   { value: 0, label: "Title" },
-  { value: 1, label: "Type / Difficulty" },
-  { value: 2, label: "Track" },
-  { value: 3, label: "Business Name" },
-  { value: 4, label: "Claimer Names" },
+  { value: 1, label: "Track" },
+  { value: 2, label: "Business Name" },
+  { value: 3, label: "Claimer Names" },
 ];
 
 const CATALOG_COLS = [
   { key: "title",      label: "Assignment",  width: 280 },
   { key: "track",      label: "Track",       width: 90  },
   { key: "credits",    label: "Credits",     width: 70  },
-  { key: "difficulty", label: "Difficulty",  width: 100 },
   { key: "business",   label: "Business",    width: 190 },
   { key: "slots",      label: "Slots",       width: 70  },
   { key: "deadline",   label: "Deadline",    width: 110 },
@@ -67,23 +64,21 @@ const CATALOG_COLS = [
 ];
 
 const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
-  { col: 2, dir: "asc" },
   { col: 1, dir: "asc" },
   { col: 0, dir: "asc" },
+  { col: 2, dir: "asc" },
   { col: 3, dir: "asc" },
-  { col: 4, dir: "asc" },
 ];
 
 interface FormState {
   title: string;
   description: string;
   primaryTrack: CycleTrack;
-  visibleTracks: CycleTrack[];
   credits: number;
-  difficulty: string;
   estimatedHours: number;
   minRole: CycleRole;
   businessId: string;       // "" or VOLTA_INTERNAL_ID or real business id
+  businessLabel: string;
   capacity: number;
   deadline: string;
   status: AssignmentStatus;
@@ -93,12 +88,11 @@ const BLANK_FORM: FormState = {
   title: "",
   description: "",
   primaryTrack: "Tech",
-  visibleTracks: ["Tech"],
   credits: 1,
-  difficulty: "Standard",
   estimatedHours: 1,
   minRole: "Analyst",
   businessId: VOLTA_INTERNAL_ID,
+  businessLabel: "Volta Internal",
   capacity: 1,
   deadline: "",
   status: "open",
@@ -168,7 +162,6 @@ export default function CatalogPage() {
         .map((c) => String(c.memberName ?? "").toLowerCase());
       return [
         a.title,
-        a.difficulty,
         a.primaryTrack,
         business?.name ?? "",
         business?.neighborhood ?? "",
@@ -181,14 +174,13 @@ export default function CatalogPage() {
   const compareAssignmentByCol = (a: Assignment, b: Assignment, col: number): number => {
     switch (col) {
       case 0: return (a.title || "").localeCompare(b.title || "");
-      case 1: return (a.difficulty || "").localeCompare(b.difficulty || "");
-      case 2: return (TRACK_RANK[a.primaryTrack] ?? 9) - (TRACK_RANK[b.primaryTrack] ?? 9);
-      case 3: {
+      case 1: return (TRACK_RANK[a.primaryTrack] ?? 9) - (TRACK_RANK[b.primaryTrack] ?? 9);
+      case 2: {
         const aB = resolveBusinessLabel(a)?.name ?? "";
         const bB = resolveBusinessLabel(b)?.name ?? "";
         return aB.localeCompare(bB);
       }
-      case 4: {
+      case 3: {
         const aNames = (claimsByAssignment.get(a.id) ?? []).map((c) => c.memberName ?? "").sort().join(", ");
         const bNames = (claimsByAssignment.get(b.id) ?? []).map((c) => c.memberName ?? "").sort().join(", ");
         return aNames.localeCompare(bNames);
@@ -247,11 +239,23 @@ export default function CatalogPage() {
     [businesses],
   );
 
-  const difficultyOptions = useMemo(() => {
-    const set = new Set<string>(DEFAULT_DIFFICULTIES);
-    for (const a of assignments) if (a.difficulty) set.add(a.difficulty);
-    return Array.from(set).sort();
-  }, [assignments]);
+  const businessChoiceLabel = (businessId: string): string => {
+    if (!businessId || businessId === VOLTA_INTERNAL_ID) return "Volta Internal";
+    const business = businessById.get(businessId);
+    if (!business) return "";
+    return [business.name, business.neighborhood].filter(Boolean).join(" · ");
+  };
+
+  const businessChoices = useMemo(
+    () => [
+      { id: VOLTA_INTERNAL_ID, label: "Volta Internal" },
+      ...businessOptions.map((b) => ({
+        id: b.id,
+        label: [b.name, b.neighborhood].filter(Boolean).join(" · "),
+      })),
+    ],
+    [businessOptions],
+  );
 
   const openCreate = () => {
     setForm({ ...BLANK_FORM });
@@ -264,12 +268,11 @@ export default function CatalogPage() {
       title: a.title,
       description: a.description ?? "",
       primaryTrack: a.primaryTrack,
-      visibleTracks: a.visibleTracks?.length ? a.visibleTracks : [a.primaryTrack],
       credits: a.credits,
-      difficulty: a.difficulty ?? "Standard",
       estimatedHours: a.estimatedHours ?? 0,
       minRole: a.minRole,
       businessId: a.businessId ?? VOLTA_INTERNAL_ID,
+      businessLabel: businessChoiceLabel(a.businessId ?? VOLTA_INTERNAL_ID),
       capacity: a.capacity ?? 1,
       deadline: a.deadline ?? "",
       status: a.status,
@@ -283,12 +286,11 @@ export default function CatalogPage() {
       title: `${a.title} (copy)`,
       description: a.description ?? "",
       primaryTrack: a.primaryTrack,
-      visibleTracks: a.visibleTracks?.length ? a.visibleTracks : [a.primaryTrack],
       credits: a.credits,
-      difficulty: a.difficulty ?? "Standard",
       estimatedHours: a.estimatedHours ?? 0,
       minRole: a.minRole,
       businessId: a.businessId ?? VOLTA_INTERNAL_ID,
+      businessLabel: businessChoiceLabel(a.businessId ?? VOLTA_INTERNAL_ID),
       capacity: a.capacity ?? 1,
       deadline: a.deadline ?? "",
       status: "open",
@@ -300,14 +302,13 @@ export default function CatalogPage() {
   const buildPayload = (): Omit<Assignment, "id" | "createdAt" | "updatedAt"> | null => {
     const title = form.title.trim();
     if (!title) return null;
-    const visibleTracks = form.visibleTracks.length > 0 ? form.visibleTracks : [form.primaryTrack];
     return {
       title,
       description: form.description,
       primaryTrack: form.primaryTrack,
-      visibleTracks: Array.from(new Set([form.primaryTrack, ...visibleTracks])),
+      visibleTracks: MEMBER_TRACKS,
       credits: Math.max(0, Number(form.credits) || 0),
-      difficulty: form.difficulty.trim() || "Standard",
+      difficulty: editing?.difficulty ?? "Standard",
       estimatedHours: Math.max(0, Number(form.estimatedHours) || 0),
       minRole: form.minRole,
       businessId: form.businessId || VOLTA_INTERNAL_ID,
@@ -340,14 +341,6 @@ export default function CatalogPage() {
       },
       `Delete “${editing.title}”? This permanently removes the catalog entry. Existing claims keep their credit history.`,
     );
-  };
-
-  const toggleVisibleTrack = (track: CycleTrack) => {
-    setForm((prev) => {
-      const has = prev.visibleTracks.includes(track);
-      const next = has ? prev.visibleTracks.filter((t) => t !== track) : [...prev.visibleTracks, track];
-      return { ...prev, visibleTracks: next };
-    });
   };
 
   if (loading || authRole !== "admin") {
@@ -503,11 +496,6 @@ export default function CatalogPage() {
                           case "credits": return (
                             <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a.credits}</td>
                           );
-                          case "difficulty": return (
-                            <td key="difficulty" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
-                              <span className="block truncate">{a.difficulty || "—"}</span>
-                            </td>
-                          );
                           case "business": return (
                             <td key="business" className="px-3 py-0 h-9 text-[11px] text-white/65 align-middle overflow-hidden">
                               {business?.name ? (
@@ -579,7 +567,7 @@ export default function CatalogPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Field label="Primary track" required>
               <Select
-                options={TRACKS}
+                options={MEMBER_TRACKS}
                 value={form.primaryTrack}
                 onChange={(e) => setForm((p) => ({ ...p, primaryTrack: e.target.value as CycleTrack }))}
               />
@@ -592,45 +580,7 @@ export default function CatalogPage() {
                 onChange={(e) => setForm((p) => ({ ...p, credits: Number(e.target.value) || 0 }))}
               />
             </Field>
-            <Field label="Difficulty">
-              <input
-                list="assignment-difficulty-options"
-                value={form.difficulty}
-                onChange={(e) => setForm((p) => ({ ...p, difficulty: e.target.value }))}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-              />
-              <datalist id="assignment-difficulty-options">
-                {difficultyOptions.map((d) => <option key={d} value={d} />)}
-              </datalist>
-            </Field>
           </div>
-
-          <Field label="Visible to tracks">
-            <div className="flex flex-wrap gap-2">
-              {TRACKS.map((track) => {
-                const on = form.visibleTracks.includes(track);
-                const isPrimary = form.primaryTrack === track;
-                return (
-                  <button
-                    key={track}
-                    type="button"
-                    onClick={() => !isPrimary && toggleVisibleTrack(track)}
-                    disabled={isPrimary}
-                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      on
-                        ? "border-[#85CC17]/45 bg-[#85CC17]/10 text-[#9BE22B]"
-                        : "border-white/15 bg-[#11141A] text-white/65 hover:border-white/35"
-                    } ${isPrimary ? "opacity-100 cursor-default" : ""}`}
-                  >
-                    <span className={`inline-block h-2 w-2 rounded-full ${TRACK_DOT[track]}`} />
-                    {track}
-                    {isPrimary && <span className="text-[10px] text-white/55">primary</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[11px] text-white/40 mt-1.5">Primary track is always included. Add other tracks to surface this assignment in their marketplace too.</p>
-          </Field>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Field label="Estimated hours">
@@ -642,7 +592,7 @@ export default function CatalogPage() {
                 onChange={(e) => setForm((p) => ({ ...p, estimatedHours: Number(e.target.value) || 0 }))}
               />
             </Field>
-            <Field label="Slots (how many members can claim this)">
+            <Field label="Slots">
               <Input
                 type="number"
                 min="1"
@@ -650,7 +600,7 @@ export default function CatalogPage() {
                 onChange={(e) => setForm((p) => ({ ...p, capacity: Number(e.target.value) || 1 }))}
               />
             </Field>
-            <Field label="Min role to claim">
+            <Field label="Required Role">
               <Select
                 options={ROLES}
                 value={form.minRole}
@@ -660,19 +610,22 @@ export default function CatalogPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Business / context">
-              <select
-                value={form.businessId}
-                onChange={(e) => setForm((p) => ({ ...p, businessId: e.target.value }))}
+            <Field label="Business">
+              <input
+                list="assignment-business-options"
+                value={form.businessLabel}
+                onChange={(e) => {
+                  const label = e.target.value;
+                  const match = businessChoices.find((choice) => choice.label === label);
+                  setForm((p) => ({ ...p, businessLabel: label, businessId: match?.id ?? "" }));
+                }}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-              >
-                <option value={VOLTA_INTERNAL_ID}>Volta Internal</option>
-                {businessOptions.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}{b.neighborhood ? ` · ${b.neighborhood}` : ""}
-                  </option>
+              />
+              <datalist id="assignment-business-options">
+                {businessChoices.map((choice) => (
+                  <option key={choice.id} value={choice.label} />
                 ))}
-              </select>
+              </datalist>
               <p className="text-[11px] text-white/40 mt-1.5">Use Volta Internal for finance work, internal templates, sponsor outreach, etc.</p>
             </Field>
             <Field label="Deadline">
