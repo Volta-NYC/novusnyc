@@ -55,7 +55,11 @@ export function pickPrimaryTrack(member: TeamMember): CycleTrack {
 }
 
 export function lookupCreditTarget(cycle: Cycle, track: CycleTrack, role: CycleRole): number {
-  return cycle.creditTargets[track]?.[role] ?? 0;
+  // CycleCreditTargets only has Tech/Marketing/Finance; General assignments
+  // don't have a per-cycle credit target.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const targets = cycle.creditTargets as any;
+  return (targets[track]?.[role] as number | undefined) ?? 0;
 }
 
 // ── Credit ledger ─────────────────────────────────────────────────────────────

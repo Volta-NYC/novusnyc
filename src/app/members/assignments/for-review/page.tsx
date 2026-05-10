@@ -22,7 +22,7 @@ import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
 
 const VOLTA_INTERNAL_ID = "__volta_internal__";
 
-const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
+const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2, General: 3 };
 
 // col 0=Title, 1=Track, 2=Business Name, 3=Claimer Names
 const ASSIGNMENT_SORT_OPTIONS = [

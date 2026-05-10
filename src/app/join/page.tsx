@@ -129,7 +129,7 @@ export default async function Join() {
               </a>
             </div>
             <p className="font-body text-sm text-white/60">
-              Takes 5 minutes · Apply anytime.
+              Takes 5 minutes · Apply anytime · ~30% acceptance rate.
             </p>
           </AnimatedSection>
         </div>

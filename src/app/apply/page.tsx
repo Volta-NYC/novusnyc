@@ -31,9 +31,12 @@ export default function Apply() {
                 >
                   Join Volta NYC
                 </h1>
-                <p className="font-body text-v-muted text-base leading-relaxed mb-8">
+                <p className="font-body text-v-muted text-base leading-relaxed mb-3">
                   High school and college students. Real projects for real businesses.
                   2–4 hours a week, fully remote.
+                </p>
+                <p className="font-body text-sm text-v-muted/70 mb-8">
+                  ~30% acceptance rate.
                 </p>
 
                 <div className="space-y-5">

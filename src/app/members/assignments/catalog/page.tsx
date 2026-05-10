@@ -40,9 +40,10 @@ const TRACK_DOT: Record<CycleTrack, string> = {
   Tech: "bg-blue-500",
   Marketing: "bg-lime-500",
   Finance: "bg-amber-500",
+  General: "bg-gray-400",
 };
 
-const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2 };
+const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2, General: 3 };
 
 // col 0=Title, 1=Track, 2=Business Name, 3=Claimer Names
 const ASSIGNMENT_SORT_OPTIONS = [

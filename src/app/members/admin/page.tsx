@@ -4,8 +4,9 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
-import { Btn } from "@/components/members/ui";
+
 import { useRouter } from "next/navigation";
+import { getHandbookPage, upsertHandbookPage, type HandbookPage } from "@/lib/members/storage";
 
 const EXPORT_OPTIONS = [
   { key: "businesses", label: "Businesses" },
@@ -185,12 +186,124 @@ function DataTab() {
   );
 }
 
+// ── TAB: HANDBOOK ─────────────────────────────────────────────────────────────
+
+function HandbookTab() {
+  const { user } = useAuth();
+  const [page, setPage] = useState<HandbookPage | null>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  useEffect(() => {
+    getHandbookPage("credit-infraction-policy")
+      .then((p) => {
+        setPage(p);
+        setTitle(p?.title ?? "Credit & Infraction Policy");
+        setContent(p?.content ?? "");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    setStatusMessage("");
+    try {
+      await upsertHandbookPage("credit-infraction-policy", {
+        slug: "credit-infraction-policy",
+        title,
+        content,
+        updatedBy: user.email ?? user.id,
+      });
+      setStatusMessage("Handbook page saved successfully.");
+      // Refresh the page record
+      const updated = await getHandbookPage("credit-infraction-policy");
+      setPage(updated);
+    } catch {
+      setStatusMessage("Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="w-5 h-5 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl space-y-4">
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-5">
+        <h2 className="font-display font-bold text-white mb-1">Credit &amp; Infraction Policy</h2>
+        <p className="text-white/40 text-sm mb-4">
+          Edit the handbook page shown to members. Members must acknowledge this page on first login.
+          {page?.updatedAt && (
+            <span className="block mt-1 text-white/25 text-xs">
+              Last saved: {new Date(page.updatedAt).toLocaleString()}
+              {page.updatedBy ? ` by ${page.updatedBy}` : ""}
+            </span>
+          )}
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs text-white/50 font-body mb-1">Page Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+              placeholder="Credit & Infraction Policy"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-white/50 font-body mb-1">Content</label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={20}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50 resize-y"
+              placeholder="Enter handbook content here..."
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            onClick={() => void handleSave()}
+            disabled={saving}
+            className={`font-display font-bold px-5 py-2.5 rounded-xl transition-colors text-sm ${
+              saving
+                ? "bg-white/10 text-white/35 cursor-not-allowed"
+                : "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+            }`}
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+
+        {statusMessage && (
+          <div className="mt-3 bg-white/5 border border-white/8 rounded-lg px-4 py-2.5 text-white/60 text-sm font-body">
+            {statusMessage}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── ADMIN CONTENT (inside AuthProvider via MembersLayout) ─────────────────────
 // useAuth() must be called from inside MembersLayout's AuthProvider — not from
 // the page root, which is outside it.
 
 function AdminContent() {
-  const [activeTab, setActiveTab] = useState<"users" | "data">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "data" | "handbook">("users");
   const { authRole, loading } = useAuth();
   const router = useRouter();
 
@@ -210,8 +323,9 @@ function AdminContent() {
   }
 
   const TABS: { key: typeof activeTab; label: string }[] = [
-    { key: "users", label: "Users" },
-    { key: "data",  label: "Data" },
+    { key: "users",    label: "Users" },
+    { key: "data",     label: "Data" },
+    { key: "handbook", label: "Handbook" },
   ];
 
   return (
@@ -236,7 +350,8 @@ function AdminContent() {
         ))}
       </div>
 
-      {activeTab === "data" && <DataTab />}
+      {activeTab === "data"     && <DataTab />}
+      {activeTab === "handbook" && <HandbookTab />}
     </>
   );
 }

@@ -12,10 +12,10 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeCycles, createCycle, updateCycle, deleteCycle, activateCycleExclusive,
-  type Cycle, type CycleRole, type CycleTrack,
+  type Cycle, type CycleRole,
 } from "@/lib/members/storage";
 
-const TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
+const TRACKS: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
 // Default starting point for a fresh cycle. Targets are placeholders; thresholds
@@ -339,7 +339,7 @@ function CycleEditor({
   saveLabel: string;
   activeBadge: boolean;
 }) {
-  const setTarget = (track: CycleTrack, role: CycleRole, raw: string) => {
+  const setTarget = (track: "Tech" | "Marketing" | "Finance", role: CycleRole, raw: string) => {
     const value = Math.max(0, Number(raw) || 0);
     onChange({
       creditTargets: {
