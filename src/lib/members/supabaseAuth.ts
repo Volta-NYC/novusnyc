@@ -12,15 +12,24 @@ export async function signOut(): Promise<void> {
 }
 
 // Returns the current session's JWT access token, or "" if not signed in.
+// Refresh tokens rotate on every use — calling refreshSession() unconditionally
+// on every API call causes concurrent requests to race and invalidate each
+// other's tokens, triggering a SIGNED_OUT event.  Only refresh when the token
+// is about to expire (within 60 seconds).
 export async function getAuthToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return "";
 
-  // Role changes live in app_metadata. Refresh before API calls so migrated
-  // accounts do not keep sending a stale JWT without auth_role.
-  const { data: refreshed, error } = await supabase.auth.refreshSession();
-  if (!error && refreshed.session?.access_token) {
-    return refreshed.session.access_token;
+  const expiresAt = session.expires_at ?? 0;           // Unix seconds
+  const nowSec    = Date.now() / 1000;
+  const ttl       = expiresAt - nowSec;                // seconds remaining
+
+  if (ttl <= 60) {
+    // Token is expired or expiring soon — refresh it.
+    const { data: refreshed, error } = await supabase.auth.refreshSession();
+    if (!error && refreshed.session?.access_token) {
+      return refreshed.session.access_token;
+    }
   }
 
   return session.access_token;

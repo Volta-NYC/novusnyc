@@ -1,8 +1,8 @@
 // Supabase Postgres storage for the Volta NYC members portal.
 // All exported function signatures are unchanged — callers require no edits.
 //
-// Subscribe functions now do a one-shot fetch and call the callback immediately.
-// They return a no-op unsubscribe. Real-time Supabase channels can be added later.
+// Subscribe functions perform an initial fetch then open a Supabase realtime
+// channel so the UI updates automatically when the database changes.
 
 import { supabase } from "@/lib/supabaseClient";
 import { normalizeTeamPod } from "@/lib/teamPod";
@@ -261,7 +261,7 @@ export interface FinanceAssignment {
 // per-track × per-role. Senior Associate and Board are intentionally excluded
 // from the credit/strike system — they run it.
 
-export type CycleTrack = "Tech" | "Marketing" | "Finance";
+export type CycleTrack = "Tech" | "Marketing" | "Finance" | "General";
 export type CycleRole = "Analyst" | "Senior Analyst" | "Associate";
 
 export interface CycleCreditTargets {
@@ -367,6 +367,8 @@ export interface Assignment {
   businessId?: string;             // optional link to a business
   capacity: number;                // how many members can claim simultaneously
   deadline?: string;               // ISO date
+  creditsMax?: number;             // upper bound for variable-credit tasks
+  creditsNote?: string;            // extra context, e.g. "+1 for Senior Analyst"
   status: AssignmentStatus;
   cycleId: string;                 // cycle this assignment is scoped to
   createdAt: string;
@@ -428,6 +430,27 @@ export interface MemberCreditAdjustment {
   reason: string;
   createdAt: string;
   createdBy: string;
+}
+
+// ── Handbook pages ────────────────────────────────────────────────────────────
+// Admin-editable pages (credit/infraction policy etc.) shown to members.
+// Members must acknowledge each page on first login.
+
+export interface HandbookPage {
+  id: string;
+  slug: string;         // e.g. "credit-infraction-policy"
+  title: string;
+  content: string;      // HTML (rich-text)
+  updatedAt: string;
+  updatedBy: string;    // uid or email
+}
+
+export interface MemberAcknowledgment {
+  id: string;
+  memberId: string;
+  pageSlug: string;
+  contentHash: string;  // SHA-256 of content at time of ack — stale when content changes
+  acknowledgedAt: string;
 }
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
@@ -598,22 +621,33 @@ function toRow(obj: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-// One-shot subscriber factory — fetches once, calls callback, returns no-op unsubscribe.
-// Preserves the same API shape as the old realtime subscribers.
+// Realtime subscriber factory.
+// 1. Fetches the full table immediately and calls callback.
+// 2. Opens a Supabase postgres_changes channel; re-fetches on any row change.
+// 3. Returns an unsubscribe function that removes the channel.
 function makeSubscriber<T>(table: string, transform?: (row: Record<string, unknown>) => T) {
   return (callback: (items: T[]) => void): (() => void) => {
-    supabase
-      .from(table)
-      .select("*")
-      .then(({ data, error }) => {
-        if (error || !data) { callback([]); return; }
-        callback(
-          (data as Record<string, unknown>[]).map(
-            transform ? (r) => transform(r) : (r) => fromRow<T>(r)
-          )
-        );
-      });
-    return () => {};
+    const fetchAll = () =>
+      supabase
+        .from(table)
+        .select("*")
+        .then(({ data, error }) => {
+          if (error || !data) { callback([]); return; }
+          callback(
+            (data as Record<string, unknown>[]).map(
+              transform ? (r) => transform(r) : (r) => fromRow<T>(r)
+            )
+          );
+        });
+
+    void fetchAll();
+
+    const channel = supabase
+      .channel(`realtime-${table}-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table }, () => void fetchAll())
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
   };
 }
 
@@ -844,11 +878,20 @@ export const subscribeAuditLogs =
   makeSubscriber<AuditLogEntry>("audit_logs", (r) => fromRow<AuditLogEntry>(r));
 
 export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
-  supabase.from("applications").select("*").then(({ data, error }) => {
-    if (error || !data) { callback([]); return; }
-    callback((data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), r)));
-  });
-  return () => {};
+  const fetchAll = () =>
+    supabase.from("applications").select("*").then(({ data, error }) => {
+      if (error || !data) { callback([]); return; }
+      callback((data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), r)));
+    });
+
+  void fetchAll();
+
+  const channel = supabase
+    .channel(`realtime-applications-${Math.random().toString(36).slice(2)}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "applications" }, () => void fetchAll())
+    .subscribe();
+
+  return () => { void supabase.removeChannel(channel); };
 }
 
 // ── BIDs ──────────────────────────────────────────────────────────────────────
@@ -1033,14 +1076,23 @@ export async function deleteFinanceAssignment(id: string): Promise<void> {
 // ── UserProfiles (admin only) ─────────────────────────────────────────────────
 
 export function subscribeUserProfiles(callback: (items: UserProfile[]) => void): (() => void) {
-  supabase.from("user_profiles").select("*").then(({ data, error }) => {
-    if (error || !data) { callback([]); return; }
-    callback((data as Record<string, unknown>[]).map((r) => ({
-      ...fromRow<UserProfile>(r),
-      authRole: normalizeAuthRoleValue((r.auth_role)),
-    })));
-  });
-  return () => {};
+  const fetchAll = () =>
+    supabase.from("user_profiles").select("*").then(({ data, error }) => {
+      if (error || !data) { callback([]); return; }
+      callback((data as Record<string, unknown>[]).map((r) => ({
+        ...fromRow<UserProfile>(r),
+        authRole: normalizeAuthRoleValue((r.auth_role)),
+      })));
+    });
+
+  void fetchAll();
+
+  const channel = supabase
+    .channel(`realtime-user_profiles-${Math.random().toString(36).slice(2)}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "user_profiles" }, () => void fetchAll())
+    .subscribe();
+
+  return () => { void supabase.removeChannel(channel); };
 }
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
@@ -1360,17 +1412,26 @@ export async function getInterviewSlots(): Promise<InterviewSlot[]> {
 // ── Interview Settings ───────────────────────────────────────────────────────
 
 export function subscribeInterviewSettings(callback: (settings: InterviewSettings | null) => void): (() => void) {
-  supabase.from("interview_settings").select("*").eq("id", "singleton").maybeSingle().then(({ data }) => {
-    if (!data) { callback(null); return; }
-    const r = data as Record<string, unknown>;
-    callback({
-      zoomLink:    r.zoom_link as string | undefined,
-      zoomEnabled: r.zoom_enabled as boolean | undefined,
-      updatedAt:   tsToMs(r.updated_at) || undefined,
-      updatedBy:   r.updated_by as string | undefined,
+  const fetchSettings = () =>
+    supabase.from("interview_settings").select("*").eq("id", "singleton").maybeSingle().then(({ data }) => {
+      if (!data) { callback(null); return; }
+      const r = data as Record<string, unknown>;
+      callback({
+        zoomLink:    r.zoom_link as string | undefined,
+        zoomEnabled: r.zoom_enabled as boolean | undefined,
+        updatedAt:   tsToMs(r.updated_at) || undefined,
+        updatedBy:   r.updated_by as string | undefined,
+      });
     });
-  });
-  return () => {};
+
+  void fetchSettings();
+
+  const channel = supabase
+    .channel(`realtime-interview_settings-${Math.random().toString(36).slice(2)}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "interview_settings" }, () => void fetchSettings())
+    .subscribe();
+
+  return () => { void supabase.removeChannel(channel); };
 }
 
 export async function updateInterviewSettings(data: Partial<InterviewSettings>): Promise<void> {
@@ -1541,4 +1602,52 @@ export async function createMemberCreditAdjustment(data: Omit<MemberCreditAdjust
 export async function deleteMemberCreditAdjustment(id: string): Promise<void> {
   await supabase.from("member_credit_adjustments").delete().eq("id", id);
   await writeAuditLog({ action: "delete", collection: "memberCreditAdjustments", recordId: id });
+}
+
+// ── Handbook pages ────────────────────────────────────────────────────────────
+
+export const subscribeHandbookPages =
+  makeSubscriber<HandbookPage>("handbook_pages", (r) => fromRow<HandbookPage>(r));
+
+export async function getHandbookPagesList(): Promise<HandbookPage[]> {
+  const { data } = await supabase.from("handbook_pages").select("*");
+  return (data ?? []).map((r) => fromRow<HandbookPage>(r as Record<string, unknown>));
+}
+
+export async function getHandbookPage(slug: string): Promise<HandbookPage | null> {
+  const { data } = await supabase.from("handbook_pages").select("*").eq("slug", slug).maybeSingle();
+  if (!data) return null;
+  return fromRow<HandbookPage>(data as Record<string, unknown>);
+}
+
+export async function upsertHandbookPage(slug: string, data: Omit<HandbookPage, "id" | "updatedAt">): Promise<void> {
+  const existing = await getHandbookPage(slug);
+  const now = nowISO();
+  if (existing) {
+    await supabase.from("handbook_pages").update(toRow({ ...data, updatedAt: now })).eq("slug", slug);
+    await writeAuditLog({ action: "update", collection: "handbookPages", recordId: existing.id, details: { slug } });
+  } else {
+    const id = genId();
+    await supabase.from("handbook_pages").insert(toRow({ ...data, id, slug, updatedAt: now }));
+    await writeAuditLog({ action: "create", collection: "handbookPages", recordId: id, details: { slug } });
+  }
+}
+
+export async function getMemberAcknowledgment(memberId: string, pageSlug: string): Promise<MemberAcknowledgment | null> {
+  const { data } = await supabase
+    .from("member_acknowledgments")
+    .select("*")
+    .eq("member_id", memberId)
+    .eq("page_slug", pageSlug)
+    .maybeSingle();
+  if (!data) return null;
+  return fromRow<MemberAcknowledgment>(data as Record<string, unknown>);
+}
+
+export async function createMemberAcknowledgment(data: Omit<MemberAcknowledgment, "id" | "acknowledgedAt">): Promise<void> {
+  const id = genId();
+  await supabase.from("member_acknowledgments").upsert(
+    toRow({ ...data, id, acknowledgedAt: nowISO() }),
+    { onConflict: "member_id,page_slug" }
+  );
 }

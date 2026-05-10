@@ -43,15 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading]         = useState(true);
 
-  async function loadProfile(_authUser: User) {
+  // Returns the resolved profile (or null) without touching React state —
+  // the caller decides whether to apply it, allowing stale loads to be ignored.
+  async function fetchProfile(authUser: User): Promise<UserProfile | null> {
     try {
       // getUser() calls the Supabase Auth server and returns current app_metadata —
       // avoids stale JWT where app_metadata was updated after the session was created.
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setUserProfile(null); return; }
+      if (!user) return null;
 
       const email = (user.email ?? "").trim().toLowerCase();
-      if (!email) { setUserProfile(null); return; }
+      if (!email) return null;
 
       const { data: rows } = await supabase
         .from("team")
@@ -60,42 +62,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .limit(1);
 
       const row = rows?.[0] as Record<string, unknown> | undefined;
-      if (!row) { setUserProfile(null); return; }
+      if (!row) return null;
 
       const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
       const authRole = normalizeAuthRole(appMeta.auth_role ?? row.auth_role);
 
-      setUserProfile({
+      return {
         id:       String(row.id ?? ""),
         email:    String(row.email ?? user.email ?? ""),
         name:     String(row.name ?? ""),
         authRole,
         active:   String(row.status ?? "Active").toLowerCase() !== "inactive",
-      });
+      };
     } catch {
-      setUserProfile(null);
+      return null;
     }
   }
 
   useEffect(() => {
-    // Hydrate initial session.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const authUser = session?.user ?? null;
-      setUser(authUser);
-      if (authUser) {
-        loadProfile(authUser).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    // Single source of truth: onAuthStateChange fires immediately with the
+    // current session via INITIAL_SESSION, so a separate getSession() call is
+    // not needed. Using both causes a race: two concurrent fetchProfile() calls
+    // where whichever finishes last wins, potentially wiping out a valid profile.
+    //
+    // We use a generation counter so that if a second auth event fires before
+    // the first profile load completes, the stale result is discarded.
+    let gen = 0;
 
-    // Listen for sign-in / sign-out / token refresh.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const authUser = session?.user ?? null;
       setUser(authUser);
+
       if (authUser) {
-        loadProfile(authUser).finally(() => setLoading(false));
+        const myGen = ++gen;
+        void fetchProfile(authUser).then((profile) => {
+          if (myGen === gen) {          // still the latest event — safe to commit
+            setUserProfile(profile);
+            setLoading(false);
+          }
+        });
       } else {
+        ++gen;                          // invalidate any in-flight load
         setUserProfile(null);
         setLoading(false);
       }

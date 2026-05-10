@@ -6,8 +6,8 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
-import { AuthProvider, useAuth } from "@/lib/members/authContext";
-import { type AuthRole } from "@/lib/members/storage";
+import { useAuth } from "@/lib/members/authContext";
+import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment } from "@/lib/members/storage";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -91,6 +91,11 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
     label: "Available Work",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>,
   },
+  {
+    href: "/members/handbook",
+    label: "Handbook",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+  },
 ];
 
 function getDefaultMembersPath(role: AuthRole | null): string {
@@ -119,7 +124,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
     ];
   }
   if (role === "interviewer") return ["/members/applicants/interviews"];
-  return ["/members/overview", "/members/work", "/members/me"];
+  return ["/members/overview", "/members/work", "/members/me", "/members/handbook"];
 }
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
@@ -131,6 +136,9 @@ function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
 function MembersLayoutInner({ children }: { children: ReactNode }) {
   const { user, userProfile, authRole, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAckModal, setShowAckModal] = useState(false);
+  const [ackChecked, setAckChecked] = useState(false);
+  const [ackLoading, setAckLoading] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -143,6 +151,36 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       signOut().then(() => router.replace("/members/login"));
     }
   }, [loading, user, userProfile, router]);
+
+  // Check handbook acknowledgment for members only.
+  useEffect(() => {
+    if (loading || !user || !userProfile || authRole !== "member") return;
+    getMemberAcknowledgment(userProfile.id, "credit-infraction-policy")
+      .then((ack) => {
+        if (!ack) setShowAckModal(true);
+      })
+      .catch(() => {
+        // silently ignore — don't block the user if the check fails
+      });
+  }, [loading, user, userProfile, authRole]);
+
+  const handleConfirmAck = async () => {
+    if (!userProfile) return;
+    setAckLoading(true);
+    try {
+      await createMemberAcknowledgment({
+        memberId: userProfile.id,
+        pageSlug: "credit-infraction-policy",
+        contentHash: "",
+      });
+      setShowAckModal(false);
+    } catch {
+      // ignore error — user can dismiss and continue
+      setShowAckModal(false);
+    } finally {
+      setAckLoading(false);
+    }
+  };
 
   const visibleNavItems = getNavItemsForRole(authRole);
 
@@ -219,6 +257,48 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   return (
     <div className={`members-portal ${lightTheme ? "members-portal-light" : ""} min-h-screen ${tone.page} flex`}>
+
+      {/* Handbook acknowledgment modal — shown once to members on first login */}
+      {showAckModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 md:p-8">
+            <h2 className="font-display font-bold text-black/85 text-xl mb-2">Before you continue</h2>
+            <p className="text-black/60 text-sm font-body mb-4 leading-relaxed">
+              By continuing, you acknowledge that you have read and understand the Volta NYC credit and infraction system as described in the Member Handbook.
+            </p>
+            <a
+              href="/members/handbook"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-[#5C9911] hover:text-[#85CC17] font-body font-medium mb-5 transition-colors"
+            >
+              Read the Handbook →
+            </a>
+            <label className="flex items-start gap-3 mb-6 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={ackChecked}
+                onChange={(e) => setAckChecked(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-[#85CC17] cursor-pointer flex-shrink-0"
+              />
+              <span className="text-sm text-black/70 font-body">
+                I have read and understand the credit and infraction policy.
+              </span>
+            </label>
+            <button
+              onClick={() => void handleConfirmAck()}
+              disabled={!ackChecked || ackLoading}
+              className={`w-full py-2.5 rounded-xl font-display font-bold text-sm transition-colors ${
+                ackChecked && !ackLoading
+                  ? "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+                  : "bg-black/10 text-black/35 cursor-not-allowed"
+              }`}
+            >
+              {ackLoading ? "Saving…" : "Confirm"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
@@ -310,13 +390,9 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 }
 
 // ── PUBLIC EXPORT ─────────────────────────────────────────────────────────────
-// Wraps the inner layout with the AuthProvider so all child components can
-// call useAuth() without needing to wrap the tree themselves.
+// AuthProvider lives in src/app/members/layout.tsx (the Next.js route layout).
+// This component just renders the inner layout; no second provider needed.
 
 export default function MembersLayout({ children }: { children: ReactNode }) {
-  return (
-    <AuthProvider>
-      <MembersLayoutInner>{children}</MembersLayoutInner>
-    </AuthProvider>
-  );
+  return <MembersLayoutInner>{children}</MembersLayoutInner>;
 }
