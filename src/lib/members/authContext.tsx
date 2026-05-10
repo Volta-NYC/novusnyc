@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { data: rows } = await supabase
         .from("team")
-        .select("id, email, name, active, auth_role")
+        .select("*")
         .or(`email.eq.${email},alternate_email.eq.${email}`)
         .limit(1);
 
