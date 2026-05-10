@@ -10,9 +10,9 @@ import {
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
   getBusinessesList, getFinanceAssignmentsList, getApplicationsList,
-  getUserProfilesList, getCyclesList, getAssignmentsList, getAssignmentClaimsList,
+  getCyclesList, getAssignmentsList, getAssignmentClaimsList,
   getMemberStrikesList, getMemberCreditAdjustmentsList, getEmailTemplatesList, getInfractionsList,
-  type TeamMember, type UserProfile, type Business, type FinanceAssignment, type ApplicationRecord,
+  type TeamMember, type Business, type FinanceAssignment, type ApplicationRecord,
   type Cycle, type Assignment, type AssignmentClaim, type MemberStrike, type MemberCreditAdjustment,
   type EmailTemplate, type Infraction,
 } from "@/lib/members/storage";
@@ -147,7 +147,7 @@ const ADMIN_COLS = [
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: null },
-  { key: "accountCreated", label: "Account Created", width: 116, sortCol: null },
+  { key: "accountCreated", label: "Portal",          width: 80,  sortCol: null },
   { key: "strikes",        label: "Strikes",         width: 72,  sortCol: null },
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
@@ -339,7 +339,6 @@ export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
   const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
-  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -368,6 +367,8 @@ export default function TeamPage() {
   const [importingCsv, setImportingCsv] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
+  const [inviteAllState, setInviteAllState] = useState<"idle" | "running" | "done">("idle");
+  const [inviteAllProgress, setInviteAllProgress] = useState({ sent: 0, total: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ask, Dialog } = useConfirm();
@@ -382,7 +383,6 @@ export default function TeamPage() {
   useEffect(() => {
     void Promise.all([
       getBusinessesList().then(setBusinesses),
-      getUserProfilesList().then(setUserProfiles),
       getCyclesList().then(setCycles),
       getAssignmentsList().then(setCreditAssignments),
       getAssignmentClaimsList().then(setCreditClaims),
@@ -777,6 +777,35 @@ export default function TeamPage() {
     }
   };
 
+  const handleInviteAll = async () => {
+    const uninvited = team.filter(m =>
+      !m.authUid &&
+      String(m.status ?? "").toLowerCase() !== "inactive" &&
+      (m.email ?? "").trim()
+    );
+    if (!uninvited.length || inviteAllState === "running") return;
+    setInviteAllState("running");
+    setInviteAllProgress({ sent: 0, total: uninvited.length });
+    const token = await getAuthToken();
+    let sent = 0;
+    for (const member of uninvited) {
+      try {
+        const res = await fetch("/api/members/admin/invite-member", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ memberId: member.id }),
+        });
+        if (res.ok) {
+          sent += 1;
+          setInviteStatus(s => ({ ...s, [member.id]: "sent" }));
+        }
+      } catch { /* skip failed rows */ }
+      setInviteAllProgress({ sent, total: uninvited.length });
+    }
+    setInviteAllState("done");
+    setTimeout(() => { setInviteAllState("idle"); setInviteAllProgress({ sent: 0, total: 0 }); }, 4000);
+  };
+
   const filtered = team.filter(member => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -789,16 +818,6 @@ export default function TeamPage() {
       || (member.email ?? "").toLowerCase().includes(q)
       || (member.alternateEmail ?? "").toLowerCase().includes(q);
   });
-
-  const profileByEmail = useMemo(() => {
-    const map = new Map<string, UserProfile>();
-    for (const profile of userProfiles) {
-      const key = normalizeKey(profile.email ?? "");
-      if (!key) continue;
-      map.set(key, profile);
-    }
-    return map;
-  }, [userProfiles]);
 
   const resumeUrlByEmail = useMemo(() => {
     const map = new Map<string, string>();
@@ -1170,6 +1189,9 @@ export default function TeamPage() {
     const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
     return memberAssignments.length > 0;
   }).length;
+  const unregisteredCount = team.filter((m) =>
+    !m.authUid && normalizeKey(m.status ?? "") !== "inactive" && (m.email ?? "").trim()
+  ).length;
 
 
   return (
@@ -1188,7 +1210,20 @@ export default function TeamPage() {
       <PageHeader
         title="Team Directory"
         action={canEdit ? (
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {unregisteredCount > 0 && (
+              <Btn
+                variant="secondary"
+                disabled={inviteAllState === "running"}
+                onClick={() => void handleInviteAll()}
+              >
+                {inviteAllState === "running"
+                  ? `Inviting… ${inviteAllProgress.sent}/${inviteAllProgress.total}`
+                  : inviteAllState === "done"
+                    ? `✓ Sent ${inviteAllProgress.sent}`
+                    : `Invite All (${unregisteredCount})`}
+              </Btn>
+            )}
             <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importingCsv}>
               {importingCsv ? "Importing..." : "Import CSV"}
             </Btn>
@@ -1200,6 +1235,7 @@ export default function TeamPage() {
         <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
         <span>Assigned: <span className="text-emerald-300 font-semibold">{assignedMembersCount}</span></span>
         <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
+        {canEdit && <span>No account: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>}
       </div>
       <SectionTabs tabs={MEMBERS_GROUP_TABS} />
       {importMessage && (
@@ -1402,8 +1438,7 @@ export default function TeamPage() {
                   const track = getMemberTrack(member);
                   const avatar = getTrackAvatarStyles(track);
                   const indicator = getMemberIndicator(member);
-                  const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
-                  const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
+                  const hasPortalAccount = !!member.authUid;
                   const memberStrikes = strikesByMemberId.get(member.id) ?? [];
                   const strikeCount = memberStrikes.length;
                   return (
@@ -1423,6 +1458,10 @@ export default function TeamPage() {
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                                   <TrackAvatarIcon track={track} color={avatar.text} />
                                 </div>
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${hasPortalAccount ? "bg-emerald-400" : "bg-white/20"}`}
+                                  title={hasPortalAccount ? "Portal account linked" : "No portal account yet"}
+                                />
                                 <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
                               </div>
                             </td>
@@ -1501,7 +1540,11 @@ export default function TeamPage() {
                           );
                           case "accountCreated": return (
                             <td key="accountCreated" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
-                              <span className="text-white/50">{accountCreated}</span>
+                              {hasPortalAccount ? (
+                                <span className="text-emerald-400 text-xs font-medium">✓</span>
+                              ) : (
+                                <span className="text-white/25 text-xs">—</span>
+                              )}
                             </td>
                           );
                           case "strikes": return (

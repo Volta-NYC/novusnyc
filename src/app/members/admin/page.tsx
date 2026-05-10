@@ -4,11 +4,7 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
-import {
-  subscribeUserProfiles, updateUserProfile, deletePortalUserAccount,
-  type UserProfile, type AuthRole,
-} from "@/lib/members/storage";
-import { Btn, Table, useConfirm } from "@/components/members/ui";
+import { Btn } from "@/components/members/ui";
 import { useRouter } from "next/navigation";
 
 const EXPORT_OPTIONS = [
@@ -23,73 +19,6 @@ const EXPORT_OPTIONS = [
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-
-// ── TAB: USERS ────────────────────────────────────────────────────────────────
-
-function UsersTab() {
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const { ask, Dialog } = useConfirm();
-
-  useEffect(() => subscribeUserProfiles(setUsers), []);
-
-  const changeRole = async (uid: string, role: AuthRole) => {
-    await updateUserProfile(uid, { authRole: role });
-  };
-
-  const toggleActive = async (uid: string, currentlyActive: boolean) => {
-    await updateUserProfile(uid, { active: !currentlyActive });
-  };
-
-  const handleDelete = (user: UserProfile) => {
-    ask(
-      async () => deletePortalUserAccount(user.id),
-      `Delete ${user.email}? This removes both the Supabase Auth account and the portal user profile. They will not be able to sign in again unless a new account is created.`
-    );
-  };
-
-  // Display users in the order they joined.
-  const sortedUsers = [...users].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  return (
-    <>
-      <Dialog />
-      <Table
-        cols={["Name", "Email", "Role", "Active", "Joined", "Actions"]}
-        rows={sortedUsers.map(user => [
-          <span key="name" className="text-white/70 text-sm">{user.name ?? "—"}</span>,
-          <span key="email" className="text-white text-sm font-mono">{user.email}</span>,
-          <select
-            key="role"
-            value={user.authRole}
-            onChange={e => changeRole(user.id, e.target.value as AuthRole)}
-            className="bg-[#0F1014] border border-white/10 rounded-lg pl-2 pr-6 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/50"
-          >
-            <option value="member">member</option>
-            <option value="interviewer">interviewer</option>
-            <option value="admin">admin</option>
-          </select>,
-          <span key="active" className={`text-xs font-medium ${user.active ? "text-green-400" : "text-red-400"}`}>
-            {user.active ? "Active" : "Disabled"}
-          </span>,
-          <span key="joined" className="text-white/30 text-xs">{user.createdAt?.split("T")[0] ?? "—"}</span>,
-          <div key="actions" className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => toggleActive(user.id, user.active)}
-              className={`text-xs font-body transition-colors ${
-                user.active ? "text-red-400/70 hover:text-red-400" : "text-green-400/70 hover:text-green-400"
-              }`}
-            >
-              {user.active ? "Disable" : "Enable"}
-            </button>
-            <Btn size="sm" variant="danger" onClick={() => handleDelete(user)}>Delete</Btn>
-          </div>,
-        ])}
-      />
-    </>
-  );
-}
 
 // ── TAB: DATA ─────────────────────────────────────────────────────────────────
 
@@ -307,8 +236,7 @@ function AdminContent() {
         ))}
       </div>
 
-      {activeTab === "users" && <UsersTab />}
-      {activeTab === "data"  && <DataTab />}
+      {activeTab === "data" && <DataTab />}
     </>
   );
 }
