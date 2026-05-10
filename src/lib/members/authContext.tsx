@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email:    String(row.email ?? user.email ?? ""),
         name:     String(row.name ?? ""),
         authRole,
-        active:   row.active !== false,
+        active:   String(row.status ?? "Active").toLowerCase() !== "inactive",
       });
     } catch {
       setUserProfile(null);
