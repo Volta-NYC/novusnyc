@@ -43,9 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading]         = useState(true);
 
-  async function loadProfile(authUser: User) {
+  async function loadProfile(_authUser: User) {
     try {
-      const email = (authUser.email ?? "").trim().toLowerCase();
+      // getUser() calls the Supabase Auth server and returns current app_metadata —
+      // avoids stale JWT where app_metadata was updated after the session was created.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setUserProfile(null); return; }
+
+      const email = (user.email ?? "").trim().toLowerCase();
       if (!email) { setUserProfile(null); return; }
 
       const { data: rows } = await supabase
@@ -57,16 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const row = rows?.[0] as Record<string, unknown> | undefined;
       if (!row) { setUserProfile(null); return; }
 
-      // Prefer app_metadata.auth_role (set server-side, always in JWT, no PostgREST
-      // schema-cache dependency) and fall back to the team row column.
-      const metaRole = (authUser.app_metadata as Record<string, unknown> | undefined)?.auth_role;
-      const rowRole  = row.auth_role;
+      const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+      const authRole = normalizeAuthRole(appMeta.auth_role ?? row.auth_role);
 
       setUserProfile({
         id:       String(row.id ?? ""),
-        email:    String(row.email ?? authUser.email ?? ""),
+        email:    String(row.email ?? user.email ?? ""),
         name:     String(row.name ?? ""),
-        authRole: normalizeAuthRole(metaRole ?? rowRole),
+        authRole,
         active:   row.active !== false,
       });
     } catch {
