@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminAuth, getAdminDB } from "@/lib/firebaseAdmin";
+import { verifyCaller } from "@/lib/server/adminApi";
+import { getSupabaseAdmin, dbDelete, writeAuditLog } from "@/lib/supabaseAdmin";
 
 type RouteContext = { params: Promise<{ uid: string }> };
-
-function getBearerToken(req: NextRequest): string {
-  const authHeader = req.headers.get("authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) return "";
-  return authHeader.slice("Bearer ".length).trim();
-}
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   const { uid } = await params;
@@ -16,69 +11,49 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "missing_uid" }, { status: 400 });
   }
 
-  const adminAuth = getAdminAuth();
-  const db = getAdminDB();
-  if (!adminAuth || !db) {
-    return NextResponse.json({ error: "admin_not_configured" }, { status: 500 });
+  const verified = await verifyCaller(req, ["admin"]);
+  if (!verified.ok) {
+    return NextResponse.json({ error: verified.error }, { status: verified.status });
   }
 
-  const idToken = getBearerToken(req);
-  if (!idToken) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  let callerUid = "";
-  let callerEmail = "";
-  let callerName = "";
-
-  try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    callerUid = decoded.uid;
-    callerEmail = decoded.email ?? "";
-    callerName = decoded.name ?? "";
-
-    const callerRoleSnap = await db.ref(`userProfiles/${callerUid}/authRole`).get();
-    const callerRole = callerRoleSnap.exists() ? String(callerRoleSnap.val()) : "";
-    if (callerRole !== "admin") {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  if (targetUid === callerUid) {
+  if (targetUid === verified.caller.uid) {
     return NextResponse.json({ error: "cannot_delete_self" }, { status: 400 });
   }
 
-  const targetProfileSnap = await db.ref(`userProfiles/${targetUid}`).get();
-  const targetProfile = targetProfileSnap.exists() ? (targetProfileSnap.val() as Record<string, unknown>) : null;
-  const targetEmail = typeof targetProfile?.email === "string" ? targetProfile.email : "";
+  const sb = getSupabaseAdmin();
 
+  // Look up the target user profile by auth_uid or by user_profiles.id for backward compat.
+  const targetProfile = await dbDelete(`userProfiles/${targetUid}`).then(
+    () => null, () => null
+  );
+  void targetProfile;
+
+  // Also remove from user_profiles table directly (belt-and-suspenders).
+  await sb.from("user_profiles").delete().eq("id", targetUid);
+
+  // Delete the Supabase Auth user.
   let removedAuthUser = true;
   try {
-    await adminAuth.deleteUser(targetUid);
-  } catch (err: unknown) {
-    const code = (err as { code?: string })?.code ?? "";
-    if (code === "auth/user-not-found") {
-      removedAuthUser = false;
-    } else {
-      return NextResponse.json({ error: "delete_failed" }, { status: 500 });
+    const { error } = await sb.auth.admin.deleteUser(targetUid);
+    if (error) {
+      if (error.message.includes("not found") || error.message.includes("User not found")) {
+        removedAuthUser = false;
+      } else {
+        return NextResponse.json({ error: "delete_failed", detail: error.message }, { status: 500 });
+      }
     }
+  } catch {
+    removedAuthUser = false;
   }
 
-  // Remove user profile record.
-  await db.ref(`userProfiles/${targetUid}`).remove();
-
-  await db.ref("auditLogs").push({
-    timestamp: new Date().toISOString(),
+  await writeAuditLog({
     action: "delete",
     collection: "authUsers",
     recordId: targetUid,
-    actorUid: callerUid,
-    actorEmail: callerEmail || "unknown",
-    actorName: callerName || "",
+    actorUid: verified.caller.uid,
+    actorEmail: verified.caller.email,
+    actorName: verified.caller.name,
     details: {
-      targetEmail,
       source: "api.members.admin.users.delete",
       removedUserProfile: true,
       removedAuthUser,

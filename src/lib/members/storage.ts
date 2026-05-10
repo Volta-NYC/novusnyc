@@ -1,13 +1,11 @@
-// Firebase Realtime Database storage for the Volta NYC members portal.
-// All data is shared in real-time across all authenticated users.
+// Supabase Postgres storage for the Volta NYC members portal.
+// Replaces the previous Firebase Realtime Database implementation.
+// All exported function signatures are unchanged — callers require no edits.
 //
-// IMPORTANT: Firebase Realtime Database does NOT store empty arrays or null
-// values. If a field like `activeServices: []` is saved, Firebase omits it
-// entirely on read. Every caller that uses array fields must guard with `?? []`
-// to avoid "Cannot read properties of undefined" crashes.
+// Subscribe functions now do a one-shot fetch and call the callback immediately.
+// They return a no-op unsubscribe. Real-time Supabase channels can be added later.
 
-import { ref, push, update, remove, onValue, get, set, off, query, orderByChild, equalTo, limitToFirst, limitToLast } from "firebase/database";
-import { getDB, getAuth } from "@/lib/firebase";
+import { supabase } from "@/lib/supabaseClient";
 import { normalizeTeamPod } from "@/lib/teamPod";
 
 // ── DATA TYPES ────────────────────────────────────────────────────────────────
@@ -547,59 +545,179 @@ export interface AuditLogEntry {
 
 // ── INTERNAL HELPERS ──────────────────────────────────────────────────────────
 
-// Returns the current time as an ISO string, used for createdAt / updatedAt fields.
 function nowISO(): string {
   return new Date().toISOString();
 }
 
-function getAuditActor() {
-  const auth = getAuth();
-  const user = auth?.currentUser;
+function genId(): string {
+  return crypto.randomUUID();
+}
+
+async function getAuditActor() {
+  const { data: { user } } = await supabase.auth.getUser();
   return {
-    actorUid: user?.uid ?? "unknown",
+    actorUid:   user?.id    ?? "unknown",
     actorEmail: user?.email ?? "unknown",
-    actorName: user?.displayName ?? "",
+    actorName:  (user?.user_metadata?.full_name as string | undefined) ?? "",
   };
 }
 
 async function writeAuditLog(
-  db: NonNullable<ReturnType<typeof getDB>>,
   entry: Omit<AuditLogEntry, "id" | "timestamp" | "actorUid" | "actorEmail" | "actorName">
 ): Promise<void> {
   try {
-    const actor = getAuditActor();
-    await push(ref(db, "auditLogs"), {
+    const actor = await getAuditActor();
+    await supabase.from("audit_logs").insert({
+      id: genId(),
       timestamp: nowISO(),
-      ...actor,
-      ...entry,
+      actor_uid: actor.actorUid,
+      actor_email: actor.actorEmail,
+      actor_name: actor.actorName,
+      action: entry.action,
+      collection: entry.collection,
+      record_id: entry.recordId ?? null,
+      details: entry.details ?? null,
     });
   } catch (err) {
-    // Do not block primary writes if audit logging fails.
     console.error("Audit log write failed:", err);
   }
 }
 
-// Converts a Firebase snapshot object into a typed array.
-// Firebase stores collections as plain objects keyed by push-ID; this turns
-// them back into arrays and injects each item's Firebase key as its `id` field.
-function snapToList<T>(snap: import("firebase/database").DataSnapshot): T[] {
-  const val = snap.val();
-  if (!val) return [];
-  return Object.entries(val).map(([id, data]) => ({ ...(data as object), id } as T));
+// camelCase ↔ snake_case converters
+function camelToSnake(s: string): string {
+  return s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
+function snakeToCamel(s: string): string {
+  return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 }
 
-// Factory that creates a real-time subscriber function for a given database path.
-// Returns a function that registers the listener and returns an unsubscribe callback.
-function makeSubscriber<T>(path: string) {
-  return (callback: (items: T[]) => void): (() => void) => {
-    const database = getDB();
-    if (!database) {
-      callback([]);
-      return () => {};
+// Generic row → camelCase TS object
+function fromRow<T>(row: Record<string, unknown>): T {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    out[snakeToCamel(k)] = v;
+  }
+  return out as T;
+}
+
+// Generic TS object → snake_case Postgres row (undefined and empty-string timestamps → null)
+function toRow(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined) continue;
+    const col = camelToSnake(k);
+    // coerce empty strings to null for timestamp/date columns
+    if (v === "" && (col.endsWith("_at") || col.endsWith("_date") || k === "datetime")) {
+      out[col] = null;
+    } else {
+      out[col] = v;
     }
-    const dbRef = ref(database, path);
-    const handler = onValue(dbRef, (snap) => callback(snapToList<T>(snap)));
-    return () => off(dbRef, "value", handler);
+  }
+  return out;
+}
+
+// One-shot subscriber factory — fetches once, calls callback, returns no-op unsubscribe.
+// Preserves the same API as the old Firebase onValue-based subscribers.
+function makeSubscriber<T>(table: string, transform?: (row: Record<string, unknown>) => T) {
+  return (callback: (items: T[]) => void): (() => void) => {
+    supabase
+      .from(table)
+      .select("*")
+      .then(({ data, error }) => {
+        if (error || !data) { callback([]); return; }
+        callback(
+          (data as Record<string, unknown>[]).map(
+            transform ? (r) => transform(r) : (r) => fromRow<T>(r)
+          )
+        );
+      });
+    return () => {};
+  };
+}
+
+// ── SPECIALISED ROW CONVERTERS ────────────────────────────────────────────────
+
+// InterviewSlot/InterviewInvite/CalendarEvent store createdAt as Unix ms in TS
+// but as timestamptz in Postgres — convert on read.
+function tsToMs(val: unknown): number {
+  if (typeof val === "number") return val;
+  if (typeof val === "string" && val) return new Date(val).getTime();
+  return 0;
+}
+// Convert Unix ms → ISO for write
+function msToIso(val: unknown): string | null {
+  if (typeof val === "number" && val > 0) return new Date(val).toISOString();
+  if (typeof val === "string" && val) return val;
+  return null;
+}
+
+function interviewSlotFromRow(row: Record<string, unknown>): InterviewSlot {
+  return {
+    id:                    row.id as string,
+    datetime:              row.datetime as string ?? "",
+    durationMinutes:       row.duration_minutes as number,
+    available:             row.available as boolean ?? true,
+    bookedBy:              row.booked_by as string | undefined,
+    bookerName:            row.booker_name as string | undefined,
+    bookerEmail:           row.booker_email as string | undefined,
+    interviewerMemberIds:  (row.interviewer_member_ids as string[]) ?? [],
+    evaluationByUid:       row.evaluation_by_uid as InterviewSlot["evaluationByUid"],
+    recurringWeekly:       row.recurring_weekly as boolean | undefined,
+    recurringSeriesId:     row.recurring_series_id as string | undefined,
+    noShow:                row.no_show as boolean | undefined,
+    location:              row.location as string | undefined,
+    createdBy:             row.created_by as string ?? "",
+    createdAt:             tsToMs(row.created_at),
+  };
+}
+
+function interviewSlotToRow(data: Partial<InterviewSlot>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (data.datetime           !== undefined) out.datetime                = data.datetime || null;
+  if (data.durationMinutes    !== undefined) out.duration_minutes        = data.durationMinutes;
+  if (data.available          !== undefined) out.available               = data.available;
+  if (data.bookedBy           !== undefined) out.booked_by               = data.bookedBy || null;
+  if (data.bookerName         !== undefined) out.booker_name             = data.bookerName || null;
+  if (data.bookerEmail        !== undefined) out.booker_email            = data.bookerEmail || null;
+  if (data.interviewerMemberIds !== undefined) out.interviewer_member_ids = data.interviewerMemberIds;
+  if (data.evaluationByUid    !== undefined) out.evaluation_by_uid      = data.evaluationByUid;
+  if (data.recurringWeekly    !== undefined) out.recurring_weekly        = data.recurringWeekly;
+  if (data.recurringSeriesId  !== undefined) out.recurring_series_id     = data.recurringSeriesId;
+  if (data.noShow             !== undefined) out.no_show                 = data.noShow;
+  if (data.location           !== undefined) out.location                = data.location;
+  if (data.createdBy          !== undefined) out.created_by              = data.createdBy;
+  if (data.createdAt          !== undefined) out.created_at              = msToIso(data.createdAt);
+  return out;
+}
+
+function interviewInviteFromRow(row: Record<string, unknown>): InterviewInvite {
+  return {
+    id:             row.id as string,
+    applicantName:  row.applicant_name as string | undefined,
+    applicantEmail: row.applicant_email as string | undefined,
+    role:           row.role as string ?? "",
+    expiresAt:      tsToMs(row.expires_at),
+    bookedSlotId:   row.booked_slot_id as string | undefined,
+    status:         row.status as InterviewStatus ?? "pending",
+    multiUse:       row.multi_use as boolean | undefined,
+    createdBy:      row.created_by as string ?? "",
+    createdAt:      tsToMs(row.created_at),
+    note:           row.note as string | undefined,
+  };
+}
+
+function calendarEventFromRow(row: Record<string, unknown>): CalendarEvent {
+  return {
+    id:          row.id as string,
+    title:       row.title as string ?? "",
+    start:       row.start as string ?? "",
+    end:         row.end as string ?? "",
+    iCalUID:     row.i_cal_uid as string | undefined,
+    description: row.description as string | undefined,
+    color:       row.color as string | undefined,
+    allDay:      row.all_day as boolean | undefined,
+    createdBy:   row.created_by as string ?? "",
+    createdAt:   tsToMs(row.created_at),
   };
 }
 
@@ -697,285 +815,213 @@ function normalizeAuthRoleValue(value: unknown): AuthRole {
   return "member";
 }
 
-// ── REAL-TIME SUBSCRIBERS ─────────────────────────────────────────────────────
+// ── SUBSCRIBERS ───────────────────────────────────────────────────────────────
+// Each subscriber fetches once and calls callback immediately.
+// Returns a no-op unsubscribe (real-time channels can be added later).
 
-export const subscribeBIDs        = makeSubscriber<BID>("bids");
-export const subscribeBusinesses  = makeSubscriber<Business>("businesses");
-export const subscribeTeam        = makeSubscriber<TeamMember>("team");
-export const subscribeProjects    = makeSubscriber<Project>("projects");
-export const subscribeFinanceAssignments = makeSubscriber<FinanceAssignment>("financeAssignments");
-export const subscribeCycles      = makeSubscriber<Cycle>("cycles");
-export const subscribeInfractions = makeSubscriber<Infraction>("infractions");
-export const subscribeEmailTemplates = makeSubscriber<EmailTemplate>("emailTemplates");
-export const subscribeAssignments = makeSubscriber<Assignment>("assignmentCatalog");
-export const subscribeAssignmentClaims = makeSubscriber<AssignmentClaim>("assignmentClaims");
-export const subscribeMemberStrikes = makeSubscriber<MemberStrike>("memberStrikes");
-export const subscribeMemberCreditAdjustments = makeSubscriber<MemberCreditAdjustment>("memberCreditAdjustments");
-export const subscribeAuditLogs   = makeSubscriber<AuditLogEntry>("auditLogs");
+export const subscribeBIDs =
+  makeSubscriber<BID>("bids", (r) => fromRow<BID>(r));
+
+export const subscribeBusinesses =
+  makeSubscriber<Business>("businesses", (r) => fromRow<Business>(r));
+
+export const subscribeTeam =
+  makeSubscriber<TeamMember>("team", (r) => fromRow<TeamMember>(r));
+
+export const subscribeProjects =
+  makeSubscriber<Project>("projects", (r) => fromRow<Project>(r));
+
+export const subscribeFinanceAssignments =
+  makeSubscriber<FinanceAssignment>("finance_assignments", (r) => fromRow<FinanceAssignment>(r));
+
+export const subscribeCycles =
+  makeSubscriber<Cycle>("cycles", (r) => fromRow<Cycle>(r));
+
+export const subscribeInfractions =
+  makeSubscriber<Infraction>("infractions", (r) => fromRow<Infraction>(r));
+
+export const subscribeEmailTemplates =
+  makeSubscriber<EmailTemplate>("email_templates", (r) => ({
+    ...fromRow<EmailTemplate>(r),
+    availableVariables: (r.available_variables as string[]) ?? [],
+  }));
+
+export const subscribeAssignments =
+  makeSubscriber<Assignment>("assignment_catalog", (r) => fromRow<Assignment>(r));
+
+export const subscribeAssignmentClaims =
+  makeSubscriber<AssignmentClaim>("assignment_claims", (r) => fromRow<AssignmentClaim>(r));
+
+export const subscribeMemberStrikes =
+  makeSubscriber<MemberStrike>("member_strikes", (r) => fromRow<MemberStrike>(r));
+
+export const subscribeMemberCreditAdjustments =
+  makeSubscriber<MemberCreditAdjustment>("member_credit_adjustments", (r) => fromRow<MemberCreditAdjustment>(r));
+
+export const subscribeAuditLogs =
+  makeSubscriber<AuditLogEntry>("audit_logs", (r) => fromRow<AuditLogEntry>(r));
 
 export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
-  const database = getDB();
-  if (!database) {
-    callback([]);
-    return () => {};
-  }
-  const dbRef = ref(database, "applications");
-  const handler = onValue(dbRef, (snap) => {
-    const val = snap.val() as Record<string, Record<string, unknown>> | null;
-    if (!val) {
-      callback([]);
-      return;
-    }
-    const list = Object.entries(val).map(([id, row]) => normalizeApplicationRecord(id, row ?? {}));
-    callback(list);
+  supabase.from("applications").select("*").then(({ data, error }) => {
+    if (error || !data) { callback([]); return; }
+    callback((data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), r)));
   });
-  return () => off(dbRef, "value", handler);
+  return () => {};
 }
 
 // ── BIDs ──────────────────────────────────────────────────────────────────────
 
 export async function createBID(data: Omit<BID, "id" | "createdAt" | "updatedAt">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const bidRef = push(ref(db, "bids"));
-  await set(bidRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "bids",
-    recordId: bidRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
+  const id = genId();
+  const now = nowISO();
+  const row = toRow({ ...data, id, createdAt: now, updatedAt: now });
+  await supabase.from("bids").insert(row);
+  await writeAuditLog({ action: "create", collection: "bids", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateBID(id: string, data: Partial<BID>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `bids/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "bids",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("bids").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "bids", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteBID(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `bids/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "bids",
-    recordId: id,
-  });
+  await supabase.from("bids").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "bids", recordId: id });
 }
 
 export async function addBIDTimelineEntry(
   bidId: string,
   entry: { date: string; action: string; createdAt: string }
 ): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const tlRef = push(ref(db, `bids/${bidId}/timeline`));
-  await set(tlRef, entry);
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "bids.timeline",
-    recordId: `${bidId}/${tlRef.key ?? ""}`,
-    details: { action: entry.action, date: entry.date },
-  });
+  const { data: row } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
+  const entryId = genId();
+  timeline[entryId] = entry;
+  await supabase.from("bids").update({ timeline }).eq("id", bidId);
+  await writeAuditLog({ action: "create", collection: "bids.timeline", recordId: `${bidId}/${entryId}`, details: { action: entry.action, date: entry.date } });
 }
 
 export async function deleteBIDTimelineEntry(bidId: string, entryId: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `bids/${bidId}/timeline/${entryId}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "bids.timeline",
-    recordId: `${bidId}/${entryId}`,
-  });
+  const { data: row } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
+  delete timeline[entryId];
+  await supabase.from("bids").update({ timeline }).eq("id", bidId);
+  await writeAuditLog({ action: "delete", collection: "bids.timeline", recordId: `${bidId}/${entryId}` });
 }
 
 // ── Businesses ────────────────────────────────────────────────────────────────
 
 export async function createBusiness(data: Omit<Business, "id" | "createdAt" | "updatedAt">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-
   const { showcaseImageData, ...rest } = data;
-  const businessRef = push(ref(db, "businesses"));
-  const id = businessRef.key ?? "";
-
-  await set(businessRef, {
-    ...rest,
-    showcaseImageSet: !!showcaseImageData,
-    createdAt: nowISO(),
-    updatedAt: nowISO(),
-  });
-
-  if (showcaseImageData && id) {
-    await set(ref(db, `businessImages/${id}`), { data: showcaseImageData });
-  }
-
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "businesses",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  const id = genId();
+  const now = nowISO();
+  const row = toRow({ ...rest, id, showcaseImageSet: !!showcaseImageData, createdAt: now, updatedAt: now });
+  await supabase.from("businesses").insert(row);
+  // Image data is uploaded separately via /api/members/upload-business-image
+  await writeAuditLog({ action: "create", collection: "businesses", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateBusiness(id: string, data: Partial<Business>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-
-  // Intercept showcaseImageData and route it to the separate businessImages node
-  // so the main businesses collection stays lean.
   const { showcaseImageData, ...rest } = data;
+
   if (showcaseImageData !== undefined) {
     if (showcaseImageData) {
-      await set(ref(db, `businessImages/${id}`), { data: showcaseImageData });
-      (rest as Partial<Business>).showcaseImageSet = true;
+      // Upload image via server-side API route (service role required for Storage)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (token) {
+          const res = await fetch("/api/members/upload-business-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ businessId: id, imageData: showcaseImageData }),
+          });
+          if (res.ok) {
+            const { path, url } = await res.json() as { path: string; url: string };
+            (rest as Partial<Business> & Record<string, unknown>).showcaseImagePath = path;
+            (rest as Partial<Business>).showcaseImageUrl = url;
+            (rest as Partial<Business>).showcaseImageSet = true;
+          }
+        }
+      } catch (err) {
+        console.error("Business image upload failed:", err);
+      }
     } else {
-      await set(ref(db, `businessImages/${id}`), null);
       (rest as Partial<Business>).showcaseImageSet = false;
+      (rest as Partial<Business> & Record<string, unknown>).showcaseImagePath = null;
+      (rest as Partial<Business>).showcaseImageUrl = undefined;
     }
-    // Null out any legacy inline copy so old bytes don't stay in businesses.
-    (rest as Record<string, unknown>).showcaseImageData = null;
   }
 
-  await update(ref(db, `businesses/${id}`), { ...rest, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "businesses",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("businesses").update(toRow({ ...rest, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "businesses", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteBusiness(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `businesses/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "businesses",
-    recordId: id,
-  });
+  await supabase.from("businesses").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "businesses", recordId: id });
 }
 
 // ── Team ──────────────────────────────────────────────────────────────────────
 
 export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const memberRef = push(ref(db, "team"));
-  await set(memberRef, { ...data, pod: normalizeTeamPod(data.pod), createdAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "team",
-    recordId: memberRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
+  const id = genId();
+  const row = toRow({ ...data, id, pod: normalizeTeamPod(data.pod), createdAt: nowISO() });
+  await supabase.from("team").insert(row);
+  await writeAuditLog({ action: "create", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function createApplicationRecord(
   data: Omit<ApplicationRecord, "id" | "createdAt" | "updatedAt">
     & Partial<Pick<ApplicationRecord, "createdAt" | "updatedAt">>
 ): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const appRef = push(ref(db, "applications"));
+  const id = genId();
   const createdAt = data.createdAt ?? nowISO();
   const updatedAt = data.updatedAt ?? createdAt;
-  await set(appRef, { ...data, createdAt, updatedAt });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "applications",
-    recordId: appRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
+  const row = toRow({ ...data, id, createdAt, updatedAt });
+  await supabase.from("applications").insert(row);
+  await writeAuditLog({ action: "create", collection: "applications", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateApplicationRecord(
   id: string,
   data: Partial<ApplicationRecord>
 ): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `applications/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "applications",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("applications").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "applications", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateTeamMember(id: string, data: Partial<TeamMember>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const patch: Partial<TeamMember> = { ...data };
+  const patch = { ...data };
   if (Object.prototype.hasOwnProperty.call(patch, "pod")) {
     patch.pod = normalizeTeamPod(patch.pod);
   }
-  await update(ref(db, `team/${id}`), patch);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "team",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("team").update(toRow(patch as Record<string, unknown>)).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteTeamMember(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `team/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "team",
-    recordId: id,
-  });
+  await supabase.from("team").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "team", recordId: id });
 }
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
 export async function createProject(data: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const projectRef = push(ref(db, "projects"));
-  await set(projectRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "projects",
-    recordId: projectRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
+  const id = genId();
+  const now = nowISO();
+  await supabase.from("projects").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "projects", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateProject(id: string, data: Partial<Project>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `projects/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "projects",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("projects").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "projects", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `projects/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "projects",
-    recordId: id,
-  });
+  await supabase.from("projects").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "projects", recordId: id });
 }
 
 // ── Finance Assignments ──────────────────────────────────────────────────────
@@ -983,111 +1029,64 @@ export async function deleteProject(id: string): Promise<void> {
 export async function createFinanceAssignment(
   data: Omit<FinanceAssignment, "id" | "createdAt" | "updatedAt">
 ): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const assignmentRef = push(ref(db, "financeAssignments"));
-  await set(assignmentRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "financeAssignments",
-    recordId: assignmentRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
+  const id = genId();
+  const now = nowISO();
+  await supabase.from("finance_assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateFinanceAssignment(
   id: string,
   data: Partial<FinanceAssignment>
 ): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `financeAssignments/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "financeAssignments",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("finance_assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteFinanceAssignment(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `financeAssignments/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "financeAssignments",
-    recordId: id,
-  });
+  await supabase.from("finance_assignments").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "financeAssignments", recordId: id });
 }
 
 // ── UserProfiles (admin only) ─────────────────────────────────────────────────
 
 export function subscribeUserProfiles(callback: (items: UserProfile[]) => void): (() => void) {
-  const database = getDB();
-  if (!database) {
-    callback([]);
-    return () => {};
-  }
-  const dbRef = ref(database, "userProfiles");
-  const handler = onValue(dbRef, (snap) => {
-    const list = snapToList<UserProfile>(snap).map((row) => ({
-      ...row,
-      authRole: normalizeAuthRoleValue(row.authRole),
-    }));
-    callback(list);
+  supabase.from("user_profiles").select("*").then(({ data, error }) => {
+    if (error || !data) { callback([]); return; }
+    callback((data as Record<string, unknown>[]).map((r) => ({
+      ...fromRow<UserProfile>(r),
+      authRole: normalizeAuthRoleValue((r.auth_role)),
+    })));
   });
-  return () => off(dbRef, "value", handler);
+  return () => {};
 }
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `userProfiles/${uid}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "userProfiles",
-    recordId: uid,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("user_profiles").update(toRow(data as Record<string, unknown>)).eq("id", uid);
+  await writeAuditLog({ action: "update", collection: "userProfiles", recordId: uid, details: { fields: Object.keys(data) } });
 }
 
 export async function setUserProfileRecord(uid: string, data: Omit<UserProfile, "id">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const profileRef = ref(db, `userProfiles/${uid}`);
-  const before = await get(profileRef);
-  const beforeData = before.exists() ? (before.val() as Omit<UserProfile, "id">) : null;
-  const merged = beforeData ? { ...beforeData, ...data } : data;
+  const { data: existing } = await supabase.from("user_profiles").select("*").eq("id", uid).maybeSingle();
+  const before = existing ? fromRow<Omit<UserProfile, "id">>(existing as Record<string, unknown>) : null;
+  const merged = before ? { ...before, ...data } : data;
   merged.authRole = normalizeAuthRoleValue(merged.authRole);
-  await set(profileRef, merged);
-  await writeAuditLog(db, {
-    action: before.exists() ? "update" : "create",
-    collection: "userProfiles",
-    recordId: uid,
-    details: { fields: Object.keys(merged) },
-  });
+  await supabase.from("user_profiles").upsert(toRow({ ...merged, id: uid }), { onConflict: "id" });
+  await writeAuditLog({ action: before ? "update" : "create", collection: "userProfiles", recordId: uid, details: { fields: Object.keys(merged) } });
 }
 
 export async function deleteUserProfile(uid: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `userProfiles/${uid}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "userProfiles",
-    recordId: uid,
-  });
+  await supabase.from("user_profiles").delete().eq("id", uid);
+  await writeAuditLog({ action: "delete", collection: "userProfiles", recordId: uid });
 }
 
-// Deletes a portal account from both Firebase Auth and userProfiles via a
-// protected admin API route. Requires current user to be signed in as admin.
+// Deletes a portal account via a protected admin API route.
+// Requires the current user to be signed in as admin.
 export async function deletePortalUserAccount(uid: string): Promise<void> {
-  const auth = getAuth();
-  const currentUser = auth?.currentUser;
-  if (!currentUser) throw new Error("not_authenticated");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("not_authenticated");
 
-  const token = await currentUser.getIdToken();
+  const token = session.access_token;
   const res = await fetch(`/api/members/admin/users/${encodeURIComponent(uid)}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
@@ -1106,770 +1105,500 @@ export async function deletePortalUserAccount(uid: string): Promise<void> {
 }
 
 export async function getUserProfilesList(): Promise<UserProfile[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "userProfiles"));
-  return snapToList<UserProfile>(snap).map((row) => ({
-    ...row,
-    authRole: normalizeAuthRoleValue(row.authRole),
+  const { data } = await supabase.from("user_profiles").select("*");
+  return (data ?? []).map((r) => ({
+    ...fromRow<UserProfile>(r as Record<string, unknown>),
+    authRole: normalizeAuthRoleValue((r as Record<string, unknown>).auth_role),
   }));
 }
 
 export async function getTeamMembersList(): Promise<TeamMember[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "team"));
-  return snapToList<TeamMember>(snap);
+  const { data } = await supabase.from("team").select("*");
+  return (data ?? []).map((r) => fromRow<TeamMember>(r as Record<string, unknown>));
 }
 
 export async function getAuditLogsList(limit = 200): Promise<AuditLogEntry[]> {
-  const db = getDB();
-  if (!db) return [];
-  const q = query(ref(db, "auditLogs"), orderByChild("timestamp"), limitToLast(limit));
-  const snap = await get(q);
-  return snapToList<AuditLogEntry>(snap).reverse();
+  const { data } = await supabase
+    .from("audit_logs")
+    .select("*")
+    .order("timestamp", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((r) => fromRow<AuditLogEntry>(r as Record<string, unknown>));
 }
 
-// Returns the image data stored at businessImages/{id}, or null if none.
+// Returns the public showcase image URL for a business, or null if none set.
 export async function getBusinessImage(id: string): Promise<string | null> {
-  const db = getDB();
-  if (!db) return null;
-  const snap = await get(ref(db, `businessImages/${id}`));
-  if (!snap.exists()) return null;
-  const val = snap.val() as { data?: string } | null;
-  return val?.data ?? null;
+  const { data } = await supabase
+    .from("businesses")
+    .select("showcase_image_url")
+    .eq("id", id)
+    .maybeSingle();
+  return (data as Record<string, unknown> | null)?.showcase_image_url as string | null ?? null;
 }
 
 // ── ONE-SHOT GET VARIANTS ─────────────────────────────────────────────────────
-// These fetch a collection once and return a plain array — no persistent
-// listener, no automatic updates. Use these on pages that don't need live sync.
 
 export async function getBusinessesList(): Promise<Business[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "businesses"));
-  return snapToList<Business>(snap);
+  const { data } = await supabase.from("businesses").select("*");
+  return (data ?? []).map((r) => fromRow<Business>(r as Record<string, unknown>));
 }
 
 export async function getBIDsList(): Promise<BID[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "bids"));
-  return snapToList<BID>(snap);
+  const { data } = await supabase.from("bids").select("*");
+  return (data ?? []).map((r) => fromRow<BID>(r as Record<string, unknown>));
 }
 
 export async function getProjectsList(): Promise<Project[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "projects"));
-  return snapToList<Project>(snap);
+  const { data } = await supabase.from("projects").select("*");
+  return (data ?? []).map((r) => fromRow<Project>(r as Record<string, unknown>));
 }
 
 export async function getFinanceAssignmentsList(): Promise<FinanceAssignment[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "financeAssignments"));
-  return snapToList<FinanceAssignment>(snap);
+  const { data } = await supabase.from("finance_assignments").select("*");
+  return (data ?? []).map((r) => fromRow<FinanceAssignment>(r as Record<string, unknown>));
 }
 
 export async function getCyclesList(): Promise<Cycle[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "cycles"));
-  return snapToList<Cycle>(snap);
+  const { data } = await supabase.from("cycles").select("*");
+  return (data ?? []).map((r) => fromRow<Cycle>(r as Record<string, unknown>));
 }
 
 export async function getInfractionsList(): Promise<Infraction[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "infractions"));
-  return snapToList<Infraction>(snap);
+  const { data } = await supabase.from("infractions").select("*");
+  return (data ?? []).map((r) => fromRow<Infraction>(r as Record<string, unknown>));
 }
 
 export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "emailTemplates"));
-  return snapToList<EmailTemplate>(snap);
+  const { data } = await supabase.from("email_templates").select("*");
+  return (data ?? []).map((r) => ({
+    ...fromRow<EmailTemplate>(r as Record<string, unknown>),
+    availableVariables: ((r as Record<string, unknown>).available_variables as string[]) ?? [],
+  }));
 }
 
 export async function getAssignmentsList(): Promise<Assignment[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "assignmentCatalog"));
-  return snapToList<Assignment>(snap);
+  const { data } = await supabase.from("assignment_catalog").select("*");
+  return (data ?? []).map((r) => fromRow<Assignment>(r as Record<string, unknown>));
 }
 
 export async function getAssignmentClaimsList(): Promise<AssignmentClaim[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "assignmentClaims"));
-  return snapToList<AssignmentClaim>(snap);
+  const { data } = await supabase.from("assignment_claims").select("*");
+  return (data ?? []).map((r) => fromRow<AssignmentClaim>(r as Record<string, unknown>));
 }
 
 export async function getMemberStrikesList(): Promise<MemberStrike[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "memberStrikes"));
-  return snapToList<MemberStrike>(snap);
+  const { data } = await supabase.from("member_strikes").select("*");
+  return (data ?? []).map((r) => fromRow<MemberStrike>(r as Record<string, unknown>));
 }
 
 export async function getMemberCreditAdjustmentsList(): Promise<MemberCreditAdjustment[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "memberCreditAdjustments"));
-  return snapToList<MemberCreditAdjustment>(snap);
+  const { data } = await supabase.from("member_credit_adjustments").select("*");
+  return (data ?? []).map((r) => fromRow<MemberCreditAdjustment>(r as Record<string, unknown>));
 }
 
 export async function getApplicationsList(): Promise<ApplicationRecord[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "applications"));
-  if (!snap.exists()) return [];
-  const val = snap.val() as Record<string, Record<string, unknown>> | null;
-  if (!val) return [];
-  return Object.entries(val).map(([id, row]) => normalizeApplicationRecord(id, row ?? {}));
+  const { data } = await supabase.from("applications").select("*");
+  if (!data?.length) return [];
+  return (data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), r));
 }
 
 export async function getCalendarEventsList(): Promise<CalendarEvent[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "calendarEvents"));
-  return snapToList<CalendarEvent>(snap);
+  const { data } = await supabase.from("calendar_events").select("*");
+  return (data ?? []).map((r) => calendarEventFromRow(r as Record<string, unknown>));
 }
 
 // ── InviteCodes ───────────────────────────────────────────────────────────────
 
 export function subscribeInviteCodes(callback: (items: InviteCode[]) => void): (() => void) {
-  const database = getDB();
-  if (!database) {
-    callback([]);
-    return () => {};
-  }
-  const dbRef = ref(database, "inviteCodes");
-  const handler = onValue(dbRef, (snap) => {
-    const list = snapToList<InviteCode>(snap).map((row) => ({
-      ...row,
-      role: normalizeAuthRoleValue(row.role),
-    }));
-    callback(list);
+  supabase.from("invite_codes").select("*").then(({ data, error }) => {
+    if (error || !data) { callback([]); return; }
+    callback((data as Record<string, unknown>[]).map((r) => ({
+      ...fromRow<InviteCode>(r),
+      role: normalizeAuthRoleValue(r.role),
+    })));
   });
-  return () => off(dbRef, "value", handler);
+  return () => {};
 }
 
 export async function createInviteCode(data: Omit<InviteCode, "id">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  // Store at inviteCodes/{code} so the signup page can read a single code without
-  // needing to list the entire collection (which requires admin auth).
-  const normalizedData = {
-    ...data,
-    role: normalizeAuthRoleValue(data.role),
-  };
-  await set(ref(db, `inviteCodes/${data.code}`), normalizedData);
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "inviteCodes",
-    recordId: data.code,
-    details: {
-      role: normalizedData.role,
-      expiresAt: data.expiresAt,
-      source: data.source ?? "manual",
-      multiUse: data.multiUse !== false,
-    },
-  });
+  const normalized = { ...data, role: normalizeAuthRoleValue(data.role) };
+  // Use the code string as the primary key (id) so it can be looked up directly.
+  await supabase.from("invite_codes").upsert(toRow({ ...normalized, id: data.code }), { onConflict: "id" });
+  await writeAuditLog({ action: "create", collection: "inviteCodes", recordId: data.code, details: { role: normalized.role, expiresAt: data.expiresAt, source: data.source ?? "manual", multiUse: data.multiUse !== false } });
 }
 
-// Reads a single invite code by its code value (e.g. "VOLTA-A3BX7M").
-// Safe to call while unauthenticated if the Firebase rule allows reading
-// individual children of inviteCodes (see CLAUDE.md for rule snippet).
 export async function getInviteCodeByValue(code: string): Promise<InviteCode | null> {
-  const db = getDB();
-  if (!db) return null;
-  const snap = await get(ref(db, `inviteCodes/${code}`));
-  if (!snap.exists()) return null;
-  const row = snap.val() as InviteCode;
-  return {
-    ...row,
-    id: code,
-    role: normalizeAuthRoleValue(row.role),
-  };
+  const { data } = await supabase.from("invite_codes").select("*").eq("id", code).maybeSingle();
+  if (!data) return null;
+  const r = data as Record<string, unknown>;
+  return { ...fromRow<InviteCode>(r), id: code, role: normalizeAuthRoleValue(r.role) };
 }
 
 export async function updateInviteCode(id: string, data: Partial<InviteCode>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `inviteCodes/${id}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "inviteCodes",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("invite_codes").update(toRow(data as Record<string, unknown>)).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "inviteCodes", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteInviteCode(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `inviteCodes/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "inviteCodes",
-    recordId: id,
-  });
+  await supabase.from("invite_codes").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "inviteCodes", recordId: id });
 }
 
 export async function getInviteCodes(): Promise<InviteCode[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "inviteCodes"));
-  return snapToList<InviteCode>(snap).map((row) => ({
-    ...row,
-    role: normalizeAuthRoleValue(row.role),
-  }));
+  const { data } = await supabase.from("invite_codes").select("*");
+  return (data ?? []).map((r) => ({ ...fromRow<InviteCode>(r as Record<string, unknown>), role: normalizeAuthRoleValue((r as Record<string, unknown>).role) }));
 }
 
 // ── CalendarEvents ────────────────────────────────────────────────────────────
 
-export const subscribeCalendarEvents = makeSubscriber<CalendarEvent>("calendarEvents");
+export const subscribeCalendarEvents =
+  makeSubscriber<CalendarEvent>("calendar_events", calendarEventFromRow);
 
 export async function createCalendarEvent(data: Omit<CalendarEvent, "id">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const eventRef = push(ref(db, "calendarEvents"));
-  await set(eventRef, data);
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "calendarEvents",
-    recordId: eventRef.key ?? "",
-    details: { title: data.title },
+  const id = genId();
+  await supabase.from("calendar_events").insert({
+    id,
+    title: data.title,
+    start: data.start || null,
+    end: data.end || null,
+    i_cal_uid: data.iCalUID ?? null,
+    description: data.description ?? null,
+    color: data.color ?? null,
+    all_day: data.allDay ?? false,
+    created_by: data.createdBy,
+    created_at: msToIso(data.createdAt),
   });
+  await writeAuditLog({ action: "create", collection: "calendarEvents", recordId: id, details: { title: data.title } });
 }
 
 export async function updateCalendarEvent(id: string, data: Partial<CalendarEvent>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `calendarEvents/${id}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "calendarEvents",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  const row: Record<string, unknown> = {};
+  if (data.title       !== undefined) row.title       = data.title;
+  if (data.start       !== undefined) row.start       = data.start || null;
+  if (data.end         !== undefined) row.end         = data.end || null;
+  if (data.iCalUID     !== undefined) row.i_cal_uid   = data.iCalUID;
+  if (data.description !== undefined) row.description = data.description;
+  if (data.color       !== undefined) row.color       = data.color;
+  if (data.allDay      !== undefined) row.all_day     = data.allDay;
+  await supabase.from("calendar_events").update(row).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "calendarEvents", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteCalendarEvent(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `calendarEvents/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "calendarEvents",
-    recordId: id,
-  });
+  await supabase.from("calendar_events").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "calendarEvents", recordId: id });
 }
 
 // ── InterviewInvites ──────────────────────────────────────────────────────────
-// Uses the booking token as the Firebase key (instead of a push-generated key),
-// so the token IS the record's ID and is embedded in the shareable URL.
 
-export const subscribeInterviewInvites = makeSubscriber<InterviewInvite>("interviewInvites");
+export const subscribeInterviewInvites =
+  makeSubscriber<InterviewInvite>("interview_invites", interviewInviteFromRow);
 
 export async function createInterviewInvite(token: string, data: Omit<InterviewInvite, "id">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await set(ref(db, `interviewInvites/${token}`), data);
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "interviewInvites",
-    recordId: token,
-    details: { role: data.role, expiresAt: data.expiresAt, multiUse: !!data.multiUse },
-  });
+  await supabase.from("interview_invites").upsert({
+    id: token,
+    applicant_name:  data.applicantName ?? null,
+    applicant_email: data.applicantEmail ?? null,
+    role:            data.role,
+    expires_at:      msToIso(data.expiresAt),
+    booked_slot_id:  data.bookedSlotId ?? null,
+    status:          data.status,
+    multi_use:       data.multiUse ?? false,
+    created_by:      data.createdBy,
+    created_at:      msToIso(data.createdAt),
+    note:            data.note ?? null,
+  }, { onConflict: "id" });
+  await writeAuditLog({ action: "create", collection: "interviewInvites", recordId: token, details: { role: data.role, expiresAt: data.expiresAt, multiUse: !!data.multiUse } });
 }
 
 export async function updateInterviewInvite(token: string, data: Partial<InterviewInvite>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `interviewInvites/${token}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "interviewInvites",
-    recordId: token,
-    details: { fields: Object.keys(data) },
-  });
+  const row: Record<string, unknown> = {};
+  if (data.applicantName  !== undefined) row.applicant_name  = data.applicantName;
+  if (data.applicantEmail !== undefined) row.applicant_email = data.applicantEmail;
+  if (data.role           !== undefined) row.role            = data.role;
+  if (data.expiresAt      !== undefined) row.expires_at      = msToIso(data.expiresAt);
+  if (data.bookedSlotId   !== undefined) row.booked_slot_id  = data.bookedSlotId;
+  if (data.status         !== undefined) row.status          = data.status;
+  if (data.multiUse       !== undefined) row.multi_use       = data.multiUse;
+  if (data.note           !== undefined) row.note            = data.note;
+  await supabase.from("interview_invites").update(row).eq("id", token);
+  await writeAuditLog({ action: "update", collection: "interviewInvites", recordId: token, details: { fields: Object.keys(data) } });
 }
 
 export async function getInterviewInvite(token: string): Promise<InterviewInvite | null> {
-  const db = getDB();
-  if (!db) return null;
-  const snap = await get(ref(db, `interviewInvites/${token}`));
-  if (!snap.exists()) return null;
-  return { ...snap.val(), id: token } as InterviewInvite;
+  const { data } = await supabase.from("interview_invites").select("*").eq("id", token).maybeSingle();
+  if (!data) return null;
+  return interviewInviteFromRow(data as Record<string, unknown>);
 }
 
 // ── InterviewSlots ────────────────────────────────────────────────────────────
 
-export const subscribeInterviewSlots = makeSubscriber<InterviewSlot>("interviewSlots");
+export const subscribeInterviewSlots =
+  makeSubscriber<InterviewSlot>("interview_slots", interviewSlotFromRow);
 
 export async function createInterviewSlot(data: Omit<InterviewSlot, "id">): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const slotRef = push(ref(db, "interviewSlots"));
-  await set(slotRef, data);
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "interviewSlots",
-    recordId: slotRef.key ?? "",
-    details: { datetime: data.datetime, durationMinutes: data.durationMinutes },
-  });
+  const id = genId();
+  await supabase.from("interview_slots").insert({ ...interviewSlotToRow(data), id });
+  await writeAuditLog({ action: "create", collection: "interviewSlots", recordId: id, details: { datetime: data.datetime, durationMinutes: data.durationMinutes } });
 }
 
 export async function updateInterviewSlot(id: string, data: Partial<InterviewSlot>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `interviewSlots/${id}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "interviewSlots",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("interview_slots").update(interviewSlotToRow(data)).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "interviewSlots", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteBookedInterview(slotId: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
+  const { data: slotRow } = await supabase.from("interview_slots").select("*").eq("id", slotId).maybeSingle();
+  if (!slotRow) return;
 
-  const slotRef = ref(db, `interviewSlots/${slotId}`);
-  const snap = await get(slotRef);
-  if (!snap.exists()) return;
+  const slot = interviewSlotFromRow(slotRow as Record<string, unknown>);
 
-  const slot = snap.val() as Partial<InterviewSlot>;
-  await update(slotRef, {
-    available: true,
-    bookedBy: "",
-    bookerName: "",
-    bookerEmail: "",
-    reminderSentAt: "",
-  });
+  await supabase.from("interview_slots").update({
+    available:        true,
+    booked_by:        null,
+    booker_name:      null,
+    booker_email:     null,
+    reminder_sent_at: null,
+  }).eq("id", slotId);
 
   const bookedEmail = String(slot.bookerEmail ?? "").trim().toLowerCase();
-  const bookedName = String(slot.bookerName ?? "").trim().toLowerCase();
-  const bookedBy = String(slot.bookedBy ?? "").trim();
+  const bookedName  = String(slot.bookerName  ?? "").trim().toLowerCase();
+  const bookedBy    = String(slot.bookedBy    ?? "").trim();
+
   if (bookedEmail) {
     const now = nowISO();
     const terminal = new Set(["accepted", "not accepted", "rejected"]);
 
-    // Use an indexed query on `email` instead of fetching all applications.
-    const appsQuery = query(
-      ref(db, "applications"),
-      orderByChild("email"),
-      equalTo(bookedEmail),
-      limitToFirst(10),
-    );
-    const appsSnap = await get(appsQuery);
+    const { data: apps } = await supabase
+      .from("applications")
+      .select("*")
+      .eq("email", bookedEmail)
+      .limit(10);
 
-    if (appsSnap.exists()) {
-      const entries = appsSnap.val() as Record<string, Record<string, unknown>>;
-      const appEntries = Object.entries(entries).map(([id, row]) => ({ id, row: row ?? {} }));
+    const appEntries = (apps ?? []).map((r) => ({
+      id: String((r as Record<string, unknown>).id),
+      row: r as Record<string, unknown>,
+    }));
 
-      let target = appEntries.find(({ row }) => {
-        const token = String(row.interviewInviteToken ?? "").trim();
-        return bookedBy && bookedBy !== "public-booking" && token === bookedBy;
+    let target = appEntries.find(({ row }) => {
+      const token = String(row.interview_invite_token ?? "").trim();
+      return bookedBy && bookedBy !== "public-booking" && token === bookedBy;
+    });
+    if (!target) target = appEntries.find(({ row }) => String(row.interview_slot_id ?? "").trim() === slotId);
+    if (!target) {
+      const sorted = [...appEntries].sort((a, b) => {
+        const aT = Date.parse(String(a.row.updated_at ?? a.row.created_at ?? ""));
+        const bT = Date.parse(String(b.row.updated_at ?? b.row.created_at ?? ""));
+        return (Number.isNaN(bT) ? 0 : bT) - (Number.isNaN(aT) ? 0 : aT);
       });
-      if (!target) {
-        target = appEntries.find(({ row }) => (
-          String(row.interviewSlotId ?? "").trim() === slotId
-        ));
+      target = sorted.find(({ row }) => String(row.full_name ?? "").trim().toLowerCase() === bookedName) ?? sorted[0];
+    }
+
+    if (target) {
+      const currentStatus = String(target.row.status ?? "").trim().toLowerCase();
+      const patch: Record<string, unknown> = { interview_slot_id: null, interview_scheduled_at: null, updated_at: now };
+      if (!target.row.status_manual_override && !terminal.has(currentStatus)) {
+        patch.status = "Invited for Interview";
       }
-      if (!target) {
-        const candidates = appEntries.sort((a, b) => {
-          const aTime = Date.parse(String(a.row.updatedAt ?? a.row.createdAt ?? ""));
-          const bTime = Date.parse(String(b.row.updatedAt ?? b.row.createdAt ?? ""));
-          return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
-        });
-        target = candidates.find(({ row }) => String(row.fullName ?? "").trim().toLowerCase() === bookedName) ?? candidates[0];
-      }
-      if (target) {
-        const currentStatus = String(target.row.status ?? "").trim().toLowerCase();
-        const patch: Record<string, unknown> = {
-          interviewSlotId: "",
-          interviewScheduledAt: "",
-          updatedAt: now,
-        };
-        if (!target.row.statusManualOverride && !terminal.has(currentStatus)) {
-          patch.status = "Invited for Interview";
-        }
-        await update(ref(db, `applications/${target.id}`), patch);
-      }
+      await supabase.from("applications").update(patch).eq("id", target.id);
     }
   }
 
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "interviewBookings",
-    recordId: slotId,
-    details: {
-      datetime: slot.datetime ?? "",
-      previousBookedBy: slot.bookedBy ?? "",
-      previousBookerName: slot.bookerName ?? "",
-      previousBookerEmail: slot.bookerEmail ?? "",
-    },
-  });
+  await writeAuditLog({ action: "delete", collection: "interviewBookings", recordId: slotId, details: { datetime: slot.datetime, previousBookedBy: slot.bookedBy, previousBookerName: slot.bookerName, previousBookerEmail: slot.bookerEmail } });
 }
 
 export async function deleteInterviewSlot(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `interviewSlots/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "interviewSlots",
-    recordId: id,
-  });
+  await supabase.from("interview_slots").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "interviewSlots", recordId: id });
 }
 
 export async function getInterviewSlots(): Promise<InterviewSlot[]> {
-  const db = getDB();
-  if (!db) return [];
-  const snap = await get(ref(db, "interviewSlots"));
-  return snapToList<InterviewSlot>(snap);
+  const { data } = await supabase.from("interview_slots").select("*");
+  return (data ?? []).map((r) => interviewSlotFromRow(r as Record<string, unknown>));
 }
 
 // ── Interview Settings ───────────────────────────────────────────────────────
 
 export function subscribeInterviewSettings(callback: (settings: InterviewSettings | null) => void): (() => void) {
-  const db = getDB();
-  if (!db) {
-    callback(null);
-    return () => {};
-  }
-  const dbRef = ref(db, "interviewSettings");
-  const handler = onValue(dbRef, (snap) => {
-    callback(snap.exists() ? (snap.val() as InterviewSettings) : null);
+  supabase.from("interview_settings").select("*").eq("id", "singleton").maybeSingle().then(({ data }) => {
+    if (!data) { callback(null); return; }
+    const r = data as Record<string, unknown>;
+    callback({
+      zoomLink:    r.zoom_link as string | undefined,
+      zoomEnabled: r.zoom_enabled as boolean | undefined,
+      updatedAt:   tsToMs(r.updated_at) || undefined,
+      updatedBy:   r.updated_by as string | undefined,
+    });
   });
-  return () => off(dbRef, "value", handler);
+  return () => {};
 }
 
 export async function updateInterviewSettings(data: Partial<InterviewSettings>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, "interviewSettings"), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "interviewSettings",
-    recordId: "singleton",
-    details: { fields: Object.keys(data) },
-  });
+  const row: Record<string, unknown> = {};
+  if (data.zoomLink    !== undefined) row.zoom_link    = data.zoomLink;
+  if (data.zoomEnabled !== undefined) row.zoom_enabled = data.zoomEnabled;
+  if (data.updatedAt   !== undefined) row.updated_at   = msToIso(data.updatedAt);
+  if (data.updatedBy   !== undefined) row.updated_by   = data.updatedBy;
+  await supabase.from("interview_settings").update(row).eq("id", "singleton");
+  await writeAuditLog({ action: "update", collection: "interviewSettings", recordId: "singleton", details: { fields: Object.keys(data) } });
 }
 
 // ── Cycles ────────────────────────────────────────────────────────────────────
 
-export async function createCycle(
-  data: Omit<Cycle, "id" | "createdAt" | "updatedAt">,
-): Promise<string | null> {
-  const db = getDB();
-  if (!db) return null;
-  const cycleRef = push(ref(db, "cycles"));
-  const id = cycleRef.key ?? "";
-  await set(cycleRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "cycles",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+export async function createCycle(data: Omit<Cycle, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
+  const id = genId();
+  const now = nowISO();
+  await supabase.from("cycles").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "cycles", recordId: id, details: { fields: Object.keys(data) } });
   return id;
 }
 
 export async function updateCycle(id: string, data: Partial<Cycle>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `cycles/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "cycles",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("cycles").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "cycles", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteCycle(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `cycles/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "cycles",
-    recordId: id,
-  });
+  await supabase.from("cycles").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "cycles", recordId: id });
 }
 
-// Activates one cycle and deactivates every other one in a single multi-path
-// update so the "exactly one active cycle" invariant holds atomically.
 export async function activateCycleExclusive(id: string, allCycleIds: string[]): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const updates: Record<string, unknown> = {};
-  const ts = nowISO();
-  for (const cycleId of allCycleIds) {
-    updates[`cycles/${cycleId}/active`] = cycleId === id;
-    updates[`cycles/${cycleId}/updatedAt`] = ts;
+  const now = nowISO();
+  await supabase.from("cycles").update({ active: true,  updated_at: now }).eq("id", id);
+  const others = allCycleIds.filter((c) => c !== id);
+  if (others.length) {
+    await supabase.from("cycles").update({ active: false, updated_at: now }).in("id", others);
   }
-  await update(ref(db), updates);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "cycles",
-    recordId: id,
-    details: { activated: true, deactivated: allCycleIds.filter((c) => c !== id) },
-  });
+  await writeAuditLog({ action: "update", collection: "cycles", recordId: id, details: { activated: true, deactivated: others } });
 }
 
 // ── Infractions ───────────────────────────────────────────────────────────────
 
-export async function createInfraction(
-  data: Omit<Infraction, "id" | "createdAt" | "updatedAt">,
-): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const infRef = push(ref(db, "infractions"));
-  await set(infRef, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "infractions",
-    recordId: infRef.key ?? "",
-    details: { fields: Object.keys(data) },
-  });
+export async function createInfraction(data: Omit<Infraction, "id" | "createdAt" | "updatedAt">): Promise<void> {
+  const id = genId();
+  const now = nowISO();
+  await supabase.from("infractions").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "infractions", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateInfraction(id: string, data: Partial<Infraction>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `infractions/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "infractions",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("infractions").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "infractions", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteInfraction(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `infractions/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "infractions",
-    recordId: id,
-  });
+  await supabase.from("infractions").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "infractions", recordId: id });
 }
 
 // ── Email templates ───────────────────────────────────────────────────────────
 
-export async function createEmailTemplate(
-  data: Omit<EmailTemplate, "id" | "updatedAt">,
-): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  const tmplRef = push(ref(db, "emailTemplates"));
-  await set(tmplRef, { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "emailTemplates",
-    recordId: tmplRef.key ?? "",
-    details: { key: data.key },
+export async function createEmailTemplate(data: Omit<EmailTemplate, "id" | "updatedAt">): Promise<void> {
+  const id = genId();
+  await supabase.from("email_templates").insert({
+    id,
+    key:                 data.key,
+    label:               data.label,
+    description:         data.description,
+    subject:             data.subject,
+    body:                data.body,
+    available_variables: data.availableVariables,
+    active:              data.active,
+    updated_by:          data.updatedBy,
+    updated_at:          nowISO(),
   });
+  await writeAuditLog({ action: "create", collection: "emailTemplates", recordId: id, details: { key: data.key } });
 }
 
 export async function updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `emailTemplates/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "emailTemplates",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  const row: Record<string, unknown> = { updated_at: nowISO() };
+  if (data.key                !== undefined) row.key                 = data.key;
+  if (data.label              !== undefined) row.label               = data.label;
+  if (data.description        !== undefined) row.description         = data.description;
+  if (data.subject            !== undefined) row.subject             = data.subject;
+  if (data.body               !== undefined) row.body                = data.body;
+  if (data.availableVariables !== undefined) row.available_variables = data.availableVariables;
+  if (data.active             !== undefined) row.active              = data.active;
+  if (data.updatedBy          !== undefined) row.updated_by          = data.updatedBy;
+  await supabase.from("email_templates").update(row).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "emailTemplates", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteEmailTemplate(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `emailTemplates/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "emailTemplates",
-    recordId: id,
-  });
+  await supabase.from("email_templates").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "emailTemplates", recordId: id });
 }
 
 // ── Assignment catalog ────────────────────────────────────────────────────────
 
-export async function createAssignment(
-  data: Omit<Assignment, "id" | "createdAt" | "updatedAt">,
-): Promise<string | null> {
-  const db = getDB();
-  if (!db) return null;
-  const r = push(ref(db, "assignmentCatalog"));
-  const id = r.key ?? "";
-  await set(r, { ...data, createdAt: nowISO(), updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "assignmentCatalog",
-    recordId: id,
-    details: { title: data.title, primaryTrack: data.primaryTrack },
-  });
+export async function createAssignment(data: Omit<Assignment, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
+  const id = genId();
+  const now = nowISO();
+  await supabase.from("assignment_catalog").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "assignmentCatalog", recordId: id, details: { title: data.title, primaryTrack: data.primaryTrack } });
   return id;
 }
 
 export async function updateAssignment(id: string, data: Partial<Assignment>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `assignmentCatalog/${id}`), { ...data, updatedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "assignmentCatalog",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("assignment_catalog").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "assignmentCatalog", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteAssignment(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `assignmentCatalog/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "assignmentCatalog",
-    recordId: id,
-  });
+  await supabase.from("assignment_catalog").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "assignmentCatalog", recordId: id });
 }
 
 // ── Assignment claims ─────────────────────────────────────────────────────────
 
-export async function createAssignmentClaim(
-  data: Omit<AssignmentClaim, "id">,
-): Promise<string | null> {
-  const db = getDB();
-  if (!db) return null;
-  const r = push(ref(db, "assignmentClaims"));
-  const id = r.key ?? "";
-  await set(r, data);
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "assignmentClaims",
-    recordId: id,
-    details: { assignmentId: data.assignmentId, memberId: data.memberId },
-  });
+export async function createAssignmentClaim(data: Omit<AssignmentClaim, "id">): Promise<string | null> {
+  const id = genId();
+  await supabase.from("assignment_claims").insert(toRow({ ...data, id }));
+  await writeAuditLog({ action: "create", collection: "assignmentClaims", recordId: id, details: { assignmentId: data.assignmentId, memberId: data.memberId } });
   return id;
 }
 
 export async function updateAssignmentClaim(id: string, data: Partial<AssignmentClaim>): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await update(ref(db, `assignmentClaims/${id}`), data);
-  await writeAuditLog(db, {
-    action: "update",
-    collection: "assignmentClaims",
-    recordId: id,
-    details: { fields: Object.keys(data) },
-  });
+  await supabase.from("assignment_claims").update(toRow(data as Record<string, unknown>)).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "assignmentClaims", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteAssignmentClaim(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `assignmentClaims/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "assignmentClaims",
-    recordId: id,
-  });
+  await supabase.from("assignment_claims").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "assignmentClaims", recordId: id });
 }
 
 // ── Member strikes ────────────────────────────────────────────────────────────
 
-export async function createMemberStrike(
-  data: Omit<MemberStrike, "id" | "issuedAt">,
-): Promise<string | null> {
-  const db = getDB();
-  if (!db) return null;
-  const r = push(ref(db, "memberStrikes"));
-  const id = r.key ?? "";
-  await set(r, { ...data, issuedAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "memberStrikes",
-    recordId: id,
-    details: {
-      memberId: data.memberId,
-      infractionId: data.infractionId,
-      points: data.points,
-      source: data.source,
-    },
-  });
+export async function createMemberStrike(data: Omit<MemberStrike, "id" | "issuedAt">): Promise<string | null> {
+  const id = genId();
+  await supabase.from("member_strikes").insert(toRow({ ...data, id, issuedAt: nowISO() }));
+  await writeAuditLog({ action: "create", collection: "memberStrikes", recordId: id, details: { memberId: data.memberId, infractionId: data.infractionId, points: data.points, source: data.source } });
   return id;
 }
 
 export async function deleteMemberStrike(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `memberStrikes/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "memberStrikes",
-    recordId: id,
-  });
+  await supabase.from("member_strikes").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "memberStrikes", recordId: id });
 }
 
-// Admin-only "clear strikes" — wipes every strike for a member in a cycle.
-export async function clearMemberStrikes(
-  strikeIds: string[],
-): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  if (strikeIds.length === 0) return;
-  const updates: Record<string, unknown> = {};
-  for (const sid of strikeIds) {
-    updates[`memberStrikes/${sid}`] = null;
-  }
-  await update(ref(db), updates);
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "memberStrikes",
-    recordId: "bulk",
-    details: { count: strikeIds.length, ids: strikeIds },
-  });
+export async function clearMemberStrikes(strikeIds: string[]): Promise<void> {
+  if (!strikeIds.length) return;
+  await supabase.from("member_strikes").delete().in("id", strikeIds);
+  await writeAuditLog({ action: "delete", collection: "memberStrikes", recordId: "bulk", details: { count: strikeIds.length, ids: strikeIds } });
 }
 
 // ── Member credit adjustments ─────────────────────────────────────────────────
 
-export async function createMemberCreditAdjustment(
-  data: Omit<MemberCreditAdjustment, "id" | "createdAt">,
-): Promise<string | null> {
-  const db = getDB();
-  if (!db) return null;
-  const r = push(ref(db, "memberCreditAdjustments"));
-  const id = r.key ?? "";
-  await set(r, { ...data, createdAt: nowISO() });
-  await writeAuditLog(db, {
-    action: "create",
-    collection: "memberCreditAdjustments",
-    recordId: id,
-    details: { memberId: data.memberId, points: data.points },
-  });
+export async function createMemberCreditAdjustment(data: Omit<MemberCreditAdjustment, "id" | "createdAt">): Promise<string | null> {
+  const id = genId();
+  await supabase.from("member_credit_adjustments").insert(toRow({ ...data, id, createdAt: nowISO() }));
+  await writeAuditLog({ action: "create", collection: "memberCreditAdjustments", recordId: id, details: { memberId: data.memberId, points: data.points } });
   return id;
 }
 
 export async function deleteMemberCreditAdjustment(id: string): Promise<void> {
-  const db = getDB();
-  if (!db) return;
-  await remove(ref(db, `memberCreditAdjustments/${id}`));
-  await writeAuditLog(db, {
-    action: "delete",
-    collection: "memberCreditAdjustments",
-    recordId: id,
-  });
+  await supabase.from("member_credit_adjustments").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "memberCreditAdjustments", recordId: id });
 }

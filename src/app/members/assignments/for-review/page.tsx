@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 // Assignments → For Review. Sr Associate / Board review submitted claims
 // here. Approved claims migrate to the Catalog's "completed" view; rejected
@@ -173,7 +174,7 @@ export default function ForReviewPage() {
       .slice(0, 12);
   }, [claims]);
 
-  const reviewerLabel = userProfile?.email || user?.email || user?.uid || "unknown";
+  const reviewerLabel = userProfile?.email || user?.email || user?.id || "unknown";
 
   const buildReviewInput = (claim: AssignmentClaim): ReviewInput => {
     const assignment = assignmentById.get(claim.assignmentId);
@@ -241,7 +242,7 @@ export default function ForReviewPage() {
     });
     if (user && rejectingClaim.memberEmail) {
       try {
-        const idToken = await user.getIdToken();
+        const idToken = await getAuthToken();
         await dispatchTemplatedEmail({
           templates,
           templateKey: "assignment_rejected",

@@ -316,7 +316,7 @@ export default function CatalogPage() {
       deadline: form.deadline || undefined,
       status: form.status,
       cycleId: editing?.cycleId ?? activeCycle?.id ?? "",
-      createdBy: userProfile?.email || user?.email || user?.uid || "unknown",
+      createdBy: userProfile?.email || user?.email || user?.id || "unknown",
     };
   };
 

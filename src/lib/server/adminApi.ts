@@ -1,8 +1,11 @@
 import { NextRequest } from "next/server";
-import { getAdminAuth, getAdminDB } from "@/lib/firebaseAdmin";
-
-const DB_URL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL ?? "";
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import {
+  dbRead as sbRead,
+  dbPatch as sbPatch,
+  dbPush as sbPush,
+  dbDelete as sbDelete,
+} from "@/lib/supabaseAdmin";
 
 export interface VerifiedCaller {
   uid: string;
@@ -22,105 +25,26 @@ function normalizeCallerRole(value: unknown): string {
   return raw;
 }
 
-function toDbUrl(path: string, idToken?: string): string {
-  if (!DB_URL) throw new Error("no_db");
-  const cleanPath = path.replace(/^\/+|\/+$/g, "");
-  const base = cleanPath ? `${DB_URL}/${cleanPath}.json` : `${DB_URL}/.json`;
-  if (!idToken) return base;
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}auth=${encodeURIComponent(idToken)}`;
-}
-
 export function getBearerToken(req: NextRequest): string {
   const authHeader = req.headers.get("authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) return "";
   return authHeader.slice("Bearer ".length).trim();
 }
 
-async function verifyTokenViaRest(idToken: string): Promise<{ uid: string; email: string; name: string } | null> {
-  if (!API_KEY) return null;
-  const res = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(API_KEY)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
-      cache: "no-store",
-    }
-  );
-  if (!res.ok) return null;
-
-  const data = await res.json() as {
-    users?: Array<{ localId?: string; email?: string; displayName?: string }>;
-  };
-  const user = data.users?.[0];
-  if (!user?.localId) return null;
-
-  return {
-    uid: user.localId,
-    email: user.email ?? "",
-    name: user.displayName ?? "",
-  };
+export async function dbRead(path: string, _idToken?: string): Promise<unknown> {
+  return sbRead(path);
 }
 
-export async function dbRead(path: string, idToken?: string): Promise<unknown> {
-  const adminDb = getAdminDB();
-  if (adminDb) {
-    const snap = await adminDb.ref(path).get();
-    return snap.exists() ? snap.val() : null;
-  }
-
-  const res = await fetch(toDbUrl(path, idToken), { cache: "no-store" });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error("db_read_failed");
-  const data = await res.json() as unknown;
-  return data ?? null;
+export async function dbPatch(path: string, data: Record<string, unknown>, _idToken?: string): Promise<void> {
+  return sbPatch(path, data);
 }
 
-export async function dbPatch(path: string, data: Record<string, unknown>, idToken?: string): Promise<void> {
-  const adminDb = getAdminDB();
-  if (adminDb) {
-    await adminDb.ref(path).update(data);
-    return;
-  }
-
-  const res = await fetch(toDbUrl(path, idToken), {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("db_write_failed");
+export async function dbPush(path: string, data: Record<string, unknown>, _idToken?: string): Promise<string> {
+  return sbPush(path, data);
 }
 
-export async function dbPush(path: string, data: Record<string, unknown>, idToken?: string): Promise<void> {
-  const adminDb = getAdminDB();
-  if (adminDb) {
-    await adminDb.ref(path).push(data);
-    return;
-  }
-
-  const res = await fetch(toDbUrl(path, idToken), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("db_write_failed");
-}
-
-export async function dbDelete(path: string, idToken?: string): Promise<void> {
-  const adminDb = getAdminDB();
-  if (adminDb) {
-    await adminDb.ref(path).remove();
-    return;
-  }
-
-  const res = await fetch(toDbUrl(path, idToken), {
-    method: "DELETE",
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("db_delete_failed");
+export async function dbDelete(path: string, _idToken?: string): Promise<void> {
+  return sbDelete(path);
 }
 
 export async function verifyCaller(
@@ -132,53 +56,27 @@ export async function verifyCaller(
     return { ok: false, status: 401, error: "unauthorized" };
   }
 
-  const adminAuth = getAdminAuth();
-  const adminDb = getAdminDB();
-  if (adminAuth && adminDb) {
-    try {
-      const decoded = await adminAuth.verifyIdToken(idToken);
-      const uid = decoded.uid;
-      const email = decoded.email ?? "";
-      const name = decoded.name ?? "";
-      const roleSnap = await adminDb.ref(`userProfiles/${uid}/authRole`).get();
-      const role = normalizeCallerRole(roleSnap.exists() ? String(roleSnap.val()) : "");
-      if (!allowedRoles.includes(role)) {
-        return { ok: false, status: 403, error: "forbidden" };
-      }
-      return {
-        ok: true,
-        caller: { uid, email, name, role, idToken },
-      };
-    } catch {
-      return { ok: false, status: 401, error: "unauthorized" };
-    }
-  }
-
-  const caller = await verifyTokenViaRest(idToken);
-  if (!caller) {
+  const sb = getSupabaseAdmin();
+  const { data: { user }, error } = await sb.auth.getUser(idToken);
+  if (error || !user) {
     return { ok: false, status: 401, error: "unauthorized" };
   }
 
-  let role = "";
-  try {
-    const roleData = await dbRead(`userProfiles/${caller.uid}/authRole`, idToken);
-    role = normalizeCallerRole(typeof roleData === "string" ? roleData : "");
-  } catch {
-    return { ok: false, status: 403, error: "forbidden" };
-  }
+  // Look up auth_role from the team table.
+  const { data: teamRow } = await sb
+    .from("team")
+    .select("auth_role")
+    .eq("auth_uid", user.id)
+    .single();
 
+  const role = normalizeCallerRole(teamRow?.auth_role ?? "");
   if (!allowedRoles.includes(role)) {
     return { ok: false, status: 403, error: "forbidden" };
   }
 
+  const name = (user.user_metadata?.full_name as string | undefined) ?? "";
   return {
     ok: true,
-    caller: {
-      uid: caller.uid,
-      email: caller.email,
-      name: caller.name,
-      role,
-      idToken,
-    },
+    caller: { uid: user.id, email: user.email ?? "", name, role, idToken },
   };
 }

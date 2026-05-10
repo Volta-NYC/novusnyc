@@ -4,8 +4,8 @@ import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { isFirebaseConfigured } from "@/lib/firebase";
-import { signOut } from "@/lib/members/firebaseAuth";
+
+import { signOut } from "@/lib/members/supabaseAuth";
 import { AuthProvider, useAuth } from "@/lib/members/authContext";
 import { type AuthRole } from "@/lib/members/storage";
 
@@ -131,7 +131,6 @@ function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
 function MembersLayoutInner({ children }: { children: ReactNode }) {
   const { user, userProfile, authRole, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [firebaseReady] = useState(isFirebaseConfigured());
   const pathname = usePathname();
   const router = useRouter();
 
@@ -303,13 +302,6 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             ← Site
           </Link>
         </div>
-
-        {/* Firebase misconfiguration warning */}
-        {!firebaseReady && (
-          <div className="mx-4 mt-4 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3 text-orange-400 text-sm">
-            <strong>Firebase not configured.</strong> Data is not being saved. Add Firebase env vars in Vercel.
-          </div>
-        )}
 
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>

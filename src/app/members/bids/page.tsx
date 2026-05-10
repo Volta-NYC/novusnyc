@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -121,7 +122,7 @@ export default function BIDTrackerPage() {
   }): Promise<{ lat: number; lng: number } | null> => {
     if (!user) return null;
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const res = await fetch("/api/members/bids/geocode", {
         method: "POST",
         headers: {

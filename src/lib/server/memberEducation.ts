@@ -2,7 +2,7 @@ import "server-only";
 
 import fs from "node:fs";
 import path from "node:path";
-import { getAdminDB } from "@/lib/firebaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export interface EducationSnapshot {
   memberCount: number;
@@ -246,52 +246,37 @@ function fallbackSnapshot(): EducationSnapshot {
 export async function getMemberEducationSnapshot(): Promise<EducationSnapshot> {
   if (FORCE_STATIC_SCHOOL_LIST) return fallbackSnapshot();
 
-  const db = getAdminDB();
-  if (!db) return fallbackSnapshot();
-
   try {
-    const [teamSnap, applicationSnap] = await Promise.all([
-      db.ref("team").get(),
-      db.ref("applications").get(),
+    const sb = getSupabaseAdmin();
+    const [{ data: teamRows }, { data: appRows }] = await Promise.all([
+      sb.from("team").select("school"),
+      sb.from("applications").select("school_name, school"),
     ]);
-    if (!teamSnap.exists() && !applicationSnap.exists()) return fallbackSnapshot();
-
-    const teamRows = Object.values((teamSnap.val() ?? {}) as Record<string, Record<string, unknown>>);
-    const applicationRows = Object.values((applicationSnap.val() ?? {}) as Record<string, Record<string, unknown>>);
+    if (!teamRows?.length && !appRows?.length) return fallbackSnapshot();
 
     const schools = [
-      ...teamRows.map((row) => asText(row.school)),
-      ...applicationRows.map((row) => asText(row.schoolName) || asText(row.school)),
+      ...(teamRows ?? []).map((row) => asText((row as Record<string, unknown>).school)),
+      ...(appRows ?? []).map((row) => {
+        const r = row as Record<string, unknown>;
+        return asText(r.school_name) || asText(r.school);
+      }),
     ];
 
-    return buildSnapshot(teamRows.length, schools);
+    return buildSnapshot((teamRows ?? []).length, schools);
   } catch {
     return fallbackSnapshot();
   }
 }
 
 export async function getTotalMemberCount(): Promise<number> {
-  const db = getAdminDB();
-  if (!db) return 0;
-
   try {
-    const [teamSnap, applicationSnap] = await Promise.all([
-      db.ref("team").get(),
-      db.ref("applications").get(),
+    const sb = getSupabaseAdmin();
+    const [{ count: teamCount }, { data: apps }] = await Promise.all([
+      sb.from("team").select("*", { count: "exact", head: true }),
+      sb.from("applications").select("status").eq("status", "New"),
     ]);
-    const teamCount = teamSnap.exists() ? Object.keys(teamSnap.val() as Record<string, unknown>).length : 0;
 
-    // Only count "New" applicants to avoid double-counting accepted applicants
-    // who are already in the team count.
-    let newAppCount = 0;
-    if (applicationSnap.exists()) {
-      const apps = applicationSnap.val() as Record<string, Record<string, unknown>>;
-      for (const [, app] of Object.entries(apps)) {
-        if (app.status === "New") newAppCount++;
-      }
-    }
-
-    return teamCount + newAppCount;
+    return (teamCount ?? 0) + (apps?.length ?? 0);
   } catch {
     return 0;
   }

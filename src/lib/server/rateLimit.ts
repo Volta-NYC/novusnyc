@@ -1,4 +1,4 @@
-import { getAdminDB } from "@/lib/firebaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 type RateLimitResult = {
   ok: boolean;
@@ -69,40 +69,51 @@ export async function consumeRateLimit(opts: RateLimitOptions): Promise<RateLimi
   const key = safePathSegment(opts.key);
   const storeKey = `${bucket}:${key}`;
 
-  const adminDb = getAdminDB();
-  if (!adminDb) {
-    const current = memoryStore.get(storeKey);
-    let next: LimitRecord;
+  // Try Supabase-backed rate limiting (abuse_guards table).
+  try {
+    const sb = getSupabaseAdmin();
+    const { data: existing } = await sb
+      .from("abuse_guards")
+      .select("count, reset_at, blocked, last_seen_at")
+      .eq("bucket", bucket)
+      .eq("key", key)
+      .maybeSingle();
 
-    if (!current || !current.resetAt || current.resetAt <= now) {
-      next = { count: 1, resetAt: now + windowMs, blocked: false, lastSeenAt: now };
-    } else if ((current.count ?? 0) >= limit) {
-      next = { ...current, blocked: true, lastSeenAt: now };
+    let next: { count: number; reset_at: number; blocked: boolean; last_seen_at: number };
+    const currentCount = typeof existing?.count === "number" ? existing.count : 0;
+    const currentResetAt = typeof existing?.reset_at === "number" ? existing.reset_at : 0;
+    const currentBlocked = existing?.blocked === true;
+
+    if (!currentResetAt || currentResetAt <= now) {
+      next = { count: 1, reset_at: now + windowMs, blocked: false, last_seen_at: now };
+    } else if (currentBlocked || currentCount >= limit) {
+      next = { count: currentCount, reset_at: currentResetAt, blocked: true, last_seen_at: now };
     } else {
-      next = { ...current, count: (current.count ?? 0) + 1, blocked: false, lastSeenAt: now };
+      next = { count: currentCount + 1, reset_at: currentResetAt, blocked: false, last_seen_at: now };
     }
 
-    memoryStore.set(storeKey, next);
-    return computeResult(next, limit, now);
+    await sb.from("abuse_guards").upsert(
+      { bucket, key, ...next },
+      { onConflict: "bucket,key" }
+    );
+
+    const record: LimitRecord = { count: next.count, resetAt: next.reset_at, blocked: next.blocked };
+    return computeResult(record, limit, now);
+  } catch {
+    // Fall through to in-memory store if Supabase is unavailable.
   }
 
-  const ref = adminDb.ref(`abuseGuards/${bucket}/${key}`);
-  const tx = await ref.transaction((raw) => {
-    const current = (raw ?? {}) as LimitRecord;
-    const count = typeof current.count === "number" ? current.count : 0;
-    const resetAt = typeof current.resetAt === "number" ? current.resetAt : 0;
+  const current = memoryStore.get(storeKey);
+  let next: LimitRecord;
 
-    if (!resetAt || resetAt <= now) {
-      return { count: 1, resetAt: now + windowMs, blocked: false, lastSeenAt: now };
-    }
+  if (!current || !current.resetAt || current.resetAt <= now) {
+    next = { count: 1, resetAt: now + windowMs, blocked: false, lastSeenAt: now };
+  } else if ((current.count ?? 0) >= limit) {
+    next = { ...current, blocked: true, lastSeenAt: now };
+  } else {
+    next = { ...current, count: (current.count ?? 0) + 1, blocked: false, lastSeenAt: now };
+  }
 
-    if (count >= limit) {
-      return { ...current, blocked: true, lastSeenAt: now };
-    }
-
-    return { ...current, count: count + 1, blocked: false, lastSeenAt: now };
-  });
-
-  const value = (tx.snapshot.val() ?? {}) as LimitRecord;
-  return computeResult(value, limit, now);
+  memoryStore.set(storeKey, next);
+  return computeResult(next, limit, now);
 }

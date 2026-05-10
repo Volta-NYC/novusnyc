@@ -1,5 +1,4 @@
 import { dbPatch, dbRead } from "@/lib/server/adminApi";
-import { getAdminDB } from "@/lib/firebaseAdmin";
 
 type AuthRole = "admin" | "interviewer" | "member";
 
@@ -150,28 +149,6 @@ export async function incrementInviteCodeUsage(input: {
   if (!code || !email) return false;
 
   const nowIso = new Date().toISOString();
-  const adminDb = getAdminDB();
-  if (adminDb) {
-    const result = await adminDb.ref(`inviteCodes/${code}`).transaction((current) => {
-      if (!current || typeof current !== "object") return current;
-      const row = current as InviteCodeRecord;
-      const nextCount = getInviteCodeCount(row) + 1;
-      const next: InviteCodeRecord = {
-        ...row,
-        signupCount: nextCount,
-        lastUsedBy: email,
-        lastUsedAt: nowIso,
-      };
-      if (row.multiUse === false) {
-        next.used = true;
-        next.usedBy = email;
-        next.usedAt = nowIso;
-      }
-      return next as unknown as object;
-    });
-    return result.committed;
-  }
-
   const raw = (await dbRead(`inviteCodes/${code}`, input.idToken)) as InviteCodeRecord | null;
   if (!raw || typeof raw !== "object") return false;
 

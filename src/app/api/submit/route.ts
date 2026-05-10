@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
-import { getAdminDB } from "@/lib/firebaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   validateApplicationForm,
   validateContactForm,
@@ -12,8 +12,7 @@ function asText(value: unknown): string {
 }
 
 async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>): Promise<void> {
-  const db = getAdminDB();
-  if (!db) throw new Error("firebase_admin_unavailable");
+  const sb = getSupabaseAdmin();
 
   const businessName = asText(data.businessName);
   const ownerName = asText(data.name);
@@ -26,25 +25,27 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
 
   if (!businessName || !ownerName || !ownerEmail) return;
 
-  // Indexed query: only fetch businesses from this owner email, then check name/ownerName in memory.
-  const byEmailSnap = await db.ref("businesses").orderByChild("ownerEmail").equalTo(ownerEmail).get();
+  // Indexed query: check for recent duplicate by owner email.
   const now = Date.now();
-  if (byEmailSnap.exists()) {
-    const entries = byEmailSnap.val() as Record<string, Record<string, unknown>>;
-    const duplicateRecent = Object.values(entries).some((entry) => {
-      const existingName = asText(entry.name).toLowerCase();
-      const existingOwner = asText(entry.ownerName).toLowerCase();
-      const createdAt = Date.parse(asText(entry.createdAt));
-      if (!createdAt) return false;
-      const within24h = now - createdAt <= 24 * 60 * 60 * 1000;
-      return (
-        within24h
-        && existingName === businessName.toLowerCase()
-        && existingOwner === ownerName.toLowerCase()
-      );
-    });
-    if (duplicateRecent) return;
-  }
+  const { data: existing } = await sb
+    .from("businesses")
+    .select("name, owner_name, created_at")
+    .eq("owner_email", ownerEmail);
+
+  const duplicateRecent = (existing ?? []).some((entry) => {
+    const r = entry as Record<string, unknown>;
+    const existingName = asText(r.name).toLowerCase();
+    const existingOwner = asText(r.owner_name).toLowerCase();
+    const createdAt = Date.parse(asText(r.created_at));
+    if (!createdAt) return false;
+    const within24h = now - createdAt <= 24 * 60 * 60 * 1000;
+    return (
+      within24h
+      && existingName === businessName.toLowerCase()
+      && existingOwner === ownerName.toLowerCase()
+    );
+  });
+  if (duplicateRecent) return;
 
   const timestamp = new Date(now).toISOString();
   const notesParts = [
@@ -56,29 +57,30 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     message ? `Message: ${message}` : "",
   ].filter(Boolean);
 
-  await db.ref("businesses").push({
+  await sb.from("businesses").insert({
+    id: crypto.randomUUID(),
     name: businessName,
-    bidId: "",
-    ownerName,
-    ownerEmail,
-    ownerAlternateEmail: "",
+    bid_id: "",
+    owner_name: ownerName,
+    owner_email: ownerEmail,
+    owner_alternate_email: "",
     phone,
-    alternatePhone: "",
+    alternate_phone: "",
     address: "",
     neighborhood,
     website: "",
-    projectStatus: "Upcoming",
-    teamLead: "",
-    firstContactDate: timestamp.slice(0, 10),
+    project_status: "Upcoming",
+    team_lead: "",
+    first_contact_date: timestamp.slice(0, 10),
     notes: notesParts.join("\n"),
     division: "Marketing",
-    teamMembers: [],
-    sortIndex: now,
-    intakeSource: "website_form",
-    showcaseEnabled: false,
-    showcaseFeaturedOnHome: false,
-    createdAt: timestamp,
-    updatedAt: timestamp,
+    team_members: [],
+    sort_index: now,
+    intake_source: "website_form",
+    showcase_enabled: false,
+    showcase_featured_on_home: false,
+    created_at: timestamp,
+    updated_at: timestamp,
   });
 }
 
@@ -99,8 +101,7 @@ function splitCsvToList(values: unknown): string[] {
 }
 
 async function upsertApplicationFromForm(data: Record<string, unknown>): Promise<void> {
-  const db = getAdminDB();
-  if (!db) throw new Error("firebase_admin_unavailable");
+  const sb = getSupabaseAdmin();
 
   const fullName = asText(data["Full Name"]);
   const email = asText(data.Email).toLowerCase();
@@ -111,30 +112,30 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
   const tracks = splitToCsv(data["Tracks Selected"]);
   const createdAt = new Date().toISOString();
 
-  await db.ref("applications").push({
-    fullName,
+  await sb.from("applications").insert({
+    id: crypto.randomUUID(),
+    full_name: fullName,
     email,
-    schoolName,
+    school_name: schoolName,
     grade: asText(data.Grade),
-    cityState,
+    city_state: cityState,
     referral: asText(data["How They Heard"]),
-    tracksSelected: tracks,
-    hasResume: asText(data["Has Resume"]),
-    resumeUrl: asText(data["Resume URL"]),
-    toolsSoftware: asText(data["Tools/Software"]),
+    tracks_selected: tracks,
+    has_resume: asText(data["Has Resume"]) || null,
+    resume_url: asText(data["Resume URL"]),
+    tools_software: asText(data["Tools/Software"]),
     accomplishment: asText(data.Accomplishment),
     status: "New",
     source: "website_form",
-    sourceTimestampRaw: asText(data.Timestamp),
+    source_timestamp_raw: asText(data.Timestamp),
     notes: "",
-    createdAt,
-    updatedAt: createdAt,
+    created_at: createdAt,
+    updated_at: createdAt,
   });
 }
 
 async function upsertInquiryFromForm(data: Record<string, unknown>): Promise<void> {
-  const db = getAdminDB();
-  if (!db) throw new Error("firebase_admin_unavailable");
+  const sb = getSupabaseAdmin();
 
   const name = asText(data.name);
   const email = asText(data.email).toLowerCase();
@@ -142,13 +143,14 @@ async function upsertInquiryFromForm(data: Record<string, unknown>): Promise<voi
   if (!name || !email || !inquiry) return;
 
   const createdAt = new Date().toISOString();
-  await db.ref("inquiries").push({
+  await sb.from("inquiries").insert({
+    id: crypto.randomUUID(),
     name,
     email,
     inquiry,
     source: "website_form",
-    createdAt,
-    updatedAt: createdAt,
+    created_at: createdAt,
+    updated_at: createdAt,
   });
 }
 
@@ -279,13 +281,13 @@ export async function POST(request: Request) {
     }
   }
 
-  let firebaseWriteFailed = false;
+  let dbWriteFailed = false;
 
   if (formType === "contact") {
     try {
       await upsertBusinessLeadFromContactForm(data);
     } catch {
-      firebaseWriteFailed = true;
+      dbWriteFailed = true;
     }
   }
 
@@ -293,7 +295,7 @@ export async function POST(request: Request) {
     try {
       await upsertApplicationFromForm(data);
     } catch {
-      firebaseWriteFailed = true;
+      dbWriteFailed = true;
     }
   }
 
@@ -301,14 +303,14 @@ export async function POST(request: Request) {
     try {
       await upsertInquiryFromForm(data);
     } catch {
-      firebaseWriteFailed = true;
+      dbWriteFailed = true;
     }
   }
 
-  // Always attempt the Google Sheets forward, especially if Firebase write fails.
+  // Always attempt the Google Sheets forward, especially if DB write fails.
   const sheetsForward = await forwardToAppsScriptBackup(data);
 
-  if (firebaseWriteFailed) {
+  if (dbWriteFailed) {
     if (sheetsForward.ok) {
       return NextResponse.json({
         success: true,
@@ -318,7 +320,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "storage_failed",
-        firebase: "write_failed",
+        db: "write_failed",
         sheets: sheetsForward.configured ? "forward_failed" : "not_configured",
       },
       { status: 502 }

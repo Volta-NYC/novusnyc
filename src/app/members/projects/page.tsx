@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { Suspense, useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -701,7 +702,7 @@ function BusinessesPageInner() {
   }): Promise<{ lat: number; lng: number } | null> => {
     if (!user) return null;
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const res = await fetch("/api/members/bids/geocode", {
         method: "POST",
         headers: {
@@ -1199,7 +1200,7 @@ function BusinessesPageInner() {
     setProjectEmailSending(true);
     setProjectEmailStatus("Sending…");
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const formData = new FormData();
       formData.append("fromAddress", projectEmailFrom);
       formData.append("subject", projectEmailSubject.trim());

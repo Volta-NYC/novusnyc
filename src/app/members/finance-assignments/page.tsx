@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -300,7 +301,7 @@ export default function FinanceAssignmentsPage() {
     setLoadingAssignments(true);
     setLoadError(null);
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const res = await fetch("/api/members/finance-assignments", {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
@@ -609,7 +610,7 @@ export default function FinanceAssignmentsPage() {
     };
 
     if (!user) return;
-    const token = await user.getIdToken();
+    const token = await getAuthToken();
 
     if (editingAssignment) {
       await fetch("/api/members/finance-assignments", {
@@ -658,7 +659,7 @@ export default function FinanceAssignmentsPage() {
     const interviewDisplay = toDisplayStr(interviewDate);
     const finalDisplay = toDisplayStr(finalDate);
 
-    const token = await user.getIdToken();
+    const token = await getAuthToken();
     let successCount = 0;
     let errorCount = 0;
 
@@ -734,7 +735,7 @@ export default function FinanceAssignmentsPage() {
     if (!editingAssignment || !user) return;
     await ask(
       async () => {
-        const token = await user.getIdToken();
+        const token = await getAuthToken();
         await fetch(`/api/members/finance-assignments?id=${encodeURIComponent(editingAssignment.id)}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -749,7 +750,7 @@ export default function FinanceAssignmentsPage() {
   const handleQuickStatusChange = async (id: string, newStatus: FinanceAssignmentStatus) => {
     if (!user) return;
     setOpenStatusPopoverId(null);
-    const token = await user.getIdToken();
+    const token = await getAuthToken();
     await fetch("/api/members/finance-assignments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -842,7 +843,7 @@ export default function FinanceAssignmentsPage() {
     setEmailSending(true);
     setEmailStatus("Sending...");
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const formData = new FormData();
       formData.append("fromAddress", emailFrom);
       formData.append("subject", emailSubject.trim());

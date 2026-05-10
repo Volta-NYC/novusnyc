@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getAdminDB } from "@/lib/firebaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export type PublicShowcaseStatus = "Ongoing" | "Upcoming" | "Completed";
 export type PublicShowcaseColor =
@@ -68,33 +68,46 @@ export interface PublicLiveStats {
   bidPartners: number;
 }
 
-// Module-level cache so parallel calls within the same ISR revalidation
-// (e.g. getPublicShowcaseCards + getPublicLiveStats on the home page) share
-// a single Firebase read instead of downloading the full businesses node twice.
+// Module-level cache so parallel calls within the same ISR revalidation share
+// a single Supabase read instead of fetching the full businesses table twice.
 let businessesCache: {
   data: Record<string, Record<string, unknown>>;
   fetchedAt: number;
 } | null = null;
 const BUSINESSES_CACHE_TTL_MS = 60_000;
 
-async function fetchBusinesses(
-  db: NonNullable<ReturnType<typeof getAdminDB>>,
-): Promise<Record<string, Record<string, unknown>>> {
+async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>>> {
   const now = Date.now();
   if (businessesCache && now - businessesCache.fetchedAt < BUSINESSES_CACHE_TTL_MS) {
     return businessesCache.data;
   }
-  const snap = await db.ref("businesses").get();
-  const data = (snap.exists() ? snap.val() : {}) as Record<string, Record<string, unknown>>;
-  businessesCache = { data, fetchedAt: now };
-  return data;
+  const sb = getSupabaseAdmin();
+  const { data } = await sb.from("businesses").select("*");
+  const obj: Record<string, Record<string, unknown>> = {};
+  for (const row of data ?? []) {
+    const r = row as Record<string, unknown>;
+    const id = String(r.id ?? "");
+    if (!id) continue;
+    // Normalize snake_case keys to camelCase for the rest of the logic.
+    obj[id] = snakeToCamelRow(r);
+  }
+  businessesCache = { data: obj, fetchedAt: now };
+  return obj;
+}
+
+function snakeToCamelRow(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    const camel = k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+    out[camel] = v;
+  }
+  return out;
 }
 
 function resolvePublicShowcaseImageUrl(
   id: string,
   row: Record<string, unknown>,
 ): string {
-  // Prefer the new split-node flag; fall back to the legacy inline field.
   if (row.showcaseImageSet === true || asText(row.showcaseImageData)) {
     return `/api/showcase-image/${encodeURIComponent(id)}`;
   }
@@ -389,10 +402,7 @@ function hasService(services: string[], keywords: string[]): boolean {
 }
 
 export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
-  const db = getAdminDB();
-  if (!db) return [];
-
-  const rows = await fetchBusinesses(db);
+  const rows = await fetchBusinesses();
   if (Object.keys(rows).length === 0) return [];
   const explicitCards: PublicShowcaseCard[] = [];
   const fallbackCards: PublicShowcaseCard[] = [];
@@ -447,12 +457,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
 }
 
 export async function getPublicImpactStats(): Promise<PublicImpactStats> {
-  const db = getAdminDB();
-  if (!db) {
-    return { totalProjects: 0, websiteProjects: 0, socialMediaProjects: 0, seoProjects: 0, grantProjects: 0, financeProjects: 0 };
-  }
-
-  const rows = await fetchBusinesses(db);
+  const rows = await fetchBusinesses();
   if (Object.keys(rows).length === 0) {
     return { totalProjects: 0, websiteProjects: 0, socialMediaProjects: 0, seoProjects: 0, grantProjects: 0, financeProjects: 0 };
   }
@@ -486,39 +491,31 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
 }
 
 export async function getPublicLiveStats(): Promise<PublicLiveStats> {
-  const db = getAdminDB();
-  if (!db) {
-    return { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, caseStudies: 0, educationalReports: 0, bidPartners: 0 };
-  }
+  const sb = getSupabaseAdmin();
 
-  const [businessRows, financeSnap, bidsSnap] = await Promise.all([
-    fetchBusinesses(db),
-    db.ref("financeAssignments").get(),
-    db.ref("bids").get(),
+  const [businessRows, { data: financeRows }, { data: bidsRows }] = await Promise.all([
+    fetchBusinesses(),
+    sb.from("finance_assignments").select("type"),
+    sb.from("bids").select("id"),
   ]);
 
-  // Count total businesses (all statuses)
   let totalBusinesses = 0;
   const businesses: Array<{ id: string; name: string; projectTracks?: string[]; trackProjects?: Record<string, unknown> }> = [];
 
-  if (Object.keys(businessRows).length > 0) {
-    const rows = businessRows;
-    for (const [id, row] of Object.entries(rows)) {
-      const name = asText(row.showcaseName) || asText(row.name);
-      if (!name) continue;
-      totalBusinesses++;
-      businesses.push({
-        id,
-        name,
-        projectTracks: Array.isArray(row.projectTracks) ? row.projectTracks as string[] : undefined,
-        trackProjects: typeof row.trackProjects === "object" && row.trackProjects !== null
-          ? row.trackProjects as Record<string, unknown>
-          : undefined,
-      });
-    }
+  for (const [id, row] of Object.entries(businessRows)) {
+    const name = asText(row.showcaseName) || asText(row.name);
+    if (!name) continue;
+    totalBusinesses++;
+    businesses.push({
+      id,
+      name,
+      projectTracks: Array.isArray(row.projectTracks) ? row.projectTracks as string[] : undefined,
+      trackProjects: typeof row.trackProjects === "object" && row.trackProjects !== null
+        ? row.trackProjects as Record<string, unknown>
+        : undefined,
+    });
   }
 
-  // Count W# and M# from business tracks (same logic as computeGlobalCodes)
   let wCount = 0;
   let mCount = 0;
 
@@ -531,157 +528,143 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
     );
 
     if (allTracks.length === 0) {
-      // Legacy no-track → W
       wCount++;
     } else {
       for (const track of allTracks) {
         if (track === "Marketing") mCount++;
-        else wCount++; // Tech and Finance both get W
+        else wCount++;
       }
     }
   }
 
-  // Count C# and R# from finance assignments
   let caseStudies = 0;
   let educationalReports = 0;
-
-  if (financeSnap.exists()) {
-    const assignments = financeSnap.val() as Record<string, Record<string, unknown>>;
-    for (const [, row] of Object.entries(assignments)) {
-      const type = asText(row.type);
-      if (type === "Case Study") caseStudies++;
-      else if (type === "Report") educationalReports++;
-    }
+  for (const row of financeRows ?? []) {
+    const r = row as Record<string, unknown>;
+    if (r.type === "Case Study") caseStudies++;
+    else if (r.type === "Report") educationalReports++;
   }
 
-  // Count BID partners
-  let bidPartners = 0;
-  if (bidsSnap.exists()) {
-    const bids = bidsSnap.val() as Record<string, Record<string, unknown>>;
-    bidPartners = Object.keys(bids).length;
-  }
+  const bidPartners = bidsRows?.length ?? 0;
 
   return { totalBusinesses, websiteProjects: wCount, marketingProjects: mCount, caseStudies, educationalReports, bidPartners };
 }
 
 export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
-  const db = getAdminDB();
-  if (!db) return [];
+  const sb = getSupabaseAdmin();
 
-  const [businessRows, bidsSnap] = await Promise.all([
-    fetchBusinesses(db),
-    db.ref("bids").get(),
+  const [businessRows, { data: bidsRows }] = await Promise.all([
+    fetchBusinesses(),
+    sb.from("bids").select("*"),
   ]);
 
   const entries: PublicMapEntry[] = [];
   const businessGeocodeWrites: Array<{ id: string; lat: number; lng: number }> = [];
   const businessesMissingCoords: Array<{ id: string; address: string; borough: string; entry: PublicMapEntry }> = [];
 
-  if (Object.keys(businessRows).length > 0) {
-    const businesses = businessRows;
-    for (const [id, row] of Object.entries(businesses)) {
-      const name = asText(row.showcaseName) || asText(row.name);
-      if (!name) continue;
+  for (const [id, row] of Object.entries(businessRows)) {
+    const name = asText(row.showcaseName) || asText(row.name);
+    if (!name) continue;
 
-      const division = inferDivision(row.division, row);
-      const type = divisionLabel(division);
-      const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
-      const services = asStringArray(row.showcaseServices);
-      const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
-      const status = mapBusinessStatusToShowcase(row.projectStatus);
-      const url = asText(row.showcaseUrl);
-      const color = asText(row.showcaseColor)
-        ? normalizeColor(row.showcaseColor)
-        : defaultShowcaseColor();
-      const address = asText(row.address);
-      const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(row.showcaseNeighborhood, row));
-      const lat = asNumber(row.lat);
-      const lng = asNumber(row.lng);
+    const division = inferDivision(row.division, row);
+    const type = divisionLabel(division);
+    const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
+    const services = asStringArray(row.showcaseServices);
+    const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
+    const status = mapBusinessStatusToShowcase(row.projectStatus);
+    const url = asText(row.showcaseUrl);
+    const color = asText(row.showcaseColor)
+      ? normalizeColor(row.showcaseColor)
+      : defaultShowcaseColor();
+    const address = asText(row.address);
+    const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(row.showcaseNeighborhood, row));
+    const lat = asNumber(row.lat);
+    const lng = asNumber(row.lng);
 
-      const entry: PublicMapEntry = {
-        id: `business:${id}`,
-        name,
-        type,
-        neighborhood,
-        borough: borough || undefined,
-        lat: lat ?? undefined,
-        lng: lng ?? undefined,
-        services: mergedServices,
-        status,
-        color,
-        url: url || undefined,
-        source: "business",
-      };
+    const entry: PublicMapEntry = {
+      id: `business:${id}`,
+      name,
+      type,
+      neighborhood,
+      borough: borough || undefined,
+      lat: lat ?? undefined,
+      lng: lng ?? undefined,
+      services: mergedServices,
+      status,
+      color,
+      url: url || undefined,
+      source: "business",
+    };
 
-      if ((lat == null || lng == null) && address) {
-        businessesMissingCoords.push({ id, address, borough, entry });
-      }
-
-      entries.push(entry);
+    if ((lat == null || lng == null) && address) {
+      businessesMissingCoords.push({ id, address, borough, entry });
     }
 
-    if (businessesMissingCoords.length > 0) {
-      const geocoded = await mapWithConcurrency(
-        businessesMissingCoords,
-        6,
-        async ({ id, address, borough, entry }) => {
-          const result = await geocodeBusinessAddress(address, borough);
-          if (result) {
-            entry.lat = result.lat;
-            entry.lng = result.lng;
-            return { id, lat: result.lat, lng: result.lng };
-          }
-          return null;
-        },
-      );
+    entries.push(entry);
+  }
 
-      for (const item of geocoded) {
-        if (item) businessGeocodeWrites.push(item);
-      }
-    }
+  if (businessesMissingCoords.length > 0) {
+    const geocoded = await mapWithConcurrency(
+      businessesMissingCoords,
+      6,
+      async ({ id, address, borough, entry }) => {
+        const result = await geocodeBusinessAddress(address, borough);
+        if (result) {
+          entry.lat = result.lat;
+          entry.lng = result.lng;
+          return { id, lat: result.lat, lng: result.lng };
+        }
+        return null;
+      },
+    );
 
-    if (businessGeocodeWrites.length > 0) {
-      await Promise.allSettled(
-        businessGeocodeWrites.map(({ id, lat, lng }) =>
-          db.ref(`businesses/${id}`).update({
-            lat,
-            lng,
-            updatedAt: new Date().toISOString(),
-          }),
-        ),
-      );
+    for (const item of geocoded) {
+      if (item) businessGeocodeWrites.push(item);
     }
   }
 
-  if (bidsSnap.exists()) {
-    const bids = bidsSnap.val() as Record<string, Record<string, unknown>>;
-    for (const [id, row] of Object.entries(bids)) {
-      const name = asText(row.name);
-      if (!name) continue;
+  if (businessGeocodeWrites.length > 0) {
+    await Promise.allSettled(
+      businessGeocodeWrites.map(({ id, lat, lng }) =>
+        sb.from("businesses").update({
+          lat,
+          lng,
+          updated_at: new Date().toISOString(),
+        }).eq("id", id),
+      ),
+    );
+    // Bust the cache so next call picks up the new coords.
+    businessesCache = null;
+  }
 
-      const borough = normalizeBoroughName(asText(row.borough));
-      const address = asText(row.address);
-      const zipCode = asText(row.zipCode ?? row.zipcode ?? row.zip);
-      const locationLabel = [address, zipCode].filter(Boolean).join(" · ");
-      const lat = asNumber(row.lat);
-      const lng = asNumber(row.lng);
-      const status = mapBidStatusToShowcase(row.status);
-      const services = asStringArray(row.services);
+  for (const rawBid of bidsRows ?? []) {
+    const row = rawBid as Record<string, unknown>;
+    const name = asText(row.name);
+    if (!name) continue;
 
-      entries.push({
-        id: `bid:${id}`,
-        name,
-        type: asText(row.type) || "BID",
-        neighborhood: locationLabel || borough || "Location TBD",
-        borough: borough || undefined,
-        lat: lat ?? undefined,
-        lng: lng ?? undefined,
-        services: services.length > 0 ? services : ["BID"],
-        status,
-        color: "blue-mid",
-        source: "bid",
-      });
-    }
+    const id = String(row.id ?? "");
+    const borough = normalizeBoroughName(asText(row.borough));
+    const address = asText(row.address);
+    const zipCode = asText(row.zipCode ?? row.zipcode ?? row.zip);
+    const locationLabel = [address, zipCode].filter(Boolean).join(" · ");
+    const lat = asNumber(row.lat);
+    const lng = asNumber(row.lng);
+    const status = mapBidStatusToShowcase(row.status);
+    const services = asStringArray(row.services);
+
+    entries.push({
+      id: `bid:${id}`,
+      name,
+      type: asText(row.type) || "BID",
+      neighborhood: locationLabel || borough || "Location TBD",
+      borough: borough || undefined,
+      lat: lat ?? undefined,
+      lng: lng ?? undefined,
+      services: services.length > 0 ? services : ["BID"],
+      status,
+      color: "blue-mid",
+      source: "bid",
+    });
   }
 
   return entries.sort(compareMapEntries);

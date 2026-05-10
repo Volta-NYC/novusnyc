@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useState, useEffect, useCallback } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -86,7 +87,7 @@ function AccessCodesTab({ uid }: { uid: string }) {
   const ensureRotatingInviteCode = useCallback(async () => {
     if (!user) return;
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       await fetch("/api/members/admin/ensure-rotating-invite", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -274,7 +275,7 @@ function DataTab() {
     setRevalidating(true);
     setStatusMessage("");
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const res = await fetch("/api/members/admin/revalidate", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -302,7 +303,7 @@ function DataTab() {
 
     setStatusMessage("Exporting…");
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const query = sections && sections.length > 0
         ? `?sections=${encodeURIComponent(sections.join(","))}`
         : "";
@@ -478,7 +479,7 @@ function AdminContent() {
         ))}
       </div>
 
-      {activeTab === "codes" && <AccessCodesTab uid={user?.uid ?? ""} />}
+      {activeTab === "codes" && <AccessCodesTab uid={user?.id ?? ""} />}
       {activeTab === "users" && <UsersTab />}
       {activeTab === "data"  && <DataTab />}
     </>

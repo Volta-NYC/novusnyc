@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -321,7 +322,7 @@ export default function MemberEmailPage() {
     setSeededSystemTemplates(true);
     void (async () => {
       const existingKeys = new Set(templates.map((t) => t.key));
-      const updatedBy = user.email || user.uid || "system";
+      const updatedBy = user.email || user.id || "system";
       for (const def of SYSTEM_TEMPLATE_SEEDS) {
         if (existingKeys.has(def.key)) continue;
         try {
@@ -369,7 +370,7 @@ export default function MemberEmailPage() {
     const label = saveModalLabel.trim();
     if (!label) return;
     if (!user) return;
-    const updatedBy = user.email || user.uid || "admin";
+    const updatedBy = user.email || user.id || "admin";
     // Custom keys are namespaced so they never collide with system templates.
     const key = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await createEmailTemplate({
@@ -388,7 +389,7 @@ export default function MemberEmailPage() {
 
   const saveChangesToLoaded = async () => {
     if (!loadedTemplate || !user) return;
-    const updatedBy = user.email || user.uid || "admin";
+    const updatedBy = user.email || user.id || "admin";
     await updateEmailTemplate(loadedTemplate.id, {
       subject,
       body: message,
@@ -667,7 +668,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
     setSending(true);
     setStatus("Sending…");
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const formData = new FormData();
       formData.append("fromAddress", fromAddress);
       formData.append("subject", subject.trim());

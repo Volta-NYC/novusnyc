@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
-import { getAdminDB } from "@/lib/firebaseAdmin";
+import { dbRead, dbPatch, dbPush } from "@/lib/supabaseAdmin";
 import {
   pickPrimaryTrack,
   suggestTeamForTrack,
@@ -25,9 +25,6 @@ export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["admin"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
-  const db = getAdminDB();
-  if (!db) return NextResponse.json({ error: "admin_not_configured" }, { status: 500 });
-
   const body = (await req.json().catch(() => ({}))) as PromoteBody;
   const fullName = (body.fullName ?? "").trim();
   const email = normalize(body.email ?? "");
@@ -40,8 +37,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  const teamSnap = await db.ref("team").get();
-  const team = (teamSnap.exists() ? (teamSnap.val() as Record<string, Record<string, unknown>>) : {}) ?? {};
+  const teamData = await dbRead("team");
+  const team = (teamData ?? {}) as Record<string, Record<string, unknown>>;
   const suggestedPod = suggestTeamForTrack(track, team);
   let targetId = "";
 
@@ -87,12 +84,11 @@ export async function POST(req: NextRequest) {
     }
     patch.role = role;
     if (!String(existing.notes ?? "").trim()) patch.notes = "Synced from accepted applicant";
-    if (Object.keys(patch).length > 0) await db.ref(`team/${targetId}`).update(patch);
+    if (Object.keys(patch).length > 0) await dbPatch(`team/${targetId}`, patch);
     return NextResponse.json({ success: true, action: "updated", memberId: targetId });
   }
 
-  const newRef = db.ref("team").push();
-  await newRef.set({
+  const memberId = await dbPush("team", {
     name: fullName,
     school: schoolName,
     grade,
@@ -110,5 +106,5 @@ export async function POST(req: NextRequest) {
     createdAt: nowIso,
   });
 
-  return NextResponse.json({ success: true, action: "created", memberId: newRef.key });
+  return NextResponse.json({ success: true, action: "created", memberId });
 }

@@ -4,50 +4,52 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { updateProfile } from "firebase/auth";
-import { signUp } from "@/lib/members/firebaseAuth";
-import {
-  getInviteCodeByValue, setUserProfileRecord, type AuthRole,
-} from "@/lib/members/storage";
-import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
-
-const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
-
-function isInviteCodeExpired(expiresAt: string): boolean {
-  const raw = expiresAt.trim().toLowerCase();
-  if (raw === "never") return false;
-  const t = new Date(expiresAt).getTime();
-  if (Number.isNaN(t)) return true;
-  return t < Date.now();
-}
-
-function getInviteCodeFromUrl(): string {
-  if (typeof window === "undefined") return "";
-  const params = new URLSearchParams(window.location.search);
-  const raw =
-    params.get("code")
-    || params.get("accessCode")
-    || params.get("access_key")
-    || "";
-  return raw.trim().toUpperCase();
-}
+import { supabase } from "@/lib/supabaseClient";
 
 export default function SignupPage() {
-  const [code, setCode] = useState(() => getInviteCodeFromUrl());
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [school, setSchool] = useState("");
-  const [grade, setGrade] = useState("");
+  const [name, setName]         = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [confirm, setConfirm]   = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [ready, setReady]       = useState(false);   // true once invite session detected
+  const [invalid, setInvalid]   = useState(false);   // true if no valid invite in URL
   const router = useRouter();
 
+  // Supabase automatically exchanges the invite token in the URL hash for a session.
+  // We wait for the SIGNED_IN event to confirm the invite was valid.
   useEffect(() => {
-    const normalized = getInviteCodeFromUrl();
-    if (!normalized) return;
-    setCode(normalized);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        // Pre-fill name from user metadata if the invite included it.
+        const metaName = session.user.user_metadata?.full_name as string | undefined;
+        if (metaName) setName(metaName);
+        setReady(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        const metaName = session.user.user_metadata?.full_name as string | undefined;
+        if (metaName) setName(metaName);
+        setReady(true);
+      }
+      if (event === "INITIAL_SESSION" && !session) {
+        setInvalid(true);
+      }
+    });
+
+    // If no auth event fires within 3 s, the URL had no invite token.
+    const timer = setTimeout(() => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) setInvalid(true);
+      });
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,160 +57,87 @@ export default function SignupPage() {
     setError("");
 
     if (password !== confirm) { setError("Passwords do not match."); return; }
-    if (password.length < 6)  { setError("Password must be at least 6 characters."); return; }
-    if (!school.trim())       { setError("Please enter your school."); return; }
-    if (!grade.trim())        { setError("Please select your grade."); return; }
+    if (password.length < 8)  { setError("Password must be at least 8 characters."); return; }
 
     setLoading(true);
-    const normalizedCode = code.trim().toUpperCase();
-
-    // ── Abuse guard (IP/email/code) ───────────────────────────────────────────
     try {
-      const guard = await fetch("/api/members/signup-guard", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          code: normalizedCode,
-        }),
+      // Set the member's password (they were already signed in by the invite link).
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password,
+        data: { full_name: name.trim() },
       });
-      if (!guard.ok) {
-        if (guard.status === 429) setError("Too many signup attempts. Please try again later.");
-        else setError("Could not verify signup request. Please try again.");
-        setLoading(false);
-        return;
-      }
-    } catch {
-      setError("Could not verify signup request. Please try again.");
-      setLoading(false);
-      return;
-    }
+      if (updateErr) throw updateErr;
 
-    // ── Step 1: Validate invite code ──────────────────────────────────────────
-    // Reads the specific code directly (inviteCodes/{code}) so the signup page
-    // can verify without needing auth to list the entire inviteCodes collection.
-    let inviteRole: AuthRole = "member";
-    try {
-      const invite = await getInviteCodeByValue(normalizedCode);
-      if (!invite)                                   { setError("Invalid invite code."); setLoading(false); return; }
-      if (invite.active === false)                   { setError("This invite code is inactive."); setLoading(false); return; }
-      if (isInviteCodeExpired(invite.expiresAt))      { setError("This invite code has expired."); setLoading(false); return; }
-      const isSingleUse = invite.multiUse === false;
-      const signupCount = Number(invite.signupCount);
-      if (isSingleUse && (
-        invite.used
-        || (Number.isFinite(signupCount) && signupCount > 0)
-      )) {
-        setError("This invite code has already been used.");
-        setLoading(false);
-        return;
-      }
-      inviteRole = invite.role ?? "member";
-    } catch {
-      setError("Could not verify invite code. Please try again or contact an admin.");
-      setLoading(false);
-      return;
-    }
+      // Get the fresh session token after the password update.
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("no_session");
 
-    // ── Step 2: Create Firebase Auth account ──────────────────────────────────
-    let uid: string;
-    let idToken = "";
-    try {
-      const cred = await signUp(email.trim().toLowerCase(), password);
-      uid = cred.user.uid;
-      if (name.trim()) {
-        await updateProfile(cred.user, { displayName: name.trim() });
-      }
-      idToken = await cred.user.getIdToken();
+      // Link auth_uid to the matching team row.
+      await fetch("/api/members/signup/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+
+      router.replace("/members");
     } catch (err: unknown) {
-      const errCode = (err as { code?: string })?.code;
-      if (errCode === "auth/email-already-in-use")  setError("An account with this email already exists. Sign in instead.");
-      else if (errCode === "auth/invalid-email")     setError("Please enter a valid email address.");
-      else if (errCode === "auth/operation-not-allowed") setError("Email/password sign-up is not enabled. Contact an admin.");
-      else if (errCode === "auth/weak-password")     setError("Password is too weak. Use at least 6 characters.");
-      else                                           setError("Account creation failed. Please try again.");
+      const msg = (err as { message?: string })?.message ?? "";
+      if (msg.includes("weak") || msg.includes("Password should be")) {
+        setError("Password is too weak. Use at least 8 characters.");
+      } else if (msg.includes("expired") || msg.includes("invalid")) {
+        setError("Your invite link has expired. Contact an admin for a new one.");
+      } else {
+        setError("Account setup failed. Please try again or contact an admin.");
+      }
       setLoading(false);
-      return;
     }
-
-    // ── Step 3: Write user profile ────────────────────────────────────────────
-    // Non-fatal: if this fails (e.g. DB rules), authContext will create a default
-    // "member" profile on first login. Admin can then manually set the correct role.
-    try {
-      await setUserProfileRecord(uid, {
-        email:     email.trim().toLowerCase(),
-        authRole:  inviteRole,
-        name:      name.trim(),
-        school:    school.trim(),
-        grade:     grade.trim(),
-        active:    true,
-        createdAt: new Date().toISOString(),
-      });
-    } catch { /* non-fatal */ }
-
-    // ── Step 3b: Sync into team directory (name/email/school/grade) ─────────
-    // Uses a server route with Admin SDK so regular members don't need write
-    // access to the team collection in database rules.
-    try {
-      await fetch("/api/members/sync-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          school: school.trim(),
-          grade: grade.trim(),
-        }),
-      });
-    } catch { /* non-fatal */ }
-
-    // ── Step 4: Track invite code usage ───────────────────────────────────────
-    // Non-fatal: account creation should still complete even if usage analytics
-    // cannot be written (e.g. temporary network/server issue).
-    try {
-      await fetch("/api/members/signup/redeem-invite", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          code: normalizedCode,
-          email: email.trim().toLowerCase(),
-        }),
-      });
-    } catch { /* non-fatal */ }
-
-    router.replace("/members");
   };
+
+  // Still waiting to detect invite session.
+  if (!ready && !invalid) {
+    return (
+      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // No invite token found — show guidance.
+  if (invalid) {
+    return (
+      <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm text-center">
+          <Image src="/logo.png" alt="Volta" width={48} height={48} className="object-contain mb-6 mx-auto" />
+          <h1 className="font-display font-bold text-white text-2xl mb-3">Invalid Invite</h1>
+          <p className="text-white/50 text-sm mb-6">
+            This link is invalid or has expired. Use the personal invite link from your
+            acceptance email, or contact an admin for a new one.
+          </p>
+          <Link
+            href="/members/login"
+            className="text-[#85CC17]/70 hover:text-[#85CC17] text-sm transition-colors"
+          >
+            Already have an account? Sign in →
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Volta" width={48} height={48} className="object-contain mb-4" />
-          <h1 className="font-display font-bold text-white text-2xl">Create Account</h1>
-          <p className="text-white/40 text-sm mt-1">You need an invite code to join.</p>
+          <h1 className="font-display font-bold text-white text-2xl">Set Up Your Account</h1>
+          <p className="text-white/40 text-sm mt-1">Welcome to the Volta member portal.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-              Invite Code
-            </label>
-            <input
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors font-mono uppercase tracking-widest"
-              placeholder="VOLTA-XXXXXX"
-              autoFocus
-            />
-          </div>
-
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Full Name
@@ -219,52 +148,8 @@ export default function SignupPage() {
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
               placeholder="Your full name"
+              autoFocus
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
-              placeholder="you@email.com"
-              autoComplete="email"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-              School
-            </label>
-            <input
-              required
-              value={school}
-              onChange={(e) => setSchool(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
-              placeholder="School name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-              High School Class Year
-            </label>
-            <select
-              required
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors"
-            >
-              <option value="">Select class year</option>
-              {GRADE_OPTIONS.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
           </div>
 
           <div>
@@ -277,7 +162,7 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
-              placeholder="Min. 6 characters"
+              placeholder="Min. 8 characters"
               autoComplete="new-password"
             />
           </div>
@@ -308,7 +193,7 @@ export default function SignupPage() {
             disabled={loading}
             className="w-full bg-[#85CC17] text-[#0D0D0D] font-display font-bold py-3 rounded-xl hover:bg-[#72b314] transition-colors disabled:opacity-60"
           >
-            {loading ? "Creating account…" : "Create Account"}
+            {loading ? "Setting up…" : "Complete Setup"}
           </button>
         </form>
 

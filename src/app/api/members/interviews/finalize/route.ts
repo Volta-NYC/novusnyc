@@ -6,9 +6,8 @@ import {
   getDefaultReplyToAddress,
   resolveFromWithName,
 } from "@/lib/server/smtp";
-import { getAdminDB } from "@/lib/firebaseAdmin";
 import { buildAcceptanceTemplate } from "@/lib/server/applicantEmails";
-import { getOrCreateRotatingInviteLink } from "@/lib/server/inviteCodes";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   pickPrimaryTrack,
   suggestTeamForTrack,
@@ -68,9 +67,7 @@ async function sendAcceptanceEmail(input: {
   notes?: string;
   role: string;
   tracks?: string;
-  createdByUid: string;
   baseUrl: string;
-  idToken: string;
 }) {
   const allowedFrom = Array.from(
     new Set(
@@ -85,17 +82,22 @@ async function sendAcceptanceEmail(input: {
   if (!from || !allowedFrom.includes(from)) return;
   const transporter = createTransportForFrom(from).transporter;
   const replyTo = getDefaultReplyToAddress(from);
-  const rotatingInvite = await getOrCreateRotatingInviteLink({
-    role: "member",
-    createdBy: input.createdByUid,
-    baseUrl: input.baseUrl,
-    idToken: input.idToken,
+
+  // Generate a unique, one-time Supabase invite link for this applicant.
+  // We use generateLink (not inviteUserByEmail) so Volta controls the email content.
+  const sb = getSupabaseAdmin();
+  const { data: linkData } = await sb.auth.admin.generateLink({
+    type: "invite",
+    email: input.to,
+    options: { redirectTo: `${input.baseUrl}/members/signup` },
   });
+  const signupLink = linkData?.properties?.action_link ?? `${input.baseUrl}/members/signup`;
+
   const tpl = buildAcceptanceTemplate({
     name: input.applicantName,
     role: input.role,
     tracks: input.tracks ?? "",
-    signupLink: rotatingInvite.link,
+    signupLink,
   });
   await transporter.sendMail({
     from: resolveFromWithName(from),
@@ -162,30 +164,7 @@ async function upsertTeamMember(params: {
     return targetId;
   }
 
-  const adminDb = getAdminDB();
-  if (!adminDb) {
-    await dbPush("team", {
-      name: params.fullName,
-      school: params.schoolName ?? "",
-      grade: params.grade ?? "",
-      divisions: trackToDivisions(track),
-      pod: suggestedPod,
-      role: params.role,
-      slackHandle: "",
-      email: emailKey,
-      alternateEmail: "",
-      status: "Active",
-      skills: [],
-      joinDate: nowIso.slice(0, 10),
-      acceptedDate: nowIso.slice(0, 10),
-      notes: "Synced from interviewed applicant",
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    }, params.idToken);
-    return "";
-  }
-  const newRef = adminDb.ref("team").push();
-  await newRef.set({
+  const newId = await dbPush("team", {
     name: params.fullName,
     school: params.schoolName ?? "",
     grade: params.grade ?? "",
@@ -202,8 +181,8 @@ async function upsertTeamMember(params: {
     notes: "Synced from interviewed applicant",
     createdAt: nowIso,
     updatedAt: nowIso,
-  });
-  return newRef.key ?? "";
+  }, params.idToken);
+  return newId;
 }
 
 export async function POST(req: NextRequest) {
@@ -270,13 +249,7 @@ export async function POST(req: NextRequest) {
       tracks = String(target.row.tracksSelected ?? "").trim();
     } else {
       const createdAt = new Date().toISOString();
-      const adminDb = getAdminDB();
-      if (!adminDb) {
-        failed.push(slotId);
-        continue;
-      }
-      const newRef = adminDb.ref("applications").push();
-      await newRef.set({
+      appId = await dbPush("applications", {
         fullName,
         email,
         schoolName: "",
@@ -295,8 +268,7 @@ export async function POST(req: NextRequest) {
         source: "manual",
         createdAt,
         updatedAt: createdAt,
-      });
-      appId = newRef.key ?? "";
+      }, verified.caller.idToken);
     }
 
     if (!appId || !email) {
@@ -333,9 +305,7 @@ export async function POST(req: NextRequest) {
           notes,
           role: teamRole,
           tracks,
-          createdByUid: verified.caller.uid,
           baseUrl,
-          idToken: verified.caller.idToken,
         });
       } catch {
         // continue pipeline even if email fails

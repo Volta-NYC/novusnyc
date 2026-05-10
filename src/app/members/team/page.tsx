@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -410,7 +411,7 @@ export default function TeamPage() {
     sweepRanRef.current = true;
     void (async () => {
       try {
-        const idToken = await user.getIdToken();
+        const idToken = await getAuthToken();
         await runCycleSweep({
           team,
           cycles,
@@ -499,7 +500,7 @@ export default function TeamPage() {
 
     const loadAssignments = async () => {
       try {
-        const token = await user.getIdToken();
+        const token = await getAuthToken();
         const res = await fetch("/api/members/finance-assignments", {
           cache: "no-store",
           headers: { Authorization: `Bearer ${token}` },
@@ -1777,7 +1778,7 @@ export default function TeamPage() {
       {drawerMember && (
         <MemberDrawer
           member={drawerMember}
-          reviewerLabel={user?.email || user?.uid || "admin"}
+          reviewerLabel={user?.email || user?.id || "admin"}
           onClose={() => setDrawerMember(null)}
         />
       )}

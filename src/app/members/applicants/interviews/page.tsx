@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -393,7 +394,7 @@ function InterviewsContent() {
     evalCleanupTriggeredRef.current = true;
     void (async () => {
       try {
-        const token = await user.getIdToken();
+        const token = await getAuthToken();
         await fetch("/api/members/interviews/cleanup-evaluations", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -416,7 +417,7 @@ function InterviewsContent() {
     let cancelled = false;
     const load = async () => {
       try {
-        const token = await user.getIdToken();
+        const token = await getAuthToken();
         const res = await fetch("/api/members/applicants/list", {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
@@ -475,7 +476,7 @@ function InterviewsContent() {
   }, []);
 
   useEffect(() => {
-    if (!canAccessInterviews || !user?.uid) return;
+    if (!canAccessInterviews || !user?.id) return;
     if (recurringSyncInFlightRef.current) return;
 
     const nowTs = Date.now();
@@ -520,7 +521,7 @@ function InterviewsContent() {
             recurringWeekly: true,
             recurringSeriesId: template.recurringSeriesId,
             location: template.location ?? "",
-            createdBy: user.uid,
+            createdBy: user.id,
             createdAt: Date.now(),
           });
         }
@@ -541,7 +542,7 @@ function InterviewsContent() {
         recurringSyncInFlightRef.current = false;
       }
     })();
-  }, [canAccessInterviews, slots, user?.uid, windowAnchor]);
+  }, [canAccessInterviews, slots, user?.id, windowAnchor]);
 
   const saveZoomSettings = async () => {
     if (!canEditZoom) return;
@@ -549,7 +550,7 @@ function InterviewsContent() {
     setZoomSaveMessage(null);
     const trimmedZoom = zoomLinkInput.trim();
     try {
-      const token = await user?.getIdToken();
+      const token = await getAuthToken();
       if (!token) {
         throw new Error("not_authenticated");
       }
@@ -562,7 +563,7 @@ function InterviewsContent() {
         },
         body: JSON.stringify({
           zoomLink: trimmedZoom,
-          updatedBy: user?.uid ?? "",
+          updatedBy: user?.id ?? "",
         }),
         cache: "no-store",
       });
@@ -595,7 +596,7 @@ function InterviewsContent() {
           zoomLink: trimmedZoom,
           zoomEnabled: true,
           updatedAt: Date.now(),
-          updatedBy: user?.uid ?? "",
+          updatedBy: user?.id ?? "",
         });
         setEffectiveZoomLink(trimmedZoom || DEFAULT_INTERVIEW_ZOOM_LINK);
         setZoomLinkInput(trimmedZoom || DEFAULT_INTERVIEW_ZOOM_LINK);
@@ -656,7 +657,7 @@ function InterviewsContent() {
     if (!user) return [] as string[];
     const email = normalizeString(user.email ?? "");
     const canonical = canonicalEmail(user.email ?? "");
-    const displayName = normalizeName(user.displayName ?? "");
+    const displayName = normalizeName(user.user_metadata?.full_name ?? "");
     return teamMembers
       .filter((member) => {
         const memberEmail = normalizeString(member.email ?? "");
@@ -884,7 +885,7 @@ function InterviewsContent() {
     setRescheduling(true);
     setRescheduleMessage(null);
     try {
-      const token = await user?.getIdToken();
+      const token = await getAuthToken();
       if (!token) {
         setRescheduleMessage("Could not reschedule: not authenticated.");
         return;
@@ -938,7 +939,7 @@ function InterviewsContent() {
     setSavingEvaluation(true);
     setEvaluationMessage(null);
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const res = await fetch("/api/members/interviews/evaluate", {
         method: "POST",
         headers: {
@@ -972,7 +973,7 @@ function InterviewsContent() {
       setSavingEvaluation(true);
       setEvaluationMessage(null);
       try {
-        const token = await user.getIdToken();
+        const token = await getAuthToken();
         const res = await fetch("/api/members/interviews/evaluate", {
           method: "POST",
           headers: {
@@ -1001,7 +1002,7 @@ function InterviewsContent() {
     if (!user) return;
     ask(async () => {
       try {
-        const token = await user.getIdToken();
+        const token = await getAuthToken();
         await fetch("/api/members/interviews/update", {
           method: "POST",
           headers: {
@@ -1023,7 +1024,7 @@ function InterviewsContent() {
     if (!finalizeSlot || !user) return;
     setFinalizing(true);
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const res = await fetch("/api/members/interviews/finalize", {
         method: "POST",
         headers: {
@@ -1124,7 +1125,7 @@ function InterviewsContent() {
             recurringWeekly: true,
             recurringSeriesId: seriesId,
             location: slot.location ?? "",
-            createdBy: user?.uid ?? "",
+            createdBy: user?.id ?? "",
             createdAt: Date.now(),
           });
           created += 1;
@@ -1236,7 +1237,7 @@ function InterviewsContent() {
       interviewerMemberIds: interviewerIds,
       recurringWeekly: !!recurring?.enabled,
       recurringSeriesId: recurring?.enabled ? (recurring.seriesId || buildRecurringSeriesId()) : undefined,
-      createdBy: user?.uid ?? "",
+      createdBy: user?.id ?? "",
       createdAt: Date.now(),
     });
   };

@@ -1,4 +1,5 @@
 "use client";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -211,7 +212,7 @@ export default function ApplicantsPage() {
     if (!user) return [] as string[];
     const email = normalize(user.email ?? "");
     const canonical = canonicalEmail(user.email ?? "");
-    const displayName = normalizeName(user.displayName ?? "");
+    const displayName = normalizeName(user.user_metadata?.full_name ?? "");
     return teamMembers
       .filter((member) => {
         const memberEmail = normalize(member.email ?? "");
@@ -233,7 +234,7 @@ export default function ApplicantsPage() {
     }
     setLoadingData(true);
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
       const res = await fetch("/api/members/applicants/list", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -388,7 +389,7 @@ export default function ApplicantsPage() {
 
   const updateApplicantServer = async (id: string, patch: Record<string, unknown>) => {
     if (!user) throw new Error("not_authenticated");
-    const token = await user.getIdToken();
+    const token = await getAuthToken();
     const res = await fetch("/api/members/applicants/update", {
       method: "POST",
       headers: {
@@ -409,7 +410,7 @@ export default function ApplicantsPage() {
     allowAlreadyInvited = false
   ) => {
     if (!user || ids.length === 0) return { sent: 0, skipped: 0, failed: 0 };
-    const token = await user.getIdToken();
+    const token = await getAuthToken();
     if (!token) return { sent: 0, skipped: 0, failed: ids.length };
     const response = await fetch("/api/members/applicants/interview-invite-email", {
       method: "POST",
@@ -487,7 +488,7 @@ export default function ApplicantsPage() {
 
   const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, role: string) => {
     if (!user) throw new Error("not_authenticated");
-    const token = await user.getIdToken();
+    const token = await getAuthToken();
     await updateApplicantServer(app.id, {
       status: "Accepted",
       finalDecisionRole: role,
@@ -600,7 +601,7 @@ export default function ApplicantsPage() {
 
   const deleteApplicant = async (app: ApplicationRecord) => {
     if (!user || !canDelete) return;
-    const token = await user.getIdToken();
+    const token = await getAuthToken();
     const res = await fetch("/api/members/applicants/delete", {
       method: "POST",
       headers: {

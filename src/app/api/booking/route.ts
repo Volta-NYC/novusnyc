@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDB } from "@/lib/firebaseAdmin";
+import {
+  dbRead as sbRead,
+  dbPatch as sbPatch,
+  writeAuditLog as sbWriteAuditLog,
+} from "@/lib/supabaseAdmin";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 import { formatInterviewInET, toInterviewTimestamp } from "@/lib/interviews/datetime";
 import { pickIcsOrganizer, resolveInterviewerContacts } from "@/lib/server/interviewerResolver";
@@ -20,51 +24,12 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
 
-const DB_URL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL ?? "";
-
 async function dbGet(path: string): Promise<unknown> {
-  const db = getAdminDB();
-  if (db) {
-    const snap = await db.ref(path).get();
-    return snap.exists() ? snap.val() : null;
-  }
-  if (!DB_URL) return null;
-  const res = await fetch(`${DB_URL}/${path}.json`, { cache: "no-store" });
-  if (!res.ok || res.status === 404) return null;
-  const data = await res.json() as unknown;
-  return data ?? null;
+  return sbRead(path);
 }
 
 async function dbPatch(path: string, data: Record<string, unknown>): Promise<void> {
-  const db = getAdminDB();
-  if (db) {
-    await db.ref(path).update(data);
-    return;
-  }
-  if (!DB_URL) throw new Error("no_db");
-  const res = await fetch(`${DB_URL}/${path}.json`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("db_write_failed");
-}
-
-async function dbPush(path: string, data: Record<string, unknown>): Promise<void> {
-  const db = getAdminDB();
-  if (db) {
-    await db.ref(path).push(data);
-    return;
-  }
-  if (!DB_URL) throw new Error("no_db");
-  const res = await fetch(`${DB_URL}/${path}.json`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("db_write_failed");
+  return sbPatch(path, data);
 }
 
 async function writeAuditLog(entry: {
@@ -76,10 +41,7 @@ async function writeAuditLog(entry: {
   actorName?: string;
   details?: Record<string, unknown>;
 }): Promise<void> {
-  await dbPush("auditLogs", {
-    timestamp: new Date().toISOString(),
-    ...entry,
-  });
+  await sbWriteAuditLog(entry);
 }
 
 type ExistingBooking = {
