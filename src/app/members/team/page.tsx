@@ -152,9 +152,9 @@ const ADMIN_COLS = [
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
 
-// Roles offered in the inline role-edit popover. Board is an internal designation
-// for leadership; the rest mirror the labels used on the applicant acceptance form.
-const ROLE_OPTIONS = ["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Board"] as const;
+// Roles offered in the inline role-edit popover, ordered seniority-high to seniority-low
+// so the dropdown reads top-down from most senior. Board is an internal designation for leadership.
+const ROLE_OPTIONS = ["Board", "Senior Associate", "Associate", "Senior Analyst", "Analyst"] as const;
 type RoleOption = (typeof ROLE_OPTIONS)[number];
 
 // Display the role exactly as stored, so legacy entries (e.g. "Project Lead",
@@ -356,6 +356,7 @@ export default function TeamPage() {
   const [hiddenAdminCols, setHiddenAdminCols] = useState<Set<string>>(new Set());
   const [adminColsMenuOpen, setAdminColsMenuOpen] = useState(false);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   const boardMigrationRef = useRef(false);
   const gradeMigrationRef = useRef(false);
   // Credit-system inputs for the dot color computation + drawer.
@@ -432,12 +433,19 @@ export default function TeamPage() {
   ]);
   useEffect(() => { void getApplicationsList().then(setApplications); }, []);
 
-  // Close the inline role-edit popover on any document click outside it.
+  // Close the inline role-edit popover on click outside, scroll, or resize.
   useEffect(() => {
     if (!openRolePopoverId) return;
-    const close = () => setOpenRolePopoverId(null);
+    const close = () => { setOpenRolePopoverId(null); setPopoverPos(null); };
     const timerId = setTimeout(() => document.addEventListener("click", close), 0);
-    return () => { clearTimeout(timerId); document.removeEventListener("click", close); };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      clearTimeout(timerId);
+      document.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
   }, [openRolePopoverId]);
 
   const handleQuickRoleChange = async (member: TeamMember, nextRole: RoleOption) => {
@@ -1456,29 +1464,24 @@ export default function TeamPage() {
                           case "role": return (
                             <td key="role" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
                               {canEdit ? (
-                                <div className="relative inline-block">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setOpenRolePopoverId(openRolePopoverId === member.id ? null : member.id); }}
-                                    className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#85CC17]/45 hover:bg-[#85CC17]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
-                                    title="Click to change role"
-                                  >
-                                    {displayRoleValue(member.role)}
-                                  </button>
-                                  {openRolePopoverId === member.id && (
-                                    <div onClick={(e) => e.stopPropagation()} className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[160px]">
-                                      {ROLE_OPTIONS.map((roleOption) => {
-                                        const isActive = String(member.role ?? "").trim() === roleOption;
-                                        return (
-                                          <button key={roleOption} type="button" onClick={() => void handleQuickRoleChange(member, roleOption)} className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}>
-                                            <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
-                                            {roleOption}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (openRolePopoverId === member.id) {
+                                      setOpenRolePopoverId(null);
+                                      setPopoverPos(null);
+                                    } else {
+                                      const r = e.currentTarget.getBoundingClientRect();
+                                      setPopoverPos({ top: r.bottom + 4, left: r.left });
+                                      setOpenRolePopoverId(member.id);
+                                    }
+                                  }}
+                                  className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#85CC17]/45 hover:bg-[#85CC17]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
+                                  title="Click to change role"
+                                >
+                                  {displayRoleValue(member.role)}
+                                </button>
                               ) : (
                                 <span className="text-white/50">{displayRoleValue(member.role)}</span>
                               )}
@@ -1778,6 +1781,35 @@ export default function TeamPage() {
           onClose={() => setDrawerMember(null)}
         />
       )}
+
+      {/* Role popover rendered at page root with position: fixed so it escapes
+          all ancestor overflow clipping (table cells, overflow-x-auto wraps). */}
+      {openRolePopoverId && popoverPos && (() => {
+        const member = team.find((m) => m.id === openRolePopoverId);
+        if (!member) return null;
+        return (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, zIndex: 1000 }}
+            className="bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[160px]"
+          >
+            {ROLE_OPTIONS.map((roleOption) => {
+              const isActive = String(member.role ?? "").trim() === roleOption;
+              return (
+                <button
+                  key={roleOption}
+                  type="button"
+                  onClick={() => void handleQuickRoleChange(member, roleOption)}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
+                >
+                  <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
+                  {roleOption}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
     </MembersLayout>
   );
 }

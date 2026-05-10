@@ -1279,16 +1279,23 @@ function BusinessesPageInner() {
     });
   };
 
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
+
   useEffect(() => {
     if (!openStatusPopoverId && !openMovePopoverId) return;
     const close = () => {
       setOpenStatusPopoverId(null);
       setOpenMovePopoverId(null);
+      setPopoverPos(null);
     };
     const timerId = setTimeout(() => document.addEventListener("click", close), 0);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
     return () => {
       clearTimeout(timerId);
       document.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
     };
   }, [openStatusPopoverId, openMovePopoverId]);
 
@@ -1390,42 +1397,27 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-9 align-middle">
           {canEdit ? (
-            <div className="relative inline-block">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenStatusPopoverId(openStatusPopoverId === b.id ? null : b.id);
-                }}
-                className="cursor-pointer"
-                title="Click to change status"
-              >
-                <Badge label={trackStatus} />
-              </button>
-              {openStatusPopoverId === b.id && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
-                >
-                  {STATUSES.map((status) => {
-                    const isActive = trackStatus === status;
-                    return (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => void handleQuickStatusChange(b, status)}
-                        className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
-                      >
-                        <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
-                        {status}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (openStatusPopoverId === b.id) {
+                  setOpenStatusPopoverId(null);
+                  setPopoverPos(null);
+                } else {
+                  const r = e.currentTarget.getBoundingClientRect();
+                  setPopoverPos({ top: r.bottom + 4, left: r.left });
+                  setOpenMovePopoverId(null);
+                  setOpenStatusPopoverId(b.id);
+                }
+              }}
+              className="cursor-pointer"
+              title="Click to change status"
+            >
+              <Badge label={trackStatus} />
+            </button>
           ) : (
             <Badge label={trackStatus} />
           )}
@@ -1534,35 +1526,24 @@ function BusinessesPageInner() {
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
             <div className="members-row-actions">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMovePopoverId(openMovePopoverId === b.id ? null : b.id);
-                  }}
-                  className="rounded-md border border-white/15 hover:border-[#85CC17]/45 bg-[#11141A] hover:bg-[#85CC17]/10 px-2 py-1 text-[11px] text-white/80 hover:text-white transition-colors"
-                >
-                  Move to…
-                </button>
-                {openMovePopoverId === b.id && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 top-full mt-1 z-50 bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
-                  >
-                    {TRACK_ORDER.map((track) => (
-                      <button
-                        key={`move-${b.id}-${track}`}
-                        type="button"
-                        onClick={() => void handleMoveToTrack(b, track)}
-                        className="w-full text-left px-3 py-2 text-xs text-white/75 hover:bg-white/8 transition-colors"
-                      >
-                        {TRACK_META[track].label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (openMovePopoverId === b.id) {
+                    setOpenMovePopoverId(null);
+                    setPopoverPos(null);
+                  } else {
+                    const r = e.currentTarget.getBoundingClientRect();
+                    setPopoverPos({ top: r.bottom + 4, left: r.left });
+                    setOpenStatusPopoverId(null);
+                    setOpenMovePopoverId(b.id);
+                  }
+                }}
+                className="rounded-md border border-white/15 hover:border-[#85CC17]/45 bg-[#11141A] hover:bg-[#85CC17]/10 px-2 py-1 text-[11px] text-white/80 hover:text-white transition-colors"
+              >
+                Move to…
+              </button>
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
             </div>
           )}
@@ -2372,6 +2353,63 @@ function BusinessesPageInner() {
           </div>
         </div>
       </Modal>
+
+      {/* Status popover — rendered at page root with position: fixed so it
+          escapes ancestor overflow clipping (table cells, overflow-x-auto wraps). */}
+      {openStatusPopoverId && popoverPos && (() => {
+        const b = businesses.find((biz) => biz.id === openStatusPopoverId);
+        if (!b) return null;
+        const trackForRow = activeTab === "discovery" ? null : TAB_TRACK[activeTab];
+        const normalized = normalizeTrackProjectsFromBusiness(b);
+        const trackInfo = trackForRow ? normalized.trackProjects[trackForRow] : undefined;
+        const trackStatus: ProjectStatusValue = trackInfo?.projectStatus ?? normalizeProjectStatus(b.projectStatus);
+        return (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, zIndex: 1000 }}
+            className="bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
+          >
+            {STATUSES.map((status) => {
+              const isActive = trackStatus === status;
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => void handleQuickStatusChange(b, status)}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
+                >
+                  <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
+                  {status}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {/* Move-to popover — same fixed-positioning treatment. */}
+      {openMovePopoverId && popoverPos && (() => {
+        const b = businesses.find((biz) => biz.id === openMovePopoverId);
+        if (!b) return null;
+        return (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, zIndex: 1000 }}
+            className="bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
+          >
+            {TRACK_ORDER.map((track) => (
+              <button
+                key={`move-${b.id}-${track}`}
+                type="button"
+                onClick={() => void handleMoveToTrack(b, track)}
+                className="w-full text-left px-3 py-2 text-xs text-white/75 hover:bg-white/8 transition-colors"
+              >
+                {TRACK_META[track].label}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
     </MembersLayout>
   );
 }
