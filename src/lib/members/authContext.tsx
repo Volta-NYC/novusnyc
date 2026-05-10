@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Returns the resolved profile (or null) without touching React state —
   // the caller decides whether to apply it, allowing stale loads to be ignored.
-  async function fetchProfile(authUser: User): Promise<UserProfile | null> {
+  async function fetchProfile(_authUser: User): Promise<UserProfile | null> {
     try {
       // getUser() calls the Supabase Auth server and returns current app_metadata —
       // avoids stale JWT where app_metadata was updated after the session was created.
