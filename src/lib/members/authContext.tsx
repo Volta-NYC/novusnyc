@@ -57,11 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const row = rows?.[0] as Record<string, unknown> | undefined;
       if (!row) { setUserProfile(null); return; }
 
+      // Prefer app_metadata.auth_role (set server-side, always in JWT, no PostgREST
+      // schema-cache dependency) and fall back to the team row column.
+      const metaRole = (authUser.app_metadata as Record<string, unknown> | undefined)?.auth_role;
+      const rowRole  = row.auth_role;
+
       setUserProfile({
         id:       String(row.id ?? ""),
         email:    String(row.email ?? authUser.email ?? ""),
         name:     String(row.name ?? ""),
-        authRole: normalizeAuthRole(row.auth_role),
+        authRole: normalizeAuthRole(metaRole ?? rowRole),
         active:   row.active !== false,
       });
     } catch {

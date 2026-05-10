@@ -50,12 +50,14 @@ export async function POST(req: NextRequest) {
 
   await sb.from("team").update(patch).eq("id", String(teamRow.id));
 
-  // Store full_name in auth user metadata for audit logs.
-  if (displayName) {
-    await sb.auth.admin.updateUserById(user.id, {
-      user_metadata: { full_name: displayName },
-    });
-  }
+  // Write auth_role into app_metadata so verifyCaller and authContext can read it
+  // from the JWT without depending on PostgREST schema cache for new columns.
+  const authRole = typeof teamRow.auth_role === "string" ? teamRow.auth_role : "member";
+  const existingAppMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+  await sb.auth.admin.updateUserById(user.id, {
+    app_metadata: { ...existingAppMeta, auth_role: authRole },
+    ...(displayName ? { user_metadata: { ...user.user_metadata, full_name: displayName } } : {}),
+  });
 
   return NextResponse.json({ success: true });
 }

@@ -62,16 +62,10 @@ export async function verifyCaller(
     return { ok: false, status: 401, error: "unauthorized" };
   }
 
-  // Look up auth_role by email to avoid PostgREST schema-cache issues with new columns.
-  const email = (user.email ?? "").trim().toLowerCase();
-  const { data: teamRow } = await sb
-    .from("team")
-    .select("*")
-    .or(`email.eq.${email},alternate_email.eq.${email}`)
-    .maybeSingle();
-
-  const row = teamRow as Record<string, unknown> | null;
-  const role = normalizeCallerRole(row?.auth_role ?? "");
+  // Read auth_role from app_metadata — set server-side only, always in the JWT,
+  // no PostgREST schema-cache dependency.
+  const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+  const role = normalizeCallerRole(appMeta.auth_role ?? "");
   if (!allowedRoles.includes(role)) {
     return { ok: false, status: 403, error: "forbidden" };
   }
