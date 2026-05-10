@@ -45,25 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadProfile(authUser: User) {
     try {
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
-      if (!token) { setUserProfile(null); return; }
+      const email = (authUser.email ?? "").trim().toLowerCase();
+      if (!email) { setUserProfile(null); return; }
 
-      const res = await fetch("/api/portal-auth/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      if (!res.ok) { setUserProfile(null); return; }
+      const { data: rows } = await supabase
+        .from("team")
+        .select("id, email, name, active, auth_role")
+        .or(`email.eq.${email},alternate_email.eq.${email}`)
+        .limit(1);
 
-      const data = await res.json() as {
-        id: string; email: string; name: string; active: boolean; authRole: string;
-      };
+      const row = rows?.[0] as Record<string, unknown> | undefined;
+      if (!row) { setUserProfile(null); return; }
+
       setUserProfile({
-        id:       data.id,
-        email:    data.email || authUser.email || "",
-        name:     data.name,
-        authRole: normalizeAuthRole(data.authRole),
-        active:   data.active,
+        id:       String(row.id ?? ""),
+        email:    String(row.email ?? authUser.email ?? ""),
+        name:     String(row.name ?? ""),
+        authRole: normalizeAuthRole(row.auth_role),
+        active:   row.active !== false,
       });
     } catch {
       setUserProfile(null);
