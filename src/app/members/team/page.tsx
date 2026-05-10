@@ -148,7 +148,8 @@ const ADMIN_COLS = [
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: null },
   { key: "accountCreated", label: "Account Created", width: 116, sortCol: null },
-  { key: "actions",        label: "Actions",         width: 100, sortCol: null },
+  { key: "strikes",        label: "Strikes",         width: 72,  sortCol: null },
+  { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
 
 // Roles offered in the inline role-edit popover. Board is an internal designation
@@ -1105,6 +1106,16 @@ export default function TeamPage() {
 
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
 
+  const strikesByMemberId = useMemo(() => {
+    const map = new Map<string, MemberStrike[]>();
+    for (const s of creditStrikes) {
+      const list = map.get(s.memberId) ?? [];
+      list.push(s);
+      map.set(s.memberId, list);
+    }
+    return map;
+  }, [creditStrikes]);
+
   // Dot color is driven by the credit-system pace computation. Falls back to a
   // gray "no cycle" state when there's no active cycle to anchor the math.
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
@@ -1301,23 +1312,14 @@ export default function TeamPage() {
       </div>
       {/* Team member list */}
       {isMemberRestricted ? (
-        <div className="members-table-shell relative select-text">
-          <table className="members-grid-table w-full min-w-[780px] text-[10px] leading-4 table-fixed [&_td]:overflow-hidden">
+        <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto relative select-text">
+          <table className="table-fixed text-left text-[10px] leading-4" style={{ width: "100%", minWidth: 780 }}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                {["Name", "School", "HS Class", "Role"].map((col) => (
-                  <th
-                    key={col}
-                    className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
-                      col === "Name" ? "w-[280px]" :
-                      col === "School" ? "w-[340px]" :
-                      col === "HS Class" ? "w-[80px]" :
-                      "w-[110px]"
-                    }`}
-                  >
-                    {col}
-                  </th>
-                ))}
+                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap w-[280px]">Name</th>
+                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap">School</th>
+                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap w-[80px]">HS Class</th>
+                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap w-[110px]">Role</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -1326,8 +1328,8 @@ export default function TeamPage() {
                 const avatar = getTrackAvatarStyles(track);
                 const indicator = getMemberIndicator(member);
                 return (
-                  <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
-                    <td className="px-2 py-1">
+                  <tr key={member.id} className="hover:bg-white/3 transition-colors">
+                    <td className="px-2 py-0 h-9 align-middle overflow-hidden">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
@@ -1342,13 +1344,13 @@ export default function TeamPage() {
                         <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 44)}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
+                    <td className="px-2 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
                       <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 64) : "—"}</span>
                     </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
+                    <td className="px-2 py-0 h-9 align-middle whitespace-nowrap">
                       <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
                     </td>
-                    <td className="px-2 py-1 whitespace-nowrap">
+                    <td className="px-2 py-0 h-9 align-middle whitespace-nowrap">
                       <span className="text-white/60">{displayRoleValue(member.role)}</span>
                     </td>
                   </tr>
@@ -1362,7 +1364,7 @@ export default function TeamPage() {
         const tableWidth = visCols.reduce((s, c) => s + c.width, 0);
         return (
           <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto relative select-text">
-            <table className="table-fixed text-left text-[10px] leading-4" style={{ width: tableWidth }}>
+            <table className="table-fixed text-left text-[10px] leading-4" style={{ width: "100%", minWidth: tableWidth }}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   {visCols.map((col) => {
@@ -1401,6 +1403,8 @@ export default function TeamPage() {
                   const indicator = getMemberIndicator(member);
                   const accountProfile = profileByEmail.get(normalizeKey(member.email ?? "")) ?? profileByEmail.get(normalizeKey(member.alternateEmail ?? ""));
                   const accountCreated = accountProfile?.createdAt ? accountProfile.createdAt.slice(0, 10) : "—";
+                  const memberStrikes = strikesByMemberId.get(member.id) ?? [];
+                  const strikeCount = memberStrikes.length;
                   return (
                     <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
                       {visCols.map((col) => {
@@ -1498,6 +1502,22 @@ export default function TeamPage() {
                           case "accountCreated": return (
                             <td key="accountCreated" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
                               <span className="text-white/50">{accountCreated}</span>
+                            </td>
+                          );
+                          case "strikes": return (
+                            <td key="strikes" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                              {strikeCount > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setDrawerMember(member)}
+                                  title={`${strikeCount} strike${strikeCount === 1 ? "" : "s"} — click to view in member drawer`}
+                                  className="members-chip border-red-400/35 bg-red-400/10 text-red-300 hover:bg-red-400/20 transition-colors cursor-pointer"
+                                >
+                                  {strikeCount} strike{strikeCount === 1 ? "" : "s"}
+                                </button>
+                              ) : (
+                                <span className="text-white/25">—</span>
+                              )}
                             </td>
                           );
                           case "actions": return (
