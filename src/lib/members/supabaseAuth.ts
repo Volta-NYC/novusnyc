@@ -12,27 +12,13 @@ export async function signOut(): Promise<void> {
 }
 
 // Returns the current session's JWT access token, or "" if not signed in.
-// Refresh tokens rotate on every use — calling refreshSession() unconditionally
-// on every API call causes concurrent requests to race and invalidate each
-// other's tokens, triggering a SIGNED_OUT event.  Only refresh when the token
-// is about to expire (within 60 seconds).
+// autoRefreshToken: true on the client keeps the access token fresh automatically,
+// so getSession() always returns a valid (or just-refreshed) token.  We never
+// call refreshSession() manually — rotating refresh tokens race and invalidate
+// each other when multiple API calls are in-flight simultaneously.
 export async function getAuthToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return "";
-
-  const expiresAt = session.expires_at ?? 0;           // Unix seconds
-  const nowSec    = Date.now() / 1000;
-  const ttl       = expiresAt - nowSec;                // seconds remaining
-
-  if (ttl <= 60) {
-    // Token is expired or expiring soon — refresh it.
-    const { data: refreshed, error } = await supabase.auth.refreshSession();
-    if (!error && refreshed.session?.access_token) {
-      return refreshed.session.access_token;
-    }
-  }
-
-  return session.access_token;
+  return session?.access_token ?? "";
 }
 
 // Sends a password-reset email. Use on the login page's "Forgot password" link.
