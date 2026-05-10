@@ -62,14 +62,16 @@ export async function verifyCaller(
     return { ok: false, status: 401, error: "unauthorized" };
   }
 
-  // Look up auth_role from the team table.
+  // Look up auth_role by email to avoid PostgREST schema-cache issues with new columns.
+  const email = (user.email ?? "").trim().toLowerCase();
   const { data: teamRow } = await sb
     .from("team")
-    .select("auth_role")
-    .eq("auth_uid", user.id)
-    .single();
+    .select("*")
+    .or(`email.eq.${email},alternate_email.eq.${email}`)
+    .maybeSingle();
 
-  const role = normalizeCallerRole(teamRow?.auth_role ?? "");
+  const row = teamRow as Record<string, unknown> | null;
+  const role = normalizeCallerRole(row?.auth_role ?? "");
   if (!allowedRoles.includes(role)) {
     return { ok: false, status: 403, error: "forbidden" };
   }

@@ -1,0 +1,2382 @@
+{
+  "-OsCO595lpNCUqOUL0HX": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T15:39:03.194Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5AW7xxKF3lEqODD": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T15:39:03.285Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5C3lWS2A9hO9zf0": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T15:39:03.384Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5DUyY20N2X36sHo": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T15:39:03.475Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5F7byMyJAjsiEQA": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T15:39:03.580Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5GUb0E60srxk-K3": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T15:39:03.667Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5HuthIFp5mDEZCI": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T15:39:03.758Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5JPiLHd7mmOIk3f": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T15:39:03.854Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5KjBaJkzufK_9xY": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T15:39:03.939Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCO5M4DdAQm6c97LF_": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T15:39:04.025Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOojeOBPlHhSHHmr3": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T15:42:14.011Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOoon2VdsnJU72EI6": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T15:42:14.339Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOoq9RKVJo_2c3Fbj": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T15:42:14.426Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOorSeEsr9snyRCyO": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T15:42:14.509Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOoyoGHQc4Wn2lZZ9": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T15:42:14.980Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOp3WPzRU4NsX_15m": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T15:42:15.345Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOp743SH14i2s5NK4": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T15:42:15.573Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOpAEE2nYidsKTnDp": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T15:42:15.775Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOpBrfo0sWVAeBWD0": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T15:42:15.879Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCOpDbsX3PpjMjwPdO": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T15:42:15.991Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbiR1-fKOessaV5-B": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T16:42:58.194Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbiWmGc33piAdANe8": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:42:58.562Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbiYH4uWFMx9DNwTt": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T16:42:58.658Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbiZnZrovM0CfvfBv": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:42:58.755Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbiaFrG2EK43XNGFx": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T16:42:58.848Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbidn-70yHpbXE0gF": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T16:42:59.075Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbifBH6C7JG8TqKan": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:42:59.164Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbihASYU_yyw7vPd1": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:42:59.291Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbij84vagqW0IDWO8": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T16:42:59.417Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbikaD8owldZLXO0H": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T16:42:59.510Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbj0ewtqjEHy6pQEG": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T16:43:00.602Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbj6_Wsp_IXvzlYPF": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:43:00.981Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbj7s8-AqCKt3-Awy": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T16:43:01.064Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbj9BYJIPiVTKyu91": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:43:01.148Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbjAavdv0HVjGbGqL": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T16:43:01.238Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbjC-bFc96BXYKDuj": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T16:43:01.328Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbjDKdrSFfHta2f_R": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:43:01.413Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbjEfANOJOGdEFiC1": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:43:01.499Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbjFy6Eoa4lZyZoLq": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T16:43:01.582Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCbjHJikkIvtaXk3No": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T16:43:01.668Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1bc68Q_ELeZQurM": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T16:53:05.151Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1eHUlacCH1_MwOr": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:53:05.321Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1fRZF4GNYFd4uDx": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T16:53:05.395Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1ghC6qcLRXGJ7Rr": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:53:05.476Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1hrHKFyQ1_7Lq9f": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T16:53:05.550Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1jAaZxf6SkMsu--": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T16:53:05.634Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1kYUkktWACj7MZ-": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:53:05.722Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1lhltGEPn7O7-0s": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:53:05.796Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1msRhmahhPuFiy4": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T16:53:05.871Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCe1q09xLfTpVNgGqF": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T16:53:06.072Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfH1M8Ttu0sg_1xeq": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T16:58:30.439Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfH3LuBfmTfqn9_7i": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:58:30.566Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfH4aVB_vM29JBteM": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T16:58:30.646Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfH5l8atog9sSc5rQ": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T16:58:30.721Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfH7AaENpsaPptLyw": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T16:58:30.811Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfH8Tdr2cswxR6lav": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T16:58:30.894Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfH9k68G8XZGW8McL": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:58:30.976Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfHB2ffBM1XzkjMbV": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T16:58:31.059Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfHCJRY7KuKCs2a7Y": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T16:58:31.140Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCfHDaofHWLuJ78T4I": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T16:58:31.222Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGQHsVhXntTYGh8L": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T17:02:50.082Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGScpcOJ-nTWqUj4": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:02:50.232Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGU1G9BiApIicndq": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T17:02:50.322Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGVJa97PW0UP1BVR": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:02:50.404Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGWbMWBbZ6rs72tZ": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T17:02:50.487Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGY0Tops0xQr3zUX": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T17:02:50.577Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGZJRG7LGldvOAFJ": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:02:50.660Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgG_T72ZzIoctut4i": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:02:50.734Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGakhbkn9oiSuD_1": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T17:02:50.816Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCgGc1XYTv6ov27ZsE": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T17:02:50.898Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkssWvShyKBEauCsL": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T17:23:00.273Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkswfO4Ev-oc38r73": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:23:00.539Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCksxxGQWZXd-Qao8t": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T17:23:00.621Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkszMVeeSMoQ5ffrA": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:23:00.711Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkt-ntahAzEky-bN8": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T17:23:00.803Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkt1FKVYgOlC_gOYH": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T17:23:00.896Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkt2d7s9bh8CQ1fVL": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:23:00.985Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkt3u1uVT1vKaa2NS": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:23:01.066Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkt531A71MlMDBDWw": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T17:23:01.140Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCkt6M6PwUzv5_NzkJ": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T17:23:01.223Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnI9jOGdsc6dWmtrG": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T17:33:32.223Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnICvA7W3OPRhhgyA": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:33:32.427Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnIEKzhNuK_PJR2L-": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T17:33:32.517Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnIFcwzA0txQyk00l": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:33:32.600Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnIH3zDgsS4JSY4Nk": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T17:33:32.692Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnIIS0_W7_t-7JgB3": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T17:33:32.781Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnIJllMKhKJVXzAui": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:33:32.865Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnIL2ecsKWjvQW6kA": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:33:32.947Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnIMM23vwlx_UjiOl": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T17:33:33.031Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCnINl6lymwiFdO2Oi": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T17:33:33.121Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAYC7MWZqJI-ajJS": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T17:59:13.885Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAZlfyMrVGcFRw9I": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:59:13.984Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAa2NnCQGBKiKrzu": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T17:59:14.066Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAbLVB171K6YyoC-": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T17:59:14.149Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAcdmqBym2HaS6mz": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T17:59:14.232Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAe1KWkNO2bL5Ra_": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T17:59:14.321Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAfJsMK3yXO6wc2W": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:59:14.403Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAgdMY6h0WkUYNWi": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T17:59:14.488Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAi0V0bWOGIDWPgT": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T17:59:14.576Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsCtAjDSVxyv5pCF48p": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T17:59:14.653Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75_uJq0cLxZQ5qV3": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T23:44:02.958Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75bQ1e6hep_-p03a": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T23:44:03.055Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75chPXSEa-U8TSIp": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T23:44:03.137Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75e6zcG8wMz7Dt99": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T23:44:03.227Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75fYo8SHE7xMgnp5": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T23:44:03.319Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75h-_AJjyRZNOmX4": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T23:44:03.412Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75iQSG_tyhCumIwC": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T23:44:03.503Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75jkDNXGwlvGESxn": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T23:44:03.588Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75l8mqRpTv_IpkKQ": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T23:44:03.677Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75mSjR_kuI5YL-yU": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T23:44:03.761Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE75zzPT-XpuNazY-1": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-09T23:44:04.627Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE760PqS2gwsUznOdW": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-09T23:44:04.718Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE761ppsNPDCCS7r7E": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-09T23:44:04.809Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE763Fo8fC7lkgaxDo": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-09T23:44:04.900Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE764fx_zjdvdiowXc": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-09T23:44:04.991Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE7665PksLtjBIOoIm": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-09T23:44:05.082Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE767R_eK9eKTEEviY": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T23:44:05.168Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE768nh9VZYhyeNRbw": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-09T23:44:05.255Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE76AFuTMNYokTcfCd": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-09T23:44:05.348Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsE76BZAx6zoCsYiK7F": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-09T23:44:05.432Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQ8ymhqIY5tzVloR": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-10T00:02:55.763Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQAbHU-wsdWvwukL": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-10T00:02:55.868Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQBy4FD1kRxHnX06": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-10T00:02:55.955Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQDM3my_cBgWChTT": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-10T00:02:56.045Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQEoGPiaYZO3m6na": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-10T00:02:56.137Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQGFdROMzohW-Hk1": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-10T00:02:56.229Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQHe7owlup9BZq1I": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-10T00:02:56.319Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQJ5TUcBccNJjz7c": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-10T00:02:56.411Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQKViR7qKKugBBEt": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-10T00:02:56.501Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEBQLx7-9_nDfeDCBL": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-10T00:02:56.594Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFWtK39STRbQgvZxm": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "checkInsBehind",
+      "daysRemaining"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
+    "description": "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
+    "key": "orange_pace_warning",
+    "label": "Pace warning (orange)",
+    "subject": "Heads up — you're behind pace on {{cycleName}}",
+    "updatedAt": "2026-05-10T00:20:51.944Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXACbdvE09LR1gSR": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "strikeReason",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
+    "description": "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
+    "key": "red_pace_strike",
+    "label": "Pace strike (red)",
+    "subject": "Strike issued — {{cycleName}}",
+    "updatedAt": "2026-05-10T00:20:53.088Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXBbsAfCUIb256Hq": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
+    "description": "Fires automatically every two weeks during an active cycle.",
+    "key": "biweekly_checkin",
+    "label": "Biweekly check-in reminder",
+    "subject": "{{cycleName}} — biweekly check-in",
+    "updatedAt": "2026-05-10T00:20:53.178Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXD5SFgQ-hhNoBvT": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "previousRole",
+      "newRole",
+      "cycleName"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
+    "description": "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
+    "key": "demotion_notice",
+    "label": "Demotion notice",
+    "subject": "Role change — {{cycleName}}",
+    "updatedAt": "2026-05-10T00:20:53.273Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXEX4ycnec_rdRFC": {
+    "active": true,
+    "availableVariables": [
+      "cycleName",
+      "startDate",
+      "endDate",
+      "creditsTarget",
+      "pacingPercent"
+    ],
+    "body": "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
+    "description": "Mass email at the start of a new cycle.",
+    "key": "cycle_start",
+    "label": "Cycle start announcement",
+    "subject": "{{cycleName}} starts now",
+    "updatedAt": "2026-05-10T00:20:53.365Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXFxNWjSs1kHQxps": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "outcome",
+      "strikeCount"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
+    "description": "Per-member email at cycle close summarizing earned credits.",
+    "key": "cycle_end_summary",
+    "label": "Cycle end summary",
+    "subject": "{{cycleName}} — your wrap-up",
+    "updatedAt": "2026-05-10T00:20:53.456Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXHMAJcRMEBrQABo": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "creditsAwarded",
+      "businessName"
+    ],
+    "body": "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
+    "description": "Sent when an approver accepts a submitted claim.",
+    "key": "assignment_approved",
+    "label": "Assignment approved",
+    "subject": "Approved — {{assignmentTitle}}",
+    "updatedAt": "2026-05-10T00:20:53.546Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXImADeiQocQoKWY": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "assignmentTitle",
+      "rejectionReason"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
+    "description": "Sent when a submission is rejected. Includes the reviewer's reason.",
+    "key": "assignment_rejected",
+    "label": "Assignment rejected",
+    "subject": "Resubmit needed — {{assignmentTitle}}",
+    "updatedAt": "2026-05-10T00:20:53.637Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXKBjNjSNX5K2WGJ": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "infractionName",
+      "points",
+      "totalPoints",
+      "issuedBy",
+      "note"
+    ],
+    "body": "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    "description": "Sent when an admin manually issues an infraction.",
+    "key": "infraction_notice",
+    "label": "Infraction notice",
+    "subject": "Infraction logged — {{infractionName}}",
+    "updatedAt": "2026-05-10T00:20:53.727Z",
+    "updatedBy": "ethan@voltanyc.org"
+  },
+  "-OsEFXLcH7g1Q-SWHYcc": {
+    "active": true,
+    "availableVariables": [
+      "memberName",
+      "cycleName",
+      "creditsEarned",
+      "creditsTarget",
+      "openAssignmentCount"
+    ],
+    "body": "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
+    "description": "Replaces per-assignment emails. Reminds members to check the portal.",
+    "key": "monthly_portal_reminder",
+    "label": "Monthly portal reminder",
+    "subject": "{{cycleName}} — check the portal",
+    "updatedAt": "2026-05-10T00:20:53.819Z",
+    "updatedBy": "ethan@voltanyc.org"
+  }
+}

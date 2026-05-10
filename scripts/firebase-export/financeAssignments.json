@@ -1,0 +1,1374 @@
+{
+  "-OoQ6EoDBFZClOzPxUO9": {
+    "assignedMemberIds": [
+      "-Om6cLRNTPk7oSbIic9-"
+    ],
+    "assignedMemberNames": [
+      "Angeline Chan"
+    ],
+    "createdAt": "2026-03-23T14:32:57.880Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:1:angeline chan",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "customer rewards and loyalty program",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:33:25.533Z"
+  },
+  "-OoQ6EpL1xE2yV4vUnmF": {
+    "assignedMemberIds": [
+      "-OoHWfbo2zo-8gnG0NTc"
+    ],
+    "assignedMemberNames": [
+      "Angelina Zvereva"
+    ],
+    "createdAt": "2026-03-23T14:32:57.952Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:2:angelina zvereva",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "digital and AI tools",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6EqOPpZnNguKbQND": {
+    "assignedMemberIds": [
+      "-Om6cLRMU4PHAEptSVn-"
+    ],
+    "assignedMemberNames": [
+      "Yuba Bhatta"
+    ],
+    "createdAt": "2026-03-23T14:32:58.020Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:3:yuba",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "how to apply for grants",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6ErKMPmgDRddEwIy": {
+    "assignedMemberIds": [
+      "-OnhwPCDSPW7HFqS2vCC"
+    ],
+    "assignedMemberNames": [
+      "Ellie Mak"
+    ],
+    "createdAt": "2026-03-23T14:32:58.079Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:4:ellie",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "city resources and BIDs",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6EsIUj7HSXEz9XG-": {
+    "assignedMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjp"
+    ],
+    "assignedMemberNames": [
+      "Kevin Lin"
+    ],
+    "createdAt": "2026-03-23T14:32:58.141Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:5:kevin",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "social media presence and posting",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6Eti4nDPNR_eqPS-": {
+    "assignedMemberIds": [
+      "-OmlSJfn2ilrR-vGruOG"
+    ],
+    "assignedMemberNames": [
+      "Tsundruk Norbu"
+    ],
+    "createdAt": "2026-03-23T14:32:58.232Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:6:tsundruk",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "SEO",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6EuwBHPemyV4ExJI": {
+    "assignedMemberIds": [
+      "-OnmsDU_fFXxUatd6y9z"
+    ],
+    "assignedMemberNames": [
+      "Leena Ali"
+    ],
+    "createdAt": "2026-03-23T14:32:58.310Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:7:leena ali",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "misconceptions about going digital",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6EvrFwa4BfxlyZAr": {
+    "assignedMemberIds": [
+      "-OmfO2kh30bFp0wAQ0yF"
+    ],
+    "assignedMemberNames": [
+      "Tiffany Xu"
+    ],
+    "createdAt": "2026-03-23T14:32:58.369Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:8:tiffany",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "how to use AI tools for repetitive tasks",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6EwoNg84gUCN_r6M": {
+    "assignedMemberIds": [
+      "-OmofoIXtAwMOzVq06Mv"
+    ],
+    "assignedMemberNames": [
+      "Shafeen Basher"
+    ],
+    "createdAt": "2026-03-23T14:32:58.430Z",
+    "deadline": "2026-03-29",
+    "deadlines": [
+      {
+        "date": "2026-04-05",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-03-29",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-05",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "",
+    "seedKey": "report:9:shafeen",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Report Assignment",
+    "topic": "basic marketing breakdown",
+    "type": "Report",
+    "updatedAt": "2026-03-24T01:12:15.283Z"
+  },
+  "-OoQ6Ey9M_ZJEQfbCRfo": {
+    "assignedMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt",
+      "-Om6cLRLlnsZhD0PpgO7",
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "assignedMemberNames": [
+      "Alvin Jiang",
+      "Bruce Weng",
+      "Ashley Mui"
+    ],
+    "createdAt": "2026-03-23T14:32:58.516Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "Stuyvesant",
+    "seedKey": "case:1:stuy 1",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — Stuyvesant",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.638Z"
+  },
+  "-OoQ6EzPYLJs-JjXoBU0": {
+    "assignedMemberIds": [
+      "-OmfO2kh30bFp0wAQ0yH",
+      "-Om6cLRMU4PHAEptSVn2"
+    ],
+    "assignedMemberNames": [
+      "Ryan Liu",
+      "Peyton Yuen"
+    ],
+    "createdAt": "2026-03-23T14:32:58.596Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "Stuyvesant",
+    "seedKey": "case:2:stuy 2",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — Stuyvesant",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.518Z"
+  },
+  "-OoQ6F-_lQcJ0s7q-ZQf": {
+    "assignedMemberIds": [
+      "-OmofnzuIglfpVSCIgl8"
+    ],
+    "assignedMemberNames": [
+      "Veronika Gulko"
+    ],
+    "createdAt": "2026-03-23T14:32:58.671Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "Stuyvesant",
+    "seedKey": "case:3:stuy 3",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — Stuyvesant",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.850Z"
+  },
+  "-OoQ6F0nk6W7_fJ3FIRB": {
+    "assignedMemberIds": [
+      "-OmofoCEELBj2Pe43_NV"
+    ],
+    "assignedMemberNames": [
+      "Tyler Tong",
+      "Marvens Celius"
+    ],
+    "createdAt": "2026-03-23T14:32:58.749Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "Midwood",
+    "seedKey": "case:4:midwood",
+    "status": "Ongoing",
+    "teamLabel": "Midwood",
+    "title": "Case Study — Midwood",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.997Z"
+  },
+  "-OoQ6F1kf_s7aAllEO7G": {
+    "assignedMemberIds": [
+      "-OnyVLMQuGrGSjHsp100",
+      "-OoAWXs8W8Y8LdDs7pPO",
+      "-OoPoIyQazE3RrbdH8H7"
+    ],
+    "assignedMemberNames": [
+      "Chu Qi Li",
+      "Kyra Sacheti",
+      "Tenzin Dadon"
+    ],
+    "createdAt": "2026-03-23T14:32:58.810Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "Brooklyn Tech",
+    "seedKey": "case:5:brooklyn tech",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — Brooklyn Tech",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:15.149Z"
+  },
+  "-OoQ6F2fTRNT15oSTGFk": {
+    "assignedMemberIds": [
+      "-Onms1AETUWoS10bDLq9",
+      "-OoNVqpA-HnS_jNZ2ptW",
+      "-Om6cLRNTPk7oSbIic90"
+    ],
+    "assignedMemberNames": [
+      "Rohan Guddeti",
+      "Andrew Liu",
+      "Kaia Talathi"
+    ],
+    "createdAt": "2026-03-23T14:32:58.870Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "New Jersey",
+    "seedKey": "case:6:new jersey 1",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — New Jersey",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:15.354Z"
+  },
+  "-OoQ6F3h1BlEQgVfx3lP": {
+    "assignedMemberIds": [
+      "-OnntmxLnaZfs0_3Xa5m"
+    ],
+    "assignedMemberNames": [
+      "Brendon Kim"
+    ],
+    "createdAt": "2026-03-23T14:32:58.935Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "Long Island",
+    "seedKey": "case:7:long island",
+    "status": "Ongoing",
+    "teamLabel": "Long Island",
+    "title": "Case Study — Long Island",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:15.469Z"
+  },
+  "-OoQ6F4rYdWHiGzvIBOR": {
+    "assignedMemberIds": [
+      "-OmofnuGCEC9K1BlDe4J",
+      "-OmfO2kgqD9bYFS9ku4c"
+    ],
+    "assignedMemberNames": [
+      "Jay Thakkar",
+      "Sarah Umeed",
+      "Beverly Nguyen",
+      "Lasyapriya Ganapathiraju"
+    ],
+    "createdAt": "2026-03-23T14:32:59.009Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "New Jersey",
+    "seedKey": "case:8:new jersey 2",
+    "status": "Ongoing",
+    "teamLabel": "New Jersey 2",
+    "title": "Case Study — New Jersey 2",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:15.578Z"
+  },
+  "-OoQ6F5oGr_Olfs4cARF": {
+    "assignedMemberNames": [
+      "Aarush Vignesh",
+      "Aryan Katakam"
+    ],
+    "createdAt": "2026-03-23T14:32:59.070Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "Florida",
+    "seedKey": "case:9:florida",
+    "status": "Ongoing",
+    "teamLabel": "Florida",
+    "title": "Case Study — Florida",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:15.693Z"
+  },
+  "-OoQ6F7747HhUJtRK8rL": {
+    "assignedMemberNames": [
+      "Shruti Sridhar"
+    ],
+    "createdAt": "2026-03-23T14:32:59.154Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "Pennsylvania",
+    "seedKey": "case:10:pennsylvania",
+    "status": "Ongoing",
+    "teamLabel": "Pennsylvania",
+    "title": "Case Study — Pennsylvania",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:15.857Z"
+  },
+  "-OoQ6F8Kytql-4QSbLCw": {
+    "assignedMemberNames": [
+      "Dallas Lewis",
+      "Collin Bodle"
+    ],
+    "createdAt": "2026-03-23T14:32:59.231Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "Southeast",
+    "seedKey": "case:11:southeast",
+    "status": "Ongoing",
+    "teamLabel": "Southeast",
+    "title": "Case Study — Southeast",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:15.994Z"
+  },
+  "-OoQ6F9_qezTwuZXBDaS": {
+    "assignedMemberNames": [
+      "Kobe Wang"
+    ],
+    "createdAt": "2026-03-23T14:32:59.311Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "California",
+    "seedKey": "case:12:california",
+    "status": "Ongoing",
+    "teamLabel": "California",
+    "title": "Case Study — California",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:16.105Z"
+  },
+  "-OoQ6FAnH_l2noyI4h8m": {
+    "assignedMemberNames": [
+      "Aamnah Sethi"
+    ],
+    "createdAt": "2026-03-23T14:32:59.389Z",
+    "deadline": "2026-04-13",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "Virginia",
+    "seedKey": "case:13:virginia",
+    "status": "Ongoing",
+    "teamLabel": "Virginia",
+    "title": "Case Study — Virginia",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:16.215Z"
+  },
+  "-OoQ6FBlOcuKuOmEx6G3": {
+    "assignedMemberNames": [
+      "Saranya Ganti"
+    ],
+    "createdAt": "2026-03-23T14:32:59.451Z",
+    "deadline": "2026-04-13",
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-04-06",
+    "notes": "3–4 week research field project.",
+    "region": "Maryland / DC",
+    "seedKey": "case:14:maryland dc",
+    "status": "Ongoing",
+    "teamLabel": "Maryland / DC",
+    "title": "Case Study — Maryland / DC",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:16.376Z"
+  },
+  "-OoQ6FD1SDrWhmGni05n": {
+    "assignedMemberIds": [
+      "-OoPnPvlx-ysHSEy_a-Y"
+    ],
+    "assignedMemberNames": [
+      "Aakanksh Ravuri"
+    ],
+    "createdAt": "2026-03-23T14:32:59.532Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "Texas",
+    "seedKey": "case:15:texas",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — Texas",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.399Z"
+  },
+  "-OoQ6FEFK7Abn_XGA7pk": {
+    "assignedMemberIds": [
+      "-OoPnSyqk0A7FLrtNVBf",
+      "-OoPnV6Ku8Gu-QRoBx5I",
+      "-OnyWzaVQsNuYzWopXWS",
+      "-OnyX0UX95ICjl4AjzEn",
+      "-OoPnUKz1jw4c398A09E"
+    ],
+    "assignedMemberNames": [
+      "Sarah Yagninim",
+      "Leena Naji",
+      "Alaynah Chowdhury",
+      "Santana Harm",
+      "Nameera Guffer"
+    ],
+    "createdAt": "2026-03-23T14:32:59.610Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Interview Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "Manhattan Hunter",
+    "seedKey": "case:16:manhattan hunter",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — Manhattan Hunter",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.018Z"
+  },
+  "-OoXMeDmtltrI981TdYF": {
+    "assignedMemberIds": [
+      "-OnmsVLj1jBvINyv6rJY",
+      "-OoPnNvSP7LWax5e-bKs"
+    ],
+    "assignedMemberNames": [
+      "Mohammed Majd Elbaba",
+      "Adam Abdelmajid"
+    ],
+    "createdAt": "2026-03-25T00:22:00.896Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "UAE",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — UAE",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.146Z"
+  },
+  "-OoXNh4SPqBBw_OoR7U0": {
+    "assignedMemberIds": [
+      "-OmoMU2N0d8t9jPZ0SR3",
+      "-OmlgSi_J11CuZBtHioW",
+      "-OnjKOCI3II-i-M_GWZ_",
+      "-OmofoOongrDkWDmBWCp"
+    ],
+    "assignedMemberNames": [
+      "Sk Ahmed",
+      "Ryan Tao",
+      "Vavin Zhao",
+      "Walter Zhu"
+    ],
+    "createdAt": "2026-03-25T00:26:34.733Z",
+    "deadline": "2026-04-06",
+    "deadlines": [
+      {
+        "date": "2026-04-13",
+        "label": "Final Deadline"
+      },
+      {
+        "date": "2026-04-06",
+        "label": "Check-In"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-04-13",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "",
+    "notes": "",
+    "region": "Staten Island",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study — Staten Island",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:09:14.283Z"
+  },
+  "-OriQh4_7l87DTvSHIP-": {
+    "assignedMemberIds": [
+      "-OoS1dFESZ6L2c1Supyb"
+    ],
+    "assignedMemberNames": [
+      "Maggie Jones-Cimini"
+    ],
+    "createdAt": "2026-05-03T15:22:13.237Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:13.237Z"
+  },
+  "-OriQhQT62i6_xyrT28w": {
+    "assignedMemberIds": [
+      "-OpNMEXo9rqXdKWINm4c"
+    ],
+    "assignedMemberNames": [
+      "Kabir Singh"
+    ],
+    "createdAt": "2026-05-03T15:22:14.638Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:14.638Z"
+  },
+  "-OriQhotVsd8sbI3WAmt": {
+    "assignedMemberIds": [
+      "-OpNMAm4xfeC8s_IkBNG"
+    ],
+    "assignedMemberNames": [
+      "Stephen Lyu"
+    ],
+    "createdAt": "2026-05-03T15:22:16.266Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:16.266Z"
+  },
+  "-OriQiIWO4PwReTVCrbE": {
+    "assignedMemberIds": [
+      "-OqC9mqQr579ci2K8Fzc"
+    ],
+    "assignedMemberNames": [
+      "Chloe Loo"
+    ],
+    "createdAt": "2026-05-03T15:22:18.226Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:18.226Z"
+  },
+  "-OriQiesmtrSt6xGzNbI": {
+    "assignedMemberIds": [
+      "-Ori39aCoG_KSgHhjUaJ"
+    ],
+    "assignedMemberNames": [
+      "Araf Khan"
+    ],
+    "createdAt": "2026-05-03T15:22:19.721Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:19.721Z"
+  },
+  "-OriQjA4mncds2CDs8-u": {
+    "assignedMemberIds": [
+      "-Ori3CX1lnHAwAT3kSmU"
+    ],
+    "assignedMemberNames": [
+      "Becker Chan"
+    ],
+    "createdAt": "2026-05-03T15:22:21.782Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:21.782Z"
+  },
+  "-OriQjSq74QMJqxHQIon": {
+    "assignedMemberIds": [
+      "-Ori3BRg8pMf9JrG_14q"
+    ],
+    "assignedMemberNames": [
+      "Chendong Gao"
+    ],
+    "createdAt": "2026-05-03T15:22:22.983Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:22.983Z"
+  },
+  "-OriQjoei9grHsaPWOVl": {
+    "assignedMemberIds": [
+      "-Ori3BzVhmRHgDlGr_18"
+    ],
+    "assignedMemberNames": [
+      "Dinara Gargu"
+    ],
+    "createdAt": "2026-05-03T15:22:24.443Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:24.443Z"
+  },
+  "-OriQk78bDZHAJy0TLjC": {
+    "assignedMemberIds": [
+      "-Ori3DYsN-HMKHY4PGse"
+    ],
+    "assignedMemberNames": [
+      "Huiting Lei"
+    ],
+    "createdAt": "2026-05-03T15:22:25.690Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:25.690Z"
+  },
+  "-OriQkkTByIUrWFYMmgz": {
+    "assignedMemberIds": [
+      "-Ori36cAxNDO3mctT8ka"
+    ],
+    "assignedMemberNames": [
+      "Louis Alvarez"
+    ],
+    "createdAt": "2026-05-03T15:22:28.271Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:28.271Z"
+  },
+  "-OriQl6S-wCAXBA8YsLD": {
+    "assignedMemberIds": [
+      "-Ori3Cruc3GUiEepi6r7"
+    ],
+    "assignedMemberNames": [
+      "Maxwell Derella"
+    ],
+    "createdAt": "2026-05-03T15:22:29.742Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:29.742Z"
+  },
+  "-OriQlV2ReHCzRwyJCGm": {
+    "assignedMemberIds": [
+      "-Ori3AVdM7ATMR5poZpn"
+    ],
+    "assignedMemberNames": [
+      "Oscar Heller"
+    ],
+    "createdAt": "2026-05-03T15:22:31.316Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:31.316Z"
+  },
+  "-OriQlrrhPqWz536Fm-f": {
+    "assignedMemberIds": [
+      "-Ori39vk4tr_m8B9BKHg"
+    ],
+    "assignedMemberNames": [
+      "Raymond Chen"
+    ],
+    "createdAt": "2026-05-03T15:22:32.839Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:32.839Z"
+  },
+  "-OriQmQKQg6W0G9r4oZf": {
+    "assignedMemberIds": [
+      "-Ori3FqJ3IrD9C1ea4n0"
+    ],
+    "assignedMemberNames": [
+      "Saharsh Batchu"
+    ],
+    "createdAt": "2026-05-03T15:22:35.110Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:35.110Z"
+  },
+  "-OriQmmOI22eXDW-koDu": {
+    "assignedMemberIds": [
+      "-Ori3DDei-0oso7NLk9y"
+    ],
+    "assignedMemberNames": [
+      "Tyler Lin"
+    ],
+    "createdAt": "2026-05-03T15:22:36.586Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:36.586Z"
+  },
+  "-OriQn4IFOvRK1AjHI4N": {
+    "assignedMemberIds": [
+      "-Ori3EHjn_Jo4-MZ9rrZ"
+    ],
+    "assignedMemberNames": [
+      "Yohen David Perez"
+    ],
+    "createdAt": "2026-05-03T15:22:37.796Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:37.796Z"
+  },
+  "-OriQndv-pR6Bwah7l3K": {
+    "assignedMemberIds": [
+      "-Ori3B76HIb9xh26Pikb"
+    ],
+    "assignedMemberNames": [
+      "Yuanming Zhao"
+    ],
+    "createdAt": "2026-05-03T15:22:40.139Z",
+    "deadline": "2026-05-17",
+    "deadlines": [
+      {
+        "date": "2026-05-17",
+        "label": "Interview Deadline"
+      },
+      {
+        "date": "2026-05-31",
+        "label": "Final Deadline"
+      }
+    ],
+    "deliverableUrl": "",
+    "finalDueDate": "2026-05-31",
+    "firstDraftDueDate": "",
+    "interviewDueDate": "2026-05-17",
+    "notes": "",
+    "region": "",
+    "status": "Ongoing",
+    "teamLabel": "",
+    "title": "Case Study",
+    "topic": "",
+    "type": "Case Study",
+    "updatedAt": "2026-05-03T15:22:40.139Z"
+  }
+}

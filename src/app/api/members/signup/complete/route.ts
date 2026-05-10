@@ -30,24 +30,25 @@ export async function POST(req: NextRequest) {
   // Find the team row by primary email, then alternate email.
   const { data: rows } = await sb
     .from("team")
-    .select("id, auth_uid")
+    .select("*")
     .or(`email.eq.${email},alternate_email.eq.${email}`)
     .limit(1);
 
-  const teamRow = rows?.[0];
+  const teamRow = rows?.[0] as Record<string, unknown> | undefined;
   if (!teamRow) {
     return NextResponse.json({ error: "team_member_not_found" }, { status: 404 });
   }
 
   // Write auth_uid — skip if already linked to this user (idempotent).
-  if (teamRow.auth_uid && teamRow.auth_uid !== user.id) {
+  const existingUid = teamRow.auth_uid as string | null | undefined;
+  if (existingUid && existingUid !== user.id) {
     return NextResponse.json({ error: "already_linked" }, { status: 409 });
   }
 
   const patch: Record<string, unknown> = { auth_uid: user.id };
   if (displayName) patch.name = displayName;
 
-  await sb.from("team").update(patch).eq("id", teamRow.id);
+  await sb.from("team").update(patch).eq("id", String(teamRow.id));
 
   // Store full_name in auth user metadata for audit logs.
   if (displayName) {

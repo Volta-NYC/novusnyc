@@ -1,0 +1,4203 @@
+{
+  "-Om7dIc3JEVA914gS-Ka": {
+    "available": false,
+    "bookedBy": "P6emJemPQtU87Ecz",
+    "bookerEmail": "mahekraiyan@gmail.com",
+    "bookerName": "Raiyan Mahek",
+    "createdAt": 1771819055644,
+    "createdBy": "WxKPxr5A4cf1PuxIYDEdBeKHplR2",
+    "datetime": "2026-03-01T14:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-14:00-15-andrew chin",
+    "recurringWeekly": true
+  },
+  "-Om7dIc4cbLlAboao609": {
+    "available": false,
+    "bookedBy": "P6emJemPQtU87Ecz",
+    "bookerEmail": "gerardbhill@yahoo.com",
+    "bookerName": "Gerard Hill",
+    "createdAt": 1771819055645,
+    "createdBy": "WxKPxr5A4cf1PuxIYDEdBeKHplR2",
+    "datetime": "2026-03-01T15:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-15:30-15-andrew chin",
+    "recurringWeekly": true
+  },
+  "-OmMcM0WAJiPotc0y6Zj": {
+    "available": false,
+    "bookedBy": "P6emJemPQtU87Ecz",
+    "bookerEmail": "SrikaKambhampati@gmail.com",
+    "bookerName": "Srika Kambhampati",
+    "createdAt": 1772070465652,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T14:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-14:00-15-andrew chin",
+    "recurringWeekly": true
+  },
+  "-OmMcMniUD8DFVdLrRys": {
+    "available": false,
+    "bookedBy": "P6emJemPQtU87Ecz",
+    "bookerEmail": "aaditya.kuberan@gmail.com",
+    "bookerName": "Aaditya Kuberan",
+    "createdAt": 1772070468865,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-15T09:30:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "pSZuQYuFG6NsU9hLHW6rU57MXvJ2": {
+        "comments": "Freshman, but decent experience and can lead into Utah",
+        "interviewerEmail": "andrew@voltanpo.org",
+        "interviewerName": "andrew@voltanpo.org",
+        "interviewerUid": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+        "rating": "Qualified",
+        "updatedAt": "2026-03-15T13:42:11.310Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-09:30-15-andrew chin",
+    "recurringWeekly": true
+  },
+  "-On5V9K17oj4hXxsrAB9": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "aryankatakam092@gmail.com",
+    "bookerName": "Aryan Katakam",
+    "createdAt": 1772856845620,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-13T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-On5V9NR3KjbCu4bbSMT": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "nameeraguffer@gmail.com",
+    "bookerName": "Nameera Guffer",
+    "createdAt": 1772856845838,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-20T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-On5V9V-IRYPAHYhiFJG": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "iluvvpace222@gmail.com",
+    "bookerName": "Maggie Jones-Cimini",
+    "createdAt": 1772856846322,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-20T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5V9ZuMlIkQE8-V3Vs": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "kobewangbebe@gmail.com",
+    "bookerName": "Kobe Wang",
+    "createdAt": 1772856846636,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-13T20:00:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "s0Q0L3LyBJfE5DVuIfo2toD547D2": {
+        "comments": "Minimal Experience or didn't explain well enough.\nVolta to him: Applied to volta bc he loves student led org that helps businesses. Bond and help peers. \nFinance Track. Hardest part is working ppl that dont work. \ndidnt see anything too outstanding.",
+        "interviewerEmail": "ajiang80@stuy.edu",
+        "interviewerName": "ajiang80@stuy.edu",
+        "interviewerUid": "s0Q0L3LyBJfE5DVuIfo2toD547D2",
+        "rating": "Decent",
+        "updatedAt": "2026-03-14T00:07:24.972Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-On5V9c-kWcgvmEq2xHP": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1772856846833,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-20T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5V9gtlnolMo_nkxIa": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "lewisdallas1212@gmail.com",
+    "bookerName": "Dallas Lewis",
+    "createdAt": 1772856847147,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-13T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5V9k0ZJvPcajZTUAb": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1772856847347,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-20T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5V9ocSq3C7DeFIazn": {
+    "available": true,
+    "createdAt": 1772856847642,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-13T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-On5V9rhrAix1WHNtFb8": {
+    "available": true,
+    "createdAt": 1772856847839,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-20T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-On5V9ukMlhhKWXEbT9I": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "umeed.sarah@gmail.com",
+    "bookerName": "Sarah Umeed",
+    "createdAt": 1772856848034,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-13T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5V9xsdWP24j6Fy9dA": {
+    "available": true,
+    "createdAt": 1772856848234,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-20T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-On5VEBUdhbrf1KCnPcK": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1772856865553,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-11T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VECsyfnJBx5pzuf8": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "chelseacatherine@zebrastonecollection.com",
+    "bookerName": "Chelsey Gebologlu",
+    "createdAt": 1772856865641,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-18T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VEE7OESRkImYiRVh": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1772856865722,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-25T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VEFQX4aFgLpQMlbw": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "ezhao7440@gmail.com",
+    "bookerName": "Emily Zhao",
+    "createdAt": 1772856865805,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-11T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VEH9kDJJCtzpfF1j": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "avaraiya260@gmail.com",
+    "bookerName": "Arush Varaiya",
+    "createdAt": 1772856865916,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-18T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VEIVWUU137n7l2Pu": {
+    "available": true,
+    "createdAt": 1772856866002,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-25T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VEJrVEnn4Q2ar9JO": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "vivh314@gmail.com",
+    "bookerName": "Vivian Hoelscher",
+    "createdAt": 1772856866089,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-11T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VELDBoSKrep8o2Fs": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1772856866176,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-18T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VEMZbC1Xy9PDUSz8": {
+    "available": true,
+    "createdAt": 1772856866262,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-25T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VEPDvAdKbanAWJGr": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "chelsecatherine@zebrastonecollection.com",
+    "bookerName": "Chelsey Gebologlu",
+    "createdAt": 1772856866432,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-18T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VEQrNvj_BskZ2THj": {
+    "available": true,
+    "createdAt": 1772856866537,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-25T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VH2p3Kf9K6IS0haD": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "chabstar1429@gmail.com",
+    "bookerName": "Marcus Penaherrera",
+    "createdAt": 1772856877287,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-09T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VH4D-r0ze5EZZsU6": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "roodygeorges@hotmail.com",
+    "bookerName": "Roody georges",
+    "createdAt": 1772856877376,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-16T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VH5WrGnv8QS2qDcK": {
+    "available": true,
+    "createdAt": 1772856877459,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-23T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VH6rnI1whL61MKAS": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1772856877544,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-09T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VH8Eow5F55_dqn4w": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "aryankatakam092@gmail.com",
+    "bookerName": "Aryan Katakam",
+    "createdAt": 1772856877633,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-16T20:15:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "gpCpd90AaDVUVBi8RvLeBwzNz6t2": {
+        "comments": "Good finance and operation engagement, not much on resume or in past but seems good enough.",
+        "interviewerEmail": "jppfinster@gmail.com",
+        "interviewerName": "jppfinster@gmail.com",
+        "interviewerUid": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+        "rating": "Decent",
+        "updatedAt": "2026-03-17T22:04:15.162Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5VH9Z3ZCGzpAQoo8Z": {
+    "available": true,
+    "createdAt": 1772856877718,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-23T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VHAq2-H5JM8I67F8": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "sophiachangzms@gmail.com",
+    "bookerName": "Sophia Chang",
+    "createdAt": 1772856877800,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-09T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VHCBZjYnj5x3AFq6": {
+    "available": true,
+    "createdAt": 1772856877886,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-16T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VHDUjdeX-s8yXI2R": {
+    "available": true,
+    "createdAt": 1772856877969,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-23T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VHEpxve9crCp9x3o": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "sanarihossain@gmail.com",
+    "bookerName": "Sanari Hossain",
+    "createdAt": 1772856878055,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-09T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VHGBNqq0ZR12YkG8": {
+    "available": true,
+    "createdAt": 1772856878142,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-16T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5VHHUlZZwXvJedLuS": {
+    "available": true,
+    "createdAt": 1772856878225,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-23T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-On5XwrryRqMi2dn279R": {
+    "available": true,
+    "createdAt": 1772857576937,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T08:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-08:30-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5XwvvAxMkt_PaMKTV": {
+    "available": true,
+    "createdAt": 1772857577197,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T08:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-08:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5Xwzzxsxc2pZZ5Muy": {
+    "available": true,
+    "createdAt": 1772857577457,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T09:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-09:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5Xx2tM2S4WbDBxmy0": {
+    "available": true,
+    "createdAt": 1772857577707,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-09:15-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5Xx49f76SVjF9lLfM": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "aamnahasethi@gmail.com",
+    "bookerName": "Aamnah Sethi",
+    "createdAt": 1772857577788,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-15T09:15:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "pSZuQYuFG6NsU9hLHW6rU57MXvJ2": {
+        "comments": "No experience, willing do grunt work?",
+        "interviewerEmail": "andrew@voltanpo.org",
+        "interviewerName": "andrew@voltanpo.org",
+        "interviewerUid": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+        "rating": "Unqualified",
+        "updatedAt": "2026-03-15T13:35:33.941Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-09:15-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5Xx6s55JETTDYfbIj": {
+    "available": true,
+    "createdAt": 1772857577962,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T09:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-09:30-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5Xx9SBj7jYvGZDzXu": {
+    "available": true,
+    "createdAt": 1772857578127,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T09:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-09:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5XxDNd2obHDxbigf7": {
+    "available": true,
+    "createdAt": 1772857578378,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T10:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-10:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5XxHNNjg6r_BRFNZu": {
+    "available": true,
+    "createdAt": 1772857578634,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T10:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-10:15-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5XxLOUCUbJSV1_H-V": {
+    "available": true,
+    "createdAt": 1772857578891,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T10:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-10:30-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5XxPJ2Camsb3jLlZC": {
+    "available": true,
+    "createdAt": 1772857579142,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T10:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-10:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5YSVfHl5a4iO4mgUx": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "mathias.escurra.castro@gmail.com",
+    "bookerName": "Angel Escurra",
+    "createdAt": 1772857710621,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5YSX4M9BHcAGKN2tf": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "albabablock22@gmail.com",
+    "bookerName": "Mohammed Elbaba",
+    "createdAt": 1772857710711,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-15T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5YSZnY8OwWVB1OyKC": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1772857710885,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:15-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5YScmVf-4Oo8cYtyp": {
+    "available": true,
+    "createdAt": 1772857711140,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:30-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5YSe9_3BLSS7d9KV-": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "gud200919@gmail.com",
+    "bookerName": "Rohan Guddeti",
+    "createdAt": 1772857711228,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-15T17:30:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "nVHd3VGeVuObTCft4eRhbjtNzBl2": {
+        "comments": "finance experience, ill put him on new jersey expansion and one of the teams ig",
+        "interviewerEmail": "ethan@voltanyc.org",
+        "interviewerName": "Ethan Zhang",
+        "interviewerUid": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+        "rating": "Qualified",
+        "updatedAt": "2026-03-15T21:41:58.462Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:30-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-On5YSgpq-5G2XLyGNxB": {
+    "available": true,
+    "createdAt": 1772857711399,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-08T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-On5YSjRwiZgmmC8JtXt": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "sarahyagninim@gmail.com",
+    "bookerName": "Sarah Yagninim",
+    "createdAt": 1772857711566,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-22T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OnHj7yRp6CKPKJNwuwQ": {
+    "available": true,
+    "createdAt": 1773062098357,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T00:15:00.000Z",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OnHj8-0uyMOU39UcdzR": {
+    "available": true,
+    "createdAt": 1773062098357,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T00:30:00.000Z",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OnHj81hGUuCpAfgNJHc": {
+    "available": true,
+    "createdAt": 1773062098358,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T00:45:00.000Z",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OnI-s2tz0fX-NPlZRnJ": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "svas.logan22@gmail.com",
+    "bookerName": "Svasthikaa Loganathan Rangasamy",
+    "createdAt": 1773066748203,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnI-s4lMJxNdLFxffuf": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1773066748323,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnI-s8W55tUemTnvwuF": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "aryankatakam092@gmail.com",
+    "bookerName": "Aryan Katakam",
+    "createdAt": 1773066748563,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T13:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnI-sFRE36AUalepNqj": {
+    "available": true,
+    "createdAt": 1773066749006,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T13:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OnI-sMHbR4ws_jn9Rm9": {
+    "available": true,
+    "createdAt": 1773066749444,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T13:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OnI-sY1pvDjRfk6B22d": {
+    "available": true,
+    "createdAt": 1773066750196,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T14:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OnI-sd4A5xkUHLH1woN": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "mekotsarder@gmail.com",
+    "bookerName": "Mekot Sarder",
+    "createdAt": 1773066750583,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T14:30:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "nVHd3VGeVuObTCft4eRhbjtNzBl2": {
+        "comments": "ok merkot did alright\nkinda socially awkward but he has cs skills\nso its wtvr",
+        "interviewerEmail": "ethan@voltanyc.org",
+        "interviewerName": "Ethan Zhang",
+        "interviewerUid": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+        "rating": "Qualified",
+        "updatedAt": "2026-03-14T18:37:52.614Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnI-sjb9sQ0zKlCb6Tu": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "shrutisri1616@gmail.com",
+    "bookerName": "Shruti Sridhar",
+    "createdAt": 1773066751001,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T14:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnIN3mRMMh6k6QiOeZM": {
+    "available": true,
+    "createdAt": 1773072829617,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-27T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjds78x-1x9y4z",
+    "recurringWeekly": true
+  },
+  "-OnIN3o2NmDmlNiqP3c8": {
+    "available": true,
+    "createdAt": 1773072829720,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-27T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjds78x-1x9y4z",
+    "recurringWeekly": true
+  },
+  "-OnIN3pXg8pHuAmqsqrm": {
+    "available": true,
+    "createdAt": 1773072829815,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-27T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjds78x-1x9y4z",
+    "recurringWeekly": true
+  },
+  "-OnIN3r3bUO9ot-DvExK": {
+    "available": true,
+    "createdAt": 1773072829913,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-27T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjds78x-1x9y4z",
+    "recurringWeekly": true
+  },
+  "-OnIN3sVuk6rasr6Em65": {
+    "available": true,
+    "createdAt": 1773072830005,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-27T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjds78x-1x9y4z",
+    "recurringWeekly": true
+  },
+  "-OnIN3ty2nQqyrSyKHHP": {
+    "available": true,
+    "createdAt": 1773072830099,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-27T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjds78x-1x9y4z",
+    "recurringWeekly": true
+  },
+  "-OnIqtzNIQQcxOJ2kHRc": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "mallela.rakshan@gmail.com",
+    "bookerName": "Rakshan Reddy Mallela",
+    "createdAt": 1773080911939,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnPaJyDFkh_lHxpiT4t": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "personaluse.andrewliu@gmail.com",
+    "bookerName": "andrew liu",
+    "createdAt": 1773194006430,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-19T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnPaJzJo3p_JFBka9V9": {
+    "available": true,
+    "createdAt": 1773194006500,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-19T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaJzftbepoiZuJMac": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "l.gonzaleznova7@gmail.com",
+    "bookerName": "Luisaury Gonzalez",
+    "createdAt": 1773194006430,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-26T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnPaK-qpa9vTBjYAHMD": {
+    "available": true,
+    "createdAt": 1773194006598,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-26T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaK18ekgBgcrfr9fF": {
+    "available": true,
+    "createdAt": 1773194006681,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-12T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaK2SrRTmPemeHW-u": {
+    "available": true,
+    "createdAt": 1773194006765,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-19T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaK3iOPf6fF4tXeng": {
+    "available": true,
+    "createdAt": 1773194006846,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-26T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaK4zAPYgTiSdWd_R": {
+    "available": true,
+    "createdAt": 1773194006927,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-12T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaK6HkV2pm6wxemCL": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1773194007010,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-19T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnPaK7aYbTOfM63c0RQ": {
+    "available": true,
+    "createdAt": 1773194007094,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-26T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaK8sZPCmInGJPAHB": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "vivh314@gmail.com",
+    "bookerName": "Vivian Hoelscher",
+    "createdAt": 1773194007176,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-12T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnPaKAAnSLGLe7cLBs0": {
+    "available": true,
+    "createdAt": 1773194007259,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-19T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPaKBSAZhnF77f7xyX": {
+    "available": true,
+    "createdAt": 1773194007341,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-26T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OnPahYn0drDS5thBbWQ": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1773194107139,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-15T09:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldzlkz-n5ui49",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnPahnnETyIO1fOPUcz": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "roulletaidan@gmail.com",
+    "bookerName": "Aidan Roullet",
+    "createdAt": 1773194108163,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-15T10:30:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "pSZuQYuFG6NsU9hLHW6rU57MXvJ2": {
+        "comments": "College student, should be accepted decent coder",
+        "interviewerEmail": "andrew@voltanpo.org",
+        "interviewerName": "andrew@voltanpo.org",
+        "interviewerUid": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+        "rating": "Extremely Qualified",
+        "updatedAt": "2026-03-15T14:47:07.127Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldzlkz-n5ui49",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnPahrei829EVlMhVWK": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "beverlyngu09@gmail.com",
+    "bookerName": "Beverly Nguyen",
+    "createdAt": 1773194108410,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-15T10:45:00",
+    "durationMinutes": 15,
+    "evaluationByUid": {
+      "pSZuQYuFG6NsU9hLHW6rU57MXvJ2": {
+        "comments": "Help with marketing timelines, qualified. Good for marketing",
+        "interviewerEmail": "andrew@voltanpo.org",
+        "interviewerName": "andrew@voltanpo.org",
+        "interviewerUid": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+        "rating": "Extremely Qualified",
+        "updatedAt": "2026-03-15T15:01:03.053Z"
+      }
+    },
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldzlkz-n5ui49",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnSqD0TfutXQ96jFsT5": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "leena12175@gmail.com",
+    "bookerName": "Leena ali",
+    "createdAt": 1773248503929,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-15T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnSqEBiflF5WrYpmybj": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "nithikaprabhu0507@gmail.com",
+    "bookerName": "Nithika Prabhu",
+    "createdAt": 1773248508745,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-15T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadm4p-ubc7bs",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnhlMs-90aJMcQ6Cm7F": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "adamaa09@hotmail.com",
+    "bookerName": "Adam Abdelmajid",
+    "createdAt": 1773515669015,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T15:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnhlMvb5CChgonuNKkC": {
+    "available": true,
+    "createdAt": 1773515669246,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T15:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OnhlN0LJx-Q5h5YBWly": {
+    "available": true,
+    "createdAt": 1773515669613,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T15:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OnhlN5Qb22ImAZ-I6dn": {
+    "available": true,
+    "createdAt": 1773515669938,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OnhlNAAW3XUUJ10ykhf": {
+    "available": true,
+    "createdAt": 1773515670242,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OnhlNGWdiyI9bXX2MsT": {
+    "available": true,
+    "createdAt": 1773515670648,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T15:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlNLGYHOW9ZAH-9t0": {
+    "available": true,
+    "createdAt": 1773515670952,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T15:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlNQEHSzJg4LcxgFf": {
+    "available": true,
+    "createdAt": 1773515671270,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T15:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlNYVIGxXsgiOVqzt": {
+    "available": true,
+    "createdAt": 1773515671799,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T15:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlNeahV1mWo4mqCxE": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "ravuri.aakanksh@gmail.com",
+    "bookerName": "Aakanksh Ravuri",
+    "createdAt": 1773515672253,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T16:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnhlNomCLoSYFEKJ9iz": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "chloeloo708@gmail.com",
+    "bookerName": "Chloe Loo",
+    "createdAt": 1773515672905,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T16:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OnhlO6Gs50KkX1gdfZ-": {
+    "available": true,
+    "createdAt": 1773515674088,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T16:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlOG4BwWYMentzTR-": {
+    "available": true,
+    "createdAt": 1773515674716,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T16:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlO_JAesg4v5nIjpO": {
+    "available": true,
+    "createdAt": 1773515676011,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T16:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlOitIc8x9DoRUS4R": {
+    "available": true,
+    "createdAt": 1773515676624,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T16:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlOs0SxUlDWXu03sw": {
+    "available": true,
+    "createdAt": 1773515677208,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-21T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhlP-KhpNXH2bUu0KB": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1773515677740,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onhp9UCXlikT-TNDeaO": {
+    "available": true,
+    "createdAt": 1773516662761,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T15:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-Onhp9mrV7MZjP5Hb8yf": {
+    "available": true,
+    "createdAt": 1773516664019,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T16:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhpA3yW7R54E52QwwC": {
+    "available": true,
+    "createdAt": 1773516665178,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T16:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhpAMMH1EH3c1XcsFH": {
+    "available": true,
+    "createdAt": 1773516666355,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T16:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnhpAdZixCDHh6wTcBH": {
+    "available": true,
+    "createdAt": 1773516667520,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-14T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OnieKC-uGIMGatoOKga": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "leena12175@gmail.com",
+    "bookerName": "Leena Ali",
+    "createdAt": 1773530600265,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onm2n3nTfVCyj07V2bN": {
+    "available": true,
+    "createdAt": 1773587607905,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-22T08:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2n70KyXsAKvdZnQ1": {
+    "available": true,
+    "createdAt": 1773587608111,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T08:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2n8fKACHihFZ6T3I": {
+    "available": true,
+    "createdAt": 1773587608139,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-29T08:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2nCyaSKiN0FD_3JM": {
+    "available": true,
+    "createdAt": 1773587608492,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T08:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2nHkuqXQDu1VdvTy": {
+    "available": true,
+    "createdAt": 1773587608798,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-22T08:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2nLatTOobrOgYCxG": {
+    "available": true,
+    "createdAt": 1773587609044,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T08:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2nPiwMSxF8Lxqx7P": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "nithikaprabhu0507@gmail.com",
+    "bookerName": "Nithika Prabhu",
+    "createdAt": 1773587609308,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-22T09:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onm2nW1mhCk3MGCxeLv": {
+    "available": true,
+    "createdAt": 1773587609712,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T09:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2nbHQ1zI9m6N068k": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "dtenzin2385@gmail.com",
+    "bookerName": "Tenzin Dadon",
+    "createdAt": 1773587610112,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-22T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onm2ngXohts31nJet8r": {
+    "available": true,
+    "createdAt": 1773587610448,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onm2qk-LPO3fMcUrK8t": {
+    "available": true,
+    "createdAt": 1773587622945,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-Onm2qkOhLrYRO-QyQAT": {
+    "available": true,
+    "createdAt": 1773587622898,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-29T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-Onm2r0fOA4-HJQwQTw_": {
+    "available": true,
+    "createdAt": 1773587624070,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-22T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:30-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-Onm2r2OZXRkJP2K_pJ1": {
+    "available": true,
+    "createdAt": 1773587624108,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-22T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:30-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-Onm2uUFZ2BfO4dM4pW0": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "nikkiranabhat@gmail.com",
+    "bookerName": "Nikki Ranabhat",
+    "createdAt": 1773587638253,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-28T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onm2uWR2RPmiJZQSiYG": {
+    "available": true,
+    "createdAt": 1773587638319,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-28T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-Onm31DE4ZsP7-omadqX": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1773587669923,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-22T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onm31GY__0dk5M0Ws0V": {
+    "available": true,
+    "createdAt": 1773587670068,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-22T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-Onm31K8fbfvrsfw4jzy": {
+    "available": true,
+    "createdAt": 1773587670068,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-03-29T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-Onm31ZKUGXKwdLaDV-E": {
+    "available": true,
+    "createdAt": 1773587669923,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-03-29T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-Onsz84sMUC-9aLtUteo": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1773703827813,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-03T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onsz8ATop6rqsWO0_F6": {
+    "available": true,
+    "createdAt": 1773703827813,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-03T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Onsz8Fo9FcPxuSNOvih": {
+    "available": true,
+    "createdAt": 1773703827814,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-03T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Onsz8LGnDCwCvfdF0zg": {
+    "available": true,
+    "createdAt": 1773703827814,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-03T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Onsz8QkMGrXrBpHOsct": {
+    "available": true,
+    "createdAt": 1773703827814,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-03T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Onsz8WKKqhORtP4leCW": {
+    "available": true,
+    "createdAt": 1773703827814,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-03T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Onsz8apr4p638q7Irs6": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1773703827815,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-01T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onsz8gXaxUn8zhYJeAF": {
+    "available": true,
+    "createdAt": 1773703827815,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-01T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Onsz8mGYiNG7mih2uPC": {
+    "available": true,
+    "createdAt": 1773703827816,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-01T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Onsz8s-QtdTxrYWWnOL": {
+    "available": true,
+    "createdAt": 1773703827816,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-01T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Onsz8xjGq4CGcZL7Y_l": {
+    "available": true,
+    "createdAt": 1773703827817,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-03-30T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Onsz92bsFMBiuqzA0s2": {
+    "available": true,
+    "createdAt": 1773703827817,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-03-30T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Onsz98KtVDi9mWBIHi5": {
+    "available": true,
+    "createdAt": 1773703827818,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-03-30T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Onsz9EDHZ8UM5SxCazu": {
+    "available": true,
+    "createdAt": 1773703827819,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-03-30T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Onsz9KCP2As-AQ2vD8X": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "rmoschella@gmail.com",
+    "bookerName": "Rita",
+    "createdAt": 1773703827820,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-05T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-Onsz9QCGi8yJzmyUOLY": {
+    "available": true,
+    "createdAt": 1773703827820,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-04T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-Onsz9WBa1tOXzQAEi5S": {
+    "available": true,
+    "createdAt": 1773703827824,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-05T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-Onsz9bDWZuz50jK69jf": {
+    "available": true,
+    "createdAt": 1773703827830,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-02T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-Onsz9hDOuOyd2_3x_5p": {
+    "available": true,
+    "createdAt": 1773703827832,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-04T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-Onsz9nH8W4JlmwZ5Prl": {
+    "available": true,
+    "createdAt": 1773703827840,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-04T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-Onsz9tKSQiMzs6q034q": {
+    "available": true,
+    "createdAt": 1773703827847,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-05T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Onsz9zIWeHl0OflyrEm": {
+    "available": true,
+    "createdAt": 1773703827847,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-05T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-OnszA4V6Cr5XkWAd1jD": {
+    "available": true,
+    "createdAt": 1773703827849,
+    "createdBy": "gpCpd90AaDVUVBi8RvLeBwzNz6t2",
+    "datetime": "2026-04-05T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OoPgcP7oNAiqaRPkowM": {
+    "available": true,
+    "createdAt": 1774269400663,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-08T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgcU3tkja8bmOMFu3": {
+    "available": true,
+    "createdAt": 1774269400663,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-08T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgcYPOZ1nhy2qY_Hi": {
+    "available": true,
+    "createdAt": 1774269400664,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-08T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgcZiWBr23a0F0216": {
+    "available": true,
+    "createdAt": 1774269400664,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-08T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgca-hlirbLYxs0mi": {
+    "available": true,
+    "createdAt": 1774269400664,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-06T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgcbCYi8kcrVrX7Dq": {
+    "available": true,
+    "createdAt": 1774269400665,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-06T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgccUKLtK1cmEWEmH": {
+    "available": true,
+    "createdAt": 1774269400665,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-06T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgcdl-9p-HPYHfdMm": {
+    "available": true,
+    "createdAt": 1774269400665,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-06T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-2-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OoPgcf2ttmxRNW4HNkW": {
+    "available": true,
+    "createdAt": 1774269400666,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-10T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OoPgcgHGVeqNQmLYnaG": {
+    "available": true,
+    "createdAt": 1774269400666,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-10T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OoPgchgvhQc4oNj8rBF": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1774269400666,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-10T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OoPgciu9nBtulG5MIzI": {
+    "available": true,
+    "createdAt": 1774269400668,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-12T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-OoPgck8xPSxZKdvNjfg": {
+    "available": true,
+    "createdAt": 1774269400670,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-09T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OoPgclNnjJ-HBD-Yjlb": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "sbatchu7268@gmail.com",
+    "bookerName": "Saharsh Batchu",
+    "createdAt": 1774269400671,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-11T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OoPgcmdjY1ojwrZjn2K": {
+    "available": true,
+    "createdAt": 1774269400673,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-11T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OoPgcnvvnbDruMS22Pw": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1774269400673,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-12T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OoPgcpBeoIJia76A3mB": {
+    "available": true,
+    "createdAt": 1774269400675,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-12T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-OoPgcqT3QsUod0Nbpr2": {
+    "available": true,
+    "createdAt": 1774269400675,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-12T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-OoPgcrnym5oPuIYOQ6C": {
+    "available": true,
+    "createdAt": 1774269400676,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-11T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OoPgctGsJOiaS06rOyP": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "arjunmagarwal@gmail.com",
+    "bookerName": "Arjun Agarwal",
+    "createdAt": 1774269400677,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-12T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OoPgcumR9CJjVc2jKOR": {
+    "available": true,
+    "createdAt": 1774269400677,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-10T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OoPgcw-HJldlQ-7evzS": {
+    "available": true,
+    "createdAt": 1774269400677,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-10T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OoPgcxIVfMQIs9o41zP": {
+    "available": true,
+    "createdAt": 1774269400677,
+    "createdBy": "pSZuQYuFG6NsU9hLHW6rU57MXvJ2",
+    "datetime": "2026-04-10T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZUjAPSkYBySESacj": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-15T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZUsQIeCxu_7YtKSg": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-22T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZV0xtHyrz2g61W6Q": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-15T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZV9ovKfHvIku-LLf": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-22T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZVG3MqWNO40bAvrV": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-15T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZVMvgnXL0WnaKH8u": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-22T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZVS43mYBOyIo5b1r": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-15T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZVVNyMJQ-_H-YHQG": {
+    "available": true,
+    "createdAt": 1775575894336,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-22T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OpcZVYXuckqn7A5dzHv": {
+    "available": true,
+    "createdAt": 1775575894337,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-17T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZV_zh2JgVQNDmbWP": {
+    "available": true,
+    "createdAt": 1775575894337,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-24T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZVc_T_gPYpS3upQe": {
+    "available": true,
+    "createdAt": 1775575894337,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-17T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZVerC9vDZNTd6fHd": {
+    "available": true,
+    "createdAt": 1775575894337,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-24T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZVhX3K7LtmlD3Yhf": {
+    "available": true,
+    "createdAt": 1775575894337,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-17T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZVjnE1kQ_uldcLhr": {
+    "available": true,
+    "createdAt": 1775575894337,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-24T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZVmC_6ilqDR_lmyL": {
+    "available": true,
+    "createdAt": 1775575894337,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-19T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-OpcZVonSabTEPy5j5nl": {
+    "available": true,
+    "createdAt": 1775575894338,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-26T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-OpcZVqpigqVg8fx8U1O": {
+    "available": true,
+    "createdAt": 1775575894338,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-16T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OpcZVt8DoMJycVie63O": {
+    "available": true,
+    "createdAt": 1775575894338,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-23T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OpcZVvA2NXa0euDbFhp": {
+    "available": true,
+    "createdAt": 1775575894338,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-18T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OpcZVxM7yCi9ZJMYVMG": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "rmoschella@statenislandacademy.org",
+    "bookerName": "rita moschella",
+    "createdAt": 1775575894338,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-25T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OpcZVzc1m5hU_uXzN7v": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1775575894338,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-18T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OpcZW0oqcrsnhnIzKYK": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "rmoschella2027@gmail.com",
+    "bookerName": "Rita Moschella",
+    "createdAt": 1775575894338,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-25T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OpcZW3ZGnMfwJmMI2ph": {
+    "available": true,
+    "bookedBy": "",
+    "bookerEmail": "",
+    "bookerName": "",
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-19T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OpcZW5m5eAWMbZjEjHV": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "mallela.rakshan@gmail.com",
+    "bookerName": "Rakshan Reddy Mallela",
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-26T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OpcZW806BpC4OGa_hQ9": {
+    "available": true,
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-19T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-OpcZWAKq7LXzWL--dBm": {
+    "available": true,
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-26T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-OpcZWD-JaINsNAeH2eg": {
+    "available": true,
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-19T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-OpcZWFUbLNm4eTzlYuh": {
+    "available": true,
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-26T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-OpcZWI13iudR5Of_IyF": {
+    "available": true,
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-18T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OpcZWKzvDrQqaGBBRp1": {
+    "available": true,
+    "createdAt": 1775575894339,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-25T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OpcZWNJ8sk6qEauhclm": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-19T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OpcZWQ-wO9FAyagxHKN": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-26T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OpcZWSPukAiHHDK-ES_": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-17T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZWVJIc_nI1g6h9M1": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-24T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZWXbpcFy2iETBxyR": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-17T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZW_9tmQqVHIbzRr3": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-24T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZWbronQTljJg5sPU": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-17T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OpcZWel1qZMUqhPGTu1": {
+    "available": true,
+    "createdAt": 1775575894340,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-04-24T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OqBVOLfVUEX_Ev000zZ": {
+    "available": true,
+    "createdAt": 1776178795960,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-04-29T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OqBVOYf5GjYzgBFkTDu": {
+    "available": true,
+    "createdAt": 1776178795960,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-04-29T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OqBVOe8zWlEF-gokR0p": {
+    "available": true,
+    "createdAt": 1776178795961,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-04-29T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OqBVOgIblOUuLMybvt3": {
+    "available": true,
+    "createdAt": 1776178795961,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-04-29T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OqBVOhaElt9NyJOQugW": {
+    "available": true,
+    "createdAt": 1776178795961,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-01T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OqBVOiusBwD0B7Mtz8-": {
+    "available": true,
+    "createdAt": 1776178795961,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-01T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OqBVOkIZX9-y7yeNa0L": {
+    "available": true,
+    "createdAt": 1776178795961,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-01T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OqBVOlcDKEM_CRax3nj": {
+    "available": true,
+    "createdAt": 1776178795962,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-03T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-OqBVOnr4oTgQ-oFcB0N": {
+    "available": true,
+    "createdAt": 1776178795962,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-04-30T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OqBVOp9y8KSP3EITjWi": {
+    "available": true,
+    "createdAt": 1776178795962,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-02T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OqBVOqOoPycbGt6D_ap": {
+    "available": true,
+    "createdAt": 1776178795962,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-02T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OqBVOrn5DLm85rmcBb2": {
+    "available": false,
+    "bookedBy": "public-booking",
+    "bookerEmail": "rmoschella2027@gmail.com",
+    "bookerName": "Rita",
+    "createdAt": 1776178795963,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-03T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true,
+    "reminderSentAt": ""
+  },
+  "-OqBVOwjFk5redXBwNGj": {
+    "available": true,
+    "createdAt": 1776178795963,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-03T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-OqBVP0QYHt7_9fwIgZU": {
+    "available": true,
+    "createdAt": 1776178795963,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-03T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-OqBVP1oEpuCr-6tGpxp": {
+    "available": true,
+    "createdAt": 1776178795963,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-02T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OqBVP4pQ94S4B5hv-UO": {
+    "available": true,
+    "createdAt": 1776178795963,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-03T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OqBVP6D5S5-c2zabUZB": {
+    "available": true,
+    "createdAt": 1776178795964,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-01T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OqBVP7Z0fPxJaRD7gK6": {
+    "available": true,
+    "createdAt": 1776178795964,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-01T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OqBVP97DQeukfLoqIJW": {
+    "available": true,
+    "createdAt": 1776178795964,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-01T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Oqh3-aYbH5O9Sy6oB3K": {
+    "available": true,
+    "createdAt": 1776725002667,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-06T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Oqh3-hDINZkE721gn-p": {
+    "available": true,
+    "createdAt": 1776725002667,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-06T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Oqh3-may9Z0Xo18IGQ0": {
+    "available": true,
+    "createdAt": 1776725002668,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-06T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Oqh3-rpgi05661fI6L-": {
+    "available": true,
+    "createdAt": 1776725002668,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-06T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-Oqh3-xFhF1IzZaQfRba": {
+    "available": true,
+    "createdAt": 1776725002669,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-08T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Oqh305IweqP6E54Myjz": {
+    "available": true,
+    "createdAt": 1776725002669,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-08T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Oqh30AlN3ukHx8WHo4W": {
+    "available": true,
+    "createdAt": 1776725002669,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-08T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Oqh30GEl7E5r3SF0F4Z": {
+    "available": true,
+    "createdAt": 1776725002670,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-10T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-Oqh30Lt5AXhq0SVD5Co": {
+    "available": true,
+    "createdAt": 1776725002670,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-07T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-Oqh30SAJ66rVp7lHX2b": {
+    "available": true,
+    "createdAt": 1776725002670,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-09T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-Oqh30YF3XNj7yD4ye51": {
+    "available": true,
+    "createdAt": 1776725002671,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-09T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-Oqh30d7zxuwiKscEgTX": {
+    "available": true,
+    "createdAt": 1776725002671,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-10T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-Oqh30iui6mqTaHRSOiq": {
+    "available": true,
+    "createdAt": 1776725002671,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-10T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-Oqh30onnRDGM3Pg9uDd": {
+    "available": true,
+    "createdAt": 1776725002672,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-10T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-Oqh30q3-W01gmQvruMd": {
+    "available": true,
+    "createdAt": 1776725002672,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-09T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-Oqh30rKd5unapRMCTSf": {
+    "available": true,
+    "createdAt": 1776725002672,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-10T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-Oqh30sYLSBz9_ly8Yq7": {
+    "available": true,
+    "createdAt": 1776725002673,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-08T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Oqh30tnCPmQBMz_UAf8": {
+    "available": true,
+    "createdAt": 1776725002673,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-08T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-Oqh30v2IBPDM10d8AKX": {
+    "available": true,
+    "createdAt": 1776725002673,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-08T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrR7X6SD9Ytvn-fTkz9": {
+    "available": true,
+    "createdAt": 1777514717692,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-15T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrR7XCQVXxp0a5Lrms4": {
+    "available": true,
+    "createdAt": 1777514717692,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-15T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrR7XHl6lQOrJIOR6i6": {
+    "available": true,
+    "createdAt": 1777514717692,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-15T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrR7XOTQiXg9a_9Tvht": {
+    "available": true,
+    "createdAt": 1777514717693,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-17T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-OrR7XVbXFJOvYTqQHb7": {
+    "available": true,
+    "createdAt": 1777514717693,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-14T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OrR7XaGClKR1xRoRRyN": {
+    "available": true,
+    "createdAt": 1777514717694,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-16T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OrR7Xfr5ZZpYq-e5Uzm": {
+    "available": true,
+    "createdAt": 1777514717694,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-16T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OrR7XlIVd3cqdCoBNes": {
+    "available": true,
+    "createdAt": 1777514717694,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-17T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OrR7Xr3botdWYg6kzsO": {
+    "available": true,
+    "createdAt": 1777514717695,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-17T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-OrR7XwRKCf4IHqak9FR": {
+    "available": true,
+    "createdAt": 1777514717695,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-17T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-OrR7Y0shZYPTRpehdnA": {
+    "available": true,
+    "createdAt": 1777514717695,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-16T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OrR7Y6WsonlhoDQz6MR": {
+    "available": true,
+    "createdAt": 1777514717696,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-17T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OrR7YBxKXAxVzXNqZSE": {
+    "available": true,
+    "createdAt": 1777514717696,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-15T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrR7YHQfM6bLpYtl0rG": {
+    "available": true,
+    "createdAt": 1777514717696,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-15T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrR7YOHqegOgY8JKCpl": {
+    "available": true,
+    "createdAt": 1777514717697,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-15T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrR7YUVluMMn1TwUkf1": {
+    "available": true,
+    "createdAt": 1777514717697,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-13T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrR7Y_vgJXWtKD6i-MQ": {
+    "available": true,
+    "createdAt": 1777514717697,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-13T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrR7YgJXrNNDy2a2lqg": {
+    "available": true,
+    "createdAt": 1777514717698,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-13T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrR7YmlMwGYKH_0sk7-": {
+    "available": true,
+    "createdAt": 1777514717698,
+    "createdBy": "Jm9VBt08lhUpshIthqMhi8oQc453",
+    "datetime": "2026-05-13T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrnSHdh15RB1ttKsDAN": {
+    "available": true,
+    "createdAt": 1777906035322,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-20T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:00-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrnSHhxdF8WybDJAZen": {
+    "available": true,
+    "createdAt": 1777906035323,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-20T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:15-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrnSHmIxyznRHU516pn": {
+    "available": true,
+    "createdAt": 1777906035323,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-20T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:30-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrnSHrHCsCBql3RRt8W": {
+    "available": true,
+    "createdAt": 1777906035323,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-20T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kiIj0TGrPEQEjs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-4-20:45-15-jean-pierre proulx",
+    "recurringWeekly": true
+  },
+  "-OrnSHuTwfsYBdNMlLR6": {
+    "available": true,
+    "createdAt": 1777906035323,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-22T20:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:15-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrnSHw2ELm7KKqK4NJt": {
+    "available": true,
+    "createdAt": 1777906035324,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-22T20:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrnSHxXxsiRXC9OnD39": {
+    "available": true,
+    "createdAt": 1777906035324,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-22T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrnSHzG2sMQjtwEWkao": {
+    "available": true,
+    "createdAt": 1777906035324,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-24T17:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmjilfeh-fmh0ok",
+    "recurringWeekly": true
+  },
+  "-OrnSI-_f6_pE3iX3in7": {
+    "available": true,
+    "createdAt": 1777906035324,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-21T20:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRNTPk7oSbIic91"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmldxfuv-1he3yp",
+    "recurringWeekly": true
+  },
+  "-OrnSI1rxRzRjaAEgHh0": {
+    "available": true,
+    "createdAt": 1777906035325,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-23T15:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqpfsbb-wi74sk",
+    "recurringWeekly": true
+  },
+  "-OrnSI3EjUdk3sZI5H1E": {
+    "available": true,
+    "createdAt": 1777906035325,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-23T16:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmqq12kh-f409kc",
+    "recurringWeekly": true
+  },
+  "-OrnSI4aN2tCdh3hMxjc": {
+    "available": true,
+    "createdAt": 1777906035325,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-24T17:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m",
+      "-OnFB_tlzJxkmLrxSIRs"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:45-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OrnSI6-fLgL_O83yAON": {
+    "available": true,
+    "createdAt": 1777906035325,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-24T09:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmrw9opt-wprjla",
+    "recurringWeekly": true
+  },
+  "-OrnSI7PpMi0dFYKLuKs": {
+    "available": true,
+    "createdAt": 1777906035326,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-24T17:15:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmmadiex-eoqkt1",
+    "recurringWeekly": true
+  },
+  "-OrnSI9ujUBhId89bdhP": {
+    "available": true,
+    "createdAt": 1777906035326,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-23T13:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-Om6cLRMU4PHAEptSVn0"
+    ],
+    "location": "",
+    "recurringSeriesId": "weekly-mmja5usq-eqb1r4",
+    "recurringWeekly": true
+  },
+  "-OrnSIBLjXJ86kGFtJMk": {
+    "available": true,
+    "createdAt": 1777906035326,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-24T17:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmoOhxQjuUTt0092W3m"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-0-17:00-15-andrew chin|ethan zhang",
+    "recurringWeekly": true
+  },
+  "-OrnSIClV-3Qrw7nRfPy": {
+    "available": true,
+    "createdAt": 1777906035326,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-22T19:30:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:30-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrnSIE86gvTHB1J3muq": {
+    "available": true,
+    "createdAt": 1777906035326,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-22T19:45:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-5-19:45-15-alvin jiang",
+    "recurringWeekly": true
+  },
+  "-OrnSIFX-OklZ9gEJKEM": {
+    "available": true,
+    "createdAt": 1777906035327,
+    "createdBy": "nVHd3VGeVuObTCft4eRhbjtNzBl2",
+    "datetime": "2026-05-22T20:00:00",
+    "durationMinutes": 15,
+    "interviewerMemberIds": [
+      "-OmfO2kjKfsbC37PnSkt"
+    ],
+    "location": "",
+    "recurringSeriesId": "wk-6-20:00-15-alvin jiang",
+    "recurringWeekly": true
+  }
+}

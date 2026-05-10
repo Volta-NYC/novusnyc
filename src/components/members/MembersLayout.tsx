@@ -159,7 +159,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     router.replace("/members/login");
   };
 
-  // Show a spinner while Firebase resolves the auth state.
+  // Show a spinner while auth state resolves.
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
