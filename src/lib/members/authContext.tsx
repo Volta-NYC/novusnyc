@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = session.data.session?.access_token;
       if (!token) { setUserProfile(null); return; }
 
-      const res = await fetch("/api/members/me", {
+      const res = await fetch("/api/portal-auth/profile", {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });
