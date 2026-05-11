@@ -31,11 +31,9 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        // Firebase Storage showcase images — allows Next.js image optimization
-        // and CDN caching instead of serving them unoptimized.
         protocol: "https",
-        hostname: "firebasestorage.googleapis.com",
-        pathname: "/v0/b/**",
+        hostname: "thzvuxuqvjkifpxlmoqc.supabase.co",
+        pathname: "/storage/v1/object/public/**",
       },
     ],
     // Serve WebP/AVIF where supported and cache optimized images on Vercel CDN.
