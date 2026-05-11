@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
-import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment } from "@/lib/members/storage";
+import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment, getHandbookPage } from "@/lib/members/storage";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -98,6 +98,11 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
+async function sha256(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 function getDefaultMembersPath(role: AuthRole | null): string {
   if (role === "interviewer") return "/members/applicants/interviews";
   return "/members/overview";
@@ -139,6 +144,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const [showAckModal, setShowAckModal] = useState(false);
   const [ackChecked, setAckChecked] = useState(false);
   const [ackLoading, setAckLoading] = useState(false);
+  const [currentContentHash, setCurrentContentHash] = useState("");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -152,12 +158,22 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     }
   }, [loading, user, userProfile, router]);
 
-  // Check handbook acknowledgment for members only.
+  // Check handbook acknowledgment for members only. Re-shows if the handbook
+  // content has changed since the user last acknowledged it (hash mismatch).
   useEffect(() => {
     if (loading || !user || !userProfile || authRole !== "member") return;
-    getMemberAcknowledgment(userProfile.id, "credit-infraction-policy")
-      .then((ack) => {
-        if (!ack) setShowAckModal(true);
+    Promise.all([
+      getMemberAcknowledgment(userProfile.id, "credit-infraction-policy"),
+      getHandbookPage("credit-infraction-policy"),
+    ])
+      .then(async ([ack, page]) => {
+        const content = page?.content ?? "";
+        const hash = content ? await sha256(content) : "";
+        setCurrentContentHash(hash);
+        // Show if never acknowledged, or if the handbook content has changed.
+        if (!ack || (hash && ack.contentHash !== hash)) {
+          setShowAckModal(true);
+        }
       })
       .catch(() => {
         // silently ignore — don't block the user if the check fails
@@ -171,7 +187,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       await createMemberAcknowledgment({
         memberId: userProfile.id,
         pageSlug: "credit-infraction-policy",
-        contentHash: "",
+        contentHash: currentContentHash,
       });
       setShowAckModal(false);
     } catch {

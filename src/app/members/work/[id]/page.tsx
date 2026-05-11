@@ -9,8 +9,8 @@ import { useParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  getAssignmentClaimsList, getAssignmentsList, getBusinessesList,
-  getCyclesList, getTeamMembersList,
+  subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
+  subscribeCycles, getTeamMembersList,
   createAssignmentClaim, updateAssignmentClaim, deleteAssignmentClaim,
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
@@ -57,14 +57,13 @@ export default function AssignmentDetailPage() {
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => { void getTeamMembersList().then(setTeam); }, []);
   useEffect(() => {
-    void Promise.all([
-      getTeamMembersList().then(setTeam),
-      getCyclesList().then(setCycles),
-      getAssignmentsList().then(setAssignments),
-      getAssignmentClaimsList().then(setClaims),
-      getBusinessesList().then(setBusinesses),
-    ]);
+    const unsub1 = subscribeCycles(setCycles);
+    const unsub2 = subscribeAssignments(setAssignments);
+    const unsub3 = subscribeAssignmentClaims(setClaims);
+    const unsub4 = subscribeBusinesses(setBusinesses);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
   }, []);
 
   const me = useMemo(() => {
@@ -114,9 +113,9 @@ export default function AssignmentDetailPage() {
   const isFull = activeClaims.length >= assignment.capacity;
   const cycleMatches = activeCycle && assignment.cycleId === activeCycle.id;
   const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate;
-  const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "in_progress" || myClaim.status === "rejected");
+  const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress" || myClaim.status === "rejected");
   const canMarkInProgress = myClaim && myClaim.status === "claimed";
-  const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "in_progress");
+  const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress");
 
   const handleClaim = async () => {
     if (!me || !activeCycle) return;
@@ -139,7 +138,7 @@ export default function AssignmentDetailPage() {
     if (!myClaim) return;
     setBusy(true);
     try {
-      await updateAssignmentClaim(myClaim.id, { status: "in_progress" });
+      await updateAssignmentClaim(myClaim.id, { status: "In Progress" });
     } finally {
       setBusy(false);
     }
@@ -165,7 +164,7 @@ export default function AssignmentDetailPage() {
     setBusy(true);
     try {
       await updateAssignmentClaim(myClaim.id, {
-        status: "submitted",
+        status: "Submitted",
         deliverableUrl: deliverableUrl.trim(),
         submissionNotes: submissionNotes.trim(),
         submittedAt: new Date().toISOString(),
@@ -305,7 +304,7 @@ export default function AssignmentDetailPage() {
                 {myClaim.rejectReason}
               </div>
             )}
-            {myClaim.status === "approved" && (
+            {myClaim.status === "Approved" && (
               <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
                 Approved — <strong>{myClaim.creditsAwarded ?? assignment.credits} credits</strong> added to your ledger.
               </div>

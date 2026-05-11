@@ -3,17 +3,21 @@
 // Infractions catalog — renders as a tab on the Members page. Defines the *types*
 // of infractions and their point values. Severity is implicit in the points
 // (1 = minor, 2 = major, 3 = severe). Sort is fixed: points low→high, name A→Z.
+//
+// Also doubles as the "Issue infraction" entry point when navigated to with
+// ?memberId=<id>&memberName=<name> query params (from MemberDrawer).
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { MEMBERS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, Btn, Modal, Field, Input, TextArea, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeInfractions, createInfraction, updateInfraction, deleteInfraction,
-  type Infraction,
+  subscribeInfractions, subscribeCycles, getTeamMembersList,
+  createInfraction, updateInfraction, deleteInfraction, createMemberStrike,
+  type Infraction, type Cycle, type TeamMember,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -36,20 +40,38 @@ const BLANK_FORM: Omit<Infraction, "id" | "createdAt" | "updatedAt"> = {
 };
 
 export default function InfractionsPage() {
-  const { authRole, loading } = useAuth();
+  const { authRole, loading, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { ask, Dialog } = useConfirm();
 
   const [infractions, setInfractions] = useState<Infraction[]>([]);
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Infraction | null>(null);
   const [form, setForm] = useState(BLANK_FORM);
+
+  // Issue-infraction form state
+  const [issueInfractionId, setIssueInfractionId] = useState("");
+  const [issueMemberId, setIssueMemberId] = useState("");
+  const [issueNote, setIssueNote] = useState("");
+  const [issuePointsOverride, setIssuePointsOverride] = useState("");
+  const [issueStatus, setIssueStatus] = useState<"idle" | "busy" | "done" | "error">("idle");
 
   useEffect(() => {
     if (!loading && authRole !== "admin") router.replace("/members/projects");
   }, [authRole, loading, router]);
 
   useEffect(() => subscribeInfractions(setInfractions), []);
+  useEffect(() => subscribeCycles(setCycles), []);
+  useEffect(() => { void getTeamMembersList().then(setTeam); }, []);
+
+  // Pre-select member from query params (navigated from MemberDrawer)
+  useEffect(() => {
+    const memberId = searchParams.get("memberId");
+    if (memberId) setIssueMemberId(memberId);
+  }, [searchParams]);
 
   // Fixed sort: by points (low→high), then by name (A→Z). No other sort needed.
   const sorted = useMemo(() => {
@@ -92,8 +114,39 @@ export default function InfractionsPage() {
         await deleteInfraction(editing.id);
         setModal(null);
       },
-      `Delete “${editing.name}”? This permanently removes the infraction type. Strikes already issued under this name keep their record.`,
+      `Delete "${editing.name}"? This permanently removes the infraction type. Strikes already issued under this name keep their record.`,
     );
+  };
+
+  const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
+
+  const handleIssueStrike = async () => {
+    const infraction = sorted.find((i) => i.id === issueInfractionId);
+    const member = team.find((m) => m.id === issueMemberId);
+    if (!infraction || !member || !activeCycle) return;
+    setIssueStatus("busy");
+    try {
+      const points = issuePointsOverride.trim()
+        ? Math.max(0, Number(issuePointsOverride) || 0)
+        : infraction.points;
+      await createMemberStrike({
+        memberId: member.id,
+        memberName: member.name,
+        cycleId: activeCycle.id,
+        infractionId: infraction.id,
+        infractionName: infraction.name,
+        points,
+        issuedBy: user?.email ?? "admin",
+        note: issueNote.trim(),
+        source: "manual",
+      });
+      setIssueStatus("done");
+      setIssueInfractionId("");
+      setIssueNote("");
+      setIssuePointsOverride("");
+    } catch {
+      setIssueStatus("error");
+    }
   };
 
   if (loading || authRole !== "admin") {
@@ -116,6 +169,70 @@ export default function InfractionsPage() {
         subtitle="Catalog of infraction types and their point values. Members see this list on their dashboard rules card."
         action={<Btn variant="primary" onClick={openCreate}>+ New Infraction</Btn>}
       />
+
+      {/* Issue infraction to member */}
+      <section className="rounded-2xl border border-white/10 bg-[#13161D] p-5">
+        <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-3">Issue infraction to member</p>
+        {!activeCycle ? (
+          <p className="text-xs text-white/45">No active cycle — infractions can only be issued during an active cycle.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Member" required>
+              <select
+                value={issueMemberId}
+                onChange={(e) => { setIssueMemberId(e.target.value); setIssueStatus("idle"); }}
+                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+              >
+                <option value="">— Select member —</option>
+                {[...team].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")).map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Infraction" required>
+              <select
+                value={issueInfractionId}
+                onChange={(e) => { setIssueInfractionId(e.target.value); setIssueStatus("idle"); }}
+                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+              >
+                <option value="">— Select infraction —</option>
+                {sorted.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name} ({i.points} pt{i.points === 1 ? "" : "s"})</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Points override (optional)">
+              <Input
+                type="number"
+                min="0"
+                value={issuePointsOverride}
+                onChange={(e) => setIssuePointsOverride(e.target.value)}
+                placeholder={sorted.find((i) => i.id === issueInfractionId)?.points?.toString() ?? "default"}
+              />
+            </Field>
+            <Field label="Note (optional)">
+              <Input
+                value={issueNote}
+                onChange={(e) => setIssueNote(e.target.value)}
+                placeholder="Context for this infraction…"
+              />
+            </Field>
+          </div>
+        )}
+        {activeCycle && (
+          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-white/8">
+            <Btn
+              variant="primary"
+              disabled={!issueMemberId || !issueInfractionId || issueStatus === "busy"}
+              onClick={() => void handleIssueStrike()}
+            >
+              {issueStatus === "busy" ? "Issuing…" : "Issue infraction"}
+            </Btn>
+            {issueStatus === "done" && <span className="text-xs text-emerald-400">✓ Issued successfully</span>}
+            {issueStatus === "error" && <span className="text-xs text-red-400">Failed — try again</span>}
+          </div>
+        )}
+      </section>
 
       <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
         <table className="w-full text-left">

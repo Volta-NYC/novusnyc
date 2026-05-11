@@ -81,9 +81,9 @@ export function computeCreditLedger(input: {
   let approved = 0;
   let pending = 0;
   for (const claim of input.claims) {
-    if (claim.status === "approved") {
+    if (claim.status === "Approved") {
       approved += claim.creditsAwarded ?? input.assignmentCredits.get(claim.assignmentId) ?? 0;
-    } else if (claim.status === "submitted") {
+    } else if (claim.status === "Submitted") {
       pending += input.assignmentCredits.get(claim.assignmentId) ?? 0;
     }
   }

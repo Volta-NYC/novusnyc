@@ -145,10 +145,10 @@ export default function MemberOverviewPage() {
   const targetReached = targetCredits > 0 ? Math.min(100, (ledger.total / targetCredits) * 100) : 0;
 
   // My-work buckets.
-  const inProgress = myClaims.filter((c) => c.status === "claimed" || c.status === "in_progress");
-  const pending = myClaims.filter((c) => c.status === "submitted");
+  const inProgress = myClaims.filter((c) => c.status === "claimed" || c.status === "In Progress");
+  const pending = myClaims.filter((c) => c.status === "Submitted");
   const recentlyApproved = myClaims
-    .filter((c) => c.status === "approved")
+    .filter((c) => c.status === "Approved")
     .sort((a, b) => (b.approvedAt ?? "").localeCompare(a.approvedAt ?? ""))
     .slice(0, 5);
 
@@ -163,7 +163,7 @@ export default function MemberOverviewPage() {
       claimsByAssignment.set(c.assignmentId, list);
     }
     const open = assignments
-      .filter((a) => a.status === "open" || a.status === "claimed")
+      .filter((a) => a.status === "Open" || a.status === "In Progress")
       .filter((a) => a.cycleId === activeCycle.id)
       .filter((a) => !claimedAssignmentIds.has(a.id))
       .filter((a) => {
@@ -366,7 +366,7 @@ export default function MemberOverviewPage() {
               entries={inProgress.slice(0, 2).map((c) => ({
                 id: c.id,
                 title: assignmentsById.get(c.assignmentId)?.title ?? "—",
-                subtitle: c.status === "in_progress" ? "In progress" : "Claimed",
+                subtitle: c.status === "In Progress" ? "In progress" : "Claimed",
               }))}
               accent="text-blue-700"
             />

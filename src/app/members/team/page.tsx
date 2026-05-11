@@ -7,11 +7,12 @@ import SectionTabs, { MEMBERS_GROUP_TABS } from "@/components/members/SectionTab
 import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
+import SchoolSelector from "@/components/SchoolSelector";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
-  getBusinessesList, getFinanceAssignmentsList, getApplicationsList,
-  getCyclesList, getAssignmentsList, getAssignmentClaimsList,
-  getMemberStrikesList, getMemberCreditAdjustmentsList, getEmailTemplatesList, getInfractionsList,
+  subscribeBusinesses, subscribeCycles, subscribeAssignments, subscribeAssignmentClaims,
+  subscribeMemberStrikes, subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
+  getFinanceAssignmentsList, getApplicationsList,
   type TeamMember, type Business, type FinanceAssignment, type ApplicationRecord,
   type Cycle, type Assignment, type AssignmentClaim, type MemberStrike, type MemberCreditAdjustment,
   type EmailTemplate, type Infraction,
@@ -147,7 +148,6 @@ const ADMIN_COLS = [
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: null },
-  { key: "accountCreated", label: "Portal",          width: 80,  sortCol: null },
   { key: "strikes",        label: "Strikes",         width: 72,  sortCol: null },
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
@@ -375,22 +375,50 @@ export default function TeamPage() {
   const { authRole, user } = useAuth();
   const canEdit = authRole === "admin";
   const isMemberRestricted = authRole === "member";
+  const [schoolOptions, setSchoolOptions] = useState<string[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(true);
+
+  useEffect(() => {
+    const fetchSchoolNames = async () => {
+      try {
+        const names = await import('@/lib/members/storage').then(mod => mod.getTeamSchoolNames());
+        setSchoolOptions(names);
+      } catch (error) {
+        console.error('Failed to fetch school names:', error);
+        setSchoolOptions([]);
+      } finally {
+        setLoadingSchools(false);
+      }
+    };
+
+    fetchSchoolNames();
+  }, []);
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   useEffect(() => subscribeTeam(setTeam), []);
 
-  // One-shot batch fetch for all supporting data — no persistent listeners needed.
+  // Real-time subscriptions for all supporting data — automatic updates when database changes.
   useEffect(() => {
-    void Promise.all([
-      getBusinessesList().then(setBusinesses),
-      getCyclesList().then(setCycles),
-      getAssignmentsList().then(setCreditAssignments),
-      getAssignmentClaimsList().then(setCreditClaims),
-      getMemberStrikesList().then(setCreditStrikes),
-      getMemberCreditAdjustmentsList().then(setCreditAdjustments),
-      getEmailTemplatesList().then(setEmailTemplates),
-      getInfractionsList().then(setInfractionCatalog),
-    ]);
+    const unsubscribeBusinesses = subscribeBusinesses(setBusinesses);
+    const unsubscribeCycles = subscribeCycles(setCycles);
+    const unsubscribeCreditAssignments = subscribeAssignments(setCreditAssignments);
+    const unsubscribeCreditClaims = subscribeAssignmentClaims(setCreditClaims);
+    const unsubscribeCreditStrikes = subscribeMemberStrikes(setCreditStrikes);
+    const unsubscribeCreditAdjustments = subscribeMemberCreditAdjustments(setCreditAdjustments);
+    const unsubscribeEmailTemplates = subscribeEmailTemplates(setEmailTemplates);
+    const unsubscribeInfractionCatalog = subscribeInfractions(setInfractionCatalog);
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      unsubscribeBusinesses();
+      unsubscribeCycles();
+      unsubscribeCreditAssignments();
+      unsubscribeCreditClaims();
+      unsubscribeCreditStrikes();
+      unsubscribeCreditAdjustments();
+      unsubscribeEmailTemplates();
+      unsubscribeInfractionCatalog();
+    };
   }, []);
 
   // One-shot automation sweep: when admin loads this page with full cycle data,
@@ -1458,10 +1486,6 @@ export default function TeamPage() {
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
                                   <TrackAvatarIcon track={track} color={avatar.text} />
                                 </div>
-                                <span
-                                  className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${hasPortalAccount ? "bg-emerald-400" : "bg-white/20"}`}
-                                  title={hasPortalAccount ? "Portal account linked" : "No portal account yet"}
-                                />
                                 <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
                               </div>
                             </td>
@@ -1538,15 +1562,6 @@ export default function TeamPage() {
                               <span className="text-white/50">{member.acceptedDate || "—"}</span>
                             </td>
                           );
-                          case "accountCreated": return (
-                            <td key="accountCreated" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
-                              {hasPortalAccount ? (
-                                <span className="text-emerald-400 text-xs font-medium">✓</span>
-                              ) : (
-                                <span className="text-white/25 text-xs">—</span>
-                              )}
-                            </td>
-                          );
                           case "strikes": return (
                             <td key="strikes" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
                               {strikeCount > 0 ? (
@@ -1568,7 +1583,9 @@ export default function TeamPage() {
                               <div className="members-row-actions">
                                 {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
                                 {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
-                                {canEdit && !member.authUid && (() => {
+                                {canEdit && member.authUid ? (
+                                  <span className="members-pill-btn whitespace-nowrap text-emerald-400 text-xs font-medium">✓</span>
+                                ) : (() => {
                                   const st = inviteStatus[member.id];
                                   return (
                                     <Btn
@@ -1606,7 +1623,7 @@ export default function TeamPage() {
       <Modal
         open={!!assignmentQuickView}
         onClose={() => setAssignmentQuickView(null)}
-        title={assignmentQuickView ? `${assignmentQuickView.item.code} · ${assignmentQuickView.item.title}` : "Assignment"}
+        title={assignmentQuickView ? assignmentQuickView.item.title : "Assignment"}
       >
         {assignmentQuickView && (
           <div className="space-y-3">
@@ -1628,7 +1645,7 @@ export default function TeamPage() {
               )}
             </div>
             <p className="text-[11px] text-white/45">
-              Click {assignmentQuickView.item.code} again to open the full project popup.
+              Click the assignment again to open the full project popup.
             </p>
           </div>
         )}
@@ -1660,8 +1677,8 @@ export default function TeamPage() {
             : 0;
           const dot = computeDot({ cycle: activeCycle, member: m, earnedCredits: ledger.total, targetCredits: target, hasAnyClaims: memberClaims.length > 0 });
           const dotColorClass = dot.color === "green" ? "bg-emerald-400" : dot.color === "yellow" ? "bg-yellow-400" : dot.color === "orange" ? "bg-orange-400" : dot.color === "red" ? "bg-red-500" : "bg-gray-400";
-          const pendingClaims = memberClaims.filter((c) => c.status === "claimed" || c.status === "in_progress" || c.status === "submitted");
-          const approvedClaims = memberClaims.filter((c) => c.status === "approved");
+          const pendingClaims = memberClaims.filter((c) => c.status === "claimed" || c.status === "In Progress" || c.status === "Submitted");
+          const approvedClaims = memberClaims.filter((c) => c.status === "Approved");
           return (
             <div className="space-y-3">
               <div className="flex items-center gap-2.5">
@@ -1697,7 +1714,7 @@ export default function TeamPage() {
                           <span className="text-xs text-white/70 truncate">{assignment?.title ?? claim.assignmentId}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <span className="text-xs text-white/50">{credits.get(claim.assignmentId) ?? "?"} cr</span>
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${claim.status === "approved" ? "bg-emerald-500/15 text-emerald-300" : claim.status === "rejected" ? "bg-red-500/15 text-red-300" : "bg-yellow-500/15 text-yellow-300"}`}>
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${claim.status === "Approved" ? "bg-emerald-500/15 text-emerald-300" : claim.status === "rejected" ? "bg-red-500/15 text-red-300" : "bg-yellow-500/15 text-yellow-300"}`}>
                               {claim.status}
                             </span>
                           </div>
@@ -1760,7 +1777,12 @@ export default function TeamPage() {
             </Field>
           )}
           <Field label="School">
-            <Input value={form.school} onChange={e => setField("school", e.target.value)} />
+            <SchoolSelector
+              value={form.school}
+              onChange={(value) => setField("school", value)}
+              options={loadingSchools ? [] : schoolOptions}
+              placeholder="Type or select a school"
+            />
           </Field>
           <Field label="High School Class Year">
             <select

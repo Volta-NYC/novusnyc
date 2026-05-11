@@ -376,8 +376,8 @@ const TAB_TRACK: Record<Exclude<ProjectTab, "discovery">, TrackDivision> = {
 };
 
 const TAB_TITLE: Record<ProjectTab, string> = {
-  tech: "Tech Projects",
-  marketing: "Marketing Projects",
+  tech: "Businesses",
+  marketing: "Marketing",
   discovery: "Discovery",
 };
 

@@ -8,12 +8,13 @@
 // page just sets a `manageMember` state and renders this component.
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   subscribeAssignmentClaims, subscribeAssignments, subscribeCycles,
-  subscribeInfractions, subscribeMemberCreditAdjustments, subscribeMemberStrikes,
-  createMemberStrike, deleteMemberStrike, clearMemberStrikes,
+  subscribeMemberCreditAdjustments, subscribeMemberStrikes,
+  deleteMemberStrike, clearMemberStrikes,
   createMemberCreditAdjustment, updateTeamMember,
-  type Assignment, type AssignmentClaim, type Cycle, type Infraction,
+  type Assignment, type AssignmentClaim, type Cycle,
   type MemberCreditAdjustment, type MemberStrike, type TeamMember,
 } from "@/lib/members/storage";
 import {
@@ -41,16 +42,10 @@ interface Props {
 
 export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) {
   const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [infractions, setInfractions] = useState<Infraction[]>([]);
   const [strikes, setStrikes] = useState<MemberStrike[]>([]);
   const [adjustments, setAdjustments] = useState<MemberCreditAdjustment[]>([]);
   const [claims, setClaims] = useState<AssignmentClaim[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-
-  const [issueOpen, setIssueOpen] = useState(false);
-  const [issueInfractionId, setIssueInfractionId] = useState("");
-  const [issueNote, setIssueNote] = useState("");
-  const [issuePointsOverride, setIssuePointsOverride] = useState("");
 
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustPoints, setAdjustPoints] = useState("");
@@ -60,7 +55,6 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
   const [statusOverride, setStatusOverride] = useState("");
 
   useEffect(() => subscribeCycles(setCycles), []);
-  useEffect(() => subscribeInfractions(setInfractions), []);
   useEffect(() => subscribeMemberStrikes(setStrikes), []);
   useEffect(() => subscribeMemberCreditAdjustments(setAdjustments), []);
   useEffect(() => subscribeAssignmentClaims(setClaims), []);
@@ -117,38 +111,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
       })
     : null;
 
-  // Sort the infraction picker by points (low→high) then by name to match the
-  // member-facing rules card.
-  const activeInfractions = useMemo(
-    () => [...infractions].sort((a, b) => (a.points - b.points) || a.name.localeCompare(b.name)),
-    [infractions],
-  );
-
-  const selectedInfraction = activeInfractions.find((i) => i.id === issueInfractionId) ?? null;
-
   if (!member) return null;
-
-  const handleIssueStrike = async () => {
-    if (!selectedInfraction || !activeCycle) return;
-    const points = issuePointsOverride.trim()
-      ? Math.max(0, Number(issuePointsOverride) || 0)
-      : selectedInfraction.points;
-    await createMemberStrike({
-      memberId: member.id,
-      memberName: member.name,
-      cycleId: activeCycle.id,
-      infractionId: selectedInfraction.id,
-      infractionName: selectedInfraction.name,
-      points,
-      issuedBy: reviewerLabel,
-      note: issueNote.trim(),
-      source: "manual",
-    });
-    setIssueOpen(false);
-    setIssueInfractionId("");
-    setIssueNote("");
-    setIssuePointsOverride("");
-  };
 
   const handleAdjustCredits = async () => {
     if (!activeCycle) return;
@@ -285,10 +248,13 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                   ))}
               </ul>
             )}
-            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-white/8">
-              <Btn size="sm" variant="primary" onClick={() => setIssueOpen(true)} disabled={!activeCycle || activeInfractions.length === 0}>
-                Issue infraction
-              </Btn>
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/8">
+              <Link
+                href={`/members/team/infractions?memberId=${encodeURIComponent(member.id)}&memberName=${encodeURIComponent(member.name ?? "")}`}
+                className="inline-flex items-center rounded-lg border border-[#85CC17]/40 bg-[#85CC17]/10 px-2.5 py-1 text-xs font-medium text-[#85CC17] hover:bg-[#85CC17]/20 transition-colors"
+              >
+                Issue infraction →
+              </Link>
               {memberStrikes.length > 0 && (
                 <Btn size="sm" variant="danger" onClick={() => void handleClearStrikes()}>
                   Clear all
@@ -378,50 +344,6 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
           </section>
         </div>
       </aside>
-
-      {/* Issue infraction modal */}
-      {issueOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setIssueOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-[#13161D] border border-white/10 p-5">
-            <h3 className="font-display font-bold text-white text-lg mb-3">Issue infraction</h3>
-            <Field label="Infraction" required>
-              <select
-                value={issueInfractionId}
-                onChange={(e) => setIssueInfractionId(e.target.value)}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-              >
-                <option value="">— Select —</option>
-                {activeInfractions.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.name} ({i.points} pt{i.points === 1 ? "" : "s"})
-                  </option>
-                ))}
-              </select>
-            </Field>
-            {selectedInfraction && (
-              <p className="text-xs text-white/55 mt-1">{selectedInfraction.description}</p>
-            )}
-            <Field label="Points override (optional)">
-              <Input
-                type="number"
-                min="0"
-                placeholder={selectedInfraction ? String(selectedInfraction.points) : ""}
-                value={issuePointsOverride}
-                onChange={(e) => setIssuePointsOverride(e.target.value)}
-              />
-            </Field>
-            <Field label="Note (optional)">
-              <TextArea rows={3} value={issueNote} onChange={(e) => setIssueNote(e.target.value)} />
-            </Field>
-            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-white/8">
-              <Btn variant="ghost" onClick={() => setIssueOpen(false)}>Cancel</Btn>
-              <Btn variant="primary" onClick={() => void handleIssueStrike()} disabled={!selectedInfraction}>
-                Issue
-              </Btn>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Adjust credits modal */}
       {adjustOpen && (

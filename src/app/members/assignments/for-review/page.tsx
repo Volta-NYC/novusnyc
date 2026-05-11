@@ -13,7 +13,7 @@ import {
   PageHeader, Btn, Modal, Field, Input, TextArea, Empty, useConfirm, SearchBar,
 } from "@/components/members/ui";
 import {
-  getAssignmentsList, getAssignmentClaimsList, getBusinessesList, getEmailTemplatesList,
+  subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeEmailTemplates,
   updateAssignmentClaim,
   type Assignment, type AssignmentClaim, type Business, type EmailTemplate, type CycleTrack,
 } from "@/lib/members/storage";
@@ -84,12 +84,11 @@ export default function ForReviewPage() {
   }, [authRole, loading, router]);
 
   useEffect(() => {
-    void Promise.all([
-      getAssignmentClaimsList().then(setClaims),
-      getAssignmentsList().then(setAssignments),
-      getBusinessesList().then(setBusinesses),
-      getEmailTemplatesList().then(setTemplates),
-    ]);
+    const unsub1 = subscribeAssignmentClaims(setClaims);
+    const unsub2 = subscribeAssignments(setAssignments);
+    const unsub3 = subscribeBusinesses(setBusinesses);
+    const unsub4 = subscribeEmailTemplates(setTemplates);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
   }, []);
 
   const assignmentById = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
@@ -112,7 +111,7 @@ export default function ForReviewPage() {
   const queue = useMemo(() => {
     const q = search.trim().toLowerCase();
     return claims
-      .filter((c) => c.status === "submitted")
+      .filter((c) => c.status === "Submitted")
       .filter((c) => {
         if (!q) return true;
         const a = assignmentById.get(c.assignmentId);
@@ -165,7 +164,7 @@ export default function ForReviewPage() {
 
   const recentDecisions = useMemo(() => {
     return claims
-      .filter((c) => c.status === "approved" || c.status === "rejected")
+      .filter((c) => c.status === "Approved" || c.status === "rejected")
       .sort((a, b) => {
         const ta = a.approvedAt ?? a.rejectedAt ?? "";
         const tb = b.approvedAt ?? b.rejectedAt ?? "";
@@ -199,7 +198,7 @@ export default function ForReviewPage() {
 
   const confirmApprove = async (claim: AssignmentClaim, awarded: number) => {
     await updateAssignmentClaim(claim.id, {
-      status: "approved",
+      status: "Approved",
       approvedAt: new Date().toISOString(),
       approvedBy: reviewerLabel,
       creditsAwarded: awarded,
@@ -479,9 +478,9 @@ export default function ForReviewPage() {
                       <td className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="block truncate">{c.memberName}</span></td>
                       <td className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle overflow-hidden"><span className="block truncate" title={a?.title ?? ""}>{a?.title ?? "—"}</span></td>
                       <td className="px-3 py-0 h-9 text-[11px] align-middle">
-                        <span className={`members-chip ${c.status === "approved" ? "border-violet-400/30 bg-violet-400/10 text-violet-300" : "border-red-400/30 bg-red-400/10 text-red-300"}`}>{c.status}</span>
+                        <span className={`members-chip ${c.status === "Approved" ? "border-violet-400/30 bg-violet-400/10 text-violet-300" : "border-red-400/30 bg-red-400/10 text-red-300"}`}>{c.status}</span>
                       </td>
-                      <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{c.status === "approved" ? c.creditsAwarded ?? "—" : "—"}</td>
+                      <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{c.status === "Approved" ? c.creditsAwarded ?? "—" : "—"}</td>
                       <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle overflow-hidden"><span className="block truncate">{c.approvedBy ?? "—"}</span></td>
                       <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{when ? new Date(when).toLocaleDateString() : "—"}</td>
                     </tr>

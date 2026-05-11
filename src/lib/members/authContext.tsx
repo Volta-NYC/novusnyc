@@ -9,6 +9,9 @@ function normalizeAuthRole(value: unknown): AuthRole {
   const raw = String(value ?? "").trim();
   if (raw === "admin") return "admin";
   if (raw === "interviewer") return "interviewer";
+  if (raw === "Board" || raw === "Senior Associate") return "admin";
+  if (raw === "Associate" || raw === "Senior Analyst" || raw === "Analyst") return "member";
+  // fallback to member for any other role
   return "member";
 }
 

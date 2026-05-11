@@ -362,6 +362,10 @@ export default function MemberEmailPage() {
   const submitSaveAsNew = async () => {
     const label = saveModalLabel.trim();
     if (!label) return;
+    if (!subject.trim() || !message.trim()) {
+      setStatus("Please add both a subject and message before saving.");
+      return;
+    }
     if (!user) return;
     const updatedBy = user.email || user.id || "admin";
     // Custom keys are namespaced so they never collide with system templates.
@@ -382,6 +386,10 @@ export default function MemberEmailPage() {
 
   const saveChangesToLoaded = async () => {
     if (!loadedTemplate || !user) return;
+    if (!subject.trim() || !message.trim()) {
+      setStatus("Please add both a subject and message before saving.");
+      return;
+    }
     const updatedBy = user.email || user.id || "admin";
     await updateEmailTemplate(loadedTemplate.id, {
       subject,
@@ -672,7 +680,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
       bccRecipients.forEach((e) => formData.append("bccRecipients", e));
       selectedRecipients.forEach((recipient) => {
         const member = team.find((item) => item.id === recipient.id);
-        const assignments = member ? (memberAssignmentsById.get(member.id) ?? []).map((item) => item.code).join(", ") : "";
+        const assignments = member ? (memberAssignmentsById.get(member.id) ?? []).map((item) => item.title).join(", ") : "";
         formData.append("recipientMeta", JSON.stringify({
           email: recipient.email,
           fullName: member?.name ?? recipient.name ?? "",
@@ -709,6 +717,26 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
           ? `Sent from ${payload.from ?? fromAddress} to ${sentCount}. Failed: ${failedCount}. ${breakdown}`
           : `Sent from ${payload.from ?? fromAddress} to ${sentCount}. ${breakdown}`,
       );
+
+      // Update template usage if a template was loaded
+      if (loadedTemplateId && loadedTemplate) {
+        try {
+          await updateEmailTemplate(loadedTemplateId, {
+            usageCount: (loadedTemplate.usageCount ?? 0) + 1,
+            lastUsedAt: new Date().toISOString(),
+          });
+          // Update local state
+          setTemplates(prev =>
+            prev.map(t =>
+              t.id === loadedTemplateId
+                ? { ...t, usageCount: (t.usageCount ?? 0) + 1, lastUsedAt: new Date().toISOString() }
+                : t
+            )
+          );
+        } catch (error) {
+          console.error("Failed to update template usage:", error);
+        }
+      }
     } catch {
       setStatus("Could not send email.");
     } finally {
@@ -1068,6 +1096,17 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
             placeholder="Write your email..."
             minHeight={280}
           />
+
+          {/* Template preview */}
+          {loadedTemplate && (
+            <div className="mt-4 p-3 bg-[#0F1014] border border-white/10 rounded-lg">
+              <p className="text-xs font-semibold text-white/80 mb-2">Preview</p>
+              <div className="text-white/60 whitespace-pre-line">
+                {loadedTemplate.subject}
+                <div className="mt-2">{loadedTemplate.body}</div>
+              </div>
+            </div>
+          )}
         </Field>
 
         {status && <p className="text-xs text-white/60">{status}</p>}

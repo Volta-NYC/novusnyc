@@ -25,9 +25,9 @@ function normalizeKey(v: string): string {
 
 const CLAIM_STATUS_PILL: Record<string, string> = {
   claimed: "bg-blue-100 text-blue-800 border-blue-200",
-  in_progress: "bg-cyan-100 text-cyan-800 border-cyan-200",
-  submitted: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  approved: "bg-violet-100 text-violet-800 border-violet-200",
+  "In Progress": "bg-cyan-100 text-cyan-800 border-cyan-200",
+  Submitted: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  Approved: "bg-violet-100 text-violet-800 border-violet-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
 };
 
@@ -244,7 +244,7 @@ export default function MyRecordPage() {
                                 <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${CLAIM_STATUS_PILL[c.status] ?? ""}`}>
                                   {c.status.replace("_", " ")}
                                 </span>
-                                {c.status === "approved" && (
+                                {c.status === "Approved" && (
                                   <span className="text-xs text-[#5C9911] font-mono">+{c.creditsAwarded ?? a?.credits ?? 0} cr</span>
                                 )}
                               </div>

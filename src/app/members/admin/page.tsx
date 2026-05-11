@@ -16,7 +16,6 @@ const EXPORT_OPTIONS = [
   { key: "bids", label: "BIDs" },
   { key: "interviews", label: "Interview Slots" },
   { key: "calendar", label: "Calendar Events" },
-  { key: "users", label: "Portal Users" },
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
@@ -323,7 +322,6 @@ function AdminContent() {
   }
 
   const TABS: { key: typeof activeTab; label: string }[] = [
-    { key: "users",    label: "Users" },
     { key: "data",     label: "Data" },
     { key: "handbook", label: "Handbook" },
   ];

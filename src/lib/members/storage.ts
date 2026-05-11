@@ -337,6 +337,9 @@ export interface EmailTemplate {
   active: boolean;
   updatedAt: string;
   updatedBy: string;               // uid or email of the last admin to edit
+  // Usage tracking
+  usageCount?: number;             // how many times this template has been used
+  lastUsedAt?: string;             // ISO timestamp of when this template was last used
 }
 
 // ── Assignment catalog (credit-system marketplace) ────────────────────────────
@@ -347,12 +350,11 @@ export interface EmailTemplate {
 export type AssignmentDifficulty = string; // admin-configurable, free-form
 
 export type AssignmentStatus =
-  | "open"          // visible in marketplace, accepting claims
-  | "claimed"       // capacity reached but work hasn't been submitted
-  | "in_progress"   // mostly informational; admin can still close/duplicate
-  | "submitted"     // at least one claim is awaiting approval
-  | "approved"      // all claims approved (closed naturally)
-  | "closed";       // admin-closed; no longer browseable
+  | "Open"          // visible in marketplace, accepting claims
+  | "In Progress"   // mostly informational; admin can still close/duplicate
+  | "Submitted"     // at least one claim is awaiting approval
+  | "Approved"      // all claims approved (closed naturally)
+  | "Finalized";    // admin-closed; no longer browseable
 
 export interface Assignment {
   id: string;
@@ -378,9 +380,9 @@ export interface Assignment {
 
 export type AssignmentClaimStatus =
   | "claimed"
-  | "in_progress"
-  | "submitted"
-  | "approved"
+  | "In Progress"
+  | "Submitted"
+  | "Approved"
   | "rejected";
 
 export interface AssignmentClaim {
@@ -546,6 +548,41 @@ export interface AuditLogEntry {
   actorEmail: string;
   actorName?: string;
   details?: Record<string, unknown>;
+}
+
+// ── STATUS NORMALIZERS ────────────────────────────────────────────────────────
+// The DB may contain legacy lowercase values written before the types were
+// formalised. Normalise on read so all callers see canonical Title-Case values.
+
+function normalizeAssignmentStatus(raw: unknown): AssignmentStatus {
+  const v = String(raw ?? "").trim().toLowerCase().replace(/_/g, " ");
+  if (v === "open") return "Open";
+  if (v === "in progress") return "In Progress";
+  if (v === "submitted") return "Submitted";
+  if (v === "approved") return "Approved";
+  if (v === "closed" || v === "finalized") return "Finalized";
+  return "Open";
+}
+
+function normalizeClaimStatus(raw: unknown): AssignmentClaimStatus {
+  const v = String(raw ?? "").trim().toLowerCase().replace(/_/g, " ");
+  if (v === "in progress") return "In Progress";
+  if (v === "submitted") return "Submitted";
+  if (v === "approved") return "Approved";
+  if (v === "rejected") return "rejected";
+  return "claimed";
+}
+
+function assignmentFromRow(r: Record<string, unknown>): Assignment {
+  const a = fromRow<Assignment>(r);
+  a.status = normalizeAssignmentStatus(r.status);
+  return a;
+}
+
+function claimFromRow(r: Record<string, unknown>): AssignmentClaim {
+  const c = fromRow<AssignmentClaim>(r);
+  c.status = normalizeClaimStatus(r.status);
+  return c;
 }
 
 // ── INTERNAL HELPERS ──────────────────────────────────────────────────────────
@@ -863,10 +900,10 @@ export const subscribeEmailTemplates =
   }));
 
 export const subscribeAssignments =
-  makeSubscriber<Assignment>("assignment_catalog", (r) => fromRow<Assignment>(r));
+  makeSubscriber<Assignment>("assignment_catalog", assignmentFromRow);
 
 export const subscribeAssignmentClaims =
-  makeSubscriber<AssignmentClaim>("assignment_claims", (r) => fromRow<AssignmentClaim>(r));
+  makeSubscriber<AssignmentClaim>("assignment_claims", claimFromRow);
 
 export const subscribeMemberStrikes =
   makeSubscriber<MemberStrike>("member_strikes", (r) => fromRow<MemberStrike>(r));
@@ -1202,6 +1239,44 @@ export async function getInfractionsList(): Promise<Infraction[]> {
   return (data ?? []).map((r) => fromRow<Infraction>(r as Record<string, unknown>));
 }
 
+// Get distinct school names from applications for autocomplete
+export async function getApplicationSchoolNames(): Promise<string[]> {
+  const { data } = await supabase
+    .from("applications")
+    .select("schoolName")
+    .not("schoolName", "is", "");
+
+  if (!data?.length) return [];
+
+  // Extract distinct school names
+  const schoolNames = [...new Set(
+    data
+      .map((r: any) => r.schoolName?.trim())
+      .filter((name: string | null): name is string => name !== null && name !== "")
+  )];
+
+  return schoolNames.sort();
+}
+
+// Get distinct school names from team directory for autocomplete
+export async function getTeamSchoolNames(): Promise<string[]> {
+  const { data } = await supabase
+    .from("team")
+    .select("school")
+    .not("school", "is", "");
+
+  if (!data?.length) return [];
+
+  // Extract distinct school names
+  const schoolNames = [...new Set(
+    data
+      .map((r: any) => r.school?.trim())
+      .filter((name: string | null): name is string => name !== null && name !== "")
+  )];
+
+  return schoolNames.sort();
+}
+
 export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
   const { data } = await supabase.from("email_templates").select("*");
   return (data ?? []).map((r) => ({
@@ -1212,12 +1287,12 @@ export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
 
 export async function getAssignmentsList(): Promise<Assignment[]> {
   const { data } = await supabase.from("assignment_catalog").select("*");
-  return (data ?? []).map((r) => fromRow<Assignment>(r as Record<string, unknown>));
+  return (data ?? []).map((r) => assignmentFromRow(r as Record<string, unknown>));
 }
 
 export async function getAssignmentClaimsList(): Promise<AssignmentClaim[]> {
   const { data } = await supabase.from("assignment_claims").select("*");
-  return (data ?? []).map((r) => fromRow<AssignmentClaim>(r as Record<string, unknown>));
+  return (data ?? []).map((r) => claimFromRow(r as Record<string, unknown>));
 }
 
 export async function getMemberStrikesList(): Promise<MemberStrike[]> {
@@ -1508,6 +1583,8 @@ export async function createEmailTemplate(data: Omit<EmailTemplate, "id" | "upda
     active:              data.active,
     updated_by:          data.updatedBy,
     updated_at:          nowISO(),
+    usage_count:         0,
+    last_used_at:        null,
   });
   await writeAuditLog({ action: "create", collection: "emailTemplates", recordId: id, details: { key: data.key } });
 }
@@ -1522,6 +1599,8 @@ export async function updateEmailTemplate(id: string, data: Partial<EmailTemplat
   if (data.availableVariables !== undefined) row.available_variables = data.availableVariables;
   if (data.active             !== undefined) row.active              = data.active;
   if (data.updatedBy          !== undefined) row.updated_by          = data.updatedBy;
+  if (data.usageCount         !== undefined) row.usage_count         = data.usageCount;
+  if (data.lastUsedAt         !== undefined) row.last_used_at        = data.lastUsedAt;
   await supabase.from("email_templates").update(row).eq("id", id);
   await writeAuditLog({ action: "update", collection: "emailTemplates", recordId: id, details: { fields: Object.keys(data) } });
 }

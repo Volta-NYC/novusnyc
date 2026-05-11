@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CheckIcon } from "@/components/Icons";
 import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schemas";
 import { TRACK_NAMES } from "@/data";
 import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
+import SchoolSelector from "@/components/SchoolSelector";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Online", "Referral", "Other"];
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS.filter((grade) => grade !== "Class of 2022");
@@ -19,7 +20,25 @@ export default function ApplicationForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [schoolOptions, setSchoolOptions] = useState<string[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchSchoolNames = async () => {
+      try {
+        const names = await import('@/lib/members/storage').then(mod => mod.getApplicationSchoolNames());
+        setSchoolOptions(names);
+      } catch (error) {
+        console.error('Failed to fetch school names:', error);
+        setSchoolOptions([]);
+      } finally {
+        setLoadingSchools(false);
+      }
+    };
+
+    fetchSchoolNames();
+  }, []);
 
   const set = <K extends keyof ApplicationFormValues>(k: K, v: ApplicationFormValues[K]) =>
     setForm((p) => ({ ...p, [k]: v }));
@@ -132,11 +151,12 @@ export default function ApplicationForm() {
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">School Name *</label>
-        <input
+        <SchoolSelector
           value={form.schoolName}
-          onChange={(e) => { set("schoolName", e.target.value); clearError("schoolName"); }}
-          className={`volta-input ${errors.schoolName ? "border-red-400" : ""}`}
-          placeholder="e.g. Stuyvesant High School"
+          onChange={(value) => { set("schoolName", value); clearError("schoolName"); }}
+          options={loadingSchools ? [] : schoolOptions}
+          placeholder="Type or select a school"
+          isDisabled={status === "loading"}
         />
         {errors.schoolName && <p className="text-red-500 text-xs mt-1 font-body">{errors.schoolName}</p>}
       </div>

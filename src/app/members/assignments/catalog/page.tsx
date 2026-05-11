@@ -13,7 +13,7 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  getAssignmentsList, getAssignmentClaimsList, getBusinessesList, getCyclesList,
+  subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
   createAssignment, updateAssignment, deleteAssignment,
   type Assignment, type AssignmentClaim, type AssignmentStatus, type Business, type Cycle, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
@@ -21,19 +21,18 @@ import { useAuth } from "@/lib/members/authContext";
 
 const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
-const STATUS_OPTIONS: AssignmentStatus[] = ["open", "claimed", "in_progress", "submitted", "approved", "closed"];
+const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", "Approved", "Finalized"];
 
 // "Volta Internal" is a sentinel businessId for assignments not tied to any
 // outside business — common for finance work, internal templates, etc.
 const VOLTA_INTERNAL_ID = "__volta_internal__";
 
 const STATUS_STYLES: Record<AssignmentStatus, string> = {
-  open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
-  claimed: "border-blue-400/30 bg-blue-400/10 text-blue-300",
-  in_progress: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
-  submitted: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
-  approved: "border-violet-400/30 bg-violet-400/10 text-violet-300",
-  closed: "border-white/15 bg-white/5 text-white/55",
+  Open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
+  "In Progress": "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  Submitted: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+  Approved: "border-violet-400/30 bg-violet-400/10 text-violet-300",
+  Finalized: "border-white/15 bg-white/5 text-white/55",
 };
 
 const TRACK_DOT: Record<CycleTrack, string> = {
@@ -96,7 +95,7 @@ const BLANK_FORM: FormState = {
   businessLabel: "Volta Internal",
   capacity: 1,
   deadline: "",
-  status: "open",
+  status: "Open",
 };
 
 export default function CatalogPage() {
@@ -123,13 +122,15 @@ export default function CatalogPage() {
   }, [authRole, loading, router]);
 
   useEffect(() => {
-    void Promise.all([
-      getAssignmentsList().then(setAssignments),
-      getAssignmentClaimsList().then(setClaims),
-      getBusinessesList().then(setBusinesses),
-      getCyclesList().then(setCycles),
-    ]);
-  }, []);
+    const unsub1 = subscribeAssignmentClaims(setClaims);
+    const unsub2 = subscribeBusinesses(setBusinesses);
+    const unsub3 = subscribeCycles(setCycles);
+    const unsub4 = subscribeAssignments((all) => {
+      // Non-admin members only see Open assignments.
+      setAssignments(authRole === "admin" ? all : all.filter((a) => a.status === "Open"));
+    });
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
+  }, [authRole]);
 
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
   const businessById = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
@@ -227,10 +228,10 @@ export default function CatalogPage() {
 
   // Summary counters at the top.
   const counts = {
-    open: assignments.filter((a) => a.status === "open").length,
-    claimed: claims.filter((c) => c.status === "claimed" || c.status === "in_progress").length,
-    awaitingApproval: claims.filter((c) => c.status === "submitted").length,
-    completed: claims.filter((c) => c.status === "approved").length + assignments.filter((a) => a.status === "approved" || a.status === "closed").length,
+    open: assignments.filter((a) => a.status === "Open").length,
+    claimed: claims.filter((c) => c.status === "claimed" || c.status === "In Progress").length,
+    awaitingApproval: claims.filter((c) => c.status === "Submitted").length,
+    completed: claims.filter((c) => c.status === "Approved").length + assignments.filter((a) => a.status === "Approved" || a.status === "Finalized").length,
   };
 
   const businessOptions = useMemo(
@@ -294,7 +295,7 @@ export default function CatalogPage() {
       businessLabel: businessChoiceLabel(a.businessId ?? VOLTA_INTERNAL_ID),
       capacity: a.capacity ?? 1,
       deadline: a.deadline ?? "",
-      status: "open",
+      status: "Open",
     });
     setEditing(null);
     setModal("create");

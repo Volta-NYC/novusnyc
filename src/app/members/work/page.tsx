@@ -9,8 +9,8 @@ import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
-  getAssignmentClaimsList, getAssignmentsList, getBusinessesList,
-  getCyclesList, getTeamMembersList,
+  subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
+  subscribeCycles, getTeamMembersList,
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
@@ -49,14 +49,13 @@ export default function MarketplacePage() {
   const [trackFilter, setTrackFilter] = useState<"" | CycleTrack>("");
   const [sortKey, setSortKey] = useState<SortKey>("recommended");
 
+  useEffect(() => { void getTeamMembersList().then(setTeam); }, []);
   useEffect(() => {
-    void Promise.all([
-      getTeamMembersList().then(setTeam),
-      getCyclesList().then(setCycles),
-      getAssignmentsList().then(setAssignments),
-      getAssignmentClaimsList().then(setClaims),
-      getBusinessesList().then(setBusinesses),
-    ]);
+    const unsub1 = subscribeCycles(setCycles);
+    const unsub2 = subscribeAssignments(setAssignments);
+    const unsub3 = subscribeAssignmentClaims(setClaims);
+    const unsub4 = subscribeBusinesses(setBusinesses);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
   }, []);
 
   const me = useMemo(() => {
@@ -94,7 +93,7 @@ export default function MarketplacePage() {
     const q = search.trim().toLowerCase();
     return assignments
       .filter((a) => a.cycleId === activeCycle.id)
-      .filter((a) => a.status === "open" || a.status === "claimed")
+      .filter((a) => a.status === "Open" || a.status === "In Progress")
       .filter((a) => !trackFilter || a.primaryTrack === trackFilter)
       .filter((a) => {
         if (!q) return true;
