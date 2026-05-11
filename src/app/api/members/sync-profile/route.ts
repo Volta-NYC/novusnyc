@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
     if (bodySchool && bodySchool !== (typeof target.school === "string" ? target.school : "")) patch.school = bodySchool;
     if (bodyGrade && bodyGrade !== (typeof target.grade === "string" ? target.grade : "")) patch.grade = bodyGrade;
     if (!target.email) patch.email = email;
+    // Always set join_date to the current date on sync (after clearing old values)
+    patch.join_date = nowIso.split("T")[0];
     if (Object.keys(patch).length > 0) {
       patch.notes = typeof target.notes === "string" && target.notes ? target.notes : "Synced from signup";
       await sb.from("team").update(patch).eq("id", targetId);
