@@ -70,6 +70,7 @@ export const PROJECT_GROUP_TABS: SectionTab[] = [
   { href: "/members/projects?tab=marketing", label: "Marketing", matchTab: "marketing" },
   { href: "/members/finance-assignments", label: "Finance" },
   { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
+  { href: "/members/projects?tab=showcase", label: "Showcase", matchTab: "showcase" },
 ];
 
 // Members directory + Infractions live on the same Members page.

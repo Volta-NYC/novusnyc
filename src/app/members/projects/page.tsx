@@ -361,16 +361,17 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
-type ProjectTab = "tech" | "marketing" | "discovery";
+type ProjectTab = "tech" | "marketing" | "discovery" | "showcase";
 
 function normalizeProjectTab(value: string | null | undefined): ProjectTab {
   const raw = String(value ?? "").trim().toLowerCase();
   if (raw === "marketing") return "marketing";
   if (raw === "discovery") return "discovery";
+  if (raw === "showcase") return "showcase";
   return "tech";
 }
 
-const TAB_TRACK: Record<Exclude<ProjectTab, "discovery">, TrackDivision> = {
+const TAB_TRACK: Record<Exclude<ProjectTab, "discovery" | "showcase">, TrackDivision> = {
   tech: "Tech",
   marketing: "Marketing",
 };
@@ -379,6 +380,7 @@ const TAB_TITLE: Record<ProjectTab, string> = {
   tech: "Businesses",
   marketing: "Marketing",
   discovery: "Discovery",
+  showcase: "Public Showcase",
 };
 
 // Wrap the page body in Suspense so static prerendering doesn't bail on the
@@ -432,6 +434,11 @@ function BusinessesPageInner() {
   const [presetNeighborhood, setPresetNeighborhood] = useState<string | null>(null);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
+
+  // Showcase tab state
+  const [scAddOpen, setScAddOpen] = useState(false);
+  const [scAddPickerId, setScAddPickerId] = useState("");
+  const [scAddBusy, setScAddBusy] = useState(false);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -946,6 +953,36 @@ function BusinessesPageInner() {
     );
   };
 
+  // ── Showcase tab handlers ────────────────────────────────────────────────────
+
+  const handleScAdd = async () => {
+    const biz = businesses.find((b) => b.id === scAddPickerId);
+    if (!biz) return;
+    setScAddBusy(true);
+    await updateBusiness(biz.id, { showcaseEnabled: true });
+    setScAddBusy(false);
+    setScAddOpen(false);
+    setScAddPickerId("");
+    // Open the business edit modal so admin can fill showcase details immediately.
+    await openEdit({ ...biz, showcaseEnabled: true });
+    setModal("edit");
+  };
+
+  const handleScRemove = async (biz: Business) => {
+    await ask(
+      async () => {
+        await updateBusiness(biz.id, { showcaseEnabled: false, showcaseFeaturedOnHome: false });
+      },
+      `Remove "${biz.name}" from the public showcase? The business record is kept.`,
+    );
+  };
+
+  const handleScToggleHome = async (biz: Business) => {
+    await updateBusiness(biz.id, { showcaseFeaturedOnHome: !biz.showcaseFeaturedOnHome });
+  };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
   const getNeighborhoodLabel = (project: Business): string => {
     const neighborhood = (project.neighborhood ?? project.showcaseNeighborhood ?? "").trim();
     return neighborhood;
@@ -1051,6 +1088,7 @@ function BusinessesPageInner() {
 
   const tabScoped = businesses.filter((business) => {
     if (activeTab === "discovery") return isDiscoveryBusiness(business);
+    if (activeTab === "showcase") return false; // showcase tab renders its own list
     return businessHasTrack(business, TAB_TRACK[activeTab]);
   });
   const filtered = sortByStatusThenName(tabScoped.filter(matchesSearch));
@@ -1233,7 +1271,7 @@ function BusinessesPageInner() {
   // status to that track and recomputes the overall projectStatus.
   const handleQuickStatusChange = async (business: Business, newStatus: ProjectStatusValue) => {
     setOpenStatusPopoverId(null);
-    if (activeTab === "discovery") return;
+    if (activeTab === "discovery" || activeTab === "showcase") return;
     const track = TAB_TRACK[activeTab];
     const normalized = normalizeTrackProjectsFromBusiness(business);
     const currentInfo = normalized.trackProjects[track] ?? {
@@ -1753,15 +1791,21 @@ function BusinessesPageInner() {
 
       <PageHeader
         title={TAB_TITLE[activeTab]}
+        subtitle={activeTab === "showcase" ? "Businesses that appear on the public home and showcase pages." : undefined}
         action={
           canEdit ? (
-            <div className="flex gap-2">
-              <Btn variant="primary" onClick={() => openCreate()}>+ New Project</Btn>
-            </div>
+            activeTab === "showcase" ? (
+              <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn>
+            ) : (
+              <div className="flex gap-2">
+                <Btn variant="primary" onClick={() => openCreate()}>+ New Project</Btn>
+              </div>
+            )
           ) : undefined
         }
       />
-      {activeTab !== "discovery" && (
+
+      {activeTab !== "showcase" && activeTab !== "discovery" && (
         <div className="grid grid-cols-3 gap-3 mb-5">
           <StatCard label="Ongoing" value={ongoingCount} color="text-green-400" />
           <StatCard label="Upcoming" value={upcomingCount} color="text-blue-400" />
@@ -1769,15 +1813,125 @@ function BusinessesPageInner() {
         </div>
       )}
 
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
-        />
-      </div>
+      {activeTab !== "showcase" && (
+        <div className="flex gap-3 mb-4 flex-wrap">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
+          />
+        </div>
+      )}
 
-      {activeTab === "discovery" ? (
+      {activeTab === "showcase" ? (
+        <>
+          {/* Add-to-showcase picker modal */}
+          <Modal open={scAddOpen} onClose={() => setScAddOpen(false)} title="Add Business to Showcase">
+            <Field label="Business" required>
+              <select
+                value={scAddPickerId}
+                onChange={(e) => setScAddPickerId(e.target.value)}
+                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+              >
+                <option value="">— Select a business —</option>
+                {[...businesses]
+                  .filter((b) => !b.showcaseEnabled)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+              </select>
+            </Field>
+            <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-white/8">
+              <Btn variant="ghost" onClick={() => setScAddOpen(false)}>Cancel</Btn>
+              <Btn
+                variant="primary"
+                disabled={!scAddPickerId || scAddBusy}
+                onClick={() => void handleScAdd()}
+              >
+                {scAddBusy ? "Adding…" : "Add & Edit"}
+              </Btn>
+            </div>
+          </Modal>
+
+          {/* Showcase table */}
+          {(() => {
+            const showcased = [...businesses]
+              .filter((b) => b.showcaseEnabled)
+              .sort((a, b) => a.name.localeCompare(b.name));
+            return (
+              <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-[#0F1014] border-b border-white/8">
+                    <tr>
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-10" />
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45">Business</th>
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[140px]">Neighborhood</th>
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[120px]">What we do</th>
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[110px] text-center">Home page</th>
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[120px]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {showcased.map((b) => {
+                      const imgUrl = b.showcaseImageUrl || undefined;
+                      const service = (b.showcaseServices ?? [])[0] ?? "";
+                      return (
+                        <tr key={b.id} className="border-b border-white/8 align-middle hover:bg-white/[0.03]">
+                          <td className="px-3 py-2">
+                            {imgUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={imgUrl} alt="" className="w-8 h-8 rounded object-cover border border-white/10" />
+                            ) : (
+                              <div className="w-8 h-8 rounded border border-white/10 bg-white/5" />
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <p className="text-sm text-white/90 font-medium">{b.name}</p>
+                            {b.showcaseDescription && (
+                              <p className="text-xs text-white/45 mt-0.5 line-clamp-1">{b.showcaseDescription}</p>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-xs text-white/65">
+                            {(b.neighborhood ?? b.showcaseNeighborhood ?? "").trim() || <span className="text-white/30">—</span>}
+                          </td>
+                          <td className="px-3 py-2.5 text-xs text-white/65">
+                            {service || <span className="text-white/30">—</span>}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <button
+                              type="button"
+                              title={b.showcaseFeaturedOnHome ? "Remove from home page" : "Feature on home page"}
+                              onClick={() => void handleScToggleHome(b)}
+                              className={`w-9 h-5 rounded-full transition-colors ${b.showcaseFeaturedOnHome ? "bg-[#85CC17]" : "bg-white/15"}`}
+                            >
+                              <span className={`block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5 ${b.showcaseFeaturedOnHome ? "translate-x-4" : "translate-x-0"}`} />
+                            </button>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex gap-1.5">
+                              <Btn size="sm" variant="secondary" onClick={() => void openEdit(b).then(() => setModal("edit"))}>Edit</Btn>
+                              <Btn size="sm" variant="ghost" onClick={() => void handleScRemove(b)}>Remove</Btn>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {showcased.length === 0 && (
+                  <div className="p-6">
+                    <Empty
+                      message="No businesses on the public showcase yet."
+                      action={canEdit ? <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn> : undefined}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </>
+      ) : activeTab === "discovery" ? (
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
           <table className="table-fixed text-left" style={{width: "100%", minWidth: "1110px"}}>
             <thead className="bg-[#0F1014] border-b border-white/8">
@@ -1821,7 +1975,7 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>{myProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab]))}</tbody>
+                  <tbody>{myProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab as "tech" | "marketing"]))}</tbody>
                 </table>
               </div>
             </div>
@@ -1845,7 +1999,7 @@ function BusinessesPageInner() {
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Actions</th>
                 </tr>
               </thead>
-              <tbody>{otherProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab]))}</tbody>
+              <tbody>{otherProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab as "tech" | "marketing"]))}</tbody>
             </table>
             {filtered.length === 0 && (
               <div className="p-6">
@@ -2106,47 +2260,12 @@ function BusinessesPageInner() {
             .map((track) => renderTrackProjectSection(track))}
 
           {/* ── Public Showcase ── */}
+          {form.showcaseEnabled && (
           <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
-            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Public Showcase</p>
-            <p className="text-white/45 text-xs font-body">Controls what appears on the public home/showcase cards.</p>
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Showcase Settings</p>
+            <p className="text-white/45 text-xs font-body">Manage showcase membership from the <strong className="text-white/60">Showcase</strong> tab.</p>
           </div>
-          <div className="lg:col-span-2">
-            <label className="inline-flex items-center gap-2.5 text-sm text-white/80 font-body rounded-lg border border-white/10 bg-[#11141A] px-3 py-2">
-              <input
-                type="checkbox"
-                className="members-checkbox"
-                checked={!!form.showcaseEnabled}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setField("showcaseEnabled", checked);
-                  if (!checked) {
-                    setField("showcaseFeaturedOnHome", false);
-                  } else {
-                    // When enabling showcase on a multi-track business, default the public-facing
-                    // work to the Tech track's website so the user lands on a sensible default.
-                    const tracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((t) => normalizeDivision(t));
-                    const hasTech = tracks.includes("Tech");
-                    const currentService = (form.showcaseServices ?? [])[0]?.trim() ?? "";
-                    if (hasTech && !currentService) {
-                      setField("showcaseServices", ["Website"]);
-                      setField("showcaseType", DIVISION_PUBLIC_LABEL.Tech);
-                    }
-                  }
-                }}
-              />
-              Show this project on the public site
-            </label>
-            <label className={`inline-flex items-center gap-2.5 text-sm font-body mt-2 rounded-lg border px-3 py-2 ${form.showcaseEnabled ? "text-white/75 border-white/10 bg-[#11141A]" : "text-white/35 border-white/5 bg-[#11141A]/40"}`}>
-              <input
-                type="checkbox"
-                className="members-checkbox"
-                checked={!!form.showcaseFeaturedOnHome}
-                onChange={(e) => setField("showcaseFeaturedOnHome", e.target.checked)}
-                disabled={!form.showcaseEnabled}
-              />
-              Feature this card on the homepage
-            </label>
-          </div>
+          )}
 
           {form.showcaseEnabled && (
             <>
@@ -2360,7 +2479,7 @@ function BusinessesPageInner() {
       {openStatusPopoverId && popoverPos && (() => {
         const b = businesses.find((biz) => biz.id === openStatusPopoverId);
         if (!b) return null;
-        const trackForRow = activeTab === "discovery" ? null : TAB_TRACK[activeTab];
+        const trackForRow = (activeTab === "discovery" || activeTab === "showcase") ? null : TAB_TRACK[activeTab];
         const normalized = normalizeTrackProjectsFromBusiness(b);
         const trackInfo = trackForRow ? normalized.trackProjects[trackForRow] : undefined;
         const trackStatus: ProjectStatusValue = trackInfo?.projectStatus ?? normalizeProjectStatus(b.projectStatus);
