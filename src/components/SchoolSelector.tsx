@@ -108,7 +108,7 @@ export default function SchoolSelector({
       {isOpen && (
         <div className="absolute z-20 mt-1 w-full rounded-xl border border-white/10 bg-[#0F1014] max-h-[200px] overflow-y-auto">
           {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, index) => (
+            filteredOptions.map((option, _index) => (
               <div
                 key={option}
                 className={`flex items-center px-3 py-2 text-sm text-white/80 cursor-pointer hover:bg-white/5 hover:text-white selected:bg-[#85CC17]/20 selected:text-white`}

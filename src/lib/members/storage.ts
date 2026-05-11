@@ -1251,8 +1251,8 @@ export async function getApplicationSchoolNames(): Promise<string[]> {
   // Extract distinct school names
   const schoolNames = [...new Set(
     data
-      .map((r: any) => r.schoolName?.trim())
-      .filter((name: string | null): name is string => name !== null && name !== "")
+      .map((r: { schoolName?: string | null }) => r.schoolName?.trim())
+      .filter((name): name is string => name !== null && name !== undefined && name !== "")
   )];
 
   return schoolNames.sort();
@@ -1270,8 +1270,8 @@ export async function getTeamSchoolNames(): Promise<string[]> {
   // Extract distinct school names
   const schoolNames = [...new Set(
     data
-      .map((r: any) => r.school?.trim())
-      .filter((name: string | null): name is string => name !== null && name !== "")
+      .map((r: { school?: string | null }) => r.school?.trim())
+      .filter((name): name is string => name !== null && name !== undefined && name !== "")
   )];
 
   return schoolNames.sort();

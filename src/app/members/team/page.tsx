@@ -1466,7 +1466,7 @@ export default function TeamPage() {
                   const track = getMemberTrack(member);
                   const avatar = getTrackAvatarStyles(track);
                   const indicator = getMemberIndicator(member);
-                  const hasPortalAccount = !!member.authUid;
+                  const _hasPortalAccount = !!member.authUid;
                   const memberStrikes = strikesByMemberId.get(member.id) ?? [];
                   const strikeCount = memberStrikes.length;
                   return (
