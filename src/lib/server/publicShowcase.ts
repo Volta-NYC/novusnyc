@@ -108,6 +108,10 @@ function resolvePublicShowcaseImageUrl(
   id: string,
   row: Record<string, unknown>,
 ): string {
+  // Prefer the direct Supabase Storage URL — no redirect, Next.js can optimize it.
+  if (asText(row.showcaseImagePath) && asText(row.showcaseImageUrl)) {
+    return asText(row.showcaseImageUrl);
+  }
   if (row.showcaseImageSet === true || asText(row.showcaseImageData)) {
     return `/api/showcase-image/${encodeURIComponent(id)}`;
   }

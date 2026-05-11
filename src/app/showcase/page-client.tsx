@@ -236,16 +236,7 @@ export default function ShowcaseClient({
           ) : (
             <>
               <div className="lg:hidden">
-                {/* Swipe affordance hint */}
-                <p className="flex items-center gap-2 px-5 mb-3 font-body text-xs text-v-muted/70 select-none" aria-hidden="true">
-                  <span>Swipe to browse</span>
-                  <span className="flex-1 border-t border-dashed border-v-border" />
-                  <span>→</span>
-                </p>
-
-                {/* Scroll area — right-edge gradient hints at more content */}
                 <div className="relative">
-                  <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-white to-transparent" />
                   <div
                     ref={mobileScrollRef}
                     onScroll={handleMobileScroll}
@@ -268,7 +259,7 @@ export default function ShowcaseClient({
                               alt={`${p.name} project`}
                               width={1600}
                               height={1000}
-                              unoptimized
+                              sizes="(max-width: 1024px) 78vw, 290px"
                               className="block w-full h-auto"
                               loading="lazy"
                             />

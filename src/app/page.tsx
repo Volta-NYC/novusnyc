@@ -165,7 +165,7 @@ async function CurrentProjectsSection() {
                             alt={`${p.name} project`}
                             width={1600}
                             height={1000}
-                            unoptimized
+                            sizes="(max-width: 640px) 82vw, 290px"
                             className="block w-full h-auto"
                             loading="lazy"
                           />
