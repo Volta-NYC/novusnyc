@@ -7,7 +7,7 @@
 // Also doubles as the "Issue infraction" entry point when navigated to with
 // ?memberId=<id>&memberName=<name> query params (from MemberDrawer).
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { MEMBERS_GROUP_TABS } from "@/components/members/SectionTabs";
@@ -39,7 +39,7 @@ const BLANK_FORM: Omit<Infraction, "id" | "createdAt" | "updatedAt"> = {
   points: 1,
 };
 
-export default function InfractionsPage() {
+function InfractionsPageInner() {
   const { authRole, loading, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -323,5 +323,13 @@ export default function InfractionsPage() {
         </div>
       </Modal>
     </MembersLayout>
+  );
+}
+
+export default function InfractionsPage() {
+  return (
+    <Suspense>
+      <InfractionsPageInner />
+    </Suspense>
   );
 }
