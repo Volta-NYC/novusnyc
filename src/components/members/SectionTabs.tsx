@@ -83,9 +83,9 @@ export const APPLICANTS_GROUP_TABS: SectionTab[] = [
   { href: "/members/applicants/interviews", label: "Interviews" },
 ];
 
-// Assignments: by-business grouped view, flat list, review queue, templates.
+// Assignments: by-project grouped view, flat list, review queue, templates.
 export const ASSIGNMENTS_TABS: SectionTab[] = [
-  { href: "/members/assignments/by-business", label: "By Business" },
+  { href: "/members/assignments/by-project", label: "By Project" },
   { href: "/members/assignments/catalog", label: "All Assignments" },
   { href: "/members/assignments/for-review", label: "For Review" },
   { href: "/members/assignments/templates", label: "Create + Templates" },

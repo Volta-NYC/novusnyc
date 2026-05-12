@@ -14,8 +14,10 @@ import {
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
+  subscribeProjectGroups,
   createAssignment, updateAssignment, deleteAssignment,
-  type Assignment, type AssignmentClaim, type AssignmentStatus, type Business, type Cycle, type CycleRole, type CycleTrack,
+  type Assignment, type AssignmentClaim, type AssignmentStatus, type Business, type Cycle,
+  type CycleRole, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -23,9 +25,17 @@ const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", "Approved", "Finalized"];
 
-// "Volta Internal" is a sentinel businessId for assignments not tied to any
-// outside business — common for finance work, internal templates, etc.
-const _VOLTA_INTERNAL_ID = "__volta_internal__";
+function encodeProjectRef(bizId?: string, grpId?: string): string {
+  if (bizId) return `biz:${bizId}`;
+  if (grpId) return `grp:${grpId}`;
+  return "";
+}
+
+function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: string } {
+  if (ref.startsWith("biz:")) return { businessId: ref.slice(4) };
+  if (ref.startsWith("grp:")) return { projectGroupId: ref.slice(4) };
+  return {};
+}
 
 const STATUS_STYLES: Record<AssignmentStatus, string> = {
   Open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
@@ -54,7 +64,7 @@ const ASSIGNMENT_SORT_OPTIONS = [
 
 const CATALOG_COLS = [
   { key: "title",      label: "Assignment",  width: 260 },
-  { key: "business",   label: "Business",    width: 220 },
+  { key: "business",   label: "Project",     width: 220 },
   { key: "track",      label: "Track",       width: 90  },
   { key: "status",     label: "Status",      width: 120 },
   { key: "credits",    label: "Credits",     width: 65  },
@@ -77,8 +87,7 @@ interface FormState {
   credits: number;
   estimatedHours: number;
   minRole: CycleRole;
-  businessId: string;
-  businessLabel: string;
+  projectRef: string; // "biz:<id>" | "grp:<id>" | ""
   capacity: number;
   deadline: string;
   status: AssignmentStatus;
@@ -91,8 +100,7 @@ const BLANK_FORM: FormState = {
   credits: 1,
   estimatedHours: 1,
   minRole: "Analyst",
-  businessId: "",
-  businessLabel: "",
+  projectRef: "",
   capacity: 1,
   deadline: "",
   status: "Open",
@@ -106,6 +114,7 @@ export default function CatalogPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [claims, setClaims] = useState<AssignmentClaim[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
 
   const [search, setSearch] = useState("");
@@ -129,7 +138,8 @@ export default function CatalogPage() {
       // Non-admin members only see Open assignments.
       setAssignments(authRole !== "member" ? all : all.filter((a) => a.status === "Open"));
     });
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
+    const unsub5 = subscribeProjectGroups(setProjectGroups);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); };
   }, [authRole]);
 
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
@@ -145,40 +155,47 @@ export default function CatalogPage() {
     return map;
   }, [claims]);
 
-  // Resolve the displayed business name for an assignment, including the
-  // "Volta Internal" sentinel.
-  const resolveBusinessLabel = (assignment: Assignment): { name: string; neighborhood?: string } | null => {
-    if (!assignment.businessId) return null;
-    const business = businessById.get(assignment.businessId);
-    if (!business) return null;
-    return { name: business.name, neighborhood: business.neighborhood };
+  const projectGroupById = useMemo(() => new Map(projectGroups.map((g) => [g.id, g])), [projectGroups]);
+
+  const resolveProjectLabel = (assignment: Assignment): { name: string; subtitle?: string } | null => {
+    if (assignment.businessId) {
+      const biz = businessById.get(assignment.businessId);
+      if (!biz) return null;
+      return { name: biz.name, subtitle: biz.neighborhood };
+    }
+    if (assignment.projectGroupId) {
+      const grp = projectGroupById.get(assignment.projectGroupId);
+      if (!grp) return null;
+      return { name: grp.name, subtitle: grp.description };
+    }
+    return null;
   };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return assignments;
     return assignments.filter((a) => {
-      const business = resolveBusinessLabel(a);
+      const proj = resolveProjectLabel(a);
       const claimerNames = (claimsByAssignment.get(a.id) ?? [])
         .map((c) => String(c.memberName ?? "").toLowerCase());
       return [
         a.title,
         (a.track ?? a.primaryTrack ?? "Tech"),
-        business?.name ?? "",
-        business?.neighborhood ?? "",
+        proj?.name ?? "",
+        proj?.subtitle ?? "",
         ...claimerNames,
       ].some((v) => String(v ?? "").toLowerCase().includes(q));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignments, search, businessById, claimsByAssignment]);
+  }, [assignments, search, businessById, projectGroupById, claimsByAssignment]);
 
   const compareAssignmentByCol = (a: Assignment, b: Assignment, col: number): number => {
     switch (col) {
       case 0: return (a.title || "").localeCompare(b.title || "");
       case 1: return (TRACK_RANK[(a.track ?? a.primaryTrack ?? "Tech")] ?? 9) - (TRACK_RANK[(b.track ?? b.primaryTrack ?? "Tech")] ?? 9);
       case 2: {
-        const aB = resolveBusinessLabel(a)?.name ?? "";
-        const bB = resolveBusinessLabel(b)?.name ?? "";
+        const aB = resolveProjectLabel(a)?.name ?? "";
+        const bB = resolveProjectLabel(b)?.name ?? "";
         return aB.localeCompare(bB);
       }
       case 3: {
@@ -199,7 +216,7 @@ export default function CatalogPage() {
       return 0;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, sortRules, businessById, claimsByAssignment]);
+  }, [filtered, sortRules, businessById, projectGroupById, claimsByAssignment]);
 
   const addSortRule = () => {
     const usedCols = new Set(sortRules.map((r) => r.col));
@@ -233,26 +250,16 @@ export default function CatalogPage() {
     completed: claims.filter((c) => c.status === "Approved").length + assignments.filter((a) => a.status === "Approved" || a.status === "Finalized").length,
   };
 
-  const businessOptions = useMemo(
+  const sortedBusinessOptions = useMemo(
     () => businesses
       .filter((b) => String(b.name ?? "").trim())
       .sort((a, b) => a.name.localeCompare(b.name)),
     [businesses],
   );
 
-  const businessChoiceLabel = (businessId: string): string => {
-    if (!businessId) return "";
-    const business = businessById.get(businessId);
-    if (!business) return "";
-    return [business.name, business.neighborhood].filter(Boolean).join(" · ");
-  };
-
-  const businessChoices = useMemo(
-    () => businessOptions.map((b) => ({
-      id: b.id,
-      label: [b.name, b.neighborhood].filter(Boolean).join(" · "),
-    })),
-    [businessOptions],
+  const sortedGroupOptions = useMemo(
+    () => [...projectGroups].sort((a, b) => a.name.localeCompare(b.name)),
+    [projectGroups],
   );
 
   const openCreate = () => {
@@ -262,19 +269,17 @@ export default function CatalogPage() {
   };
 
   const openEdit = (a: Assignment) => {
-    const bizId = a.businessId ?? "";
     setForm({
-      title: a.title,
-      description: a.description ?? "",
-      track: a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
-      credits: a.credits,
+      title:          a.title,
+      description:    a.description ?? "",
+      track:          a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
+      credits:        a.credits,
       estimatedHours: a.estimatedHours ?? 0,
-      minRole: a.minRole,
-      businessId: bizId,
-      businessLabel: businessChoiceLabel(bizId),
-      capacity: a.capacity ?? 1,
-      deadline: a.deadlines?.[0]?.date ?? a.deadline ?? "",
-      status: a.status,
+      minRole:        a.minRole,
+      projectRef:     encodeProjectRef(a.businessId, a.projectGroupId),
+      capacity:       a.capacity ?? 1,
+      deadline:       a.deadlines?.[0]?.date ?? a.deadline ?? "",
+      status:         a.status,
     });
     setEditing(a);
     setModal("edit");
@@ -284,22 +289,24 @@ export default function CatalogPage() {
   const buildPayload = (): Omit<Assignment, "id" | "createdAt" | "updatedAt"> | null => {
     const title = form.title.trim();
     if (!title) return null;
+    const { businessId, projectGroupId } = decodeProjectRef(form.projectRef);
     return {
       title,
-      description: form.description,
-      track: form.track,
-      visibleTracks: MEMBER_TRACKS,
-      credits: Math.max(0, Number(form.credits) || 0),
-      difficulty: editing?.difficulty ?? "Standard",
+      description:    form.description,
+      track:          form.track,
+      visibleTracks:  MEMBER_TRACKS,
+      credits:        Math.max(0, Number(form.credits) || 0),
+      difficulty:     editing?.difficulty ?? "Standard",
       estimatedHours: Math.max(0, Number(form.estimatedHours) || 0),
-      minRole: form.minRole,
-      businessId: form.businessId || undefined,
-      capacity: Math.max(1, Number(form.capacity) || 1),
-      deadlines: form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
-      status: form.status,
-      cycleId: editing?.cycleId ?? activeCycle?.id ?? "",
-      createdBy: userProfile?.email || user?.email || user?.id || "unknown",
-      notes: "",
+      minRole:        form.minRole,
+      businessId,
+      projectGroupId,
+      capacity:       Math.max(1, Number(form.capacity) || 1),
+      deadlines:      form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
+      status:         form.status,
+      cycleId:        editing?.cycleId ?? activeCycle?.id ?? "",
+      createdBy:      userProfile?.email || user?.email || user?.id || "unknown",
+      notes:          "",
     };
   };
 
@@ -456,7 +463,7 @@ export default function CatalogPage() {
               </thead>
               <tbody>
                 {sorted.map((a) => {
-                  const business = resolveBusinessLabel(a);
+                  const proj = resolveProjectLabel(a);
                   const claimList = claimsByAssignment.get(a.id) ?? [];
                   const activeClaims = claimList.filter((c) => c.status !== "rejected").length;
                   return (
@@ -470,9 +477,9 @@ export default function CatalogPage() {
                           );
                           case "business": return (
                             <td key="business" className="px-3 py-0 h-9 text-[11px] text-white/65 align-middle overflow-hidden">
-                              {business?.name ? (
-                                <span className="block truncate" title={[business.name, business.neighborhood].filter(Boolean).join(" · ")}>
-                                  {business.name}{business.neighborhood && <span className="text-white/40"> · {business.neighborhood}</span>}
+                              {proj?.name ? (
+                                <span className="block truncate" title={[proj.name, proj.subtitle].filter(Boolean).join(" · ")}>
+                                  {proj.name}{proj.subtitle && <span className="text-white/40"> · {proj.subtitle}</span>}
                                 </span>
                               ) : <span className="text-white/30">—</span>}
                             </td>
@@ -592,16 +599,29 @@ export default function CatalogPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Business">
+            <Field label="Project">
               <select
-                value={form.businessId}
-                onChange={(e) => setForm((p) => ({ ...p, businessId: e.target.value, businessLabel: businessChoiceLabel(e.target.value) }))}
+                value={form.projectRef}
+                onChange={(e) => setForm((p) => ({ ...p, projectRef: e.target.value }))}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
               >
-                <option value="">— No business —</option>
-                {businessChoices.map((choice) => (
-                  <option key={choice.id} value={choice.id}>{choice.label}</option>
-                ))}
+                <option value="">— None —</option>
+                {sortedBusinessOptions.length > 0 && (
+                  <optgroup label="Businesses">
+                    {sortedBusinessOptions.map((b) => (
+                      <option key={b.id} value={`biz:${b.id}`}>
+                        {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {sortedGroupOptions.length > 0 && (
+                  <optgroup label="Project Groups">
+                    {sortedGroupOptions.map((g) => (
+                      <option key={g.id} value={`grp:${g.id}`}>{g.name}</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </Field>
             <Field label="Deadline">

@@ -84,6 +84,11 @@ const nextConfig = {
         destination: "/partners",
         permanent: true,
       },
+      {
+        source: "/members/assignments/by-business",
+        destination: "/members/assignments/by-project",
+        permanent: true,
+      },
       ...OLD_HOSTS.map((host) => ({
         source: "/:path*",
         has: [{ type: "host", value: host }],

@@ -14,13 +14,13 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeEmailTemplates,
+  subscribeProjectGroups,
   updateAssignmentClaim,
   type Assignment, type AssignmentClaim, type Business, type EmailTemplate, type CycleTrack,
+  type ProjectGroup,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
-
-const VOLTA_INTERNAL_ID = "__volta_internal__";
 
 const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2, General: 3 };
 
@@ -54,6 +54,7 @@ interface ReviewInput {
   claim: AssignmentClaim;
   assignment: Assignment | undefined;
   business: Business | undefined;
+  projectGroup: ProjectGroup | undefined;
   memberEmail: string;
 }
 
@@ -65,6 +66,7 @@ export default function ForReviewPage() {
   const [claims, setClaims] = useState<AssignmentClaim[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
 
   const [search, setSearch] = useState("");
@@ -88,21 +90,28 @@ export default function ForReviewPage() {
     const unsub2 = subscribeAssignments(setAssignments);
     const unsub3 = subscribeBusinesses(setBusinesses);
     const unsub4 = subscribeEmailTemplates(setTemplates);
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
+    const unsub5 = subscribeProjectGroups(setProjectGroups);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); };
   }, []);
 
-  const assignmentById = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
-  const businessById = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
+  const assignmentById   = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
+  const businessById     = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
+  const projectGroupById = useMemo(() => new Map(projectGroups.map((g) => [g.id, g])), [projectGroups]);
+
+  const resolveGroupLabel = (a: Assignment | undefined): string => {
+    if (!a) return "";
+    if (a.businessId) return businessById.get(a.businessId)?.name ?? "";
+    if (a.projectGroupId) return projectGroupById.get(a.projectGroupId)?.name ?? "";
+    return "";
+  };
 
   const compareClaimByCol = (aC: AssignmentClaim, bC: AssignmentClaim, col: number): number => {
     const aA = assignmentById.get(aC.assignmentId);
     const bA = assignmentById.get(bC.assignmentId);
-    const aB = aA?.businessId === VOLTA_INTERNAL_ID ? { name: "Volta Internal" } : aA?.businessId ? businessById.get(aA.businessId) : undefined;
-    const bB = bA?.businessId === VOLTA_INTERNAL_ID ? { name: "Volta Internal" } : bA?.businessId ? businessById.get(bA.businessId) : undefined;
     switch (col) {
       case 0: return (aA?.title ?? "").localeCompare(bA?.title ?? "");
       case 1: return (TRACK_RANK[aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.primaryTrack ?? "Tech"] ?? 9);
-      case 2: return (aB?.name ?? "").localeCompare(bB?.name ?? "");
+      case 2: return resolveGroupLabel(aA).localeCompare(resolveGroupLabel(bA));
       case 3: return (aC.memberName ?? "").localeCompare(bC.memberName ?? "");
       default: return 0;
     }
@@ -115,17 +124,12 @@ export default function ForReviewPage() {
       .filter((c) => {
         if (!q) return true;
         const a = assignmentById.get(c.assignmentId);
-        const business = a?.businessId === VOLTA_INTERNAL_ID
-          ? { name: "Volta Internal", neighborhood: "" }
-          : a?.businessId
-            ? businessById.get(a.businessId)
-            : undefined;
+        const groupLabel = resolveGroupLabel(a);
         return [
           c.memberName,
           a?.title,
           a?.primaryTrack,
-          business?.name,
-          business?.neighborhood,
+          groupLabel,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       })
       .sort((a, b) => {
@@ -177,12 +181,9 @@ export default function ForReviewPage() {
 
   const buildReviewInput = (claim: AssignmentClaim): ReviewInput => {
     const assignment = assignmentById.get(claim.assignmentId);
-    const business = assignment?.businessId === VOLTA_INTERNAL_ID
-      ? undefined
-      : assignment?.businessId
-        ? businessById.get(assignment.businessId)
-        : undefined;
-    return { claim, assignment, business, memberEmail: "" };
+    const business = assignment?.businessId ? businessById.get(assignment.businessId) : undefined;
+    const projectGroup = assignment?.projectGroupId ? projectGroupById.get(assignment.projectGroupId) : undefined;
+    return { claim, assignment, business, projectGroup, memberEmail: "" };
   };
 
   const openApprove = (claim: AssignmentClaim) => {

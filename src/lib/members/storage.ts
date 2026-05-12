@@ -400,6 +400,7 @@ export interface Assignment {
   estimatedHours: number;
   minRole: CycleRole;
   capacity: number;
+  projectGroupId?: string;          // set when assignment belongs to a standalone project group
   cycleId?: string;
   templateId?: string;             // template used to create this assignment
   // Finance-specific
@@ -414,6 +415,22 @@ export interface Assignment {
   primaryTrack?: CycleTrack;
   visibleTracks?: CycleTrack[];
   deadline?: string;
+}
+
+// ── Project groups (standalone non-business project containers) ───────────────
+// Businesses already serve as their own group via business_id on assignments.
+// ProjectGroup covers internal work, cohorts, or multi-business initiatives that
+// don't map to a single client record.
+
+export interface ProjectGroup {
+  id: string;
+  name: string;
+  description: string;
+  color: "green" | "blue" | "amber" | "purple" | "gray";
+  status: "Ongoing" | "Upcoming" | "Completed";
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type AssignmentClaimStatus =
@@ -953,6 +970,9 @@ export const subscribeAssignmentClaims =
 
 export const subscribeAssignmentTemplates =
   makeSubscriber<AssignmentTemplate>("assignment_templates", (r) => fromRow<AssignmentTemplate>(r));
+
+export const subscribeProjectGroups =
+  makeSubscriber<ProjectGroup>("project_groups", (r) => fromRow<ProjectGroup>(r));
 
 export const subscribeMemberStrikes =
   makeSubscriber<MemberStrike>("member_strikes", (r) => fromRow<MemberStrike>(r));
@@ -1723,6 +1743,28 @@ export async function deleteAssignmentTemplate(id: string): Promise<void> {
 export async function getAssignmentTemplatesList(): Promise<AssignmentTemplate[]> {
   const { data } = await supabase.from("assignment_templates").select("*");
   return (data ?? []).map((r) => fromRow<AssignmentTemplate>(r as Record<string, unknown>));
+}
+
+// ── Project groups ────────────────────────────────────────────────────────────
+
+export async function createProjectGroup(
+  data: Omit<ProjectGroup, "id" | "createdAt" | "updatedAt">
+): Promise<string> {
+  const id = genId();
+  const now = nowISO();
+  await supabase.from("project_groups").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "projectGroups", recordId: id, details: { name: data.name } });
+  return id;
+}
+
+export async function updateProjectGroup(id: string, data: Partial<ProjectGroup>): Promise<void> {
+  await supabase.from("project_groups").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "projectGroups", recordId: id, details: { fields: Object.keys(data) } });
+}
+
+export async function deleteProjectGroup(id: string): Promise<void> {
+  await supabase.from("project_groups").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "projectGroups", recordId: id });
 }
 
 // ── Assignment claims ─────────────────────────────────────────────────────────
