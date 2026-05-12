@@ -37,6 +37,7 @@ export default function SchoolSelector({
       <input
         list={listId}
         type="text"
+        autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

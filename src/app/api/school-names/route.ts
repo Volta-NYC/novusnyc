@@ -16,6 +16,6 @@ export async function GET() {
   )].sort();
 
   return NextResponse.json(names, {
-    headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" },
+    headers: { "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=3600" },
   });
 }
