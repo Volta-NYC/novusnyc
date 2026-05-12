@@ -165,7 +165,7 @@ export default function ApplicantsPage() {
   const canEdit = authRole === "owner";
   const canDelete = authRole === "owner";
   const canManageStatus = authRole === "owner";
-  const canView = canEdit;
+  const canView = authRole === "owner" || authRole === "admin";
   const isInterviewerOnly = false;
 
   // Subscribe to team members for interviewer identity resolution
