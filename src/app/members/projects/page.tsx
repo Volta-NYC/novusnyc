@@ -11,9 +11,9 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeBusinesses, subscribeTeam, subscribeFinanceAssignments,
+  subscribeBusinesses, subscribeTeam,
   createBusiness, updateBusiness, deleteBusiness, getBusinessImage,
-  type Business, type TeamMember, type FinanceAssignment,
+  type Business, type TeamMember,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -360,24 +360,17 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
 
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
-type ProjectTab = "tech" | "marketing" | "discovery" | "showcase";
+type ProjectTab = "businesses" | "discovery" | "showcase";
 
 function normalizeProjectTab(value: string | null | undefined): ProjectTab {
   const raw = String(value ?? "").trim().toLowerCase();
-  if (raw === "marketing") return "marketing";
   if (raw === "discovery") return "discovery";
   if (raw === "showcase") return "showcase";
-  return "tech";
+  return "businesses";
 }
 
-const TAB_TRACK: Record<Exclude<ProjectTab, "discovery" | "showcase">, TrackDivision> = {
-  tech: "Tech",
-  marketing: "Marketing",
-};
-
 const TAB_TITLE: Record<ProjectTab, string> = {
-  tech: "Businesses",
-  marketing: "Marketing",
+  businesses: "Businesses",
   discovery: "Discovery",
   showcase: "Public Showcase",
 };
@@ -423,7 +416,6 @@ function BusinessesPageInner() {
   const [projectEmailSubject, setProjectEmailSubject] = useState("");
   const [projectEmailMessage, setProjectEmailMessage] = useState("");
   const [projectEmailFrom, setProjectEmailFrom] = useState("info@voltanyc.org");
-  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [projectEmailSending, setProjectEmailSending] = useState(false);
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
@@ -431,6 +423,8 @@ function BusinessesPageInner() {
   const [projectEmailAttachments, setProjectEmailAttachments] = useState<File[]>([]);
   // Tracks the neighborhood pre-filled when opening the modal from a group's + button.
   const [presetNeighborhood, setPresetNeighborhood] = useState<string | null>(null);
+  // When false (default), only Ongoing businesses are shown in the Businesses tab.
+  const [showInactive, setShowInactive] = useState(false);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
 
@@ -441,7 +435,7 @@ function BusinessesPageInner() {
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
-  const canEdit = authRole === "admin";
+  const canEdit = authRole === "owner";
   const [deepLinkedProjectId, setDeepLinkedProjectId] = useState("");
   const handledProjectDeepLinkRef = useRef<string>("");
 
@@ -473,7 +467,6 @@ function BusinessesPageInner() {
     []
   );
   useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
   useEffect(() => {
     if (normalizedLegacyColorsRef.current) return;
     if (!canEdit || businesses.length === 0) return;
@@ -1088,7 +1081,10 @@ function BusinessesPageInner() {
   const tabScoped = businesses.filter((business) => {
     if (activeTab === "discovery") return isDiscoveryBusiness(business);
     if (activeTab === "showcase") return false; // showcase tab renders its own list
-    return businessHasTrack(business, TAB_TRACK[activeTab]);
+    // "businesses" tab: all businesses that are assigned to at least one track
+    if (isDiscoveryBusiness(business)) return false;
+    if (!showInactive && normalizeProjectStatus(business.projectStatus) !== "Ongoing") return false;
+    return true;
   });
   const filtered = sortByStatusThenName(tabScoped.filter(matchesSearch));
 
@@ -1257,31 +1253,26 @@ function BusinessesPageInner() {
     }
   };
 
-  const ongoingCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Ongoing").length;
-  const upcomingCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Upcoming").length;
-  const completedCount = businesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Completed").length;
+  // Counts across all assigned businesses (excludes discovery).
+  const assignedBusinesses = businesses.filter((b) => !isDiscoveryBusiness(b));
+  const ongoingCount = assignedBusinesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Ongoing").length;
+  const upcomingCount = assignedBusinesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Upcoming").length;
+  const completedCount = assignedBusinesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Completed").length;
 
-  // Inline status pill change for the active track (Tech/Marketing tabs); writes the new
-  // status to that track and recomputes the overall projectStatus.
+  // Inline status pill change — updates all active tracks to the new status, then
+  // recomputes the derived overall projectStatus.
   const handleQuickStatusChange = async (business: Business, newStatus: ProjectStatusValue) => {
     setOpenStatusPopoverId(null);
     if (activeTab === "discovery" || activeTab === "showcase") return;
-    const track = TAB_TRACK[activeTab];
     const normalized = normalizeTrackProjectsFromBusiness(business);
-    const currentInfo = normalized.trackProjects[track] ?? {
-      projectStatus: "Upcoming" as ProjectStatusValue,
-      teamMembers: [],
-      deadlines: [...TRACK_DEADLINE_DEFAULT],
-      notes: "",
-    };
-    const nextTrackProjects: TrackProjectMap = {
-      ...normalized.trackProjects,
-      [track]: { ...currentInfo, projectStatus: newStatus },
-    };
-    const overallStatus = deriveOverallStatus(nextTrackProjects, normalized.projectTracks);
+    const nextTrackProjects: TrackProjectMap = { ...normalized.trackProjects };
+    for (const track of normalized.projectTracks) {
+      const current = normalized.trackProjects[track];
+      if (current) nextTrackProjects[track] = { ...current, projectStatus: newStatus };
+    }
     await updateBusiness(business.id, {
       trackProjects: nextTrackProjects,
-      projectStatus: overallStatus,
+      projectStatus: newStatus,
     });
   };
 
@@ -1347,10 +1338,9 @@ function BusinessesPageInner() {
       .some((member) => myNameSet.has(normalizeLoose(member)));
   };
 
-  const isNonAdminMember = authRole !== "admin";
   const isMemberRestricted = authRole === "member";
-  const myProjects = isNonAdminMember ? filtered.filter(isProjectMine) : [];
-  const otherProjects = isNonAdminMember ? filtered.filter((p) => !isProjectMine(p)) : filtered;
+  const myProjects = isMemberRestricted ? filtered.filter(isProjectMine) : [];
+  const otherProjects = isMemberRestricted ? filtered.filter((p) => !isProjectMine(p)) : filtered;
 
   const copyText = async (value: string) => {
     const safe = value.trim();
@@ -1362,18 +1352,21 @@ function BusinessesPageInner() {
     }
   };
 
-  // Renders a row for the Tech or Marketing tab. Status pill is clickable; members and deadlines
-  // are scoped to the current track so each tab shows that track's timeline only.
-  const renderTrackRow = (b: Business, track: TrackDivision) => {
+  // Renders a unified row for the Businesses tab. Shows all tracks as chips;
+  // members and deadlines are aggregated across all active tracks.
+  const renderTrackRow = (b: Business) => {
     const normalized = normalizeTrackProjectsFromBusiness(b);
-    const trackInfo = normalized.trackProjects[track];
-    const trackStatus: ProjectStatusValue = trackInfo?.projectStatus ?? normalizeProjectStatus(b.projectStatus);
-    const members = (trackInfo?.teamMembers ?? [])
+    const overallStatus: ProjectStatusValue = normalizeProjectStatus(b.projectStatus);
+    // Aggregate members across all tracks (deduplicated).
+    const members = normalized.projectTracks
+      .flatMap((t) => normalized.trackProjects[t]?.teamMembers ?? [])
       .map((value) => resolveTeamMemberFromInput(value) ?? stripDecoratedName(String(value ?? "")))
       .filter(Boolean);
     const dedupedMembers = Array.from(new Set(members));
-    const deadlines = sortDeadlinesMostRecentFirst(trackInfo?.deadlines ?? [])
-      .filter((entry) => String(entry.date ?? "").trim());
+    // Earliest upcoming deadline across all tracks.
+    const deadlines = sortDeadlinesMostRecentFirst(
+      normalized.projectTracks.flatMap((t) => normalized.trackProjects[t]?.deadlines ?? [])
+    ).filter((entry) => String(entry.date ?? "").trim());
     const neighborhood = getNeighborhoodLabel(b);
 
     return (
@@ -1413,6 +1406,15 @@ function BusinessesPageInner() {
           )}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
+          {normalized.projectTracks.length > 0 ? (
+            <div className="flex gap-1 flex-wrap">
+              {normalized.projectTracks.map((t) => (
+                <span key={t} className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${TRACK_META[t].chipClass}`}>{t}</span>
+              ))}
+            </div>
+          ) : <span className="text-white/30">—</span>}
+        </td>
+        <td className="px-3 py-0 h-9 align-middle">
           {canEdit ? (
             <button
               type="button"
@@ -1431,20 +1433,17 @@ function BusinessesPageInner() {
               className="cursor-pointer"
               title="Click to change status"
             >
-              <Badge label={trackStatus} />
+              <Badge label={overallStatus} />
             </button>
           ) : (
-            <Badge label={trackStatus} />
+            <Badge label={overallStatus} />
           )}
         </td>
         <td className="px-3 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
           {dedupedMembers.length === 0 ? (
             <span className="text-white/30">—</span>
           ) : (
-            <span
-              className="block truncate"
-              title={dedupedMembers.join(", ")}
-            >
+            <span className="block truncate" title={dedupedMembers.join(", ")}>
               {dedupedMembers[0]}{dedupedMembers.length > 1 && <span className="text-white/40"> +{dedupedMembers.length - 1}</span>}
             </span>
           )}
@@ -1774,7 +1773,7 @@ function BusinessesPageInner() {
               <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn>
             ) : (
               <div className="flex gap-2">
-                <Btn variant="primary" onClick={() => openCreate()}>+ New Project</Btn>
+                <Btn variant="primary" onClick={() => openCreate()}>+ New Business</Btn>
               </div>
             )
           ) : undefined
@@ -1790,12 +1789,27 @@ function BusinessesPageInner() {
       )}
 
       {activeTab !== "showcase" && (
-        <div className="flex gap-3 mb-4 flex-wrap">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
-          />
+        <div className="flex gap-3 mb-4 flex-wrap items-center">
+          <div className="flex-1">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
+            />
+          </div>
+          {activeTab === "businesses" && (
+            <button
+              type="button"
+              onClick={() => setShowInactive((v) => !v)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                showInactive
+                  ? "border-white/20 bg-white/8 text-white/75 hover:bg-white/12"
+                  : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+              }`}
+            >
+              {showInactive ? "Hide completed & upcoming" : `Show all (${upcomingCount + completedCount} inactive)`}
+            </button>
+          )}
         </div>
       )}
 
@@ -1934,54 +1948,56 @@ function BusinessesPageInner() {
         </div>
       ) : (
         <>
-          {isNonAdminMember && myProjects.length > 0 && (
+          {isMemberRestricted && myProjects.length > 0 && (
             <div className="mb-4">
-              <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Projects</h2>
+              <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1240px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1370px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Neighborhood</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Owner</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[230px]">Primary Email</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Status</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Members</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Deadlines</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Actions</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Tracks</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Status</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Members</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Next Deadline</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>{myProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab as "tech" | "marketing"]))}</tbody>
+                  <tbody>{myProjects.map((b) => renderTrackRow(b))}</tbody>
                 </table>
               </div>
             </div>
           )}
 
-          {isNonAdminMember && myProjects.length > 0 && (
-            <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-2">Other Projects</h2>
+          {isMemberRestricted && myProjects.length > 0 && (
+            <h2 className="text-white/65 text-sm font-semibold uppercase tracking-wider mb-2">Other Businesses</h2>
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1240px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1370px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Neighborhood</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Owner</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[230px]">Primary Email</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Status</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Members</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Deadlines</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Actions</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Tracks</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Status</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Members</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Next Deadline</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>
               </thead>
-              <tbody>{otherProjects.map((b) => renderTrackRow(b, TAB_TRACK[activeTab as "tech" | "marketing"]))}</tbody>
+              <tbody>{otherProjects.map((b) => renderTrackRow(b))}</tbody>
             </table>
             {filtered.length === 0 && (
               <div className="p-6">
                 <Empty
-                  message={`No ${TAB_TITLE[activeTab].toLowerCase()} found.`}
-                  action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first project</Btn> : undefined}
+                  message={showInactive ? "No businesses found." : "No ongoing businesses. Click \"Show all\" to see upcoming and completed ones."}
+                  action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first business</Btn> : undefined}
                 />
               </div>
             )}
@@ -2455,10 +2471,7 @@ function BusinessesPageInner() {
       {openStatusPopoverId && popoverPos && (() => {
         const b = businesses.find((biz) => biz.id === openStatusPopoverId);
         if (!b) return null;
-        const trackForRow = (activeTab === "discovery" || activeTab === "showcase") ? null : TAB_TRACK[activeTab];
-        const normalized = normalizeTrackProjectsFromBusiness(b);
-        const trackInfo = trackForRow ? normalized.trackProjects[trackForRow] : undefined;
-        const trackStatus: ProjectStatusValue = trackInfo?.projectStatus ?? normalizeProjectStatus(b.projectStatus);
+        const trackStatus: ProjectStatusValue = normalizeProjectStatus(b.projectStatus);
         return (
           <div
             onClick={(e) => e.stopPropagation()}

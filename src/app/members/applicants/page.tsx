@@ -162,11 +162,11 @@ export default function ApplicantsPage() {
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
-  const canEdit = authRole === "admin";
-  const canDelete = authRole === "admin";
-  const canManageStatus = authRole === "admin" || authRole === "interviewer";
-  const canView = canEdit || authRole === "interviewer";
-  const isInterviewerOnly = authRole === "interviewer" && !canEdit;
+  const canEdit = authRole === "owner";
+  const canDelete = authRole === "owner";
+  const canManageStatus = authRole === "owner";
+  const canView = canEdit;
+  const isInterviewerOnly = false;
 
   // Subscribe to team members for interviewer identity resolution
   useEffect(() => subscribeTeam(setTeamMembers), []);

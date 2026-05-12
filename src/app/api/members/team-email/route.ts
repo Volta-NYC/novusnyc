@@ -40,7 +40,7 @@ function applyPlaceholders(input: string, meta: Record<string, string>): string 
 }
 
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const formData = await req.formData();

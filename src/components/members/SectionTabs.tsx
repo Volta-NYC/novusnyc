@@ -67,8 +67,6 @@ export default function SectionTabs({
 
 export const PROJECT_GROUP_TABS: SectionTab[] = [
   { href: "/members/projects", label: "Businesses", matchTab: "" },
-  { href: "/members/projects?tab=marketing", label: "Marketing", matchTab: "marketing" },
-  { href: "/members/finance-assignments", label: "Finance" },
   { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
   { href: "/members/projects?tab=showcase", label: "Showcase", matchTab: "showcase" },
 ];
@@ -85,8 +83,10 @@ export const APPLICANTS_GROUP_TABS: SectionTab[] = [
   { href: "/members/applicants/interviews", label: "Interviews" },
 ];
 
-// Assignments contains the catalog and approvals queue.
+// Assignments: by-business grouped view, flat list, review queue, templates.
 export const ASSIGNMENTS_TABS: SectionTab[] = [
-  { href: "/members/assignments/catalog", label: "Catalog" },
+  { href: "/members/assignments/by-business", label: "By Business" },
+  { href: "/members/assignments/catalog", label: "All Assignments" },
   { href: "/members/assignments/for-review", label: "For Review" },
+  { href: "/members/assignments/templates", label: "Templates" },
 ];

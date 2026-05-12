@@ -4,8 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/members/authContext";
 
-function defaultPathForRole(role: "admin" | "interviewer" | "member" | null): string {
-  if (role === "interviewer") return "/members/applicants/interviews";
+function defaultPathForRole(_role: "owner" | "admin" | "member" | null): string {
   return "/members/overview";
 }
 

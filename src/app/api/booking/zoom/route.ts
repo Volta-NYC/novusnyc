@@ -42,7 +42,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) {
     return NextResponse.json({ error: verified.error }, { status: verified.status });
   }

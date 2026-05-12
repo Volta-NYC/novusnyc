@@ -80,7 +80,7 @@ export default function ForReviewPage() {
   const [creditsOverride, setCreditsOverride] = useState<string>("");
 
   useEffect(() => {
-    if (!loading && authRole !== "admin") router.replace("/members/projects");
+    if (!loading && authRole === "member") router.replace("/members/projects");
   }, [authRole, loading, router]);
 
   useEffect(() => {
@@ -270,7 +270,7 @@ export default function ForReviewPage() {
     });
   };
 
-  if (loading || authRole !== "admin") {
+  if (loading || authRole === "member") {
     return (
       <MembersLayout>
         <div className="flex items-center justify-center h-64">

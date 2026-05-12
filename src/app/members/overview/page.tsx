@@ -18,6 +18,6 @@ export default function OverviewPage() {
     );
   }
 
-  if (authRole === "admin") return <AdminCycleOverview />;
+  if (authRole === "owner" || authRole === "admin") return <AdminCycleOverview />;
   return <MemberOverview />;
 }

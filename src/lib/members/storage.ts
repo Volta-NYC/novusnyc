@@ -342,40 +342,78 @@ export interface EmailTemplate {
   lastUsedAt?: string;             // ISO timestamp of when this template was last used
 }
 
-// ── Assignment catalog (credit-system marketplace) ────────────────────────────
-// An Assignment is the *catalog entry* for work members can claim. AssignmentClaim
-// records the member→assignment relationship and carries the lifecycle status.
-// Together they replace the older finance-assignment model for credit purposes.
+// ── Assignment templates (admin-managed blueprints) ───────────────────────────
+// Templates are reusable blueprints for creating assignments. They have no
+// business_id and no status — they are never "open" assignments themselves.
+
+export interface AssignmentTemplate {
+  id: string;
+  title: string;
+  description: string;             // HTML (rich-text)
+  type?: string;                   // null | 'Report' | 'Case Study'
+  track: CycleTrack;
+  credits: number;
+  creditsMax?: number;
+  creditsNote?: string;
+  difficulty: string;
+  estimatedHours: number;
+  minRole: CycleRole;
+  capacity: number;
+  deadlineOffsetDays?: number;     // days after creation → suggested deadline
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+// ── Active assignments (unified: Tech + Marketing + Finance) ──────────────────
+// An Assignment is active work tied to a specific business (business_id is
+// required). It replaces the old assignment_catalog (active rows only) and
+// absorbs finance_assignments. AssignmentClaim tracks member work on an
+// assignment.
 
 export type AssignmentDifficulty = string; // admin-configurable, free-form
 
 export type AssignmentStatus =
   | "Open"          // visible in marketplace, accepting claims
-  | "In Progress"   // mostly informational; admin can still close/duplicate
-  | "Submitted"     // at least one claim is awaiting approval
+  | "In Progress"   // at least one active claim
+  | "Submitted"     // at least one claim awaiting approval
   | "Approved"      // all claims approved (closed naturally)
-  | "Finalized";    // admin-closed; no longer browseable
+  | "Finalized";    // admin-closed
 
 export interface Assignment {
   id: string;
   title: string;
   description: string;             // HTML (rich-text)
-  primaryTrack: CycleTrack;        // for assignment grouping + code prefix
-  visibleTracks: CycleTrack[];     // legacy field; assignments are surfaced to every member track
+  type?: string;                   // null | 'Report' | 'Case Study' (Finance)
+  track: CycleTrack;
+  businessId?: string;             // required for active assignments
+  status: AssignmentStatus;
+  assignedMemberIds?: string[];
+  assignedMemberNames?: string[];
+  deadlines?: Array<{ label: string; date: string }>;
+  deliverableUrl?: string;
   credits: number;
+  creditsMax?: number;
+  creditsNote?: string;
   difficulty: AssignmentDifficulty;
   estimatedHours: number;
-  minRole: CycleRole;              // gate — Analyst / Sr Analyst / Associate
-  businessId?: string;             // optional link to a business
-  capacity: number;                // how many members can claim simultaneously
-  deadline?: string;               // ISO date
-  creditsMax?: number;             // upper bound for variable-credit tasks
-  creditsNote?: string;            // extra context, e.g. "+1 for Senior Analyst"
-  status: AssignmentStatus;
-  cycleId: string;                 // cycle this assignment is scoped to
+  minRole: CycleRole;
+  capacity: number;
+  cycleId?: string;
+  templateId?: string;             // template used to create this assignment
+  // Finance-specific
+  region?: string;
+  teamLabel?: string;
+  seedKey?: string;
+  notes: string;
   createdAt: string;
   updatedAt: string;
-  createdBy: string;               // uid or email
+  createdBy: string;
+  // Legacy compatibility fields (read from old assignment_catalog rows)
+  primaryTrack?: CycleTrack;
+  visibleTracks?: CycleTrack[];
+  deadline?: string;
 }
 
 export type AssignmentClaimStatus =
@@ -457,7 +495,7 @@ export interface MemberAcknowledgment {
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
 
-export type AuthRole = "admin" | "interviewer" | "member";
+export type AuthRole = "owner" | "admin" | "member";
 
 export interface UserProfile {
   id: string;
@@ -576,6 +614,9 @@ function normalizeClaimStatus(raw: unknown): AssignmentClaimStatus {
 function assignmentFromRow(r: Record<string, unknown>): Assignment {
   const a = fromRow<Assignment>(r);
   a.status = normalizeAssignmentStatus(r.status);
+  // New table uses `track`; old catalog used `primary_track` — normalise both.
+  if (!a.track && a.primaryTrack) a.track = a.primaryTrack;
+  if (!a.track) a.track = "Tech";
   return a;
 }
 
@@ -863,8 +904,11 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
 
 function normalizeAuthRoleValue(value: unknown): AuthRole {
   const raw = String(value ?? "").trim();
-  if (raw === "admin") return "admin";
-  if (raw === "interviewer") return "interviewer";
+  if (raw === "owner") return "owner";
+  if (raw === "admin") return "owner"; // legacy: old DB 'admin' values are owners
+  if (raw === "Board") return "owner";
+  if (raw === "Senior Associate") return "admin";
+  if (raw === "admin_lite") return "admin";
   return "member";
 }
 
@@ -899,11 +943,16 @@ export const subscribeEmailTemplates =
     availableVariables: (r.available_variables as string[]) ?? [],
   }));
 
+// Legacy subscriber retained for the old catalog page (will be removed once
+// the catalog page is fully migrated).
 export const subscribeAssignments =
-  makeSubscriber<Assignment>("assignment_catalog", assignmentFromRow);
+  makeSubscriber<Assignment>("assignments", assignmentFromRow);
 
 export const subscribeAssignmentClaims =
   makeSubscriber<AssignmentClaim>("assignment_claims", claimFromRow);
+
+export const subscribeAssignmentTemplates =
+  makeSubscriber<AssignmentTemplate>("assignment_templates", (r) => fromRow<AssignmentTemplate>(r));
 
 export const subscribeMemberStrikes =
   makeSubscriber<MemberStrike>("member_strikes", (r) => fromRow<MemberStrike>(r));
@@ -977,9 +1026,28 @@ export async function createBusiness(data: Omit<Business, "id" | "createdAt" | "
   const { showcaseImageData, ...rest } = data;
   const id = genId();
   const now = nowISO();
-  const row = toRow({ ...rest, id, showcaseImageSet: !!showcaseImageData, createdAt: now, updatedAt: now });
+  const row = toRow({ ...rest, id, showcaseImageSet: false, createdAt: now, updatedAt: now });
   await supabase.from("businesses").insert(row);
-  // Image data is uploaded separately via /api/members/upload-business-image
+
+  if (showcaseImageData) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (token) {
+        const res = await fetch("/api/members/upload-business-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ businessId: id, dataUrl: showcaseImageData }),
+        });
+        if (!res.ok) {
+          console.error("Business image upload failed on create:", await res.text());
+        }
+      }
+    } catch (err) {
+      console.error("Business image upload failed on create:", err);
+    }
+  }
+
   await writeAuditLog({ action: "create", collection: "businesses", recordId: id, details: { fields: Object.keys(data) } });
 }
 
@@ -996,7 +1064,7 @@ export async function updateBusiness(id: string, data: Partial<Business>): Promi
           const res = await fetch("/api/members/upload-business-image", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ businessId: id, imageData: showcaseImageData }),
+            body: JSON.stringify({ businessId: id, dataUrl: showcaseImageData }),
           });
           if (res.ok) {
             const { path, url } = await res.json() as { path: string; url: string };
@@ -1285,10 +1353,7 @@ export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
   }));
 }
 
-export async function getAssignmentsList(): Promise<Assignment[]> {
-  const { data } = await supabase.from("assignment_catalog").select("*");
-  return (data ?? []).map((r) => assignmentFromRow(r as Record<string, unknown>));
-}
+// getAssignmentsList is defined above in the unified assignments section.
 
 export async function getAssignmentClaimsList(): Promise<AssignmentClaim[]> {
   const { data } = await supabase.from("assignment_claims").select("*");
@@ -1610,24 +1675,54 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
   await writeAuditLog({ action: "delete", collection: "emailTemplates", recordId: id });
 }
 
-// ── Assignment catalog ────────────────────────────────────────────────────────
+// ── Assignments (new unified table) ──────────────────────────────────────────
 
 export async function createAssignment(data: Omit<Assignment, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("assignment_catalog").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  await writeAuditLog({ action: "create", collection: "assignmentCatalog", recordId: id, details: { title: data.title, primaryTrack: data.primaryTrack } });
+  await supabase.from("assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { title: data.title, track: data.track } });
   return id;
 }
 
 export async function updateAssignment(id: string, data: Partial<Assignment>): Promise<void> {
-  await supabase.from("assignment_catalog").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "assignmentCatalog", recordId: id, details: { fields: Object.keys(data) } });
+  await supabase.from("assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteAssignment(id: string): Promise<void> {
-  await supabase.from("assignment_catalog").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "assignmentCatalog", recordId: id });
+  await supabase.from("assignments").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
+}
+
+export async function getAssignmentsList(): Promise<Assignment[]> {
+  const { data } = await supabase.from("assignments").select("*");
+  return (data ?? []).map((r) => assignmentFromRow(r as Record<string, unknown>));
+}
+
+// ── Assignment templates ──────────────────────────────────────────────────────
+
+export async function createAssignmentTemplate(data: Omit<AssignmentTemplate, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
+  const id = genId();
+  const now = nowISO();
+  await supabase.from("assignment_templates").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  await writeAuditLog({ action: "create", collection: "assignmentTemplates", recordId: id, details: { title: data.title, track: data.track } });
+  return id;
+}
+
+export async function updateAssignmentTemplate(id: string, data: Partial<AssignmentTemplate>): Promise<void> {
+  await supabase.from("assignment_templates").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  await writeAuditLog({ action: "update", collection: "assignmentTemplates", recordId: id, details: { fields: Object.keys(data) } });
+}
+
+export async function deleteAssignmentTemplate(id: string): Promise<void> {
+  await supabase.from("assignment_templates").delete().eq("id", id);
+  await writeAuditLog({ action: "delete", collection: "assignmentTemplates", recordId: id });
+}
+
+export async function getAssignmentTemplatesList(): Promise<AssignmentTemplate[]> {
+  const { data } = await supabase.from("assignment_templates").select("*");
+  return (data ?? []).map((r) => fromRow<AssignmentTemplate>(r as Record<string, unknown>));
 }
 
 // ── Assignment claims ─────────────────────────────────────────────────────────

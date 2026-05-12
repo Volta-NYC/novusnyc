@@ -256,7 +256,7 @@ function normalizeEmail(email: string): string {
 
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
-  const canUseEmail = authRole === "admin";
+  const canUseEmail = authRole === "owner";
 
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);

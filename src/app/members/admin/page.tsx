@@ -308,12 +308,12 @@ function AdminContent() {
 
   // Redirect non-admins away from this page.
   useEffect(() => {
-    if (!loading && authRole !== "admin") {
+    if (!loading && authRole !== "owner") {
       router.replace("/members/projects");
     }
   }, [authRole, loading, router]);
 
-  if (loading || authRole !== "admin") {
+  if (loading || authRole !== "owner") {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />

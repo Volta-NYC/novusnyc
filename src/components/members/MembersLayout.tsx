@@ -20,20 +20,20 @@ type NavItem = {
 
 // ── NAV ITEM LIST ─────────────────────────────────────────────────────────────
 
-const ADMIN_NAV_ITEMS: NavItem[] = [
+const OWNER_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/overview",
-    label: "Overview",
+    label: "Dashboard",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
   },
   {
     href: "/members/projects",
     label: "Projects",
-    activeMatchRoots: ["/members/projects", "/members/finance-assignments"],
+    activeMatchRoots: ["/members/projects"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
   },
   {
-    href: "/members/assignments/catalog",
+    href: "/members/assignments/by-business",
     label: "Assignments",
     activeMatchRoots: ["/members/assignments"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
@@ -67,18 +67,30 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const INTERVIEWER_NAV_ITEMS: NavItem[] = [
+const ADMIN_NAV_ITEMS: NavItem[] = [
   {
-    href: "/members/applicants/interviews",
-    label: "Interviews",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>,
+    href: "/members/overview",
+    label: "Dashboard",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  },
+  {
+    href: "/members/projects",
+    label: "Projects",
+    activeMatchRoots: ["/members/projects"],
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
+  },
+  {
+    href: "/members/assignments/by-business",
+    label: "Assignments",
+    activeMatchRoots: ["/members/assignments"],
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
   },
 ];
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/overview",
-    label: "Overview",
+    label: "Dashboard",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
   },
   {
@@ -103,22 +115,20 @@ async function sha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function getDefaultMembersPath(role: AuthRole | null): string {
-  if (role === "interviewer") return "/members/applicants/interviews";
+function getDefaultMembersPath(_role: AuthRole | null): string {
   return "/members/overview";
 }
 
 function getNavItemsForRole(role: AuthRole | null): NavItem[] {
+  if (role === "owner") return OWNER_NAV_ITEMS;
   if (role === "admin") return ADMIN_NAV_ITEMS;
-  if (role === "interviewer") return INTERVIEWER_NAV_ITEMS;
   return MEMBER_NAV_ITEMS;
 }
 
 function getAllowedRootsForRole(role: AuthRole | null): string[] {
-  if (role === "admin") {
+  if (role === "owner") {
     return [
       "/members/projects",
-      "/members/finance-assignments",
       "/members/overview",
       "/members/assignments",
       "/members/bids",
@@ -128,7 +138,13 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
       "/members/admin",
     ];
   }
-  if (role === "interviewer") return ["/members/applicants/interviews"];
+  if (role === "admin") {
+    return [
+      "/members/overview",
+      "/members/projects",
+      "/members/assignments",
+    ];
+  }
   return ["/members/overview", "/members/work", "/members/me", "/members/handbook"];
 }
 
@@ -224,8 +240,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   const memberDisplayName = userProfile?.name || user.email?.split("@")[0] || "Member";
   const memberRoleLabel =
+    authRole === "owner" ? "Owner" :
     authRole === "admin" ? "Admin" :
-    authRole === "interviewer" ? "Interviewer" :
     "Member";
 
   // Members get the light theme so the surface they live in feels distinct

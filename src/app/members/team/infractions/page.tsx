@@ -60,7 +60,7 @@ function InfractionsPageInner() {
   const [issueStatus, setIssueStatus] = useState<"idle" | "busy" | "done" | "error">("idle");
 
   useEffect(() => {
-    if (!loading && authRole !== "admin") router.replace("/members/projects");
+    if (!loading && authRole !== "owner") router.replace("/members/projects");
   }, [authRole, loading, router]);
 
   useEffect(() => subscribeInfractions(setInfractions), []);
@@ -149,7 +149,7 @@ function InfractionsPageInner() {
     }
   };
 
-  if (loading || authRole !== "admin") {
+  if (loading || authRole !== "owner") {
     return (
       <MembersLayout>
         <div className="flex items-center justify-center h-64">

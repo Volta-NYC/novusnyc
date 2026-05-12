@@ -81,7 +81,7 @@ export default function BIDTrackerPage() {
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user }    = useAuth();
-  const canEdit = authRole === "admin";
+  const canEdit = authRole === "owner";
   const isMemberRestricted = authRole === "member";
 
   // Subscribe to real-time BID updates; unsubscribe on unmount.

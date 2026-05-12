@@ -379,9 +379,9 @@ function InterviewsContent() {
   const recurringSyncInFlightRef = useRef(false);
   const evalCleanupTriggeredRef = useRef(false);
 
-  const canAccessInterviews = authRole === "admin" || authRole === "interviewer";
-  const canDeleteInterviews = authRole === "admin";
-  const canEditZoom = authRole === "admin";
+  const canAccessInterviews = authRole === "owner";
+  const canDeleteInterviews = authRole === "owner";
+  const canEditZoom = authRole === "owner";
 
   useEffect(() => {
     if (!loading && !canAccessInterviews) {
@@ -676,7 +676,7 @@ function InterviewsContent() {
     // Admins can always see resumes
     if (canDeleteInterviews) return true;
     // Interviewers can only see resumes for slots they are assigned to
-    if (authRole !== "interviewer") return false;
+    return false;
     const slotIds = Array.isArray(slot.interviewerMemberIds)
       ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
       : [];

@@ -21,6 +21,10 @@ type VerifyResult =
 
 function normalizeCallerRole(value: unknown): string {
   const raw = String(value ?? "").trim();
+  if (raw === "owner") return "owner";
+  if (raw === "admin") return "owner";   // legacy JWT app_metadata before role rename
+  if (raw === "Board") return "owner";
+  if (raw === "Senior Associate") return "admin";
   if (raw === "project_lead") return "member";
   return raw;
 }

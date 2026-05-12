@@ -11,7 +11,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "missing_uid" }, { status: 400 });
   }
 
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) {
     return NextResponse.json({ error: verified.error }, { status: verified.status });
   }

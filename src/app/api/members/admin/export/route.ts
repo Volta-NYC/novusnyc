@@ -16,7 +16,7 @@ const EXPORT_SECTION_PATHS = {
 type ExportSection = keyof typeof EXPORT_SECTION_PATHS;
 
 export async function GET(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) {
     return NextResponse.json({ error: verified.error }, { status: verified.status });
   }

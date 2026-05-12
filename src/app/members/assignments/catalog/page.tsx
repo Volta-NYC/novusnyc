@@ -73,11 +73,11 @@ const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
 interface FormState {
   title: string;
   description: string;
-  primaryTrack: CycleTrack;
+  track: CycleTrack;
   credits: number;
   estimatedHours: number;
   minRole: CycleRole;
-  businessId: string;       // "" or VOLTA_INTERNAL_ID or real business id
+  businessId: string;
   businessLabel: string;
   capacity: number;
   deadline: string;
@@ -87,12 +87,12 @@ interface FormState {
 const BLANK_FORM: FormState = {
   title: "",
   description: "",
-  primaryTrack: "Tech",
+  track: "Tech",
   credits: 1,
   estimatedHours: 1,
   minRole: "Analyst",
-  businessId: VOLTA_INTERNAL_ID,
-  businessLabel: "Volta Internal",
+  businessId: "",
+  businessLabel: "",
   capacity: 1,
   deadline: "",
   status: "Open",
@@ -118,7 +118,7 @@ export default function CatalogPage() {
   const [form, setForm] = useState<FormState>(BLANK_FORM);
 
   useEffect(() => {
-    if (!loading && authRole !== "admin") router.replace("/members/projects");
+    if (!loading && authRole === "member") router.replace("/members/projects");
   }, [authRole, loading, router]);
 
   useEffect(() => {
@@ -127,7 +127,7 @@ export default function CatalogPage() {
     const unsub3 = subscribeCycles(setCycles);
     const unsub4 = subscribeAssignments((all) => {
       // Non-admin members only see Open assignments.
-      setAssignments(authRole === "admin" ? all : all.filter((a) => a.status === "Open"));
+      setAssignments(authRole !== "member" ? all : all.filter((a) => a.status === "Open"));
     });
     return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
   }, [authRole]);
@@ -149,7 +149,6 @@ export default function CatalogPage() {
   // "Volta Internal" sentinel.
   const resolveBusinessLabel = (assignment: Assignment): { name: string; neighborhood?: string } | null => {
     if (!assignment.businessId) return null;
-    if (assignment.businessId === VOLTA_INTERNAL_ID) return { name: "Volta Internal" };
     const business = businessById.get(assignment.businessId);
     if (!business) return null;
     return { name: business.name, neighborhood: business.neighborhood };
@@ -164,7 +163,7 @@ export default function CatalogPage() {
         .map((c) => String(c.memberName ?? "").toLowerCase());
       return [
         a.title,
-        a.primaryTrack,
+        (a.track ?? a.primaryTrack ?? "Tech"),
         business?.name ?? "",
         business?.neighborhood ?? "",
         ...claimerNames,
@@ -176,7 +175,7 @@ export default function CatalogPage() {
   const compareAssignmentByCol = (a: Assignment, b: Assignment, col: number): number => {
     switch (col) {
       case 0: return (a.title || "").localeCompare(b.title || "");
-      case 1: return (TRACK_RANK[a.primaryTrack] ?? 9) - (TRACK_RANK[b.primaryTrack] ?? 9);
+      case 1: return (TRACK_RANK[(a.track ?? a.primaryTrack ?? "Tech")] ?? 9) - (TRACK_RANK[(b.track ?? b.primaryTrack ?? "Tech")] ?? 9);
       case 2: {
         const aB = resolveBusinessLabel(a)?.name ?? "";
         const bB = resolveBusinessLabel(b)?.name ?? "";
@@ -242,20 +241,17 @@ export default function CatalogPage() {
   );
 
   const businessChoiceLabel = (businessId: string): string => {
-    if (!businessId || businessId === VOLTA_INTERNAL_ID) return "Volta Internal";
+    if (!businessId) return "";
     const business = businessById.get(businessId);
     if (!business) return "";
     return [business.name, business.neighborhood].filter(Boolean).join(" · ");
   };
 
   const businessChoices = useMemo(
-    () => [
-      { id: VOLTA_INTERNAL_ID, label: "Volta Internal" },
-      ...businessOptions.map((b) => ({
-        id: b.id,
-        label: [b.name, b.neighborhood].filter(Boolean).join(" · "),
-      })),
-    ],
+    () => businessOptions.map((b) => ({
+      id: b.id,
+      label: [b.name, b.neighborhood].filter(Boolean).join(" · "),
+    })),
     [businessOptions],
   );
 
@@ -266,17 +262,18 @@ export default function CatalogPage() {
   };
 
   const openEdit = (a: Assignment) => {
+    const bizId = a.businessId ?? "";
     setForm({
       title: a.title,
       description: a.description ?? "",
-      primaryTrack: a.primaryTrack,
+      track: a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
       credits: a.credits,
       estimatedHours: a.estimatedHours ?? 0,
       minRole: a.minRole,
-      businessId: a.businessId ?? VOLTA_INTERNAL_ID,
-      businessLabel: businessChoiceLabel(a.businessId ?? VOLTA_INTERNAL_ID),
+      businessId: bizId,
+      businessLabel: businessChoiceLabel(bizId),
       capacity: a.capacity ?? 1,
-      deadline: a.deadline ?? "",
+      deadline: a.deadlines?.[0]?.date ?? a.deadline ?? "",
       status: a.status,
     });
     setEditing(a);
@@ -284,17 +281,18 @@ export default function CatalogPage() {
   };
 
   const duplicateAssignment = (a: Assignment) => {
+    const bizId = a.businessId ?? "";
     setForm({
       title: `${a.title} (copy)`,
       description: a.description ?? "",
-      primaryTrack: a.primaryTrack,
+      track: a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
       credits: a.credits,
       estimatedHours: a.estimatedHours ?? 0,
       minRole: a.minRole,
-      businessId: a.businessId ?? VOLTA_INTERNAL_ID,
-      businessLabel: businessChoiceLabel(a.businessId ?? VOLTA_INTERNAL_ID),
+      businessId: bizId,
+      businessLabel: businessChoiceLabel(bizId),
       capacity: a.capacity ?? 1,
-      deadline: a.deadline ?? "",
+      deadline: a.deadlines?.[0]?.date ?? a.deadline ?? "",
       status: "Open",
     });
     setEditing(null);
@@ -307,18 +305,19 @@ export default function CatalogPage() {
     return {
       title,
       description: form.description,
-      primaryTrack: form.primaryTrack,
+      track: form.track,
       visibleTracks: MEMBER_TRACKS,
       credits: Math.max(0, Number(form.credits) || 0),
       difficulty: editing?.difficulty ?? "Standard",
       estimatedHours: Math.max(0, Number(form.estimatedHours) || 0),
       minRole: form.minRole,
-      businessId: form.businessId || VOLTA_INTERNAL_ID,
+      businessId: form.businessId || undefined,
       capacity: Math.max(1, Number(form.capacity) || 1),
-      deadline: form.deadline || undefined,
+      deadlines: form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
       status: form.status,
       cycleId: editing?.cycleId ?? activeCycle?.id ?? "",
       createdBy: userProfile?.email || user?.email || user?.id || "unknown",
+      notes: "",
     };
   };
 
@@ -345,7 +344,7 @@ export default function CatalogPage() {
     );
   };
 
-  if (loading || authRole !== "admin") {
+  if (loading || authRole === "member") {
     return (
       <MembersLayout>
         <div className="flex items-center justify-center h-64">
@@ -362,7 +361,7 @@ export default function CatalogPage() {
 
       <PageHeader
         title="Assignments"
-        subtitle="Catalog — full record of past, present, and future assignments. Submitted ones also appear under For Review until they're reviewed."
+        subtitle="All Assignments — full record across all tracks and businesses. Use the By Business tab for a grouped view."
         action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
       />
 
@@ -490,8 +489,8 @@ export default function CatalogPage() {
                           case "track": return (
                             <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle">
                               <span className="inline-flex items-center gap-1.5">
-                                <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[a.primaryTrack]}`} />
-                                {a.primaryTrack}
+                                <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[(a.track ?? a.primaryTrack ?? "Tech")]}`} />
+                                {(a.track ?? a.primaryTrack ?? "Tech")}
                               </span>
                             </td>
                           );
@@ -567,11 +566,11 @@ export default function CatalogPage() {
           </Field>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Field label="Primary track" required>
+            <Field label="Track" required>
               <Select
                 options={MEMBER_TRACKS}
-                value={form.primaryTrack}
-                onChange={(e) => setForm((p) => ({ ...p, primaryTrack: e.target.value as CycleTrack }))}
+                value={form.track}
+                onChange={(e) => setForm((p) => ({ ...p, track: e.target.value as CycleTrack }))}
               />
             </Field>
             <Field label="Credits" required>
@@ -613,22 +612,16 @@ export default function CatalogPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Field label="Business">
-              <input
-                list="assignment-business-options"
-                value={form.businessLabel}
-                onChange={(e) => {
-                  const label = e.target.value;
-                  const match = businessChoices.find((choice) => choice.label === label);
-                  setForm((p) => ({ ...p, businessLabel: label, businessId: match?.id ?? "" }));
-                }}
+              <select
+                value={form.businessId}
+                onChange={(e) => setForm((p) => ({ ...p, businessId: e.target.value, businessLabel: businessChoiceLabel(e.target.value) }))}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-              />
-              <datalist id="assignment-business-options">
+              >
+                <option value="">— No business —</option>
                 {businessChoices.map((choice) => (
-                  <option key={choice.id} value={choice.label} />
+                  <option key={choice.id} value={choice.id}>{choice.label}</option>
                 ))}
-              </datalist>
-              <p className="text-[11px] text-white/40 mt-1.5">Use Volta Internal for finance work, internal templates, sponsor outreach, etc.</p>
+              </select>
             </Field>
             <Field label="Deadline">
               <Input

@@ -138,7 +138,7 @@ function sanitizeAssignedMembers(
 }
 
 export async function GET(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const rowsData = await dbRead("financeAssignments", verified.caller.idToken);
@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = await req.json() as FinanceAssignmentRow;
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = await req.json() as { id?: string; patch?: FinanceAssignmentRow };
@@ -208,7 +208,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const verified = await verifyCaller(req, ["admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const url = new URL(req.url);

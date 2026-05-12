@@ -7,11 +7,11 @@ import { type AuthRole } from "@/lib/members/storage";
 
 function normalizeAuthRole(value: unknown): AuthRole {
   const raw = String(value ?? "").trim();
-  if (raw === "admin") return "admin";
-  if (raw === "interviewer") return "interviewer";
-  if (raw === "Board" || raw === "Senior Associate") return "admin";
-  if (raw === "Associate" || raw === "Senior Analyst" || raw === "Analyst") return "member";
-  // fallback to member for any other role
+  if (raw === "owner") return "owner";
+  if (raw === "admin") return "owner"; // legacy DB 'admin' → owner
+  if (raw === "Board") return "owner";
+  if (raw === "Senior Associate") return "admin";
+  if (raw === "admin_lite") return "admin";
   return "member";
 }
 
