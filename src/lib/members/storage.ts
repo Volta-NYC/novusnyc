@@ -987,7 +987,7 @@ export function subscribeApplications(callback: (items: ApplicationRecord[]) => 
   const fetchAll = () =>
     supabase.from("applications").select("*").then(({ data, error }) => {
       if (error || !data) { callback([]); return; }
-      callback((data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), r)));
+      callback((data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r))));
     });
 
   void fetchAll();
@@ -1391,7 +1391,7 @@ export async function getMemberCreditAdjustmentsList(): Promise<MemberCreditAdju
 export async function getApplicationsList(): Promise<ApplicationRecord[]> {
   const { data } = await supabase.from("applications").select("*");
   if (!data?.length) return [];
-  return (data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), r));
+  return (data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r)));
 }
 
 export async function getCalendarEventsList(): Promise<CalendarEvent[]> {
