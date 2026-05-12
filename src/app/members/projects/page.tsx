@@ -11,9 +11,9 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeBusinesses, subscribeTeam,
+  subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
   createBusiness, updateBusiness, deleteBusiness, getBusinessImage,
-  type Business, type TeamMember,
+  type Business, type TeamMember, type Assignment, type AssignmentClaim,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -31,18 +31,21 @@ const DIVISION_PUBLIC_LABEL: Record<string, string> = {
   Marketing: "Marketing & Strategy",
   Finance: "Finance & Operations",
 };
-const TRACK_META: Record<TrackDivision, { label: string; chipClass: string }> = {
+const TRACK_META: Record<TrackDivision, { label: string; chipClass: string; dotClass: string }> = {
   Tech: {
     label: "Tech",
     chipClass: "bg-blue-100 text-blue-700 border-blue-300",
+    dotClass: "bg-blue-500",
   },
   Marketing: {
     label: "Marketing",
     chipClass: "bg-lime-100 text-lime-700 border-lime-300",
+    dotClass: "bg-lime-500",
   },
   Finance: {
     label: "Finance",
     chipClass: "bg-amber-100 text-amber-700 border-amber-300",
+    dotClass: "bg-amber-500",
   },
 };
 const TRACK_ORDER: TrackDivision[] = ["Tech", "Marketing", "Finance"];
@@ -90,7 +93,7 @@ const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; 
   { value: "red-deep", label: "Red · Deep", swatch: "#991B1B" },
 ];
 const SHOWCASE_COLOR_VALUES = SHOWCASE_COLOR_OPTIONS.map((option) => option.value);
-const SHOWCASE_SERVICE_OPTIONS = ["Website", "SEO", "Social", "Content", "Grants", "Finance"] as const;
+const SHOWCASE_SERVICE_OPTIONS = ["Website", "SEO", "Social Media", "Graphic Design", "Grants"] as const;
 type ShowcaseServiceValue = (typeof SHOWCASE_SERVICE_OPTIONS)[number];
 const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "info@voltanyc.org", label: "info@voltanyc.org" },
@@ -391,6 +394,8 @@ function BusinessesPageInner() {
 
   const [businesses, setBusinesses]           = useState<Business[]>([]);
   const [team, setTeam]                       = useState<TeamMember[]>([]);
+  const [assignments, setAssignments]         = useState<Assignment[]>([]);
+  const [claims, setClaims]                   = useState<AssignmentClaim[]>([]);
   const [search, setSearch]                   = useState("");
   const [openStatusPopoverId, setOpenStatusPopoverId] = useState<string | null>(null);
   const [openMovePopoverId, setOpenMovePopoverId] = useState<string | null>(null);
@@ -425,6 +430,11 @@ function BusinessesPageInner() {
   const [presetNeighborhood, setPresetNeighborhood] = useState<string | null>(null);
   // When false (default), only Ongoing businesses are shown in the Businesses tab.
   const [showInactive, setShowInactive] = useState(false);
+  // Fine-grained filter checkboxes for businesses tab.
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
+  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+  const [filterNeighborhoods, setFilterNeighborhoods] = useState<Set<string>>(new Set());
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
 
@@ -467,6 +477,8 @@ function BusinessesPageInner() {
     []
   );
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeAssignments(setAssignments), []);
+  useEffect(() => subscribeAssignmentClaims(setClaims), []);
   useEffect(() => {
     if (normalizedLegacyColorsRef.current) return;
     if (!canEdit || businesses.length === 0) return;
@@ -1010,9 +1022,16 @@ function BusinessesPageInner() {
     return normalized.projectTracks.includes(track);
   };
 
+  // Discovery tab is a permanent record: always shows website-form intake entries,
+  // even after they've been promoted to a track. Also shows unassigned entries with no tracks.
+  const isDiscoveryEntry = (business: Business): boolean => {
+    return business.intakeSource === "website_form"
+      || normalizeTrackProjectsFromBusiness(business).projectTracks.length === 0;
+  };
+
+  // True only when the business has NOT been promoted to any track yet (no projectTracks).
   const isDiscoveryBusiness = (business: Business): boolean => {
-    const normalized = normalizeTrackProjectsFromBusiness(business);
-    return normalized.projectTracks.length === 0;
+    return normalizeTrackProjectsFromBusiness(business).projectTracks.length === 0;
   };
 
 
@@ -1079,13 +1098,38 @@ function BusinessesPageInner() {
   };
 
   const tabScoped = businesses.filter((business) => {
-    if (activeTab === "discovery") return isDiscoveryBusiness(business);
+    if (activeTab === "discovery") return isDiscoveryEntry(business);
     if (activeTab === "showcase") return false; // showcase tab renders its own list
-    // "businesses" tab: all businesses that are assigned to at least one track
+    // "businesses" tab: only entries promoted to at least one track
     if (isDiscoveryBusiness(business)) return false;
     if (!showInactive && normalizeProjectStatus(business.projectStatus) !== "Ongoing") return false;
+    // Fine-grained filters (only applied in businesses tab)
+    if (filterTracks.size > 0) {
+      const bTracks = normalizeTrackProjectsFromBusiness(business).projectTracks;
+      if (!bTracks.some((t) => filterTracks.has(t))) return false;
+    }
+    if (filterStatuses.size > 0) {
+      if (!filterStatuses.has(normalizeProjectStatus(business.projectStatus))) return false;
+    }
+    if (filterNeighborhoods.size > 0) {
+      const n = getNeighborhoodLabel(business);
+      if (!filterNeighborhoods.has(n)) return false;
+    }
     return true;
   });
+
+  // Unique neighborhoods for the filter dropdown (computed from assigned businesses).
+  const allNeighborhoods = useMemo(
+    () => [...new Set(
+      businesses
+        .filter((b) => !isDiscoveryBusiness(b))
+        .map((b) => getNeighborhoodLabel(b))
+        .filter(Boolean)
+    )].sort(),
+    [businesses]
+  );
+
+  const hasActiveFilters = filterTracks.size > 0 || filterStatuses.size > 0 || filterNeighborhoods.size > 0;
   const filtered = sortByStatusThenName(tabScoped.filter(matchesSearch));
 
   const resolveRecipientsFromAssignedNames = (inputNames: string[]): { emails: string[]; unresolved: string[] } => {
@@ -1139,11 +1183,22 @@ function BusinessesPageInner() {
   };
 
   const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
-    const assigned = getTrackAssignments(project)
-      .flatMap((assignment) => assignment.members)
-      .map((value) => String(value ?? "").trim())
+    // Use AssignmentClaims as the authoritative source: includes everyone who has ever
+    // claimed or worked on an assignment for this business (not just current active ones).
+    const bizAssignmentIds = new Set(
+      assignments.filter((a) => a.businessId === project.id).map((a) => a.id)
+    );
+    const claimerNames = claims
+      .filter((c) => bizAssignmentIds.has(c.assignmentId) && c.status !== "rejected")
+      .map((c) => (c.memberName ?? "").trim())
       .filter(Boolean);
-    return resolveRecipientsFromAssignedNames(assigned);
+
+    // Fall back to legacy trackProjects teamMembers if no claims exist yet.
+    const fallbackNames = claimerNames.length === 0
+      ? getTrackAssignments(project).flatMap((a) => a.members).map((v) => String(v ?? "").trim()).filter(Boolean)
+      : [];
+
+    return resolveRecipientsFromAssignedNames([...new Set([...claimerNames, ...fallbackNames])]);
   };
 
   const baseProjectEmailRecipients = emailModalProject ? resolveProjectRecipients(emailModalProject) : { emails: [], unresolved: [] };
@@ -1487,10 +1542,19 @@ function BusinessesPageInner() {
   const renderDiscoveryRow = (b: Business) => {
     const neighborhood = getNeighborhoodLabel(b);
     const fromWebsite = b.intakeSource === "website_form";
+    const promotedTracks = normalizeTrackProjectsFromBusiness(b).projectTracks;
+    const isPromoted = promotedTracks.length > 0;
     return (
       <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
         <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
-          <span className="font-medium truncate block" title={b.name}>{b.name}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-medium truncate block" title={b.name}>{b.name}</span>
+            {isPromoted && (
+              <span className="flex-shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#85CC17] bg-[#85CC17]/10 border border-[#85CC17]/25 rounded-full px-1.5 py-0.5">
+                {promotedTracks.join(" · ")}
+              </span>
+            )}
+          </div>
         </td>
         <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
           <span className="block truncate" title={neighborhood || ""}>{neighborhood || <span className="text-white/30">—</span>}</span>
@@ -1556,7 +1620,7 @@ function BusinessesPageInner() {
                 }}
                 className="rounded-md border border-white/15 hover:border-[#85CC17]/45 bg-[#11141A] hover:bg-[#85CC17]/10 px-2 py-1 text-[11px] text-white/80 hover:text-white transition-colors"
               >
-                Move to…
+                {isPromoted ? "Add track…" : "Move to…"}
               </button>
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
             </div>
@@ -1789,26 +1853,132 @@ function BusinessesPageInner() {
       )}
 
       {activeTab !== "showcase" && (
-        <div className="flex gap-3 mb-4 flex-wrap items-center">
-          <div className="flex-1">
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
-            />
+        <div className="flex flex-col gap-2 mb-4">
+          <div className="flex gap-3 flex-wrap items-center">
+            <div className="flex-1">
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
+              />
+            </div>
+            {activeTab === "businesses" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen((v) => !v)}
+                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                    hasActiveFilters || filterOpen
+                      ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                      : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+                  </svg>
+                  Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size + filterNeighborhoods.size})` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInactive((v) => !v)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                    showInactive
+                      ? "border-white/20 bg-white/8 text-white/75 hover:bg-white/12"
+                      : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+                  }`}
+                >
+                  {showInactive ? "Hide inactive" : `Show all (${upcomingCount + completedCount} inactive)`}
+                </button>
+              </>
+            )}
           </div>
-          {activeTab === "businesses" && (
-            <button
-              type="button"
-              onClick={() => setShowInactive((v) => !v)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                showInactive
-                  ? "border-white/20 bg-white/8 text-white/75 hover:bg-white/12"
-                  : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
-              }`}
-            >
-              {showInactive ? "Hide completed & upcoming" : `Show all (${upcomingCount + completedCount} inactive)`}
-            </button>
+
+          {/* Filter panel */}
+          {activeTab === "businesses" && filterOpen && (
+            <div className="rounded-xl border border-white/10 bg-[#13161D] p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {/* Track filter */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Track</p>
+                  <div className="space-y-1.5">
+                    {TRACK_ORDER.map((t) => (
+                      <label key={t} className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={filterTracks.has(t)}
+                          onChange={() => setFilterTracks((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(t)) next.delete(t); else next.add(t);
+                            return next;
+                          })}
+                          className="accent-[#85CC17]"
+                        />
+                        <span className={`inline-block h-2 w-2 rounded-full ${TRACK_META[t].dotClass}`} />
+                        <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{TRACK_META[t].label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status filter */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Status</p>
+                  <div className="space-y-1.5">
+                    {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
+                      <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={filterStatuses.has(s)}
+                          onChange={() => setFilterStatuses((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(s)) next.delete(s); else next.add(s);
+                            return next;
+                          })}
+                          className="accent-[#85CC17]"
+                        />
+                        <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{s}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Neighborhood filter */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Neighborhood</p>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    {allNeighborhoods.length === 0 ? (
+                      <p className="text-xs text-white/30">No data yet.</p>
+                    ) : allNeighborhoods.map((n) => (
+                      <label key={n} className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={filterNeighborhoods.has(n)}
+                          onChange={() => setFilterNeighborhoods((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(n)) next.delete(n); else next.add(n);
+                            return next;
+                          })}
+                          className="accent-[#85CC17]"
+                        />
+                        <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{n}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {hasActiveFilters && (
+                <div className="mt-3 pt-3 border-t border-white/8 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setFilterTracks(new Set()); setFilterStatuses(new Set()); setFilterNeighborhoods(new Set()); }}
+                    className="text-[11px] text-white/45 hover:text-white/75 transition-colors"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -1871,9 +2041,9 @@ function BusinessesPageInner() {
                           <td className="px-3 py-2">
                             {imgUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={imgUrl} alt="" className="w-8 h-8 rounded object-cover border border-white/10" />
+                              <img src={imgUrl} alt="" className="w-8 h-8 rounded-lg object-cover border border-white/10" />
                             ) : (
-                              <div className="w-8 h-8 rounded border border-white/10 bg-white/5" />
+                              <div className="w-8 h-8 rounded-lg border border-white/10 bg-white/5" />
                             )}
                           </td>
                           <td className="px-3 py-2.5">
@@ -2217,13 +2387,13 @@ function BusinessesPageInner() {
             </Field>
           </div>
 
-          {/* ── Project Info ── */}
+          {/* ── Tracks ── */}
           <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
-            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Project Info</p>
-            <p className="text-white/45 text-xs font-body">Tracks are optional. Use this section when work is assigned.</p>
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Tracks</p>
+            <p className="text-white/45 text-xs font-body">Select which Volta tracks are working on this client. Assignment details are managed in the Assignments section.</p>
           </div>
           <div className="lg:col-span-2">
-            <Field label="Tracks">
+            <Field label="Active Tracks">
               <div className="flex flex-wrap gap-2">
                 {TRACK_ORDER.map((track) => {
                   const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
@@ -2246,10 +2416,6 @@ function BusinessesPageInner() {
               </div>
             </Field>
           </div>
-          {(Array.isArray(form.projectTracks) ? form.projectTracks : [])
-            .map((track) => normalizeDivision(track))
-            .filter((track, index, arr) => arr.indexOf(track) === index)
-            .map((track) => renderTrackProjectSection(track))}
 
           {/* ── Public Showcase ── */}
           {form.showcaseEnabled && (

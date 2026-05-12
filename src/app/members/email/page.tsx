@@ -1,12 +1,12 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, Field, Btn, Empty, Modal, Input, useConfirm,
 } from "@/components/members/ui";
-import RichTextEditor from "@/components/members/RichTextEditor";
+import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
 import {
   getTeamMembersList,
   getBusinessesList,
@@ -279,8 +279,11 @@ export default function MemberEmailPage() {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [prefillIds, setPrefillIds] = useState<string[]>([]);
+  const editorRef = useRef<RichTextEditorHandle>(null);
   const insertPlaceholder = (placeholder: string) => {
-    setMessage((current) => `${current}${current.trim() ? " " : ""}${placeholder}`);
+    if (editorRef.current) {
+      editorRef.current.insertAtCursor(placeholder);
+    }
   };
 
   // Templates state — drives the "load / save / delete" panel above compose.
@@ -1089,6 +1092,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
             ))}
           </div>
           <RichTextEditor
+            ref={editorRef}
             content={message}
             onChange={setMessage}
             attachments={attachments}
@@ -1097,13 +1101,19 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
             minHeight={280}
           />
 
-          {/* Template preview */}
+          {/* Template preview — renders the loaded template body as HTML alongside the compose area */}
           {loadedTemplate && (
-            <div className="mt-4 p-3 bg-[#0F1014] border border-white/10 rounded-lg">
-              <p className="text-xs font-semibold text-white/80 mb-2">Preview</p>
-              <div className="text-white/60 whitespace-pre-line">
-                {loadedTemplate.subject}
-                <div className="mt-2">{loadedTemplate.body}</div>
+            <div className="mt-4 rounded-xl border border-white/10 bg-[#0F1014] overflow-hidden">
+              <div className="px-4 py-2 border-b border-white/8 flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Template preview</p>
+                <span className="text-[11px] text-white/50">{loadedTemplate.label}</span>
+              </div>
+              <div className="px-4 py-3 space-y-2">
+                <p className="text-xs text-white/50"><span className="text-white/35">Subject: </span>{loadedTemplate.subject}</p>
+                <div
+                  className="text-sm text-white/65 leading-relaxed prose-rte"
+                  dangerouslySetInnerHTML={{ __html: loadedTemplate.body }}
+                />
               </div>
             </div>
           )}

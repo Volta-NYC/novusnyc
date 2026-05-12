@@ -297,20 +297,55 @@ export default function ByBusinessPage() {
     );
   }
 
-  const renderAssignmentRow = (a: Assignment) => {
+  const renderAssignmentCard = (a: Assignment) => {
     const claimList = claimsByAssignment.get(a.id) ?? [];
-    const activeClaimCount = claimList.filter((c) => c.status !== "rejected").length;
+    const activeClaims = claimList.filter((c) => c.status !== "rejected");
+    const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
+    const spotsLeft = a.capacity - activeClaims.length;
+    const deadline = a.deadlines?.[0]?.date ?? "";
+    const isOpen = a.status === "Open";
     return (
-      <div key={a.id} className="flex items-center gap-3 px-4 py-2 border-b border-white/5 last:border-0 hover:bg-white/[0.02] group">
-        <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[a.track]}`} />
-        <span className="text-[11px] text-white/85 font-medium flex-1 min-w-0 truncate" title={a.title}>{a.title}</span>
-        {a.type && <span className="text-[10px] text-white/40 flex-shrink-0">{a.type}</span>}
-        <span className={`members-chip flex-shrink-0 ${STATUS_STYLES[a.status]}`}>{a.status}</span>
-        <span className="text-[11px] text-white/40 flex-shrink-0 w-14 text-right">{activeClaimCount}/{a.capacity}</span>
-        {a.deadlines?.[0]?.date && (
-          <span className="text-[11px] text-white/45 flex-shrink-0 w-24 text-right">{a.deadlines[0].date}</span>
+      <div key={a.id} className="group relative rounded-xl border border-white/8 bg-[#0F1014] p-4 flex flex-col gap-3 hover:border-white/15 transition-colors">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${TRACK_DOT[a.track]}`} />
+            <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">{a.track}{a.type ? ` · ${a.type}` : ""}</span>
+          </div>
+          <span className={`members-chip flex-shrink-0 ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+        </div>
+
+        {/* Title */}
+        <p className="text-sm font-semibold text-white/90 leading-snug">{a.title}</p>
+
+        {/* Description (truncated) */}
+        {a.description && (
+          <p className="text-[11px] text-white/45 line-clamp-2 leading-relaxed">{a.description}</p>
         )}
-        <div className="members-row-actions flex-shrink-0 opacity-0 group-hover:opacity-100">
+
+        {/* Meta row */}
+        <div className="flex items-center gap-3 flex-wrap text-[11px] text-white/45">
+          <span>{a.credits} cr · {a.estimatedHours}h est.</span>
+          <span>Min: {a.minRole}</span>
+          {deadline && (
+            <span className={isOpen ? "text-[#85CC17]/70" : ""}>Due {deadline}</span>
+          )}
+          <span className={spotsLeft > 0 ? "text-white/45" : "text-red-400/70"}>
+            {activeClaims.length}/{a.capacity} slots filled
+          </span>
+        </div>
+
+        {/* Assignees */}
+        {claimerNames.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {claimerNames.map((name) => (
+              <span key={name} className="inline-flex items-center px-2 py-0.5 rounded-full bg-white/6 border border-white/10 text-[10px] text-white/60">{name}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Edit button */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <Btn size="sm" variant="secondary" onClick={() => openEdit(a)}>Edit</Btn>
         </div>
       </div>
@@ -322,37 +357,54 @@ export default function ByBusinessPage() {
     const isOpen = expanded.has(b.id);
     const status = normalizeBusinessStatus(b.projectStatus);
     const openCount = bizAssignments.filter((a) => a.status === "Open").length;
+    const trackSet = [...new Set(bizAssignments.map((a) => a.track))];
     return (
-      <div key={b.id} className={`rounded-xl border bg-[#13161D] mb-3 overflow-hidden ${status === "Ongoing" ? "border-white/10" : "border-white/6 opacity-70"}`}>
+      <div key={b.id} className={`rounded-2xl border mb-4 overflow-hidden ${status === "Ongoing" ? "border-white/12 bg-[#111418]" : "border-white/7 bg-[#0E1014] opacity-80"}`}>
+        {/* Business header */}
         <button
           type="button"
-          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors"
+          className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.025] transition-colors"
           onClick={() => toggleExpanded(b.id)}
         >
-          <span className={`text-xs font-bold transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
-          <span className="text-sm font-semibold text-white/90 flex-1 truncate">{b.name}</span>
-          {b.neighborhood && <span className="text-[11px] text-white/40">{b.neighborhood}</span>}
-          <span className={`text-[10px] font-semibold uppercase tracking-wide ${BIZ_STATUS_STYLES[status]}`}>{status}</span>
-          {openCount > 0 && (
-            <span className="text-[10px] text-[#9BE22B] bg-[#85CC17]/10 border border-[#85CC17]/25 rounded-full px-2 py-0.5">
-              {openCount} open
-            </span>
-          )}
-          <span className="text-[11px] text-white/35">{bizAssignments.length} total</span>
-          <Btn
-            size="sm"
-            variant="ghost"
-            onClick={(e) => { e.stopPropagation(); setPrefillBizId(b.id); openCreate(b.id); }}
-          >
-            + Add
-          </Btn>
+          <span className={`text-xs font-bold transition-transform flex-shrink-0 ${isOpen ? "rotate-90" : ""}`}>▶</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-bold text-white/90">{b.name}</span>
+              {b.neighborhood && <span className="text-xs text-white/40">{b.neighborhood}</span>}
+            </div>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${BIZ_STATUS_STYLES[status]}`}>{status}</span>
+              {trackSet.map((t) => (
+                <span key={t} className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[t]}`} title={t} />
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {openCount > 0 && (
+              <span className="text-[10px] text-[#9BE22B] bg-[#85CC17]/10 border border-[#85CC17]/25 rounded-full px-2.5 py-1 font-semibold">
+                {openCount} open
+              </span>
+            )}
+            <span className="text-xs text-white/35">{bizAssignments.length} total</span>
+            <Btn
+              size="sm"
+              variant="ghost"
+              onClick={(e) => { e.stopPropagation(); setPrefillBizId(b.id); openCreate(b.id); }}
+            >
+              + Add
+            </Btn>
+          </div>
         </button>
+
+        {/* Assignment cards grid */}
         {isOpen && (
-          <div className="border-t border-white/8">
+          <div className="border-t border-white/8 p-4">
             {bizAssignments.length === 0 ? (
-              <p className="px-4 py-3 text-[11px] text-white/35">No assignments for this business yet.</p>
+              <p className="text-[11px] text-white/35 text-center py-4">No assignments for this business yet.</p>
             ) : (
-              bizAssignments.map(renderAssignmentRow)
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {bizAssignments.map(renderAssignmentCard)}
+              </div>
             )}
           </div>
         )}
@@ -398,19 +450,21 @@ export default function ByBusinessPage() {
           {visibleBusinesses.map(renderBusinessBucket)}
 
           {unassigned.length > 0 && (
-            <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 mb-3 overflow-hidden">
+            <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 mb-4 overflow-hidden">
               <button
                 type="button"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02]"
+                className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02]"
                 onClick={() => toggleExpanded("__unassigned__")}
               >
                 <span className={`text-xs font-bold transition-transform ${expanded.has("__unassigned__") ? "rotate-90" : ""}`}>▶</span>
-                <span className="text-sm font-semibold text-amber-300/80 flex-1">Unassigned</span>
-                <span className="text-[11px] text-white/35">{unassigned.length} — no business set</span>
+                <span className="text-base font-bold text-amber-300/80 flex-1">Unassigned</span>
+                <span className="text-xs text-white/35">{unassigned.length} — no business set</span>
               </button>
               {expanded.has("__unassigned__") && (
-                <div className="border-t border-amber-400/15">
-                  {unassigned.map(renderAssignmentRow)}
+                <div className="border-t border-amber-400/15 p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {unassigned.map(renderAssignmentCard)}
+                  </div>
                 </div>
               )}
             </div>

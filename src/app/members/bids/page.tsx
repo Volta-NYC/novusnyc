@@ -9,7 +9,6 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeBIDs, createBID, updateBID, deleteBID,
-  addBIDTimelineEntry, deleteBIDTimelineEntry,
   type BID,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -75,9 +74,6 @@ export default function BIDTrackerPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
-  const [timelineDrafts, setTimelineDrafts] = useState<
-    Record<string, { date: string; action: string; saving: boolean }>
-  >({});
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user }    = useAuth();
@@ -195,48 +191,6 @@ export default function BIDTrackerPage() {
     );
   };
 
-  const defaultTimelineDraft = () => ({
-    date: new Date().toISOString().split("T")[0],
-    action: "",
-    saving: false,
-  });
-
-  const getTimelineDraft = (bidId: string) =>
-    timelineDrafts[bidId] ?? defaultTimelineDraft();
-
-  const setTimelineDraft = (
-    bidId: string,
-    patch: Partial<{ date: string; action: string; saving: boolean }>
-  ) => {
-    setTimelineDrafts((prev) => ({
-      ...prev,
-      [bidId]: { ...(prev[bidId] ?? defaultTimelineDraft()), ...patch },
-    }));
-  };
-
-  const handleAddTimeline = async (bidId: string) => {
-    const draft = getTimelineDraft(bidId);
-    if (!draft.action.trim()) return;
-    setTimelineDraft(bidId, { saving: true });
-    await addBIDTimelineEntry(bidId, {
-      date: draft.date,
-      action: draft.action.trim(),
-      createdAt: new Date().toISOString(),
-    });
-    setTimelineDraft(bidId, { action: "", saving: false });
-  };
-
-  const handleDeleteTimeline = (bidId: string, entryId: string) => {
-    ask(async () => deleteBIDTimelineEntry(bidId, entryId));
-  };
-
-      // Build timeline array from the nested legacy object, newest first.
-  const getTimeline = (bid: BID | null) => {
-    if (!bid?.timeline) return [];
-    return Object.entries(bid.timeline)
-      .map(([id, entry]) => ({ ...entry, id }))
-      .sort((a, b) => b.date.localeCompare(a.date));
-  };
 
   const matchesSearch = (bid: BID) => {
     const query = search.trim().toLowerCase();
@@ -324,12 +278,9 @@ export default function BIDTrackerPage() {
         </div>
       </div>
 
-      {/* BID cards with inline timeline */}
       {viewMode === "cards" && (
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {sorted.map((bid) => {
-          const timeline = getTimeline(bid);
-          const draft = getTimelineDraft(bid.id);
           return (
             <div
               key={bid.id}
@@ -376,71 +327,6 @@ export default function BIDTrackerPage() {
                 </div>
               )}
 
-              {!isMemberRestricted && (
-                <div className="mt-3 border-t border-white/8 pt-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xs uppercase tracking-wider text-white/40 font-semibold">Activity Timeline</h3>
-                    <span className="text-[11px] text-white/35">{timeline.length} entries</span>
-                  </div>
-
-                  <div className="space-y-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
-                    {timeline.length === 0 ? (
-                      <p className="text-xs text-white/30">No activity logged yet.</p>
-                    ) : (
-                      timeline.map((entry) => (
-                        <div key={entry.id} className="flex items-start gap-2 rounded-lg border border-white/7 bg-[#0F1014] px-2.5 py-2">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[10px] text-white/30 block mb-0.5">{entry.date}</span>
-                            <p className="text-xs sm:text-sm text-white/70 leading-snug">{entry.action ?? entry.note ?? ""}</p>
-                          </div>
-                          {canEdit && (
-                            <button
-                              onClick={() => handleDeleteTimeline(bid.id, entry.id)}
-                              className="members-icon-btn members-icon-btn-danger h-7 w-7 flex-shrink-0 mt-0.5"
-                              aria-label="Delete timeline entry"
-                            >
-                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {canEdit && (
-                    <div className="mt-2.5 rounded-lg border border-white/8 bg-[#141821] p-2.5 space-y-2">
-                      <p className="text-[11px] text-white/45">Log activity</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
-                        <input
-                          type="date"
-                          value={draft.date}
-                          onChange={(e) => setTimelineDraft(bid.id, { date: e.target.value })}
-                          className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-white focus:outline-none"
-                        />
-                        <textarea
-                          value={draft.action}
-                          onChange={(e) => setTimelineDraft(bid.id, { action: e.target.value })}
-                          placeholder="Action"
-                          rows={1}
-                          className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-white placeholder-white/25 focus:outline-none resize-none font-body"
-                        />
-                        <Btn
-                          variant="primary"
-                          size="sm"
-                          className="w-full sm:w-auto justify-center"
-                          onClick={() => handleAddTimeline(bid.id)}
-                          disabled={draft.saving || !draft.action.trim()}
-                        >
-                          {draft.saving ? "Saving…" : "+ Add"}
-                        </Btn>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           );
         })}

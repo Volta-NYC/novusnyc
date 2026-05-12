@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -423,15 +423,19 @@ export interface RichTextEditorProps {
   onAttachmentsChange?: (files: File[]) => void;
 }
 
+export interface RichTextEditorHandle {
+  insertAtCursor: (text: string) => void;
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function RichTextEditor({
+const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(function RichTextEditor({
   content,
   onChange,
   placeholder = "Write your email...",
   minHeight = 240,
   attachments = [],
   onAttachmentsChange,
-}: RichTextEditorProps) {
+}: RichTextEditorProps, ref) {
   const [showTextColor, setShowTextColor] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
   const [showLink, setShowLink] = useState(false);
@@ -467,6 +471,14 @@ export default function RichTextEditor({
       },
     },
   });
+
+  // Expose insertAtCursor so callers can inject text at the current cursor position.
+  useImperativeHandle(ref, () => ({
+    insertAtCursor: (text: string) => {
+      if (!editor) return;
+      editor.chain().focus().insertContent(text).run();
+    },
+  }), [editor]);
 
   // Sync external content changes (e.g. reset after send)
   useEffect(() => {
@@ -826,4 +838,6 @@ export default function RichTextEditor({
       )}
     </div>
   );
-}
+});
+
+export default RichTextEditor;
