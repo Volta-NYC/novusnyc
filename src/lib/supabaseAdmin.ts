@@ -27,7 +27,6 @@ const PATH_TABLE: Record<string, string> = {
   bids:                     "bids",
   projects:                 "projects",
   financeAssignments:       "finance_assignments",
-  assignmentCatalog:        "assignment_catalog",
   assignmentClaims:         "assignment_claims",
   memberStrikes:            "member_strikes",
   memberCreditAdjustments:  "member_credit_adjustments",
@@ -41,7 +40,6 @@ const PATH_TABLE: Record<string, string> = {
   interviewInvites:         "interview_invites",
   interviewSlots:           "interview_slots",
   interviewSettings:        "interview_settings",
-  inquiries:                "inquiries",
 };
 
 function camelToSnake(s: string): string {

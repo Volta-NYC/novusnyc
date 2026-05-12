@@ -83,19 +83,3 @@ export function validateApplicationForm(
   return { success: true };
 }
 
-// ─── Inquiry form ─────────────────────────────────────────────────────────────
-
-export interface InquiryFormValues {
-  name: string;
-  email: string;
-  inquiry: string;
-}
-
-export function validateInquiryForm(data: InquiryFormValues): ValidationResult {
-  const errors: Record<string, string> = {};
-  addError(errors, "name", required(data.name, "Name is required"));
-  addError(errors, "email", validEmail(data.email, "Enter a valid email address"));
-  addError(errors, "inquiry", required(data.inquiry, "Please enter your inquiry"));
-  if (Object.keys(errors).length > 0) return { success: false, errors };
-  return { success: true };
-}

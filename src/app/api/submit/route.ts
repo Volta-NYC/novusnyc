@@ -4,7 +4,6 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   validateApplicationForm,
   validateContactForm,
-  validateInquiryForm,
 } from "@/lib/schemas";
 
 function asText(value: unknown): string {
@@ -134,26 +133,6 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
   });
 }
 
-async function upsertInquiryFromForm(data: Record<string, unknown>): Promise<void> {
-  const sb = getSupabaseAdmin();
-
-  const name = asText(data.name);
-  const email = asText(data.email).toLowerCase();
-  const inquiry = asText(data.inquiry);
-  if (!name || !email || !inquiry) return;
-
-  const createdAt = new Date().toISOString();
-  await sb.from("inquiries").insert({
-    id: crypto.randomUUID(),
-    name,
-    email,
-    inquiry,
-    source: "website_form",
-    created_at: createdAt,
-    updated_at: createdAt,
-  });
-}
-
 type AppsScriptForwardResult = {
   configured: boolean;
   ok: boolean;
@@ -190,7 +169,7 @@ export async function POST(request: Request) {
   }
 
   const formType = typeof data.formType === "string" ? data.formType : "";
-  const isKnownFormType = formType === "application" || formType === "contact" || formType === "inquiry";
+  const isKnownFormType = formType === "application" || formType === "contact";
   if (!isKnownFormType) {
     return NextResponse.json({ error: "unknown_form_type" }, { status: 400 });
   }
@@ -226,17 +205,6 @@ export async function POST(request: Request) {
       neighborhood: asText(data.neighborhood),
       services: splitCsvToList(data.services),
       message: asText(data.message),
-    });
-    if (!validation.success) {
-      return NextResponse.json({ error: "invalid_form", fields: validation.errors }, { status: 400 });
-    }
-  }
-
-  if (formType === "inquiry") {
-    const validation = validateInquiryForm({
-      name: asText(data.name),
-      email: asText(data.email),
-      inquiry: asText(data.inquiry),
     });
     if (!validation.success) {
       return NextResponse.json({ error: "invalid_form", fields: validation.errors }, { status: 400 });
@@ -294,14 +262,6 @@ export async function POST(request: Request) {
   if (formType === "application") {
     try {
       await upsertApplicationFromForm(data);
-    } catch {
-      dbWriteFailed = true;
-    }
-  }
-
-  if (formType === "inquiry") {
-    try {
-      await upsertInquiryFromForm(data);
     } catch {
       dbWriteFailed = true;
     }
