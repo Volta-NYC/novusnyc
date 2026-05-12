@@ -15,7 +15,6 @@ import {
   createBusiness, updateBusiness, deleteBusiness, getBusinessImage,
   type Business, type TeamMember, type FinanceAssignment,
 } from "@/lib/members/storage";
-import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
@@ -1215,11 +1214,6 @@ function BusinessesPageInner() {
       }))
     : [];
 
-  const globalCodeMaps = useMemo(
-    () => computeGlobalCodes(businesses, financeAssignments),
-    [businesses, financeAssignments]
-  );
-
   const sendProjectEmail = async () => {
     if (!emailModalProject) return;
     if (!projectEmailSubject.trim() || !projectEmailMessage.trim()) {
@@ -1368,14 +1362,6 @@ function BusinessesPageInner() {
     }
   };
 
-  const codeColorClass = (track: TrackDivision) => {
-    switch (track) {
-      case "Tech": return "bg-blue-500/10 border-blue-400/25 text-blue-300";
-      case "Marketing": return "bg-lime-500/10 border-lime-400/25 text-lime-300";
-      case "Finance": return "bg-amber-500/10 border-amber-400/25 text-amber-300";
-    }
-  };
-
   // Renders a row for the Tech or Marketing tab. Status pill is clickable; members and deadlines
   // are scoped to the current track so each tab shows that track's timeline only.
   const renderTrackRow = (b: Business, track: TrackDivision) => {
@@ -1388,22 +1374,12 @@ function BusinessesPageInner() {
     const dedupedMembers = Array.from(new Set(members));
     const deadlines = sortDeadlinesMostRecentFirst(trackInfo?.deadlines ?? [])
       .filter((entry) => String(entry.date ?? "").trim());
-    const code = globalCodeMaps.businessTrackCode.get(`${b.id}-${track}`)
-      ?? globalCodeMaps.businessTrackCode.get(b.id);
     const neighborhood = getNeighborhoodLabel(b);
 
     return (
       <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
         <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
           <div className="flex items-center gap-1.5 min-w-0">
-            {code && (
-              <span
-                className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 border ${codeColorClass(track)}`}
-                title={TRACK_META[track].label}
-              >
-                {code}
-              </span>
-            )}
             <span className="font-medium truncate" title={b.name}>{b.name}</span>
           </div>
         </td>

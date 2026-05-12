@@ -1029,15 +1029,10 @@ export default function FinanceAssignmentsPage() {
               ) : (
                 caseStudyFilteredItems.map((item) => {
                   const deadlineLines = formatDeadlineLabel(item);
-                  const code = globalCodeMaps.assignmentCode.get(item.id);
                   return (
                     <tr key={item.id} className="border-b border-white/8 hover:bg-white/[0.03]">
                       <td id={`finance-assignment-${item.id}`} className="px-2 py-0 h-9 text-[11px] align-middle">
-                        {code ? (
-                          <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold font-mono bg-emerald-500/10 border-emerald-400/25 text-emerald-300">
-                            {code}
-                          </span>
-                        ) : <span className="text-white/25">—</span>}
+                        <span className="text-white/25">—</span>
                       </td>
                       <td className="px-2 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
                         <span className="block truncate" title={item.region || ""}>{item.region || <span className="text-white/30">—</span>}</span>
@@ -1132,18 +1127,10 @@ export default function FinanceAssignmentsPage() {
                 reportItems.map((item) => {
                   const rowRecipients = resolveRecipientsFromNames(item.assignedMemberNames ?? []);
                   const deadlineLines = formatDeadlineLabel(item);
-                  const code = globalCodeMaps.assignmentCode.get(item.id);
                   return (
                     <tr key={item.id} className="border-b border-white/8 hover:bg-white/[0.03]">
                       <td className="px-2 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {code && (
-                            <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 bg-blue-500/10 border-blue-400/25 text-blue-300">
-                              {code}
-                            </span>
-                          )}
-                          <span id={`finance-assignment-${item.id}`} className="font-medium truncate block" title={item.topic || ""}>{item.topic || "—"}</span>
-                        </div>
+                        <span id={`finance-assignment-${item.id}`} className="font-medium truncate block" title={item.topic || ""}>{item.topic || "—"}</span>
                       </td>
                       <td className="px-2 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden">
                         {(item.assignedMemberNames ?? []).length === 0 ? (
