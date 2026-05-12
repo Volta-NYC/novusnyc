@@ -53,10 +53,10 @@ const ASSIGNMENT_SORT_OPTIONS = [
 ];
 
 const CATALOG_COLS = [
-  { key: "title",      label: "Assignment",  width: 280 },
+  { key: "title",      label: "Assignment",  width: 240 },
+  { key: "business",   label: "Business",    width: 190 },
   { key: "track",      label: "Track",       width: 90  },
   { key: "credits",    label: "Credits",     width: 70  },
-  { key: "business",   label: "Business",    width: 190 },
   { key: "slots",      label: "Slots",       width: 70  },
   { key: "deadline",   label: "Deadline",    width: 110 },
   { key: "status",     label: "Status",      width: 110 },
