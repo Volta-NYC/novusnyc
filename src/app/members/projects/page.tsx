@@ -738,9 +738,7 @@ function BusinessesPageInner() {
       : randomShowcaseColor();
     const showcaseService = (form.showcaseServices ?? [])[0]?.trim() ?? "";
     const showcaseServices = showcaseService ? [showcaseService] : [];
-    const showcaseImageData = showcaseImageSource === "upload"
-      ? (form.showcaseImageData ?? "").trim()
-      : "";
+    const showcaseImageData = (form.showcaseImageData ?? "").trim();
     const neighborhood = (form.neighborhood ?? "").trim();
     const geocodeAddress = (form.address ?? "").trim() || neighborhood;
     const geocoded = geocodeAddress
