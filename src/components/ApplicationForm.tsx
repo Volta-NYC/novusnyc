@@ -25,19 +25,11 @@ export default function ApplicationForm() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchSchoolNames = async () => {
-      try {
-        const names = await import('@/lib/members/storage').then(mod => mod.getTeamSchoolNames());
-        setSchoolOptions(names);
-      } catch (error) {
-        console.error('Failed to fetch school names:', error);
-        setSchoolOptions([]);
-      } finally {
-        setLoadingSchools(false);
-      }
-    };
-
-    fetchSchoolNames();
+    fetch("/api/school-names")
+      .then((r) => r.json())
+      .then((names: string[]) => setSchoolOptions(names))
+      .catch(() => setSchoolOptions([]))
+      .finally(() => setLoadingSchools(false));
   }, []);
 
   const set = <K extends keyof ApplicationFormValues>(k: K, v: ApplicationFormValues[K]) =>

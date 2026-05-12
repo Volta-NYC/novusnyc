@@ -1346,18 +1346,16 @@ export async function getTeamSchoolNames(): Promise<string[]> {
   const { data } = await supabase
     .from("team")
     .select("school")
-    .not("school", "is", "");
+    .not("school", "is", null)
+    .neq("school", "");
 
   if (!data?.length) return [];
 
-  // Extract distinct school names
-  const schoolNames = [...new Set(
+  return [...new Set(
     data
       .map((r: { school?: string | null }) => r.school?.trim())
-      .filter((name): name is string => name !== null && name !== undefined && name !== "")
-  )];
-
-  return schoolNames.sort();
+      .filter((name): name is string => Boolean(name))
+  )].sort();
 }
 
 export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
