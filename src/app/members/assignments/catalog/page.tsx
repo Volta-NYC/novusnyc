@@ -53,14 +53,14 @@ const ASSIGNMENT_SORT_OPTIONS = [
 ];
 
 const CATALOG_COLS = [
-  { key: "title",      label: "Assignment",  width: 240 },
-  { key: "business",   label: "Business",    width: 190 },
+  { key: "title",      label: "Assignment",  width: 260 },
+  { key: "business",   label: "Business",    width: 220 },
   { key: "track",      label: "Track",       width: 90  },
-  { key: "credits",    label: "Credits",     width: 70  },
-  { key: "slots",      label: "Slots",       width: 70  },
+  { key: "status",     label: "Status",      width: 120 },
+  { key: "credits",    label: "Credits",     width: 65  },
+  { key: "slots",      label: "Slots",       width: 65  },
   { key: "deadline",   label: "Deadline",    width: 110 },
-  { key: "status",     label: "Status",      width: 110 },
-  { key: "actions",    label: "Actions",     width: 140 },
+  { key: "actions",    label: "Actions",     width: 120 },
 ];
 
 const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
@@ -468,17 +468,6 @@ export default function CatalogPage() {
                               <span className="font-medium block truncate" title={a.title}>{a.title}</span>
                             </td>
                           );
-                          case "track": return (
-                            <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle">
-                              <span className="inline-flex items-center gap-1.5">
-                                <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[(a.track ?? a.primaryTrack ?? "Tech")]}`} />
-                                {(a.track ?? a.primaryTrack ?? "Tech")}
-                              </span>
-                            </td>
-                          );
-                          case "credits": return (
-                            <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a.credits}</td>
-                          );
                           case "business": return (
                             <td key="business" className="px-3 py-0 h-9 text-[11px] text-white/65 align-middle overflow-hidden">
                               {business?.name ? (
@@ -488,6 +477,22 @@ export default function CatalogPage() {
                               ) : <span className="text-white/30">—</span>}
                             </td>
                           );
+                          case "track": return (
+                            <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[(a.track ?? a.primaryTrack ?? "Tech")]}`} />
+                                {(a.track ?? a.primaryTrack ?? "Tech")}
+                              </span>
+                            </td>
+                          );
+                          case "status": return (
+                            <td key="status" className="px-4 py-0 h-9 align-middle">
+                              <span className={`members-chip ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                            </td>
+                          );
+                          case "credits": return (
+                            <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a.credits}</td>
+                          );
                           case "slots": return (
                             <td key="slots" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle">{activeClaims} / {a.capacity}</td>
                           );
@@ -496,13 +501,8 @@ export default function CatalogPage() {
                               <span className="block truncate">{a.deadline || <span className="text-white/30">—</span>}</span>
                             </td>
                           );
-                          case "status": return (
-                            <td key="status" className="px-3 py-0 h-9 align-middle">
-                              <span className={`members-chip ${STATUS_STYLES[a.status]}`}>{a.status}</span>
-                            </td>
-                          );
                           case "actions": return (
-                            <td key="actions" className="px-3 py-0 h-9 align-middle">
+                            <td key="actions" className="px-2 py-0 h-9 align-middle">
                               <div className="members-row-actions">
                                 <Btn size="sm" variant="secondary" onClick={() => openEdit(a)}>Edit</Btn>
                               </div>

@@ -1441,7 +1441,7 @@ export default function TeamPage() {
                       <th
                         key={col.key}
                         style={{ width: col.width }}
-                        className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""}`}
+                        className={`px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""}`}
                         onClick={() => sortable && handleSort(col.sortCol as number)}
                       >
                         <span className="inline-flex items-center gap-0.5">
@@ -1474,7 +1474,7 @@ export default function TeamPage() {
                       {visCols.map((col) => {
                         switch (col.key) {
                           case "name": return (
-                            <td key="name" className="px-2 py-0 h-9 align-middle overflow-hidden">
+                            <td key="name" className="px-3 py-0 h-9 align-middle overflow-hidden">
                               <div className="flex items-center gap-2 min-w-0">
                                 <button
                                   type="button"
@@ -1491,7 +1491,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "email": return (
-                            <td key="email" className="px-2 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                            <td key="email" className="px-3 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
                               <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
                                 <span className="text-white/55 block truncate" title={[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}>
                                   {truncateCell([member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—", 92)}
@@ -1508,17 +1508,17 @@ export default function TeamPage() {
                             </td>
                           );
                           case "school": return (
-                            <td key="school" className="px-2 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                            <td key="school" className="px-3 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
                               <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 72) : "—"}</span>
                             </td>
                           );
                           case "hsClass": return (
-                            <td key="hsClass" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="hsClass" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
                             </td>
                           );
                           case "role": return (
-                            <td key="role" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="role" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               {canEdit ? (
                                 <button
                                   type="button"
@@ -1544,7 +1544,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "resume": return (
-                            <td key="resume" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="resume" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               {(() => {
                                 const emailKey = normalizeKey(member.email ?? "");
                                 const altEmailKey = normalizeKey(member.alternateEmail ?? "");
@@ -1558,12 +1558,12 @@ export default function TeamPage() {
                             </td>
                           );
                           case "acceptedDate": return (
-                            <td key="acceptedDate" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="acceptedDate" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               <span className="text-white/50">{member.acceptedDate || "—"}</span>
                             </td>
                           );
                           case "strikes": return (
-                            <td key="strikes" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="strikes" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               {strikeCount > 0 ? (
                                 <button
                                   type="button"
@@ -1579,7 +1579,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "actions": return (
-                            <td key="actions" className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="actions" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               <div className="members-row-actions">
                                 {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
                                 {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}

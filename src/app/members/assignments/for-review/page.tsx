@@ -33,14 +33,14 @@ const ASSIGNMENT_SORT_OPTIONS = [
 ];
 
 const REVIEW_COLS = [
-  { key: "member",      label: "Member",      width: 160 },
-  { key: "assignment",  label: "Assignment",  width: 260 },
+  { key: "member",      label: "Member",      width: 180 },
+  { key: "assignment",  label: "Assignment",  width: 280 },
   { key: "track",       label: "Track",       width: 90  },
-  { key: "credits",     label: "Credits",     width: 70  },
+  { key: "credits",     label: "Credits",     width: 65  },
   { key: "submitted",   label: "Submitted",   width: 110 },
-  { key: "deliverable", label: "Deliverable", width: 130 },
-  { key: "notes",       label: "Notes",       width: 200 },
-  { key: "actions",     label: "Actions",     width: 140 },
+  { key: "deliverable", label: "Deliverable", width: 150 },
+  { key: "notes",       label: "Notes",       width: 180 },
+  { key: "actions",     label: "Actions",     width: 160 },
 ];
 
 const DEFAULT_ASSIGNMENT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
@@ -430,7 +430,7 @@ export default function ForReviewPage() {
                           );
                           case "notes": return <td key="notes" className="px-3 py-0 h-9 text-[11px] text-white/45 align-middle overflow-hidden"><span className="block truncate" title={c.submissionNotes ?? ""}>{c.submissionNotes || <span className="text-white/25">—</span>}</span></td>;
                           case "actions": return (
-                            <td key="actions" className="px-3 py-0 h-9 align-middle">
+                            <td key="actions" className="px-2 py-0 h-9 align-middle">
                               <div className="members-row-actions">
                                 <Btn size="sm" variant="primary" onClick={() => openApprove(c)}>Approve</Btn>
                                 <Btn size="sm" variant="danger" onClick={() => openReject(c)}>Reject</Btn>
@@ -458,11 +458,11 @@ export default function ForReviewPage() {
         <div className="mt-6">
           <h2 className="text-white/55 text-xs uppercase tracking-wider font-semibold mb-2">Recent decisions</h2>
           <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
-            <table className="table-fixed text-left" style={{ width: 870 }}>
+            <table className="table-fixed text-left" style={{ width: 950 }}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Member</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[250px]">Assignment</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[180px]">Member</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[290px]">Assignment</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Decision</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[70px]">Credits</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Reviewer</th>

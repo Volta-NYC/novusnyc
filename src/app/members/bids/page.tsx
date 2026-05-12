@@ -55,10 +55,10 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
 // ── COLUMN DEFINITIONS (compact view) ─────────────────────────────────────────
 
 const BID_ALL_COLS = [
-  { key: "name",       label: "Name",        width: 280, restricted: false, adminOnly: false },
+  { key: "name",       label: "Name",        width: 240, restricted: false, adminOnly: false },
   { key: "status",     label: "Status",      width: 140, restricted: false, adminOnly: false },
   { key: "borough",    label: "Borough",     width: 170, restricted: false, adminOnly: false },
-  { key: "contact",    label: "Contact",     width: 300, restricted: true,  adminOnly: false },
+  { key: "contact",    label: "Contact",     width: 260, restricted: true,  adminOnly: false },
   { key: "nextAction", label: "Next Action", width: 240, restricted: true,  adminOnly: false },
   { key: "actions",    label: "Actions",     width: 110, restricted: false, adminOnly: true  },
 ] as const;

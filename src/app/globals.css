@@ -305,10 +305,6 @@ main {
   border-radius: 4px !important;
 }
 
-.members-portal table.table-fixed th,
-.members-portal table.table-fixed td {
-  vertical-align: top;
-}
 
 .members-portal .members-table-shell {
   background: rgb(var(--color-portal-panel));
@@ -560,7 +556,7 @@ main {
 .members-portal .members-chip {
   display: inline-flex;
   align-items: center;
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: 4px;
   font-size: 10px;
   font-weight: 600;
