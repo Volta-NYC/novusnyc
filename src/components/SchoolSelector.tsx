@@ -96,29 +96,27 @@ export default function SchoolSelector({
           handleKeyDown(e);
           handleEscape(e);
         }}
-        className={`w-full pl-3 pr-10 py-2 rounded-xl border border-white/10 bg-[#0F1014] text-white text-sm font-body focus:outline-none focus:border-[#85CC17]/50 disabled:cursor-not-allowed disabled:opacity-50`}
+        className="volta-input pr-10 disabled:cursor-not-allowed disabled:opacity-50"
         disabled={isDisabled}
         placeholder={placeholder}
       />
-      {/* Dropdown arrow icon */}
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-v-muted/60 text-xs">
         ▼
       </span>
-      {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full rounded-xl border border-white/10 bg-[#0F1014] max-h-[200px] overflow-y-auto">
+        <div className="absolute z-20 mt-1 w-full rounded-xl border border-v-border bg-white shadow-lg max-h-[200px] overflow-y-auto">
           {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, _index) => (
+            filteredOptions.map((option) => (
               <div
                 key={option}
-                className={`flex items-center px-3 py-2 text-sm text-white/80 cursor-pointer hover:bg-white/5 hover:text-white selected:bg-[#85CC17]/20 selected:text-white`}
+                className="px-3 py-2 text-sm text-v-ink font-body cursor-pointer hover:bg-v-green/10"
                 onClick={() => handleOptionSelect(option)}
               >
                 {option}
               </div>
             ))
           ) : (
-            <div className="px-3 py-2 text-sm text-white/40">
+            <div className="px-3 py-2 text-sm text-v-muted font-body">
               No matching schools
             </div>
           )}

@@ -15,6 +15,12 @@ function normalizeAuthRole(value: unknown): AuthRole {
   return "member";
 }
 
+const AUTH_ROLE_TIER: Record<AuthRole, number> = { owner: 2, admin: 1, member: 0 };
+
+function maxAuthRole(a: AuthRole, b: AuthRole): AuthRole {
+  return AUTH_ROLE_TIER[a] >= AUTH_ROLE_TIER[b] ? a : b;
+}
+
 // ── CONTEXT TYPE ──────────────────────────────────────────────────────────────
 
 export interface UserProfile {
@@ -68,7 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!row) return null;
 
       const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
-      const authRole = normalizeAuthRole(appMeta.auth_role ?? row.auth_role);
+      const authRole = maxAuthRole(
+        normalizeAuthRole(appMeta.auth_role),
+        normalizeAuthRole(row.role),
+      );
 
       return {
         id:       String(row.id ?? ""),

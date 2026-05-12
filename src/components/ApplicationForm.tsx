@@ -27,7 +27,7 @@ export default function ApplicationForm() {
   useEffect(() => {
     const fetchSchoolNames = async () => {
       try {
-        const names = await import('@/lib/members/storage').then(mod => mod.getApplicationSchoolNames());
+        const names = await import('@/lib/members/storage').then(mod => mod.getTeamSchoolNames());
         setSchoolOptions(names);
       } catch (error) {
         console.error('Failed to fetch school names:', error);
@@ -155,7 +155,7 @@ export default function ApplicationForm() {
           value={form.schoolName}
           onChange={(value) => { set("schoolName", value); clearError("schoolName"); }}
           options={loadingSchools ? [] : schoolOptions}
-          placeholder="Type or select a school"
+          placeholder="Begin typing your school name"
           isDisabled={status === "loading"}
         />
         {errors.schoolName && <p className="text-red-500 text-xs mt-1 font-body">{errors.schoolName}</p>}
@@ -163,27 +163,15 @@ export default function ApplicationForm() {
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">High School Class Year *</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {GRADE_OPTIONS.map((grade) => {
-            const active = form.grade === grade;
-            return (
-              <button
-                key={grade}
-                type="button"
-                onClick={() => { set("grade", grade); clearError("grade"); }}
-                className={`w-full text-left px-4 py-3 rounded-xl border font-body text-sm font-medium transition-all flex items-center gap-3 ${
-                  active ? "bg-v-green/10 border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"
-                }`}
-              >
-                <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${active ? "bg-v-green border-v-green" : "border-v-border"}`}>
-                  {active && <CheckIcon className="w-3 h-3 text-v-ink" />}
-                </span>
-                {grade}
-              </button>
-            );
-          })}
-        </div>
-        {errors.grade && <p className="text-red-500 text-xs mt-2 font-body">{errors.grade}</p>}
+        <select
+          value={form.grade}
+          onChange={(e) => { set("grade", e.target.value); clearError("grade"); }}
+          className={`volta-input ${errors.grade ? "border-red-400" : ""}`}
+        >
+          <option value="">Select your graduation year</option>
+          {GRADE_OPTIONS.map((grade) => <option key={grade} value={grade}>{grade}</option>)}
+        </select>
+        {errors.grade && <p className="text-red-500 text-xs mt-1 font-body">{errors.grade}</p>}
       </div>
 
       <div>
