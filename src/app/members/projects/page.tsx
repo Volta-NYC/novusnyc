@@ -12,7 +12,7 @@ import {
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
-  createBusiness, updateBusiness, deleteBusiness, getBusinessImage,
+  createBusiness, updateBusiness, deleteBusiness,
   type Business, type TeamMember, type Assignment, type AssignmentClaim,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -93,8 +93,6 @@ const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; 
   { value: "red-deep", label: "Red · Deep", swatch: "#991B1B" },
 ];
 const SHOWCASE_COLOR_VALUES = SHOWCASE_COLOR_OPTIONS.map((option) => option.value);
-const SHOWCASE_SERVICE_OPTIONS = ["Website", "SEO", "Social Media", "Graphic Design", "Grants"] as const;
-type ShowcaseServiceValue = (typeof SHOWCASE_SERVICE_OPTIONS)[number];
 const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "info@voltanyc.org", label: "info@voltanyc.org" },
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
@@ -404,12 +402,6 @@ function BusinessesPageInner() {
   const [form, setForm]                       = useState(BLANK_FORM);
   const [showOwnerAltEmail, setShowOwnerAltEmail] = useState(false);
   const [showAlternatePhone, setShowAlternatePhone] = useState(false);
-  const [showcaseImageSource, setShowcaseImageSource] = useState<"link" | "upload">("link");
-  const [uploadImageData, setUploadImageData] = useState("");
-  const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [cropDragStart, setCropDragStart] = useState<{ x: number; y: number } | null>(null);
-  const showcaseImageInputRef = useRef<HTMLInputElement | null>(null);
-  const showcaseImagePreviewRef = useRef<HTMLImageElement | null>(null);
   const [memberInputByTrack, setMemberInputByTrack] = useState<Record<TrackDivision, string>>({
     Tech: "",
     Marketing: "",
@@ -597,10 +589,6 @@ function BusinessesPageInner() {
     setEditingBusiness(null);
     setShowOwnerAltEmail(false);
     setShowAlternatePhone(false);
-    setShowcaseImageSource("link");
-    setUploadImageData("");
-    setCropRect(null);
-    setCropDragStart(null);
     setMemberInputByTrack({ Tech: "", Marketing: "", Finance: "" });
     setMemberInputErrorByTrack({});
     setModal("create");
@@ -640,15 +628,6 @@ function BusinessesPageInner() {
     setPresetNeighborhood(null);
     setShowOwnerAltEmail(!!(b.ownerAlternateEmail ?? "").trim());
     setShowAlternatePhone(!!(b.alternatePhone ?? "").trim());
-    // Load the image from the split businessImages node, falling back to the
-    // legacy inline field on records that haven't been re-saved yet.
-    const savedImageData = b.showcaseImageSet === true
-      ? (await getBusinessImage(b.id) ?? (b.showcaseImageData ?? "").trim())
-      : (b.showcaseImageData ?? "").trim();
-    setShowcaseImageSource(savedImageData ? "upload" : "link");
-    setUploadImageData(savedImageData);
-    setCropRect(null);
-    setCropDragStart(null);
     setMemberInputByTrack({ Tech: "", Marketing: "", Finance: "" });
     setMemberInputErrorByTrack({});
     setModal("edit");
@@ -731,113 +710,6 @@ function BusinessesPageInner() {
     }
   };
 
-  const resetImageCrop = () => {
-    setCropRect(null);
-    setCropDragStart(null);
-  };
-
-  const handleShowcaseImageFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ""));
-      reader.onerror = () => reject(new Error("read_failed"));
-      reader.readAsDataURL(file);
-    });
-    setShowcaseImageSource("upload");
-    setUploadImageData(dataUrl);
-    setField("showcaseImageData", dataUrl);
-    setField("showcaseImageUrl", "");
-    resetImageCrop();
-  };
-
-  const onShowcaseDrop = async (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const file = event.dataTransfer.files?.[0];
-    if (!file) return;
-    await handleShowcaseImageFile(file);
-  };
-
-  const getRelativePoint = (event: React.PointerEvent<HTMLDivElement>) => {
-    const img = showcaseImagePreviewRef.current;
-    if (!img) return null;
-    const rect = img.getBoundingClientRect();
-    const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
-    const y = Math.max(0, Math.min(event.clientY - rect.top, rect.height));
-    return { x, y };
-  };
-
-  const onCropPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!uploadImageData) return;
-    const point = getRelativePoint(event);
-    if (!point) return;
-    setCropDragStart(point);
-    setCropRect({ x: point.x, y: point.y, width: 0, height: 0 });
-  };
-
-  const onCropPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!cropDragStart) return;
-    const point = getRelativePoint(event);
-    if (!point) return;
-    const x = Math.min(cropDragStart.x, point.x);
-    const y = Math.min(cropDragStart.y, point.y);
-    const width = Math.abs(point.x - cropDragStart.x);
-    const height = Math.abs(point.y - cropDragStart.y);
-    setCropRect({ x, y, width, height });
-  };
-
-  const onCropPointerUp = () => {
-    setCropDragStart(null);
-  };
-
-  const applyCropToShowcaseImage = () => {
-    const img = showcaseImagePreviewRef.current;
-    if (!img || !uploadImageData) return;
-    if (!cropRect || cropRect.width < 4 || cropRect.height < 4) {
-      setField("showcaseImageData", uploadImageData);
-      return;
-    }
-
-    const displayWidth = img.clientWidth;
-    const displayHeight = img.clientHeight;
-    if (displayWidth <= 0 || displayHeight <= 0 || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
-      return;
-    }
-
-    const sx = (cropRect.x / displayWidth) * img.naturalWidth;
-    const sy = (cropRect.y / displayHeight) * img.naturalHeight;
-    const sw = (cropRect.width / displayWidth) * img.naturalWidth;
-    const sh = (cropRect.height / displayHeight) * img.naturalHeight;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(sw));
-    canvas.height = Math.max(1, Math.round(sh));
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(
-      img,
-      Math.max(0, sx),
-      Math.max(0, sy),
-      Math.max(1, sw),
-      Math.max(1, sh),
-      0,
-      0,
-      canvas.width,
-      canvas.height,
-    );
-    // Preserve source format when possible so cropped images keep full quality.
-    const sourceMime = uploadImageData.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/)?.[1] ?? "image/png";
-    const outputMime = sourceMime === "image/png" || sourceMime === "image/webp" || sourceMime === "image/jpeg" || sourceMime === "image/jpg"
-      ? sourceMime.replace("image/jpg", "image/jpeg")
-      : "image/png";
-    const cropped = outputMime === "image/png"
-      ? canvas.toDataURL(outputMime)
-      : canvas.toDataURL(outputMime, 1.0);
-    setField("showcaseImageData", cropped);
-    setUploadImageData(cropped);
-    setField("showcaseImageUrl", "");
-    resetImageCrop();
-  };
 
   const handleSave = async (opts?: { addAnother?: boolean }) => {
     if (!form.name.trim()) return;
@@ -2421,190 +2293,10 @@ function BusinessesPageInner() {
 
           {/* ── Public Showcase ── */}
           {form.showcaseEnabled && (
-          <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
-            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Showcase Settings</p>
-            <p className="text-white/45 text-xs font-body">Manage showcase membership from the <strong className="text-white/60">Showcase</strong> tab.</p>
-          </div>
-          )}
-
-          {form.showcaseEnabled && (
-            <>
-              <Field label="Card/Map Color">
-                <div className="grid grid-cols-2 gap-2">
-                  {SHOWCASE_COLOR_OPTIONS.map((option) => {
-                    const selected = normalizeColorToken((form.showcaseColor as string) ?? "") === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setField("showcaseColor", option.value)}
-                        className={`w-full rounded-lg border px-2 py-1.5 text-xs text-left transition-colors ${
-                          selected ? "border-white/55 bg-white/10 text-white" : "border-white/15 bg-[#0F1014] text-white/70 hover:border-white/30"
-                        }`}
-                        title={option.label}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            className="inline-block h-3 w-3 rounded-full border border-black/25"
-                            style={{ backgroundColor: option.swatch }}
-                          />
-                          <span className="truncate">{option.label}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Field>
-              <div className="lg:col-span-2">
-                <Field label="Image">
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowcaseImageSource("link")}
-                        className={`px-3 py-1.5 rounded-lg border text-xs transition-colors ${
-                          showcaseImageSource === "link"
-                            ? "bg-white/10 border-white/35 text-white"
-                            : "bg-[#0F1014] border-white/15 text-white/65 hover:border-white/30"
-                        }`}
-                      >
-                        Use Link
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowcaseImageSource("upload")}
-                        className={`px-3 py-1.5 rounded-lg border text-xs transition-colors ${
-                          showcaseImageSource === "upload"
-                            ? "bg-white/10 border-white/35 text-white"
-                            : "bg-[#0F1014] border-white/15 text-white/65 hover:border-white/30"
-                        }`}
-                      >
-                        Upload + Crop
-                      </button>
-                    </div>
-
-                    {showcaseImageSource === "link" ? (
-                      <Input
-                        value={form.showcaseImageUrl ?? ""}
-                        onChange={e => {
-                          setField("showcaseImageUrl", e.target.value);
-                          setField("showcaseImageData", "");
-                        }}
-                        placeholder="https://..."
-                      />
-                    ) : (
-                      <div className="space-y-3">
-                        <div
-                          onDragOver={(event) => event.preventDefault()}
-                          onDrop={onShowcaseDrop}
-                          className="rounded-lg border border-dashed border-white/25 bg-[#0F1014] p-4 text-center"
-                        >
-                          <p className="text-xs text-white/65">Drag an image here, or</p>
-                          <Btn
-                            size="sm"
-                            variant="secondary"
-                            className="mt-2"
-                            onClick={() => showcaseImageInputRef.current?.click()}
-                          >
-                            Choose Image
-                          </Btn>
-                          <input
-                            ref={showcaseImageInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (event) => {
-                              const file = event.target.files?.[0];
-                              if (file) await handleShowcaseImageFile(file);
-                              event.target.value = "";
-                            }}
-                          />
-                        </div>
-
-                        {(uploadImageData || form.showcaseImageData) && (
-                          <div className="rounded-lg border border-white/15 bg-[#0F1014] p-3 space-y-2">
-                            <p className="text-[11px] text-white/60">Drag across the image to crop, then click Apply Crop.</p>
-                            <div
-                              className="relative w-full overflow-hidden rounded-md border border-white/10"
-                              onPointerDown={onCropPointerDown}
-                              onPointerMove={onCropPointerMove}
-                              onPointerUp={onCropPointerUp}
-                              onPointerLeave={onCropPointerUp}
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                ref={showcaseImagePreviewRef}
-                                src={uploadImageData || form.showcaseImageData || ""}
-                                alt="Showcase crop preview"
-                                className="block w-full h-auto select-none"
-                                draggable={false}
-                              />
-                              {cropRect && cropRect.width > 0 && cropRect.height > 0 && (
-                                <div
-                                  className="absolute border-2 border-[#85CC17] bg-[#85CC17]/20 pointer-events-none"
-                                  style={{
-                                    left: cropRect.x,
-                                    top: cropRect.y,
-                                    width: cropRect.width,
-                                    height: cropRect.height,
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Btn size="sm" variant="secondary" onClick={applyCropToShowcaseImage}>Apply Crop</Btn>
-                              <Btn
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setField("showcaseImageData", uploadImageData || "");
-                                  resetImageCrop();
-                                }}
-                              >
-                                Use Full Image
-                              </Btn>
-                              <Btn
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setUploadImageData("");
-                                  setField("showcaseImageData", "");
-                                  resetImageCrop();
-                                }}
-                              >
-                                Clear
-                              </Btn>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </Field>
-              </div>
-              <div className="lg:col-span-2">
-                <Field label="What we do">
-                  <Select
-                    options={[...SHOWCASE_SERVICE_OPTIONS]}
-                    value={(form.showcaseServices?.[0] as ShowcaseServiceValue | undefined) ?? ""}
-                    onChange={e => {
-                      const next = e.target.value.trim();
-                      setField("showcaseServices", next ? [next] : []);
-                    }}
-                  />
-                </Field>
-              </div>
-              <div className="lg:col-span-2">
-                <Field label="Description">
-                  <TextArea rows={3} value={form.showcaseDescription ?? ""} onChange={e => setField("showcaseDescription", e.target.value)} />
-                </Field>
-              </div>
-              <div className="lg:col-span-2">
-                <Field label="Completed Showcase">
-                  <Input value={form.showcaseUrl ?? ""} onChange={e => setField("showcaseUrl", e.target.value)} placeholder="https://" />
-                </Field>
-              </div>
-            </>
+            <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
+              <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Showcase Settings</p>
+              <p className="text-white/45 text-xs font-body">Manage colors, images, and appearance from the <strong className="text-white/60">Showcase</strong> tab.</p>
+            </div>
           )}
         </div>
         <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-white/8">
