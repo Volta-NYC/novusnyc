@@ -358,6 +358,19 @@ export default function ByBusinessPage() {
     const status = normalizeBusinessStatus(b.projectStatus);
     const openCount = bizAssignments.filter((a) => a.status === "Open").length;
     const trackSet = [...new Set(bizAssignments.map((a) => a.track))];
+
+    // Sort by deadline (soonest first, blanks last), then by created_at desc
+    const sortedAssignments = [...bizAssignments].sort((a, b) => {
+      const da = a.deadlines?.[0]?.date ?? "";
+      const db = b.deadlines?.[0]?.date ?? "";
+      if (da && db) return da < db ? -1 : da > db ? 1 : 0;
+      if (da) return -1;
+      if (db) return 1;
+      return 0;
+    });
+    const previewAssignments = sortedAssignments.slice(0, 2);
+    const hasMore = bizAssignments.length > 2;
+
     return (
       <div key={b.id} className={`rounded-2xl border mb-4 overflow-hidden ${status === "Ongoing" ? "border-white/12 bg-[#111418]" : "border-white/7 bg-[#0E1014] opacity-80"}`}>
         {/* Business header */}
@@ -396,7 +409,38 @@ export default function ByBusinessPage() {
           </div>
         </button>
 
-        {/* Assignment cards grid */}
+        {/* Collapsed preview: show up to 2 most-recent assignments */}
+        {!isOpen && bizAssignments.length > 0 && (
+          <div className="border-t border-white/6 px-4 pb-3 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {previewAssignments.map((a) => {
+                const claimList = claimsByAssignment.get(a.id) ?? [];
+                const activeClaims = claimList.filter((c) => c.status !== "rejected");
+                const deadline = a.deadlines?.[0]?.date ?? "";
+                return (
+                  <div key={a.id} className="flex items-center gap-2 rounded-lg border border-white/6 bg-white/[0.025] px-3 py-2">
+                    <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[a.track]}`} />
+                    <span className="text-[11px] text-white/75 font-medium truncate flex-1">{a.title}</span>
+                    <span className={`members-chip flex-shrink-0 text-[9px] px-1.5 py-0.5 ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                    {deadline && <span className="text-[10px] text-white/35 flex-shrink-0">{deadline}</span>}
+                    <span className="text-[10px] text-white/30 flex-shrink-0">{activeClaims.length}/{a.capacity}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {hasMore && (
+              <button
+                type="button"
+                className="mt-2 text-[10px] text-white/35 hover:text-white/55 transition-colors"
+                onClick={() => toggleExpanded(b.id)}
+              >
+                +{bizAssignments.length - 2} more — click to expand
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Expanded assignment cards grid */}
         {isOpen && (
           <div className="border-t border-white/8 p-4">
             {bizAssignments.length === 0 ? (

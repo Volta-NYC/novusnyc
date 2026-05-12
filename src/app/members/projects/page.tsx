@@ -1520,14 +1520,16 @@ function BusinessesPageInner() {
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
             <div className="members-row-actions">
-              <Btn
-                size="sm"
-                variant="secondary"
-                onClick={() => openProjectTeamEmailModal(b)}
-                disabled={resolveProjectRecipients(b).emails.length === 0}
-              >
-                Email
-              </Btn>
+              <span title={resolveProjectRecipients(b).emails.length === 0 ? "No assigned members to email" : undefined}>
+                <Btn
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => openProjectTeamEmailModal(b)}
+                  disabled={resolveProjectRecipients(b).emails.length === 0}
+                >
+                  Email
+                </Btn>
+              </span>
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
             </div>
           )}
@@ -1725,7 +1727,7 @@ function BusinessesPageInner() {
     );
   };
 
-  const renderTrackProjectSection = (track: TrackDivision) => {
+  const _renderTrackProjectSection = (track: TrackDivision) => {
     const info = normalizedFormTrackProjects()[track] ?? {
       projectStatus: "Upcoming",
       teamMembers: [],
