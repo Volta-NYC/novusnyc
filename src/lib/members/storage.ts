@@ -893,7 +893,12 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
     grade: readLegacyText(row, ["grade", "Grade"]),
     cityState: readLegacyText(row, ["cityState", "City, State", "City"]),
     referral: readLegacyText(row, ["referral", "How They Heard"]),
-    tracksSelected: readLegacyText(row, ["tracksSelected", "Tracks Selected"]),
+    tracksSelected: (() => {
+      const v = row["tracks_selected"] ?? row["tracksSelected"] ?? row["Tracks Selected"];
+      if (Array.isArray(v)) return v.filter(Boolean).join(", ");
+      if (typeof v === "string" && v.trim()) return v.trim();
+      return "";
+    })(),
     hasResume: readLegacyText(row, ["hasResume", "Has Resume"]),
     resumeUrl: readLegacyText(row, ["resumeUrl", "Resume URL"]),
     toolsSoftware: readLegacyText(row, ["toolsSoftware", "Tools/Software"]),
