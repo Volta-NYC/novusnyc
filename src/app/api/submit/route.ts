@@ -108,10 +108,10 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
 
   const schoolName = asText(data["School Name"]) || asText(data.Education);
   const cityState = asText(data["City, State"]) || asText(data.City);
-  const tracks = splitToCsv(data["Tracks Selected"]);
+  const tracks = splitCsvToList(data["Tracks Selected"]);
   const createdAt = new Date().toISOString();
 
-  await sb.from("applications").insert({
+  const { error } = await sb.from("applications").insert({
     id: crypto.randomUUID(),
     full_name: fullName,
     email,
@@ -131,6 +131,7 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
     created_at: createdAt,
     updated_at: createdAt,
   });
+  if (error) throw new Error(`applications_insert_failed: ${error.message}`);
 }
 
 type AppsScriptForwardResult = {
