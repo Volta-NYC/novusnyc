@@ -157,6 +157,7 @@ export default function ApplicationForm() {
           options={loadingSchools ? [] : schoolOptions}
           placeholder="Begin typing your school name"
           isDisabled={status === "loading"}
+          theme="light"
         />
         {errors.schoolName && <p className="text-red-500 text-xs mt-1 font-body">{errors.schoolName}</p>}
       </div>
