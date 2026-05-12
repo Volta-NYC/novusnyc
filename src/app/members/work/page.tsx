@@ -235,8 +235,8 @@ export default function MarketplacePage() {
                   className="block rounded-2xl border border-black/8 bg-white p-4 hover:border-[#85CC17]/55 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[a.primaryTrack]}`}>
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[a.primaryTrack]}`} />
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[a.primaryTrack ?? "Tech"]}`}>
+                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[a.primaryTrack ?? "Tech"]}`} />
                       {a.primaryTrack}
                     </span>
                     <span className="text-[#5C9911] font-mono font-semibold text-sm">{a.credits} cr</span>
