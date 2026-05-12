@@ -280,24 +280,6 @@ export default function CatalogPage() {
     setModal("edit");
   };
 
-  const duplicateAssignment = (a: Assignment) => {
-    const bizId = a.businessId ?? "";
-    setForm({
-      title: `${a.title} (copy)`,
-      description: a.description ?? "",
-      track: a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
-      credits: a.credits,
-      estimatedHours: a.estimatedHours ?? 0,
-      minRole: a.minRole,
-      businessId: bizId,
-      businessLabel: businessChoiceLabel(bizId),
-      capacity: a.capacity ?? 1,
-      deadline: a.deadlines?.[0]?.date ?? a.deadline ?? "",
-      status: "Open",
-    });
-    setEditing(null);
-    setModal("create");
-  };
 
   const buildPayload = (): Omit<Assignment, "id" | "createdAt" | "updatedAt"> | null => {
     const title = form.title.trim();
@@ -523,7 +505,6 @@ export default function CatalogPage() {
                             <td key="actions" className="px-3 py-0 h-9 align-middle">
                               <div className="members-row-actions">
                                 <Btn size="sm" variant="secondary" onClick={() => openEdit(a)}>Edit</Btn>
-                                <Btn size="sm" variant="ghost" onClick={() => duplicateAssignment(a)}>Dup</Btn>
                               </div>
                             </td>
                           );

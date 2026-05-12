@@ -14,9 +14,9 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeAssignmentTemplates,
+  subscribeAssignmentTemplates, subscribeBusinesses, createAssignment,
   createAssignmentTemplate, updateAssignmentTemplate, deleteAssignmentTemplate,
-  type AssignmentTemplate, type CycleRole, type CycleTrack,
+  type AssignmentTemplate, type AssignmentStatus, type Business, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -58,16 +58,30 @@ const BLANK_FORM: FormState = {
   notes: "",
 };
 
+interface FromTemplateForm {
+  businessId: string;
+  title: string;
+  deadline: string;
+  status: AssignmentStatus;
+}
+
 export default function TemplatesPage() {
   const { authRole, user, userProfile, loading } = useAuth();
   const router = useRouter();
   const { ask, Dialog } = useConfirm();
 
   const [templates, setTemplates] = useState<AssignmentTemplate[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<AssignmentTemplate | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
+
+  const [fromTemplate, setFromTemplate] = useState<AssignmentTemplate | null>(null);
+  const [fromTemplateForm, setFromTemplateForm] = useState<FromTemplateForm>({
+    businessId: "", title: "", deadline: "", status: "Open",
+  });
+  const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -76,6 +90,55 @@ export default function TemplatesPage() {
   useEffect(() => {
     return subscribeAssignmentTemplates(setTemplates);
   }, []);
+
+  useEffect(() => {
+    return subscribeBusinesses(setBusinesses);
+  }, []);
+
+  const businessOptions = useMemo(
+    () => [...businesses].filter((b) => b.name?.trim()).sort((a, b) => a.name.localeCompare(b.name)),
+    [businesses],
+  );
+
+  const openFromTemplate = (t: AssignmentTemplate) => {
+    let suggestedDeadline = "";
+    if (t.deadlineOffsetDays != null) {
+      const d = new Date();
+      d.setDate(d.getDate() + t.deadlineOffsetDays);
+      suggestedDeadline = d.toISOString().slice(0, 10);
+    }
+    setFromTemplate(t);
+    setFromTemplateForm({ businessId: "", title: t.title, deadline: suggestedDeadline, status: "Open" });
+  };
+
+  const handleCreateFromTemplate = async () => {
+    if (!fromTemplate || !fromTemplateForm.businessId) return;
+    setFromTemplateCreating(true);
+    try {
+      await createAssignment({
+        title: fromTemplateForm.title.trim() || fromTemplate.title,
+        description: fromTemplate.description ?? "",
+        track: fromTemplate.track,
+        visibleTracks: ["Tech", "Marketing", "Finance"],
+        credits: fromTemplate.credits,
+        difficulty: fromTemplate.difficulty ?? "Standard",
+        estimatedHours: fromTemplate.estimatedHours ?? 0,
+        minRole: fromTemplate.minRole,
+        businessId: fromTemplateForm.businessId,
+        capacity: fromTemplate.capacity ?? 1,
+        deadlines: fromTemplateForm.deadline ? [{ label: "Final Deadline", date: fromTemplateForm.deadline }] : undefined,
+        status: fromTemplateForm.status,
+        type: fromTemplate.type,
+        notes: fromTemplate.notes,
+        region: undefined,
+        teamLabel: undefined,
+        createdBy: userProfile?.email || user?.email || user?.id || "unknown",
+      });
+      setFromTemplate(null);
+    } finally {
+      setFromTemplateCreating(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -220,6 +283,7 @@ export default function TemplatesPage() {
                   </td>
                   <td className="px-3 py-0 h-9 align-middle">
                     <div className="members-row-actions">
+                      <Btn size="sm" variant="primary" onClick={() => openFromTemplate(t)}>Create +</Btn>
                       <Btn size="sm" variant="secondary" onClick={() => openEdit(t)}>Edit</Btn>
                     </div>
                   </td>
@@ -306,6 +370,85 @@ export default function TemplatesPage() {
               {editing ? "Save" : "Create"}
             </Btn>
           </div>
+        </div>
+      </Modal>
+
+      {/* ── Create from Template modal ─────────────────────────── */}
+      <Modal
+        open={fromTemplate !== null}
+        onClose={() => setFromTemplate(null)}
+        title="Create Assignment from Template"
+      >
+        {fromTemplate && (
+          <div className="space-y-4">
+            {/* Template summary */}
+            <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 flex items-start gap-3">
+              <span className={`mt-0.5 inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${TRACK_DOT[fromTemplate.track]}`} />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white/90">{fromTemplate.title}</p>
+                <p className="text-[11px] text-white/45 mt-0.5">
+                  {fromTemplate.track} · {fromTemplate.credits} cr · {fromTemplate.estimatedHours}h · {fromTemplate.capacity} slot{fromTemplate.capacity !== 1 ? "s" : ""} · Min {fromTemplate.minRole}
+                </p>
+                {fromTemplate.description && (
+                  <p
+                    className="text-[11px] text-white/40 mt-1.5 line-clamp-3 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: fromTemplate.description }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <Field label="Business" required>
+              <select
+                value={fromTemplateForm.businessId}
+                onChange={(e) => setFromTemplateForm((p) => ({ ...p, businessId: e.target.value }))}
+                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+              >
+                <option value="">— Select a business —</option>
+                {businessOptions.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Assignment title">
+              <Input
+                value={fromTemplateForm.title}
+                onChange={(e) => setFromTemplateForm((p) => ({ ...p, title: e.target.value }))}
+                placeholder={fromTemplate.title}
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Deadline">
+                <Input
+                  type="date"
+                  value={fromTemplateForm.deadline}
+                  onChange={(e) => setFromTemplateForm((p) => ({ ...p, deadline: e.target.value }))}
+                />
+              </Field>
+              <Field label="Status">
+                <Select
+                  options={["Open", "In Progress", "Submitted", "Approved", "Finalized"]}
+                  value={fromTemplateForm.status}
+                  onChange={(e) => setFromTemplateForm((p) => ({ ...p, status: e.target.value as AssignmentStatus }))}
+                />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-3 mt-5 pt-4 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setFromTemplate(null)}>Cancel</Btn>
+          <Btn
+            variant="primary"
+            onClick={() => void handleCreateFromTemplate()}
+            disabled={!fromTemplateForm.businessId || fromTemplateCreating}
+          >
+            {fromTemplateCreating ? "Creating…" : "Create Assignment"}
+          </Btn>
         </div>
       </Modal>
     </MembersLayout>
