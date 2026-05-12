@@ -234,7 +234,6 @@ export default function TemplatesPage() {
 
       <PageHeader
         title="Assignments"
-        subtitle="Templates — reusable blueprints. Not open assignments. Use &quot;Create Assignment from Template&quot; in the By Business view to instantiate one."
         action={<Btn variant="primary" onClick={openCreate}>+ New Template</Btn>}
       />
 
