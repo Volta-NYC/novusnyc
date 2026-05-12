@@ -8,14 +8,14 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
 import {
-  getTeamMembersList,
-  getBusinessesList,
-  getFinanceAssignmentsList,
-  getEmailTemplatesList,
-  getCyclesList,
-  getAssignmentsList,
-  getAssignmentClaimsList,
-  getMemberCreditAdjustmentsList,
+  subscribeTeam,
+  subscribeBusinesses,
+  subscribeFinanceAssignments,
+  subscribeEmailTemplates,
+  subscribeCycles,
+  subscribeAssignments,
+  subscribeAssignmentClaims,
+  subscribeMemberCreditAdjustments,
   createEmailTemplate,
   updateEmailTemplate,
   deleteEmailTemplate,
@@ -294,18 +294,14 @@ export default function MemberEmailPage() {
   const [manageOpen, setManageOpen] = useState(false);
   const { ask, Dialog: ConfirmDialog } = useConfirm();
 
-  useEffect(() => {
-    void Promise.all([
-      getTeamMembersList().then(setTeam),
-      getBusinessesList().then(setBusinesses),
-      getFinanceAssignmentsList().then(setFinanceAssignments),
-      getEmailTemplatesList().then(setTemplates),
-      getCyclesList().then(setCycles),
-      getAssignmentsList().then(setCreditAssignments),
-      getAssignmentClaimsList().then(setCreditClaims),
-      getMemberCreditAdjustmentsList().then(setCreditAdjustments),
-    ]);
-  }, []);
+  useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
+  useEffect(() => subscribeEmailTemplates(setTemplates), []);
+  useEffect(() => subscribeCycles(setCycles), []);
+  useEffect(() => subscribeAssignments(setCreditAssignments), []);
+  useEffect(() => subscribeAssignmentClaims(setCreditClaims), []);
+  useEffect(() => subscribeMemberCreditAdjustments(setCreditAdjustments), []);
 
   // Seed system templates on first admin visit so they're editable from this
   // page. Each system template has a stable key referenced by automation; we

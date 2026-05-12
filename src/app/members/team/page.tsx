@@ -12,7 +12,7 @@ import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
   subscribeBusinesses, subscribeCycles, subscribeAssignments, subscribeAssignmentClaims,
   subscribeMemberStrikes, subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
-  getFinanceAssignmentsList, getApplicationsList,
+  subscribeApplications, subscribeFinanceAssignments,
   type TeamMember, type Business, type FinanceAssignment, type ApplicationRecord,
   type Cycle, type Assignment, type AssignmentClaim, type MemberStrike, type MemberCreditAdjustment,
   type EmailTemplate, type Infraction,
@@ -454,7 +454,7 @@ export default function TeamPage() {
     canEdit, user, team, cycles, creditAssignments, creditClaims, creditStrikes,
     creditAdjustments, emailTemplates, infractionCatalog,
   ]);
-  useEffect(() => { void getApplicationsList().then(setApplications); }, []);
+  useEffect(() => subscribeApplications(setApplications), []);
 
   // Close the inline role-edit popover on click outside, scroll, or resize.
   useEffect(() => {
@@ -498,8 +498,7 @@ export default function TeamPage() {
     let timer: number | null = null;
 
     if (!canEdit || !user) {
-      void getFinanceAssignmentsList().then(setFinanceAssignments);
-      return;
+      return subscribeFinanceAssignments(setFinanceAssignments);
     }
 
     const loadAssignments = async () => {

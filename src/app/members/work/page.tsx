@@ -10,7 +10,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
-  subscribeCycles, getTeamMembersList,
+  subscribeCycles, subscribeTeam,
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
@@ -49,7 +49,7 @@ export default function MarketplacePage() {
   const [trackFilter, setTrackFilter] = useState<"" | CycleTrack>("");
   const [sortKey, setSortKey] = useState<SortKey>("recommended");
 
-  useEffect(() => { void getTeamMembersList().then(setTeam); }, []);
+  useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => {
     const unsub1 = subscribeCycles(setCycles);
     const unsub2 = subscribeAssignments(setAssignments);

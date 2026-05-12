@@ -10,7 +10,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
-  subscribeCycles, getTeamMembersList,
+  subscribeCycles, subscribeTeam,
   createAssignmentClaim, updateAssignmentClaim, deleteAssignmentClaim,
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
@@ -57,7 +57,7 @@ export default function AssignmentDetailPage() {
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { void getTeamMembersList().then(setTeam); }, []);
+  useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => {
     const unsub1 = subscribeCycles(setCycles);
     const unsub2 = subscribeAssignments(setAssignments);

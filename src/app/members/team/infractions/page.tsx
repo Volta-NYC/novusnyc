@@ -15,7 +15,7 @@ import {
   PageHeader, Btn, Modal, Field, Input, TextArea, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeInfractions, subscribeCycles, getTeamMembersList,
+  subscribeInfractions, subscribeCycles, subscribeTeam,
   createInfraction, updateInfraction, deleteInfraction, createMemberStrike,
   type Infraction, type Cycle, type TeamMember,
 } from "@/lib/members/storage";
@@ -65,7 +65,7 @@ function InfractionsPageInner() {
 
   useEffect(() => subscribeInfractions(setInfractions), []);
   useEffect(() => subscribeCycles(setCycles), []);
-  useEffect(() => { void getTeamMembersList().then(setTeam); }, []);
+  useEffect(() => subscribeTeam(setTeam), []);
 
   // Pre-select member from query params (navigated from MemberDrawer)
   useEffect(() => {
