@@ -186,8 +186,8 @@ export default function AssignmentDetailPage() {
               ← Back to marketplace
             </Link>
             <div className="flex items-center gap-2 mt-2 mb-1">
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[assignment.primaryTrack]}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignment.primaryTrack]}`} />
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[assignment.primaryTrack ?? "Tech"]}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignment.primaryTrack ?? "Tech"]}`} />
                 {assignment.primaryTrack}
               </span>
               <span className="text-[#5C9911] font-mono text-sm font-semibold">{assignment.credits} credits</span>
