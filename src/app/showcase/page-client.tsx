@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -30,7 +30,7 @@ type ShowcaseProject = {
 };
 
 const BOROUGH_OPTIONS = ["All Boroughs", "Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
-const SERVICE_OPTIONS = ["All Services", "Website", "Social Media", "SEO", "Grant Writing", "Finance"];
+const SERVICE_OPTIONS = ["All Services", "Website", "SEO", "Social Media", "Graphic Design", "Grants"];
 
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
@@ -62,10 +62,10 @@ function matchesService(projectServices: string[], filter: string): boolean {
   return projectServices.some((s) => {
     const lower = s.toLowerCase();
     if (key === "website") return lower.includes("website") || lower.includes("web");
-    if (key === "social media") return lower.includes("social");
     if (key === "seo") return lower.includes("seo") || lower.includes("google");
-    if (key === "grant writing") return lower.includes("grant");
-    if (key === "finance") return lower.includes("finance") || lower.includes("sales") || lower.includes("payment");
+    if (key === "social media") return lower.includes("social");
+    if (key === "graphic design") return lower.includes("graphic") || lower.includes("design");
+    if (key === "grants") return lower.includes("grant");
     return false;
   });
 }
@@ -94,7 +94,6 @@ export default function ShowcaseClient({
 }) {
   const [boroughFilter, setBoroughFilter] = useState("All Boroughs");
   const [serviceFilter, setServiceFilter] = useState("All Services");
-  const [activeMobileCard, setActiveMobileCard] = useState(0);
   const mobileScrollRef = useRef<HTMLDivElement>(null);
 
   const filteredProjects = useMemo(() => {
@@ -117,17 +116,8 @@ export default function ShowcaseClient({
     return bidPartners.filter((bid) => matchesBorough(bid.borough, boroughFilter));
   }, [bidPartners, boroughFilter]);
 
-  const handleMobileScroll = useCallback(() => {
-    const el = mobileScrollRef.current;
-    if (!el || el.scrollWidth <= el.clientWidth) return;
-    const slotWidth = el.scrollWidth / filteredProjects.length;
-    const idx = Math.round(el.scrollLeft / slotWidth);
-    setActiveMobileCard(Math.max(0, Math.min(idx, filteredProjects.length - 1)));
-  }, [filteredProjects.length]);
-
-  // Reset carousel position when filters change
+  // Reset scroll position when filters change
   useEffect(() => {
-    setActiveMobileCard(0);
     if (mobileScrollRef.current) mobileScrollRef.current.scrollLeft = 0;
   }, [boroughFilter, serviceFilter]);
 
@@ -239,8 +229,7 @@ export default function ShowcaseClient({
                 <div className="relative">
                   <div
                     ref={mobileScrollRef}
-                    onScroll={handleMobileScroll}
-                    className="-mx-5 overflow-x-auto pb-3 snap-x snap-mandatory scroll-pl-5 [&::-webkit-scrollbar]:hidden"
+                    className="-mx-5 overflow-x-auto pb-3 [&::-webkit-scrollbar]:hidden"
                     style={{ scrollbarWidth: "none" }}
                   >
                     <div className="flex gap-4 pl-5 pr-8 items-start">
@@ -248,7 +237,7 @@ export default function ShowcaseClient({
                         <AnimatedSection
                           key={`mobile-${p.name}`}
                           delay={i * 0.05}
-                          className="snap-start shrink-0 w-[78vw] max-w-[340px]"
+                          className="shrink-0 w-[78vw] max-w-[340px]"
                         >
                       <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                         <div className={`${p.colorClass} h-2`} />
@@ -320,21 +309,6 @@ export default function ShowcaseClient({
                   </div>
                 </div>
 
-                {/* Dot progress indicators */}
-                {filteredProjects.length > 1 && (
-                  <div className="flex items-center justify-center gap-1.5 mt-4 px-5" aria-hidden="true">
-                    {filteredProjects.map((_, i) => (
-                      <div
-                        key={i}
-                        className={`rounded-full transition-all duration-300 ${
-                          i === activeMobileCard
-                            ? "w-5 h-1.5 bg-v-green"
-                            : "w-1.5 h-1.5 bg-v-border"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="hidden lg:block">

@@ -148,13 +148,13 @@ async function CurrentProjectsSection() {
         </AnimatedSection>
         {homeProjects.length > 0 ? (
           <>
-            <div className="sm:hidden -mx-5 px-5 overflow-x-auto pb-2">
-              <div className="flex gap-4 w-max min-w-full snap-x snap-mandatory items-start">
+            <div className="sm:hidden -mx-5 px-5 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+              <div className="flex gap-4 w-max min-w-full items-start">
                 {homeProjects.map((p, i) => (
                   <AnimatedSection
                     key={`mobile-${p.name}`}
                     delay={i * 0.05}
-                    className="snap-start shrink-0 w-[82vw] max-w-[360px]"
+                    className="shrink-0 w-[82vw] max-w-[360px]"
                   >
                     <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-white">
                       <div className={`${p.colorClass} h-2`} />
