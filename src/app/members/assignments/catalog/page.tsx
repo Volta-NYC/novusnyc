@@ -25,7 +25,7 @@ const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", 
 
 // "Volta Internal" is a sentinel businessId for assignments not tied to any
 // outside business — common for finance work, internal templates, etc.
-const VOLTA_INTERNAL_ID = "__volta_internal__";
+const _VOLTA_INTERNAL_ID = "__volta_internal__";
 
 const STATUS_STYLES: Record<AssignmentStatus, string> = {
   Open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",

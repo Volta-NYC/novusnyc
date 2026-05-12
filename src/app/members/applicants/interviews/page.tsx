@@ -683,7 +683,7 @@ function InterviewsContent() {
     // If slot has no assigned interviewers, no interviewer can see the resume
     if (slotIds.length === 0 || currentInterviewerMemberIds.length === 0) return false;
     return slotIds.some((id) => currentInterviewerMemberIds.includes(id));
-  }, [authRole, canDeleteInterviews, currentInterviewerMemberIds]);
+  }, [canDeleteInterviews, currentInterviewerMemberIds]);
 
   const interviewerDisplayOptions = useMemo(() => {
     const nameCounts = new Map<string, number>();

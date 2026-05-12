@@ -1005,7 +1005,7 @@ function BusinessesPageInner() {
     });
   };
 
-  const businessHasTrack = (business: Business, track: TrackDivision): boolean => {
+  const _businessHasTrack = (business: Business, track: TrackDivision): boolean => {
     const normalized = normalizeTrackProjectsFromBusiness(business);
     return normalized.projectTracks.includes(track);
   };
