@@ -61,7 +61,7 @@ async function syncApplicationAfterReschedule(params: {
   bookerName: string;
   idToken: string;
 }): Promise<void> {
-  const applications = await dbRead("applications", params.idToken);
+  const applications = await dbRead("applications");
   if (!applications || typeof applications !== "object") return;
 
   const entries = Object.entries(applications as Record<string, Record<string, unknown>>)
@@ -95,7 +95,7 @@ async function syncApplicationAfterReschedule(params: {
   if (!target.row.statusManualOverride && !TERMINAL_APPLICATION_STATUSES.has(status)) {
     patch.status = "Interview Scheduled";
   }
-  await dbPatch(`applications/${target.id}`, patch, params.idToken);
+  await dbPatch(`applications/${target.id}`, patch);
 }
 
 export async function POST(req: NextRequest) {
@@ -112,10 +112,10 @@ export async function POST(req: NextRequest) {
   }
 
   const [fromData, toData, settingsData, teamData] = await Promise.all([
-    dbRead(`interviewSlots/${fromSlotId}`, verified.caller.idToken),
-    dbRead(`interviewSlots/${toSlotId}`, verified.caller.idToken),
-    dbRead("interviewSettings", verified.caller.idToken).catch(() => null),
-    dbRead("team", verified.caller.idToken).catch(() => null),
+    dbRead(`interviewSlots/${fromSlotId}`),
+    dbRead(`interviewSlots/${toSlotId}`),
+    dbRead("interviewSettings").catch(() => null),
+    dbRead("team").catch(() => null),
   ]);
 
   if (!fromData || !toData) {
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
     bookerName: fromName,
     bookerEmail: fromEmail,
     reminderSentAt: "",
-  }, verified.caller.idToken);
+  });
 
   await dbPatch(`interviewSlots/${fromSlotId}`, {
     available: true,
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
     bookerName: "",
     bookerEmail: "",
     reminderSentAt: "",
-  }, verified.caller.idToken);
+  });
 
   await syncApplicationAfterReschedule({
     fromSlotId,
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
     actorEmail: verified.caller.email,
     actorName,
     details: { rescheduledTo: toSlotId, available: true, bookedBy: "" },
-  }, verified.caller.idToken).catch(() => {});
+  }).catch(() => {});
 
   await dbPush("auditLogs", {
     timestamp: new Date().toISOString(),
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
     actorEmail: verified.caller.email,
     actorName,
     details: { rescheduledFrom: fromSlotId, available: false, bookedBy: fromBookedBy },
-  }, verified.caller.idToken).catch(() => {});
+  }).catch(() => {});
 
   const zoom = resolveInterviewZoomSettings(settingsData, process.env.INTERVIEW_ZOOM_LINK ?? "");
   const interviewerContacts = resolveInterviewerContacts(toSlot, teamData);

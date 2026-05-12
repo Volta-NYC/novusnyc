@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
   const dryRun = !!body?.dryRun;
 
   const [appsData, slotsData] = await Promise.all([
-    dbRead("applications", verified.caller.idToken),
-    dbRead("interviewSlots", verified.caller.idToken),
+    dbRead("applications"),
+    dbRead("interviewSlots"),
   ]);
 
   const apps = (appsData ?? {}) as Record<string, AppRow>;
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!dryRun) {
-      await dbPatch(`applications/${appId}`, patch, verified.caller.idToken);
+      await dbPatch(`applications/${appId}`, patch);
     }
     patched += 1;
   }

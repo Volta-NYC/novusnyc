@@ -103,9 +103,9 @@ export async function POST(req: NextRequest) {
   }
 
   const [applicationsData, invitesData, slotsData] = await Promise.all([
-    dbRead("applications", verified.caller.idToken),
-    dbRead("interviewInvites", verified.caller.idToken),
-    dbRead("interviewSlots", verified.caller.idToken),
+    dbRead("applications"),
+    dbRead("interviewInvites"),
+    dbRead("interviewSlots"),
   ]);
   const appsMap = (applicationsData ?? {}) as Record<string, ApplicationRow>;
   const inviteMap = (invitesData ?? {}) as Record<string, Record<string, unknown>>;
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
           createdAt: Date.now(),
           multiUse: false,
           note: "Generated from applicants pipeline",
-        }, verified.caller.idToken);
+        });
       }
 
       if (mode === "reminder") {
@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
       if (!row.statusManualOverride && (!nextStatus || nextStatus === "new")) {
         patch.status = "Invited for Interview";
       }
-      await dbPatch(`applications/${appId}`, patch, verified.caller.idToken);
+      await dbPatch(`applications/${appId}`, patch);
       sent += 1;
     } catch {
       errors.push(appId);

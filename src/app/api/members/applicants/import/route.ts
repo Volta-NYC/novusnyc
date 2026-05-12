@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_rows" }, { status: 400 });
   }
 
-  const applicationsData = await dbRead("applications", verified.caller.idToken);
+  const applicationsData = await dbRead("applications");
   const existing = (applicationsData ?? {}) as Record<string, ApplicationRow>;
   const byKey = new Map<string, { id: string; row: ApplicationRow }>();
   const byEmail = new Map<string, { id: string; row: ApplicationRow }>();
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     if (incoming.inviteSent) patch.interviewInviteSentAt = importedCreatedAt;
 
     if (match) {
-      await dbPatch(`applications/${match.id}`, patch, verified.caller.idToken);
+      await dbPatch(`applications/${match.id}`, patch);
       updated += 1;
       continue;
     }
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
     };
     if (incoming.inviteSent) record.interviewInviteSentAt = importedCreatedAt;
 
-    await dbPush("applications", record, verified.caller.idToken);
+    await dbPush("applications", record);
     added += 1;
   }
 

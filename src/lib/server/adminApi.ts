@@ -39,19 +39,19 @@ export function getBearerToken(req: NextRequest): string {
   return authHeader.slice("Bearer ".length).trim();
 }
 
-export async function dbRead(path: string, _idToken?: string): Promise<unknown> {
+export async function dbRead(path: string): Promise<unknown> {
   return sbRead(path);
 }
 
-export async function dbPatch(path: string, data: Record<string, unknown>, _idToken?: string): Promise<void> {
+export async function dbPatch(path: string, data: Record<string, unknown>): Promise<void> {
   return sbPatch(path, data);
 }
 
-export async function dbPush(path: string, data: Record<string, unknown>, _idToken?: string): Promise<string> {
+export async function dbPush(path: string, data: Record<string, unknown>): Promise<string> {
   return sbPush(path, data);
 }
 
-export async function dbDelete(path: string, _idToken?: string): Promise<void> {
+export async function dbDelete(path: string): Promise<void> {
   return sbDelete(path);
 }
 

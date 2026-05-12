@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
-  const rowsData = await dbRead("financeAssignments", verified.caller.idToken);
+  const rowsData = await dbRead("financeAssignments");
   const rows = (rowsData ?? {}) as Record<string, FinanceAssignmentRow>;
   const assignments = Object.entries(rows)
     .map(([id, row]) => normalizeRow(id, row ?? {}))
@@ -160,8 +160,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json() as FinanceAssignmentRow;
   const [teamRows, applicationRows] = await Promise.all([
-    dbRead("team", verified.caller.idToken),
-    dbRead("applications", verified.caller.idToken),
+    dbRead("team"),
+    dbRead("applications"),
   ]);
   const lookup = buildAllowedAssigneeLookup(
     (teamRows ?? {}) as Record<string, FinanceAssignmentRow>,
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
     assignedMemberNames: sanitizedAssignees.names,
     assignedMemberIds: sanitizedAssignees.ids,
   };
-  await dbPush("financeAssignments", { ...nextBody, createdAt: now, updatedAt: now }, verified.caller.idToken);
+  await dbPush("financeAssignments", { ...nextBody, createdAt: now, updatedAt: now });
   return NextResponse.json({ success: true });
 }
 
@@ -192,8 +192,8 @@ export async function PATCH(req: NextRequest) {
   if ("status" in patch) patch.status = normalizeAssignmentStatus(patch.status);
   if ("assignedMemberNames" in patch || "assignedMemberIds" in patch) {
     const [teamRows, applicationRows] = await Promise.all([
-      dbRead("team", verified.caller.idToken),
-      dbRead("applications", verified.caller.idToken),
+      dbRead("team"),
+      dbRead("applications"),
     ]);
     const lookup = buildAllowedAssigneeLookup(
       (teamRows ?? {}) as Record<string, FinanceAssignmentRow>,
@@ -203,7 +203,7 @@ export async function PATCH(req: NextRequest) {
     patch.assignedMemberNames = sanitizedAssignees.names;
     patch.assignedMemberIds = sanitizedAssignees.ids;
   }
-  await dbPatch(`financeAssignments/${id}`, { ...patch, updatedAt: new Date().toISOString() }, verified.caller.idToken);
+  await dbPatch(`financeAssignments/${id}`, { ...patch, updatedAt: new Date().toISOString() });
   return NextResponse.json({ success: true });
 }
 
@@ -215,7 +215,7 @@ export async function DELETE(req: NextRequest) {
   const id = asText(url.searchParams.get("id"));
   if (!id) return NextResponse.json({ error: "missing_id" }, { status: 400 });
 
-  await dbDelete(`financeAssignments/${id}`, verified.caller.idToken);
+  await dbDelete(`financeAssignments/${id}`);
 
   return NextResponse.json({ success: true });
 }

@@ -105,7 +105,7 @@ async function upsertTeamMember(params: {
   tracksSelected?: string;
   role: string;
 }) {
-  const teamData = await dbRead("team", params.idToken);
+  const teamData = await dbRead("team");
   const team = (teamData ?? {}) as Record<string, Record<string, unknown>>;
   const emailKey = normalize(params.email);
   const nameKey = normalize(params.fullName);
@@ -147,7 +147,7 @@ async function upsertTeamMember(params: {
       if (!String(row.pod ?? "").trim() && suggestedPod) patch.pod = suggestedPod;
     }
     patch.role = params.role;
-    await dbPatch(`team/${targetId}`, patch, params.idToken);
+    await dbPatch(`team/${targetId}`, patch);
     return targetId;
   }
 
@@ -168,7 +168,7 @@ async function upsertTeamMember(params: {
     notes: "Synced from interviewed applicant",
     createdAt: nowIso,
     updatedAt: nowIso,
-  }, params.idToken);
+  });
   return newId;
 }
 
@@ -186,8 +186,8 @@ export async function POST(req: NextRequest) {
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
 
   const [slotsData, applicationsData] = await Promise.all([
-    dbRead("interviewSlots", verified.caller.idToken),
-    dbRead("applications", verified.caller.idToken),
+    dbRead("interviewSlots"),
+    dbRead("applications"),
   ]);
   const slots = (slotsData ?? {}) as Record<string, SlotRecord>;
   const applications = (applicationsData ?? {}) as Record<string, Record<string, unknown>>;
@@ -255,7 +255,7 @@ export async function POST(req: NextRequest) {
         source: "manual",
         createdAt,
         updatedAt: createdAt,
-      }, verified.caller.idToken);
+      });
     }
 
     if (!appId || !email) {
@@ -270,7 +270,7 @@ export async function POST(req: NextRequest) {
       interviewScheduledAt: String(slot.datetime ?? ""),
       notes: notes || String(target?.row.notes ?? ""),
       updatedAt: new Date().toISOString(),
-    }, verified.caller.idToken);
+    });
 
     await upsertTeamMember({
       idToken: verified.caller.idToken,

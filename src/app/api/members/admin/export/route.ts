@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   if (requestedSections.length === 0) {
     let rootData: unknown = null;
     try {
-      rootData = await dbRead("", verified.caller.idToken);
+      rootData = await dbRead("");
     } catch {
       return NextResponse.json({ error: "read_failed" }, { status: 500 });
     }
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     requestedSections.map(async (section) => {
       const path = EXPORT_SECTION_PATHS[section];
       try {
-        const value = await dbRead(path, verified.caller.idToken);
+        const value = await dbRead(path);
         return [section, value] as const;
       } catch {
         return [section, { __error: "read_failed" }] as const;

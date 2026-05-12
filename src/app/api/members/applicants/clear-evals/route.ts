@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
   }
 
   const [appsData, slotsData] = await Promise.all([
-    dbRead("applications", verified.caller.idToken),
-    dbRead("interviewSlots", verified.caller.idToken),
+    dbRead("applications"),
+    dbRead("interviewSlots"),
   ]);
 
   const apps = (appsData ?? {}) as Record<string, Record<string, unknown>>;
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
           ? normalize(evalEntry?.interviewerEmail).includes(evaluatorEmail)
           : false;
         if (!uidMatch && !emailMatch) continue;
-        await dbPatch(`applications/${appId}`, { [`interviewEvaluations/${uid}`]: null }, verified.caller.idToken);
+        await dbPatch(`applications/${appId}`, { [`interviewEvaluations/${uid}`]: null });
         removed += 1;
       }
     }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         ? normalize(evalEntry?.interviewerEmail).includes(evaluatorEmail)
         : false;
       if (!uidMatch && !emailMatch) continue;
-      await dbPatch(`interviewSlots/${slotId}`, { [`evaluationByUid/${uid}`]: null }, verified.caller.idToken);
+      await dbPatch(`interviewSlots/${slotId}`, { [`evaluationByUid/${uid}`]: null });
       removed += 1;
     }
   }

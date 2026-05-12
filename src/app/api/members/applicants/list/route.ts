@@ -138,9 +138,9 @@ export async function GET(req: NextRequest) {
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const [applicationsData, slotsData, teamData] = await Promise.all([
-    dbRead("applications", verified.caller.idToken),
-    dbRead("interviewSlots", verified.caller.idToken),
-    dbRead("team", verified.caller.idToken),
+    dbRead("applications"),
+    dbRead("interviewSlots"),
+    dbRead("team"),
   ]);
 
   const slots = (slotsData ?? {}) as Record<string, InterviewSlotRow>;

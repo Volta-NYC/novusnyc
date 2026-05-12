@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
   try {
     try {
-      await dbPatch("interviewSettings", payload, caller.idToken);
+      await dbPatch("interviewSettings", payload);
     } catch {
       // Fallback: if token-auth patch fails, try server-side patch without token.
       // Route access is still role-gated by verifyCaller above.
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   let settingsData: unknown = null;
   try {
-    settingsData = await dbRead("interviewSettings", caller.idToken);
+    settingsData = await dbRead("interviewSettings");
   } catch {
     settingsData = payload;
   }

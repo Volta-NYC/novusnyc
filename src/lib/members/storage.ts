@@ -367,10 +367,6 @@ export interface AssignmentTemplate {
 }
 
 // ── Active assignments (unified: Tech + Marketing + Finance) ──────────────────
-// An Assignment is active work tied to a specific business (business_id is
-// required). It replaces the old assignment_catalog (active rows only) and
-// absorbs finance_assignments. AssignmentClaim tracks member work on an
-// assignment.
 
 export type AssignmentDifficulty = string; // admin-configurable, free-form
 
@@ -411,7 +407,6 @@ export interface Assignment {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
-  // Legacy compatibility fields (read from old assignment_catalog rows)
   primaryTrack?: CycleTrack;
   visibleTracks?: CycleTrack[];
   deadline?: string;

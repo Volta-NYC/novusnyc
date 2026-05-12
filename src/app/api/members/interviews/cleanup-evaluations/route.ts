@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const [slotsData, appsData] = await Promise.all([
-    dbRead("interviewSlots", verified.caller.idToken),
-    dbRead("applications", verified.caller.idToken),
+    dbRead("interviewSlots"),
+    dbRead("applications"),
   ]);
 
   const slots = (slotsData ?? {}) as Record<string, Record<string, unknown>>;
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (Object.keys(patch).length > 0) {
-      await dbPatch(`interviewSlots/${slotId}`, patch, verified.caller.idToken);
+      await dbPatch(`interviewSlots/${slotId}`, patch);
       slotRecordsUpdated += 1;
     }
   }
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (Object.keys(patch).length > 0) {
-      await dbPatch(`applications/${appId}`, patch, verified.caller.idToken);
+      await dbPatch(`applications/${appId}`, patch);
       appRecordsUpdated += 1;
     }
   }

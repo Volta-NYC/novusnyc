@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_patch" }, { status: 400 });
   }
 
-  const existing = await dbRead(`applications/${id}`, verified.caller.idToken);
+  const existing = await dbRead(`applications/${id}`);
   if (!existing || typeof existing !== "object") {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
@@ -50,6 +50,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "empty_patch" }, { status: 400 });
   }
 
-  await dbPatch(`applications/${id}`, patch, verified.caller.idToken);
+  await dbPatch(`applications/${id}`, patch);
   return NextResponse.json({ success: true });
 }

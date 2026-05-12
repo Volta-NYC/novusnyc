@@ -1,5 +1,4 @@
 // Server-side only — never import in client components.
-// Replaces getAdminDB() / dbRead / dbPatch / dbPush / dbDelete from firebaseAdmin.
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 let _client: SupabaseClient | null = null;
@@ -15,8 +14,6 @@ export function getSupabaseAdmin(): SupabaseClient {
 
 // ---------------------------------------------------------------------------
 // Path → table + id helpers
-// Converts Firebase-style path strings ("applications/abc123") to
-// {table, id} so callers don't need to know the Supabase table names.
 // ---------------------------------------------------------------------------
 type Parsed = { table: string; id?: string; field?: string };
 
@@ -74,7 +71,7 @@ function objToSnake(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// dbRead — reads a whole collection or one row by legacy path.
+// dbRead — reads a whole collection or one row by path.
 // ---------------------------------------------------------------------------
 export async function dbRead(path: string): Promise<unknown> {
   const sb = getSupabaseAdmin();
@@ -105,8 +102,7 @@ export async function dbRead(path: string): Promise<unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// dbPatch — shallow patch using legacy path syntax.
-// Shallow patch: writes only the supplied fields.
+// dbPatch — shallow patch. Writes only the supplied fields.
 // ---------------------------------------------------------------------------
 export async function dbPatch(path: string, data: Record<string, unknown>): Promise<void> {
   const sb = getSupabaseAdmin();
@@ -146,7 +142,7 @@ export async function dbPush(path: string, data: Record<string, unknown>): Promi
 }
 
 // ---------------------------------------------------------------------------
-// dbDelete — deletes one row by legacy path.
+// dbDelete — deletes one row by path.
 // ---------------------------------------------------------------------------
 export async function dbDelete(path: string): Promise<void> {
   const sb = getSupabaseAdmin();

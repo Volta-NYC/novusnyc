@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
   }
 
   const [slotData, settingsData, teamData] = await Promise.all([
-    dbRead(`interviewSlots/${slotId}`, verified.caller.idToken),
-    dbRead("interviewSettings", verified.caller.idToken).catch(() => null),
-    dbRead("team", verified.caller.idToken).catch(() => null),
+    dbRead(`interviewSlots/${slotId}`),
+    dbRead("interviewSettings").catch(() => null),
+    dbRead("team").catch(() => null),
   ]);
 
   if (!slotData) {

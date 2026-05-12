@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
   }
 
-  const slotData = await dbRead(`interviewSlots/${slotId}`, verified.caller.idToken);
+  const slotData = await dbRead(`interviewSlots/${slotId}`);
   if (!slotData || typeof slotData !== "object") {
     return NextResponse.json({ error: "slot_not_found" }, { status: 404 });
   }
@@ -110,10 +110,10 @@ export async function POST(req: NextRequest) {
       slotDeletePatch[`evaluationByUid/${uid}`] = null;
     }
     if (Object.keys(slotDeletePatch).length > 0) {
-      await dbPatch(`interviewSlots/${slotId}`, slotDeletePatch, verified.caller.idToken);
+      await dbPatch(`interviewSlots/${slotId}`, slotDeletePatch);
     }
 
-    const appsData = await dbRead("applications", verified.caller.idToken);
+    const appsData = await dbRead("applications");
     const entries = Object.entries((appsData ?? {}) as Record<string, Record<string, unknown>>)
       .map(([id, row]) => ({ id, row: row ?? {} }));
     const target = pickApplicationBySlot(slot, entries);
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
         appDeletePatch[`interviewEvaluations/${uid}`] = null;
       }
       if (Object.keys(appDeletePatch).length > 0) {
-        await dbPatch(`applications/${target.id}`, appDeletePatch, verified.caller.idToken);
+        await dbPatch(`applications/${target.id}`, appDeletePatch);
       }
     }
     
@@ -158,9 +158,9 @@ export async function POST(req: NextRequest) {
     }
   }
   slotPatch[`evaluationByUid/${verified.caller.uid}`] = evalEntry;
-  await dbPatch(`interviewSlots/${slotId}`, slotPatch, verified.caller.idToken);
+  await dbPatch(`interviewSlots/${slotId}`, slotPatch);
 
-  const appsData = await dbRead("applications", verified.caller.idToken);
+  const appsData = await dbRead("applications");
   const entries = Object.entries((appsData ?? {}) as Record<string, Record<string, unknown>>)
     .map(([id, row]) => ({ id, row: row ?? {} }));
   const target = pickApplicationBySlot(slot, entries);
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
     };
     appPatch.status = "Interview Completed";
     appPatch.updatedAt = new Date().toISOString();
-    await dbPatch(`applications/${target.id}`, appPatch, verified.caller.idToken);
+    await dbPatch(`applications/${target.id}`, appPatch);
   }
 
   return NextResponse.json({ success: true, applicationId: target?.id ?? "" });
