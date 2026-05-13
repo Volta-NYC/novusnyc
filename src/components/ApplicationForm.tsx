@@ -143,6 +143,9 @@ export default function ApplicationForm() {
 
       <div>
         <label className="block font-body text-sm font-semibold text-v-ink mb-2">School Name *</label>
+        <p className="text-xs text-v-muted/80 mt-1 mb-2 font-body">
+          Don&apos;t see your school? Just type it in.
+        </p>
         <SchoolSelector
           value={form.schoolName}
           onChange={(value) => { set("schoolName", value); clearError("schoolName"); }}
