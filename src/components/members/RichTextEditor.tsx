@@ -288,42 +288,61 @@ function Separator() {
 }
 
 // ── Color Palette popup ────────────────────────────────────────────────────────
+// Uses position:fixed so it escapes overflow:hidden/auto ancestor containers.
 function ColorPalette({
   colors,
   onSelect,
   onClose,
   label,
+  triggerRef,
 }: {
   colors: string[];
   onSelect: (color: string) => void;
   onClose: () => void;
   label: string;
+  triggerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
   useEffect(() => {
+    if (triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left });
+    }
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         onClose();
       }
     }
+    function handleScroll() { onClose(); }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [onClose]);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [onClose, triggerRef]);
+
+  if (!pos) return null;
 
   return (
     <div
       ref={ref}
-      className="absolute top-full left-0 mt-1 z-50 bg-[#1C1F26] border border-white/10 rounded-lg p-2 shadow-xl"
+      style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
+      className="bg-[#1C1F26] border border-white/10 rounded-lg p-2 shadow-xl"
     >
       <p className="text-[10px] text-white/40 mb-1.5 px-0.5">{label}</p>
-      <div className="grid grid-cols-4 gap-1">
+      <div className="grid grid-cols-4 gap-1.5">
         {colors.map((color) => (
           <button
             key={color}
             type="button"
             onMouseDown={(e) => { e.preventDefault(); onSelect(color); onClose(); }}
             title={color}
-            className="h-6 w-6 rounded border border-white/10 hover:scale-110 transition-transform"
+            className="h-7 w-7 rounded border border-white/10 hover:scale-110 transition-transform"
             style={{
               backgroundColor: color === "transparent" ? undefined : color,
               backgroundImage: color === "transparent"
@@ -442,6 +461,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
   const [showLink, setShowLink] = useState(false);
   const [activeTextColor, setActiveTextColor] = useState<string>("#FFFFFF");
   const [activeHighlight, setActiveHighlight] = useState<string>("#FEF08A");
+  const textColorBtnRef = useRef<HTMLDivElement>(null);
+  const highlightBtnRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -608,7 +629,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         <Separator />
 
         {/* Text color */}
-        <div className="relative">
+        <div ref={textColorBtnRef} className="relative">
           <ToolbarBtn
             onClick={() => {
               setShowHighlight(false);
@@ -624,6 +645,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             <ColorPalette
               colors={TEXT_COLORS}
               label="Text color"
+              triggerRef={textColorBtnRef}
               onSelect={(color) => {
                 setActiveTextColor(color);
                 editor.chain().focus().setColor(color).run();
@@ -634,7 +656,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         </div>
 
         {/* Highlight color */}
-        <div className="relative">
+        <div ref={highlightBtnRef} className="relative">
           <ToolbarBtn
             onClick={() => {
               setShowTextColor(false);
@@ -650,6 +672,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             <ColorPalette
               colors={HIGHLIGHT_COLORS}
               label="Highlight color"
+              triggerRef={highlightBtnRef}
               onSelect={(color) => {
                 setActiveHighlight(color);
                 if (color === "transparent") {

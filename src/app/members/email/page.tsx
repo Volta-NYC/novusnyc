@@ -333,10 +333,16 @@ export default function MemberEmailPage() {
     })();
   }, [seededSystemTemplates, canUseEmail, user, templates, templatesLoaded]);
 
-  // Sort templates: system ones (well-known keys) first, then user-created
-  // alphabetically by label.
+  // Sort templates: system ones first, then user-created alphabetically.
+  // Deduplicate by key, keeping the first occurrence (oldest row wins).
   const sortedTemplates = useMemo(() => {
-    return [...templates].sort((a, b) => {
+    const seen = new Set<string>();
+    const deduped = templates.filter((t) => {
+      if (seen.has(t.key)) return false;
+      seen.add(t.key);
+      return true;
+    });
+    return deduped.sort((a, b) => {
       const aSystem = !a.key.startsWith("custom_") ? 0 : 1;
       const bSystem = !b.key.startsWith("custom_") ? 0 : 1;
       if (aSystem !== bSystem) return aSystem - bSystem;

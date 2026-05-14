@@ -1655,7 +1655,7 @@ export async function deleteInfraction(id: string): Promise<void> {
 
 export async function createEmailTemplate(data: Omit<EmailTemplate, "id" | "updatedAt">): Promise<void> {
   const id = genId();
-  await supabase.from("email_templates").insert({
+  await supabase.from("email_templates").upsert({
     id,
     key:                 data.key,
     label:               data.label,
@@ -1668,7 +1668,7 @@ export async function createEmailTemplate(data: Omit<EmailTemplate, "id" | "upda
     updated_at:          nowISO(),
     usage_count:         0,
     last_used_at:        null,
-  });
+  }, { onConflict: "key", ignoreDuplicates: true });
   await writeAuditLog({ action: "create", collection: "emailTemplates", recordId: id, details: { key: data.key } });
 }
 
