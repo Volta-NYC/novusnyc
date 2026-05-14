@@ -16,7 +16,7 @@ import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeAssignmentTemplates, subscribeBusinesses, createAssignment,
   createAssignmentTemplate, updateAssignmentTemplate, deleteAssignmentTemplate,
-  type AssignmentTemplate, type AssignmentStatus, type Business, type CycleRole, type CycleTrack,
+  type AssignmentTemplate, type Business, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -35,34 +35,27 @@ const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance:
 interface FormState {
   title: string;
   description: string;
-  type: string;
   track: CycleTrack;
   credits: number;
-  estimatedHours: number;
   minRole: CycleRole;
-  capacity: number;
+  maxClaims: string;  // empty = no limit (saved as 0)
   deadlineOffsetDays: string;
-  notes: string;
 }
 
 const BLANK_FORM: FormState = {
   title: "",
   description: "",
-  type: "",
   track: "Tech",
   credits: 1,
-  estimatedHours: 1,
   minRole: "Analyst",
-  capacity: 1,
+  maxClaims: "",
   deadlineOffsetDays: "",
-  notes: "",
 };
 
 interface FromTemplateForm {
   businessId: string;
   title: string;
   deadline: string;
-  status: AssignmentStatus;
 }
 
 export default function TemplatesPage() {
@@ -79,7 +72,7 @@ export default function TemplatesPage() {
 
   const [fromTemplate, setFromTemplate] = useState<AssignmentTemplate | null>(null);
   const [fromTemplateForm, setFromTemplateForm] = useState<FromTemplateForm>({
-    businessId: "", title: "", deadline: "", status: "Open",
+    businessId: "", title: "", deadline: "",
   });
   const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
 
@@ -108,7 +101,7 @@ export default function TemplatesPage() {
       suggestedDeadline = d.toISOString().slice(0, 10);
     }
     setFromTemplate(t);
-    setFromTemplateForm({ businessId: "", title: t.title, deadline: suggestedDeadline, status: "Open" });
+    setFromTemplateForm({ businessId: "", title: t.title, deadline: suggestedDeadline });
   };
 
   const handleCreateFromTemplate = async () => {
@@ -122,14 +115,13 @@ export default function TemplatesPage() {
         visibleTracks: ["Tech", "Marketing", "Finance"],
         credits: fromTemplate.credits,
         difficulty: fromTemplate.difficulty ?? "Standard",
-        estimatedHours: fromTemplate.estimatedHours ?? 0,
+        estimatedHours: 0,
         minRole: fromTemplate.minRole,
         businessId: fromTemplateForm.businessId,
-        capacity: fromTemplate.capacity ?? 1,
+        capacity: fromTemplate.capacity ?? 0,
         deadlines: fromTemplateForm.deadline ? [{ label: "Final Deadline", date: fromTemplateForm.deadline }] : undefined,
-        status: fromTemplateForm.status,
-        type: fromTemplate.type,
-        notes: fromTemplate.notes,
+        status: "Open",
+        notes: "",
         region: undefined,
         teamLabel: undefined,
         createdBy: userProfile?.email || user?.email || user?.id || "unknown",
@@ -144,7 +136,7 @@ export default function TemplatesPage() {
     const q = search.trim().toLowerCase();
     const list = q
       ? templates.filter(
-          (t) => t.title.toLowerCase().includes(q) || t.track.toLowerCase().includes(q) || (t.notes ?? "").toLowerCase().includes(q),
+          (t) => t.title.toLowerCase().includes(q) || t.track.toLowerCase().includes(q),
         )
       : templates;
     return [...list].sort((a, b) => {
@@ -161,17 +153,15 @@ export default function TemplatesPage() {
   };
 
   const openEdit = (t: AssignmentTemplate) => {
+    const cap = t.capacity ?? 0;
     setForm({
       title: t.title,
       description: t.description ?? "",
-      type: t.type ?? "",
       track: t.track,
       credits: t.credits,
-      estimatedHours: t.estimatedHours ?? 0,
       minRole: t.minRole,
-      capacity: t.capacity ?? 1,
+      maxClaims: cap > 0 ? String(cap) : "",
       deadlineOffsetDays: t.deadlineOffsetDays != null ? String(t.deadlineOffsetDays) : "",
-      notes: t.notes ?? "",
     });
     setEditing(t);
     setModal("edit");
@@ -184,14 +174,13 @@ export default function TemplatesPage() {
     return {
       title,
       description: form.description,
-      type: form.type || undefined,
       track: form.track,
       credits: Math.max(0, Number(form.credits) || 0),
-      estimatedHours: Math.max(0, Number(form.estimatedHours) || 0),
+      estimatedHours: 0,
       minRole: form.minRole,
-      capacity: Math.max(1, Number(form.capacity) || 1),
+      capacity: form.maxClaims.trim() ? Math.max(0, Number(form.maxClaims)) : 0,
       deadlineOffsetDays: offsetDays,
-      notes: form.notes,
+      notes: "",
       difficulty: editing?.difficulty ?? "Standard",
       createdBy: userProfile?.email || user?.email || user?.id || "unknown",
     };
@@ -251,12 +240,11 @@ export default function TemplatesPage() {
           <table className="table-fixed text-left" style={{ width: "100%", minWidth: "860px" }}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[260px]">Title</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[90px]">Track</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[80px]">Type</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[280px]">Title</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Track</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[65px]">Credits</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[90px]">Min Role</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Deadline offset</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Minimum Role</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Deadline offset</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[175px]">Actions</th>
               </tr>
             </thead>
@@ -271,9 +259,6 @@ export default function TemplatesPage() {
                       <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[t.track]}`} />
                       {t.track}
                     </span>
-                  </td>
-                  <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle">
-                    {t.type || <span className="text-white/25">—</span>}
                   </td>
                   <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{t.credits}</td>
                   <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle">{t.minRole}</td>
@@ -312,48 +297,34 @@ export default function TemplatesPage() {
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Field label="Track" required>
               <Select options={MEMBER_TRACKS} value={form.track}
                 onChange={(e) => setForm((p) => ({ ...p, track: e.target.value as CycleTrack }))} />
             </Field>
-            <Field label="Type (Finance only)">
-              <Select options={["", "Report", "Case Study"]} value={form.type}
-                onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
             <Field label="Credits" required>
               <Input type="number" min="0" value={String(form.credits)}
                 onChange={(e) => setForm((p) => ({ ...p, credits: Number(e.target.value) || 0 }))} />
             </Field>
-            <Field label="Est. hours">
-              <Input type="number" min="0" step="0.5" value={String(form.estimatedHours)}
-                onChange={(e) => setForm((p) => ({ ...p, estimatedHours: Number(e.target.value) || 0 }))} />
-            </Field>
-            <Field label="Slots">
-              <Input type="number" min="1" value={String(form.capacity)}
-                onChange={(e) => setForm((p) => ({ ...p, capacity: Number(e.target.value) || 1 }))} />
+            <Field label="Minimum Role">
+              <Select options={ROLES} value={form.minRole}
+                onChange={(e) => setForm((p) => ({ ...p, minRole: e.target.value as CycleRole }))} />
             </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Min Role">
-              <Select options={ROLES} value={form.minRole}
-                onChange={(e) => setForm((p) => ({ ...p, minRole: e.target.value as CycleRole }))} />
-            </Field>
             <Field label="Deadline offset (days from creation)">
               <Input type="number" min="0" value={form.deadlineOffsetDays} placeholder="e.g. 28"
                 onChange={(e) => setForm((p) => ({ ...p, deadlineOffsetDays: e.target.value }))} />
             </Field>
+            <div>
+              <label className="block text-[11px] font-medium text-white/50 mb-1">
+                Max Claims <span className="text-white/30 font-normal">(blank = no limit)</span>
+              </label>
+              <Input type="number" min="0" placeholder="No limit" value={form.maxClaims}
+                onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))} />
+            </div>
           </div>
-
-          <Field label="Notes">
-            <Input value={form.notes}
-              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-              placeholder="Admin notes about when to use this template" />
-          </Field>
         </div>
 
         <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
@@ -386,7 +357,9 @@ export default function TemplatesPage() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white/90">{fromTemplate.title}</p>
                 <p className="text-[11px] text-white/45 mt-0.5">
-                  {fromTemplate.track} · {fromTemplate.credits} credits · {fromTemplate.estimatedHours}h · {fromTemplate.capacity} slot{fromTemplate.capacity !== 1 ? "s" : ""} · Min {fromTemplate.minRole}
+                  {fromTemplate.track} · {fromTemplate.credits} credits · Minimum {fromTemplate.minRole}
+                  {fromTemplate.capacity ? ` · max ${fromTemplate.capacity} claims` : ""}
+                  {fromTemplate.deadlineOffsetDays ? ` · due in ${fromTemplate.deadlineOffsetDays}d` : ""}
                 </p>
                 {fromTemplate.description && (
                   <p
@@ -420,22 +393,13 @@ export default function TemplatesPage() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Deadline">
-                <Input
-                  type="date"
-                  value={fromTemplateForm.deadline}
-                  onChange={(e) => setFromTemplateForm((p) => ({ ...p, deadline: e.target.value }))}
-                />
-              </Field>
-              <Field label="Status">
-                <Select
-                  options={["Open", "In Progress", "Submitted", "Approved", "Finalized"]}
-                  value={fromTemplateForm.status}
-                  onChange={(e) => setFromTemplateForm((p) => ({ ...p, status: e.target.value as AssignmentStatus }))}
-                />
-              </Field>
-            </div>
+            <Field label="Deadline">
+              <Input
+                type="date"
+                value={fromTemplateForm.deadline}
+                onChange={(e) => setFromTemplateForm((p) => ({ ...p, deadline: e.target.value }))}
+              />
+            </Field>
           </div>
         )}
 

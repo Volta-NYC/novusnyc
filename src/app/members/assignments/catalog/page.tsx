@@ -62,12 +62,11 @@ interface FormState {
   description: string;
   track: CycleTrack;
   credits: number;
-  estimatedHours: number;
   minRole: CycleRole;
   projectRef: string;
-  capacity: number;
+  maxClaims: string;  // empty = unlimited (saved as 0)
   deadline: string;
-  status: AssignmentStatus;
+  status: AssignmentStatus;  // only used when editing
 }
 
 const BLANK_FORM: FormState = {
@@ -75,10 +74,9 @@ const BLANK_FORM: FormState = {
   description: "",
   track: "Tech",
   credits: 1,
-  estimatedHours: 1,
   minRole: "Analyst",
   projectRef: "",
-  capacity: 1,
+  maxClaims: "",
   deadline: "",
   status: "Open",
 };
@@ -185,17 +183,17 @@ export default function CatalogPage() {
   const openCreate = () => { setForm({ ...BLANK_FORM }); setEditing(null); setModal("create"); };
 
   const openEdit = (a: Assignment) => {
+    const cap = a.capacity ?? 0;
     setForm({
-      title:          a.title,
-      description:    a.description ?? "",
-      track:          a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
-      credits:        a.credits,
-      estimatedHours: a.estimatedHours ?? 0,
-      minRole:        a.minRole,
-      projectRef:     encodeProjectRef(a.businessId, a.projectGroupId),
-      capacity:       a.capacity ?? 1,
-      deadline:       a.deadlines?.[0]?.date ?? a.deadline ?? "",
-      status:         a.status,
+      title:      a.title,
+      description: a.description ?? "",
+      track:      a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
+      credits:    a.credits,
+      minRole:    a.minRole,
+      projectRef: encodeProjectRef(a.businessId, a.projectGroupId),
+      maxClaims:  cap > 0 ? String(cap) : "",
+      deadline:   a.deadlines?.[0]?.date ?? a.deadline ?? "",
+      status:     a.status,
     });
     setEditing(a);
     setModal("edit");
@@ -212,13 +210,13 @@ export default function CatalogPage() {
       visibleTracks:  MEMBER_TRACKS,
       credits:        Math.max(0, Number(form.credits) || 0),
       difficulty:     editing?.difficulty ?? "Standard",
-      estimatedHours: Math.max(0, Number(form.estimatedHours) || 0),
+      estimatedHours: 0,
       minRole:        form.minRole,
       businessId,
       projectGroupId,
-      capacity:       Math.max(1, Number(form.capacity) || 1),
+      capacity:       form.maxClaims.trim() ? Math.max(0, Number(form.maxClaims)) : 0,
       deadlines:      form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
-      status:         form.status,
+      status:         editing ? form.status : "Open",
       cycleId:        editing?.cycleId ?? activeCycle?.id ?? "",
       createdBy:      userProfile?.email || user?.email || user?.id || "unknown",
       notes:          "",
@@ -399,7 +397,7 @@ export default function CatalogPage() {
                   <span className="text-[#85CC17] font-semibold">{a.credits} credits</span>
                   <span>{a.minRole}</span>
                   {deadline && <span>Due {deadline}</span>}
-                  {a.capacity > 1 && (
+                  {a.capacity > 0 && (
                     <span>{activeClaims.length}/{a.capacity} claimed</span>
                   )}
                 </div>
@@ -437,7 +435,7 @@ export default function CatalogPage() {
             />
           </Field>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Field label="Track" required>
               <Select
                 options={MEMBER_TRACKS}
@@ -453,27 +451,7 @@ export default function CatalogPage() {
                 onChange={(e) => setForm((p) => ({ ...p, credits: Number(e.target.value) || 0 }))}
               />
             </Field>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Field label="Estimated hours">
-              <Input
-                type="number"
-                min="0"
-                step="0.5"
-                value={String(form.estimatedHours)}
-                onChange={(e) => setForm((p) => ({ ...p, estimatedHours: Number(e.target.value) || 0 }))}
-              />
-            </Field>
-            <Field label="Slots">
-              <Input
-                type="number"
-                min="1"
-                value={String(form.capacity)}
-                onChange={(e) => setForm((p) => ({ ...p, capacity: Number(e.target.value) || 1 }))}
-              />
-            </Field>
-            <Field label="Required Role">
+            <Field label="Minimum Role">
               <Select
                 options={ROLES}
                 value={form.minRole}
@@ -482,7 +460,7 @@ export default function CatalogPage() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Project">
               <select
                 value={form.projectRef}
@@ -517,13 +495,28 @@ export default function CatalogPage() {
             </Field>
           </div>
 
-          <Field label="Status" required>
-            <Select
-              options={STATUS_OPTIONS}
-              value={form.status}
-              onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as AssignmentStatus }))}
+          <div>
+            <label className="block text-[11px] font-medium text-white/50 mb-1">
+              Max Claims <span className="text-white/30 font-normal">(leave blank for no limit — for open assignments like social follows)</span>
+            </label>
+            <Input
+              type="number"
+              min="0"
+              placeholder="No limit"
+              value={form.maxClaims}
+              onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))}
             />
-          </Field>
+          </div>
+
+          {editing && (
+            <Field label="Status">
+              <Select
+                options={STATUS_OPTIONS}
+                value={form.status}
+                onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as AssignmentStatus }))}
+              />
+            </Field>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
