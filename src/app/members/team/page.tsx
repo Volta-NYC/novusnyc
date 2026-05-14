@@ -104,14 +104,6 @@ function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
   );
 }
 
-type ImportedMember = {
-  name: string;
-  email: string;
-  school: string;
-  grade: string;
-  track: TrackKey;
-};
-
 type MemberAssignmentLink = {
   id: string;
   kind: "Business Project" | "Finance Assignment";
@@ -239,100 +231,6 @@ function readAssignmentIds(assignment: FinanceAssignment): string[] {
   return [];
 }
 
-function parseDelimitedLine(line: string, delimiter: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === "\"") {
-      if (inQuotes && line[i + 1] === "\"") {
-        current += "\"";
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-    if (ch === delimiter && !inQuotes) {
-      cells.push(current);
-      current = "";
-      continue;
-    }
-    current += ch;
-  }
-
-  cells.push(current);
-  return cells.map((c) => c.trim());
-}
-
-function countDelimiterOutsideQuotes(line: string, delimiter: string): number {
-  let inQuotes = false;
-  let count = 0;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === "\"") {
-      if (inQuotes && line[i + 1] === "\"") {
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-    if (!inQuotes && ch === delimiter) count += 1;
-  }
-  return count;
-}
-
-function detectDelimiter(headerLine: string): string {
-  const delimiters = [",", "\t", ";"];
-  let best = ",";
-  let bestCount = -1;
-  for (const d of delimiters) {
-    const count = countDelimiterOutsideQuotes(headerLine, d);
-    if (count > bestCount) {
-      best = d;
-      bestCount = count;
-    }
-  }
-  return best;
-}
-
-function parseCsv(csvText: string): string[][] {
-  const lines = csvText
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .filter((line) => line.trim() !== "");
-  if (lines.length === 0) return [];
-
-  const delimiter = detectDelimiter(lines[0]);
-  return lines.map((line) => parseDelimitedLine(line, delimiter));
-}
-
-function headerKey(raw: string): string {
-  return raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function findHeaderIndex(headers: string[], aliases: string[]): number {
-  const normalized = headers.map(headerKey);
-  for (const alias of aliases) {
-    const idx = normalized.indexOf(alias);
-    if (idx !== -1) return idx;
-  }
-  return -1;
-}
-
-function parseTrack(raw: string): TrackKey {
-  const key = normalizeKey(raw);
-  if (!key) return "—";
-  if (key.includes("tech") || key.includes("digital")) return "Tech";
-  if (key.includes("market")) return "Marketing";
-  if (key.includes("finance") || key.includes("operation")) return "Finance";
-  if (key.includes("outreach") || key.includes("other")) return "Other";
-  return "—";
-}
-
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function TeamPage() {
@@ -364,13 +262,9 @@ export default function TeamPage() {
   const sweepRanRef = useRef(false);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
   const [creditSummaryMember, setCreditSummaryMember] = useState<TeamMember | null>(null);
-  const [importingCsv, setImportingCsv] = useState(false);
-  const [importMessage, setImportMessage] = useState<string | null>(null);
   const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [inviteAllState, setInviteAllState] = useState<"idle" | "running" | "done">("idle");
   const [inviteAllProgress, setInviteAllProgress] = useState({ sent: 0, total: 0 });
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const canEdit = authRole === "owner";
@@ -545,201 +439,6 @@ export default function TeamPage() {
     setEditingMember(null);
     setShowAlternateEmail(false);
     setModal("create");
-  };
-
-  const handleImportCsv = async (file: File) => {
-    setImportingCsv(true);
-    setImportMessage(null);
-    try {
-      const csvText = await file.text();
-      const rows = parseCsv(csvText);
-      if (rows.length < 2) {
-        setImportMessage("CSV must include a header row and at least one data row.");
-        return;
-      }
-
-      const headers = rows[0];
-      const nameIdx = findHeaderIndex(headers, ["name", "full name", "student name"]);
-      const emailIdx = findHeaderIndex(headers, ["email", "email address", "student email"]);
-      const schoolIdx = findHeaderIndex(headers, ["school", "school name", "high school", "high school name"]);
-      const gradeIdx = findHeaderIndex(headers, ["grade", "year", "class year"]);
-      const trackIdx = findHeaderIndex(headers, ["track", "division"]);
-      const hasAnySupportedHeader = [nameIdx, emailIdx, schoolIdx, gradeIdx, trackIdx].some((idx) => idx !== -1);
-
-      if (!hasAnySupportedHeader) {
-        setImportMessage("CSV must include at least one supported header: Name, Email, School, Grade, or Track.");
-        return;
-      }
-
-      if (nameIdx === -1 && emailIdx === -1) {
-        setImportMessage("CSV must include Name or Email so rows can be matched to members.");
-        return;
-      }
-
-      const rawEntries: ImportedMember[] = [];
-      let invalidRows = 0;
-
-      for (const row of rows.slice(1)) {
-        const name = nameIdx === -1 ? "" : normalizeText(row[nameIdx] ?? "");
-        const email = emailIdx === -1 ? "" : normalizeText(row[emailIdx] ?? "");
-        const school = schoolIdx === -1 ? "" : normalizeText(row[schoolIdx] ?? "");
-        const grade = gradeIdx === -1 ? "" : normalizeText(row[gradeIdx] ?? "");
-        const track = trackIdx === -1 ? "—" : parseTrack(row[trackIdx] ?? "");
-        if (!name && !email) {
-          invalidRows += 1;
-          continue;
-        }
-        rawEntries.push({ name, email, school, grade, track });
-      }
-
-      const deduped: ImportedMember[] = [];
-      const seenEmail = new Map<string, ImportedMember>();
-      const seenName = new Map<string, ImportedMember>();
-
-      for (const entry of rawEntries) {
-        const emailKey = normalizeKey(entry.email);
-        const nameKey = normalizeKey(entry.name);
-
-        if (emailKey) {
-          const existing = seenEmail.get(emailKey);
-          if (existing) {
-            if (!existing.school && entry.school) existing.school = entry.school;
-            if (!existing.name && entry.name) existing.name = entry.name;
-            if (!existing.grade && entry.grade) existing.grade = entry.grade;
-            if (existing.track === "—" && entry.track !== "—") existing.track = entry.track;
-            continue;
-          }
-          seenEmail.set(emailKey, { ...entry });
-          deduped.push(seenEmail.get(emailKey)!);
-          if (nameKey && !seenName.has(nameKey)) seenName.set(nameKey, seenEmail.get(emailKey)!);
-          continue;
-        }
-
-        if (nameKey && seenName.has(nameKey)) continue;
-        if (nameKey) seenName.set(nameKey, entry);
-        deduped.push(entry);
-      }
-
-      const existingByEmail = new Map<string, TeamMember>();
-      const existingByName = new Map<string, TeamMember[]>();
-
-      for (const member of team) {
-        const memberEmailKey = normalizeKey(member.email ?? "");
-        const memberAltEmailKey = normalizeKey(member.alternateEmail ?? "");
-        const memberNameKey = normalizeKey(member.name ?? "");
-        if (memberEmailKey) existingByEmail.set(memberEmailKey, member);
-        if (memberAltEmailKey) existingByEmail.set(memberAltEmailKey, member);
-        if (memberNameKey) {
-          const arr = existingByName.get(memberNameKey) ?? [];
-          arr.push(member);
-          existingByName.set(memberNameKey, arr);
-        }
-      }
-
-      let added = 0;
-      let updated = 0;
-      let skipped = 0;
-      let ambiguous = 0;
-      const today = new Date().toISOString().split("T")[0];
-
-      for (const entry of deduped) {
-        const emailKey = normalizeKey(entry.email);
-        const nameKey = normalizeKey(entry.name);
-        const nameMatches = nameKey ? (existingByName.get(nameKey) ?? []) : [];
-        const emailMatch = emailKey ? existingByEmail.get(emailKey) : undefined;
-        const candidateMap = new Map<string, TeamMember>();
-        if (emailMatch) candidateMap.set(emailMatch.id, emailMatch);
-        nameMatches.forEach((m) => candidateMap.set(m.id, m));
-        const candidates = Array.from(candidateMap.values());
-        let target: TeamMember | undefined;
-
-        if (candidates.length === 1) {
-          [target] = candidates;
-        } else if (candidates.length > 1) {
-          const exact = candidates.filter((m) => {
-            const mName = normalizeKey(m.name ?? "");
-            const mPrimaryEmail = normalizeKey(m.email ?? "");
-            const mAltEmail = normalizeKey(m.alternateEmail ?? "");
-            const nameHit = !!nameKey && mName === nameKey;
-            const emailHit = !!emailKey && (mPrimaryEmail === emailKey || mAltEmail === emailKey);
-            return nameHit && emailHit;
-          });
-          if (exact.length === 1) {
-            [target] = exact;
-          } else {
-            ambiguous += 1;
-            continue;
-          }
-        }
-
-        if (target) {
-          const patch: Partial<TeamMember> = {};
-          if (!normalizeText(target.name ?? "") && entry.name) patch.name = entry.name;
-          if (entry.email) {
-            const entryEmailKey = normalizeKey(entry.email);
-            const primaryEmailKey = normalizeKey(target.email ?? "");
-            const altEmailKey = normalizeKey(target.alternateEmail ?? "");
-            if (entryEmailKey !== primaryEmailKey && entryEmailKey !== altEmailKey) {
-              if (!normalizeText(target.email ?? "")) patch.email = entry.email;
-              else if (!normalizeText(target.alternateEmail ?? "")) patch.alternateEmail = entry.email;
-            }
-          }
-          if (!normalizeText(target.school ?? "") && entry.school) patch.school = entry.school;
-          if (!normalizeText(target.grade ?? "") && entry.grade) patch.grade = entry.grade;
-          if ((target.divisions ?? []).length === 0 && entry.track !== "—") {
-            patch.divisions = [entry.track];
-          }
-          if (Object.keys(patch).length > 0) {
-            // eslint-disable-next-line no-await-in-loop
-            await updateTeamMember(target.id, patch);
-            if (patch.email) {
-              existingByEmail.set(normalizeKey(patch.email), { ...target, ...patch } as TeamMember);
-            }
-            if (patch.alternateEmail) {
-              existingByEmail.set(normalizeKey(patch.alternateEmail), { ...target, ...patch } as TeamMember);
-            }
-            updated += 1;
-          } else {
-            skipped += 1;
-          }
-          continue;
-        }
-
-        // eslint-disable-next-line no-await-in-loop
-        await createTeamMember({
-          name: entry.name || (entry.email ? entry.email.split("@")[0] : "New Member"),
-          email: entry.email,
-          alternateEmail: "",
-          school: entry.school,
-          grade: entry.grade,
-          acceptedDate: "",
-          divisions: entry.track === "—" ? [] : [entry.track],
-          pod: "",
-          role: "Analyst",
-          slackHandle: "",
-          status: "Active",
-          skills: [],
-          joinDate: today,
-          notes: "",
-        });
-        added += 1;
-      }
-
-      setImportMessage(
-        `Imported ${rows.length - 1} rows: ${added} added, ${updated} updated, ${skipped} skipped${ambiguous ? `, ${ambiguous} ambiguous name matches` : ""}${invalidRows ? `, ${invalidRows} invalid` : ""}.`
-      );
-    } catch {
-      setImportMessage("Could not import CSV. Check formatting and try again.");
-    } finally {
-      setImportingCsv(false);
-    }
-  };
-
-  const onCsvInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await handleImportCsv(file);
-    e.target.value = "";
   };
 
   const openEdit = (member: TeamMember) => {
@@ -1224,15 +923,6 @@ export default function TeamPage() {
   return (
     <MembersLayout>
       <Dialog />
-      {canEdit && (
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv,text/csv"
-          className="hidden"
-          onChange={onCsvInputChange}
-        />
-      )}
 
       <PageHeader
         title="Team Directory"
@@ -1251,9 +941,6 @@ export default function TeamPage() {
                     : `Invite All (${unregisteredCount})`}
               </Btn>
             )}
-            <Btn variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importingCsv}>
-              {importingCsv ? "Importing..." : "Import CSV"}
-            </Btn>
             <Btn variant="primary" onClick={openCreate}>+ Add Member</Btn>
           </div>
         ) : undefined}
@@ -1265,9 +952,6 @@ export default function TeamPage() {
         {canEdit && <span>No account: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>}
       </div>
       <SectionTabs tabs={MEMBERS_GROUP_TABS} />
-      {importMessage && (
-        <p className="text-xs text-white/55 mb-4">{importMessage}</p>
-      )}
 
       {/* Search controls */}
       <div className="flex gap-3 mb-4 flex-wrap items-center">

@@ -143,6 +143,7 @@ function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: 
   return {};
 }
 
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ByProjectPage() {
@@ -171,6 +172,8 @@ export default function ByProjectPage() {
   const [assignmentModal, setAssignmentModal] = useState<"create" | "edit" | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [assignmentForm, setAssignmentForm]       = useState<AssignmentFormState>(BLANK_ASSIGNMENT);
+  const [bizSearch, setBizSearch] = useState("");
+  const [bizDropdownOpen, setBizDropdownOpen] = useState(false);
 
   const [groupModal, setGroupModal]       = useState<"create" | "edit" | null>(null);
   const [editingGroup, setEditingGroup]   = useState<ProjectGroup | null>(null);
@@ -303,19 +306,34 @@ export default function ByProjectPage() {
     [projectGroups],
   );
 
+  const refToLabel = (ref: string): string => {
+    if (ref.startsWith("biz:")) {
+      const biz = businesses.find((b) => b.id === ref.slice(4));
+      return biz ? biz.name : "";
+    }
+    if (ref.startsWith("grp:")) {
+      const grp = projectGroups.find((g) => g.id === ref.slice(4));
+      return grp ? grp.name : "";
+    }
+    return "";
+  };
+
   const openCreateAssignment = (prefillRef = "") => {
     setAssignmentForm({ ...BLANK_ASSIGNMENT, projectRef: prefillRef });
     setEditingAssignment(null);
+    setBizSearch(prefillRef ? refToLabel(prefillRef) : "");
+    setBizDropdownOpen(false);
     setAssignmentModal("create");
   };
 
   const openEditAssignment = (a: Assignment) => {
+    const ref = encodeProjectRef(a.businessId, a.projectGroupId);
     setAssignmentForm({
       title:         a.title,
       description:   a.description ?? "",
       track:         a.track ?? "Tech",
       type:          a.type ?? "",
-      projectRef:    encodeProjectRef(a.businessId, a.projectGroupId),
+      projectRef:    ref,
       credits:       a.credits ?? 1,
       estimatedHours: a.estimatedHours ?? 0,
       minRole:       a.minRole ?? "Analyst",
@@ -326,6 +344,8 @@ export default function ByProjectPage() {
       region:        a.region ?? "",
       teamLabel:     a.teamLabel ?? "",
     });
+    setBizSearch(refToLabel(ref));
+    setBizDropdownOpen(false);
     setEditingAssignment(a);
     setAssignmentModal("edit");
   };
@@ -543,9 +563,9 @@ export default function ByProjectPage() {
           {visibleCards.map((card) => {
             const statusInfo = BIZ_STATUS_LABEL[card.status];
             const assignmentsToShow =
-              trackFilter === "All"
+              filterTracks.size === 0
                 ? card.assignments
-                : card.assignments.filter((a) => a.track === trackFilter);
+                : card.assignments.filter((a) => filterTracks.has(a.track));
 
             const filteredAssignments = q
               ? assignmentsToShow.filter(
@@ -714,27 +734,94 @@ export default function ByProjectPage() {
               />
             </Field>
             <Field label="Project">
-              <select
-                value={assignmentForm.projectRef}
-                onChange={(e) => setAssignmentForm((p) => ({ ...p, projectRef: e.target.value }))}
-                className="w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-[12px] text-white/85 focus:outline-none focus:border-[#85CC17]/50"
-              >
-                <option value="">— none —</option>
-                {sortedBusinessOptions.length > 0 && (
-                  <optgroup label="Businesses">
-                    {sortedBusinessOptions.map((b) => (
-                      <option key={b.id} value={`biz:${b.id}`}>{b.name}</option>
-                    ))}
-                  </optgroup>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={bizSearch}
+                  autoComplete="off"
+                  placeholder="Search businesses or groups…"
+                  className="w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-[12px] text-white/85 focus:outline-none focus:border-[#85CC17]/50 placeholder:text-white/25"
+                  onChange={(e) => {
+                    setBizSearch(e.target.value);
+                    setBizDropdownOpen(true);
+                    if (!e.target.value.trim()) {
+                      setAssignmentForm((p) => ({ ...p, projectRef: "" }));
+                    }
+                  }}
+                  onFocus={() => setBizDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setBizDropdownOpen(false), 150)}
+                />
+                {bizDropdownOpen && bizSearch.trim() && (() => {
+                  const q = bizSearch.trim().toLowerCase();
+                  const matchBiz = sortedBusinessOptions.filter((b) => b.name.toLowerCase().includes(q));
+                  const matchGrp = sortedGroupOptions.filter((g) => g.name.toLowerCase().includes(q));
+                  if (!matchBiz.length && !matchGrp.length) return null;
+                  return (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#1C1F26] border border-white/12 rounded-lg shadow-xl z-50 max-h-52 overflow-y-auto">
+                      {matchBiz.length > 0 && (
+                        <>
+                          <p className="px-3 pt-2 pb-1 text-[9px] uppercase tracking-widest text-white/30">Businesses</p>
+                          {matchBiz.map((b) => (
+                            <button
+                              key={b.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-[12px] text-white/80 hover:bg-white/6 hover:text-white transition-colors"
+                              onMouseDown={() => {
+                                setAssignmentForm((p) => ({ ...p, projectRef: `biz:${b.id}` }));
+                                setBizSearch(b.name);
+                                setBizDropdownOpen(false);
+                              }}
+                            >
+                              {b.name}
+                              {b.neighborhood && <span className="ml-1 text-white/35">· {b.neighborhood}</span>}
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      {matchGrp.length > 0 && (
+                        <>
+                          <p className="px-3 pt-2 pb-1 text-[9px] uppercase tracking-widest text-white/30">Project Groups</p>
+                          {matchGrp.map((g) => (
+                            <button
+                              key={g.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-[12px] text-white/80 hover:bg-white/6 hover:text-white transition-colors"
+                              onMouseDown={() => {
+                                setAssignmentForm((p) => ({ ...p, projectRef: `grp:${g.id}` }));
+                                setBizSearch(g.name);
+                                setBizDropdownOpen(false);
+                              }}
+                            >
+                              {g.name}
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-[11px] text-white/35 hover:text-white/60 border-t border-white/6 transition-colors"
+                        onMouseDown={() => {
+                          setAssignmentForm((p) => ({ ...p, projectRef: "" }));
+                          setBizSearch("");
+                          setBizDropdownOpen(false);
+                        }}
+                      >
+                        Clear selection
+                      </button>
+                    </div>
+                  );
+                })()}
+                {assignmentForm.projectRef && !bizDropdownOpen && (
+                  <button
+                    type="button"
+                    onClick={() => { setAssignmentForm((p) => ({ ...p, projectRef: "" })); setBizSearch(""); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors text-xs"
+                    aria-label="Clear"
+                  >
+                    ✕
+                  </button>
                 )}
-                {sortedGroupOptions.length > 0 && (
-                  <optgroup label="Project Groups">
-                    {sortedGroupOptions.map((g) => (
-                      <option key={g.id} value={`grp:${g.id}`}>{g.name}</option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
+              </div>
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Track">
