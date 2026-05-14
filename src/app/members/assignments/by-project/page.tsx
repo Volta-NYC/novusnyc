@@ -657,7 +657,7 @@ export default function ByProjectPage() {
                           <div className="px-4 pb-3 pt-1 flex flex-col gap-2 bg-[#0F1014]">
                             <div className="flex flex-wrap gap-3 text-[11px] text-white/50">
                               <span className="text-white/70 font-medium">{a.track}</span>
-                              <span>{a.credits} cr</span>
+                              <span>{a.credits} credits</span>
                               {deadline && <span>Due {deadline}</span>}
                               {a.capacity > 1 && (
                                 <span>{activeClaims.length}/{a.capacity} claimed</span>

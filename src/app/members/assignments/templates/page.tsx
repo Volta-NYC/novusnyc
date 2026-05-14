@@ -386,7 +386,7 @@ export default function TemplatesPage() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white/90">{fromTemplate.title}</p>
                 <p className="text-[11px] text-white/45 mt-0.5">
-                  {fromTemplate.track} · {fromTemplate.credits} cr · {fromTemplate.estimatedHours}h · {fromTemplate.capacity} slot{fromTemplate.capacity !== 1 ? "s" : ""} · Min {fromTemplate.minRole}
+                  {fromTemplate.track} · {fromTemplate.credits} credits · {fromTemplate.estimatedHours}h · {fromTemplate.capacity} slot{fromTemplate.capacity !== 1 ? "s" : ""} · Min {fromTemplate.minRole}
                 </p>
                 {fromTemplate.description && (
                   <p

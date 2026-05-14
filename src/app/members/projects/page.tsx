@@ -1292,21 +1292,8 @@ function BusinessesPageInner() {
     }
   };
 
-  // Renders a unified row for the Businesses tab. Shows all tracks as chips;
-  // members and deadlines are aggregated across all active tracks.
   const renderTrackRow = (b: Business) => {
-    const normalized = normalizeTrackProjectsFromBusiness(b);
     const overallStatus: ProjectStatusValue = normalizeProjectStatus(b.projectStatus);
-    // Aggregate members across all tracks (deduplicated).
-    const members = normalized.projectTracks
-      .flatMap((t) => normalized.trackProjects[t]?.teamMembers ?? [])
-      .map((value) => resolveTeamMemberFromInput(value) ?? stripDecoratedName(String(value ?? "")))
-      .filter(Boolean);
-    const dedupedMembers = Array.from(new Set(members));
-    // Earliest upcoming deadline across all tracks.
-    const deadlines = sortDeadlinesMostRecentFirst(
-      normalized.projectTracks.flatMap((t) => normalized.trackProjects[t]?.deadlines ?? [])
-    ).filter((entry) => String(entry.date ?? "").trim());
     const neighborhood = getNeighborhoodLabel(b);
 
     return (
@@ -1380,29 +1367,6 @@ function BusinessesPageInner() {
             </button>
           ) : (
             <Badge label={overallStatus} />
-          )}
-        </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
-          {dedupedMembers.length === 0 ? (
-            <span className="text-white/30">—</span>
-          ) : (
-            <span className="block truncate" title={dedupedMembers.join(", ")}>
-              {dedupedMembers[0]}{dedupedMembers.length > 1 && <span className="text-white/40"> +{dedupedMembers.length - 1}</span>}
-            </span>
-          )}
-        </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
-          {deadlines.length === 0 ? (
-            <span className="text-white/30">—</span>
-          ) : (
-            <span
-              className="block truncate"
-              title={deadlines.map((d) => `${d.label || "Deadline"}: ${d.date}`).join(" · ")}
-            >
-              <span className="text-white/40">{deadlines[0].label || "Due"}:</span>{" "}
-              <span className="text-white/85">{deadlines[0].date}</span>
-              {deadlines.length > 1 && <span className="text-white/40"> +{deadlines.length - 1}</span>}
-            </span>
           )}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
@@ -2001,7 +1965,7 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1370px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1080px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
@@ -2026,7 +1990,7 @@ function BusinessesPageInner() {
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1370px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1080px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
@@ -2035,8 +1999,6 @@ function BusinessesPageInner() {
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Tracks</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Status</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Members</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Next Deadline</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>
               </thead>

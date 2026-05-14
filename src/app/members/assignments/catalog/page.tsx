@@ -396,7 +396,7 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/50">
-                  <span className="text-[#85CC17] font-semibold">{a.credits} cr</span>
+                  <span className="text-[#85CC17] font-semibold">{a.credits} credits</span>
                   <span>{a.minRole}</span>
                   {deadline && <span>Due {deadline}</span>}
                   {a.capacity > 1 && (
