@@ -673,3 +673,15 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
 
   return entries.sort(compareMapEntries);
 }
+
+
+export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string }> {
+  const sb = getSupabaseAdmin();
+  const { data } = await sb.from("site_settings").select("applications_paused, applications_paused_msg").eq("id", "singleton").maybeSingle();
+  if (!data) return { paused: false, message: "" };
+  const r = data as Record<string, unknown>;
+  return {
+    paused: Boolean(r.applications_paused ?? false),
+    message: String(r.applications_paused_msg ?? "Applications are currently paused. Check back soon."),
+  };
+}

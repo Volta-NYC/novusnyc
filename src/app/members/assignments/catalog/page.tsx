@@ -64,7 +64,7 @@ interface FormState {
   credits: number;
   minRole: CycleRole;
   projectRef: string;
-  maxClaims: string;  // empty = unlimited (saved as 0)
+  maxClaims: string;  // "0" or "" = unlimited
   deadline: string;
   status: AssignmentStatus;  // only used when editing
 }
@@ -76,7 +76,7 @@ const BLANK_FORM: FormState = {
   credits: 1,
   minRole: "Analyst",
   projectRef: "",
-  maxClaims: "",
+  maxClaims: "1",
   deadline: "",
   status: "Open",
 };
@@ -495,18 +495,15 @@ export default function CatalogPage() {
             </Field>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-medium text-white/50 mb-1">
-              Max Claims <span className="text-white/30 font-normal">(leave blank for no limit — for open assignments like social follows)</span>
-            </label>
+          <Field label="Max Claims">
             <Input
               type="number"
               min="0"
-              placeholder="No limit"
+              placeholder="0 = no limit"
               value={form.maxClaims}
               onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))}
             />
-          </div>
+          </Field>
 
           {editing && (
             <Field label="Status">

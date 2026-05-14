@@ -38,7 +38,7 @@ interface FormState {
   track: CycleTrack;
   credits: number;
   minRole: CycleRole;
-  maxClaims: string;  // empty = no limit (saved as 0)
+  maxClaims: string;  // "0" or "" = unlimited
   deadlineOffsetDays: string;
 }
 
@@ -48,7 +48,7 @@ const BLANK_FORM: FormState = {
   track: "Tech",
   credits: 1,
   minRole: "Analyst",
-  maxClaims: "",
+  maxClaims: "1",
   deadlineOffsetDays: "",
 };
 
@@ -317,13 +317,10 @@ export default function TemplatesPage() {
               <Input type="number" min="0" value={form.deadlineOffsetDays} placeholder="e.g. 28"
                 onChange={(e) => setForm((p) => ({ ...p, deadlineOffsetDays: e.target.value }))} />
             </Field>
-            <div>
-              <label className="block text-[11px] font-medium text-white/50 mb-1">
-                Max Claims <span className="text-white/30 font-normal">(blank = no limit)</span>
-              </label>
-              <Input type="number" min="0" placeholder="No limit" value={form.maxClaims}
+            <Field label="Max Claims">
+              <Input type="number" min="0" placeholder="0 = no limit" value={form.maxClaims}
                 onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))} />
-            </div>
+            </Field>
           </div>
         </div>
 

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
-import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment, getHandbookPage } from "@/lib/members/storage";
+import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment, getHandbookPage, subscribeSiteSettings } from "@/lib/members/storage";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -158,6 +158,13 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const { user, userProfile, authRole, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAckModal, setShowAckModal] = useState(false);
+  const [portalBanner, setPortalBanner] = useState<{ message: string; bg: string; text: string } | null>(null);
+
+  useEffect(() => subscribeSiteSettings((s) => {
+    setPortalBanner(s.portalBannerEnabled && s.portalBannerMessage.trim()
+      ? { message: s.portalBannerMessage.trim(), bg: s.portalBannerBg, text: s.portalBannerText }
+      : null);
+  }), []);
   const [ackChecked, setAckChecked] = useState(false);
   const [ackLoading, setAckLoading] = useState(false);
   const [currentContentHash, setCurrentContentHash] = useState("");
@@ -342,6 +349,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Sidebar — fixed so it doesn't participate in page width calculations */}
       <aside className={`fixed left-0 top-0 h-full w-56 ${tone.sidebar} z-30 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+
+        {/* Announcement banner */}
+        {portalBanner && (
+          <div
+            className="px-3 py-2 text-xs font-body font-semibold text-center leading-snug"
+            style={{ backgroundColor: portalBanner.bg, color: portalBanner.text }}
+          >
+            {portalBanner.message}
+          </div>
+        )}
 
         {/* Logo */}
         <div className={`px-4 py-4 border-b ${tone.sidebarBorder} flex items-center gap-2.5`}>

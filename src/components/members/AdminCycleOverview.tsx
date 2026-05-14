@@ -28,11 +28,11 @@ const BLANK_CYCLE: Omit<Cycle, "id" | "createdAt" | "updatedAt"> = {
   active: false,
   pacingPercentPerCheckin: 20,
   creditTargets: {
-    Tech:      { Analyst: 10, "Senior Analyst": 14, Associate: 18 },
-    Marketing: { Analyst: 10, "Senior Analyst": 14, Associate: 18 },
-    Finance:   { Analyst: 10, "Senior Analyst": 14, Associate: 18 },
+    Tech:      { Analyst: 0, "Senior Analyst": 0, Associate: 0 },
+    Marketing: { Analyst: 0, "Senior Analyst": 0, Associate: 0 },
+    Finance:   { Analyst: 0, "Senior Analyst": 0, Associate: 0 },
   },
-  strikeThresholds: { warning: 3, demotion: 6, reserve: 9 },
+  strikeThresholds: { warning: 0, demotion: 0, reserve: 0 },
 };
 
 function todayISO(): string {

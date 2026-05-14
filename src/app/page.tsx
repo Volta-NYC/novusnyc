@@ -59,12 +59,15 @@ const SHOWCASE_COLOR_CLASS: Record<string, string> = {
 
 type HomeProject = {
   name: string;
+  type: string;
   neighborhood: string;
   services: string[];
+  status: "Ongoing" | "Upcoming" | "Completed";
   colorClass: string;
   url?: string;
   imageUrl?: string;
   desc?: string;
+  quote?: string;
 };
 
 function getServiceTagClass(service: string): string {
@@ -90,22 +93,28 @@ async function getHomeProjects(): Promise<HomeProject[]> {
   const homeProjects = featuredHomeCards.length > 0
     ? featuredHomeCards.map((card) => ({
       name: card.name,
+      type: card.type,
       neighborhood: card.neighborhood,
       services: card.services,
+      status: card.status,
       colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
       url: card.url,
       imageUrl: card.imageUrl,
       desc: card.desc,
+      quote: undefined as string | undefined,
     }))
     : (publicShowcase.length === 0
       ? fallbackCurrentProjects.slice(0, 6).map((project) => ({
       name: project.name,
+      type: "Digital & Tech",
       neighborhood: project.neighborhood,
       services: project.services,
+      status: "Ongoing" as const,
       colorClass: project.color,
       url: project.url,
       imageUrl: undefined as string | undefined,
       desc: project.desc,
+      quote: project.quote,
       }))
       : []);
 
@@ -156,7 +165,7 @@ async function CurrentProjectsSection() {
                     delay={i * 0.05}
                     className="shrink-0 w-[82vw] max-w-[360px]"
                   >
-                    <div className="border border-v-border rounded-2xl overflow-hidden project-card bg-white">
+                    <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
                         <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
@@ -171,21 +180,39 @@ async function CurrentProjectsSection() {
                           />
                         </div>
                       ) : (
-                        <div className="mx-4 mt-5 rounded-xl border border-v-border h-36 flex items-center justify-center bg-v-bg">
+                        <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white h-36 flex items-center justify-center">
                           <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                         </div>
                       )}
-                      <div className="p-5">
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {p.services.map((service) => (
-                            <span key={`mobile-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-                          ))}
+                      <div className="p-5 flex-1 flex flex-col">
+                        <div className="flex items-start justify-between mb-4 gap-2">
+                          <div className="flex gap-2 flex-wrap">
+                            {p.services.map((service) => (
+                              <span key={`mobile-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                            ))}
+                          </div>
+                          <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-lime-100 text-lime-700" : p.status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
+                            {p.status}
+                          </span>
                         </div>
                         <h3 className="font-display font-bold text-v-ink text-lg mb-1">{p.name}</h3>
-                        <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
-                          <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                        </p>
-                        {p.desc && <ExpandableDescription desc={p.desc} className="mt-3" />}
+                        <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
+                        {p.desc && <ExpandableDescription desc={p.desc} className="flex-1" />}
+                        {p.quote && (
+                          <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+                            &ldquo;{p.quote}&rdquo;
+                          </blockquote>
+                        )}
+                        <div className="flex items-center justify-between mt-4">
+                          <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+                            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                          </p>
+                          {p.url && (
+                            <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
+                              View live site →
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </AnimatedSection>
@@ -200,10 +227,10 @@ async function CurrentProjectsSection() {
                 gap={20}
               >
                 {homeProjects.map((p) => (
-                  <div key={`desktop-${p.name}`} className="border border-v-border rounded-2xl overflow-hidden project-card bg-white">
+                  <div key={`desktop-${p.name}`} className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                     <div className={`${p.colorClass} h-2`} />
                     {p.imageUrl ? (
-                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border bg-white overflow-hidden">
+                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
                         <Image
                           src={p.imageUrl}
                           alt={`${p.name} project`}
@@ -215,21 +242,39 @@ async function CurrentProjectsSection() {
                         />
                       </div>
                     ) : (
-                      <div className="mx-4 sm:mx-6 mt-6 rounded-xl border border-v-border h-40 flex items-center justify-center bg-v-bg">
+                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
                         <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                       </div>
                     )}
-                    <div className="p-6">
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {p.services.map((service) => (
-                          <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-                        ))}
+                    <div className="p-7 flex flex-col">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex gap-2 flex-wrap">
+                          {p.services.map((service) => (
+                            <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                          ))}
+                        </div>
+                        <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-lime-100 text-lime-700" : p.status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
+                          {p.status}
+                        </span>
                       </div>
                       <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                      <p className="font-body text-xs text-v-muted/70 mt-2 flex items-center gap-1.5">
-                        <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                      </p>
-                      {p.desc && <ExpandableDescription desc={p.desc} className="mt-3" />}
+                      <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
+                      {p.desc && <ExpandableDescription desc={p.desc} />}
+                      {p.quote && (
+                        <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+                          &ldquo;{p.quote}&rdquo;
+                        </blockquote>
+                      )}
+                      <div className="flex items-center justify-between mt-4">
+                        <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+                          <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                        </p>
+                        {p.url && (
+                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
+                            View live site →
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

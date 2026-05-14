@@ -1602,6 +1602,98 @@ export async function updateInterviewSettings(data: Partial<InterviewSettings>):
   await writeAuditLog({ action: "update", collection: "interviewSettings", recordId: "singleton", details: { fields: Object.keys(data) } });
 }
 
+// ── Site Settings ─────────────────────────────────────────────────────────────
+
+export interface SiteSettings {
+  applicationsPaused:   boolean;
+  applicationsPausedMsg: string;
+  services:             string[];
+  publicBannerEnabled:  boolean;
+  publicBannerMessage:  string;
+  publicBannerBg:       string;
+  publicBannerText:     string;
+  portalBannerEnabled:  boolean;
+  portalBannerMessage:  string;
+  portalBannerBg:       string;
+  portalBannerText:     string;
+  roleLabels:           { Analyst: string; "Senior Analyst": string; Associate: string; Reserve: string };
+}
+
+const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  applicationsPaused:    false,
+  applicationsPausedMsg: "Applications are currently paused. Check back soon.",
+  services:              ["Website", "SEO", "Social Media", "Graphic Design", "Grants"],
+  publicBannerEnabled:   false,
+  publicBannerMessage:   "",
+  publicBannerBg:        "#1a1a2e",
+  publicBannerText:      "#ffffff",
+  portalBannerEnabled:   false,
+  portalBannerMessage:   "",
+  portalBannerBg:        "#85CC17",
+  portalBannerText:      "#0D0D0D",
+  roleLabels:            { Analyst: "Analyst", "Senior Analyst": "Senior Analyst", Associate: "Associate", Reserve: "Reserve" },
+};
+
+function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
+  const rl = (r.role_labels ?? {}) as Record<string, unknown>;
+  return {
+    applicationsPaused:    Boolean(r.applications_paused ?? false),
+    applicationsPausedMsg: String(r.applications_paused_msg ?? DEFAULT_SITE_SETTINGS.applicationsPausedMsg),
+    services:              Array.isArray(r.services) ? (r.services as string[]) : DEFAULT_SITE_SETTINGS.services,
+    publicBannerEnabled:   Boolean(r.public_banner_enabled ?? false),
+    publicBannerMessage:   String(r.public_banner_message ?? ""),
+    publicBannerBg:        String(r.public_banner_bg ?? DEFAULT_SITE_SETTINGS.publicBannerBg),
+    publicBannerText:      String(r.public_banner_text ?? DEFAULT_SITE_SETTINGS.publicBannerText),
+    portalBannerEnabled:   Boolean(r.portal_banner_enabled ?? false),
+    portalBannerMessage:   String(r.portal_banner_message ?? ""),
+    portalBannerBg:        String(r.portal_banner_bg ?? DEFAULT_SITE_SETTINGS.portalBannerBg),
+    portalBannerText:      String(r.portal_banner_text ?? DEFAULT_SITE_SETTINGS.portalBannerText),
+    roleLabels: {
+      Analyst:          String(rl.Analyst          ?? "Analyst"),
+      "Senior Analyst": String(rl["Senior Analyst"] ?? "Senior Analyst"),
+      Associate:        String(rl.Associate        ?? "Associate"),
+      Reserve:          String(rl.Reserve          ?? "Reserve"),
+    },
+  };
+}
+
+export function subscribeSiteSettings(callback: (s: SiteSettings) => void): () => void {
+  const fetch = () =>
+    supabase.from("site_settings").select("*").eq("id", "singleton").maybeSingle().then(({ data }) => {
+      callback(data ? siteSettingsFromRow(data as Record<string, unknown>) : DEFAULT_SITE_SETTINGS);
+    });
+
+  void fetch();
+  const channel = supabase
+    .channel(`realtime-site_settings-${Math.random().toString(36).slice(2)}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => void fetch())
+    .subscribe();
+  return () => { void supabase.removeChannel(channel); };
+}
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const { data } = await supabase.from("site_settings").select("*").eq("id", "singleton").maybeSingle();
+  return data ? siteSettingsFromRow(data as Record<string, unknown>) : DEFAULT_SITE_SETTINGS;
+}
+
+export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<void> {
+  const row: Record<string, unknown> = { updated_at: nowISO() };
+  if (patch.applicationsPaused    !== undefined) row.applications_paused     = patch.applicationsPaused;
+  if (patch.applicationsPausedMsg !== undefined) row.applications_paused_msg = patch.applicationsPausedMsg;
+  if (patch.services              !== undefined) row.services                = patch.services;
+  if (patch.publicBannerEnabled   !== undefined) row.public_banner_enabled   = patch.publicBannerEnabled;
+  if (patch.publicBannerMessage   !== undefined) row.public_banner_message   = patch.publicBannerMessage;
+  if (patch.publicBannerBg        !== undefined) row.public_banner_bg        = patch.publicBannerBg;
+  if (patch.publicBannerText      !== undefined) row.public_banner_text      = patch.publicBannerText;
+  if (patch.portalBannerEnabled   !== undefined) row.portal_banner_enabled   = patch.portalBannerEnabled;
+  if (patch.portalBannerMessage   !== undefined) row.portal_banner_message   = patch.portalBannerMessage;
+  if (patch.portalBannerBg        !== undefined) row.portal_banner_bg        = patch.portalBannerBg;
+  if (patch.portalBannerText      !== undefined) row.portal_banner_text      = patch.portalBannerText;
+  if (patch.roleLabels            !== undefined) row.role_labels             = patch.roleLabels;
+  await supabase.from("site_settings").update(row).eq("id", "singleton");
+  await writeAuditLog({ action: "update", collection: "siteSettings", recordId: "singleton", details: { fields: Object.keys(patch) } });
+}
+
 // ── Cycles ────────────────────────────────────────────────────────────────────
 
 export async function createCycle(data: Omit<Cycle, "id" | "createdAt" | "updatedAt">): Promise<string | null> {

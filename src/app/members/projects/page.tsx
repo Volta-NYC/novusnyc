@@ -396,7 +396,6 @@ function BusinessesPageInner() {
   const [claims, setClaims]                   = useState<AssignmentClaim[]>([]);
   const [search, setSearch]                   = useState("");
   const [openStatusPopoverId, setOpenStatusPopoverId] = useState<string | null>(null);
-  const [openMovePopoverId, setOpenMovePopoverId] = useState<string | null>(null);
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -1216,40 +1215,13 @@ function BusinessesPageInner() {
     });
   };
 
-  // Move a Discovery business onto a track. Seeds an empty track project and updates derived fields.
-  const handleMoveToTrack = async (business: Business, targetTrack: TrackDivision) => {
-    setOpenMovePopoverId(null);
-    const normalized = normalizeTrackProjectsFromBusiness(business);
-    if (normalized.projectTracks.includes(targetTrack)) return;
-    const nextTracks = [...normalized.projectTracks, targetTrack];
-    const nextTrackProjects: TrackProjectMap = {
-      ...normalized.trackProjects,
-      [targetTrack]: normalized.trackProjects[targetTrack] ?? {
-        projectStatus: "Upcoming",
-        teamMembers: [],
-        deadlines: [...TRACK_DEADLINE_DEFAULT],
-        notes: "",
-      },
-    };
-    const overallStatus = deriveOverallStatus(nextTrackProjects, nextTracks);
-    const primaryDivision = derivePrimaryDivision(nextTracks);
-    const flattenedTeamMembers = TRACK_ORDER.flatMap((t) => nextTrackProjects[t]?.teamMembers ?? []);
-    await updateBusiness(business.id, {
-      projectTracks: nextTracks,
-      trackProjects: nextTrackProjects,
-      projectStatus: overallStatus,
-      division: primaryDivision,
-      teamMembers: flattenedTeamMembers,
-    });
-  };
 
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
-    if (!openStatusPopoverId && !openMovePopoverId) return;
+    if (!openStatusPopoverId) return;
     const close = () => {
       setOpenStatusPopoverId(null);
-      setOpenMovePopoverId(null);
       setPopoverPos(null);
     };
     const timerId = setTimeout(() => document.addEventListener("click", close), 0);
@@ -1261,7 +1233,7 @@ function BusinessesPageInner() {
       window.removeEventListener("scroll", close, true);
       window.removeEventListener("resize", close);
     };
-  }, [openStatusPopoverId, openMovePopoverId]);
+  }, [openStatusPopoverId]);
 
   const myEmail = normalizeLoose(userProfile?.email ?? user?.email ?? "");
   const teamMatchByEmail = myEmail ? team.find((m) => normalizeLoose(m.email ?? "") === myEmail) : undefined;
@@ -1354,7 +1326,6 @@ function BusinessesPageInner() {
                 } else {
                   const r = e.currentTarget.getBoundingClientRect();
                   setPopoverPos({ top: r.bottom + 4, left: r.left });
-                  setOpenMovePopoverId(null);
                   setOpenStatusPopoverId(b.id);
                 }
               }}
@@ -1394,19 +1365,10 @@ function BusinessesPageInner() {
   const renderDiscoveryRow = (b: Business) => {
     const neighborhood = getNeighborhoodLabel(b);
     const fromWebsite = b.intakeSource === "website_form";
-    const promotedTracks = normalizeTrackProjectsFromBusiness(b).projectTracks;
-    const isPromoted = promotedTracks.length > 0;
     return (
       <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
         <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-medium truncate block" title={b.name}>{b.name}</span>
-            {isPromoted && (
-              <span className="flex-shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#85CC17] bg-[#85CC17]/10 border border-[#85CC17]/25 rounded-full px-1.5 py-0.5">
-                {promotedTracks.join(" · ")}
-              </span>
-            )}
-          </div>
+          <span className="font-medium truncate block" title={b.name}>{b.name}</span>
         </td>
         <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
           <span className="block truncate" title={neighborhood || ""}>{neighborhood || <span className="text-white/30">—</span>}</span>
@@ -1456,24 +1418,7 @@ function BusinessesPageInner() {
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
             <div className="members-row-actions">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (openMovePopoverId === b.id) {
-                    setOpenMovePopoverId(null);
-                    setPopoverPos(null);
-                  } else {
-                    const r = e.currentTarget.getBoundingClientRect();
-                    setPopoverPos({ top: r.bottom + 4, left: r.left });
-                    setOpenStatusPopoverId(null);
-                    setOpenMovePopoverId(b.id);
-                  }
-                }}
-                className="rounded-md border border-white/15 hover:border-[#85CC17]/45 bg-[#11141A] hover:bg-[#85CC17]/10 px-2 py-1 text-[11px] text-white/80 hover:text-white transition-colors"
-              >
-                {isPromoted ? "Add track…" : "Move to…"}
-              </button>
+              <Btn size="sm" variant="secondary" onClick={() => openProjectEmailModal(b)}>Email</Btn>
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
             </div>
           )}
@@ -2283,28 +2228,6 @@ function BusinessesPageInner() {
       })()}
 
       {/* Move-to popover — same fixed-positioning treatment. */}
-      {openMovePopoverId && popoverPos && (() => {
-        const b = businesses.find((biz) => biz.id === openMovePopoverId);
-        if (!b) return null;
-        return (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, zIndex: 1000 }}
-            className="bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
-          >
-            {TRACK_ORDER.map((track) => (
-              <button
-                key={`move-${b.id}-${track}`}
-                type="button"
-                onClick={() => void handleMoveToTrack(b, track)}
-                className="w-full text-left px-3 py-2 text-xs text-white/75 hover:bg-white/8 transition-colors"
-              >
-                {TRACK_META[track].label}
-              </button>
-            ))}
-          </div>
-        );
-      })()}
     </MembersLayout>
   );
 }
