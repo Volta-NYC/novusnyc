@@ -752,7 +752,7 @@ export default function ApplicantsPage() {
           {columnsMenuOpen && (
             <div className="absolute right-0 mt-1 w-52 rounded-lg border border-white/15 bg-[#0F1014] p-2 shadow-xl z-30">
               <p className="px-1 pb-1 text-[10px] uppercase tracking-wide text-white/45">Show Columns</p>
-              <div className="max-h-56 overflow-y-auto space-y-1">
+              <div className="space-y-1">
                 {ALL_COLUMNS.filter((col) => col.key !== "actions").map((col) => {
                   const checked = !hiddenColumns.has(col.key);
                   return (

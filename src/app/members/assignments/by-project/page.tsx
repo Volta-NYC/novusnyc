@@ -160,7 +160,8 @@ export default function ByProjectPage() {
 
   const [search, setSearch]             = useState("");
   const [trackFilter, setTrackFilter]   = useState<CycleTrack | "All">("All");
-  const [showInactive, setShowInactive] = useState(false);
+  const [filterOpen, setFilterOpen]     = useState(false);
+  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
 
   // per-card "show all assignments" toggle (keyed by card.key)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
@@ -256,15 +257,12 @@ export default function ByProjectPage() {
     return result;
   }, [assignments, businesses, projectGroups]);
 
-  const inactiveCount = useMemo(
-    () => cards.filter((c) => c.status !== "Ongoing").length,
-    [cards],
-  );
+  const hasActiveFilters = filterStatuses.size > 0;
 
   const visibleCards = useMemo(() => {
     return cards
       .filter((card) => {
-        if (!showInactive && card.status !== "Ongoing") return false;
+        if (filterStatuses.size > 0 && !filterStatuses.has(card.status)) return false;
         // track filter — keep card if at least one assignment passes
         const assignmentsForTrack =
           trackFilter === "All"
@@ -281,7 +279,7 @@ export default function ByProjectPage() {
         if (td !== 0) return td;
         return a.label.localeCompare(b.label);
       });
-  }, [cards, showInactive, trackFilter, q]);
+  }, [cards, filterStatuses, trackFilter, q]);
 
   const toggleCardExpand = (key: string) =>
     setExpandedCards((prev) => {
@@ -461,7 +459,7 @@ export default function ByProjectPage() {
       <SectionTabs tabs={ASSIGNMENTS_TABS} />
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-5">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search projects or assignments…" />
         <div className="flex items-center gap-1">
           {(["All", ...MEMBER_TRACKS] as const).map((t) => (
@@ -478,15 +476,58 @@ export default function ByProjectPage() {
             </button>
           ))}
         </div>
-        {inactiveCount > 0 && (
-          <button
-            onClick={() => setShowInactive((v) => !v)}
-            className="ml-auto text-[11px] text-white/40 hover:text-white/65 transition-colors"
-          >
-            {showInactive ? "Hide inactive" : `Show inactive (${inactiveCount})`}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setFilterOpen((v) => !v)}
+          className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+            hasActiveFilters || filterOpen
+              ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+              : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+          }`}
+        >
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+          </svg>
+          Filter{hasActiveFilters ? ` (${filterStatuses.size})` : ""}
+        </button>
       </div>
+
+      {/* Filter panel */}
+      {filterOpen && (
+        <div className="rounded-xl border border-white/10 bg-[#13161D] p-4 mb-5">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Status</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+              {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
+                <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={filterStatuses.has(s)}
+                    onChange={() => setFilterStatuses((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(s)) next.delete(s); else next.add(s);
+                      return next;
+                    })}
+                    className="accent-[#85CC17]"
+                  />
+                  <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{s}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <div className="mt-3 pt-3 border-t border-white/8 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setFilterStatuses(new Set())}
+                className="text-[11px] text-white/45 hover:text-white/75 transition-colors"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Card grid */}
       {visibleCards.length === 0 ? (

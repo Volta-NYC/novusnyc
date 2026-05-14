@@ -421,7 +421,6 @@ function BusinessesPageInner() {
   // Tracks the neighborhood pre-filled when opening the modal from a group's + button.
   const [presetNeighborhood, setPresetNeighborhood] = useState<string | null>(null);
   // When false (default), only Ongoing businesses are shown in the Businesses tab.
-  const [showInactive, setShowInactive] = useState(false);
   // Fine-grained filter checkboxes for businesses tab.
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
@@ -972,7 +971,6 @@ function BusinessesPageInner() {
     if (activeTab === "showcase") return false; // showcase tab renders its own list
     // "businesses" tab: only entries promoted to at least one track
     if (isDiscoveryBusiness(business)) return false;
-    if (!showInactive && normalizeProjectStatus(business.projectStatus) !== "Ongoing") return false;
     // Fine-grained filters (only applied in businesses tab)
     if (filterTracks.size > 0) {
       const bTracks = normalizeTrackProjectsFromBusiness(business).projectTracks;
@@ -1750,17 +1748,6 @@ function BusinessesPageInner() {
                   </svg>
                   Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size + filterNeighborhoods.size})` : ""}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowInactive((v) => !v)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                    showInactive
-                      ? "border-white/20 bg-white/8 text-white/75 hover:bg-white/12"
-                      : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
-                  }`}
-                >
-                  {showInactive ? "Hide inactive" : `Show all (${upcomingCount + completedCount} inactive)`}
-                </button>
               </>
             )}
           </div>
@@ -2038,7 +2025,7 @@ function BusinessesPageInner() {
             {filtered.length === 0 && (
               <div className="p-6">
                 <Empty
-                  message={showInactive ? "No businesses found." : "No ongoing businesses. Click \"Show all\" to see upcoming and completed ones."}
+                  message="No businesses found."
                   action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first business</Btn> : undefined}
                 />
               </div>
