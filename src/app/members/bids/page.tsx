@@ -17,7 +17,6 @@ import { useAuth } from "@/lib/members/authContext";
 
 const STATUSES   = ["Active Partner", "In Conversation", "Outreach", "Paused"] as const;
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
-const PRIORITIES = ["High", "Medium", "Low"];
 type BidViewMode = "cards" | "compact";
 
 type BidStatusOption = (typeof STATUSES)[number];
@@ -291,7 +290,7 @@ export default function BIDTrackerPage() {
                   <p className="text-white font-semibold leading-snug break-words">{bid.name}</p>
                   {!isMemberRestricted ? (
                     <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
-                      <span>{[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "No borough"}</span>
+                      <span>{bid.borough || "No borough"}</span>
                       <span>•</span>
                       <span>{bid.contactName || "No contact"}</span>
                       {bid.contactEmail && (
@@ -305,12 +304,11 @@ export default function BIDTrackerPage() {
                     </div>
                   ) : (
                     <div className="text-xs text-white/45">
-                      {[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "No borough"}
+                      {bid.borough || "No borough"}
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge label={normalizeBidStatus(bid.status)} />
-                    {!isMemberRestricted && <Badge label={bid.priority} />}
                   </div>
                 </div>
                 {canEdit && (
@@ -373,8 +371,8 @@ export default function BIDTrackerPage() {
                         case "status": return <td key="status" className="px-3 py-0 h-9 align-middle"><Badge label={normalizeBidStatus(bid.status)} /></td>;
                         case "borough": return (
                           <td key="borough" className="px-3 py-0 h-9 text-white/60 align-middle overflow-hidden">
-                            <span className="block truncate" title={[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}>
-                              {[bid.borough, bid.zipCode].filter(Boolean).join(" · ") || "—"}
+                            <span className="block truncate" title={bid.borough || "—"}>
+                              {bid.borough || "—"}
                             </span>
                           </td>
                         );
@@ -436,14 +434,8 @@ export default function BIDTrackerPage() {
             <Field label="Phone">
               <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
             </Field>
-            <Field label="Priority">
-              <Select options={PRIORITIES} value={form.priority} onChange={e => setField("priority", e.target.value)} />
-            </Field>
             <Field label="Borough">
               <Select options={["", ...BOROUGHS]} value={form.borough} onChange={e => setField("borough", e.target.value)} />
-            </Field>
-            <Field label="ZIP Code">
-              <Input value={form.zipCode ?? ""} onChange={e => setField("zipCode", e.target.value)} placeholder="e.g. 11215" />
             </Field>
             <div className="col-span-2">
               <Field label="Address">

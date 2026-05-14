@@ -95,8 +95,9 @@ export default function CatalogPage() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
 
   const [search, setSearch] = useState("");
-  const [filterTrack, setFilterTrack] = useState<CycleTrack | "">("");
-  const [filterStatus, setFilterStatus] = useState<AssignmentStatus | "">("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
+  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Assignment | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
@@ -148,8 +149,8 @@ export default function CatalogPage() {
     const q = search.trim().toLowerCase();
     return [...assignments]
       .filter((a) => {
-        if (filterTrack && (a.track ?? a.primaryTrack) !== filterTrack) return false;
-        if (filterStatus && a.status !== filterStatus) return false;
+        if (filterTracks.size > 0 && !filterTracks.has(a.track ?? a.primaryTrack ?? "Tech")) return false;
+        if (filterStatuses.size > 0 && !filterStatuses.has(a.status)) return false;
         if (!q) return true;
         const proj = resolveProjectLabel(a);
         return [a.title, (a.track ?? a.primaryTrack ?? ""), proj?.name ?? "", proj?.subtitle ?? ""]
@@ -162,7 +163,7 @@ export default function CatalogPage() {
         return (a.title || "").localeCompare(b.title || "");
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignments, search, filterTrack, filterStatus, businessById, projectGroupById]);
+  }, [assignments, search, filterTracks, filterStatuses, businessById, projectGroupById]);
 
   const counts = {
     open: assignments.filter((a) => a.status === "Open").length,
@@ -269,42 +270,96 @@ export default function CatalogPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        <div className="flex-1 min-w-[180px]">
-          <SearchBar value={search} onChange={setSearch} placeholder="Search title, track, business…" />
-        </div>
-        {/* Track filter chips */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {(["", ...MEMBER_TRACKS] as Array<CycleTrack | "">).map((t) => (
-            <button
-              key={t || "all"}
-              onClick={() => setFilterTrack(t)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
-                filterTrack === t
-                  ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
-                  : "border-white/10 text-white/45 hover:text-white/70 hover:border-white/18"
-              }`}
-            >
-              {t ? <span className={`w-1.5 h-1.5 rounded-full ${TRACK_DOT[t]}`} /> : null}
-              {t || "All"}
-            </button>
-          ))}
-        </div>
-        {/* Status filter */}
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as AssignmentStatus | "")}
-          className="bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1 text-[11px] text-white/70 focus:outline-none focus:border-[#85CC17]/40"
-        >
-          <option value="">All statuses</option>
-          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
+      {(() => {
+        const hasActiveFilters = filterTracks.size > 0 || filterStatuses.size > 0;
+        return (
+          <>
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="flex-1 min-w-[180px]">
+                <SearchBar value={search} onChange={setSearch} placeholder="Search title, track, business…" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setFilterOpen((v) => !v)}
+                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                  hasActiveFilters || filterOpen
+                    ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                    : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+                </svg>
+                Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size})` : ""}
+              </button>
+            </div>
+
+            {filterOpen && (
+              <div className="rounded-xl border border-white/10 bg-[#13161D] p-4 mb-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Track</p>
+                    <div className="space-y-1.5">
+                      {MEMBER_TRACKS.map((t) => (
+                        <label key={t} className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={filterTracks.has(t)}
+                            onChange={() => setFilterTracks((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(t)) next.delete(t); else next.add(t);
+                              return next;
+                            })}
+                            className="accent-[#85CC17]"
+                          />
+                          <span className={`inline-block h-2 w-2 rounded-full ${TRACK_DOT[t]}`} />
+                          <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{t}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Status</p>
+                    <div className="space-y-1.5">
+                      {STATUS_OPTIONS.map((s) => (
+                        <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={filterStatuses.has(s)}
+                            onChange={() => setFilterStatuses((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(s)) next.delete(s); else next.add(s);
+                              return next;
+                            })}
+                            className="accent-[#85CC17]"
+                          />
+                          <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{s}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {hasActiveFilters && (
+                  <div className="mt-3 pt-3 border-t border-white/8 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setFilterTracks(new Set()); setFilterStatuses(new Set()); }}
+                      className="text-[11px] text-white/45 hover:text-white/75 transition-colors"
+                    >
+                      Clear all filters
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Card grid */}
       {sorted.length === 0 ? (
         <Empty
-          message={search || filterTrack || filterStatus ? "No assignments match your filters." : "No assignments in the catalog yet."}
+          message={search || filterTracks.size > 0 || filterStatuses.size > 0 ? "No assignments match your filters." : "No assignments in the catalog yet."}
           action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
         />
       ) : (
