@@ -9,13 +9,19 @@ import { useRouter } from "next/navigation";
 import { getHandbookPage, upsertHandbookPage, type HandbookPage } from "@/lib/members/storage";
 
 const EXPORT_OPTIONS = [
-  { key: "businesses", label: "Businesses" },
-  { key: "financeAssignments", label: "Finance Assignments" },
-  { key: "members", label: "Member List" },
-  { key: "applicants", label: "Applicants" },
-  { key: "bids", label: "BIDs" },
-  { key: "interviews", label: "Interview Slots" },
-  { key: "calendar", label: "Calendar Events" },
+  { key: "team",                label: "Team Members" },
+  { key: "userProfiles",        label: "User Profiles" },
+  { key: "businesses",          label: "Businesses" },
+  { key: "assignments",         label: "Assignments" },
+  { key: "assignmentCatalog",   label: "Assignment Catalog" },
+  { key: "assignmentClaims",    label: "Assignment Claims" },
+  { key: "applicants",          label: "Applicants" },
+  { key: "bids",                label: "BID Directory" },
+  { key: "cycles",              label: "Cycles" },
+  { key: "creditAdjustments",   label: "Credit Adjustments" },
+  { key: "emailTemplates",      label: "Email Templates" },
+  { key: "calendarEvents",      label: "Calendar Events" },
+  { key: "auditLogs",           label: "Audit Logs" },
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];

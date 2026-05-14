@@ -1295,9 +1295,19 @@ function BusinessesPageInner() {
   const renderTrackRow = (b: Business) => {
     const overallStatus: ProjectStatusValue = normalizeProjectStatus(b.projectStatus);
     const neighborhood = getNeighborhoodLabel(b);
+    const derivedTracks = businessTrackMap.get(b.id) ?? [];
 
     return (
       <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+        <td className="px-3 py-0 h-9 align-middle">
+          {derivedTracks.length > 0 ? (
+            <div className="flex items-center gap-1.5">
+              {derivedTracks.map((t) => (
+                <span key={t} title={t} className={`inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${TRACK_META[t].dotClass}`} />
+              ))}
+            </div>
+          ) : <span className="text-white/20">·</span>}
+        </td>
         <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-medium truncate" title={b.name}>{b.name}</span>
@@ -1331,18 +1341,6 @@ function BusinessesPageInner() {
           ) : (
             <span className="text-white/30">—</span>
           )}
-        </td>
-        <td className="px-3 py-0 h-9 align-middle">
-          {(() => {
-            const derivedTracks = businessTrackMap.get(b.id) ?? [];
-            return derivedTracks.length > 0 ? (
-              <div className="flex gap-1 flex-wrap">
-                {derivedTracks.map((t) => (
-                  <span key={t} className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${TRACK_META[t].chipClass}`}>{t}</span>
-                ))}
-              </div>
-            ) : <span className="text-white/30">—</span>;
-          })()}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit ? (
@@ -1965,17 +1963,15 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1080px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "996px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Tracks</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Status</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Members</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Next Deadline</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
                   </thead>
@@ -1990,14 +1986,14 @@ function BusinessesPageInner() {
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1080px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "996px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Tracks</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Status</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>

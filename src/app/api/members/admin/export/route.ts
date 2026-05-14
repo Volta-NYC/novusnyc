@@ -1,68 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dbRead, verifyCaller } from "@/lib/server/adminApi";
+import { verifyCaller } from "@/lib/server/adminApi";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-const EXPORT_SECTION_PATHS = {
-  businesses: "businesses",
-  financeAssignments: "financeAssignments",
-  members: "team",
-  applicants: "applications",
-  bids: "bids",
-  interviews: "interviewSlots",
-  calendar: "calendarEvents",
-  users: "userProfiles",
-  interviewInvites: "interviewInvites",
-} as const;
+// Each entry is a { label, table } pair. `table` is the exact Supabase table name.
+const EXPORT_SECTIONS = [
+  { key: "team",                  label: "Team Members",            table: "team" },
+  { key: "userProfiles",          label: "User Profiles",           table: "user_profiles" },
+  { key: "businesses",            label: "Businesses",              table: "businesses" },
+  { key: "assignments",           label: "Assignments",             table: "assignments" },
+  { key: "assignmentCatalog",     label: "Assignment Catalog",      table: "assignment_catalog" },
+  { key: "assignmentClaims",      label: "Assignment Claims",       table: "assignment_claims" },
+  { key: "assignmentTemplates",   label: "Assignment Templates",    table: "assignment_templates" },
+  { key: "applicants",            label: "Applicants",              table: "applications" },
+  { key: "bids",                  label: "BID Directory",           table: "bids" },
+  { key: "cycles",                label: "Cycles",                  table: "cycles" },
+  { key: "creditAdjustments",     label: "Credit Adjustments",      table: "member_credit_adjustments" },
+  { key: "memberStrikes",         label: "Member Strikes",          table: "member_strikes" },
+  { key: "emailTemplates",        label: "Email Templates",         table: "email_templates" },
+  { key: "calendarEvents",        label: "Calendar Events",         table: "calendar_events" },
+  { key: "handbookPages",         label: "Handbook Pages",          table: "handbook_pages" },
+  { key: "auditLogs",             label: "Audit Logs",              table: "audit_logs" },
+] as const;
 
-type ExportSection = keyof typeof EXPORT_SECTION_PATHS;
+type ExportKey = (typeof EXPORT_SECTIONS)[number]["key"];
+
+async function fetchTable(table: string): Promise<unknown[]> {
+  const sb = getSupabaseAdmin();
+  const { data, error } = await sb.from(table).select("*").order("id" as never);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
 
 export async function GET(req: NextRequest) {
-  const verified = await verifyCaller(req, ["owner"]);
+  const verified = await verifyCaller(req, ["owner", "admin"]);
   if (!verified.ok) {
     return NextResponse.json({ error: verified.error }, { status: verified.status });
   }
 
   const sectionsParam = req.nextUrl.searchParams.get("sections") ?? "";
-  const requestedSections = Array.from(
+  const requestedKeys = Array.from(
     new Set(
       sectionsParam
         .split(",")
-        .map((part) => part.trim())
+        .map((s) => s.trim())
         .filter(Boolean),
     ),
-  ).filter((section): section is ExportSection => section in EXPORT_SECTION_PATHS);
+  ).filter((k): k is ExportKey => EXPORT_SECTIONS.some((s) => s.key === k));
 
-  if (requestedSections.length === 0) {
-    let rootData: unknown = null;
-    try {
-      rootData = await dbRead("");
-    } catch {
-      return NextResponse.json({ error: "read_failed" }, { status: 500 });
-    }
+  const sectionsToExport = requestedKeys.length > 0
+    ? EXPORT_SECTIONS.filter((s) => requestedKeys.includes(s.key))
+    : [...EXPORT_SECTIONS];
 
-    const payload = rootData && typeof rootData === "object" ? (rootData as Record<string, unknown>) : {};
-    return NextResponse.json({
-      exportedAt: new Date().toISOString(),
-      ...payload,
-    });
-  }
-
-  const sectionEntries = await Promise.all(
-    requestedSections.map(async (section) => {
-      const path = EXPORT_SECTION_PATHS[section];
+  const entries = await Promise.all(
+    sectionsToExport.map(async (section) => {
       try {
-        const value = await dbRead(path);
-        return [section, value] as const;
+        const rows = await fetchTable(section.table);
+        return [section.key, rows] as const;
       } catch {
-        return [section, { __error: "read_failed" }] as const;
+        return [section.key, { __error: "read_failed" }] as const;
       }
     }),
   );
 
-  const payload = Object.fromEntries(sectionEntries);
-
   return NextResponse.json({
     exportedAt: new Date().toISOString(),
-    sections: requestedSections,
-    ...payload,
+    sections: sectionsToExport.map((s) => s.key),
+    ...Object.fromEntries(entries),
   });
 }
