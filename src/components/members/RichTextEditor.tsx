@@ -425,6 +425,7 @@ export interface RichTextEditorProps {
 
 export interface RichTextEditorHandle {
   insertAtCursor: (text: string) => void;
+  setContent: (html: string) => void;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -472,11 +473,14 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     },
   });
 
-  // Expose insertAtCursor so callers can inject text at the current cursor position.
   useImperativeHandle(ref, () => ({
     insertAtCursor: (text: string) => {
       if (!editor) return;
       editor.chain().focus().insertContent(text).run();
+    },
+    setContent: (html: string) => {
+      if (!editor) return;
+      editor.commands.setContent(html || "");
     },
   }), [editor]);
 

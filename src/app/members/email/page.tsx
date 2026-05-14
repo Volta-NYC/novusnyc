@@ -3,6 +3,7 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
+import SectionTabs, { EMAIL_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, Field, Btn, Empty, Modal, Input, useConfirm,
 } from "@/components/members/ui";
@@ -18,7 +19,6 @@ import {
   subscribeMemberCreditAdjustments,
   createEmailTemplate,
   updateEmailTemplate,
-  deleteEmailTemplate,
   type TeamMember,
   type Business,
   type FinanceAssignment,
@@ -286,31 +286,30 @@ export default function MemberEmailPage() {
     }
   };
 
-  // Templates state — drives the "load / save / delete" panel above compose.
+  // Templates state — drives the pill selector above compose.
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [templatesLoaded, setTemplatesLoaded] = useState(false);
   const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveModalLabel, setSaveModalLabel] = useState("");
-  const [manageOpen, setManageOpen] = useState(false);
-  const { ask, Dialog: ConfirmDialog } = useConfirm();
+  const { Dialog: ConfirmDialog } = useConfirm();
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
-  useEffect(() => subscribeEmailTemplates(setTemplates), []);
+  useEffect(() => subscribeEmailTemplates((data) => { setTemplatesLoaded(true); setTemplates(data); }), []);
   useEffect(() => subscribeCycles(setCycles), []);
   useEffect(() => subscribeAssignments(setCreditAssignments), []);
   useEffect(() => subscribeAssignmentClaims(setCreditClaims), []);
   useEffect(() => subscribeMemberCreditAdjustments(setCreditAdjustments), []);
 
-  // Seed system templates on first admin visit so they're editable from this
-  // page. Each system template has a stable key referenced by automation; we
-  // only create the row if it doesn't already exist.
+  // Seed system templates once Supabase has confirmed the templates list.
+  // Wait for templatesLoaded so we don't seed against an empty initial state.
   const [seededSystemTemplates, setSeededSystemTemplates] = useState(false);
   useEffect(() => {
     if (seededSystemTemplates) return;
     if (!canUseEmail || !user) return;
-    if (templates === null) return;
+    if (!templatesLoaded) return;
     setSeededSystemTemplates(true);
     void (async () => {
       const existingKeys = new Set(templates.map((t) => t.key));
@@ -332,7 +331,7 @@ export default function MemberEmailPage() {
         } catch { /* non-fatal */ }
       }
     })();
-  }, [seededSystemTemplates, canUseEmail, user, templates]);
+  }, [seededSystemTemplates, canUseEmail, user, templates, templatesLoaded]);
 
   // Sort templates: system ones (well-known keys) first, then user-created
   // alphabetically by label.
@@ -351,6 +350,7 @@ export default function MemberEmailPage() {
     setSubject(template.subject || "");
     setMessage(template.body || "");
     setLoadedTemplateId(template.id);
+    editorRef.current?.setContent(template.body || "");
   };
 
   const startSaveAsNew = () => {
@@ -397,15 +397,6 @@ export default function MemberEmailPage() {
     });
   };
 
-  const deleteTemplate = async (template: EmailTemplate) => {
-    await ask(
-      async () => {
-        await deleteEmailTemplate(template.id);
-        if (loadedTemplateId === template.id) setLoadedTemplateId(null);
-      },
-      `Delete template “${template.label}”?${template.key.startsWith("custom_") ? "" : " This is a system template — automation will fall back to built-in defaults."}`,
-    );
-  };
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = new URLSearchParams(window.location.search).get("prefill");
@@ -757,6 +748,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
   return (
     <MembersLayout>
       <PageHeader title="Member Email" />
+      <SectionTabs tabs={EMAIL_TABS} />
 
       <div className="space-y-4">
         <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
@@ -936,66 +928,64 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
               </div>
             </div>
 
-            {normalizedSearch && (
-              <div className="members-table-shell members-scroll-hidden max-h-[420px] overflow-x-auto overflow-y-auto">
-                <table className="members-grid-table members-email-grid w-full min-w-[1020px] table-fixed text-xs [&_td]:overflow-hidden">
-                  <thead className="bg-[#141821] sticky top-0 z-[1]">
-                    <tr>
-                      <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
-                      <th className="text-left px-3 py-2 text-white/45 w-[280px]">Name</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[280px]">School</th>
-                      <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {sortedFilteredMembers.map((member) => {
-                      const checked = selectedIds.includes(member.id);
-                      const inactive = isInactiveMember(member);
-                      const indicator = getMemberIndicator(member);
-                      const track = getMemberTrack(member);
-                      const avatar = getTrackAvatarStyles(track);
-                      return (
-                        <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
-                          <td className="px-3 py-2">
-                            <input
-                              type="checkbox"
-                              checked={checked && !inactive}
-                              onChange={(e) => {
-                                const shiftKey = "shiftKey" in e.nativeEvent
-                                  ? Boolean((e.nativeEvent as MouseEvent).shiftKey)
-                                  : false;
-                                toggleSelected(member.id, e.target.checked, shiftKey);
-                              }}
-                              disabled={inactive}
-                              className="members-checkbox"
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-white/75 whitespace-nowrap">
-                            <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
-                              <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                              <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                                <TrackAvatarIcon track={track} color={avatar.text} />
-                              </span>
-                              <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
+            <div className="members-table-shell members-scroll-hidden max-h-[260px] overflow-x-auto overflow-y-auto">
+              <table className="members-grid-table members-email-grid w-full min-w-[1020px] table-fixed text-xs [&_td]:overflow-hidden">
+                <thead className="bg-[#141821] sticky top-0 z-[1]">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-white/45 w-10" aria-label="Select recipient" />
+                    <th className="text-left px-3 py-2 text-white/45 w-[280px]">Name</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[340px]">Primary Email</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[280px]">School</th>
+                    <th className="text-left px-3 py-2 text-white/45 w-[120px]">HS Class</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {sortedFilteredMembers.map((member) => {
+                    const checked = selectedIds.includes(member.id);
+                    const inactive = isInactiveMember(member);
+                    const indicator = getMemberIndicator(member);
+                    const track = getMemberTrack(member);
+                    const avatar = getTrackAvatarStyles(track);
+                    return (
+                      <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={checked && !inactive}
+                            onChange={(e) => {
+                              const shiftKey = "shiftKey" in e.nativeEvent
+                                ? Boolean((e.nativeEvent as MouseEvent).shiftKey)
+                                : false;
+                              toggleSelected(member.id, e.target.checked, shiftKey);
+                            }}
+                            disabled={inactive}
+                            className="members-checkbox"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-white/75 whitespace-nowrap">
+                          <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
+                            <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
+                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
+                              <TrackAvatarIcon track={track} color={avatar.text} />
                             </span>
-                            {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
-                          </td>
-                          <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
-                          <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
-                          <td className="px-3 py-2 text-white/55 whitespace-nowrap">{member.grade || "—"}</td>
-                        </tr>
-                      );
-                    })}
-                    {sortedFilteredMembers.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="px-3 py-6 text-center text-white/35">No members match this search.</td>
+                            <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
+                          </span>
+                          {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
+                        </td>
+                        <td className="px-3 py-2 text-white/65 font-mono whitespace-nowrap truncate" title={member.email || "—"}>{member.email || "—"}</td>
+                        <td className="px-3 py-2 text-white/45 whitespace-nowrap truncate" title={member.school || "—"}>{member.school || "—"}</td>
+                        <td className="px-3 py-2 text-white/55 whitespace-nowrap">{member.grade || "—"}</td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    );
+                  })}
+                  {sortedFilteredMembers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-white/35">No members match this search.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -1008,22 +998,21 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
               <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">Templates</p>
               <p className="text-xs text-white/55 mt-0.5">
                 {loadedTemplate
-                  ? <>Loaded: <span className="text-white/85 font-medium">{loadedTemplate.label}</span> — edits will modify this template if you click Save changes.</>
-                  : "Pick a template to load it into compose, or write from scratch and save as a new template."}
+                  ? <>Loaded: <span className="text-white/85 font-medium">{loadedTemplate.label}</span> — edits will update this template when you click Save.</>
+                  : "Click a template to load it into the editor below."}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Btn size="sm" variant="ghost" onClick={() => setManageOpen(true)}>Manage…</Btn>
               {loadedTemplate && (
                 <Btn size="sm" variant="secondary" onClick={() => void saveChangesToLoaded()}>
                   Save changes
                 </Btn>
               )}
               <Btn size="sm" variant="primary" onClick={startSaveAsNew} disabled={!subject.trim() && !message.trim()}>
-                Save as new template
+                Save as new
               </Btn>
               {loadedTemplate && (
-                <Btn size="sm" variant="ghost" onClick={() => { setLoadedTemplateId(null); setSubject(""); setMessage(""); }}>
+                <Btn size="sm" variant="ghost" onClick={() => { setLoadedTemplateId(null); setSubject(""); setMessage(""); editorRef.current?.setContent(""); }}>
                   Clear
                 </Btn>
               )}
@@ -1096,23 +1085,6 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
             placeholder="Write your email..."
             minHeight={280}
           />
-
-          {/* Template preview — renders the loaded template body as HTML alongside the compose area */}
-          {loadedTemplate && (
-            <div className="mt-4 rounded-xl border border-white/10 bg-[#0F1014] overflow-hidden">
-              <div className="px-4 py-2 border-b border-white/8 flex items-center justify-between">
-                <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Template preview</p>
-                <span className="text-[11px] text-white/50">{loadedTemplate.label}</span>
-              </div>
-              <div className="px-4 py-3 space-y-2">
-                <p className="text-xs text-white/50"><span className="text-white/35">Subject: </span>{loadedTemplate.subject}</p>
-                <div
-                  className="text-sm text-white/65 leading-relaxed prose-rte"
-                  dangerouslySetInnerHTML={{ __html: loadedTemplate.body }}
-                />
-              </div>
-            </div>
-          )}
         </Field>
 
         {status && <p className="text-xs text-white/60">{status}</p>}
@@ -1148,51 +1120,6 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
           </div>
         </Modal>
 
-        {/* Manage all templates modal */}
-        <Modal open={manageOpen} onClose={() => setManageOpen(false)} title="Manage templates">
-          {sortedTemplates.length === 0 ? (
-            <p className="text-sm text-white/55">No templates yet.</p>
-          ) : (
-            <ul className="divide-y divide-white/8 max-h-[55vh] overflow-y-auto">
-              {sortedTemplates.map((t) => {
-                const isSystem = !t.key.startsWith("custom_");
-                return (
-                  <li key={t.id} className="py-3 flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-white/90 font-medium truncate">{t.label}</p>
-                        {isSystem && (
-                          <span className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-1.5 py-0.5 text-[9px] font-semibold text-white/55">
-                            system
-                          </span>
-                        )}
-                      </div>
-                      {t.description && <p className="text-xs text-white/45 mt-0.5">{t.description}</p>}
-                      {t.subject && (
-                        <p className="text-[11px] text-white/35 mt-1 truncate">Subject: {t.subject}</p>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                      <Btn size="sm" variant="secondary" onClick={() => { loadTemplate(t); setManageOpen(false); }}>
-                        Load
-                      </Btn>
-                      <button
-                        type="button"
-                        onClick={() => void deleteTemplate(t)}
-                        className="text-[11px] text-red-300/80 hover:text-red-200"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
-            <Btn variant="ghost" onClick={() => setManageOpen(false)}>Close</Btn>
-          </div>
-        </Modal>
       </div>
     </MembersLayout>
   );
