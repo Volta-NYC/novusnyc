@@ -158,9 +158,9 @@ export default function ByProjectPage() {
   const [cycles, setCycles]           = useState<Cycle[]>([]);
   const [templates, setTemplates]     = useState<AssignmentTemplate[]>([]);
 
-  const [search, setSearch]             = useState("");
-  const [trackFilter, setTrackFilter]   = useState<CycleTrack | "All">("All");
-  const [filterOpen, setFilterOpen]     = useState(false);
+  const [search, setSearch]         = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterTracks, setFilterTracks]   = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
 
   // per-card "show all assignments" toggle (keyed by card.key)
@@ -257,17 +257,15 @@ export default function ByProjectPage() {
     return result;
   }, [assignments, businesses, projectGroups]);
 
-  const hasActiveFilters = filterStatuses.size > 0;
+  const hasActiveFilters = filterTracks.size > 0 || filterStatuses.size > 0;
 
   const visibleCards = useMemo(() => {
     return cards
       .filter((card) => {
         if (filterStatuses.size > 0 && !filterStatuses.has(card.status)) return false;
-        // track filter — keep card if at least one assignment passes
-        const assignmentsForTrack =
-          trackFilter === "All"
-            ? card.assignments
-            : card.assignments.filter((a) => a.track === trackFilter);
+        const assignmentsForTrack = filterTracks.size > 0
+          ? card.assignments.filter((a) => filterTracks.has(a.track))
+          : card.assignments;
         if (!assignmentsForTrack.length) return false;
         if (!q) return true;
         const nameMatch = card.label.toLowerCase().includes(q) || card.subtitle.toLowerCase().includes(q);
@@ -279,7 +277,7 @@ export default function ByProjectPage() {
         if (td !== 0) return td;
         return a.label.localeCompare(b.label);
       });
-  }, [cards, filterStatuses, trackFilter, q]);
+  }, [cards, filterTracks, filterStatuses, q]);
 
   const toggleCardExpand = (key: string) =>
     setExpandedCards((prev) => {
@@ -461,21 +459,6 @@ export default function ByProjectPage() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search projects or assignments…" />
-        <div className="flex items-center gap-1">
-          {(["All", ...MEMBER_TRACKS] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTrackFilter(t)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wide transition-colors ${
-                trackFilter === t
-                  ? "bg-[#85CC17]/15 text-[#9BE22B] border border-[#85CC17]/30"
-                  : "text-white/45 hover:text-white/75 border border-transparent hover:bg-white/5"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
         <button
           type="button"
           onClick={() => setFilterOpen((v) => !v)}
@@ -488,38 +471,61 @@ export default function ByProjectPage() {
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
           </svg>
-          Filter{hasActiveFilters ? ` (${filterStatuses.size})` : ""}
+          Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size})` : ""}
         </button>
       </div>
 
       {/* Filter panel */}
       {filterOpen && (
         <div className="rounded-xl border border-white/10 bg-[#13161D] p-4 mb-5">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Status</p>
-            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-              {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={filterStatuses.has(s)}
-                    onChange={() => setFilterStatuses((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(s)) next.delete(s); else next.add(s);
-                      return next;
-                    })}
-                    className="accent-[#85CC17]"
-                  />
-                  <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{s}</span>
-                </label>
-              ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Track</p>
+              <div className="space-y-1.5">
+                {MEMBER_TRACKS.map((t) => (
+                  <label key={t} className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={filterTracks.has(t)}
+                      onChange={() => setFilterTracks((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(t)) next.delete(t); else next.add(t);
+                        return next;
+                      })}
+                      className="accent-[#85CC17]"
+                    />
+                    <span className={`inline-block h-2 w-2 rounded-full ${TRACK_DOT[t]}`} />
+                    <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{t}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Status</p>
+              <div className="space-y-1.5">
+                {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
+                  <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={filterStatuses.has(s)}
+                      onChange={() => setFilterStatuses((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(s)) next.delete(s); else next.add(s);
+                        return next;
+                      })}
+                      className="accent-[#85CC17]"
+                    />
+                    <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{s}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           {hasActiveFilters && (
             <div className="mt-3 pt-3 border-t border-white/8 flex justify-end">
               <button
                 type="button"
-                onClick={() => setFilterStatuses(new Set())}
+                onClick={() => { setFilterTracks(new Set()); setFilterStatuses(new Set()); }}
                 className="text-[11px] text-white/45 hover:text-white/75 transition-colors"
               >
                 Clear all filters
