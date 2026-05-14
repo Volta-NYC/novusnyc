@@ -854,6 +854,23 @@ function BusinessesPageInner() {
     await updateBusiness(biz.id, { showcaseFeaturedOnHome: !biz.showcaseFeaturedOnHome });
   };
 
+  // Derive which tracks are active for each business from their linked assignments.
+  const businessTrackMap = useMemo(() => {
+    const map = new Map<string, TrackDivision[]>();
+    for (const a of assignments) {
+      if (!a.businessId || !isTrackDivision(a.track)) continue;
+      const existing = map.get(a.businessId) ?? [];
+      if (!existing.includes(a.track as TrackDivision)) {
+        map.set(a.businessId, [...existing, a.track as TrackDivision]);
+      }
+    }
+    // Sort by canonical TRACK_ORDER for consistent display.
+    map.forEach((tracks, id) => {
+      map.set(id, TRACK_ORDER.filter((t) => tracks.includes(t)));
+    });
+    return map;
+  }, [assignments]);
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   const getNeighborhoodLabel = (project: Business): string => {
@@ -973,7 +990,7 @@ function BusinessesPageInner() {
     if (isDiscoveryBusiness(business)) return false;
     // Fine-grained filters (only applied in businesses tab)
     if (filterTracks.size > 0) {
-      const bTracks = normalizeTrackProjectsFromBusiness(business).projectTracks;
+      const bTracks = businessTrackMap.get(business.id) ?? [];
       if (!bTracks.some((t) => filterTracks.has(t))) return false;
     }
     if (filterStatuses.size > 0) {
@@ -1329,13 +1346,16 @@ function BusinessesPageInner() {
           )}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
-          {normalized.projectTracks.length > 0 ? (
-            <div className="flex gap-1 flex-wrap">
-              {normalized.projectTracks.map((t) => (
-                <span key={t} className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${TRACK_META[t].chipClass}`}>{t}</span>
-              ))}
-            </div>
-          ) : <span className="text-white/30">—</span>}
+          {(() => {
+            const derivedTracks = businessTrackMap.get(b.id) ?? [];
+            return derivedTracks.length > 0 ? (
+              <div className="flex gap-1 flex-wrap">
+                {derivedTracks.map((t) => (
+                  <span key={t} className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${TRACK_META[t].chipClass}`}>{t}</span>
+                ))}
+              </div>
+            ) : <span className="text-white/30">—</span>;
+          })()}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit ? (
@@ -1500,7 +1520,7 @@ function BusinessesPageInner() {
     );
   };
 
-  const toggleTrackSelection = (track: TrackDivision) => {
+  const _toggleTrackSelection = (track: TrackDivision) => {
     const currentTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
     const formTrackProjects = normalizedFormTrackProjects();
     const hasTrack = currentTracks.includes(track);
@@ -2243,36 +2263,6 @@ function BusinessesPageInner() {
               {!editingBusiness && presetNeighborhood !== null && presetNeighborhood !== "" && (
                 <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from &ldquo;{presetNeighborhood}&rdquo; group</p>
               )}
-            </Field>
-          </div>
-
-          {/* ── Tracks ── */}
-          <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
-            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Tracks</p>
-            <p className="text-white/45 text-xs font-body">Select which Volta tracks are working on this client. Assignment details are managed in the Assignments section.</p>
-          </div>
-          <div className="lg:col-span-2">
-            <Field label="Active Tracks">
-              <div className="flex flex-wrap gap-2">
-                {TRACK_ORDER.map((track) => {
-                  const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
-                  const selected = selectedTracks.includes(track);
-                  return (
-                    <button
-                      key={`track-toggle-${track}`}
-                      type="button"
-                      onClick={() => toggleTrackSelection(track)}
-                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        selected
-                          ? TRACK_META[track].chipClass
-                          : "border-white/20 text-white/65 bg-[#11141A] hover:border-white/35"
-                      }`}
-                    >
-                      {TRACK_META[track].label}
-                    </button>
-                  );
-                })}
-              </div>
             </Field>
           </div>
 
