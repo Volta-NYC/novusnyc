@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Btn, Modal, Field, Input, Select, Empty, useConfirm, SearchBar,
+  PageHeader, Btn, Modal, Field, Input, Select, Empty, useConfirm, SearchBar, Spinner,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
@@ -242,7 +242,7 @@ export default function CatalogPage() {
     return (
       <MembersLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+          <Spinner />
         </div>
       </MembersLayout>
     );

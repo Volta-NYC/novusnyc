@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { EMAIL_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Btn, Modal, Field, Input, Empty, useConfirm,
+  PageHeader, Btn, Modal, Field, Input, Empty, useConfirm, Spinner,
 } from "@/components/members/ui";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
 import {
@@ -120,7 +120,7 @@ export default function EmailTemplatesPage() {
     return (
       <MembersLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+          <Spinner />
         </div>
       </MembersLayout>
     );

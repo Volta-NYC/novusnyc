@@ -16,39 +16,16 @@ import {
   type Business, type TeamMember, type Assignment, type AssignmentClaim,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { TRACK_META, TRACK_ORDER, DIVISION_PUBLIC_LABEL, type TrackDivision } from "@/lib/members/constants";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
 const STATUSES  = ["Upcoming", "Ongoing", "Completed"] as const;
-type TrackDivision = "Tech" | "Marketing" | "Finance";
 type ProjectStatusValue = (typeof STATUSES)[number];
 type DeadlineItem = {
   label: string;
   date: string;
 };
-const DIVISION_PUBLIC_LABEL: Record<string, string> = {
-  Tech: "Digital & Tech",
-  Marketing: "Marketing & Strategy",
-  Finance: "Finance & Operations",
-};
-const TRACK_META: Record<TrackDivision, { label: string; chipClass: string; dotClass: string }> = {
-  Tech: {
-    label: "Tech",
-    chipClass: "bg-blue-100 text-blue-700 border-blue-300",
-    dotClass: "bg-blue-500",
-  },
-  Marketing: {
-    label: "Marketing",
-    chipClass: "bg-lime-100 text-lime-700 border-lime-300",
-    dotClass: "bg-lime-500",
-  },
-  Finance: {
-    label: "Finance",
-    chipClass: "bg-amber-100 text-amber-700 border-amber-300",
-    dotClass: "bg-amber-500",
-  },
-};
-const TRACK_ORDER: TrackDivision[] = ["Tech", "Marketing", "Finance"];
 type TrackProjectInfo = {
   projectStatus: ProjectStatusValue;
   teamMembers: string[];

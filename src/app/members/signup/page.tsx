@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { Spinner } from "@/components/members/ui";
 
 export default function SignupPage() {
   const [name, setName]         = useState("");
@@ -101,7 +102,7 @@ export default function SignupPage() {
   if (!ready && !invalid) {
     return (
       <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+        <Spinner />
       </div>
     );
   }

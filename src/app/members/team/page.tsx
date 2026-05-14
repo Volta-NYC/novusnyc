@@ -47,18 +47,13 @@ function getMemberTrack(member: TeamMember): TrackKey {
   return "—";
 }
 
-function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
+function getTrackAvatarClasses(track: TrackKey): { bgClass: string; textClass: string } {
   switch (track) {
-    case "Tech":
-      return { bg: "#DBEAFE", text: "#1E3A8A" };
-    case "Marketing":
-      return { bg: "#FEF3C7", text: "#92400E" };
-    case "Finance":
-      return { bg: "#DCFCE7", text: "#166534" };
-    case "Other":
-      return { bg: "#F3F4F6", text: "#374151" };
-    default:
-      return { bg: "rgba(133,204,23,0.15)", text: "#85CC17" };
+    case "Tech":      return { bgClass: "bg-blue-100",        textClass: "text-blue-900" };
+    case "Marketing": return { bgClass: "bg-amber-100",       textClass: "text-amber-800" };
+    case "Finance":   return { bgClass: "bg-green-100",       textClass: "text-green-900" };
+    case "Other":     return { bgClass: "bg-gray-100",        textClass: "text-gray-700" };
+    default:          return { bgClass: "bg-[#85CC17]/15",    textClass: "text-[#85CC17]" };
   }
 }
 
@@ -70,10 +65,10 @@ const TRACK_SORT_ORDER: Record<TrackKey, number> = {
   "—": 4,
 };
 
-function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
+function TrackAvatarIcon({ track }: { track: TrackKey }) {
   if (track === "Tech") {
     return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M8 8L3 12L8 16" />
         <path d="M16 8L21 12L16 16" />
       </svg>
@@ -81,7 +76,7 @@ function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
   }
   if (track === "Marketing") {
     return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M4 20l4.5-1.2L19 8.3a1.6 1.6 0 0 0 0-2.2l-1.1-1.1a1.6 1.6 0 0 0-2.2 0L5.2 15.5L4 20z" />
         <path d="M13.5 6.5l4 4" />
       </svg>
@@ -89,7 +84,7 @@ function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
   }
   if (track === "Finance") {
     return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M4 19h16" />
         <path d="M7 16v-4" />
         <path d="M12 16V9" />
@@ -98,7 +93,7 @@ function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
     );
   }
   return (
-    <span className="text-[11px] font-semibold leading-none" style={{ color }} aria-hidden="true">
+    <span className="text-[11px] font-semibold leading-none" aria-hidden="true">
       –
     </span>
   );
@@ -1073,7 +1068,7 @@ export default function TeamPage() {
             <tbody className="divide-y divide-white/5">
               {sorted.map((member) => {
                 const track = getMemberTrack(member);
-                const avatar = getTrackAvatarStyles(track);
+                const avatar = getTrackAvatarClasses(track);
                 const indicator = getMemberIndicator(member);
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors">
@@ -1086,8 +1081,8 @@ export default function TeamPage() {
                           onClick={() => setCreditSummaryMember(member)}
                           aria-label={`View credit progress for ${member.name}`}
                         />
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                          <TrackAvatarIcon track={track} color={avatar.text} />
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${avatar.bgClass} ${avatar.textClass}`}>
+                          <TrackAvatarIcon track={track} />
                         </div>
                         <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 44)}</span>
                       </div>
@@ -1147,7 +1142,7 @@ export default function TeamPage() {
               <tbody className="divide-y divide-white/5">
                 {sorted.map((member) => {
                   const track = getMemberTrack(member);
-                  const avatar = getTrackAvatarStyles(track);
+                  const avatar = getTrackAvatarClasses(track);
                   const indicator = getMemberIndicator(member);
                   const _hasPortalAccount = !!member.authUid;
                   const memberStrikes = strikesByMemberId.get(member.id) ?? [];
@@ -1166,8 +1161,8 @@ export default function TeamPage() {
                                   onClick={() => setCreditSummaryMember(member)}
                                   aria-label={`View credit progress for ${member.name}`}
                                 />
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                                  <TrackAvatarIcon track={track} color={avatar.text} />
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${avatar.bgClass} ${avatar.textClass}`}>
+                                  <TrackAvatarIcon track={track} />
                                 </div>
                                 <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
                               </div>

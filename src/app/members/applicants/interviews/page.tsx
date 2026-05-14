@@ -18,7 +18,7 @@ import {
   type InterviewSlot,
   type ApplicationRecord,
 } from "@/lib/members/storage";
-import { Btn, Field, Modal, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm } from "@/components/members/ui";
+import { Btn, Field, Modal, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm, Spinner } from "@/components/members/ui";
 import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
 import {
   formatInterviewInET,
@@ -1689,7 +1689,7 @@ function InterviewsContent() {
   if (loading || !canAccessInterviews) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+        <Spinner />
       </div>
     );
   }

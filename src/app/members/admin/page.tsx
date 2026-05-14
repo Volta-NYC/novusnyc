@@ -3,7 +3,7 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import { Field, Input } from "@/components/members/ui";
+import { Btn, Field, Input, Spinner, Toggle } from "@/components/members/ui";
 import { useAuth } from "@/lib/members/authContext";
 import { useRouter } from "next/navigation";
 import {
@@ -44,32 +44,9 @@ function Card({ title, subtitle, children }: { title: string; subtitle?: string;
 
 function SaveBtn({ saving, onClick, label = "Save" }: { saving: boolean; onClick: () => void; label?: string }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={saving}
-      className={`font-display font-bold px-5 py-2.5 rounded-xl transition-colors text-sm ${
-        saving ? "bg-white/10 text-white/35 cursor-not-allowed" : "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
-      }`}
-    >
+    <Btn variant="primary" onClick={onClick} disabled={saving}>
       {saving ? "Saving…" : label}
-    </button>
-  );
-}
-
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <label className="flex items-center gap-3 cursor-pointer select-none group">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`relative w-10 h-5.5 rounded-full transition-colors flex-shrink-0 cursor-pointer ${checked ? "bg-[#85CC17]" : "bg-white/15"}`}
-        style={{ height: "22px", width: "40px" }}
-      >
-        <div
-          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}
-        />
-      </div>
-      <span className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>
-    </label>
+    </Btn>
   );
 }
 
@@ -151,22 +128,15 @@ function DataTab() {
   return (
     <div className="max-w-lg space-y-4">
       <Card title="Public Stats" subtitle="Refresh the cached data shown on the public showcase, home, and about pages.">
-        <button
-          onClick={() => void handleRevalidate()}
-          disabled={revalidating}
-          className={`font-display font-bold px-5 py-2.5 rounded-xl transition-colors text-sm ${revalidating ? "bg-white/10 text-white/35 cursor-not-allowed" : "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"}`}
-        >
+        <Btn variant="primary" onClick={() => void handleRevalidate()} disabled={revalidating}>
           {revalidating ? "Refreshing…" : "Update All Stats"}
-        </button>
+        </Btn>
       </Card>
 
       <Card title="Export Data" subtitle="Download a full JSON backup, or export selected datasets only.">
-        <button
-          onClick={() => void handleExport()}
-          className="bg-[#85CC17] text-[#0D0D0D] font-display font-bold px-5 py-2.5 rounded-xl hover:bg-[#72b314] transition-colors text-sm mb-4"
-        >
+        <Btn variant="primary" onClick={() => void handleExport()} className="mb-4">
           Download Full Backup
-        </button>
+        </Btn>
 
         <div className="border border-white/10 rounded-lg p-3 bg-[#0F1014]">
           <div className="flex items-center justify-between mb-2">
@@ -189,13 +159,14 @@ function DataTab() {
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-[11px] text-white/45">{selectedSections.length} selected</span>
-            <button
+            <Btn
+              variant="primary"
+              size="sm"
               onClick={() => void handleExport(selectedSections)}
               disabled={selectedSections.length === 0}
-              className={`font-display font-bold px-4 py-2 rounded-lg transition-colors text-xs ${selectedSections.length === 0 ? "bg-white/10 text-white/35 cursor-not-allowed" : "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"}`}
             >
               Download Selected
-            </button>
+            </Btn>
           </div>
         </div>
       </Card>
@@ -234,7 +205,7 @@ function ApplicationsTab() {
     }
   };
 
-  if (loading) return <div className="flex items-center h-24"><div className="w-5 h-5 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   return (
     <div className="max-w-lg space-y-4">
@@ -300,7 +271,7 @@ function ServicesTab() {
   const removeService = (i: number) => setServices((prev) => prev.filter((_, idx) => idx !== i));
   const renameService = (i: number, val: string) => setServices((prev) => prev.map((s, idx) => idx === i ? val : s));
 
-  if (loading) return <div className="flex items-center h-24"><div className="w-5 h-5 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   return (
     <div className="max-w-lg space-y-4">
@@ -449,7 +420,7 @@ function BannersTab() {
     getSiteSettings().then((s) => { setSettings(s); setLoading(false); });
   }, []);
 
-  if (loading || !settings) return <div className="flex items-center h-24"><div className="w-5 h-5 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" /></div>;
+  if (loading || !settings) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   const savePublic = async () => {
     setPublicSaving(true);
@@ -555,7 +526,7 @@ function RolesTab() {
     }
   };
 
-  if (loading) return <div className="flex items-center h-24"><div className="w-5 h-5 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   return (
     <div className="max-w-lg space-y-4">
@@ -623,7 +594,7 @@ function HandbookTab() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-32"><div className="w-5 h-5 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-32"><Spinner size="sm" /></div>;
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -673,7 +644,7 @@ function AdminContent() {
   if (loading || authRole !== "owner") {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+        <Spinner />
       </div>
     );
   }

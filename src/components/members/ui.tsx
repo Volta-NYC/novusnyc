@@ -495,6 +495,38 @@ export function TagInput({
   );
 }
 
+// ── SPINNER ───────────────────────────────────────────────────────────────────
+
+export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const sz = size === "sm" ? "w-5 h-5" : size === "lg" ? "w-8 h-8" : "w-6 h-6";
+  return (
+    <div className={`${sz} border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin`} />
+  );
+}
+
+// ── TOGGLE ────────────────────────────────────────────────────────────────────
+
+export function Toggle({ checked, onChange, label }: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer select-none group">
+      <div
+        onClick={() => onChange(!checked)}
+        className={`relative rounded-full flex-shrink-0 cursor-pointer transition-colors ${checked ? "bg-[#85CC17]" : "bg-white/15"}`}
+        style={{ height: "22px", width: "40px" }}
+      >
+        <div
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}
+        />
+      </div>
+      <span className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>
+    </label>
+  );
+}
+
 // ── TABLE ─────────────────────────────────────────────────────────────────────
 
 export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {

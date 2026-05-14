@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { MEMBERS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Btn, Modal, Field, Input, TextArea, Empty, useConfirm,
+  PageHeader, Btn, Modal, Field, Input, TextArea, Empty, useConfirm, Spinner,
 } from "@/components/members/ui";
 import {
   subscribeInfractions, subscribeCycles, subscribeTeam,
@@ -153,7 +153,7 @@ function InfractionsPageInner() {
     return (
       <MembersLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+          <Spinner />
         </div>
       </MembersLayout>
     );
