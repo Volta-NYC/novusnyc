@@ -2266,13 +2266,6 @@ function BusinessesPageInner() {
             </Field>
           </div>
 
-          {/* ── Public Showcase ── */}
-          {form.showcaseEnabled && (
-            <div className="lg:col-span-2 mt-2 pt-2 border-t border-white/8">
-              <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-1">Showcase Settings</p>
-              <p className="text-white/45 text-xs font-body">Manage colors, images, and appearance from the <strong className="text-white/60">Showcase</strong> tab.</p>
-            </div>
-          )}
         </div>
         <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-white/8">
           <div>
