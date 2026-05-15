@@ -1690,8 +1690,9 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.portalBannerBg        !== undefined) row.portal_banner_bg        = patch.portalBannerBg;
   if (patch.portalBannerText      !== undefined) row.portal_banner_text      = patch.portalBannerText;
   if (patch.roleLabels            !== undefined) row.role_labels             = patch.roleLabels;
-  await supabase.from("site_settings").update(row).eq("id", "singleton");
-  await writeAuditLog({ action: "update", collection: "siteSettings", recordId: "singleton", details: { fields: Object.keys(patch) } });
+  const { error } = await supabase.from("site_settings").update(row).eq("id", "singleton");
+  if (error) throw new Error(error.message);
+  void writeAuditLog({ action: "update", collection: "siteSettings", recordId: "singleton", details: { fields: Object.keys(patch) } });
 }
 
 // ── Cycles ────────────────────────────────────────────────────────────────────
