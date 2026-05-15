@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, resetPassword } from "@/lib/members/supabaseAuth";
 import { Btn, Input } from "@/components/members/ui";
+import { useAuth } from "@/lib/members/authContext";
 
 export default function MembersLogin() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,15 @@ export default function MembersLogin() {
   const [resetSent, setResetSent] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/members");
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
