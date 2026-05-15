@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
 import { projects as fallbackProjects } from "@/data";
-import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { getPublicMapEntries, getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
+import { formatCounter } from "@/lib/formatCounter";
 import ShowcaseClient from "./page-client";
 
 
-export const metadata: Metadata = {
-  title: "Our Work | Volta NYC",
-  description:
-    `Interactive map and project portfolio showing Volta NYC's active work across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods — websites, social media, SEO, and grant writing for small businesses.`,
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const liveStats = await getPublicLiveStats();
+  return {
     title: "Our Work | Volta NYC",
-    description: `${formatStat(VOLTA_STATS.businessesServed)} businesses across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods. See every project.`,
-    images: ["/api/og"],
-  },
-};
+    description:
+      `Interactive map and project portfolio showing Volta NYC's active work across New York City — websites, social media, SEO, and grant writing for ${formatCounter(liveStats.totalBusinesses)} small businesses.`,
+    openGraph: {
+      title: "Our Work | Volta NYC",
+      description: `${formatCounter(liveStats.totalBusinesses)} businesses across New York City. See every project.`,
+      images: ["/api/og"],
+    },
+  };
+}
 
 const SHOWCASE_COLOR_CLASS: Record<string, string> = {
   "blue-soft": "bg-blue-300",

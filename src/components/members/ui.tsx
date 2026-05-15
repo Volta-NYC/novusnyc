@@ -175,7 +175,7 @@ export function SearchBar({ value, onChange, placeholder = "Search…" }: {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 transition-colors"
+        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
       />
     </div>
   );
@@ -362,7 +362,7 @@ export function Btn({ variant = "secondary", size = "md", className = "", childr
   return (
     <button
       {...props}
-      className={`inline-flex items-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
         ${size === "sm" ? "text-xs px-3 py-1.5" : "text-sm px-4 py-2"}
         ${BTN_CLASSES[variant]} ${className}`}
     >

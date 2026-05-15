@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, resetPassword } from "@/lib/members/supabaseAuth";
-import { Btn } from "@/components/members/ui";
+import { Btn, Input } from "@/components/members/ui";
 
 export default function MembersLogin() {
   const [email, setEmail] = useState("");
@@ -64,12 +64,11 @@ export default function MembersLogin() {
               <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
                 Email
               </label>
-              <input
+              <Input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
                 placeholder="you@email.com"
                 autoComplete="email"
                 autoFocus
@@ -80,12 +79,11 @@ export default function MembersLogin() {
               <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
                 Password
               </label>
-              <input
+              <Input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
@@ -107,12 +105,14 @@ export default function MembersLogin() {
             <p className="text-white/50 text-sm">
               We sent a password reset link to <span className="text-white/80">{email}</span>.
             </p>
-            <button
+            <Btn
+              type="button"
+              variant="ghost"
               onClick={() => { setShowReset(false); setResetSent(false); }}
-              className="mt-4 text-white/40 text-sm hover:text-white/70 transition-colors"
+              className="mt-4 text-sm"
             >
               ← Back to sign in
-            </button>
+            </Btn>
           </div>
         ) : (
           <form onSubmit={handleReset} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
@@ -121,12 +121,11 @@ export default function MembersLogin() {
               <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
                 Email
               </label>
-              <input
+              <Input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
                 placeholder="you@email.com"
                 autoComplete="email"
                 autoFocus
@@ -140,13 +139,14 @@ export default function MembersLogin() {
             <Btn type="submit" variant="primary" disabled={loading} className="w-full py-3">
               {loading ? "Sending…" : "Send Reset Link"}
             </Btn>
-            <button
+            <Btn
               type="button"
+              variant="ghost"
               onClick={() => setShowReset(false)}
-              className="w-full text-white/30 text-sm hover:text-white/60 transition-colors py-1"
+              className="w-full text-sm"
             >
               ← Back to sign in
-            </button>
+            </Btn>
           </form>
         )}
 
@@ -154,15 +154,15 @@ export default function MembersLogin() {
           <p className="text-center mt-4 text-sm font-body">
             <button
               onClick={() => setShowReset(true)}
-              className="text-white/30 hover:text-white/60 transition-colors"
+              className="text-white/50 hover:text-white/70 transition-colors"
             >
               Forgot password?
             </button>
           </p>
         )}
         <p className="text-center mt-3">
-          <Link href="/" className="text-white/25 text-sm hover:text-white/50 transition-colors">
-            ← Back to voltanyc.org
+          <Link href="/" className="text-white/40 text-sm hover:text-white/60 transition-colors">
+            ← Back to home page
           </Link>
         </p>
       </div>

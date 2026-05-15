@@ -10,23 +10,28 @@ import { currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
-import { VOLTA_STATS, formatStat } from "@/data/stats";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
 
-export const metadata: Metadata = {
-  title: "Volta NYC — Free Consulting for NYC Small Businesses",
-  description:
-    `Volta NYC places student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, and SEO. Free of charge. ${formatStat(VOLTA_STATS.nycNeighborhoods)} neighborhoods, ${formatStat(VOLTA_STATS.studentMembers)} students.`,
-  openGraph: {
-    title: "Volta NYC",
-    description: "Student consultants. Real deliverables. Free for NYC small businesses.",
-    images: ["/api/og"],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [liveStats, memberCount] = await Promise.all([
+    getPublicLiveStats(),
+    getTotalMemberCount(),
+  ]);
+  return {
+    title: "Volta NYC — Free Consulting for NYC Small Businesses",
+    description:
+      `Volta NYC places student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, and SEO. Free of charge. ${formatCounter(memberCount)} students, ${formatCounter(liveStats.totalBusinesses)} businesses served.`,
+    openGraph: {
+      title: "Volta NYC",
+      description: "Student consultants. Real deliverables. Free for NYC small businesses.",
+      images: ["/api/og"],
+    },
+  };
+}
 
 const SHOWCASE_COLOR_CLASS: Record<string, string> = {
   "blue-soft": "bg-blue-300",

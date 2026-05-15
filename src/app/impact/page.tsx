@@ -6,12 +6,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
-import { VOLTA_STATS, formatStat } from "@/data/stats";
+import { getPublicLiveStats } from "@/lib/server/publicShowcase";
+import { getTotalMemberCount } from "@/lib/server/memberEducation";
 
 export const metadata: Metadata = {
   title: "Impact | Volta NYC",
   description:
-    `Volta NYC impact report: ${formatStat(VOLTA_STATS.businessesServed)} businesses served, ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods, ${formatStat(VOLTA_STATS.studentMembers)} student contributors. Outcomes in digital access, financial access, and marketing reach.`,
+    "Volta NYC impact report: businesses served across NYC, student contributors from high schools and colleges nationwide. Outcomes in digital access, financial access, and marketing reach.",
   openGraph: {
     title: "Impact | Volta NYC",
     description: "Measurable outcomes. Real communities.",
@@ -20,50 +21,9 @@ export const metadata: Metadata = {
   robots: { index: false }, // keep unlinked until ready
 };
 
-const outcomes = [
-  {
-    value: VOLTA_STATS.businessesServed.value,
-    suffix: VOLTA_STATS.businessesServed.suffix,
-    label: "Businesses Served",
-    sub: `Across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods`,
-    color: "text-v-green",
-  },
-  {
-    value: VOLTA_STATS.studentMembers.value,
-    suffix: VOLTA_STATS.studentMembers.suffix,
-    label: "Student Members",
-    sub: "High school & college",
-    color: "text-v-blue",
-  },
-  {
-    value: VOLTA_STATS.nycNeighborhoods.value,
-    suffix: VOLTA_STATS.nycNeighborhoods.suffix,
-    label: "Neighborhoods Active",
-    sub: "Brooklyn, Queens, Manhattan, Bronx",
-    color: "text-amber-500",
-  },
-  {
-    value: VOLTA_STATS.floridaBusinessesServed.value,
-    suffix: VOLTA_STATS.floridaBusinessesServed.suffix,
-    label: "FL Businesses Served",
-    sub: "National total growing",
-    color: "text-purple-500",
-  },
-  {
-    value: VOLTA_STATS.operatingCities.value,
-    suffix: VOLTA_STATS.operatingCities.suffix,
-    label: "Cities Operating",
-    sub: "NYC, Jacksonville, Bay Area, Atlanta, VA, Dallas",
-    color: "text-v-green",
-  },
-  {
-    value: VOLTA_STATS.serviceTracks.value,
-    suffix: VOLTA_STATS.serviceTracks.suffix,
-    label: "Service Tracks",
-    sub: "Tech, Finance, Marketing",
-    color: "text-v-blue",
-  },
-];
+function boosted(n: number): number {
+  return Math.ceil((n * 1.2) / 10) * 10;
+}
 
 const impactAreas = [
   {
@@ -118,7 +78,57 @@ const recognition = [
   { org: "Media coverage", desc: "Coming soon — documenting our first full semester", placeholder: true },
 ];
 
-export default function Impact() {
+export default async function Impact() {
+  const [liveStats, memberCount] = await Promise.all([
+    getPublicLiveStats(),
+    getTotalMemberCount(),
+  ]);
+
+  const outcomes = [
+    {
+      value: boosted(liveStats.totalBusinesses),
+      suffix: "+",
+      label: "Businesses Served",
+      sub: "Across NYC and beyond",
+      color: "text-v-green",
+    },
+    {
+      value: boosted(memberCount),
+      suffix: "+",
+      label: "Student Members",
+      sub: "High school & college",
+      color: "text-v-blue",
+    },
+    {
+      value: boosted(liveStats.websiteProjects),
+      suffix: "+",
+      label: "Website Projects",
+      sub: "Built and deployed",
+      color: "text-amber-500",
+    },
+    {
+      value: boosted(liveStats.marketingProjects),
+      suffix: "+",
+      label: "Marketing Projects",
+      sub: "Social, content, SEO",
+      color: "text-purple-500",
+    },
+    {
+      value: boosted(liveStats.caseStudies + liveStats.educationalReports),
+      suffix: "+",
+      label: "Student Publications",
+      sub: "Case studies & guides",
+      color: "text-v-green",
+    },
+    {
+      value: boosted(liveStats.bidPartners),
+      suffix: "+",
+      label: "Community Partners",
+      sub: "BIDs and nonprofits",
+      color: "text-v-blue",
+    },
+  ];
+
   return (
     <>
       {/* Hero */}
@@ -237,7 +247,7 @@ export default function Impact() {
                   Geographic reach
                 </p>
                 <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-                  {formatStat(VOLTA_STATS.nycNeighborhoods)} neighborhoods.<br />5 boroughs.
+                  Active neighborhoods.<br />5 boroughs.
                 </h2>
                 <p className="font-body text-white/50 leading-relaxed mb-6">
                   Park Slope, Sunnyside, Chinatown, Long Island City, Cypress Hills,
