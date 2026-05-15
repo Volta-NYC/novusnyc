@@ -1,30 +1,19 @@
 "use client";
 
-// Right-side drawer for the team directory. Shows everything an admin needs to
-// know about a single member's credit-system standing and lets them issue
-// strikes, adjust credits, change role, move to Reserve, or clear strikes.
-//
-// Lives outside the team page itself so the page doesn't balloon further; the
-// page just sets a `manageMember` state and renders this component.
-
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   subscribeAssignmentClaims, subscribeAssignments, subscribeCycles,
-  subscribeMemberCreditAdjustments, subscribeMemberStrikes,
+  subscribeMemberStrikes, subscribeInfractions,
   deleteMemberStrike, clearMemberStrikes,
-  createMemberCreditAdjustment, updateTeamMember,
+  createMemberStrike,
   type Assignment, type AssignmentClaim, type Cycle,
-  type MemberCreditAdjustment, type MemberStrike, type TeamMember,
+  type Infraction, type MemberStrike, type TeamMember,
 } from "@/lib/members/storage";
 import {
   classifyMember, computeCreditLedger, computeDot, computeStrikeCount,
   computeStrikePoints, lookupCreditTarget, pickPrimaryTrack,
 } from "@/lib/members/cycleCompute";
-import { Btn, Field, Input, TextArea, Select } from "@/components/members/ui";
-
-const ROLES_LADDER = ["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Board"] as const;
-const STATUS_OPTIONS = ["Active", "On Leave", "Alumni", "Inactive", "Reserve"] as const;
+import { Btn, Field, Input } from "@/components/members/ui";
 
 const DOT_HEX: Record<string, string> = {
   green: "#16A34A",
@@ -32,6 +21,14 @@ const DOT_HEX: Record<string, string> = {
   orange: "#F97316",
   red: "#DC2626",
   gray: "#9CA3AF",
+};
+
+const CLAIM_STATUS_CLASS: Record<string, string> = {
+  Approved:    "bg-emerald-500/15 text-emerald-300",
+  Submitted:   "bg-yellow-500/15 text-yellow-300",
+  "In Progress": "bg-blue-500/15 text-blue-300",
+  claimed:     "bg-white/10 text-white/55",
+  rejected:    "bg-red-500/15 text-red-300",
 };
 
 interface Props {
@@ -43,28 +40,21 @@ interface Props {
 export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [strikes, setStrikes] = useState<MemberStrike[]>([]);
-  const [adjustments, setAdjustments] = useState<MemberCreditAdjustment[]>([]);
   const [claims, setClaims] = useState<AssignmentClaim[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [infractions, setInfractions] = useState<Infraction[]>([]);
 
-  const [adjustOpen, setAdjustOpen] = useState(false);
-  const [adjustPoints, setAdjustPoints] = useState("");
-  const [adjustReason, setAdjustReason] = useState("");
-
-  const [roleOverride, setRoleOverride] = useState("");
-  const [statusOverride, setStatusOverride] = useState("");
+  const [issueOpen, setIssueOpen] = useState(false);
+  const [issueInfractionId, setIssueInfractionId] = useState("");
+  const [issueNote, setIssueNote] = useState("");
+  const [issuePointsOverride, setIssuePointsOverride] = useState("");
+  const [issueStatus, setIssueStatus] = useState<"idle" | "busy" | "done" | "error">("idle");
 
   useEffect(() => subscribeCycles(setCycles), []);
   useEffect(() => subscribeMemberStrikes(setStrikes), []);
-  useEffect(() => subscribeMemberCreditAdjustments(setAdjustments), []);
   useEffect(() => subscribeAssignmentClaims(setClaims), []);
   useEffect(() => subscribeAssignments(setAssignments), []);
-
-  // Sync local override state with the live member when one is opened.
-  useEffect(() => {
-    setRoleOverride(member?.role ?? "");
-    setStatusOverride(member?.status ?? "Active");
-  }, [member?.id, member?.role, member?.status]);
+  useEffect(() => subscribeInfractions(setInfractions), []);
 
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
 
@@ -72,24 +62,21 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
     () => member ? strikes.filter((s) => s.memberId === member.id && (!activeCycle || s.cycleId === activeCycle.id)) : [],
     [strikes, member, activeCycle],
   );
-  const memberAdjustments = useMemo(
-    () => member ? adjustments.filter((a) => a.memberId === member.id && (!activeCycle || a.cycleId === activeCycle.id)) : [],
-    [adjustments, member, activeCycle],
-  );
   const memberClaims = useMemo(
     () => member ? claims.filter((c) => c.memberId === member.id && (!activeCycle || c.cycleId === activeCycle.id)) : [],
     [claims, member, activeCycle],
   );
 
+  const sortedInfractions = useMemo(
+    () => [...infractions].sort((a, b) => (a.points - b.points) || a.name.localeCompare(b.name)),
+    [infractions],
+  );
+
   const ledger = useMemo(() => {
     const credits = new Map<string, number>();
     for (const a of assignments) credits.set(a.id, a.credits);
-    return computeCreditLedger({
-      claims: memberClaims,
-      adjustments: memberAdjustments,
-      assignmentCredits: credits,
-    });
-  }, [assignments, memberClaims, memberAdjustments]);
+    return computeCreditLedger({ claims: memberClaims, adjustments: [], assignmentCredits: credits });
+  }, [assignments, memberClaims]);
 
   const classification = member ? classifyMember(member) : null;
   const primaryTrack = member ? pickPrimaryTrack(member) : null;
@@ -102,34 +89,22 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
   const strikeCount = activeCycle ? computeStrikeCount(strikePoints, activeCycle) : 0;
 
   const dot = member
-    ? computeDot({
-        cycle: activeCycle,
-        member,
-        earnedCredits: ledger.total,
-        targetCredits,
-        hasAnyClaims: memberClaims.length > 0,
-      })
+    ? computeDot({ cycle: activeCycle, member, earnedCredits: ledger.total, targetCredits, hasAnyClaims: memberClaims.length > 0 })
     : null;
 
-  if (!member) return null;
+  // Weekly (bi-weekly) target: pacingPercentPerCheckin of cycle target
+  const weeklyTarget = activeCycle && targetCredits
+    ? Math.ceil(targetCredits * (activeCycle.pacingPercentPerCheckin / 100))
+    : 0;
 
-  const handleAdjustCredits = async () => {
-    if (!activeCycle) return;
-    const points = Number(adjustPoints);
-    if (!Number.isFinite(points) || points === 0) return;
-    if (!adjustReason.trim()) return;
-    await createMemberCreditAdjustment({
-      memberId: member.id,
-      memberName: member.name,
-      cycleId: activeCycle.id,
-      points,
-      reason: adjustReason.trim(),
-      createdBy: reviewerLabel,
-    });
-    setAdjustOpen(false);
-    setAdjustPoints("");
-    setAdjustReason("");
-  };
+  // Claims grouped by status for the assignments section
+  const claimsWithAssignment = useMemo(() => {
+    return memberClaims
+      .map((c) => ({ claim: c, assignment: assignments.find((a) => a.id === c.assignmentId) ?? null }))
+      .sort((a, b) => (b.claim.claimedAt ?? "").localeCompare(a.claim.claimedAt ?? ""));
+  }, [memberClaims, assignments]);
+
+  if (!member) return null;
 
   const handleRevokeStrike = async (id: string) => {
     if (!confirm("Revoke this strike? It is removed from the member's record.")) return;
@@ -142,13 +117,36 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
     await clearMemberStrikes(memberStrikes.map((s) => s.id));
   };
 
-  const handleSaveOverrides = async () => {
-    const patch: Record<string, unknown> = {};
-    if (roleOverride && roleOverride !== member.role) patch.role = roleOverride;
-    if (statusOverride && statusOverride !== member.status) patch.status = statusOverride;
-    if (Object.keys(patch).length === 0) return;
-    await updateTeamMember(member.id, patch as Parameters<typeof updateTeamMember>[1]);
+  const handleIssueStrike = async () => {
+    const infraction = sortedInfractions.find((i) => i.id === issueInfractionId);
+    if (!infraction || !member || !activeCycle) return;
+    setIssueStatus("busy");
+    try {
+      const points = issuePointsOverride.trim()
+        ? Math.max(0, Number(issuePointsOverride) || 0)
+        : infraction.points;
+      await createMemberStrike({
+        memberId: member.id,
+        memberName: member.name,
+        cycleId: activeCycle.id,
+        infractionId: infraction.id,
+        infractionName: infraction.name,
+        points,
+        issuedBy: reviewerLabel,
+        note: issueNote.trim(),
+        source: "manual",
+      });
+      setIssueStatus("done");
+      setIssueInfractionId("");
+      setIssueNote("");
+      setIssuePointsOverride("");
+    } catch {
+      setIssueStatus("error");
+    }
   };
+
+  const earnedPct = targetCredits > 0 ? Math.min(100, Math.round((ledger.total / targetCredits) * 100)) : 0;
+  const weeklyPct = weeklyTarget > 0 ? Math.min(100, Math.round((ledger.total / weeklyTarget) * 100)) : 0;
 
   return (
     <>
@@ -160,12 +158,12 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Identity + dot */}
+          {/* Identity */}
           <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
             <div className="flex items-center gap-3">
               {dot && (
                 <span
-                  className="inline-block h-3 w-3 rounded-full"
+                  className="inline-block h-3 w-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: DOT_HEX[dot.color] }}
                   title={dot.label}
                 />
@@ -178,64 +176,90 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
             </div>
           </section>
 
-          {/* Cycle stats */}
-          {activeCycle && classification?.status === "participant" && (
-            <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-2">
-                {activeCycle.name}
-              </p>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <p className="text-[#85CC17] text-2xl font-bold">{ledger.total}</p>
-                  <p className="text-[10px] text-white/45">earned</p>
-                </div>
-                <div>
-                  <p className="text-yellow-300 text-2xl font-bold">{ledger.pending}</p>
-                  <p className="text-[10px] text-white/45">pending</p>
-                </div>
-                <div>
-                  <p className="text-white/85 text-2xl font-bold">{targetCredits}</p>
-                  <p className="text-[10px] text-white/45">target</p>
-                </div>
-              </div>
-              {dot && (
-                <p className="text-xs text-white/55 mt-2 text-center">
-                  {dot.label}{dot.checkInsBehind > 0 ? ` · ${dot.checkInsBehind} behind` : ""}
-                </p>
-              )}
-            </section>
-          )}
-
-          {classification?.status === "leadership" && (
-            <p className="text-xs text-white/55">This member is on leadership and outside the credit system.</p>
-          )}
-          {classification?.status === "reserve" && (
-            <p className="text-xs text-white/55">This member is on Reserve / Inactive — gray dot, no automation.</p>
-          )}
-
-          {/* Strikes */}
+          {/* Assignments + progress */}
           <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">Strikes</p>
-              <span className="text-xs text-white/55">{strikePoints} pts · {strikeCount} of 3</span>
-            </div>
-            {memberStrikes.length === 0 ? (
-              <p className="text-xs text-white/45">No strikes this cycle.</p>
+            <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-3">
+              {activeCycle ? activeCycle.name : "Assignments"}
+            </p>
+
+            {activeCycle && classification?.status === "participant" && (
+              <div className="space-y-3 mb-4">
+                {/* Cycle progress */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-white/55">Cycle target</span>
+                    <span className="text-white/85 font-mono">{ledger.total} / {targetCredits} credits</span>
+                  </div>
+                  <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${earnedPct}%`, backgroundColor: earnedPct >= 100 ? "#85CC17" : earnedPct >= 60 ? "#EAB308" : "#DC2626" }}
+                    />
+                  </div>
+                </div>
+                {/* Bi-weekly pace */}
+                {weeklyTarget > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-white/55">Bi-weekly pace ({activeCycle.pacingPercentPerCheckin}%)</span>
+                      <span className="text-white/85 font-mono">{ledger.total} / {weeklyTarget} credits</span>
+                    </div>
+                    <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${weeklyPct}%`, backgroundColor: weeklyPct >= 100 ? "#85CC17" : weeklyPct >= 60 ? "#EAB308" : "#DC2626" }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {dot && (
+                  <p className="text-xs text-white/45">
+                    {dot.label}{dot.checkInsBehind > 0 ? ` · ${dot.checkInsBehind} check-in${dot.checkInsBehind === 1 ? "" : "s"} behind` : ""}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {claimsWithAssignment.length === 0 ? (
+              <p className="text-xs text-white/45">No assignments claimed this cycle.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-1.5 text-xs">
+                {claimsWithAssignment.map(({ claim, assignment: a }) => (
+                  <li key={claim.id} className="flex items-center justify-between gap-2">
+                    <span className="text-white/80 truncate">{a?.title ?? "—"}</span>
+                    <span className={`flex-shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${CLAIM_STATUS_CLASS[claim.status] ?? "bg-white/10 text-white/55"}`}>
+                      {claim.status.replace("_", " ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Strikes + Issue infraction */}
+          <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">Infractions this cycle</p>
+              <span className="text-xs text-white/55">{strikePoints} pts · strike {strikeCount} of 3</span>
+            </div>
+
+            {memberStrikes.length === 0 ? (
+              <p className="text-xs text-white/45 mb-3">No infractions issued this cycle.</p>
+            ) : (
+              <ul className="space-y-2 mb-3">
                 {memberStrikes
                   .sort((a, b) => (b.issuedAt ?? "").localeCompare(a.issuedAt ?? ""))
                   .map((s) => (
                     <li key={s.id} className="flex items-start justify-between gap-2 text-xs">
                       <div className="min-w-0">
-                        <p className="text-white/85">{s.infractionName}</p>
+                        <p className="text-white/85 font-medium">{s.infractionName}</p>
                         <p className="text-white/45">
                           {new Date(s.issuedAt).toLocaleDateString()} · {s.source === "auto_pace" ? "auto" : s.issuedBy}
                         </p>
-                        {s.note && <p className="text-white/65 mt-0.5">{s.note}</p>}
+                        {s.note && <p className="text-white/60 mt-0.5 italic">{s.note}</p>}
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span className="text-[#85CC17] font-mono">{s.points} pts</span>
+                        <span className="text-[#85CC17] font-mono text-[11px]">{s.points} pt{s.points === 1 ? "" : "s"}</span>
                         <button
                           type="button"
                           onClick={() => void handleRevokeStrike(s.id)}
@@ -248,133 +272,69 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                   ))}
               </ul>
             )}
-            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/8">
-              <Link
-                href={`/members/team/infractions?memberId=${encodeURIComponent(member.id)}&memberName=${encodeURIComponent(member.name ?? "")}`}
-                className="inline-flex items-center rounded-lg border border-[#85CC17]/40 bg-[#85CC17]/10 px-2.5 py-1 text-xs font-medium text-[#85CC17] hover:bg-[#85CC17]/20 transition-colors"
-              >
-                Issue infraction →
-              </Link>
-              {memberStrikes.length > 0 && (
-                <Btn size="sm" variant="danger" onClick={() => void handleClearStrikes()}>
-                  Clear all
-                </Btn>
+
+            <div className="pt-3 border-t border-white/8 space-y-2">
+              {!issueOpen ? (
+                <div className="flex flex-wrap gap-2">
+                  <Btn size="sm" variant="secondary" onClick={() => { setIssueOpen(true); setIssueStatus("idle"); }} disabled={!activeCycle}>
+                    Issue infraction
+                  </Btn>
+                  {memberStrikes.length > 0 && (
+                    <Btn size="sm" variant="danger" onClick={() => void handleClearStrikes()}>Clear all</Btn>
+                  )}
+                  {!activeCycle && <span className="text-[11px] text-white/40 self-center">No active cycle</span>}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Field label="Infraction" required>
+                    <select
+                      value={issueInfractionId}
+                      onChange={(e) => { setIssueInfractionId(e.target.value); setIssueStatus("idle"); }}
+                      className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+                    >
+                      <option value="">— Select infraction —</option>
+                      {sortedInfractions.map((i) => (
+                        <option key={i.id} value={i.id}>{i.name} ({i.points} pt{i.points === 1 ? "" : "s"})</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Points override (optional)">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={issuePointsOverride}
+                        onChange={(e) => setIssuePointsOverride(e.target.value)}
+                        placeholder={sortedInfractions.find((i) => i.id === issueInfractionId)?.points?.toString() ?? "default"}
+                      />
+                    </Field>
+                    <Field label="Note (optional)">
+                      <Input
+                        value={issueNote}
+                        onChange={(e) => setIssueNote(e.target.value)}
+                        placeholder="Context…"
+                      />
+                    </Field>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Btn
+                      size="sm"
+                      variant="primary"
+                      disabled={!issueInfractionId || issueStatus === "busy"}
+                      onClick={() => void handleIssueStrike()}
+                    >
+                      {issueStatus === "busy" ? "Issuing…" : "Issue"}
+                    </Btn>
+                    <Btn size="sm" variant="ghost" onClick={() => { setIssueOpen(false); setIssueStatus("idle"); }}>Cancel</Btn>
+                    {issueStatus === "done" && <span className="text-xs text-emerald-400">✓ Issued</span>}
+                    {issueStatus === "error" && <span className="text-xs text-red-400">Failed — try again</span>}
+                  </div>
+                </div>
               )}
             </div>
           </section>
-
-          {/* Credit adjustments */}
-          <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">Credit adjustments</p>
-              <span className="text-xs text-white/55">{ledger.adjustments >= 0 ? "+" : ""}{ledger.adjustments}</span>
-            </div>
-            {memberAdjustments.length === 0 ? (
-              <p className="text-xs text-white/45">No manual adjustments.</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {memberAdjustments
-                  .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
-                  .map((a) => (
-                    <li key={a.id} className="flex items-start justify-between text-xs">
-                      <div className="min-w-0">
-                        <p className="text-white/85">{a.reason || "(no reason)"}</p>
-                        <p className="text-white/45">{new Date(a.createdAt).toLocaleDateString()} · {a.createdBy}</p>
-                      </div>
-                      <span className={`font-mono flex-shrink-0 ${a.points >= 0 ? "text-[#85CC17]" : "text-red-300"}`}>
-                        {a.points >= 0 ? "+" : ""}{a.points}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            )}
-            <Btn size="sm" variant="secondary" className="mt-3" onClick={() => setAdjustOpen(true)} disabled={!activeCycle}>
-              Adjust credits
-            </Btn>
-          </section>
-
-          {/* Role + status overrides */}
-          <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-            <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-3">Overrides</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Role">
-                <select
-                  value={roleOverride}
-                  onChange={(e) => setRoleOverride(e.target.value)}
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-                >
-                  {ROLES_LADDER.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </Field>
-              <Field label="Status">
-                <Select
-                  options={[...STATUS_OPTIONS]}
-                  value={statusOverride}
-                  onChange={(e) => setStatusOverride(e.target.value)}
-                />
-              </Field>
-            </div>
-            <Btn size="sm" variant="primary" className="mt-3" onClick={() => void handleSaveOverrides()}>
-              Save overrides
-            </Btn>
-          </section>
-
-          {/* Recent claims */}
-          <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-            <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-2">Active cycle claims</p>
-            {memberClaims.length === 0 ? (
-              <p className="text-xs text-white/45">No assignments claimed this cycle.</p>
-            ) : (
-              <ul className="space-y-1.5 text-xs">
-                {memberClaims
-                  .sort((a, b) => (b.claimedAt ?? "").localeCompare(a.claimedAt ?? ""))
-                  .map((c) => {
-                    const a = assignments.find((x) => x.id === c.assignmentId);
-                    return (
-                      <li key={c.id} className="flex items-center justify-between gap-2">
-                        <span className="text-white/80 truncate">{a?.title ?? "—"}</span>
-                        <span className="text-white/45 text-[10px] uppercase tracking-wider flex-shrink-0">
-                          {c.status.replace("_", " ")}
-                        </span>
-                      </li>
-                    );
-                  })}
-              </ul>
-            )}
-          </section>
         </div>
       </aside>
-
-      {/* Adjust credits modal */}
-      {adjustOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setAdjustOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-[#13161D] border border-white/10 p-5">
-            <h3 className="font-display font-bold text-white text-lg mb-3">Adjust credits</h3>
-            <p className="text-xs text-white/55 mb-3">Use a negative value to remove credits. Always include a reason.</p>
-            <Field label="Points (±)" required>
-              <Input
-                type="number"
-                value={adjustPoints}
-                onChange={(e) => setAdjustPoints(e.target.value)}
-                placeholder="e.g. 3 or -2"
-              />
-            </Field>
-            <Field label="Reason" required>
-              <TextArea rows={3} value={adjustReason} onChange={(e) => setAdjustReason(e.target.value)} />
-            </Field>
-            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-white/8">
-              <Btn variant="ghost" onClick={() => setAdjustOpen(false)}>Cancel</Btn>
-              <Btn
-                variant="primary"
-                onClick={() => void handleAdjustCredits()}
-                disabled={!adjustReason.trim() || !adjustPoints.trim() || Number(adjustPoints) === 0}
-              >
-                Apply
-              </Btn>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

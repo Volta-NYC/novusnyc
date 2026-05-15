@@ -129,14 +129,15 @@ export interface DotResult {
 
 export function computeDot(input: DotComputeInput): DotResult {
   const now = input.now ?? new Date();
-  const reserveStatus = input.member.status === "Reserve"
-    || input.member.status === "Inactive"
-    || input.member.status === "Alumni"
-    || input.member.status === "On Leave";
+  const statusLower = String(input.member.status ?? "").trim().toLowerCase();
+  const reserveStatus = statusLower === "reserve"
+    || statusLower === "inactive"
+    || statusLower === "alumni"
+    || statusLower === "on leave";
   if (reserveStatus) {
     return {
       color: "gray",
-      label: input.member.status === "Reserve" ? "Reserve" : String(input.member.status),
+      label: statusLower === "reserve" ? "Reserve" : String(input.member.status),
       checkInsExpected: 0,
       checkInsBehind: 0,
       expectedPercent: 0,

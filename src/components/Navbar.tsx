@@ -74,11 +74,12 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${
+        className={`fixed left-0 right-0 z-50 border-b transition-all duration-300 ${
           scrolled || open
             ? "bg-v-bg/95 backdrop-blur-md shadow-sm border-black/10"
             : "bg-transparent border-transparent"
         }`}
+        style={{ top: "var(--banner-h, 0px)" }}
       >
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1.5 md:gap-2 group">

@@ -104,12 +104,11 @@ export default async function Join() {
               className="font-display font-bold text-white leading-none tracking-tight mb-6"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
-              Build your resume with
-              <br />
-              <span className="text-v-blue">real projects for real businesses.</span>
+              Gain hands-on experience with<br />
+              <span className="text-v-blue">real projects with real impact.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-4">
-              Whether you are a high schooler looking for your first real project or a college student building your portfolio, Volta gives you work you can talk about in an interview. Real clients. Real deliverables.
+              Volta NYC places you on consulting teams to deliver tech and marketing strategy for local businesses. Ship full-stack web projects, drive marketing initiatives, and build a resume backed by direct client-facing experience.
             </p>
             <p className="font-body text-white/65 text-sm mb-8">
               Join {education.memberCount}+ students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.

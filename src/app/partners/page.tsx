@@ -167,12 +167,11 @@ export default async function Partners() {
               className="font-display font-bold text-white leading-none tracking-tight mb-6"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
-              Free student consulting<br />
-              <span className="text-v-green">for your business.</span>
+              Free, dedicated support for<br />
+              <span className="text-v-green">local businesses and entrepreneurs.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              Volta NYC places student teams on real projects for NYC small businesses: websites, social media, grant writing, SEO, and financial analysis.
-              We scope every project with you first and work to clear timelines with regular updates. All at no cost to you.
+              Volta NYC partners with small businesses to provide critical digital and strategic infrastructure, from web design to marketing and outreach. Our teams provide clear project planning, consistent communication, and concrete results, entirely free of charge.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a

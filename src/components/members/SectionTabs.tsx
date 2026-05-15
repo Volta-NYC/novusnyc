@@ -71,10 +71,8 @@ export const PROJECT_GROUP_TABS: SectionTab[] = [
   { href: "/members/projects?tab=showcase", label: "Showcase", matchTab: "showcase" },
 ];
 
-// Members directory + Infractions live on the same Members page.
 export const MEMBERS_GROUP_TABS: SectionTab[] = [
   { href: "/members/team", label: "Members", exact: true },
-  { href: "/members/team/infractions", label: "Infractions" },
 ];
 
 // Applicants + Interviews live on the same Applicants page.

@@ -45,7 +45,7 @@ export default async function About() {
             <AnimatedSection>
               <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">About Volta</p>
               <h1 className="font-display font-bold text-white leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
-                Students building<br /><span className="text-v-green">real skills</span><br />through real work.
+                Students building<br /><span className="text-v-blue">real skills</span><br />through <span className="text-v-green">real work.</span>
               </h1>
             </AnimatedSection>
           </div>

@@ -4,13 +4,16 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Btn, Field, Input, Spinner, Toggle } from "@/components/members/ui";
+import RichTextEditor from "@/components/members/RichTextEditor";
 import { useAuth } from "@/lib/members/authContext";
 import { useRouter } from "next/navigation";
 import {
   getHandbookPage, upsertHandbookPage, type HandbookPage,
   getSiteSettings, updateSiteSettings, type SiteSettings,
-  type PortalPermissionKey, type PortalRole, type PortalPermissions,
+  subscribeInfractions, createInfraction, updateInfraction, deleteInfraction,
+  type Infraction,
 } from "@/lib/members/storage";
+import { useConfirm, Modal, TextArea } from "@/components/members/ui";
 
 const EXPORT_OPTIONS = [
   { key: "team",                label: "Team Members" },
@@ -29,7 +32,7 @@ const EXPORT_OPTIONS = [
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-type AdminTab = "data" | "applications" | "services" | "banners" | "permissions" | "handbook";
+type AdminTab = "data" | "applications" | "services" | "banners" | "infractions" | "handbook";
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 
@@ -57,11 +60,9 @@ function StatusMsg({ msg }: { msg: string }) {
 }
 
 const BANNER_PRESET_COLORS = [
-  { bg: "#1a1a2e", text: "#ffffff", label: "Dark navy" },
   { bg: "#0D0D0D", text: "#85CC17", label: "Black + green" },
   { bg: "#85CC17", text: "#0D0D0D", label: "Volta green" },
   { bg: "#1e40af", text: "#ffffff", label: "Blue" },
-  { bg: "#92400e", text: "#fef3c7", label: "Amber" },
   { bg: "#7f1d1d", text: "#fee2e2", label: "Red" },
 ];
 
@@ -491,108 +492,119 @@ function BannersTab() {
 
 // ── TAB: ROLES ────────────────────────────────────────────────────────────────
 
-const PORTAL_ROLES: PortalRole[] = ["Analyst", "Senior Analyst", "Associate", "Reserve"];
-const PERMISSION_KEYS: PortalPermissionKey[] = ["interview", "reviewSubmissions", "email", "viewApplicants", "manageAssignments", "manageShowcase"];
-const PERMISSION_LABELS: Record<PortalPermissionKey, string> = {
-  interview:          "Conduct interviews",
-  reviewSubmissions:  "Review assignment submissions",
-  email:              "Send emails (email feature)",
-  viewApplicants:     "View applicants",
-  manageAssignments:  "Manage assignments (create, edit, delete)",
-  manageShowcase:     "Manage public showcase",
+// ── TAB: INFRACTIONS ──────────────────────────────────────────────────────────
+
+const POINT_OPTIONS = [
+  { value: 1, label: "1 — minor" },
+  { value: 2, label: "2 — major" },
+  { value: 3, label: "3 — severe" },
+];
+const POINTS_PILL: Record<number, string> = {
+  1: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+  2: "border-orange-400/30 bg-orange-400/10 text-orange-300",
+  3: "border-red-400/30 bg-red-400/10 text-red-300",
 };
+const BLANK_INFRACTION: Omit<Infraction, "id" | "createdAt" | "updatedAt"> = { name: "", description: "", points: 1 };
 
-const DEFAULT_PERMISSIONS_FALLBACK: PortalPermissions = {
-  "Analyst":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
-  "Senior Analyst": { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: false, manageShowcase: false },
-  "Associate":      { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: true,  manageShowcase: true  },
-  "Reserve":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
-};
+function InfractionsTab() {
+  const { ask, Dialog } = useConfirm();
+  const [infractions, setInfractions] = useState<Infraction[]>([]);
+  const [modal, setModal] = useState<"create" | "edit" | null>(null);
+  const [editing, setEditing] = useState<Infraction | null>(null);
+  const [form, setForm] = useState(BLANK_INFRACTION);
 
-function PermissionsTab() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState("");
-  const [permissions, setPermissions] = useState<PortalPermissions>(DEFAULT_PERMISSIONS_FALLBACK);
+  useEffect(() => subscribeInfractions(setInfractions), []);
 
-  useEffect(() => {
-    getSiteSettings().then((s) => { setPermissions(s.permissions); setLoading(false); });
-  }, []);
+  const sorted = [...infractions].sort((a, b) => (a.points - b.points) || a.name.localeCompare(b.name));
 
-  const toggle = (role: PortalRole, key: PortalPermissionKey) => {
-    setPermissions((prev) => ({
-      ...prev,
-      [role]: { ...prev[role], [key]: !prev[role][key] },
-    }));
+  const openCreate = () => { setForm({ ...BLANK_INFRACTION }); setEditing(null); setModal("create"); };
+  const openEdit = (i: Infraction) => { setForm({ name: i.name, description: i.description, points: i.points }); setEditing(i); setModal("edit"); };
+
+  const handleSave = async () => {
+    const name = form.name.trim();
+    if (!name) return;
+    const payload = { name, description: form.description.trim(), points: Math.max(1, Math.min(3, Math.round(form.points || 1))) };
+    if (editing) await updateInfraction(editing.id, payload);
+    else await createInfraction(payload);
+    setModal(null);
   };
 
-  const save = async () => {
-    setSaving(true);
-    setStatus("");
-    try {
-      await updateSiteSettings({ permissions });
-      setStatus("Saved.");
-    } catch {
-      setStatus("Save failed. Try again.");
-    } finally {
-      setSaving(false);
-    }
+  const handleDelete = async () => {
+    if (!editing) return;
+    await ask(
+      async () => { await deleteInfraction(editing.id); setModal(null); },
+      `Delete "${editing.name}"? Strikes already issued under this name keep their record.`,
+    );
   };
-
-  if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   return (
     <div className="space-y-4">
-      <Card
-        title="Role Permissions"
-        subtitle="Check which capabilities each role tier has access to. These are enforced at the application layer. Database-level RLS is controlled via migrations."
-      >
-        <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/8">
-                <th className="text-left text-[10px] uppercase tracking-wider text-white/40 font-normal pb-2 pr-4 w-[240px]">Permission</th>
-                {PORTAL_ROLES.map((role) => (
-                  <th key={role} className="text-center text-[10px] uppercase tracking-wider text-white/40 font-normal pb-2 px-3 min-w-[110px]">{role}</th>
-                ))}
+      <Dialog />
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display font-bold text-white">Infraction Catalog</h2>
+          <p className="text-white/40 text-sm mt-0.5">Define infraction types and their point values. Issue them per-member via the Manage button in the team directory.</p>
+        </div>
+        <Btn variant="primary" onClick={openCreate}>+ New Infraction</Btn>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-[#0F1014] border-b border-white/8">
+            <tr>
+              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[30%]">Name</th>
+              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45">Description</th>
+              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[100px]">Points</th>
+              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[80px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((i) => (
+              <tr key={i.id} className="border-b border-white/8 align-top hover:bg-white/[0.03]">
+                <td className="px-3 py-2.5 text-sm text-white/90">{i.name}</td>
+                <td className="px-3 py-2.5 text-xs text-white/65">{i.description || <span className="text-white/30">—</span>}</td>
+                <td className="px-3 py-2.5">
+                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${POINTS_PILL[i.points] ?? ""}`}>
+                    {i.points} pt{i.points === 1 ? "" : "s"}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5"><Btn size="sm" variant="secondary" onClick={() => openEdit(i)}>Edit</Btn></td>
               </tr>
-            </thead>
-            <tbody>
-              {PERMISSION_KEYS.map((key) => (
-                <tr key={key} className="border-b border-white/5 last:border-0">
-                  <td className="py-2.5 pr-4 text-white/70 text-xs">{PERMISSION_LABELS[key]}</td>
-                  {PORTAL_ROLES.map((role) => (
-                    <td key={role} className="py-2.5 px-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => toggle(role, key)}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center mx-auto transition-colors ${
-                          permissions[role][key]
-                            ? "bg-[#85CC17] border-[#85CC17]"
-                            : "bg-transparent border-white/20 hover:border-white/40"
-                        }`}
-                      >
-                        {permissions[role][key] && (
-                          <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3">
-                            <path d="M1 5l3.5 3.5L11 1" stroke="#0D0D0D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </button>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </tbody>
+        </table>
+        {sorted.length === 0 && (
+          <div className="p-6 text-center text-white/45 text-sm">No infractions yet. Add one above.</div>
+        )}
+      </div>
+
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={editing ? "Edit Infraction" : "New Infraction"}>
+        <div className="space-y-4">
+          <Field label="Name" required>
+            <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Did not respond to email within 48 hours" />
+          </Field>
+          <Field label="Description">
+            <TextArea rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="When this should be issued — guidance for the admin issuing it." />
+          </Field>
+          <Field label="Points" required>
+            <select
+              value={String(form.points)}
+              onChange={(e) => setForm((p) => ({ ...p, points: Number(e.target.value) || 1 }))}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              {POINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <p className="text-[11px] text-white/40 mt-1.5">1 = minor, 2 = major, 3 = severe.</p>
+          </Field>
         </div>
-        <div className="mt-5 pt-4 border-t border-white/8">
-          <p className="text-[11px] text-white/35 mb-3">
-            Note: Supabase row-level security is managed via database migrations and cannot be changed here. These settings control which UI features are visible to each role.
-          </p>
-          <SaveBtn saving={saving} onClick={() => void save()} />
-          <StatusMsg msg={status} />
+        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
+          <div>{editing && <Btn variant="danger" onClick={() => void handleDelete()}>Delete</Btn>}</div>
+          <div className="flex gap-2">
+            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim()}>{editing ? "Save" : "Create"}</Btn>
+          </div>
         </div>
-      </Card>
+      </Modal>
     </div>
   );
 }
@@ -657,13 +669,7 @@ function HandbookTab() {
           </div>
           <div>
             <label className="block text-xs text-white/50 font-body mb-1">Content</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={20}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50 resize-y"
-              placeholder="Enter handbook content here..."
-            />
+            <RichTextEditor content={content} onChange={setContent} />
           </div>
         </div>
         <div className="mt-4">
@@ -698,8 +704,8 @@ function AdminContent() {
     { key: "data",         label: "Data" },
     { key: "applications", label: "Applications" },
     { key: "services",     label: "Services" },
-    { key: "banners",      label: "Banners" },
-    { key: "permissions",  label: "Permissions" },
+    { key: "banners",       label: "Banners" },
+    { key: "infractions",  label: "Infractions" },
     { key: "handbook",     label: "Handbook" },
   ];
 
@@ -728,7 +734,7 @@ function AdminContent() {
       {activeTab === "applications" && <ApplicationsTab />}
       {activeTab === "services"     && <ServicesTab />}
       {activeTab === "banners"      && <BannersTab />}
-      {activeTab === "permissions"   && <PermissionsTab />}
+      {activeTab === "infractions"  && <InfractionsTab />}
       {activeTab === "handbook"     && <HandbookTab />}
     </>
   );

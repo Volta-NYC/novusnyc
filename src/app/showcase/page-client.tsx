@@ -138,7 +138,7 @@ export default function ShowcaseClient({
                 style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
               >
                 Projects across<br />
-                <span className="text-v-green">NYC.</span>
+                <span className="text-v-green">New York City</span>
               </h1>
               <div className="flex gap-8 md:pb-2">
                 {[

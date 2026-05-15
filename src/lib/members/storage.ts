@@ -1633,7 +1633,7 @@ export interface SiteSettings {
 
 const DEFAULT_PERMISSIONS: PortalPermissions = {
   "Analyst":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
-  "Senior Analyst": { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: false, manageShowcase: false },
+  "Senior Analyst": { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
   "Associate":      { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: true,  manageShowcase: true  },
   "Reserve":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
 };

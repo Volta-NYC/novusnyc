@@ -675,7 +675,7 @@ export default function TeamPage() {
     [businesses, financeAssignments]
   );
 
-  const assignmentsByMemberName = useMemo(() => {
+  const _assignmentsByMemberName = useMemo(() => {
     const map = new Map<string, MemberAssignmentLink[]>();
     const teamNameById = new Map(team.map((member) => [member.id, String(member.name ?? "").trim()]));
     const pushForMemberKey = (memberKey: string, item: Omit<MemberAssignmentLink, "code">) => {
@@ -905,11 +905,7 @@ export default function TeamPage() {
 
   const totalMembersCount = team.length;
   const inactiveMembersCount = team.filter((member) => normalizeKey(member.status ?? "") === "inactive").length;
-  const assignedMembersCount = team.filter((member) => {
-    if (normalizeKey(member.status ?? "") === "inactive") return false;
-    const memberAssignments = assignmentsByMemberName.get(normalizeKey(member.name ?? "")) ?? [];
-    return memberAssignments.length > 0;
-  }).length;
+  const withAccountCount = team.filter((m) => !!m.authUid).length;
   const unregisteredCount = team.filter((m) =>
     !m.authUid && normalizeKey(m.status ?? "") !== "inactive" && (m.email ?? "").trim()
   ).length;
@@ -942,9 +938,9 @@ export default function TeamPage() {
       />
       <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
         <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
-        <span>Assigned: <span className="text-emerald-300 font-semibold">{assignedMembersCount}</span></span>
+        <span>With Account: <span className="text-emerald-300 font-semibold">{withAccountCount}</span></span>
+        <span>No Account: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>
         <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
-        {canEdit && <span>No account: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>}
       </div>
       <SectionTabs tabs={MEMBERS_GROUP_TABS} />
 
