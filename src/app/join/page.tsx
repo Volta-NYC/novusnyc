@@ -5,6 +5,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import TracksTabbed from "@/components/TracksTabbed";
 import { joinFaqs, joinGains, marqueeSchools } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
+import { VOLTA_STATS } from "@/data/stats";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
@@ -111,7 +112,7 @@ export default async function Join() {
               Volta NYC places you on consulting teams to deliver tech and marketing strategy for local businesses. Ship full-stack web projects, drive marketing initiatives, and build a resume backed by direct client-facing experience.
             </p>
             <p className="font-body text-white/65 text-sm mb-8">
-              Join {education.memberCount}+ students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.
+              Join {VOLTA_STATS.studentMembers.value}+ students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.
             </p>
             <div className="flex gap-4 flex-wrap mb-3">
               <Link

@@ -244,16 +244,7 @@ function fallbackSnapshot(): EducationSnapshot {
 }
 
 export async function getMemberEducationSnapshot(): Promise<EducationSnapshot> {
-  if (FORCE_STATIC_SCHOOL_LIST) {
-    const snapshot = fallbackSnapshot();
-    try {
-      const sb = getSupabaseAdmin();
-      const { count } = await sb.from("team").select("*", { count: "exact", head: true });
-      return { ...snapshot, memberCount: count ?? 0 };
-    } catch {
-      return snapshot;
-    }
-  }
+  if (FORCE_STATIC_SCHOOL_LIST) return fallbackSnapshot();
 
   try {
     const sb = getSupabaseAdmin();
