@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode, useEffect, useId } from "react";
+import { useState, ReactNode, useEffect, useId, useRef } from "react";
 
 // ── BADGE ─────────────────────────────────────────────────────────────────────
 // Maps status/priority/role strings to their Tailwind color classes.
@@ -70,22 +70,58 @@ export function Modal({ open, onClose, title, children }: {
   title: string;
   children: ReactNode;
 }) {
-  // Close on Escape key
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) { e.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  // Auto-focus the dialog on open
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
+          'button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        );
+        firstFocusable?.focus();
+      }, 0);
+    }
+  }, [open]);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-3 sm:py-8 sm:px-4">
-      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#1C1F26] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto p-4 sm:p-6 shadow-2xl">
+      <div className="fixed inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative bg-[#1C1F26] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto p-4 sm:p-6 shadow-2xl"
+      >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display font-bold text-white text-lg">{title}</h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1 transition-colors">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <h2 id={titleId} className="font-display font-bold text-white text-lg">{title}</h2>
+          <button onClick={onClose} aria-label="Close dialog" className="text-white/40 hover:text-white p-2 transition-colors rounded-lg">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>

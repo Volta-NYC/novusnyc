@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useInView } from "framer-motion";
+import { useInView, useReducedMotion } from "framer-motion";
 
 interface Props {
   end: number;
@@ -14,9 +14,14 @@ export default function CountUp({ end, suffix = "", prefix = "", duration = 1600
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (!isInView) return;
+    if (reduced) {
+      setCount(end);
+      return;
+    }
     let startTime: number | null = null;
 
     const step = (timestamp: number) => {
@@ -28,10 +33,10 @@ export default function CountUp({ end, suffix = "", prefix = "", duration = 1600
     };
 
     requestAnimationFrame(step);
-  }, [isInView, end, duration]);
+  }, [isInView, end, duration, reduced]);
 
   return (
-    <span ref={ref}>
+    <span ref={ref} aria-label={`${prefix}${end}${suffix}`}>
       {prefix}{count}{suffix}
     </span>
   );

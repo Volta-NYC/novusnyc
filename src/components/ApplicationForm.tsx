@@ -100,9 +100,9 @@ export default function ApplicationForm() {
 
   if (status === "success") {
     return (
-      <div className="bg-white border border-v-border rounded-2xl p-12 text-center">
+      <div role="status" aria-live="polite" className="bg-white border border-v-border rounded-2xl p-12 text-center">
         <div className="w-16 h-16 rounded-full bg-v-green/20 flex items-center justify-center mx-auto mb-5">
-          <CheckIcon className="w-8 h-8 text-v-green" />
+          <CheckIcon className="w-8 h-8 text-v-green" aria-hidden="true" />
         </div>
         <h3 className="font-display font-bold text-2xl text-v-ink mb-3">Application received.</h3>
         <p className="font-body text-v-muted max-w-sm mx-auto">

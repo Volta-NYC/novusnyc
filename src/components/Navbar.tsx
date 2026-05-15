@@ -179,7 +179,9 @@ export default function Navbar() {
           <button
             onClick={() => setOpen(!open)}
             className="md:hidden flex flex-col gap-1.5 p-2"
-            aria-label="Menu"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-nav-menu"
           >
             <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
             <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "opacity-0" : ""}`} />
@@ -192,6 +194,7 @@ export default function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.div
+            id="mobile-nav-menu"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

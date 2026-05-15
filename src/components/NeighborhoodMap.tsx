@@ -119,6 +119,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
         style={{ height: "100%", width: "100%" }}
         scrollWheelZoom={true}
         zoomControl={true}
+        aria-label="Interactive map of Volta NYC business locations across New York City"
       >
         <FitMapToPoints points={fitPoints} />
         <TileLayer

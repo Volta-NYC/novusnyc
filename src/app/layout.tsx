@@ -145,6 +145,7 @@ export default function RootLayout({
         />
       </head>
       <body className="overflow-x-hidden">
+        <a href="#main-content" className="skip-to-content">Skip to main content</a>
         <ConditionalLayout>{children}</ConditionalLayout>
         <Analytics />
       </body>

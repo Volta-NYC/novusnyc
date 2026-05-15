@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ReactNode } from "react";
 
 interface Props {
@@ -16,6 +16,12 @@ export default function AnimatedSection({
   delay = 0,
   direction = "up",
 }: Props) {
+  const reduced = useReducedMotion();
+
+  if (reduced) {
+    return <div className={className}>{children}</div>;
+  }
+
   const initial = {
     opacity: 0,
     y: direction === "up" ? 24 : 0,

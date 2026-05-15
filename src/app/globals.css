@@ -645,3 +645,99 @@ details[open] > .accordion-body {
 .leaflet-control {
   z-index: 1 !important;
 }
+
+/* ── ACCESSIBILITY ────────────────────────────────────────────────────────────
+   Global :focus-visible ring for keyboard users on the public site.
+   Members portal components define their own focus styles. */
+
+/* Skip-to-content link — visible only when focused via keyboard */
+.skip-to-content {
+  position: absolute;
+  top: -9999px;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.75rem 1.25rem;
+  background: #0D0F14;
+  color: #85CC17;
+  font-weight: 700;
+  border-radius: 0 0 0.5rem 0.5rem;
+  text-decoration: none;
+  font-family: var(--font-dm-sans), sans-serif;
+  font-size: 0.875rem;
+}
+.skip-to-content:focus-visible {
+  top: 0;
+  outline: 2px solid #85CC17;
+  outline-offset: 2px;
+}
+
+/* Public site interactive element focus rings */
+a:focus-visible,
+button:focus-visible,
+[role="tab"]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid rgb(var(--color-green));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Keep form element focus rings consistent */
+.volta-input:focus-visible {
+  outline: 2px solid rgb(var(--color-green));
+  outline-offset: 0;
+  border-color: rgb(var(--color-green));
+}
+
+/* Accordion summary focus ring */
+summary {
+  cursor: pointer;
+}
+summary:focus {
+  outline: none;
+}
+summary:focus-visible {
+  outline: 2px solid rgb(var(--color-green));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Make copy button a larger touch target while keeping visual size the same */
+.members-copy-btn {
+  padding: 0.5rem;
+  margin: -0.5rem;
+  width: auto;
+  height: auto;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  box-sizing: content-box;
+}
+
+/* ── MOTION PREFERENCES ───────────────────────────────────────────────────────
+   Respect prefers-reduced-motion for all CSS animations and transitions. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .marquee-track {
+    animation: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    white-space: normal;
+  }
+
+  .accordion-body {
+    transition: none;
+  }
+
+  details[open] > .accordion-body {
+    transition: none;
+  }
+}

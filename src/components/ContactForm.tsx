@@ -117,7 +117,7 @@ export default function ContactForm() {
 
   if (status === "success") {
     return (
-      <div className="bg-white border border-v-border rounded-2xl p-10 text-center" dir={c.dir}>
+      <div role="status" aria-live="polite" className="bg-white border border-v-border rounded-2xl p-10 text-center" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
         <div className="w-14 h-14 rounded-full bg-v-green/20 flex items-center justify-center mx-auto mb-4">
           <CheckIcon className="w-7 h-7 text-v-green" />
         </div>
@@ -157,7 +157,7 @@ export default function ContactForm() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="bg-white border border-v-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir}>
+      <form onSubmit={handleSubmit} noValidate className="bg-white border border-v-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
         <div className="grid md:grid-cols-2 gap-5">
           <div>
             <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.businessName}</label>
