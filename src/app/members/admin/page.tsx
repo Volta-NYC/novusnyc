@@ -6,7 +6,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { Btn, Field, Input, Spinner, Toggle } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import { useAuth } from "@/lib/members/authContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   getHandbookPage, upsertHandbookPage, type HandbookPage,
   getSiteSettings, updateSiteSettings, type SiteSettings,
@@ -33,6 +33,24 @@ const EXPORT_OPTIONS = [
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
 type AdminTab = "data" | "applications" | "services" | "banners" | "infractions" | "handbook";
+
+const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
+  data:         "/members/admin",
+  applications: "/members/admin/applications",
+  services:     "/members/admin/services",
+  banners:      "/members/admin/banners",
+  infractions:  "/members/admin/infractions",
+  handbook:     "/members/admin/handbook",
+};
+
+function getAdminTab(pathname: string): AdminTab {
+  if (pathname.startsWith("/members/admin/applications")) return "applications";
+  if (pathname.startsWith("/members/admin/services"))     return "services";
+  if (pathname.startsWith("/members/admin/banners"))      return "banners";
+  if (pathname.startsWith("/members/admin/infractions"))  return "infractions";
+  if (pathname.startsWith("/members/admin/handbook"))     return "handbook";
+  return "data";
+}
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 
@@ -214,9 +232,9 @@ function ApplicationsTab() {
       <Card title="Application Status" subtitle="Control whether the public /apply page accepts new submissions.">
         <div className="space-y-5">
           <Toggle
-            checked={paused}
-            onChange={setPaused}
-            label={paused ? "Applications are paused" : "Applications are open"}
+            checked={!paused}
+            onChange={(open) => setPaused(!open)}
+            label={!paused ? "Applications are open" : "Applications are closed"}
           />
           {paused && (
             <Field label="Paused message shown to applicants">
@@ -684,9 +702,10 @@ function HandbookTab() {
 // ── ADMIN CONTENT ──────────────────────────────────────────────────────────────
 
 function AdminContent() {
-  const [activeTab, setActiveTab] = useState<AdminTab>("data");
   const { authRole, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const activeTab = getAdminTab(pathname);
 
   useEffect(() => {
     if (!loading && authRole !== "owner") router.replace("/members/projects");
@@ -720,7 +739,7 @@ function AdminContent() {
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => router.push(ADMIN_TAB_HREFS[tab.key])}
             className={`px-4 py-2 rounded-lg text-sm font-medium font-body transition-colors ${
               activeTab === tab.key ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/50 hover:text-white"
             }`}

@@ -2,7 +2,7 @@
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { Suspense, useState, useEffect, useMemo, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
@@ -340,10 +340,9 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
 
 type ProjectTab = "businesses" | "discovery" | "showcase";
 
-function normalizeProjectTab(value: string | null | undefined): ProjectTab {
-  const raw = String(value ?? "").trim().toLowerCase();
-  if (raw === "discovery") return "discovery";
-  if (raw === "showcase") return "showcase";
+function normalizeProjectTabFromPath(pathname: string): ProjectTab {
+  if (pathname.includes("/projects/discovery")) return "discovery";
+  if (pathname.includes("/projects/showcase")) return "showcase";
   return "businesses";
 }
 
@@ -353,8 +352,6 @@ const TAB_TITLE: Record<ProjectTab, string> = {
   showcase: "Public Showcase",
 };
 
-// Wrap the page body in Suspense so static prerendering doesn't bail on the
-// useSearchParams() call inside BusinessesPageInner.
 export default function BusinessesPage() {
   return (
     <Suspense fallback={null}>
@@ -364,8 +361,8 @@ export default function BusinessesPage() {
 }
 
 function BusinessesPageInner() {
-  const searchParams = useSearchParams();
-  const activeTab = normalizeProjectTab(searchParams?.get("tab"));
+  const pathname = usePathname();
+  const activeTab = normalizeProjectTabFromPath(pathname);
 
   const [businesses, setBusinesses]           = useState<Business[]>([]);
   const [team, setTeam]                       = useState<TeamMember[]>([]);
@@ -1395,6 +1392,21 @@ function BusinessesPageInner() {
             <span className="text-white/30">In-person</span>
           )}
         </td>
+        <td className="px-3 py-0 h-9 text-[11px] align-middle">
+          {fromWebsite ? (
+            <span className="text-white/50">{b.createdAt ? new Date(b.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-white/25">—</span>}</span>
+          ) : (
+            <input
+              type="date"
+              key={b.id}
+              defaultValue={b.firstContactDate ?? ""}
+              onBlur={(e) => { if (canEdit) void updateBusiness(b.id, { firstContactDate: e.target.value }); }}
+              className="bg-transparent border border-white/15 rounded px-1.5 py-0.5 text-[11px] text-white/70 w-full focus:outline-none focus:border-[#85CC17]/50"
+              style={{ colorScheme: "dark" }}
+              disabled={!canEdit}
+            />
+          )}
+        </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
             <div className="members-row-actions">
@@ -1609,14 +1621,10 @@ function BusinessesPageInner() {
         title={TAB_TITLE[activeTab]}
         subtitle={activeTab === "showcase" ? "Businesses that appear on the public home and showcase pages." : undefined}
         action={
-          canEdit ? (
-            activeTab === "showcase" ? (
-              <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn>
-            ) : (
-              <div className="flex gap-2">
-                <Btn variant="primary" onClick={() => openCreate()}>+ New Business</Btn>
-              </div>
-            )
+          canEdit && activeTab !== "showcase" ? (
+            <div className="flex gap-2">
+              <Btn variant="primary" onClick={() => openCreate()}>+ New Business</Btn>
+            </div>
           ) : undefined
         }
       />
@@ -1804,6 +1812,7 @@ function BusinessesPageInner() {
             const sorted = [...businesses]
               .filter((b) => b.showcaseEnabled && (scView === "showcase" || b.showcaseFeaturedOnHome))
               .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0));
+            const anyDragging = scDragSrcId !== null;
 
             const handleDragStart = (id: string) => setScDragSrcId(id);
             const handleDragOver = (e: React.DragEvent, id: string) => {
@@ -1863,9 +1872,11 @@ function BusinessesPageInner() {
                       style={{
                         background: "#F8F7F4",
                         border: isDragOver ? `2px solid ${colorSwatch}` : "1px solid #E4E2DC",
-                        opacity: isDragging ? 0.45 : 1,
-                        cursor: "grab",
-                        transition: "opacity 0.15s, border 0.1s",
+                        opacity: isDragging ? 0.25 : anyDragging && !isDragOver ? 0.65 : 1,
+                        transform: isDragOver ? "scale(1.03)" : anyDragging && !isDragging ? "scale(0.97)" : "scale(1)",
+                        cursor: isDragging ? "grabbing" : "grab",
+                        boxShadow: isDragOver ? `0 0 0 3px ${colorSwatch}40` : undefined,
+                        transition: "opacity 0.15s, transform 0.15s, border 0.1s, box-shadow 0.1s",
                       }}
                     >
                       {/* color bar */}
@@ -1946,7 +1957,7 @@ function BusinessesPageInner() {
         </>
       ) : activeTab === "discovery" ? (
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1110px"}}>
+          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1240px"}}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
@@ -1955,6 +1966,7 @@ function BusinessesPageInner() {
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[230px]">Primary Email</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Phone</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Source</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Date</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Actions</th>
               </tr>
             </thead>

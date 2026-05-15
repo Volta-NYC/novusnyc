@@ -66,13 +66,13 @@ export default function SectionTabs({
 }
 
 export const PROJECT_GROUP_TABS: SectionTab[] = [
-  { href: "/members/projects", label: "Businesses", matchTab: "" },
-  { href: "/members/projects?tab=discovery", label: "Discovery", matchTab: "discovery" },
-  { href: "/members/projects?tab=showcase", label: "Showcase", matchTab: "showcase" },
+  { href: "/members/projects", label: "Businesses", exact: true },
+  { href: "/members/projects/discovery", label: "Discovery" },
+  { href: "/members/projects/showcase", label: "Showcase" },
 ];
 
 export const MEMBERS_GROUP_TABS: SectionTab[] = [
-  { href: "/members/team", label: "Members", exact: true },
+  { href: "/members", label: "Members", exact: true },
 ];
 
 // Applicants + Interviews live on the same Applicants page.
