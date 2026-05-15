@@ -84,16 +84,6 @@ const nextConfig = {
         destination: "/partners",
         permanent: true,
       },
-      {
-        source: "/members/assignments/by-business",
-        destination: "/members/assignments/by-project",
-        permanent: true,
-      },
-      // Old query-param tab URLs → path-based
-      { source: "/members/projects", has: [{ type: "query", key: "tab", value: "discovery" }], destination: "/members/projects/discovery", permanent: true },
-      { source: "/members/projects", has: [{ type: "query", key: "tab", value: "showcase" }], destination: "/members/projects/showcase", permanent: true },
-      // Old /members/team → /members
-      { source: "/members/team", destination: "/members", permanent: true },
       ...OLD_HOSTS.map((host) => ({
         source: "/:path*",
         has: [{ type: "host", value: host }],

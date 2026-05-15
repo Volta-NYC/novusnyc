@@ -105,6 +105,7 @@ body {
   -webkit-font-smoothing: antialiased;
   margin: 0;
   padding: 0;
+  padding-top: var(--banner-h, 0px);
   width: 100%;
   max-width: 100%;
   /* Lock horizontal overflow on mobile Safari/Chrome to remove right-side dead space */
