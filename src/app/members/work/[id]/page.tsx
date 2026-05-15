@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
+import { Btn } from "@/components/members/ui";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
@@ -322,14 +323,14 @@ export default function AssignmentDetailPage() {
                 </button>
               )}
               {canSubmit && (
-                <button
-                  type="button"
+                <Btn
+                  variant="primary"
+                  size="sm"
                   onClick={() => setSubmitOpen(true)}
                   disabled={busy}
-                  className="rounded-lg bg-[#85CC17] hover:bg-[#9BE22B] px-3 py-1.5 text-sm font-semibold text-black disabled:opacity-50"
                 >
                   {myClaim.status === "rejected" ? "Resubmit" : "Submit for approval"}
-                </button>
+                </Btn>
               )}
               {canUnclaim && (
                 <button
@@ -349,14 +350,14 @@ export default function AssignmentDetailPage() {
         {!myClaim && (
           <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
             {canClaim ? (
-              <button
-                type="button"
+              <Btn
+                variant="primary"
                 onClick={() => void handleClaim()}
                 disabled={busy}
-                className="w-full rounded-lg bg-[#85CC17] hover:bg-[#9BE22B] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
+                className="w-full"
               >
                 Claim this assignment
-              </button>
+              </Btn>
             ) : (
               <p className="text-sm text-center text-black/45">
                 {isFull ? "All spots are taken." : !cycleMatches ? "Cycle is closed." : !meetsRoleGate ? `Requires ${assignment.minRole}+.` : "Claiming is disabled for your account."}
@@ -399,14 +400,14 @@ export default function AssignmentDetailPage() {
               >
                 Cancel
               </button>
-              <button
-                type="button"
+              <Btn
+                variant="primary"
+                size="sm"
                 onClick={() => void handleSubmit()}
                 disabled={busy || !deliverableUrl.trim()}
-                className="rounded-lg bg-[#85CC17] hover:bg-[#9BE22B] px-3 py-1.5 text-sm font-semibold text-black disabled:opacity-50"
               >
                 {busy ? "Submitting…" : "Submit"}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

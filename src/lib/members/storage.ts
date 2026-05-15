@@ -1604,6 +1604,18 @@ export async function updateInterviewSettings(data: Partial<InterviewSettings>):
 
 // ── Site Settings ─────────────────────────────────────────────────────────────
 
+export type PortalPermissionKey =
+  | "interview"
+  | "reviewSubmissions"
+  | "email"
+  | "viewApplicants"
+  | "manageAssignments"
+  | "manageShowcase";
+
+export type PortalRole = "Analyst" | "Senior Analyst" | "Associate" | "Reserve";
+
+export type PortalPermissions = Record<PortalRole, Record<PortalPermissionKey, boolean>>;
+
 export interface SiteSettings {
   applicationsPaused:   boolean;
   applicationsPausedMsg: string;
@@ -1616,8 +1628,15 @@ export interface SiteSettings {
   portalBannerMessage:  string;
   portalBannerBg:       string;
   portalBannerText:     string;
-  roleLabels:           { Analyst: string; "Senior Analyst": string; Associate: string; Reserve: string };
+  permissions:          PortalPermissions;
 }
+
+const DEFAULT_PERMISSIONS: PortalPermissions = {
+  "Analyst":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
+  "Senior Analyst": { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: false, manageShowcase: false },
+  "Associate":      { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: true,  manageShowcase: true  },
+  "Reserve":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
+};
 
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   applicationsPaused:    false,
@@ -1631,11 +1650,26 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   portalBannerMessage:   "",
   portalBannerBg:        "#85CC17",
   portalBannerText:      "#0D0D0D",
-  roleLabels:            { Analyst: "Analyst", "Senior Analyst": "Senior Analyst", Associate: "Associate", Reserve: "Reserve" },
+  permissions:           DEFAULT_PERMISSIONS,
 };
 
+function parsePermissions(raw: unknown): PortalPermissions {
+  const ROLES: PortalRole[] = ["Analyst", "Senior Analyst", "Associate", "Reserve"];
+  const KEYS: PortalPermissionKey[] = ["interview", "reviewSubmissions", "email", "viewApplicants", "manageAssignments", "manageShowcase"];
+  const src = (raw && typeof raw === "object" ? raw : {}) as Record<string, Record<string, unknown>>;
+  const out = {} as PortalPermissions;
+  for (const role of ROLES) {
+    const roleRow = (src[role] && typeof src[role] === "object" ? src[role] : {}) as Record<string, unknown>;
+    const defaults = DEFAULT_PERMISSIONS[role];
+    out[role] = {} as Record<PortalPermissionKey, boolean>;
+    for (const key of KEYS) {
+      out[role][key] = typeof roleRow[key] === "boolean" ? roleRow[key] as boolean : defaults[key];
+    }
+  }
+  return out;
+}
+
 function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
-  const rl = (r.role_labels ?? {}) as Record<string, unknown>;
   return {
     applicationsPaused:    Boolean(r.applications_paused ?? false),
     applicationsPausedMsg: String(r.applications_paused_msg ?? DEFAULT_SITE_SETTINGS.applicationsPausedMsg),
@@ -1648,12 +1682,7 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
     portalBannerMessage:   String(r.portal_banner_message ?? ""),
     portalBannerBg:        String(r.portal_banner_bg ?? DEFAULT_SITE_SETTINGS.portalBannerBg),
     portalBannerText:      String(r.portal_banner_text ?? DEFAULT_SITE_SETTINGS.portalBannerText),
-    roleLabels: {
-      Analyst:          String(rl.Analyst          ?? "Analyst"),
-      "Senior Analyst": String(rl["Senior Analyst"] ?? "Senior Analyst"),
-      Associate:        String(rl.Associate        ?? "Associate"),
-      Reserve:          String(rl.Reserve          ?? "Reserve"),
-    },
+    permissions:           parsePermissions(r.permissions),
   };
 }
 
@@ -1689,7 +1718,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.portalBannerMessage   !== undefined) row.portal_banner_message   = patch.portalBannerMessage;
   if (patch.portalBannerBg        !== undefined) row.portal_banner_bg        = patch.portalBannerBg;
   if (patch.portalBannerText      !== undefined) row.portal_banner_text      = patch.portalBannerText;
-  if (patch.roleLabels            !== undefined) row.role_labels             = patch.roleLabels;
+  if (patch.permissions           !== undefined) row.permissions             = patch.permissions;
   const { error } = await supabase.from("site_settings").update(row).eq("id", "singleton");
   if (error) throw new Error(error.message);
   void writeAuditLog({ action: "update", collection: "siteSettings", recordId: "singleton", details: { fields: Object.keys(patch) } });

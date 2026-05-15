@@ -141,7 +141,7 @@ type AppsScriptForwardResult = {
 };
 
 async function forwardToAppsScriptBackup(data: Record<string, unknown>): Promise<AppsScriptForwardResult> {
-  const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
+  const url = process.env.APPS_SCRIPT_URL;
   if (!url) return { configured: false, ok: false };
   try {
     const upstream = await fetch(url, {

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import {
   getHandbookPage, upsertHandbookPage, type HandbookPage,
   getSiteSettings, updateSiteSettings, type SiteSettings,
+  type PortalPermissionKey, type PortalRole, type PortalPermissions,
 } from "@/lib/members/storage";
 
 const EXPORT_OPTIONS = [
@@ -28,7 +29,7 @@ const EXPORT_OPTIONS = [
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-type AdminTab = "data" | "applications" | "services" | "banners" | "roles" | "handbook";
+type AdminTab = "data" | "applications" | "services" | "banners" | "permissions" | "handbook";
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 
@@ -490,34 +491,46 @@ function BannersTab() {
 
 // ── TAB: ROLES ────────────────────────────────────────────────────────────────
 
-const ROLE_KEYS: Array<keyof SiteSettings["roleLabels"]> = ["Analyst", "Senior Analyst", "Associate", "Reserve"];
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  Analyst:          "Entry-level member. Most members start here.",
-  "Senior Analyst": "Mid-level member. Eligible to review assignments.",
-  Associate:        "Senior member. Full access and leadership responsibilities.",
-  Reserve:          "Inactive or penalized status. Limited portal access.",
+const PORTAL_ROLES: PortalRole[] = ["Analyst", "Senior Analyst", "Associate", "Reserve"];
+const PERMISSION_KEYS: PortalPermissionKey[] = ["interview", "reviewSubmissions", "email", "viewApplicants", "manageAssignments", "manageShowcase"];
+const PERMISSION_LABELS: Record<PortalPermissionKey, string> = {
+  interview:          "Conduct interviews",
+  reviewSubmissions:  "Review assignment submissions",
+  email:              "Send emails (email feature)",
+  viewApplicants:     "View applicants",
+  manageAssignments:  "Manage assignments (create, edit, delete)",
+  manageShowcase:     "Manage public showcase",
 };
 
-function RolesTab() {
+const DEFAULT_PERMISSIONS_FALLBACK: PortalPermissions = {
+  "Analyst":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
+  "Senior Analyst": { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: false, manageShowcase: false },
+  "Associate":      { interview: true,  reviewSubmissions: true,  email: true,  viewApplicants: true,  manageAssignments: true,  manageShowcase: true  },
+  "Reserve":        { interview: false, reviewSubmissions: false, email: false, viewApplicants: false, manageAssignments: false, manageShowcase: false },
+};
+
+function PermissionsTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
-  const [labels, setLabels] = useState<SiteSettings["roleLabels"]>({
-    Analyst: "Analyst",
-    "Senior Analyst": "Senior Analyst",
-    Associate: "Associate",
-    Reserve: "Reserve",
-  });
+  const [permissions, setPermissions] = useState<PortalPermissions>(DEFAULT_PERMISSIONS_FALLBACK);
 
   useEffect(() => {
-    getSiteSettings().then((s) => { setLabels(s.roleLabels); setLoading(false); });
+    getSiteSettings().then((s) => { setPermissions(s.permissions); setLoading(false); });
   }, []);
+
+  const toggle = (role: PortalRole, key: PortalPermissionKey) => {
+    setPermissions((prev) => ({
+      ...prev,
+      [role]: { ...prev[role], [key]: !prev[role][key] },
+    }));
+  };
 
   const save = async () => {
     setSaving(true);
     setStatus("");
     try {
-      await updateSiteSettings({ roleLabels: labels });
+      await updateSiteSettings({ permissions });
       setStatus("Saved.");
     } catch {
       setStatus("Save failed. Try again.");
@@ -529,24 +542,56 @@ function RolesTab() {
   if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   return (
-    <div className="max-w-lg space-y-4">
-      <Card title="Role Labels" subtitle="Override the display name for each role tier. Internal enum values are unchanged.">
-        <div className="space-y-3 mb-4">
-          {ROLE_KEYS.map((key) => (
-            <div key={key}>
-              <Field label={`${key} label`}>
-                <Input
-                  value={labels[key]}
-                  onChange={(e) => setLabels((prev) => ({ ...prev, [key]: e.target.value }))}
-                  placeholder={key}
-                />
-              </Field>
-              <p className="text-[11px] text-white/35 mt-1 ml-0.5">{ROLE_DESCRIPTIONS[key]}</p>
-            </div>
-          ))}
+    <div className="space-y-4">
+      <Card
+        title="Role Permissions"
+        subtitle="Check which capabilities each role tier has access to. These are enforced at the application layer. Database-level RLS is controlled via migrations."
+      >
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/8">
+                <th className="text-left text-[10px] uppercase tracking-wider text-white/40 font-normal pb-2 pr-4 w-[240px]">Permission</th>
+                {PORTAL_ROLES.map((role) => (
+                  <th key={role} className="text-center text-[10px] uppercase tracking-wider text-white/40 font-normal pb-2 px-3 min-w-[110px]">{role}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {PERMISSION_KEYS.map((key) => (
+                <tr key={key} className="border-b border-white/5 last:border-0">
+                  <td className="py-2.5 pr-4 text-white/70 text-xs">{PERMISSION_LABELS[key]}</td>
+                  {PORTAL_ROLES.map((role) => (
+                    <td key={role} className="py-2.5 px-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggle(role, key)}
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center mx-auto transition-colors ${
+                          permissions[role][key]
+                            ? "bg-[#85CC17] border-[#85CC17]"
+                            : "bg-transparent border-white/20 hover:border-white/40"
+                        }`}
+                      >
+                        {permissions[role][key] && (
+                          <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3">
+                            <path d="M1 5l3.5 3.5L11 1" stroke="#0D0D0D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <SaveBtn saving={saving} onClick={() => void save()} />
-        <StatusMsg msg={status} />
+        <div className="mt-5 pt-4 border-t border-white/8">
+          <p className="text-[11px] text-white/35 mb-3">
+            Note: Supabase row-level security is managed via database migrations and cannot be changed here. These settings control which UI features are visible to each role.
+          </p>
+          <SaveBtn saving={saving} onClick={() => void save()} />
+          <StatusMsg msg={status} />
+        </div>
       </Card>
     </div>
   );
@@ -654,7 +699,7 @@ function AdminContent() {
     { key: "applications", label: "Applications" },
     { key: "services",     label: "Services" },
     { key: "banners",      label: "Banners" },
-    { key: "roles",        label: "Roles" },
+    { key: "permissions",  label: "Permissions" },
     { key: "handbook",     label: "Handbook" },
   ];
 
@@ -683,7 +728,7 @@ function AdminContent() {
       {activeTab === "applications" && <ApplicationsTab />}
       {activeTab === "services"     && <ServicesTab />}
       {activeTab === "banners"      && <BannersTab />}
-      {activeTab === "roles"        && <RolesTab />}
+      {activeTab === "permissions"   && <PermissionsTab />}
       {activeTab === "handbook"     && <HandbookTab />}
     </>
   );

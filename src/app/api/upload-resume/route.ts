@@ -8,7 +8,7 @@ import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
 // that serves the actual JSON response. We use redirect:"manual" to stop
 // at the 302 and read the Location header, then follow it manually.
 export async function POST(req: Request) {
-  const url = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL;
+  const url = process.env.APPS_SCRIPT_URL;
   if (!url) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
   }

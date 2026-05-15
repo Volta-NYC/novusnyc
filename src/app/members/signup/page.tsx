@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Spinner } from "@/components/members/ui";
+import { Spinner, Btn } from "@/components/members/ui";
 
 export default function SignupPage() {
   const [name, setName]         = useState("");
@@ -189,13 +189,9 @@ export default function SignupPage() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#85CC17] text-[#0D0D0D] font-display font-bold py-3 rounded-xl hover:bg-[#72b314] transition-colors disabled:opacity-60"
-          >
+          <Btn type="submit" variant="primary" disabled={loading} className="w-full py-3">
             {loading ? "Setting up…" : "Complete Setup"}
-          </button>
+          </Btn>
         </form>
 
         <p className="text-center mt-4 text-sm font-body">

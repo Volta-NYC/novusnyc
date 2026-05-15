@@ -145,7 +145,62 @@ Don't add error handling, fallbacks, or helper functions for scenarios that can'
 
 - **Platform:** Vercel
 - **Production domain:** `voltanyc.org`
-- **Redirects (configured in `next.config.ts`):** `www.voltanyc.org`, `nyc.voltanpo.org`, `volta-nyc.vercel.app` → `voltanyc.org`
+- **Redirects (configured in `next.config.mjs`):** `www.voltanyc.org`, `nyc.voltanpo.org`, `volta-nyc.vercel.app` → `voltanyc.org`
 - **Images:** served from Supabase Storage (`thzvuxuqvjkifpxlmoqc.supabase.co`), optimized as AVIF/WebP by Next.js Image.
 - **Cache-busting:** run `npx next build` and deploy; Vercel invalidates CDN on deploy automatically.
 - **Revalidate static pages after DB changes:** `POST /api/members/admin/revalidate` (admin-only).
+
+---
+
+## Security Invariants
+
+- `supabaseAdmin.ts` has `import "server-only"` as its first line. Build fails if it's ever imported client-side.
+- `SUPABASE_SERVICE_ROLE_KEY` and any private keys must never appear in client bundles or source files committed to git.
+- `.gitignore` covers `*.save` and `.env*.local` — never commit credentials under any extension.
+- All API routes that write or return sensitive data must call `verifyCaller()` or `getAuthToken()` + role check before touching the DB.
+- If a Firebase or third-party service key is ever accidentally committed, revoke it immediately before removing from history.
+
+---
+
+## Auth Guard Pattern (Canonical)
+
+The correct pattern guards render AND schedules a redirect. `useEffect`-only is prohibited because it allows a flash of data before the redirect fires.
+
+```tsx
+const { authRole, loading } = useAuth();
+const router = useRouter();
+
+useEffect(() => {
+  if (!loading && authRole === "member") router.replace("/members/work");
+}, [authRole, loading, router]);
+
+if (loading || authRole === "member") return null; // or <Spinner /> inside <MembersLayout>
+```
+
+The `return null` / early render guard is **required**. The `useEffect` redirect is a fallback for navigation history. Both must be present.
+
+---
+
+## Leaflet / Maps Rule
+
+All `react-leaflet` render components (`MapContainer`, `TileLayer`, `Marker`, etc.) must be loaded via `next/dynamic({ ssr: false })`. Static imports of hooks like `useMap` are fine inside components that are themselves dynamically loaded. Never import render components at the top level of a server or shared module.
+
+---
+
+## Tailwind Safelist Policy
+
+Add a class to `safelist` in `tailwind.config.ts` only when it is constructed dynamically at runtime (string concatenation, lookup maps, data-driven class names) and therefore invisible to the Tailwind content scanner. Every safelisted entry must have an inline comment identifying which file builds the class string dynamically and why.
+
+Do not safelist classes that appear as complete strings in JSX — Tailwind will scan those automatically.
+
+---
+
+## API Route Checklist
+
+Before merging any new `src/app/api/` route:
+
+- [ ] Mutating methods (`POST`, `PATCH`, `DELETE`) call `verifyCaller()` or verify JWT via `getAuthToken()`.
+- [ ] Uses `getSupabaseAdmin()` (not `supabase` client) for DB writes.
+- [ ] Returns `{ error: string }` with correct HTTP status on failure; `{ data }` on success.
+- [ ] Does not expose raw Supabase error messages to the client.
+- [ ] Input from the request body is validated (required fields present, types correct) before hitting the DB.

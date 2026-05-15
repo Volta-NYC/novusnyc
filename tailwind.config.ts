@@ -7,22 +7,15 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/data/**/*.{js,ts}",
   ],
+  // Classes here are constructed dynamically via a color-name→class lookup map in
+  // src/app/page.tsx (COLOR_CLASS_MAP). Tailwind can't see them at scan time.
   safelist: [
-    "bg-blue-300",
-    "bg-blue-500",
-    "bg-blue-700",
-    "bg-lime-300",
-    "bg-lime-500",
-    "bg-lime-700",
-    "bg-amber-300",
-    "bg-amber-500",
-    "bg-amber-700",
-    "bg-pink-300",
-    "bg-pink-500",
-    "bg-pink-700",
-    "bg-red-300",
-    "bg-red-500",
-    "bg-red-700",
+    // soft/mid/deep shades used by public home page showcase cards (COLOR_CLASS_MAP)
+    "bg-blue-300",  "bg-blue-500",  "bg-blue-700",
+    "bg-lime-300",  "bg-lime-500",  "bg-lime-700",
+    "bg-amber-300", "bg-amber-500", "bg-amber-700",
+    "bg-pink-300",  "bg-pink-500",  "bg-pink-700",
+    "bg-red-300",   "bg-red-500",   "bg-red-700",
   ],
   theme: {
     extend: {

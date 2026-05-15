@@ -409,6 +409,9 @@ function BusinessesPageInner() {
   const [scAddOpen, setScAddOpen] = useState(false);
   const [scAddPickerId, setScAddPickerId] = useState("");
   const [scAddBusy, setScAddBusy] = useState(false);
+  const [scView, setScView] = useState<"showcase" | "home">("showcase");
+  const [scDragSrcId, setScDragSrcId] = useState<string | null>(null);
+  const [scDragOverId, setScDragOverId] = useState<string | null>(null);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
@@ -1777,79 +1780,166 @@ function BusinessesPageInner() {
             </div>
           </Modal>
 
-          {/* Showcase table */}
+          {/* Sub-tab header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex gap-1 bg-[#13161D] border border-white/10 rounded-xl p-1">
+              {(["showcase", "home"] as const).map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  onClick={() => setScView(view)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${scView === view ? "bg-white/10 text-white" : "text-white/45 hover:text-white/70"}`}
+                >
+                  {view === "showcase" ? "Showcase" : "Home Page"}
+                </button>
+              ))}
+            </div>
+            {canEdit && (
+              <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn>
+            )}
+          </div>
+
+          {/* Drag-and-drop card preview */}
           {(() => {
-            const showcased = [...businesses]
-              .filter((b) => b.showcaseEnabled)
-              .sort((a, b) => a.name.localeCompare(b.name));
+            const sorted = [...businesses]
+              .filter((b) => b.showcaseEnabled && (scView === "showcase" || b.showcaseFeaturedOnHome))
+              .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0));
+
+            const handleDragStart = (id: string) => setScDragSrcId(id);
+            const handleDragOver = (e: React.DragEvent, id: string) => {
+              e.preventDefault();
+              if (id !== scDragSrcId) setScDragOverId(id);
+            };
+            const handleDrop = async (e: React.DragEvent, targetId: string) => {
+              e.preventDefault();
+              const srcId = scDragSrcId;
+              setScDragSrcId(null);
+              setScDragOverId(null);
+              if (!srcId || srcId === targetId) return;
+              const srcIdx = sorted.findIndex((b) => b.id === srcId);
+              const tgtIdx = sorted.findIndex((b) => b.id === targetId);
+              if (srcIdx === -1 || tgtIdx === -1) return;
+              const reordered = [...sorted];
+              const [moved] = reordered.splice(srcIdx, 1);
+              reordered.splice(tgtIdx, 0, moved);
+              await Promise.all(
+                reordered.map((b, i) => {
+                  const newIdx = (i + 1) * 1000;
+                  if (newIdx !== (b.sortIndex ?? 0)) return updateBusiness(b.id, { sortIndex: newIdx });
+                  return Promise.resolve();
+                }),
+              );
+            };
+            const handleDragEnd = () => { setScDragSrcId(null); setScDragOverId(null); };
+
+            if (sorted.length === 0) {
+              return (
+                <Empty
+                  message={scView === "showcase" ? "No businesses on the public showcase yet." : "No businesses featured on the home page yet."}
+                  action={canEdit ? <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn> : undefined}
+                />
+              );
+            }
+
             return (
-              <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
-                <table className="w-full text-left">
-                  <thead className="bg-[#0F1014] border-b border-white/8">
-                    <tr>
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-10" />
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45">Business</th>
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[140px]">Neighborhood</th>
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[120px]">What we do</th>
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[110px] text-center">Home page</th>
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[120px]">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {showcased.map((b) => {
-                      const imgUrl = b.showcaseImageUrl || undefined;
-                      const service = (b.showcaseServices ?? [])[0] ?? "";
-                      return (
-                        <tr key={b.id} className="border-b border-white/8 align-middle hover:bg-white/[0.03]">
-                          <td className="px-3 py-2">
-                            {imgUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={imgUrl} alt="" className="w-8 h-8 rounded-lg object-cover border border-white/10" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-lg border border-white/10 bg-white/5" />
-                            )}
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <p className="text-sm text-white/90 font-medium">{b.name}</p>
-                            {b.showcaseDescription && (
-                              <p className="text-xs text-white/45 mt-0.5 line-clamp-1">{b.showcaseDescription}</p>
-                            )}
-                          </td>
-                          <td className="px-3 py-2.5 text-xs text-white/65">
-                            {(b.neighborhood ?? b.showcaseNeighborhood ?? "").trim() || <span className="text-white/30">—</span>}
-                          </td>
-                          <td className="px-3 py-2.5 text-xs text-white/65">
-                            {service || <span className="text-white/30">—</span>}
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <button
-                              type="button"
-                              title={b.showcaseFeaturedOnHome ? "Remove from home page" : "Feature on home page"}
-                              onClick={() => void handleScToggleHome(b)}
-                              className={`w-9 h-5 rounded-full transition-colors ${b.showcaseFeaturedOnHome ? "bg-[#85CC17]" : "bg-white/15"}`}
-                            >
-                              <span className={`block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5 ${b.showcaseFeaturedOnHome ? "translate-x-4" : "translate-x-0"}`} />
-                            </button>
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <div className="flex gap-1.5">
-                              <Btn size="sm" variant="secondary" onClick={() => void openEdit(b).then(() => setModal("edit"))}>Edit</Btn>
-                              <Btn size="sm" variant="ghost" onClick={() => void handleScRemove(b)}>Remove</Btn>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {showcased.length === 0 && (
-                  <div className="p-6">
-                    <Empty
-                      message="No businesses on the public showcase yet."
-                      action={canEdit ? <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn> : undefined}
-                    />
-                  </div>
-                )}
+              <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
+                {sorted.map((b) => {
+                  const colorSwatch = SHOWCASE_COLOR_OPTIONS.find((o) => o.value === b.showcaseColor)?.swatch ?? "#3B82F6";
+                  const imgUrl = b.showcaseImageUrl || null;
+                  const services = b.showcaseServices ?? [];
+                  const neighborhood = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim();
+                  const status = normalizeProjectStatus(b.projectStatus ?? "Upcoming");
+                  const isDragging = scDragSrcId === b.id;
+                  const isDragOver = scDragOverId === b.id;
+                  return (
+                    <div
+                      key={b.id}
+                      draggable
+                      onDragStart={() => handleDragStart(b.id)}
+                      onDragOver={(e) => handleDragOver(e, b.id)}
+                      onDrop={(e) => void handleDrop(e, b.id)}
+                      onDragEnd={handleDragEnd}
+                      className="rounded-2xl overflow-hidden flex flex-col relative select-none"
+                      style={{
+                        background: "#F8F7F4",
+                        border: isDragOver ? `2px solid ${colorSwatch}` : "1px solid #E4E2DC",
+                        opacity: isDragging ? 0.45 : 1,
+                        cursor: "grab",
+                        transition: "opacity 0.15s, border 0.1s",
+                      }}
+                    >
+                      {/* color bar */}
+                      <div style={{ backgroundColor: colorSwatch, height: "8px", flexShrink: 0 }} />
+                      {/* image */}
+                      <div className="mx-4 mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid #E4E2DC", background: "white" }}>
+                        {imgUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={imgUrl} alt={b.name} className="w-full object-cover" style={{ height: "120px" }} />
+                        ) : (
+                          <div className="w-full flex items-center justify-center" style={{ height: "120px", color: "#C4C2BC", fontSize: "28px" }}>
+                            &#9728;
+                          </div>
+                        )}
+                      </div>
+                      {/* content */}
+                      <div className="px-4 pt-3 pb-4 flex flex-col flex-1">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {services.slice(0, 2).map((s) => (
+                            <span key={s} className="px-2 py-0.5 rounded-full text-[10px] font-semibold border" style={{ background: "#EFF6FF", borderColor: "#BFDBFE", color: "#1D4ED8" }}>{s}</span>
+                          ))}
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${status === "Ongoing" ? "bg-lime-100 border-lime-200 text-lime-700" : status === "Completed" ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-slate-100 border-slate-200 text-slate-600"}`}>
+                            {status}
+                          </span>
+                        </div>
+                        <p className="font-bold text-sm mb-0.5" style={{ color: "#1A1A18", fontFamily: "var(--font-display, sans-serif)" }}>{b.name}</p>
+                        {b.showcaseDescription && (
+                          <p className="text-xs line-clamp-2 flex-1" style={{ color: "#6B6B65" }}>{b.showcaseDescription}</p>
+                        )}
+                        {neighborhood && (
+                          <p className="text-[10px] mt-1" style={{ color: "#9B9B95" }}>{neighborhood}</p>
+                        )}
+                        {b.showcaseUrl && (
+                          <p className="text-[10px] mt-1 font-medium" style={{ color: "#4B7A0A" }}>View live site →</p>
+                        )}
+                      </div>
+                      {/* action overlay */}
+                      <div className="absolute top-3 right-2 flex gap-1 opacity-0 hover:opacity-100 group-hover:opacity-100 transition-opacity" style={{ pointerEvents: "auto" }}>
+                        <span />
+                      </div>
+                      <div
+                        className="absolute inset-x-0 bottom-0 flex gap-1.5 px-3 py-2 justify-end items-center"
+                        style={{ background: "linear-gradient(to top, rgba(248,247,244,0.98) 70%, transparent)", pointerEvents: "auto" }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          title={b.showcaseFeaturedOnHome ? "Remove from home page" : "Feature on home page"}
+                          onClick={(e) => { e.stopPropagation(); void handleScToggleHome(b); }}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors ${b.showcaseFeaturedOnHome ? "bg-lime-100 border-lime-300 text-lime-700" : "bg-white/80 border-[#E4E2DC] text-[#9B9B95]"}`}
+                          draggable={false}
+                        >
+                          {b.showcaseFeaturedOnHome ? "★ Home" : "☆ Home"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void openEdit(b); }}
+                          className="px-2 py-1 rounded-lg text-[10px] font-semibold border bg-white/80 border-[#E4E2DC] text-[#4B4B45] hover:bg-white transition-colors"
+                          draggable={false}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void handleScRemove(b); }}
+                          className="px-2 py-1 rounded-lg text-[10px] font-semibold border bg-white/80 border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+                          draggable={false}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
           })()}

@@ -106,14 +106,15 @@ export default function AdminCycleOverview() {
       async () => {
         await activateCycleExclusive(cycle.id, allIds);
       },
-      `Activate “${cycle.name || "untitled cycle"}”? This deactivates any other active cycle.`,
+      `Activate "${cycle.name || "untitled cycle"}"? This deactivates any other active cycle.`,
     );
   };
 
   const handleDelete = async (cycle: Cycle) => {
+    const warning = cycle.active ? " This cycle is currently active." : "";
     await ask(
       async () => deleteCycle(cycle.id),
-      `Delete “${cycle.name || "untitled cycle"}”? This cannot be undone.`,
+      `Delete "${cycle.name || "untitled cycle"}"?${warning} This cannot be undone.`,
     );
   };
 
@@ -249,9 +250,7 @@ function CycleCard({
             {!cycle.active && (
               <Btn size="sm" variant="secondary" onClick={onActivate}>Activate</Btn>
             )}
-            {!cycle.active && (
-              <Btn size="sm" variant="danger" onClick={onDelete}>Delete</Btn>
-            )}
+            <Btn size="sm" variant="danger" onClick={onDelete}>Delete</Btn>
           </div>
         </div>
       )}

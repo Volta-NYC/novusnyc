@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, resetPassword } from "@/lib/members/supabaseAuth";
+import { Btn } from "@/components/members/ui";
 
 export default function MembersLogin() {
   const [email, setEmail] = useState("");
@@ -96,13 +97,9 @@ export default function MembersLogin() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#85CC17] text-[#0D0D0D] font-display font-bold py-3 rounded-xl hover:bg-[#72b314] transition-colors disabled:opacity-60"
-            >
+            <Btn type="submit" variant="primary" disabled={loading} className="w-full py-3">
               {loading ? "Signing in…" : "Sign In"}
-            </button>
+            </Btn>
           </form>
         ) : resetSent ? (
           <div className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 text-center">
@@ -140,13 +137,9 @@ export default function MembersLogin() {
                 {error}
               </div>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#85CC17] text-[#0D0D0D] font-display font-bold py-3 rounded-xl hover:bg-[#72b314] transition-colors disabled:opacity-60"
-            >
+            <Btn type="submit" variant="primary" disabled={loading} className="w-full py-3">
               {loading ? "Sending…" : "Send Reset Link"}
-            </button>
+            </Btn>
             <button
               type="button"
               onClick={() => setShowReset(false)}
