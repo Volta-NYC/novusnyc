@@ -482,6 +482,26 @@ export default function TeamPage() {
     );
   };
 
+  const handleDeleteAccount = async () => {
+    if (!editingMember?.authUid) return;
+    await ask(
+      async () => {
+        const token = await getAuthToken();
+        const res = await fetch("/api/members/admin/delete-account", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ memberId: editingMember.id }),
+        });
+        if (!res.ok) {
+          const { detail } = await res.json().catch(() => ({})) as { detail?: string };
+          throw new Error(detail ?? "Failed to delete account.");
+        }
+        setModal(null);
+      },
+      `Delete ${editingMember.name}'s portal account? Their member profile will be kept, but they will need a new invite to access the portal.`
+    );
+  };
+
   const handleSendInvite = async (member: TeamMember) => {
     setInviteStatus(s => ({ ...s, [member.id]: "sending" }));
     try {
@@ -1509,9 +1529,16 @@ export default function TeamPage() {
         </div>
         <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
           {editingMember ? (
-            <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
-              Delete Member
-            </Btn>
+            <div className="flex items-center gap-2">
+              <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
+                Delete Member
+              </Btn>
+              {editingMember.authUid && (
+                <Btn variant="danger" onClick={() => void handleDeleteAccount()}>
+                  Delete Account
+                </Btn>
+              )}
+            </div>
           ) : <span />}
           <div className="flex items-center gap-3">
             <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
