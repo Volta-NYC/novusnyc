@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   if (inviteErr) {
     console.error("[invite-member] inviteUserByEmail failed:", inviteErr);
-    return NextResponse.json({ error: "invite_failed" }, { status: 500 });
+    return NextResponse.json({ error: "invite_failed", detail: inviteErr.message }, { status: 500 });
   }
 
   await writeAuditLog({
