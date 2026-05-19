@@ -31,9 +31,17 @@ export async function POST(req: NextRequest) {
   if (!email) return NextResponse.json({ error: "member_has_no_email" }, { status: 400 });
 
   // redirectTo includes ?email= so the signup page always knows the member's
-  // email — used to show a pre-filled "Send me a setup link" button on both
-  // success and expired-OTP error screens.
+  // email on both success and expired-OTP error screens.
   const redirectTo = `${siteOrigin(req)}/members/signup?email=${encodeURIComponent(email)}`;
+
+  // If this email already has an unconfirmed Supabase auth account (from a
+  // previous invite), inviteUserByEmail will fail. Delete the stale unconfirmed
+  // account first so we can issue a fresh invite.
+  const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
+  const existing = users.find(u => u.email?.toLowerCase() === email);
+  if (existing && !existing.email_confirmed_at) {
+    await sb.auth.admin.deleteUser(existing.id);
+  }
 
   const { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(email, {
     redirectTo,
