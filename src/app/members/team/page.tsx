@@ -530,8 +530,8 @@ export default function TeamPage() {
   const filtered = team.filter(member => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return member.name.toLowerCase().includes(q)
-      || member.school.toLowerCase().includes(q)
+    return (member.name ?? "").toLowerCase().includes(q)
+      || (member.school ?? "").toLowerCase().includes(q)
       || (member.grade ?? "").toLowerCase().includes(q)
       || gradeToClassOf(member.grade ?? "").toLowerCase().includes(q)
       || getMemberTrack(member).toLowerCase().includes(q)
