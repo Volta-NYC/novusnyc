@@ -10,6 +10,21 @@ function siteOrigin(req: NextRequest): string {
   return `${proto}://${host}`;
 }
 
+async function deleteUnconfirmedUser(sb: ReturnType<typeof getSupabaseAdmin>, email: string): Promise<void> {
+  let page = 1;
+  while (true) {
+    const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error || !data) break;
+    const match = data.users.find(u => u.email?.toLowerCase() === email && !u.email_confirmed_at);
+    if (match) {
+      await sb.auth.admin.deleteUser(match.id);
+      break;
+    }
+    if (data.users.length < 1000) break;
+    page++;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) {
@@ -30,26 +45,25 @@ export async function POST(req: NextRequest) {
   const name  = String(member.name  ?? "").trim() || email;
   if (!email) return NextResponse.json({ error: "member_has_no_email" }, { status: 400 });
 
-  // redirectTo includes ?email= so the signup page always knows the member's
-  // email on both success and expired-OTP error screens.
   const redirectTo = `${siteOrigin(req)}/members/signup?email=${encodeURIComponent(email)}`;
 
-  // If this email already has an unconfirmed Supabase auth account (from a
-  // previous invite), inviteUserByEmail will fail. Delete the stale unconfirmed
-  // account first so we can issue a fresh invite.
-  const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
-  const existing = users.find(u => u.email?.toLowerCase() === email);
-  if (existing && !existing.email_confirmed_at) {
-    await sb.auth.admin.deleteUser(existing.id);
-  }
-
-  const { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(email, {
+  let { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(email, {
     redirectTo,
     data: { full_name: name },
   });
 
+  // If user already exists as unconfirmed (stale invite), delete and retry.
+  if (inviteErr?.message?.includes("already been registered")) {
+    await deleteUnconfirmedUser(sb, email);
+    const retry = await sb.auth.admin.inviteUserByEmail(email, {
+      redirectTo,
+      data: { full_name: name },
+    });
+    inviteErr = retry.error;
+  }
+
   if (inviteErr) {
-    console.error("[invite-member] inviteUserByEmail failed:", inviteErr);
+    console.error("[invite-member] failed:", inviteErr);
     return NextResponse.json({ error: "invite_failed", detail: inviteErr.message }, { status: 500 });
   }
 
