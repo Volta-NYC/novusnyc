@@ -21,12 +21,13 @@ export async function getAuthToken(): Promise<string> {
   return session?.access_token ?? "";
 }
 
-// Sends a password-reset email. Use on the login page's "Forgot password" link.
+// Sends a password-reset email. The link redirects to /members/reset-password
+// which handles the PASSWORD_RECOVERY session and prompts for a new password.
 export async function resetPassword(email: string): Promise<void> {
   const redirectTo =
     typeof window !== "undefined"
-      ? `${window.location.origin}/members/login`
-      : "https://voltanyc.org/members/login";
+      ? `${window.location.origin}/members/reset-password`
+      : "https://voltanyc.org/members/reset-password";
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) throw error;
 }

@@ -637,6 +637,9 @@ function HandbookTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState("");
+  const { ask: askReset, Dialog: ResetDialog } = useConfirm();
 
   useEffect(() => {
     getHandbookPage("credit-infraction-policy")
@@ -669,6 +672,31 @@ function HandbookTab() {
     }
   };
 
+  const doResetAcks = async () => {
+    setResetting(true);
+    setResetMessage("");
+    try {
+      const { data: { session } } = await (await import("@/lib/supabaseClient")).supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("no_session");
+      const res = await fetch("/api/members/admin/reset-handbook-acks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ slug: "credit-infraction-policy" }),
+      });
+      if (!res.ok) throw new Error("failed");
+      setResetMessage("All member acknowledgments cleared. Members will see the popup again on next login.");
+    } catch {
+      setResetMessage("Failed to reset. Please try again.");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const handleResetAcks = () => {
+    askReset(() => void doResetAcks(), "All existing acknowledgments will be cleared. Members will see the policy popup again on their next login.");
+  };
+
   if (loading) return <div className="flex items-center justify-center h-32"><Spinner size="sm" /></div>;
 
   return (
@@ -695,6 +723,15 @@ function HandbookTab() {
         </div>
         <StatusMsg msg={statusMessage} />
       </Card>
+
+      <Card title="Re-show popup for all members" subtitle="Use this after updating the policy if you want every member to acknowledge it again. Clears all existing acknowledgments — members will see the policy popup again on their next login.">
+        <Btn variant="danger" onClick={handleResetAcks} disabled={resetting}>
+          {resetting ? "Resetting..." : "Reset acknowledgments for all members"}
+        </Btn>
+        <StatusMsg msg={resetMessage} />
+      </Card>
+
+      <ResetDialog />
     </div>
   );
 }

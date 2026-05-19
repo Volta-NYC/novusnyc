@@ -22,12 +22,12 @@ function buildInviteEmail(name: string, signupLink: string): { subject: string; 
   const text = [
     `Hi ${firstName},`,
     "",
-    "Welcome to Volta NYC! You've been invited to set up your account on the Volta member portal.",
+    "Welcome to Volta NYC! You've been invited to set up your account on the member portal.",
     "",
-    "Click the link below to create your password and access the portal:",
+    "Click the link below to get started:",
     signupLink,
     "",
-    "This link expires in 24 hours. If you didn't expect this email, you can safely ignore it.",
+    "If you didn't expect this email, you can safely ignore it.",
     "",
     "— Volta NYC",
   ].join("\n");
@@ -44,7 +44,7 @@ function buildInviteEmail(name: string, signupLink: string): { subject: string; 
     Set Up Account
   </a>
   <p style="margin:24px 0 0;font-size:13px;color:#888">
-    This link expires in 24 hours. If you didn't expect this email, you can safely ignore it.
+    If you didn't expect this email, you can safely ignore it.
   </p>
 </body>
 </html>`;
@@ -72,53 +72,22 @@ export async function POST(req: NextRequest) {
   const name  = String(member.name  ?? "").trim() || email;
   if (!email) return NextResponse.json({ error: "member_has_no_email" }, { status: 400 });
 
-  const baseUrl = siteOrigin(req);
+  // Permanent landing link — no Supabase OTP token, never expires.
+  // The member clicks it, sees a "Send me a setup link" button, and triggers
+  // their own fresh OTP at that moment. This avoids the 24-hour expiry problem.
+  const signupLink = `${siteOrigin(req)}/members/signup?email=${encodeURIComponent(email)}`;
 
-  // Check whether this email already has a confirmed Supabase auth account.
-  // inviteUserByEmail sends via Supabase's configured SMTP (no spam risk) but
-  // is unsafe on confirmed accounts — it creates a duplicate that shadows the
-  // original. If confirmed, fall back to generateLink + nodemailer instead.
-  let confirmedAccountExists = false;
-  try {
-    const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
-    const match = users.find(u => u.email?.toLowerCase() === email);
-    confirmedAccountExists = !!(match?.email_confirmed_at);
-  } catch { /* ignore, treat as unconfirmed */ }
-
-  if (confirmedAccountExists) {
-    // Safe path: generate link, send via nodemailer.
-    const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: { redirectTo: `${baseUrl}/members/signup` },
-    });
-    if (linkErr) {
-      return NextResponse.json({ error: "invite_link_failed", detail: linkErr.message }, { status: 500 });
-    }
-    const signupLink = linkData?.properties?.action_link ?? `${baseUrl}/members/signup`;
-
-    const from = getDefaultFromAddress();
-    const { transporter } = createTransportForFrom(from);
-    const { subject, text, html } = buildInviteEmail(name, signupLink);
-    await transporter.sendMail({
-      from: resolveFromWithName(from),
-      replyTo: getDefaultReplyToAddress(from),
-      to: email,
-      subject,
-      text,
-      html,
-    });
-  } else {
-    // No confirmed account — safe to use inviteUserByEmail which sends via
-    // Supabase's configured SMTP (custom SMTP set in Supabase dashboard).
-    const { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${baseUrl}/members/signup`,
-      data: { full_name: name },
-    });
-    if (inviteErr) {
-      return NextResponse.json({ error: "invite_failed", detail: inviteErr.message }, { status: 500 });
-    }
-  }
+  const from = getDefaultFromAddress();
+  const { transporter } = createTransportForFrom(from);
+  const { subject, text, html } = buildInviteEmail(name, signupLink);
+  await transporter.sendMail({
+    from: resolveFromWithName(from),
+    replyTo: getDefaultReplyToAddress(from),
+    to: email,
+    subject,
+    text,
+    html,
+  });
 
   await writeAuditLog({
     action: "invite",

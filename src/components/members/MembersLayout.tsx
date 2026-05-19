@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, ReactNode } from "react";
+import { useEffect, useRef, useState, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -153,6 +153,9 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const [ackChecked, setAckChecked] = useState(false);
   const [ackLoading, setAckLoading] = useState(false);
   const [currentContentHash, setCurrentContentHash] = useState("");
+  // Prevents the ack check from re-firing when userProfile gets a new object
+  // reference (e.g. on silent token refresh) after the user has already seen/confirmed.
+  const ackCheckFired = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -168,8 +171,12 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   // Check handbook acknowledgment for members only. Re-shows if the handbook
   // content has changed since the user last acknowledged it (hash mismatch).
+  // The ref guard ensures this runs exactly once per session regardless of how
+  // many times userProfile gets a new object reference (e.g. silent token refresh).
   useEffect(() => {
     if (loading || !user || !userProfile || authRole !== "member") return;
+    if (ackCheckFired.current) return;
+    ackCheckFired.current = true;
     Promise.all([
       getMemberAcknowledgment(userProfile.id, "credit-infraction-policy"),
       getHandbookPage("credit-infraction-policy"),

@@ -1,0 +1,121 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
+import {
+  createTransportForFrom,
+  getDefaultFromAddress,
+  resolveFromWithName,
+  getDefaultReplyToAddress,
+} from "@/lib/server/smtp";
+
+export const runtime = "nodejs";
+
+function siteOrigin(req: NextRequest): string {
+  const host = req.headers.get("host") ?? "voltanyc.org";
+  const proto = req.headers.get("x-forwarded-proto") ?? "https";
+  return `${proto}://${host}`;
+}
+
+function buildSetupEmail(name: string, setupLink: string): { subject: string; text: string; html: string } {
+  const firstName = name.split(" ")[0] || name;
+  const subject = "Your Volta NYC portal setup link";
+  const text = [
+    `Hi ${firstName},`,
+    "",
+    "Here is your link to set up your Volta NYC member portal account:",
+    setupLink,
+    "",
+    "This link expires in 24 hours and can only be used once.",
+    "If you didn't request this, you can safely ignore it.",
+    "",
+    "— Volta NYC",
+  ].join("\n");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
+  <img src="https://voltanyc.org/logo.png" alt="Volta NYC" width="36" style="margin-bottom:24px">
+  <h2 style="margin:0 0 8px;font-size:20px">Your portal setup link</h2>
+  <p style="margin:0 0 24px;color:#555;font-size:15px">Hi ${firstName}, click below to set up your Volta NYC member portal account.</p>
+  <a href="${setupLink}"
+     style="display:inline-block;background:#85CC17;color:#0d0d0d;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:15px">
+    Set Up Account
+  </a>
+  <p style="margin:24px 0 0;font-size:13px;color:#888">
+    This link expires in 24 hours and can only be used once.<br>
+    If you didn't request this, you can safely ignore it.
+  </p>
+</body>
+</html>`;
+
+  return { subject, text, html };
+}
+
+export async function POST(req: NextRequest) {
+  // Rate limit: 5 requests per IP per hour, 3 per email per hour.
+  const ip = getClientIp(req.headers);
+  const ipCheck = await consumeRateLimit({ bucket: "signup-resend-ip", key: ip, limit: 5, windowSec: 3600 });
+  if (!ipCheck.ok) {
+    return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
+  }
+
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  if (!email) return NextResponse.json({ error: "missing_email" }, { status: 400 });
+
+  const emailCheck = await consumeRateLimit({ bucket: "signup-resend-email", key: email, limit: 3, windowSec: 3600 });
+  if (!emailCheck.ok) {
+    return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
+  }
+
+  const sb = getSupabaseAdmin();
+
+  // Verify the email is in the team directory and the member is active.
+  const { data: rows } = await sb
+    .from("team")
+    .select("id, name, auth_uid, status")
+    .or(`email.eq.${email},alternate_email.eq.${email}`)
+    .limit(1);
+  const member = rows?.[0] as Record<string, unknown> | undefined;
+
+  // Always return success to avoid revealing who is in the directory.
+  if (!member || String(member.status ?? "").toLowerCase() === "inactive") {
+    return NextResponse.json({ success: true });
+  }
+
+  // Account already fully linked — they should use login / forgot password.
+  if (member.auth_uid) {
+    return NextResponse.json({ success: true, alreadyLinked: true });
+  }
+
+  const name = String(member.name ?? email);
+  const origin = siteOrigin(req);
+  const redirectTo = `${origin}/members/signup?email=${encodeURIComponent(email)}`;
+
+  // generateLink type "invite" creates the Supabase auth user if they don't
+  // exist yet, or generates a new login link for an existing unconfirmed user.
+  const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { redirectTo, data: { full_name: name } },
+  });
+
+  if (linkErr || !linkData?.properties?.action_link) {
+    return NextResponse.json({ error: "link_generation_failed" }, { status: 500 });
+  }
+
+  const from = getDefaultFromAddress();
+  const { transporter } = createTransportForFrom(from);
+  const { subject, text, html } = buildSetupEmail(name, linkData.properties.action_link);
+  await transporter.sendMail({
+    from: resolveFromWithName(from),
+    replyTo: getDefaultReplyToAddress(from),
+    to: email,
+    subject,
+    text,
+    html,
+  });
+
+  return NextResponse.json({ success: true });
+}

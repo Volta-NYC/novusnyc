@@ -16,7 +16,14 @@ export default function MembersLogin() {
   const [resetSent, setResetSent] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const router = useRouter();
+  const [passwordReset, setPasswordReset] = useState(false);
   const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setPasswordReset(new URLSearchParams(window.location.search).get("reset") === "1");
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -67,6 +74,12 @@ export default function MembersLogin() {
           <h1 className="font-display font-bold text-white text-2xl">Members Portal</h1>
           <p className="text-white/40 text-sm mt-1">Sign in with your Volta account</p>
         </div>
+
+        {passwordReset && (
+          <div className="bg-[#85CC17]/10 border border-[#85CC17]/25 rounded-xl px-4 py-3 text-[#85CC17] text-sm mb-4">
+            Password updated. Sign in with your new password.
+          </div>
+        )}
 
         {!showReset ? (
           <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
