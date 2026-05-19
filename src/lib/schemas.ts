@@ -36,6 +36,7 @@ export interface ContactFormValues {
   phone: string;
   neighborhood: string;
   services: string[];
+  referredBy: string;
   message: string;
 }
 

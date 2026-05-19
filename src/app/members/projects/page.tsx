@@ -1407,6 +1407,9 @@ function BusinessesPageInner() {
             />
           )}
         </td>
+        <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
+          <span className="block truncate" title={b.referredBy || ""}>{b.referredBy || <span className="text-white/25">—</span>}</span>
+        </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
             <div className="members-row-actions">
@@ -1957,7 +1960,7 @@ function BusinessesPageInner() {
         </>
       ) : activeTab === "discovery" ? (
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1240px"}}>
+          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1390px"}}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
@@ -1967,6 +1970,7 @@ function BusinessesPageInner() {
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Phone</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Source</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Date</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Referred By</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Actions</th>
               </tr>
             </thead>

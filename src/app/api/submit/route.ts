@@ -19,6 +19,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
   const phone = asText(data.phone);
   const neighborhood = asText(data.neighborhood);
   const services = asText(data.services);
+  const referredBy = asText(data.referredBy);
   const message = asText(data.message);
   const language = asText(data.language);
 
@@ -52,6 +53,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     neighborhood ? `Neighborhood: ${neighborhood}` : "",
     phone ? `Phone: ${phone}` : "",
     services ? `Services requested: ${services}` : "",
+    referredBy ? `Referred by: ${referredBy}` : "",
     language ? `Language: ${language}` : "",
     message ? `Message: ${message}` : "",
   ].filter(Boolean);
@@ -75,6 +77,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     division: "Marketing",
     team_members: [],
     sort_index: now,
+    referred_by: referredBy,
     intake_source: "website_form",
     showcase_enabled: false,
     showcase_featured_on_home: false,
@@ -205,6 +208,7 @@ export async function POST(request: Request) {
       phone: asText(data.phone),
       neighborhood: asText(data.neighborhood),
       services: splitCsvToList(data.services),
+      referredBy: asText(data.referredBy),
       message: asText(data.message),
     });
     if (!validation.success) {
