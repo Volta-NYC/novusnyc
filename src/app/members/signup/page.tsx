@@ -308,10 +308,20 @@ export default function SignupPage() {
               readOnly
               className="w-full bg-[#0F1014] border border-white/6 rounded-lg px-3 py-2.5 text-sm text-white/50 cursor-default select-none focus:outline-none"
             />
-            {sessionEmail && (
-              <p className="mt-1.5 text-xs text-white/35 font-body">{sessionEmail}</p>
-            )}
           </div>
+
+          {sessionEmail && (
+            <div>
+              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+                Email
+              </label>
+              <input
+                value={sessionEmail}
+                readOnly
+                className="w-full bg-[#0F1014] border border-white/6 rounded-lg px-3 py-2.5 text-sm text-white/50 cursor-default select-none focus:outline-none"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
