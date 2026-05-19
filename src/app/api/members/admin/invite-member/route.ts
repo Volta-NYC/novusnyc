@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { getSupabaseAdmin, writeAuditLog } from "@/lib/supabaseAdmin";
+import {
+  createTransportForFrom,
+  getDefaultFromAddress,
+  resolveFromWithName,
+  getDefaultReplyToAddress,
+} from "@/lib/server/smtp";
 
 export const runtime = "nodejs";
 
@@ -10,19 +16,40 @@ function siteOrigin(req: NextRequest): string {
   return `${proto}://${host}`;
 }
 
-async function deleteUnconfirmedUser(sb: ReturnType<typeof getSupabaseAdmin>, email: string): Promise<void> {
-  let page = 1;
-  while (true) {
-    const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error || !data) break;
-    const match = data.users.find(u => u.email?.toLowerCase() === email && !u.email_confirmed_at);
-    if (match) {
-      await sb.auth.admin.deleteUser(match.id);
-      break;
-    }
-    if (data.users.length < 1000) break;
-    page++;
-  }
+function buildInviteEmail(name: string, signupLink: string): { subject: string; text: string; html: string } {
+  const firstName = name.split(" ")[0] || name;
+  const subject = "Set up your Volta NYC member portal account";
+  const text = [
+    `Hi ${firstName},`,
+    "",
+    "You've been invited to set up your account on the Volta NYC member portal.",
+    "",
+    "Click the link below to get started:",
+    signupLink,
+    "",
+    "If you didn't expect this email, you can safely ignore it.",
+    "",
+    "— Volta NYC",
+  ].join("\n");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
+  <img src="https://voltanyc.org/logo.png" alt="Volta NYC" width="36" style="margin-bottom:24px">
+  <h2 style="margin:0 0 8px;font-size:20px">Set up your member portal account</h2>
+  <p style="margin:0 0 24px;color:#555;font-size:15px">Hi ${firstName}, you've been invited to join the Volta NYC member portal.</p>
+  <a href="${signupLink}"
+     style="display:inline-block;background:#85CC17;color:#0d0d0d;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:15px">
+    Set Up Account
+  </a>
+  <p style="margin:24px 0 0;font-size:13px;color:#888">
+    If you didn't expect this email, you can safely ignore it.
+  </p>
+</body>
+</html>`;
+
+  return { subject, text, html };
 }
 
 export async function POST(req: NextRequest) {
@@ -45,26 +72,26 @@ export async function POST(req: NextRequest) {
   const name  = String(member.name  ?? "").trim() || email;
   if (!email) return NextResponse.json({ error: "member_has_no_email" }, { status: 400 });
 
-  const redirectTo = `${siteOrigin(req)}/members/signup?email=${encodeURIComponent(email)}`;
+  // Permanent landing link — never expires. Member clicks it, lands on the
+  // signup page, clicks "Send me a setup link", and triggers their own fresh
+  // OTP at that moment. Avoids the invite-link expiry problem entirely.
+  const signupLink = `${siteOrigin(req)}/members/signup?email=${encodeURIComponent(email)}`;
 
-  let { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(email, {
-    redirectTo,
-    data: { full_name: name },
-  });
-
-  // If user already exists as unconfirmed (stale invite), delete and retry.
-  if (inviteErr?.message?.includes("already been registered")) {
-    await deleteUnconfirmedUser(sb, email);
-    const retry = await sb.auth.admin.inviteUserByEmail(email, {
-      redirectTo,
-      data: { full_name: name },
+  try {
+    const from = getDefaultFromAddress();
+    const { transporter } = createTransportForFrom(from);
+    const { subject, text, html } = buildInviteEmail(name, signupLink);
+    await transporter.sendMail({
+      from: resolveFromWithName(from),
+      replyTo: getDefaultReplyToAddress(from),
+      to: email,
+      subject,
+      text,
+      html,
     });
-    inviteErr = retry.error;
-  }
-
-  if (inviteErr) {
-    console.error("[invite-member] failed:", inviteErr);
-    return NextResponse.json({ error: "invite_failed", detail: inviteErr.message }, { status: 500 });
+  } catch (err) {
+    console.error("[invite-member] sendMail failed:", err);
+    return NextResponse.json({ error: "email_send_failed", detail: String(err) }, { status: 500 });
   }
 
   await writeAuditLog({
