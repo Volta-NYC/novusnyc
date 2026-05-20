@@ -8,10 +8,7 @@ import { type AuthRole } from "@/lib/members/storage";
 function normalizeAuthRole(value: unknown): AuthRole {
   const raw = String(value ?? "").trim();
   if (raw === "owner") return "owner";
-  if (raw === "admin") return "owner"; // legacy DB 'admin' → owner
-  if (raw === "Board") return "owner";
-  if (raw === "Senior Associate") return "admin";
-  if (raw === "admin_lite") return "admin";
+  if (raw === "admin") return "admin";
   return "member";
 }
 
@@ -28,6 +25,7 @@ export interface UserProfile {
   email: string;
   name: string;
   authRole: AuthRole;
+  canInterview: boolean;
   active: boolean;
 }
 
@@ -35,6 +33,7 @@ interface AuthContextValue {
   user: User | null;
   userProfile: UserProfile | null;
   authRole: AuthRole | null;
+  canInterview: boolean;
   loading: boolean;
 }
 
@@ -42,6 +41,7 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   userProfile: null,
   authRole: null,
+  canInterview: false,
   loading: true,
 });
 
@@ -76,15 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
       const authRole = maxAuthRole(
         normalizeAuthRole(appMeta.auth_role),
-        normalizeAuthRole(row.role),
+        normalizeAuthRole(row.auth_role),
       );
+      const canInterview = appMeta.can_interview === true;
 
       return {
-        id:       String(row.id ?? ""),
-        email:    String(row.email ?? user.email ?? ""),
-        name:     String(row.name ?? ""),
+        id:           String(row.id ?? ""),
+        email:        String(row.email ?? user.email ?? ""),
+        name:         String(row.name ?? ""),
         authRole,
-        active:   String(row.status ?? "Active").toLowerCase() !== "inactive",
+        canInterview,
+        active:       String(row.status ?? "Active").toLowerCase() !== "inactive",
       };
     } catch {
       return null;
@@ -125,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, authRole: userProfile?.authRole ?? null, loading }}>
+    <AuthContext.Provider value={{ user, userProfile, authRole: userProfile?.authRole ?? null, canInterview: userProfile?.canInterview ?? false, loading }}>
       {children}
     </AuthContext.Provider>
   );

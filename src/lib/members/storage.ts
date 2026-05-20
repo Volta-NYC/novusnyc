@@ -161,6 +161,7 @@ export interface TeamMember {
   lastBiweeklyCheckinMark?: number;     // floor(daysSinceCycleStart / 14)
   lastBiweeklyCheckinCycleId?: string;  // resets when cycle changes
   authUid?: string;
+  canInterview?: boolean;
 }
 
 export type ApplicationStatus =
@@ -944,10 +945,7 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
 function normalizeAuthRoleValue(value: unknown): AuthRole {
   const raw = String(value ?? "").trim();
   if (raw === "owner") return "owner";
-  if (raw === "admin") return "owner"; // legacy: old DB 'admin' values are owners
-  if (raw === "Board") return "owner";
-  if (raw === "Senior Associate") return "admin";
-  if (raw === "admin_lite") return "admin";
+  if (raw === "admin") return "admin";
   return "member";
 }
 

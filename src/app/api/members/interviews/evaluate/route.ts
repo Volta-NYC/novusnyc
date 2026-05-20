@@ -84,7 +84,7 @@ function pickApplicationBySlot(
 }
 
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["owner"]);
+  const verified = await verifyCaller(req, ["owner", "admin"], { allowIfCanInterview: true });
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = (await req.json().catch(() => ({}))) as EvaluateBody;

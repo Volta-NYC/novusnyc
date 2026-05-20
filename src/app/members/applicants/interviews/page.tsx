@@ -316,7 +316,7 @@ type DragMode = "add" | "remove";
 type DragAnchor = { dayIndex: number; rowIndex: number };
 
 function InterviewsContent() {
-  const { user, authRole, loading } = useAuth();
+  const { user, authRole, canInterview, loading } = useAuth();
   const router = useRouter();
   const { ask, Dialog } = useConfirm();
 
@@ -379,9 +379,13 @@ function InterviewsContent() {
   const recurringSyncInFlightRef = useRef(false);
   const evalCleanupTriggeredRef = useRef(false);
 
-  const canAccessInterviews = authRole === "owner";
+  const [interviewerSearch, setInterviewerSearch] = useState("");
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const canAccessInterviews = authRole === "owner" || canInterview;
   const canDeleteInterviews = authRole === "owner";
   const canEditZoom = authRole === "owner";
+  const canEvaluate = authRole === "owner" || canInterview;
 
   useEffect(() => {
     if (!loading && !canAccessInterviews) {
@@ -1680,6 +1684,21 @@ function InterviewsContent() {
     return visible;
   };
 
+  const toggleInterviewer = async (member: TeamMember) => {
+    if (!canDeleteInterviews) return;
+    setTogglingId(member.id);
+    try {
+      const token = await getAuthToken();
+      await fetch("/api/members/admin/toggle-interviewer", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ memberId: member.id, enabled: !member.canInterview }),
+      });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const TABS: { key: "upcoming" | "past" | "availability"; label: string }[] = [
     { key: "upcoming", label: "Upcoming Interviews" },
     { key: "past", label: "Past Interviews" },
@@ -1884,7 +1903,7 @@ function InterviewsContent() {
                                 <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
                                 <Btn size="sm" variant="danger" className="members-pill-btn" onClick={() => cancelBookedInterview(slot)}>Cancel</Btn>
                               </>
-                            ) : currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid)) ? (
+                            ) : (canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) ? (
                               <>
                                 <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
                                 <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
@@ -1981,10 +2000,10 @@ function InterviewsContent() {
                         </td>
                         <td className="px-2 py-1.5 whitespace-nowrap">
                           <div className="flex gap-1 flex-nowrap">
-                            {(canDeleteInterviews || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && (
+                            {(canDeleteInterviews || canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && (
                               <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
                             )}
-                            {(canDeleteInterviews || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && !slot.noShow && (
+                            {(canDeleteInterviews || canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && !slot.noShow && (
                               <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
                             )}
                             {slot.noShow && (
@@ -2337,6 +2356,55 @@ function InterviewsContent() {
           </div>
         </div>
       )}
+
+      {canDeleteInterviews && (() => {
+        const query = interviewerSearch.trim().toLowerCase();
+        const activeMembers = teamMembers
+          .filter((m) => m.status === "Active")
+          .filter((m) => !query || m.name.toLowerCase().includes(query) || m.email.toLowerCase().includes(query));
+        return (
+          <div className="mt-8 bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
+            <div>
+              <p className="text-white/85 text-sm font-semibold">Interviewer Access</p>
+              <p className="text-white/40 text-xs mt-1 font-body">
+                Members with interviewer access can view scheduled interviews, submit evaluations, and mark no-shows.
+              </p>
+            </div>
+            <input
+              value={interviewerSearch}
+              onChange={(e) => setInterviewerSearch(e.target.value)}
+              placeholder="Search by name or email"
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/25 outline-none"
+            />
+            <div className="divide-y divide-white/5 max-h-72 overflow-y-auto">
+              {activeMembers.length === 0 && (
+                <p className="text-white/25 text-sm text-center py-4">No members found.</p>
+              )}
+              {activeMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div>
+                    <p className="text-sm text-white/85">{member.name}</p>
+                    <p className="text-[11px] text-white/35 font-body">{member.role} · {member.email}</p>
+                  </div>
+                  <button
+                    onClick={() => void toggleInterviewer(member)}
+                    disabled={togglingId === member.id}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+                      member.canInterview ? "bg-[#85CC17]" : "bg-white/15"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                        member.canInterview ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <Modal
         open={!!editingAvailableSlot}

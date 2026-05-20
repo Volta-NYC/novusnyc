@@ -12,6 +12,7 @@ export interface VerifiedCaller {
   email: string;
   name: string;
   role: string;
+  canInterview: boolean;
   idToken: string;
 }
 
@@ -22,10 +23,7 @@ type VerifyResult =
 function normalizeCallerRole(value: unknown): string {
   const raw = String(value ?? "").trim();
   if (raw === "owner") return "owner";
-  if (raw === "admin") return "owner";   // legacy JWT app_metadata before role rename
-  if (raw === "Board") return "owner";
-  if (raw === "Senior Associate") return "admin";
-  if (raw === "project_lead") return "member";
+  if (raw === "admin") return "admin";
   return raw;
 }
 
@@ -57,7 +55,8 @@ export async function dbDelete(path: string): Promise<void> {
 
 export async function verifyCaller(
   req: NextRequest,
-  allowedRoles: string[]
+  allowedRoles: string[],
+  opts?: { allowIfCanInterview?: boolean }
 ): Promise<VerifyResult> {
   const idToken = getBearerToken(req);
   if (!idToken) {
@@ -75,6 +74,7 @@ export async function verifyCaller(
   // have that metadata yet, so fall back to the linked team row.
   const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
   let role = normalizeCallerRole(appMeta.auth_role ?? "");
+  const canInterview = appMeta.can_interview === true;
   let profileName = (user.user_metadata?.full_name as string | undefined) ?? "";
 
   if (!role) {
@@ -99,12 +99,14 @@ export async function verifyCaller(
     profileName = profileName || String(teamRow?.name ?? "");
   }
 
-  if (!allowedRoles.includes(role)) {
+  const roleAllowed = allowedRoles.includes(role);
+  const interviewAllowed = opts?.allowIfCanInterview === true && canInterview;
+  if (!roleAllowed && !interviewAllowed) {
     return { ok: false, status: 403, error: "forbidden" };
   }
 
   return {
     ok: true,
-    caller: { uid: user.id, email: user.email ?? "", name: profileName, role, idToken },
+    caller: { uid: user.id, email: user.email ?? "", name: profileName, role, canInterview, idToken },
   };
 }
