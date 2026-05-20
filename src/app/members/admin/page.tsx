@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Btn, Field, Input, Spinner, Toggle } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
+import EmailBodyEditor from "@/components/members/EmailBodyEditor";
 import { useAuth } from "@/lib/members/authContext";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -742,17 +743,11 @@ function EmailsTab() {
                 />
               </div>
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs text-white/50 font-body">HTML Body</label>
-                  <span className="text-[10px] text-white/30 font-mono">{"{{firstName}}, {{name}}, {{link}}"}</span>
-                </div>
-                <textarea
-                  value={vals.body}
-                  onChange={e => setEditing(ed => ({ ...ed, [key]: { ...vals, body: e.target.value } }))}
-                  rows={14}
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#85CC17]/50 resize-y"
-                  placeholder="<!DOCTYPE html><html>…</html>"
-                  spellCheck={false}
+                <label className="block text-xs text-white/50 font-body mb-1">Body</label>
+                <EmailBodyEditor
+                  content={vals.body}
+                  onChange={body => setEditing(ed => ({ ...ed, [key]: { ...vals, body } }))}
+                  placeholder={`Write the email body… Use {{firstName}}, {{name}}, {{link}}`}
                 />
               </div>
             </div>

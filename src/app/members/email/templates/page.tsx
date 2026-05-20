@@ -7,7 +7,7 @@ import SectionTabs, { EMAIL_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, Btn, Modal, Field, Input, Empty, useConfirm, Spinner,
 } from "@/components/members/ui";
-import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
+import EmailBodyEditor, { type EmailBodyEditorHandle } from "@/components/members/EmailBodyEditor";
 import {
   subscribeEmailTemplates,
   createEmailTemplate,
@@ -30,7 +30,7 @@ export default function EmailTemplatesPage() {
   const { authRole, user, loading } = useAuth();
   const router = useRouter();
   const { ask, Dialog } = useConfirm();
-  const editorRef = useRef<RichTextEditorHandle>(null);
+  const editorRef = useRef<EmailBodyEditorHandle>(null);
 
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
@@ -228,12 +228,11 @@ export default function EmailTemplatesPage() {
             />
           </Field>
           <Field label="Body">
-            <RichTextEditor
+            <EmailBodyEditor
               ref={editorRef}
               content={form.body}
               onChange={(html) => setForm((p) => ({ ...p, body: html }))}
               placeholder="Write the email body… Use {{memberName}}, {{cycleName}}, etc."
-              minHeight={240}
             />
           </Field>
           <p className="text-[11px] text-white/35">

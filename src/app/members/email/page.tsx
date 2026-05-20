@@ -7,7 +7,7 @@ import SectionTabs, { EMAIL_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, Field, Btn, Empty, Modal, Input, useConfirm,
 } from "@/components/members/ui";
-import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
+import EmailBodyEditor, { type EmailBodyEditorHandle } from "@/components/members/EmailBodyEditor";
 import {
   subscribeTeam,
   subscribeBusinesses,
@@ -279,7 +279,7 @@ export default function MemberEmailPage() {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [prefillIds, setPrefillIds] = useState<string[]>([]);
-  const editorRef = useRef<RichTextEditorHandle>(null);
+  const editorRef = useRef<EmailBodyEditorHandle>(null);
   const insertPlaceholder = (placeholder: string) => {
     if (editorRef.current) {
       editorRef.current.insertAtCursor(placeholder);
@@ -1082,14 +1082,13 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
               </button>
             ))}
           </div>
-          <RichTextEditor
+          <EmailBodyEditor
             ref={editorRef}
             content={message}
             onChange={setMessage}
             attachments={attachments}
             onAttachmentsChange={setAttachments}
             placeholder="Write your email..."
-            minHeight={280}
           />
         </Field>
 
