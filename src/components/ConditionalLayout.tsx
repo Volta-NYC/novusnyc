@@ -7,7 +7,7 @@ import PublicBanner from "@/components/PublicBanner";
 
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMembersPage = pathname?.startsWith("/members") || pathname?.startsWith("/book");
+  const isMembersPage = (pathname?.startsWith("/members") && pathname !== "/members/login") || pathname?.startsWith("/book");
 
   return (
     <>
