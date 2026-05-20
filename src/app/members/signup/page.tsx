@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Spinner, Btn } from "@/components/members/ui";
+import { Spinner, Btn, PasswordInput } from "@/components/members/ui";
 
 type Phase =
   | "waiting"   // detecting session / hash
@@ -327,12 +327,10 @@ export default function SignupPage() {
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
               placeholder="Min. 8 characters"
               autoComplete="new-password"
               autoFocus
@@ -343,12 +341,10 @@ export default function SignupPage() {
             <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Confirm Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               required
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
               placeholder="........"
               autoComplete="new-password"
             />

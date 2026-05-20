@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, resetPassword } from "@/lib/members/supabaseAuth";
-import { Btn, Input } from "@/components/members/ui";
+import { Btn, Input, PasswordInput } from "@/components/members/ui";
 import { useAuth } from "@/lib/members/authContext";
 
 export default function MembersLogin() {
@@ -102,8 +102,7 @@ export default function MembersLogin() {
               <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
                 Password
               </label>
-              <Input
-                type="password"
+              <PasswordInput
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

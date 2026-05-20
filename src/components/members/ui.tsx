@@ -100,16 +100,21 @@ export function Modal({ open, onClose, title, children }: {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  // Auto-focus the dialog on open
+  // Auto-focus the first real form field when the modal opens. We pick the
+  // first input/textarea/select before falling back to a button so the close
+  // X (which sits earlier in the DOM) isn't what receives focus.
   useEffect(() => {
-    if (open) {
-      setTimeout(() => {
-        const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
-          'button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])'
-        );
-        firstFocusable?.focus();
-      }, 0);
-    }
+    if (!open) return;
+    const timer = setTimeout(() => {
+      const root = dialogRef.current;
+      if (!root) return;
+      const field = root.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled])'
+      );
+      const fallback = root.querySelector<HTMLElement>('button:not([disabled]),[tabindex]:not([tabindex="-1"])');
+      (field ?? fallback)?.focus();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [open]);
 
   if (!open) return null;
@@ -164,6 +169,40 @@ export function Input({ className = "", ...props }: InputProps) {
   );
 }
 
+// Input that toggles between `password` and `text` types via an eye icon.
+// Accepts the same props as Input, minus `type` (which is forced to password/text).
+type PasswordInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">;
+export function PasswordInput({ className = "", ...props }: PasswordInputProps) {
+  const [reveal, setReveal] = useState(false);
+  return (
+    <div className="relative w-full">
+      <input
+        {...props}
+        type={reveal ? "text" : "password"}
+        className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 pr-10 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+      />
+      <button
+        type="button"
+        onClick={() => setReveal(v => !v)}
+        aria-label={reveal ? "Hide password" : "Show password"}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+      >
+        {reveal ? (
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 export function TextArea({ className = "", ...props }: TextAreaProps) {
   return (
@@ -207,7 +246,7 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
 
 // ── SEARCH BAR ────────────────────────────────────────────────────────────────
 
-export function SearchBar({ value, onChange, placeholder = "Search…", debounceMs }: {
+export function SearchBar({ value, onChange, placeholder = "Search…", debounceMs = 250 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;

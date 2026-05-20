@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/lib/members/authContext";
 import { TRACK_META, TRACK_ORDER, DIVISION_PUBLIC_LABEL, type TrackDivision } from "@/lib/members/constants";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
+import { formatPhone } from "@/lib/format";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -1307,7 +1308,14 @@ function BusinessesPageInner() {
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
             <div className="inline-flex items-center gap-1 min-w-0 max-w-full">
-              <span className="text-[#85CC17]/80 truncate block" title={b.ownerEmail}>{b.ownerEmail}</span>
+              <a
+                href={`mailto:${b.ownerEmail}`}
+                className="text-[#85CC17]/80 hover:text-[#85CC17] truncate block underline-offset-2 hover:underline"
+                title={b.ownerEmail}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {b.ownerEmail}
+              </a>
               <button
                 type="button"
                 className="members-copy-btn flex-shrink-0"
@@ -1374,7 +1382,14 @@ function BusinessesPageInner() {
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
             <div className="inline-flex items-center gap-1 min-w-0 max-w-full">
-              <span className="text-[#85CC17]/80 truncate block" title={b.ownerEmail}>{b.ownerEmail}</span>
+              <a
+                href={`mailto:${b.ownerEmail}`}
+                className="text-[#85CC17]/80 hover:text-[#85CC17] truncate block underline-offset-2 hover:underline"
+                title={b.ownerEmail}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {b.ownerEmail}
+              </a>
               <button
                 type="button"
                 className="members-copy-btn flex-shrink-0"
@@ -1396,7 +1411,14 @@ function BusinessesPageInner() {
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.phone ? (
-            <span className="block truncate" title={b.phone}>{b.phone}</span>
+            <a
+              href={`tel:${b.phone.replace(/[^\d+]/g, "")}`}
+              className="block truncate text-white/75 hover:text-white"
+              title={b.phone}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {formatPhone(b.phone)}
+            </a>
           ) : (
             <span className="text-white/30">—</span>
           )}

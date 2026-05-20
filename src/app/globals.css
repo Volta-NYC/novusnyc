@@ -320,6 +320,16 @@ main {
   vertical-align: middle;
 }
 
+/* Sticky data-table headers — the table itself scrolls inside members-table-shell
+   so positioning the thead row sticky keeps column labels on screen as the user
+   scrolls. z-index covers the row cells; the shell already provides the bg. */
+.members-portal .members-grid-table thead th,
+.members-portal .members-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
 .members-portal .members-grid-table td {
   white-space: nowrap;
   overflow: hidden;

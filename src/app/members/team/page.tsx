@@ -1209,9 +1209,18 @@ export default function TeamPage() {
                           case "email": return (
                             <td key="email" className="px-3 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
                               <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
-                                <span className="text-white/55 block truncate" title={[member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—"}>
-                                  {truncateCell([member.email, member.alternateEmail].filter(Boolean).join(" · ") || "—", 92)}
-                                </span>
+                                {member.email || member.alternateEmail ? (
+                                  <a
+                                    href={`mailto:${member.email || member.alternateEmail}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-white/55 hover:text-white block truncate underline-offset-2 hover:underline"
+                                    title={[member.email, member.alternateEmail].filter(Boolean).join(" · ")}
+                                  >
+                                    {truncateCell([member.email, member.alternateEmail].filter(Boolean).join(" · "), 92)}
+                                  </a>
+                                ) : (
+                                  <span className="text-white/30">—</span>
+                                )}
                                 {(member.email || member.alternateEmail) && (
                                   <button type="button" className="members-copy-btn" onClick={() => void copyText(member.email || member.alternateEmail || "")} title="Copy email" aria-label="Copy email">
                                     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
