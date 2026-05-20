@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     .from("team")
     .select("*")
     .or(`email.eq.${email},alternate_email.eq.${email}`)
+    .is("deleted_at", null)
     .limit(1);
 
   const teamRow = rows?.[0] as Record<string, unknown> | undefined;

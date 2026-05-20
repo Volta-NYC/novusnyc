@@ -22,6 +22,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     .from("businesses")
     .select("showcase_image_path, showcase_image_url")
     .eq("id", id)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (biz?.showcase_image_path) {

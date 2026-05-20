@@ -83,6 +83,7 @@ export async function verifyCaller(
       .from("team")
       .select("name, auth_role")
       .eq("auth_uid", user.id)
+      .is("deleted_at", null)
       .maybeSingle();
 
     let teamRow = byUid.data as Record<string, unknown> | null;
@@ -91,6 +92,7 @@ export async function verifyCaller(
         .from("team")
         .select("name, auth_role")
         .or(`email.eq.${email},alternate_email.eq.${email}`)
+        .is("deleted_at", null)
         .limit(1);
       teamRow = (byEmail.data?.[0] as Record<string, unknown> | undefined) ?? null;
     }

@@ -26,12 +26,12 @@ export async function POST(req: NextRequest) {
   let targetId = "";
   let targetData: Record<string, unknown> | null = null;
 
-  const { data: byEmail } = await sb.from("team").select("*").eq("email", email).limit(1);
+  const { data: byEmail } = await sb.from("team").select("*").eq("email", email).is("deleted_at", null).limit(1);
   if (byEmail?.length) {
     targetId = String(byEmail[0].id ?? "");
     targetData = byEmail[0] as Record<string, unknown>;
   } else {
-    const { data: byAlt } = await sb.from("team").select("*").eq("alternate_email", email).limit(1);
+    const { data: byAlt } = await sb.from("team").select("*").eq("alternate_email", email).is("deleted_at", null).limit(1);
     if (byAlt?.length) {
       targetId = String(byAlt[0].id ?? "");
       targetData = byAlt[0] as Record<string, unknown>;

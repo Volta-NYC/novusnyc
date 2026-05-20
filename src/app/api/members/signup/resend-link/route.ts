@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     .from("team")
     .select("id, name, auth_uid, status")
     .or(`email.eq.${email},alternate_email.eq.${email}`)
+    .is("deleted_at", null)
     .limit(1);
   const member = rows?.[0] as Record<string, unknown> | undefined;
 

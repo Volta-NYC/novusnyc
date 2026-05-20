@@ -739,20 +739,24 @@ function toRow(obj: Record<string, unknown>): Record<string, unknown> {
 // 1. Fetches the full table immediately and calls callback.
 // 2. Opens a Supabase postgres_changes channel; re-fetches on any row change.
 // 3. Returns an unsubscribe function that removes the channel.
-function makeSubscriber<T>(table: string, transform?: (row: Record<string, unknown>) => T) {
+function makeSubscriber<T>(
+  table: string,
+  transform?: (row: Record<string, unknown>) => T,
+  options?: { excludeSoftDeleted?: boolean },
+) {
   return (callback: (items: T[]) => void): (() => void) => {
-    const fetchAll = () =>
-      supabase
-        .from(table)
-        .select("*")
-        .then(({ data, error }) => {
-          if (error || !data) { callback([]); return; }
-          callback(
-            (data as Record<string, unknown>[]).map(
-              transform ? (r) => transform(r) : (r) => fromRow<T>(r)
-            )
-          );
-        });
+    const fetchAll = () => {
+      let query = supabase.from(table).select("*");
+      if (options?.excludeSoftDeleted) query = query.is("deleted_at", null);
+      return query.then(({ data, error }) => {
+        if (error || !data) { callback([]); return; }
+        callback(
+          (data as Record<string, unknown>[]).map(
+            transform ? (r) => transform(r) : (r) => fromRow<T>(r)
+          )
+        );
+      });
+    };
 
     void fetchAll();
 
@@ -958,10 +962,10 @@ export const subscribeBIDs =
   makeSubscriber<BID>("bids", (r) => fromRow<BID>(r));
 
 export const subscribeBusinesses =
-  makeSubscriber<Business>("businesses", (r) => fromRow<Business>(r));
+  makeSubscriber<Business>("businesses", (r) => fromRow<Business>(r), { excludeSoftDeleted: true });
 
 export const subscribeTeam =
-  makeSubscriber<TeamMember>("team", (r) => fromRow<TeamMember>(r));
+  makeSubscriber<TeamMember>("team", (r) => fromRow<TeamMember>(r), { excludeSoftDeleted: true });
 
 export const subscribeProjects =
   makeSubscriber<Project>("projects", (r) => fromRow<Project>(r));
@@ -995,7 +999,7 @@ export const subscribeAutomationConfigs =
 // Legacy subscriber retained for the old catalog page (will be removed once
 // the catalog page is fully migrated).
 export const subscribeAssignments =
-  makeSubscriber<Assignment>("assignments", assignmentFromRow);
+  makeSubscriber<Assignment>("assignments", assignmentFromRow, { excludeSoftDeleted: true });
 
 export const subscribeAssignmentClaims =
   makeSubscriber<AssignmentClaim>("assignment_claims", claimFromRow);
@@ -1147,7 +1151,10 @@ export async function updateBusiness(id: string, data: Partial<Business>): Promi
 }
 
 export async function deleteBusiness(id: string): Promise<void> {
-  const { error: bizDeleteError } = await supabase.from("businesses").delete().eq("id", id);
+  const { error: bizDeleteError } = await supabase
+    .from("businesses")
+    .update({ deleted_at: nowISO(), updated_at: nowISO() })
+    .eq("id", id);
   if (bizDeleteError) throw new Error(bizDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "businesses", recordId: id });
 }
@@ -1195,7 +1202,10 @@ export async function updateTeamMember(id: string, data: Partial<TeamMember>): P
 }
 
 export async function deleteTeamMember(id: string): Promise<void> {
-  const { error: teamDeleteError } = await supabase.from("team").delete().eq("id", id);
+  const { error: teamDeleteError } = await supabase
+    .from("team")
+    .update({ deleted_at: nowISO() })
+    .eq("id", id);
   if (teamDeleteError) throw new Error(teamDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "team", recordId: id });
 }
@@ -1326,7 +1336,7 @@ export async function getUserProfilesList(): Promise<UserProfile[]> {
 }
 
 export async function getTeamMembersList(): Promise<TeamMember[]> {
-  const { data } = await supabase.from("team").select("*");
+  const { data } = await supabase.from("team").select("*").is("deleted_at", null);
   return (data ?? []).map((r) => fromRow<TeamMember>(r as Record<string, unknown>));
 }
 
@@ -1352,7 +1362,7 @@ export async function getBusinessImage(id: string): Promise<string | null> {
 // ── ONE-SHOT GET VARIANTS ─────────────────────────────────────────────────────
 
 export async function getBusinessesList(): Promise<Business[]> {
-  const { data } = await supabase.from("businesses").select("*");
+  const { data } = await supabase.from("businesses").select("*").is("deleted_at", null);
   return (data ?? []).map((r) => fromRow<Business>(r as Record<string, unknown>));
 }
 
@@ -1906,13 +1916,16 @@ export async function updateAssignment(id: string, data: Partial<Assignment>): P
 }
 
 export async function deleteAssignment(id: string): Promise<void> {
-  const { error: assignmentDeleteError } = await supabase.from("assignments").delete().eq("id", id);
+  const { error: assignmentDeleteError } = await supabase
+    .from("assignments")
+    .update({ deleted_at: nowISO(), updated_at: nowISO() })
+    .eq("id", id);
   if (assignmentDeleteError) throw new Error(assignmentDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
 }
 
 export async function getAssignmentsList(): Promise<Assignment[]> {
-  const { data } = await supabase.from("assignments").select("*");
+  const { data } = await supabase.from("assignments").select("*").is("deleted_at", null);
   return (data ?? []).map((r) => assignmentFromRow(r as Record<string, unknown>));
 }
 

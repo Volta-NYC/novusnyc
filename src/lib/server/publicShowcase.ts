@@ -82,7 +82,7 @@ async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>
     return businessesCache.data;
   }
   const sb = getSupabaseAdmin();
-  const { data } = await sb.from("businesses").select("*");
+  const { data } = await sb.from("businesses").select("*").is("deleted_at", null);
   const obj: Record<string, Record<string, unknown>> = {};
   for (const row of data ?? []) {
     const r = row as Record<string, unknown>;

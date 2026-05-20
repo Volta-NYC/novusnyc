@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     .from("team")
     .select("id, email, name, active, auth_role")
     .or(`email.eq.${email},alternate_email.eq.${email}`)
+    .is("deleted_at", null)
     .limit(1);
 
   const row = rows?.[0];

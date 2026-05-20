@@ -30,6 +30,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
   const { data: existing } = await sb
     .from("businesses")
     .select("name, owner_name, created_at")
+    .is("deleted_at", null)
     .eq("owner_email", ownerEmail);
 
   const duplicateRecent = (existing ?? []).some((entry) => {

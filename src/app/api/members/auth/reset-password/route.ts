@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
     .from("team")
     .select("name")
     .or(`email.eq.${email},alternate_email.eq.${email}`)
+    .is("deleted_at", null)
     .limit(1);
   const name = String((rows?.[0] as Record<string, unknown> | undefined)?.name ?? "") || email;
   const firstName = name.split(" ")[0] || name;

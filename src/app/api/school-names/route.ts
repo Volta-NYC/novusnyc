@@ -6,6 +6,7 @@ export async function GET() {
   const { data } = await sb
     .from("team")
     .select("school")
+    .is("deleted_at", null)
     .not("school", "is", null)
     .neq("school", "");
 

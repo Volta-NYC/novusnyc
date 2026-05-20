@@ -249,7 +249,7 @@ export async function getMemberEducationSnapshot(): Promise<EducationSnapshot> {
   try {
     const sb = getSupabaseAdmin();
     const [{ data: teamRows }, { data: appRows }] = await Promise.all([
-      sb.from("team").select("school"),
+      sb.from("team").select("school").is("deleted_at", null),
       sb.from("applications").select("school_name, school"),
     ]);
     if (!teamRows?.length && !appRows?.length) return fallbackSnapshot();
@@ -272,7 +272,7 @@ export async function getTotalMemberCount(): Promise<number> {
   try {
     const sb = getSupabaseAdmin();
     const [{ count: teamCount }, { data: apps }] = await Promise.all([
-      sb.from("team").select("*", { count: "exact", head: true }),
+      sb.from("team").select("*", { count: "exact", head: true }).is("deleted_at", null),
       sb.from("applications").select("status").eq("status", "New"),
     ]);
 
