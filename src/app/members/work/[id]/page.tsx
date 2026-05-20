@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Btn } from "@/components/members/ui";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
@@ -229,8 +230,7 @@ export default function AssignmentDetailPage() {
           {assignment.description ? (
             <div
               className="prose prose-sm max-w-none text-black/85"
-              // Description is admin-authored HTML.
-              dangerouslySetInnerHTML={{ __html: assignment.description }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(assignment.description) }}
             />
           ) : (
             <p className="text-sm text-black/45">No description yet — ask the senior associate who created this for context.</p>

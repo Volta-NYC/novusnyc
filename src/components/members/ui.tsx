@@ -429,15 +429,40 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
 //        <Dialog /> somewhere in JSX, then ask(() => doDelete()) on button click.
 
 export function useConfirm() {
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+  const [message, setMessage]   = useState<string | null>(null);
+  const [loading, setLoading]   = useState(false);
+  const [errMsg, setErrMsg]     = useState<string | null>(null);
 
-  const ask = (action: () => void, customMessage?: string) => {
+  const ask = (action: () => Promise<void>, customMessage?: string) => {
     setPendingAction(() => action);
     setMessage(customMessage ?? null);
+    setErrMsg(null);
   };
-  const confirm = () => { pendingAction?.(); setPendingAction(null); setMessage(null); };
-  const cancel  = () => { setPendingAction(null); setMessage(null); };
+
+  const confirm = async () => {
+    const action = pendingAction;
+    if (!action) return;
+    setLoading(true);
+    setErrMsg(null);
+    try {
+      await action();
+      setPendingAction(null);
+      setMessage(null);
+      setErrMsg(null);
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancel = () => {
+    if (loading) return;
+    setPendingAction(null);
+    setMessage(null);
+    setErrMsg(null);
+  };
 
   const Dialog = () =>
     pendingAction ? (
@@ -446,9 +471,16 @@ export function useConfirm() {
         <div className="relative bg-[#1C1F26] border border-white/10 rounded-xl p-6 max-w-sm w-full">
           <p className="text-white font-semibold mb-2">Are you sure?</p>
           <p className="text-white/40 text-sm mb-5">{message ?? "This cannot be undone."}</p>
+          {errMsg && (
+            <p className="text-red-400 text-xs mb-3 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
+              {errMsg}
+            </p>
+          )}
           <div className="flex gap-3 justify-end">
-            <Btn variant="ghost" size="sm" onClick={cancel}>Cancel</Btn>
-            <Btn variant="danger" size="sm" onClick={confirm}>Delete</Btn>
+            <Btn variant="ghost" size="sm" onClick={cancel} disabled={loading}>Cancel</Btn>
+            <Btn variant="danger" size="sm" onClick={() => void confirm()} disabled={loading}>
+              {loading ? "Deleting…" : "Delete"}
+            </Btn>
           </div>
         </div>
       </div>

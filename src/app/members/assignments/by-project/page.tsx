@@ -8,6 +8,7 @@ import {
   PageHeader, Btn, Modal, Field, Input, SearchBar, Empty, useConfirm, Spinner,
 } from "@/components/members/ui";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
   subscribeProjectGroups, subscribeCycles, subscribeAssignmentTemplates,
@@ -659,7 +660,7 @@ export default function ByProjectPage() {
                             {a.description && (
                               <div
                                 className="text-[11px] text-white/55 prose-invert line-clamp-3"
-                                dangerouslySetInnerHTML={{ __html: a.description }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
                               />
                             )}
                             <div className="flex gap-2 mt-1">

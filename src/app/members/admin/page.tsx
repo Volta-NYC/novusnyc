@@ -827,7 +827,7 @@ function HandbookTab() {
   };
 
   const handleResetAcks = () => {
-    askReset(() => void doResetAcks(), "All existing acknowledgments will be cleared. Members will see the policy popup again on their next login.");
+    askReset(() => doResetAcks(), "All existing acknowledgments will be cleared. Members will see the policy popup again on their next login.");
   };
 
   if (loading) return <div className="flex items-center justify-center h-32"><Spinner size="sm" /></div>;

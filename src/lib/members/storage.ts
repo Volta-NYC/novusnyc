@@ -1007,17 +1007,20 @@ export async function createBID(data: Omit<BID, "id" | "createdAt" | "updatedAt"
   const id = genId();
   const now = nowISO();
   const row = toRow({ ...data, id, createdAt: now, updatedAt: now });
-  await supabase.from("bids").insert(row);
+  const { error: insertError } = await supabase.from("bids").insert(row);
+  if (insertError) throw new Error(insertError.message);
   await writeAuditLog({ action: "create", collection: "bids", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateBID(id: string, data: Partial<BID>): Promise<void> {
-  await supabase.from("bids").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { error: updateError } = await supabase.from("bids").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  if (updateError) throw new Error(updateError.message);
   await writeAuditLog({ action: "update", collection: "bids", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteBID(id: string): Promise<void> {
-  await supabase.from("bids").delete().eq("id", id);
+  const { error: deleteError } = await supabase.from("bids").delete().eq("id", id);
+  if (deleteError) throw new Error(deleteError.message);
   await writeAuditLog({ action: "delete", collection: "bids", recordId: id });
 }
 
@@ -1029,7 +1032,8 @@ export async function addBIDTimelineEntry(
   const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
   const entryId = genId();
   timeline[entryId] = entry;
-  await supabase.from("bids").update({ timeline }).eq("id", bidId);
+  const { error: timelineAddError } = await supabase.from("bids").update({ timeline }).eq("id", bidId);
+  if (timelineAddError) throw new Error(timelineAddError.message);
   await writeAuditLog({ action: "create", collection: "bids.timeline", recordId: `${bidId}/${entryId}`, details: { action: entry.action, date: entry.date } });
 }
 
@@ -1037,7 +1041,8 @@ export async function deleteBIDTimelineEntry(bidId: string, entryId: string): Pr
   const { data: row } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
   const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
   delete timeline[entryId];
-  await supabase.from("bids").update({ timeline }).eq("id", bidId);
+  const { error: timelineDeleteError } = await supabase.from("bids").update({ timeline }).eq("id", bidId);
+  if (timelineDeleteError) throw new Error(timelineDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "bids.timeline", recordId: `${bidId}/${entryId}` });
 }
 
@@ -1048,7 +1053,8 @@ export async function createBusiness(data: Omit<Business, "id" | "createdAt" | "
   const id = genId();
   const now = nowISO();
   const row = toRow({ ...rest, id, showcaseImageSet: false, createdAt: now, updatedAt: now });
-  await supabase.from("businesses").insert(row);
+  const { error: bizInsertError } = await supabase.from("businesses").insert(row);
+  if (bizInsertError) throw new Error(bizInsertError.message);
 
   if (showcaseImageData) {
     try {
@@ -1104,12 +1110,14 @@ export async function updateBusiness(id: string, data: Partial<Business>): Promi
     }
   }
 
-  await supabase.from("businesses").update(toRow({ ...rest, updatedAt: nowISO() })).eq("id", id);
+  const { error: bizUpdateError } = await supabase.from("businesses").update(toRow({ ...rest, updatedAt: nowISO() })).eq("id", id);
+  if (bizUpdateError) throw new Error(bizUpdateError.message);
   await writeAuditLog({ action: "update", collection: "businesses", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteBusiness(id: string): Promise<void> {
-  await supabase.from("businesses").delete().eq("id", id);
+  const { error: bizDeleteError } = await supabase.from("businesses").delete().eq("id", id);
+  if (bizDeleteError) throw new Error(bizDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "businesses", recordId: id });
 }
 
@@ -1118,7 +1126,8 @@ export async function deleteBusiness(id: string): Promise<void> {
 export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt">): Promise<void> {
   const id = genId();
   const row = toRow({ ...data, id, pod: normalizeTeamPod(data.pod), createdAt: nowISO() });
-  await supabase.from("team").insert(row);
+  const { error: teamInsertError } = await supabase.from("team").insert(row);
+  if (teamInsertError) throw new Error(teamInsertError.message);
   await writeAuditLog({ action: "create", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
 }
 
@@ -1130,7 +1139,8 @@ export async function createApplicationRecord(
   const createdAt = data.createdAt ?? nowISO();
   const updatedAt = data.updatedAt ?? createdAt;
   const row = toRow({ ...data, id, createdAt, updatedAt });
-  await supabase.from("applications").insert(row);
+  const { error: appInsertError } = await supabase.from("applications").insert(row);
+  if (appInsertError) throw new Error(appInsertError.message);
   await writeAuditLog({ action: "create", collection: "applications", recordId: id, details: { fields: Object.keys(data) } });
 }
 
@@ -1138,7 +1148,8 @@ export async function updateApplicationRecord(
   id: string,
   data: Partial<ApplicationRecord>
 ): Promise<void> {
-  await supabase.from("applications").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { error: appUpdateError } = await supabase.from("applications").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  if (appUpdateError) throw new Error(appUpdateError.message);
   await writeAuditLog({ action: "update", collection: "applications", recordId: id, details: { fields: Object.keys(data) } });
 }
 
@@ -1147,12 +1158,14 @@ export async function updateTeamMember(id: string, data: Partial<TeamMember>): P
   if (Object.prototype.hasOwnProperty.call(patch, "pod")) {
     patch.pod = normalizeTeamPod(patch.pod);
   }
-  await supabase.from("team").update(toRow(patch as Record<string, unknown>)).eq("id", id);
+  const { error: teamUpdateError } = await supabase.from("team").update(toRow(patch as Record<string, unknown>)).eq("id", id);
+  if (teamUpdateError) throw new Error(teamUpdateError.message);
   await writeAuditLog({ action: "update", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteTeamMember(id: string): Promise<void> {
-  await supabase.from("team").delete().eq("id", id);
+  const { error: teamDeleteError } = await supabase.from("team").delete().eq("id", id);
+  if (teamDeleteError) throw new Error(teamDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "team", recordId: id });
 }
 
@@ -1161,17 +1174,20 @@ export async function deleteTeamMember(id: string): Promise<void> {
 export async function createProject(data: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<void> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("projects").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  const { error: projectInsertError } = await supabase.from("projects").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (projectInsertError) throw new Error(projectInsertError.message);
   await writeAuditLog({ action: "create", collection: "projects", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateProject(id: string, data: Partial<Project>): Promise<void> {
-  await supabase.from("projects").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { error: projectUpdateError } = await supabase.from("projects").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  if (projectUpdateError) throw new Error(projectUpdateError.message);
   await writeAuditLog({ action: "update", collection: "projects", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  await supabase.from("projects").delete().eq("id", id);
+  const { error: projectDeleteError } = await supabase.from("projects").delete().eq("id", id);
+  if (projectDeleteError) throw new Error(projectDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "projects", recordId: id });
 }
 
@@ -1182,7 +1198,8 @@ export async function createFinanceAssignment(
 ): Promise<void> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("finance_assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  const { error: financeInsertError } = await supabase.from("finance_assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (financeInsertError) throw new Error(financeInsertError.message);
   await writeAuditLog({ action: "create", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
 }
 
@@ -1190,12 +1207,14 @@ export async function updateFinanceAssignment(
   id: string,
   data: Partial<FinanceAssignment>
 ): Promise<void> {
-  await supabase.from("finance_assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { error: financeUpdateError } = await supabase.from("finance_assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  if (financeUpdateError) throw new Error(financeUpdateError.message);
   await writeAuditLog({ action: "update", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteFinanceAssignment(id: string): Promise<void> {
-  await supabase.from("finance_assignments").delete().eq("id", id);
+  const { error: financeDeleteError } = await supabase.from("finance_assignments").delete().eq("id", id);
+  if (financeDeleteError) throw new Error(financeDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "financeAssignments", recordId: id });
 }
 
@@ -1222,7 +1241,8 @@ export function subscribeUserProfiles(callback: (items: UserProfile[]) => void):
 }
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
-  await supabase.from("user_profiles").update(toRow(data as Record<string, unknown>)).eq("id", uid);
+  const { error: profileUpdateError } = await supabase.from("user_profiles").update(toRow(data as Record<string, unknown>)).eq("id", uid);
+  if (profileUpdateError) throw new Error(profileUpdateError.message);
   await writeAuditLog({ action: "update", collection: "userProfiles", recordId: uid, details: { fields: Object.keys(data) } });
 }
 
@@ -1231,12 +1251,14 @@ export async function setUserProfileRecord(uid: string, data: Omit<UserProfile, 
   const before = existing ? fromRow<Omit<UserProfile, "id">>(existing as Record<string, unknown>) : null;
   const merged = before ? { ...before, ...data } : data;
   merged.authRole = normalizeAuthRoleValue(merged.authRole);
-  await supabase.from("user_profiles").upsert(toRow({ ...merged, id: uid }), { onConflict: "id" });
+  const { error: profileUpsertError } = await supabase.from("user_profiles").upsert(toRow({ ...merged, id: uid }), { onConflict: "id" });
+  if (profileUpsertError) throw new Error(profileUpsertError.message);
   await writeAuditLog({ action: before ? "update" : "create", collection: "userProfiles", recordId: uid, details: { fields: Object.keys(merged) } });
 }
 
 export async function deleteUserProfile(uid: string): Promise<void> {
-  await supabase.from("user_profiles").delete().eq("id", uid);
+  const { error: profileDeleteError } = await supabase.from("user_profiles").delete().eq("id", uid);
+  if (profileDeleteError) throw new Error(profileDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "userProfiles", recordId: uid });
 }
 
@@ -1778,7 +1800,7 @@ export async function deleteInfraction(id: string): Promise<void> {
 
 export async function createEmailTemplate(data: Omit<EmailTemplate, "id" | "updatedAt">): Promise<void> {
   const id = genId();
-  await supabase.from("email_templates").upsert({
+  const { error: emailTemplateUpsertError } = await supabase.from("email_templates").upsert({
     id,
     key:                 data.key,
     label:               data.label,
@@ -1792,6 +1814,7 @@ export async function createEmailTemplate(data: Omit<EmailTemplate, "id" | "upda
     usage_count:         0,
     last_used_at:        null,
   }, { onConflict: "key", ignoreDuplicates: true });
+  if (emailTemplateUpsertError) throw new Error(emailTemplateUpsertError.message);
   await writeAuditLog({ action: "create", collection: "emailTemplates", recordId: id, details: { key: data.key } });
 }
 
@@ -1807,12 +1830,14 @@ export async function updateEmailTemplate(id: string, data: Partial<EmailTemplat
   if (data.updatedBy          !== undefined) row.updated_by          = data.updatedBy;
   if (data.usageCount         !== undefined) row.usage_count         = data.usageCount;
   if (data.lastUsedAt         !== undefined) row.last_used_at        = data.lastUsedAt;
-  await supabase.from("email_templates").update(row).eq("id", id);
+  const { error: emailTemplateUpdateError } = await supabase.from("email_templates").update(row).eq("id", id);
+  if (emailTemplateUpdateError) throw new Error(emailTemplateUpdateError.message);
   await writeAuditLog({ action: "update", collection: "emailTemplates", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteEmailTemplate(id: string): Promise<void> {
-  await supabase.from("email_templates").delete().eq("id", id);
+  const { error: emailTemplateDeleteError } = await supabase.from("email_templates").delete().eq("id", id);
+  if (emailTemplateDeleteError) throw new Error(emailTemplateDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "emailTemplates", recordId: id });
 }
 
@@ -1821,18 +1846,21 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 export async function createAssignment(data: Omit<Assignment, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  const { error: assignmentInsertError } = await supabase.from("assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (assignmentInsertError) throw new Error(assignmentInsertError.message);
   await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { title: data.title, track: data.track } });
   return id;
 }
 
 export async function updateAssignment(id: string, data: Partial<Assignment>): Promise<void> {
-  await supabase.from("assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { error: assignmentUpdateError } = await supabase.from("assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  if (assignmentUpdateError) throw new Error(assignmentUpdateError.message);
   await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteAssignment(id: string): Promise<void> {
-  await supabase.from("assignments").delete().eq("id", id);
+  const { error: assignmentDeleteError } = await supabase.from("assignments").delete().eq("id", id);
+  if (assignmentDeleteError) throw new Error(assignmentDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
 }
 
@@ -1846,18 +1874,21 @@ export async function getAssignmentsList(): Promise<Assignment[]> {
 export async function createAssignmentTemplate(data: Omit<AssignmentTemplate, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("assignment_templates").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  const { error: templateInsertError } = await supabase.from("assignment_templates").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (templateInsertError) throw new Error(templateInsertError.message);
   await writeAuditLog({ action: "create", collection: "assignmentTemplates", recordId: id, details: { title: data.title, track: data.track } });
   return id;
 }
 
 export async function updateAssignmentTemplate(id: string, data: Partial<AssignmentTemplate>): Promise<void> {
-  await supabase.from("assignment_templates").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { error: templateUpdateError } = await supabase.from("assignment_templates").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  if (templateUpdateError) throw new Error(templateUpdateError.message);
   await writeAuditLog({ action: "update", collection: "assignmentTemplates", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteAssignmentTemplate(id: string): Promise<void> {
-  await supabase.from("assignment_templates").delete().eq("id", id);
+  const { error: templateDeleteError } = await supabase.from("assignment_templates").delete().eq("id", id);
+  if (templateDeleteError) throw new Error(templateDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "assignmentTemplates", recordId: id });
 }
 
@@ -1873,18 +1904,21 @@ export async function createProjectGroup(
 ): Promise<string> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("project_groups").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  const { error: groupInsertError } = await supabase.from("project_groups").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (groupInsertError) throw new Error(groupInsertError.message);
   await writeAuditLog({ action: "create", collection: "projectGroups", recordId: id, details: { name: data.name } });
   return id;
 }
 
 export async function updateProjectGroup(id: string, data: Partial<ProjectGroup>): Promise<void> {
-  await supabase.from("project_groups").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { error: groupUpdateError } = await supabase.from("project_groups").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  if (groupUpdateError) throw new Error(groupUpdateError.message);
   await writeAuditLog({ action: "update", collection: "projectGroups", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteProjectGroup(id: string): Promise<void> {
-  await supabase.from("project_groups").delete().eq("id", id);
+  const { error: groupDeleteError } = await supabase.from("project_groups").delete().eq("id", id);
+  if (groupDeleteError) throw new Error(groupDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "projectGroups", recordId: id });
 }
 
@@ -1892,18 +1926,21 @@ export async function deleteProjectGroup(id: string): Promise<void> {
 
 export async function createAssignmentClaim(data: Omit<AssignmentClaim, "id">): Promise<string | null> {
   const id = genId();
-  await supabase.from("assignment_claims").insert(toRow({ ...data, id }));
+  const { error: claimInsertError } = await supabase.from("assignment_claims").insert(toRow({ ...data, id }));
+  if (claimInsertError) throw new Error(claimInsertError.message);
   await writeAuditLog({ action: "create", collection: "assignmentClaims", recordId: id, details: { assignmentId: data.assignmentId, memberId: data.memberId } });
   return id;
 }
 
 export async function updateAssignmentClaim(id: string, data: Partial<AssignmentClaim>): Promise<void> {
-  await supabase.from("assignment_claims").update(toRow(data as Record<string, unknown>)).eq("id", id);
+  const { error: claimUpdateError } = await supabase.from("assignment_claims").update(toRow(data as Record<string, unknown>)).eq("id", id);
+  if (claimUpdateError) throw new Error(claimUpdateError.message);
   await writeAuditLog({ action: "update", collection: "assignmentClaims", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteAssignmentClaim(id: string): Promise<void> {
-  await supabase.from("assignment_claims").delete().eq("id", id);
+  const { error: claimDeleteError } = await supabase.from("assignment_claims").delete().eq("id", id);
+  if (claimDeleteError) throw new Error(claimDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "assignmentClaims", recordId: id });
 }
 
@@ -1911,19 +1948,22 @@ export async function deleteAssignmentClaim(id: string): Promise<void> {
 
 export async function createMemberStrike(data: Omit<MemberStrike, "id" | "issuedAt">): Promise<string | null> {
   const id = genId();
-  await supabase.from("member_strikes").insert(toRow({ ...data, id, issuedAt: nowISO() }));
+  const { error: strikeInsertError } = await supabase.from("member_strikes").insert(toRow({ ...data, id, issuedAt: nowISO() }));
+  if (strikeInsertError) throw new Error(strikeInsertError.message);
   await writeAuditLog({ action: "create", collection: "memberStrikes", recordId: id, details: { memberId: data.memberId, infractionId: data.infractionId, points: data.points, source: data.source } });
   return id;
 }
 
 export async function deleteMemberStrike(id: string): Promise<void> {
-  await supabase.from("member_strikes").delete().eq("id", id);
+  const { error: strikeDeleteError } = await supabase.from("member_strikes").delete().eq("id", id);
+  if (strikeDeleteError) throw new Error(strikeDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "memberStrikes", recordId: id });
 }
 
 export async function clearMemberStrikes(strikeIds: string[]): Promise<void> {
   if (!strikeIds.length) return;
-  await supabase.from("member_strikes").delete().in("id", strikeIds);
+  const { error: strikesClearError } = await supabase.from("member_strikes").delete().in("id", strikeIds);
+  if (strikesClearError) throw new Error(strikesClearError.message);
   await writeAuditLog({ action: "delete", collection: "memberStrikes", recordId: "bulk", details: { count: strikeIds.length, ids: strikeIds } });
 }
 
@@ -1931,13 +1971,15 @@ export async function clearMemberStrikes(strikeIds: string[]): Promise<void> {
 
 export async function createMemberCreditAdjustment(data: Omit<MemberCreditAdjustment, "id" | "createdAt">): Promise<string | null> {
   const id = genId();
-  await supabase.from("member_credit_adjustments").insert(toRow({ ...data, id, createdAt: nowISO() }));
+  const { error: creditInsertError } = await supabase.from("member_credit_adjustments").insert(toRow({ ...data, id, createdAt: nowISO() }));
+  if (creditInsertError) throw new Error(creditInsertError.message);
   await writeAuditLog({ action: "create", collection: "memberCreditAdjustments", recordId: id, details: { memberId: data.memberId, points: data.points } });
   return id;
 }
 
 export async function deleteMemberCreditAdjustment(id: string): Promise<void> {
-  await supabase.from("member_credit_adjustments").delete().eq("id", id);
+  const { error: creditDeleteError } = await supabase.from("member_credit_adjustments").delete().eq("id", id);
+  if (creditDeleteError) throw new Error(creditDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "memberCreditAdjustments", recordId: id });
 }
 
@@ -1961,11 +2003,13 @@ export async function upsertHandbookPage(slug: string, data: Omit<HandbookPage, 
   const existing = await getHandbookPage(slug);
   const now = nowISO();
   if (existing) {
-    await supabase.from("handbook_pages").update(toRow({ ...data, updatedAt: now })).eq("slug", slug);
+    const { error: handbookUpdateError } = await supabase.from("handbook_pages").update(toRow({ ...data, updatedAt: now })).eq("slug", slug);
+    if (handbookUpdateError) throw new Error(handbookUpdateError.message);
     await writeAuditLog({ action: "update", collection: "handbookPages", recordId: existing.id, details: { slug } });
   } else {
     const id = genId();
-    await supabase.from("handbook_pages").insert(toRow({ ...data, id, slug, updatedAt: now }));
+    const { error: handbookInsertError } = await supabase.from("handbook_pages").insert(toRow({ ...data, id, slug, updatedAt: now }));
+    if (handbookInsertError) throw new Error(handbookInsertError.message);
     await writeAuditLog({ action: "create", collection: "handbookPages", recordId: id, details: { slug } });
   }
 }
@@ -1983,8 +2027,9 @@ export async function getMemberAcknowledgment(memberId: string, pageSlug: string
 
 export async function createMemberAcknowledgment(data: Omit<MemberAcknowledgment, "id" | "acknowledgedAt">): Promise<void> {
   const id = genId();
-  await supabase.from("member_acknowledgments").upsert(
+  const { error: ackUpsertError } = await supabase.from("member_acknowledgments").upsert(
     toRow({ ...data, id, acknowledgedAt: nowISO() }),
     { onConflict: "member_id,page_slug" }
   );
+  if (ackUpsertError) throw new Error(ackUpsertError.message);
 }

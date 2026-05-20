@@ -19,6 +19,7 @@ import {
   type AssignmentTemplate, type Business, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
@@ -361,7 +362,7 @@ export default function TemplatesPage() {
                 {fromTemplate.description && (
                   <p
                     className="text-[11px] text-white/40 mt-1.5 line-clamp-3 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: fromTemplate.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(fromTemplate.description) }}
                   />
                 )}
               </div>

@@ -96,6 +96,16 @@ export default function ShowcaseClient({
   const [serviceFilter, setServiceFilter] = useState("All Services");
   const mobileScrollRef = useRef<HTMLDivElement>(null);
 
+  // Initialise filters from URL params on mount. Values not in the allowlists
+  // are silently ignored — template syntax and arbitrary strings have no effect.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const b = params.get("borough");
+    const s = params.get("service");
+    if (b && BOROUGH_OPTIONS.includes(b)) setBoroughFilter(b);
+    if (s && SERVICE_OPTIONS.includes(s)) setServiceFilter(s);
+  }, []);
+
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
       const boroughMatch = matchesBorough(p.borough, boroughFilter);
