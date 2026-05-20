@@ -68,17 +68,27 @@ export async function POST(req: NextRequest) {
   const origin    = siteOrigin(req);
   const redirectTo = `${origin}/members/signup?email=${encodeURIComponent(email)}`;
 
-  const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
+  const { data: inviteData, error: inviteErr } = await sb.auth.admin.generateLink({
     type: "invite",
     email,
     options: { redirectTo, data: { full_name: name } },
   });
 
-  if (linkErr || !linkData?.properties?.action_link) {
-    return NextResponse.json({ error: "link_generation_failed" }, { status: 500 });
-  }
+  let link = inviteData?.properties?.action_link ?? null;
 
-  const link = linkData.properties.action_link;
+  // invite-type fails for already-confirmed users (legacy accounts with no auth_uid yet).
+  // Fall back to magiclink — produces the same SIGNED_IN event on the signup page.
+  if (inviteErr || !link) {
+    const { data: magicData, error: magicErr } = await sb.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+      options: { redirectTo, data: { full_name: name } },
+    });
+    if (magicErr || !magicData?.properties?.action_link) {
+      return NextResponse.json({ error: "link_generation_failed" }, { status: 500 });
+    }
+    link = magicData.properties.action_link;
+  }
   const { subject, html } = await loadEmailTemplate(
     "setup-link",
     { name, firstName, link },
