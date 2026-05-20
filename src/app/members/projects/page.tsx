@@ -1259,9 +1259,29 @@ function BusinessesPageInner() {
 
   const renderTrackStatusCell = (b: Business, track: "Tech" | "Marketing") => {
     const normalized = normalizeTrackProjectsFromBusiness(b);
-    const raw = normalized.trackProjects[track]?.projectStatus ?? "Upcoming";
-    const statuses = track === "Tech" ? TECH_STATUSES : MARKETING_STATUSES;
-    const label = statuses.find((s) => s.value === raw) ? raw : "Upcoming";
+    const hasTech = normalized.projectTracks.includes("Tech");
+    const hasMarketing = normalized.projectTracks.includes("Marketing");
+    const isMarketingOnly = hasMarketing && !hasTech;
+
+    // No track assigned — show a dash like other empty cells.
+    if (track === "Tech" && !hasTech) return <span className="text-white/25">—</span>;
+    if (track === "Marketing" && !hasMarketing) return <span className="text-white/25">—</span>;
+
+    // Per-track status if set; otherwise fall back to the business's overall
+    // projectStatus. For marketing-only businesses the overall status is the
+    // marketing status; for everything else it belongs to Tech.
+    const storedStatus = normalized.trackProjects[track]?.projectStatus;
+    let label: string;
+    if (storedStatus) {
+      label = storedStatus;
+    } else if (track === "Tech" && !isMarketingOnly) {
+      label = b.projectStatus ?? "Upcoming";
+    } else if (track === "Marketing" && isMarketingOnly) {
+      label = b.projectStatus ?? "Upcoming";
+    } else {
+      label = "Upcoming";
+    }
+
     if (!canEdit) return <Badge label={label} />;
     return (
       <button
@@ -2024,8 +2044,8 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Tech Status</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Tech</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
                   </thead>
