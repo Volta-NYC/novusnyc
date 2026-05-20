@@ -2060,7 +2060,7 @@ function BusinessesPageInner() {
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "100%", minWidth: "996px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1156px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2068,7 +2068,8 @@ function BusinessesPageInner() {
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Status</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Tech</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>
               </thead>
