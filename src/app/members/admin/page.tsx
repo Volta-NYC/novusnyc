@@ -1,9 +1,9 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import { Btn, Field, Input, Spinner, Toggle } from "@/components/members/ui";
+import { Btn, Field, Input, SearchBar, Spinner, Toggle } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import EmailBodyEditor from "@/components/members/EmailBodyEditor";
 import { useAuth } from "@/lib/members/authContext";
@@ -13,8 +13,11 @@ import {
   getSiteSettings, updateSiteSettings, type SiteSettings,
   subscribeInfractions, createInfraction, updateInfraction, deleteInfraction,
   type Infraction,
+  getAuditLogsList, type AuditLogEntry,
 } from "@/lib/members/storage";
 import { useConfirm, Modal, TextArea } from "@/components/members/ui";
+import { formatDate } from "@/lib/format";
+import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
 
 const EXPORT_OPTIONS = [
   { key: "team",                label: "Team Members" },
@@ -33,7 +36,7 @@ const EXPORT_OPTIONS = [
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-type AdminTab = "data" | "applications" | "services" | "banners" | "infractions" | "handbook" | "emails";
+type AdminTab = "data" | "applications" | "services" | "banners" | "infractions" | "handbook" | "emails" | "audit";
 
 const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
   data:         "/members/admin",
@@ -43,6 +46,7 @@ const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
   infractions:  "/members/admin/infractions",
   handbook:     "/members/admin/handbook",
   emails:       "/members/admin/emails",
+  audit:        "/members/admin/audit-logs",
 };
 
 function getAdminTab(pathname: string): AdminTab {
@@ -52,6 +56,7 @@ function getAdminTab(pathname: string): AdminTab {
   if (pathname.startsWith("/members/admin/infractions"))  return "infractions";
   if (pathname.startsWith("/members/admin/handbook"))     return "handbook";
   if (pathname.startsWith("/members/admin/emails"))       return "emails";
+  if (pathname.startsWith("/members/admin/audit-logs"))   return "audit";
   return "data";
 }
 
@@ -869,6 +874,127 @@ function HandbookTab() {
   );
 }
 
+// ── AUDIT LOG TAB ──────────────────────────────────────────────────────────────
+
+function AuditLogTab() {
+  const [entries, setEntries] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch]   = useState("");
+  const [actionFilter, setActionFilter] = useState<"all" | "create" | "update" | "delete">("all");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const items = await getAuditLogsList(500);
+      if (cancelled) return;
+      setEntries(items);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return entries.filter((e) => {
+      if (actionFilter !== "all" && e.action !== actionFilter) return false;
+      if (!q) return true;
+      const haystack = [
+        e.actorEmail, e.actorName, e.collection, e.recordId,
+        JSON.stringify(e.details ?? {}),
+      ].join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [entries, search, actionFilter]);
+
+  const actionBadgeClass = (action: string) => {
+    if (action === "create") return "bg-[#85CC17]/15 text-[#85CC17] border-[#85CC17]/30";
+    if (action === "update") return "bg-blue-500/15 text-blue-300 border-blue-500/30";
+    if (action === "delete") return "bg-red-500/15 text-red-300 border-red-500/30";
+    return "bg-white/10 text-white/60 border-white/20";
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card title="Audit log" subtitle={`Showing ${filtered.length} of ${entries.length} recent entries (most recent 500).`}>
+        <div className="flex gap-2 mb-4 flex-wrap">
+          <SearchBar value={search} onChange={setSearch} placeholder="Filter by user, collection, record, or details…" debounceMs={250} />
+          <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-lg p-1">
+            {(["all", "create", "update", "delete"] as const).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setActionFilter(opt)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  actionFilter === opt ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/50 hover:text-white"
+                }`}
+              >
+                {opt[0].toUpperCase() + opt.slice(1)}
+              </button>
+            ))}
+          </div>
+          <Btn
+            variant="secondary"
+            onClick={() => {
+              const csv = toCsv(filtered, [
+                { key: "timestamp", label: "Timestamp" },
+                { key: "action", label: "Action" },
+                { key: "collection", label: "Collection" },
+                { key: "recordId", label: "Record ID" },
+                { key: "actorEmail", label: "Actor Email" },
+                { key: "actorName", label: "Actor Name" },
+                { key: "details", label: "Details" },
+              ]);
+              downloadCsv(dateStampedFilename("audit-log"), csv);
+            }}
+          >
+            Export CSV
+          </Btn>
+        </div>
+
+        {loading ? (
+          <div className="py-12 flex justify-center"><Spinner /></div>
+        ) : filtered.length === 0 ? (
+          <p className="text-white/30 text-sm py-12 text-center">No audit entries match your filter.</p>
+        ) : (
+          <div className="overflow-x-auto -mx-2 px-2">
+            <table className="w-full text-xs">
+              <thead className="border-b border-white/8">
+                <tr className="text-white/40 uppercase tracking-wider text-[10px]">
+                  <th className="text-left py-2 pr-3 font-medium">When</th>
+                  <th className="text-left py-2 pr-3 font-medium">Action</th>
+                  <th className="text-left py-2 pr-3 font-medium">Collection</th>
+                  <th className="text-left py-2 pr-3 font-medium">Record</th>
+                  <th className="text-left py-2 pr-3 font-medium">Actor</th>
+                  <th className="text-left py-2 pr-3 font-medium">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((e) => (
+                  <tr key={e.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                    <td className="py-2 pr-3 text-white/70 whitespace-nowrap" title={e.timestamp}>
+                      {formatDate(e.timestamp, { withTime: true })}
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] uppercase tracking-wider border ${actionBadgeClass(e.action)}`}>
+                        {e.action}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 text-white/70 font-mono">{e.collection}</td>
+                    <td className="py-2 pr-3 text-white/40 font-mono text-[10px]">{e.recordId ?? "—"}</td>
+                    <td className="py-2 pr-3 text-white/70">{e.actorName || e.actorEmail || "—"}</td>
+                    <td className="py-2 pr-3 text-white/40 font-mono text-[10px] max-w-[320px] truncate" title={JSON.stringify(e.details ?? {})}>
+                      {e.details ? JSON.stringify(e.details) : ""}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 // ── ADMIN CONTENT ──────────────────────────────────────────────────────────────
 
 function AdminContent() {
@@ -897,6 +1023,7 @@ function AdminContent() {
     { key: "infractions",  label: "Infractions" },
     { key: "emails",       label: "Emails" },
     { key: "handbook",     label: "Handbook" },
+    { key: "audit",        label: "Audit Log" },
   ];
 
   return (
@@ -927,6 +1054,7 @@ function AdminContent() {
       {activeTab === "infractions"  && <InfractionsTab />}
       {activeTab === "emails"       && <EmailsTab />}
       {activeTab === "handbook"     && <HandbookTab />}
+      {activeTab === "audit"        && <AuditLogTab />}
     </>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { TRACK_META, TRACK_ORDER, DIVISION_PUBLIC_LABEL, type TrackDivision } from "@/lib/members/constants";
+import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -1641,6 +1642,25 @@ function BusinessesPageInner() {
         action={
           canEdit && activeTab !== "showcase" ? (
             <div className="flex gap-2">
+              <Btn
+                variant="secondary"
+                onClick={() => {
+                  const csv = toCsv(filtered, [
+                    { key: "name", label: "Name" },
+                    { key: "ownerName", label: "Owner" },
+                    { key: "ownerEmail", label: "Email" },
+                    { key: "phone", label: "Phone" },
+                    { key: "neighborhood", label: "Neighborhood" },
+                    { key: "projectStatus", label: "Status" },
+                    { key: "teamLead", label: "Team Lead" },
+                    { key: "firstContactDate", label: "First Contact" },
+                    { key: "website", label: "Website" },
+                  ]);
+                  downloadCsv(dateStampedFilename(`businesses-${activeTab}`), csv);
+                }}
+              >
+                Export CSV
+              </Btn>
               <Btn variant="primary" onClick={() => openCreate()}>+ New Business</Btn>
             </div>
           ) : undefined

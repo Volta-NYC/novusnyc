@@ -22,6 +22,7 @@ import { CLASS_GRADE_OPTIONS, gradeToClassOf } from "@/lib/grades";
 import MemberDrawer from "@/components/members/MemberDrawer";
 import { classifyMember, computeCreditLedger, computeDot, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { runCycleSweep } from "@/lib/members/cycleAutomation";
+import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -955,6 +956,25 @@ export default function TeamPage() {
                     : `Invite All (${unregisteredCount})`}
               </Btn>
             )}
+            <Btn
+              variant="secondary"
+              onClick={() => {
+                const csv = toCsv(filtered, [
+                  { key: "name", label: "Name" },
+                  { key: "email", label: "Email" },
+                  { key: "school", label: "School" },
+                  { key: "grade", label: "Grade" },
+                  { key: "role", label: "Role" },
+                  { key: "status", label: "Status" },
+                  { key: "pod", label: "Pod" },
+                  { key: "joinDate", label: "Join Date" },
+                  { key: "slackHandle", label: "Slack" },
+                ]);
+                downloadCsv(dateStampedFilename("team-directory"), csv);
+              }}
+            >
+              Export CSV
+            </Btn>
             <Btn variant="primary" onClick={openCreate}>+ Add Member</Btn>
           </div>
         ) : undefined}
