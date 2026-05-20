@@ -18,23 +18,25 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // PASSWORD_RECOVERY fires when Supabase exchanges the recovery token from
-    // the URL hash. Any other session type on this page is unexpected — redirect.
+    let recoveryFired = false;
+
+    // PASSWORD_RECOVERY fires after Supabase exchanges the token/code from the URL.
+    // INITIAL_SESSION fires first (before exchange completes) — ignoring it avoids
+    // a race where we'd show "Link Expired" before PASSWORD_RECOVERY can fire.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
+        recoveryFired = true;
         setPhase("form");
-      } else if (event === "INITIAL_SESSION") {
-        // No hash token present — sign out any stale session and show error.
-        void signOut().finally(() => setPhase("invalid"));
       }
     });
 
-    // Fallback: if no event fires within 4 s, the URL had no recovery token.
+    // Fallback: if PASSWORD_RECOVERY hasn't fired within 3 s the URL had no
+    // valid recovery token, so sign out any stale session and show the error.
     const timer = setTimeout(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) setPhase("invalid");
-      });
-    }, 4000);
+      if (!recoveryFired) {
+        void signOut().finally(() => setPhase("invalid"));
+      }
+    }, 3000);
 
     return () => {
       subscription.unsubscribe();
