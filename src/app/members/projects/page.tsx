@@ -105,10 +105,10 @@ const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
 
 function normalizeProjectStatus(value: unknown): ProjectStatusValue {
   const raw = String(value ?? "").trim();
-  if (raw === "Ongoing" || raw === "Upcoming" || raw === "Completed") return raw;
-  if (raw === "Active") return "Ongoing";
-  if (raw === "Complete") return "Completed";
-  if (raw === "On Hold" || raw === "Not Started" || raw === "Discovery") return "Upcoming";
+  if (raw === "Completed" || raw === "Complete" || raw === "Done") return "Completed";
+  if (raw === "Upcoming" || raw === "Not Started" || raw === "On Hold" || raw === "Discovery") return "Upcoming";
+  if (raw === "Ongoing" || raw === "Active" || raw === "In Development" || raw === "Awaiting Client" ||
+      raw === "Awaiting Deployment" || raw === "In Planning" || raw === "Consistent Posts") return "Ongoing";
   return "Upcoming";
 }
 
@@ -203,25 +203,13 @@ function normalizeTrackProjectsFromBusiness(business: Business): { projectTracks
   }
 
   if (projectTracks.length === 0) {
-    const legacyMembers = (business.teamMembers ?? []).map((name) => String(name ?? "").trim()).filter(Boolean);
-    if (legacyMembers.length > 0) {
-      const fallbackTrack: TrackDivision = "Tech";
-      projectTracks = [fallbackTrack];
-      normalizedMap[fallbackTrack] = {
-        projectStatus: normalizeProjectStatus(business.projectStatus),
-        teamMembers: legacyMembers,
-        deadlines: [...TRACK_DEADLINE_DEFAULT],
-        notes: String(business.notes ?? "").trim(),
-      };
-    } else {
-      return { projectTracks: [], trackProjects: normalizedMap };
-    }
+    return { projectTracks: [], trackProjects: normalizedMap };
   }
 
   for (const track of projectTracks) {
     if (!normalizedMap[track]) {
       normalizedMap[track] = {
-        projectStatus: normalizeProjectStatus(business.projectStatus),
+        projectStatus: "Upcoming",
         teamMembers: [],
         deadlines: [...TRACK_DEADLINE_DEFAULT],
         notes: "",
@@ -235,9 +223,9 @@ function normalizeTrackProjectsFromBusiness(business: Business): { projectTracks
 function deriveOverallStatus(trackProjects: TrackProjectMap, projectTracks: TrackDivision[]): ProjectStatusValue {
   if (projectTracks.length === 0) return "Upcoming";
   const statuses = projectTracks.map((track) => trackProjects[track]?.projectStatus ?? "Upcoming");
-  if (statuses.includes("Ongoing")) return "Ongoing";
-  if (statuses.includes("Upcoming")) return "Upcoming";
-  return "Completed";
+  if (statuses.every((s) => s === "Completed")) return "Completed";
+  if (statuses.some((s) => s !== "Upcoming")) return "Ongoing";
+  return "Upcoming";
 }
 
 function derivePrimaryDivision(projectTracks: TrackDivision[]): TrackDivision {
@@ -502,7 +490,7 @@ function BusinessesPageInner() {
           ...normalized.trackProjects,
           ...(techMembers.length > 0 ? {
             Tech: {
-              projectStatus: normalized.trackProjects.Tech?.projectStatus ?? normalizeProjectStatus(business.projectStatus),
+              projectStatus: normalized.trackProjects.Tech?.projectStatus ?? "Upcoming",
               teamMembers: techMembers,
               deadlines: normalized.trackProjects.Tech?.deadlines ?? [...TRACK_DEADLINE_DEFAULT],
               notes: normalized.trackProjects.Tech?.notes ?? String(business.notes ?? "").trim(),
@@ -1259,28 +1247,10 @@ function BusinessesPageInner() {
 
   const renderTrackStatusCell = (b: Business, track: "Tech" | "Marketing") => {
     const normalized = normalizeTrackProjectsFromBusiness(b);
-    const hasTech = normalized.projectTracks.includes("Tech");
-    const hasMarketing = normalized.projectTracks.includes("Marketing");
-    const isMarketingOnly = hasMarketing && !hasTech;
 
-    // No track assigned — show a dash like other empty cells.
-    if (track === "Tech" && !hasTech) return <span className="text-white/25">—</span>;
-    if (track === "Marketing" && !hasMarketing) return <span className="text-white/25">—</span>;
+    if (!normalized.projectTracks.includes(track)) return <span className="text-white/25">—</span>;
 
-    // Per-track status if set; otherwise fall back to the business's overall
-    // projectStatus. For marketing-only businesses the overall status is the
-    // marketing status; for everything else it belongs to Tech.
-    const storedStatus = normalized.trackProjects[track]?.projectStatus;
-    let label: string;
-    if (storedStatus) {
-      label = storedStatus;
-    } else if (track === "Tech" && !isMarketingOnly) {
-      label = b.projectStatus ?? "Upcoming";
-    } else if (track === "Marketing" && isMarketingOnly) {
-      label = b.projectStatus ?? "Upcoming";
-    } else {
-      label = "Upcoming";
-    }
+    const label = normalized.trackProjects[track]?.projectStatus || "Upcoming";
 
     if (!canEdit) return <Badge label={label} />;
     return (

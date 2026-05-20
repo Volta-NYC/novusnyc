@@ -3,7 +3,6 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { MEMBERS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
@@ -962,7 +961,6 @@ export default function TeamPage() {
         <span>No Account: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>
         <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
       </div>
-      <SectionTabs tabs={MEMBERS_GROUP_TABS} />
 
       {/* Search controls */}
       <div className="flex gap-3 mb-4 flex-wrap items-center">
