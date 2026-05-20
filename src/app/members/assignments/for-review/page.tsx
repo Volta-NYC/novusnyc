@@ -14,10 +14,10 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeEmailTemplates,
-  subscribeProjectGroups,
+  subscribeAutomationConfigs, subscribeProjectGroups,
   updateAssignmentClaim,
-  type Assignment, type AssignmentClaim, type Business, type EmailTemplate, type CycleTrack,
-  type ProjectGroup,
+  type Assignment, type AssignmentClaim, type AutomationConfig, type Business,
+  type EmailTemplate, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
@@ -68,6 +68,7 @@ export default function ForReviewPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [automationConfigs, setAutomationConfigs] = useState<AutomationConfig[]>([]);
 
   const [search, setSearch] = useState("");
   const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_ASSIGNMENT_SORT_RULES);
@@ -91,7 +92,8 @@ export default function ForReviewPage() {
     const unsub3 = subscribeBusinesses(setBusinesses);
     const unsub4 = subscribeEmailTemplates(setTemplates);
     const unsub5 = subscribeProjectGroups(setProjectGroups);
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); };
+    const unsub6 = subscribeAutomationConfigs(setAutomationConfigs);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); };
   }, []);
 
   const assignmentById   = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
@@ -244,12 +246,9 @@ export default function ForReviewPage() {
       try {
         const idToken = await getAuthToken();
         await dispatchTemplatedEmail({
+          automationId: "assignment_rejected",
+          automationConfigs,
           templates,
-          templateKey: "assignment_rejected",
-          fallback: {
-            subject: `Resubmit needed — ${rejectingClaim.assignment?.title ?? "Assignment"}`,
-            body: `<p>Hi ${rejectingClaim.claim.memberName},</p><p>Your submission for <strong>${rejectingClaim.assignment?.title ?? "the assignment"}</strong> needs revision.</p><blockquote>${rejectReason.trim()}</blockquote>`,
-          },
           toEmail: rejectingClaim.memberEmail,
           variables: {
             memberName: rejectingClaim.claim.memberName,

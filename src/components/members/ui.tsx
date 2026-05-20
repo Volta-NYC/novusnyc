@@ -175,18 +175,23 @@ export function TextArea({ className = "", ...props }: TextAreaProps) {
 }
 
 type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
-  options: readonly string[];
+  options?: readonly string[];
   emptyLabel?: string;
+  children?: React.ReactNode;
 };
-export function Select({ options, className = "", emptyLabel = "— Select —", ...props }: SelectProps) {
+export function Select({ options, className = "", emptyLabel = "— Select —", children, ...props }: SelectProps) {
   return (
     <div className="relative w-full">
       <select
         {...props}
         className={`w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
       >
-        <option value="">{emptyLabel}</option>
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+        {children ?? (
+          <>
+            <option value="">{emptyLabel}</option>
+            {(options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}
+          </>
+        )}
       </select>
       {/* Custom chevron — positioned well inside the border */}
       <svg

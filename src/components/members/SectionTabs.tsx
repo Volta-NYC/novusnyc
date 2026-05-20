@@ -81,10 +81,11 @@ export const APPLICANTS_GROUP_TABS: SectionTab[] = [
   { href: "/members/applicants/interviews", label: "Interviews" },
 ];
 
-// Email: compose + templates.
+// Email: compose + templates + automations.
 export const EMAIL_TABS: SectionTab[] = [
   { href: "/members/email", label: "Compose", exact: true },
   { href: "/members/email/templates", label: "Templates" },
+  { href: "/members/email/automations", label: "Automations" },
 ];
 
 // Assignments: by-project grouped view, flat list, review queue, templates.

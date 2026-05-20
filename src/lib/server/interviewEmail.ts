@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/smtp";
 import { buildInterviewInviteTemplate } from "@/lib/server/applicantEmails";
 import { formatInterviewInET, parseInterviewDateTime } from "@/lib/interviews/datetime";
+import { renderAutomationEmail } from "@/lib/server/templateRenderer";
 
 type BookingEmailInput = {
   to: string;
@@ -150,9 +151,32 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
   const googleCalendarUrl = buildGoogleCalendarUrl(input);
   const ics = buildIcs(input);
 
+  const rendered = await renderAutomationEmail("interview_booked", {
+    applicantName:    input.bookerName || "there",
+    interviewTime:    timeText,
+    zoomLink:         input.zoomLink || "will be provided separately",
+    googleCalendarUrl,
+  });
+
+  const subject = rendered?.subject ?? "Volta interview Confirmation";
+  const html    = rendered?.html    ?? `
+      <p>Hi ${input.bookerName || "there"},</p>
+      <p>Your Volta interview is confirmed.</p>
+      <p>
+        <strong>Time:</strong> ${timeText}<br/>
+        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
+      </p>
+      <p>
+        <a href="${googleCalendarUrl}">Add to Google Calendar</a><br/>
+        A calendar invite (<code>.ics</code>) is attached to this email.
+      </p>
+      <p>If you need to reschedule, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
+      <p>Best,<br/>Ethan Zhang</p>
+    `;
+
   await sendInterviewEmail({
     to: input.to,
-    subject: "Volta interview Confirmation",
+    subject,
     text: [
       `Hi ${input.bookerName || "there"},`,
       "",
@@ -170,20 +194,7 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
       "Best,",
       "Ethan Zhang",
     ].join("\n"),
-    html: `
-      <p>Hi ${input.bookerName || "there"},</p>
-      <p>Your Volta interview is confirmed.</p>
-      <p>
-        <strong>Time:</strong> ${timeText}<br/>
-        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
-      </p>
-      <p>
-        <a href="${googleCalendarUrl}">Add to Google Calendar</a><br/>
-        A calendar invite (<code>.ics</code>) is attached to this email.
-      </p>
-      <p>If you need to reschedule, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
-      <p>Best,<br/>Ethan Zhang</p>
-    `,
+    html,
     ics: {
       filename: "volta-nyc-interview.ics",
       content: ics,
@@ -199,9 +210,34 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
   const googleCalendarUrl = buildGoogleCalendarUrl(input);
   const ics = buildIcs(input);
 
+  const rendered = await renderAutomationEmail("interview_rescheduled", {
+    applicantName: input.bookerName || "there",
+    previousTime:  oldTimeText,
+    interviewTime: newTimeText,
+    zoomLink:      input.zoomLink || "will be provided separately",
+    googleCalendarUrl,
+  });
+
+  const subject = rendered?.subject ?? "Volta interview Rescheduled";
+  const html    = rendered?.html    ?? `
+      <p>Hi ${input.bookerName || "there"},</p>
+      <p>Your <strong>Volta interview</strong> has been rescheduled.</p>
+      <p>
+        <strong>Previous time:</strong> ${oldTimeText}<br/>
+        <strong>New time:</strong> ${newTimeText}<br/>
+        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
+      </p>
+      <p>
+        <a href="${googleCalendarUrl}">Open in Google Calendar</a><br/>
+        A fresh calendar invite (<code>.ics</code>) is attached.
+      </p>
+      <p>If you need to reschedule again, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
+      <p>Best,<br/>Ethan Zhang</p>
+    `;
+
   await sendInterviewEmail({
     to: input.to,
-    subject: "Volta interview Rescheduled",
+    subject,
     text: [
       `Hi ${input.bookerName || "there"},`,
       "",
@@ -220,21 +256,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
       "Best,",
       "Ethan Zhang",
     ].join("\n"),
-    html: `
-      <p>Hi ${input.bookerName || "there"},</p>
-      <p>Your <strong>Volta interview</strong> has been rescheduled.</p>
-      <p>
-        <strong>Previous time:</strong> ${oldTimeText}<br/>
-        <strong>New time:</strong> ${newTimeText}<br/>
-        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
-      </p>
-      <p>
-        <a href="${googleCalendarUrl}">Open in Google Calendar</a><br/>
-        A fresh calendar invite (<code>.ics</code>) is attached.
-      </p>
-      <p>If you need to reschedule again, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
-      <p>Best,<br/>Ethan Zhang</p>
-    `,
+    html,
     ics: {
       filename: "volta-nyc-interview-rescheduled.ics",
       content: ics,
@@ -266,9 +288,32 @@ export async function sendInterviewerBookingNotificationEmail(input: {
   const summaryHtmlLines = summaryLines.length > 0
     ? `<ul>${summaryLines.map((line) => `<li>${line}</li>`).join("")}</ul>`
     : "<ul><li>No upcoming interviews in this window.</li></ul>";
+
+  const rendered = await renderAutomationEmail("interviewer_booking_notify", {
+    interviewerName: input.interviewerName || "Interviewer",
+    applicantName:   `${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}`,
+    interviewTime:   timeText,
+    zoomLink:        input.zoomLink || "will be provided separately",
+  });
+
+  const subject = rendered?.subject ?? "New Volta interview Scheduled";
+  const html    = rendered?.html    ?? `
+      <p>Hi ${input.interviewerName || "Interviewer"},</p>
+      <p>A new interview has been scheduled for one of your available slots.</p>
+      <p>
+        <strong>Candidate:</strong> ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}<br/>
+        <strong>Time:</strong> ${timeText}<br/>
+        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
+      </p>
+      <p><strong>Your upcoming interviews (next 3 weeks):</strong></p>
+      ${summaryHtmlLines}
+      <p><strong>Total:</strong> ${scheduleTotal}</p>
+      <p>You can review details in the member interview panel.</p>
+    `;
+
   await sendInterviewEmail({
     to: input.to,
-    subject: "New Volta interview Scheduled",
+    subject,
     text: [
       `Hi ${input.interviewerName || "Interviewer"},`,
       "",
@@ -281,19 +326,7 @@ export async function sendInterviewerBookingNotificationEmail(input: {
       "",
       "You can review details in the member interview panel.",
     ].join("\n"),
-    html: `
-      <p>Hi ${input.interviewerName || "Interviewer"},</p>
-      <p>A new interview has been scheduled for one of your available slots.</p>
-      <p>
-        <strong>Candidate:</strong> ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}<br/>
-        <strong>Time:</strong> ${timeText}<br/>
-        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
-      </p>
-      <p><strong>Your upcoming interviews (next 3 weeks):</strong></p>
-      ${summaryHtmlLines}
-      <p><strong>Total:</strong> ${scheduleTotal}</p>
-      <p>You can review details in the member interview panel.</p>
-    `,
+    html,
   });
 }
 
@@ -311,9 +344,31 @@ export async function sendInterviewerRescheduledNotificationEmail(input: {
 }): Promise<void> {
   const oldTimeText = formatTime(input.previousDatetimeIso);
   const newTimeText = formatTime(input.datetimeIso);
+
+  const rendered = await renderAutomationEmail("interviewer_reschedule_notify", {
+    interviewerName: input.interviewerName || "Interviewer",
+    applicantName:   `${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}`,
+    previousTime:    oldTimeText,
+    interviewTime:   newTimeText,
+    zoomLink:        input.zoomLink || "will be provided separately",
+  });
+
+  const subject = rendered?.subject ?? "Volta interview Rescheduled to Your Slot";
+  const html    = rendered?.html    ?? `
+      <p>Hi ${input.interviewerName || "Interviewer"},</p>
+      <p>An interview has been rescheduled to one of your available slots.</p>
+      <p>
+        <strong>Candidate:</strong> ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}<br/>
+        <strong>Previous time:</strong> ${oldTimeText}<br/>
+        <strong>New time:</strong> ${newTimeText}<br/>
+        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
+      </p>
+      <p>You can review details in the member interview panel.</p>
+    `;
+
   await sendInterviewEmail({
     to: input.to,
-    subject: "Volta interview Rescheduled to Your Slot",
+    subject,
     text: [
       `Hi ${input.interviewerName || "Interviewer"},`,
       "",
@@ -325,17 +380,7 @@ export async function sendInterviewerRescheduledNotificationEmail(input: {
       "",
       "You can review details in the member interview panel.",
     ].join("\n"),
-    html: `
-      <p>Hi ${input.interviewerName || "Interviewer"},</p>
-      <p>An interview has been rescheduled to one of your available slots.</p>
-      <p>
-        <strong>Candidate:</strong> ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}<br/>
-        <strong>Previous time:</strong> ${oldTimeText}<br/>
-        <strong>New time:</strong> ${newTimeText}<br/>
-        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
-      </p>
-      <p>You can review details in the member interview panel.</p>
-    `,
+    html,
   });
 }
 
@@ -362,15 +407,16 @@ export async function sendInterviewInviteLinkEmail(input: {
   fallbackOrigin?: string;
 }): Promise<void> {
   const link = `${(process.env.NEXT_PUBLIC_SITE_URL || input.fallbackOrigin || "https://voltanyc.org").replace(/\/+$/, "")}/book`;
-  const msg = buildInterviewInviteTemplate({
-    name: input.applicantName || "there",
-    bookingLink: link,
+  const rendered = await renderAutomationEmail("interview_invite", {
+    applicantName: input.applicantName || "there",
+    bookingLink:   link,
   });
+  const fallback = buildInterviewInviteTemplate({ name: input.applicantName || "there", bookingLink: link });
   await sendInterviewEmail({
-    to: input.to,
-    subject: msg.subject,
-    text: msg.text,
-    html: msg.html,
+    to:      input.to,
+    subject: rendered?.subject ?? fallback.subject,
+    text:    fallback.text,
+    html:    rendered?.html    ?? fallback.html,
   });
 }
 
@@ -381,9 +427,23 @@ export async function sendInterviewInviteReminderEmail(input: {
   fallbackOrigin?: string;
 }): Promise<void> {
   const link = bookingPortalUrl(input.bookingToken, input.fallbackOrigin);
+  const rendered = await renderAutomationEmail("interview_invite_reminder", {
+    applicantName: input.applicantName || "there",
+    bookingLink:   link,
+  });
+
+  const subject = rendered?.subject ?? "Reminder: book your Volta interview";
+  const html    = rendered?.html    ?? `
+      <p>Hi ${input.applicantName || "there"},</p>
+      <p>Quick reminder to book your Volta interview slot:</p>
+      <p><a href="${link}">${link}</a></p>
+      <p>Please use the same name and email you used in your application.</p>
+      <p>Best,<br/>Ethan Zhang</p>
+    `;
+
   await sendInterviewEmail({
     to: input.to,
-    subject: "Reminder: book your Volta interview",
+    subject,
     text: [
       `Hi ${input.applicantName || "there"},`,
       "",
@@ -395,12 +455,6 @@ export async function sendInterviewInviteReminderEmail(input: {
       "Best,",
       "Ethan Zhang",
     ].join("\n"),
-    html: `
-      <p>Hi ${input.applicantName || "there"},</p>
-      <p>Quick reminder to book your Volta interview slot:</p>
-      <p><a href="${link}">${link}</a></p>
-      <p>Please use the same name and email you used in your application.</p>
-      <p>Best,<br/>Ethan Zhang</p>
-    `,
+    html,
   });
 }

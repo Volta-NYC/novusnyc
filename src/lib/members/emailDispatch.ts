@@ -1,19 +1,20 @@
-// Helper for sending an automated email by template key. Resolves the live
-// template (or its built-in default), substitutes {{token}} variables, and
-// posts to the existing team-email API. Used by the cycle automation sweep
-// and by ad-hoc admin actions (e.g. issuing a strike that should notify).
+// Sends an automated email by looking up the automation config to find the
+// live template, substituting {{token}} variables, and posting to the team-
+// email API. Returns { ok: false, error: 'automation_disabled' } or
+// { ok: false, error: 'no_template' } instead of falling back to hardcoded
+// copy — callers decide whether to fall back or skip.
 
-import type { EmailTemplate, EmailTemplateKey } from "@/lib/members/storage";
+import type { AutomationConfig, EmailTemplate } from "@/lib/members/storage";
 import { substituteEmailTokens } from "@/lib/members/cycleCompute";
 
 export interface DispatchEmailInput {
-  templates: EmailTemplate[];                  // live records (subscription)
-  templateKey: EmailTemplateKey;
-  fallback: { subject: string; body: string };  // built-in copy if no override saved
-  toEmail: string;                             // single recipient
-  fromAddress?: string;                         // defaults to info@voltanyc.org
+  automationId: string;
+  automationConfigs: AutomationConfig[];
+  templates: EmailTemplate[];
+  toEmail: string;
+  fromAddress?: string;
   variables: Record<string, string>;
-  idToken: string;                             // Supabase access token of caller
+  idToken: string;
 }
 
 export interface DispatchEmailResult {
@@ -25,9 +26,15 @@ export interface DispatchEmailResult {
 export async function dispatchTemplatedEmail(input: DispatchEmailInput): Promise<DispatchEmailResult> {
   if (!input.toEmail) return { ok: false, error: "missing_recipient" };
 
-  const live = input.templates.find((t) => t.key === input.templateKey && t.active !== false);
-  const subject = substituteEmailTokens(live?.subject ?? input.fallback.subject, input.variables);
-  const body = substituteEmailTokens(live?.body ?? input.fallback.body, input.variables);
+  const config = input.automationConfigs.find((c) => c.automationId === input.automationId);
+  if (!config || !config.enabled) return { ok: false, error: "automation_disabled" };
+  if (!config.templateKey) return { ok: false, error: "no_template" };
+
+  const template = input.templates.find((t) => t.key === config.templateKey && t.active !== false);
+  if (!template) return { ok: false, error: "no_template" };
+
+  const subject = substituteEmailTokens(template.subject, input.variables);
+  const body    = substituteEmailTokens(template.body,    input.variables);
 
   const fd = new FormData();
   fd.append("fromAddress", input.fromAddress ?? "info@voltanyc.org");
@@ -42,9 +49,7 @@ export async function dispatchTemplatedEmail(input: DispatchEmailInput): Promise
       headers: { Authorization: `Bearer ${input.idToken}` },
       body: fd,
     });
-    if (!res.ok) {
-      return { ok: false, error: `http_${res.status}` };
-    }
+    if (!res.ok) return { ok: false, error: `http_${res.status}` };
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };

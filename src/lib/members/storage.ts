@@ -320,7 +320,16 @@ export type SystemEmailTemplateKey =
   | "assignment_rejected"
   | "infraction_notice"
   | "monthly_portal_reminder"
-  | "biweekly_checkin";
+  | "biweekly_checkin"
+  | "interview_invite"
+  | "interview_invite_reminder"
+  | "applicant_accepted"
+  | "interview_booked"
+  | "interview_rescheduled"
+  | "interviewer_booking_notify"
+  | "interviewer_reschedule_notify"
+  | "invite"
+  | "setup-link";
 
 // Aliased for back-compat with earlier callers — same shape, just any string allowed.
 export type EmailTemplateKey = SystemEmailTemplateKey | (string & {});
@@ -341,6 +350,18 @@ export interface EmailTemplate {
   // Usage tracking
   usageCount?: number;             // how many times this template has been used
   lastUsedAt?: string;             // ISO timestamp of when this template was last used
+}
+
+// ── Automation configs ────────────────────────────────────────────────────────
+
+export interface AutomationConfig {
+  automationId: string;   // stable slug PK, e.g. "cycle_warning"
+  label: string;
+  description: string;
+  templateKey: string | null;  // references email_templates.key; null means disabled
+  enabled: boolean;
+  updatedAt: string;
+  updatedBy: string;
 }
 
 // ── Assignment templates (admin-managed blueprints) ───────────────────────────
@@ -959,6 +980,17 @@ export const subscribeEmailTemplates =
   makeSubscriber<EmailTemplate>("email_templates", (r) => ({
     ...fromRow<EmailTemplate>(r),
     availableVariables: (r.available_variables as string[]) ?? [],
+  }));
+
+export const subscribeAutomationConfigs =
+  makeSubscriber<AutomationConfig>("automation_configs", (r) => ({
+    automationId: String(r.automation_id),
+    label:        String(r.label ?? ""),
+    description:  String(r.description ?? ""),
+    templateKey:  r.template_key != null ? String(r.template_key) : null,
+    enabled:      Boolean(r.enabled ?? true),
+    updatedAt:    String(r.updated_at ?? ""),
+    updatedBy:    String(r.updated_by ?? ""),
   }));
 
 // Legacy subscriber retained for the old catalog page (will be removed once
@@ -1839,6 +1871,22 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
   const { error: emailTemplateDeleteError } = await supabase.from("email_templates").delete().eq("id", id);
   if (emailTemplateDeleteError) throw new Error(emailTemplateDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "emailTemplates", recordId: id });
+}
+
+// ── Automation configs ────────────────────────────────────────────────────────
+
+export async function updateAutomationConfig(automationId: string, patch: {
+  templateKey?: string | null;
+  enabled?: boolean;
+  updatedBy: string;
+}): Promise<void> {
+  const row: Record<string, unknown> = { updated_at: nowISO(), updated_by: patch.updatedBy };
+  if (patch.templateKey !== undefined) row.template_key = patch.templateKey;
+  if (patch.enabled     !== undefined) row.enabled      = patch.enabled;
+  const { error: automationConfigUpdateError } = await supabase
+    .from("automation_configs").update(row).eq("automation_id", automationId);
+  if (automationConfigUpdateError) throw new Error(automationConfigUpdateError.message);
+  await writeAuditLog({ action: "update", collection: "automationConfigs", recordId: automationId, details: { fields: Object.keys(patch) } });
 }
 
 // ── Assignments (new unified table) ──────────────────────────────────────────

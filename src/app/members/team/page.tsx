@@ -11,10 +11,10 @@ import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
   subscribeBusinesses, subscribeCycles, subscribeAssignments, subscribeAssignmentClaims,
   subscribeMemberStrikes, subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
-  subscribeApplications, subscribeFinanceAssignments,
+  subscribeApplications, subscribeFinanceAssignments, subscribeAutomationConfigs,
   type TeamMember, type Business, type FinanceAssignment, type ApplicationRecord,
-  type Cycle, type Assignment, type AssignmentClaim, type MemberStrike, type MemberCreditAdjustment,
-  type EmailTemplate, type Infraction,
+  type AutomationConfig, type Cycle, type Assignment, type AssignmentClaim,
+  type MemberStrike, type MemberCreditAdjustment, type EmailTemplate, type Infraction,
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
@@ -251,6 +251,7 @@ export default function TeamPage() {
   const [creditStrikes, setCreditStrikes] = useState<MemberStrike[]>([]);
   const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [automationConfigs, setAutomationConfigs] = useState<AutomationConfig[]>([]);
   const [infractionCatalog, setInfractionCatalog] = useState<Infraction[]>([]);
   const [drawerMember, setDrawerMember] = useState<TeamMember | null>(null);
   const sweepRanRef = useRef(false);
@@ -294,6 +295,7 @@ export default function TeamPage() {
     const unsubscribeCreditStrikes = subscribeMemberStrikes(setCreditStrikes);
     const unsubscribeCreditAdjustments = subscribeMemberCreditAdjustments(setCreditAdjustments);
     const unsubscribeEmailTemplates = subscribeEmailTemplates(setEmailTemplates);
+    const unsubscribeAutomationConfigs = subscribeAutomationConfigs(setAutomationConfigs);
     const unsubscribeInfractionCatalog = subscribeInfractions(setInfractionCatalog);
 
     // Cleanup subscriptions on unmount
@@ -305,6 +307,7 @@ export default function TeamPage() {
       unsubscribeCreditStrikes();
       unsubscribeCreditAdjustments();
       unsubscribeEmailTemplates();
+      unsubscribeAutomationConfigs();
       unsubscribeInfractionCatalog();
     };
   }, []);
@@ -330,6 +333,7 @@ export default function TeamPage() {
           strikes: creditStrikes,
           adjustments: creditAdjustments,
           templates: emailTemplates,
+          automationConfigs,
           infractions: infractionCatalog,
           idToken,
           reviewerLabel: "system (auto)",
@@ -340,7 +344,7 @@ export default function TeamPage() {
     })();
   }, [
     canEdit, user, team, cycles, creditAssignments, creditClaims, creditStrikes,
-    creditAdjustments, emailTemplates, infractionCatalog,
+    creditAdjustments, emailTemplates, automationConfigs, infractionCatalog,
   ]);
   useEffect(() => subscribeApplications(setApplications), []);
 

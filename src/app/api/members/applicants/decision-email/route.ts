@@ -3,6 +3,7 @@ import { verifyCaller } from "@/lib/server/adminApi";
 import { getSupabaseAdmin, writeAuditLog } from "@/lib/supabaseAdmin";
 import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 import { buildConfirmedAccountAcceptanceTemplate } from "@/lib/server/applicantEmails";
+import { renderAutomationEmail } from "@/lib/server/templateRenderer";
 
 export const runtime = "nodejs";
 
@@ -55,14 +56,19 @@ export async function POST(req: NextRequest) {
     } catch {
       return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
     }
-    const content = buildConfirmedAccountAcceptanceTemplate({ name: applicantName });
+    const firstName = applicantName.split(" ")[0] || applicantName;
+    const rendered = await renderAutomationEmail("applicant_accepted", {
+      applicantName,
+      firstName,
+    });
+    const fallback = buildConfirmedAccountAcceptanceTemplate({ name: applicantName });
     await transporter.sendMail({
       from: resolveFromWithName(from),
       replyTo: getDefaultReplyToAddress(from),
       to: applicantEmail,
-      subject: content.subject,
-      text: content.text,
-      html: content.html,
+      subject: rendered?.subject ?? fallback.subject,
+      text: fallback.text,
+      html: rendered?.html    ?? fallback.html,
     });
   } else {
     // No confirmed account — use inviteUserByEmail so Supabase sends the
