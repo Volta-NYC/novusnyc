@@ -330,7 +330,8 @@ export type SystemEmailTemplateKey =
   | "interviewer_booking_notify"
   | "interviewer_reschedule_notify"
   | "invite"
-  | "setup-link";
+  | "setup-link"
+  | "password-reset";
 
 // Aliased for back-compat with earlier callers — same shape, just any string allowed.
 export type EmailTemplateKey = SystemEmailTemplateKey | (string & {});

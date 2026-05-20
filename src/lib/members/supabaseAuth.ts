@@ -21,13 +21,15 @@ export async function getAuthToken(): Promise<string> {
   return session?.access_token ?? "";
 }
 
-// Sends a password-reset email. The link redirects to /members/reset-password
-// which handles the PASSWORD_RECOVERY session and prompts for a new password.
+// Sends a password-reset email via our own SMTP pipeline (consistent with
+// other auth emails). The server-side route generates the recovery link and
+// sends it through our email_templates system.
 export async function resetPassword(email: string): Promise<void> {
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/members/reset-password`
-      : "https://voltanyc.org/members/reset-password";
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) throw error;
+  const res = await fetch("/api/members/auth/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (res.status === 429) throw new Error("over_email_send_rate_limit");
+  if (!res.ok) throw new Error("reset_failed");
 }
