@@ -148,8 +148,8 @@ export default function AutomationsPage() {
               <tr>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[220px]">Automation</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45">Linked Template</th>
-                <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[80px]">Status</th>
-                <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[120px]" />
+                <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[72px]">Status</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[170px]" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -171,34 +171,25 @@ export default function AutomationsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
                         a.enabled
-                          ? "border-[#85CC17]/25 bg-[#85CC17]/8 text-[#85CC17]/70"
-                          : "border-white/10 bg-white/4 text-white/30"
+                          ? "border-[#85CC17]/30 bg-[#85CC17]/12 text-[#85CC17]"
+                          : "border-white/12 bg-white/5 text-white/40"
                       }`}>
                         {a.enabled ? "on" : "off"}
                       </span>
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="flex items-center gap-3 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(a)}
-                          className="text-[11px] text-white/55 hover:text-white transition-colors"
-                        >
-                          Configure
-                        </button>
-                        <button
-                          type="button"
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEdit(a)}>Configure</Btn>
+                        <Btn
+                          size="sm"
+                          variant={a.enabled ? "danger" : "primary"}
+                          className="members-pill-btn"
                           onClick={() => void handleToggleEnabled(a)}
-                          className={`text-[11px] transition-colors ${
-                            a.enabled
-                              ? "text-red-400/70 hover:text-red-300"
-                              : "text-[#85CC17]/60 hover:text-[#85CC17]"
-                          }`}
                         >
                           {a.enabled ? "Disable" : "Enable"}
-                        </button>
+                        </Btn>
                       </div>
                     </td>
                   </tr>

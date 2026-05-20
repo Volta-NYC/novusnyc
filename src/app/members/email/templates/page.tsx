@@ -147,7 +147,7 @@ export default function EmailTemplatesPage() {
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[220px]">Name</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45">Subject</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[90px]">Type</th>
-                <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[120px]" />
+                <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[140px]" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -174,21 +174,9 @@ export default function EmailTemplatesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="flex items-center gap-3 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(t)}
-                          className="text-[11px] text-white/55 hover:text-white transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(t)}
-                          className="text-[11px] text-red-400/70 hover:text-red-300 transition-colors"
-                        >
-                          Delete
-                        </button>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEdit(t)}>Edit</Btn>
+                        <Btn size="sm" variant="danger" className="members-pill-btn" onClick={() => void handleDelete(t)}>Delete</Btn>
                       </div>
                     </td>
                   </tr>
