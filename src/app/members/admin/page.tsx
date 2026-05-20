@@ -32,7 +32,7 @@ const EXPORT_OPTIONS = [
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-type AdminTab = "data" | "applications" | "services" | "banners" | "infractions" | "handbook";
+type AdminTab = "data" | "applications" | "services" | "banners" | "infractions" | "handbook" | "emails";
 
 const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
   data:         "/members/admin",
@@ -41,6 +41,7 @@ const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
   banners:      "/members/admin/banners",
   infractions:  "/members/admin/infractions",
   handbook:     "/members/admin/handbook",
+  emails:       "/members/admin/emails",
 };
 
 function getAdminTab(pathname: string): AdminTab {
@@ -49,6 +50,7 @@ function getAdminTab(pathname: string): AdminTab {
   if (pathname.startsWith("/members/admin/banners"))      return "banners";
   if (pathname.startsWith("/members/admin/infractions"))  return "infractions";
   if (pathname.startsWith("/members/admin/handbook"))     return "handbook";
+  if (pathname.startsWith("/members/admin/emails"))       return "emails";
   return "data";
 }
 
@@ -629,6 +631,139 @@ function InfractionsTab() {
 
 // ── TAB: HANDBOOK ─────────────────────────────────────────────────────────────
 
+// ── TAB: EMAILS ───────────────────────────────────────────────────────────────
+
+interface EmailTemplateRow {
+  key: string;
+  label: string;
+  description: string;
+  subject: string;
+  body: string;
+  updated_at: string | null;
+  updated_by: string | null;
+}
+
+const EMAIL_TEMPLATE_VARS = [
+  { v: "{{name}}",      desc: "Member's full name" },
+  { v: "{{firstName}}", desc: "Member's first name" },
+  { v: "{{link}}",      desc: "The action link (invite or setup link)" },
+];
+
+const EMAIL_TEMPLATE_META: Record<string, { label: string; description: string }> = {
+  "invite":     { label: "Member Invite",     description: "Sent by admin when inviting a member. Contains a permanent link (never expires)." },
+  "setup-link": { label: "Portal Setup Link", description: "Sent when a member requests a fresh setup link. Contains a one-time OTP link (expires in 24 hours)." },
+};
+
+function EmailsTab() {
+  const [templates, setTemplates] = useState<EmailTemplateRow[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [editing, setEditing]     = useState<Record<string, { subject: string; body: string }>>({});
+  const [saving, setSaving]       = useState<Record<string, boolean>>({});
+  const [status, setStatus]       = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const token = await getAuthToken();
+        const res = await fetch("/api/members/admin/email-templates", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const { templates: rows } = await res.json() as { templates: EmailTemplateRow[] };
+        setTemplates(rows ?? []);
+        const initial: Record<string, { subject: string; body: string }> = {};
+        for (const t of rows ?? []) initial[t.key] = { subject: t.subject, body: t.body };
+        setEditing(initial);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async (key: string) => {
+    const vals = editing[key];
+    if (!vals) return;
+    setSaving(s => ({ ...s, [key]: true }));
+    setStatus(s => ({ ...s, [key]: "" }));
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/admin/email-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ key, subject: vals.subject, html: vals.body }),
+      });
+      setStatus(s => ({ ...s, [key]: res.ok ? "Saved." : "Save failed. Please try again." }));
+      if (res.ok) {
+        setTemplates(ts => ts.map(t => t.key === key ? { ...t, subject: vals.subject, body: vals.body, updated_at: new Date().toISOString() } : t));
+      }
+    } catch {
+      setStatus(s => ({ ...s, [key]: "Save failed. Please try again." }));
+    } finally {
+      setSaving(s => ({ ...s, [key]: false }));
+    }
+  };
+
+  if (loading) return <div className="flex items-center justify-center h-32"><Spinner size="sm" /></div>;
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
+        <p className="text-xs text-white/50 font-body mb-2 font-semibold uppercase tracking-wider">Available variables</p>
+        <div className="flex flex-wrap gap-2">
+          {EMAIL_TEMPLATE_VARS.map(({ v, desc }) => (
+            <div key={v} className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1">
+              <code className="text-[#85CC17] text-xs font-mono">{v}</code>
+              <span className="text-white/40 text-xs">— {desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {["invite", "setup-link"].map((key) => {
+        const meta = EMAIL_TEMPLATE_META[key] ?? { label: key, description: "" };
+        const row  = templates.find(t => t.key === key);
+        const vals = editing[key] ?? { subject: "", body: "" };
+        return (
+          <Card
+            key={key}
+            title={meta.label}
+            subtitle={row?.updated_at
+              ? `Last saved: ${new Date(row.updated_at).toLocaleString()}${row.updated_by ? ` by ${row.updated_by}` : ""}`
+              : meta.description}
+          >
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-white/50 font-body mb-1">Subject</label>
+                <input
+                  type="text"
+                  value={vals.subject}
+                  onChange={e => setEditing(ed => ({ ...ed, [key]: { ...vals, subject: e.target.value } }))}
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+                  placeholder="Email subject line"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-white/50 font-body mb-1">HTML Body</label>
+                <textarea
+                  value={vals.body}
+                  onChange={e => setEditing(ed => ({ ...ed, [key]: { ...vals, body: e.target.value } }))}
+                  rows={14}
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#85CC17]/50 resize-y"
+                  placeholder="<html>…</html>"
+                  spellCheck={false}
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <SaveBtn saving={saving[key] ?? false} onClick={() => void handleSave(key)} />
+            </div>
+            <StatusMsg msg={status[key] ?? ""} />
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 function HandbookTab() {
   const { user } = useAuth();
   const [page, setPage] = useState<HandbookPage | null>(null);
@@ -760,8 +895,9 @@ function AdminContent() {
     { key: "data",         label: "Data" },
     { key: "applications", label: "Applications" },
     { key: "services",     label: "Services" },
-    { key: "banners",       label: "Banners" },
+    { key: "banners",      label: "Banners" },
     { key: "infractions",  label: "Infractions" },
+    { key: "emails",       label: "Emails" },
     { key: "handbook",     label: "Handbook" },
   ];
 
@@ -791,6 +927,7 @@ function AdminContent() {
       {activeTab === "services"     && <ServicesTab />}
       {activeTab === "banners"      && <BannersTab />}
       {activeTab === "infractions"  && <InfractionsTab />}
+      {activeTab === "emails"       && <EmailsTab />}
       {activeTab === "handbook"     && <HandbookTab />}
     </>
   );
