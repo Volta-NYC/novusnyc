@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Select, TextArea,
   Empty, StatCard, AutocompleteInput, useConfirm,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
@@ -22,6 +22,24 @@ import { TRACK_META, TRACK_ORDER, DIVISION_PUBLIC_LABEL, type TrackDivision } fr
 
 const STATUSES  = ["Upcoming", "Ongoing", "Completed"] as const;
 type ProjectStatusValue = (typeof STATUSES)[number];
+
+type TechStatusValue = "Upcoming" | "In Development" | "Awaiting Client" | "Awaiting Deployment" | "Completed";
+type MarketingStatusValue = "Upcoming" | "In Planning" | "Awaiting Client" | "Consistent Posts";
+
+const TECH_STATUSES: Array<{ value: TechStatusValue; chip: string }> = [
+  { value: "Upcoming",             chip: "bg-white/8 text-white/45 border-white/10" },
+  { value: "In Development",       chip: "bg-yellow-400/12 text-yellow-300 border-yellow-400/20" },
+  { value: "Awaiting Client",      chip: "bg-purple-400/12 text-purple-300 border-purple-400/20" },
+  { value: "Awaiting Deployment",  chip: "bg-sky-400/12 text-sky-300 border-sky-400/20" },
+  { value: "Completed",            chip: "bg-emerald-400/12 text-emerald-300 border-emerald-400/20" },
+];
+
+const MARKETING_STATUSES: Array<{ value: MarketingStatusValue; chip: string }> = [
+  { value: "Upcoming",          chip: "bg-white/8 text-white/45 border-white/10" },
+  { value: "In Planning",       chip: "bg-yellow-400/12 text-yellow-300 border-yellow-400/20" },
+  { value: "Awaiting Client",   chip: "bg-purple-400/12 text-purple-300 border-purple-400/20" },
+  { value: "Consistent Posts",  chip: "bg-emerald-400/12 text-emerald-300 border-emerald-400/20" },
+];
 type DeadlineItem = {
   label: string;
   date: string;
@@ -369,7 +387,7 @@ function BusinessesPageInner() {
   const [assignments, setAssignments]         = useState<Assignment[]>([]);
   const [claims, setClaims]                   = useState<AssignmentClaim[]>([]);
   const [search, setSearch]                   = useState("");
-  const [openStatusPopoverId, setOpenStatusPopoverId] = useState<string | null>(null);
+  const [openStatusPopover, setOpenStatusPopover] = useState<{ id: string; track: "Tech" | "Marketing" } | null>(null);
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -1177,28 +1195,27 @@ function BusinessesPageInner() {
 
   // Inline status pill change — updates all active tracks to the new status, then
   // recomputes the derived overall projectStatus.
-  const handleQuickStatusChange = async (business: Business, newStatus: ProjectStatusValue) => {
-    setOpenStatusPopoverId(null);
-    if (activeTab === "discovery" || activeTab === "showcase") return;
+  const handleQuickStatusChange = async (business: Business, track: "Tech" | "Marketing", newStatus: string) => {
+    setOpenStatusPopover(null);
     const normalized = normalizeTrackProjectsFromBusiness(business);
     const nextTrackProjects: TrackProjectMap = { ...normalized.trackProjects };
-    for (const track of normalized.projectTracks) {
-      const current = normalized.trackProjects[track];
-      if (current) nextTrackProjects[track] = { ...current, projectStatus: newStatus };
+    const current = nextTrackProjects[track];
+    if (current) {
+      nextTrackProjects[track] = { ...current, projectStatus: newStatus as ProjectStatusValue };
+    } else {
+      nextTrackProjects[track] = { projectStatus: newStatus as ProjectStatusValue, teamMembers: [], deadlines: TRACK_DEADLINE_DEFAULT, notes: "" };
     }
-    await updateBusiness(business.id, {
-      trackProjects: nextTrackProjects,
-      projectStatus: newStatus,
-    });
+    const overallStatus = deriveOverallStatus(nextTrackProjects, normalized.projectTracks);
+    await updateBusiness(business.id, { trackProjects: nextTrackProjects, projectStatus: overallStatus });
   };
 
 
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
-    if (!openStatusPopoverId) return;
+    if (!openStatusPopover) return;
     const close = () => {
-      setOpenStatusPopoverId(null);
+      setOpenStatusPopover(null);
       setPopoverPos(null);
     };
     const timerId = setTimeout(() => document.addEventListener("click", close), 0);
@@ -1210,7 +1227,7 @@ function BusinessesPageInner() {
       window.removeEventListener("scroll", close, true);
       window.removeEventListener("resize", close);
     };
-  }, [openStatusPopoverId]);
+  }, [openStatusPopover]);
 
   const myEmail = normalizeLoose(userProfile?.email ?? user?.email ?? "");
   const teamMatchByEmail = myEmail ? team.find((m) => normalizeLoose(m.email ?? "") === myEmail) : undefined;
@@ -1241,8 +1258,41 @@ function BusinessesPageInner() {
     }
   };
 
+  const renderTrackStatusCell = (b: Business, track: "Tech" | "Marketing") => {
+    const normalized = normalizeTrackProjectsFromBusiness(b);
+    const hasTack = normalized.projectTracks.includes(track);
+    if (!hasTack) return <span className="text-white/20">—</span>;
+    const raw = normalized.trackProjects[track]?.projectStatus ?? "Upcoming";
+    const statuses = track === "Tech" ? TECH_STATUSES : MARKETING_STATUSES;
+    const found = statuses.find((s) => s.value === raw);
+    const chip = found?.chip ?? "bg-white/8 text-white/45 border-white/10";
+    const label = found ? raw : "Upcoming";
+    if (!canEdit) {
+      return <span className={`members-chip ${chip}`}>{label}</span>;
+    }
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (openStatusPopover?.id === b.id && openStatusPopover?.track === track) {
+            setOpenStatusPopover(null);
+            setPopoverPos(null);
+          } else {
+            const r = e.currentTarget.getBoundingClientRect();
+            setPopoverPos({ top: r.bottom + 4, left: r.left });
+            setOpenStatusPopover({ id: b.id, track });
+          }
+        }}
+        title="Click to change status"
+        className="cursor-pointer"
+      >
+        <span className={`members-chip ${chip}`}>{label}</span>
+      </button>
+    );
+  };
+
   const renderTrackRow = (b: Business) => {
-    const overallStatus: ProjectStatusValue = normalizeProjectStatus(b.projectStatus);
     const neighborhood = getNeighborhoodLabel(b);
     const derivedTracks = businessTrackMap.get(b.id) ?? [];
 
@@ -1292,28 +1342,10 @@ function BusinessesPageInner() {
           )}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
-          {canEdit ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (openStatusPopoverId === b.id) {
-                  setOpenStatusPopoverId(null);
-                  setPopoverPos(null);
-                } else {
-                  const r = e.currentTarget.getBoundingClientRect();
-                  setPopoverPos({ top: r.bottom + 4, left: r.left });
-                  setOpenStatusPopoverId(b.id);
-                }
-              }}
-              className="cursor-pointer"
-              title="Click to change status"
-            >
-              <Badge label={overallStatus} />
-            </button>
-          ) : (
-            <Badge label={overallStatus} />
-          )}
+          {renderTrackStatusCell(b, "Tech")}
+        </td>
+        <td className="px-3 py-0 h-9 align-middle">
+          {renderTrackStatusCell(b, "Marketing")}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
@@ -1991,7 +2023,7 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "996px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1156px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -1999,7 +2031,8 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Status</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Tech Status</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
                   </thead>
@@ -2282,27 +2315,31 @@ function BusinessesPageInner() {
 
       {/* Status popover — rendered at page root with position: fixed so it
           escapes ancestor overflow clipping (table cells, overflow-x-auto wraps). */}
-      {openStatusPopoverId && popoverPos && (() => {
-        const b = businesses.find((biz) => biz.id === openStatusPopoverId);
+      {openStatusPopover && popoverPos && (() => {
+        const b = businesses.find((biz) => biz.id === openStatusPopover.id);
         if (!b) return null;
-        const trackStatus: ProjectStatusValue = normalizeProjectStatus(b.projectStatus);
+        const { track } = openStatusPopover;
+        const normalized = normalizeTrackProjectsFromBusiness(b);
+        const currentStatus = normalized.trackProjects[track]?.projectStatus ?? "Upcoming";
+        const statuses = track === "Tech" ? TECH_STATUSES : MARKETING_STATUSES;
         return (
           <div
             onClick={(e) => e.stopPropagation()}
             style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, zIndex: 1000 }}
-            className="bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
+            className="bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[160px]"
           >
-            {STATUSES.map((status) => {
-              const isActive = trackStatus === status;
+            <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide text-white/35">{track} Status</p>
+            {statuses.map(({ value, chip }) => {
+              const isActive = currentStatus === value;
               return (
                 <button
-                  key={status}
+                  key={value}
                   type="button"
-                  onClick={() => void handleQuickStatusChange(b, status)}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
+                  onClick={() => void handleQuickStatusChange(b, track, value)}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2.5 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
                 >
                   <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
-                  {status}
+                  <span className={`members-chip ${chip}`}>{value}</span>
                 </button>
               );
             })}

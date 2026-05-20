@@ -121,7 +121,7 @@ export interface Business {
   // Multi-track project model for per-business track workstreams.
   projectTracks?: Array<"Tech" | "Marketing" | "Finance">;
   trackProjects?: Partial<Record<"Tech" | "Marketing" | "Finance", {
-    projectStatus?: "Ongoing" | "Upcoming" | "Completed" | "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete";
+    projectStatus?: "Ongoing" | "Upcoming" | "Completed" | "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete" | "In Development" | "Awaiting Client" | "Awaiting Deployment" | "In Planning" | "Consistent Posts";
     teamMembers?: string[];
     deadlines?: Array<{
       label?: string;
