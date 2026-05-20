@@ -742,13 +742,16 @@ function EmailsTab() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-white/50 font-body mb-1">HTML Body</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs text-white/50 font-body">HTML Body</label>
+                  <span className="text-[10px] text-white/30 font-mono">{"{{firstName}}, {{name}}, {{link}}"}</span>
+                </div>
                 <textarea
                   value={vals.body}
                   onChange={e => setEditing(ed => ({ ...ed, [key]: { ...vals, body: e.target.value } }))}
                   rows={14}
                   className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#85CC17]/50 resize-y"
-                  placeholder="<html>…</html>"
+                  placeholder="<!DOCTYPE html><html>…</html>"
                   spellCheck={false}
                 />
               </div>
