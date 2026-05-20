@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, Select, TextArea,
+  PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
   Empty, StatCard, AutocompleteInput, useConfirm,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
@@ -20,25 +20,24 @@ import { TRACK_META, TRACK_ORDER, DIVISION_PUBLIC_LABEL, type TrackDivision } fr
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
-const STATUSES  = ["Upcoming", "Ongoing", "Completed"] as const;
-type ProjectStatusValue = (typeof STATUSES)[number];
+type ProjectStatusValue = "Upcoming" | "Ongoing" | "Completed";
 
 type TechStatusValue = "Upcoming" | "In Development" | "Awaiting Client" | "Awaiting Deployment" | "Completed";
 type MarketingStatusValue = "Upcoming" | "In Planning" | "Awaiting Client" | "Consistent Posts";
 
-const TECH_STATUSES: Array<{ value: TechStatusValue; chip: string }> = [
-  { value: "Upcoming",             chip: "bg-white/8 text-white/45 border-white/10" },
-  { value: "In Development",       chip: "bg-yellow-400/12 text-yellow-300 border-yellow-400/20" },
-  { value: "Awaiting Client",      chip: "bg-purple-400/12 text-purple-300 border-purple-400/20" },
-  { value: "Awaiting Deployment",  chip: "bg-sky-400/12 text-sky-300 border-sky-400/20" },
-  { value: "Completed",            chip: "bg-emerald-400/12 text-emerald-300 border-emerald-400/20" },
+const TECH_STATUSES: Array<{ value: TechStatusValue }> = [
+  { value: "Upcoming" },
+  { value: "In Development" },
+  { value: "Awaiting Client" },
+  { value: "Awaiting Deployment" },
+  { value: "Completed" },
 ];
 
-const MARKETING_STATUSES: Array<{ value: MarketingStatusValue; chip: string }> = [
-  { value: "Upcoming",          chip: "bg-white/8 text-white/45 border-white/10" },
-  { value: "In Planning",       chip: "bg-yellow-400/12 text-yellow-300 border-yellow-400/20" },
-  { value: "Awaiting Client",   chip: "bg-purple-400/12 text-purple-300 border-purple-400/20" },
-  { value: "Consistent Posts",  chip: "bg-emerald-400/12 text-emerald-300 border-emerald-400/20" },
+const MARKETING_STATUSES: Array<{ value: MarketingStatusValue }> = [
+  { value: "Upcoming" },
+  { value: "In Planning" },
+  { value: "Awaiting Client" },
+  { value: "Consistent Posts" },
 ];
 type DeadlineItem = {
   label: string;
@@ -1260,16 +1259,10 @@ function BusinessesPageInner() {
 
   const renderTrackStatusCell = (b: Business, track: "Tech" | "Marketing") => {
     const normalized = normalizeTrackProjectsFromBusiness(b);
-    const hasTack = normalized.projectTracks.includes(track);
-    if (!hasTack) return <span className="text-white/20">—</span>;
     const raw = normalized.trackProjects[track]?.projectStatus ?? "Upcoming";
     const statuses = track === "Tech" ? TECH_STATUSES : MARKETING_STATUSES;
-    const found = statuses.find((s) => s.value === raw);
-    const chip = found?.chip ?? "bg-white/8 text-white/45 border-white/10";
-    const label = found ? raw : "Upcoming";
-    if (!canEdit) {
-      return <span className={`members-chip ${chip}`}>{label}</span>;
-    }
+    const label = statuses.find((s) => s.value === raw) ? raw : "Upcoming";
+    if (!canEdit) return <Badge label={label} />;
     return (
       <button
         type="button"
@@ -1287,7 +1280,7 @@ function BusinessesPageInner() {
         title="Click to change status"
         className="cursor-pointer"
       >
-        <span className={`members-chip ${chip}`}>{label}</span>
+        <Badge label={label} />
       </button>
     );
   };
@@ -1564,10 +1557,10 @@ function BusinessesPageInner() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <Field label="Status" required>
             <Select
-              options={STATUSES}
+              options={(track === "Tech" ? TECH_STATUSES : track === "Marketing" ? MARKETING_STATUSES : TECH_STATUSES).map((s) => s.value)}
               emptyLabel="-"
-              value={info.projectStatus}
-              onChange={(e) => setTrackField(track, "projectStatus", normalizeProjectStatus(e.target.value))}
+              value={info.projectStatus ?? "Upcoming"}
+              onChange={(e) => setTrackField(track, "projectStatus", e.target.value)}
             />
           </Field>
           <div />
@@ -2329,7 +2322,7 @@ function BusinessesPageInner() {
             className="bg-[#1C1F26] border border-white/15 rounded-lg shadow-xl overflow-hidden min-w-[160px]"
           >
             <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide text-white/35">{track} Status</p>
-            {statuses.map(({ value, chip }) => {
+            {statuses.map(({ value }) => {
               const isActive = currentStatus === value;
               return (
                 <button
@@ -2339,7 +2332,7 @@ function BusinessesPageInner() {
                   className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2.5 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
                 >
                   <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
-                  <span className={`members-chip ${chip}`}>{value}</span>
+                  <Badge label={value} />
                 </button>
               );
             })}
