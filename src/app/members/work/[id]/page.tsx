@@ -159,6 +159,13 @@ export default function AssignmentDetailPage() {
     setBusy(true);
     try {
       await deleteAssignmentClaim(myClaim.id);
+      // Revert assignment to Open if no other active claims remain
+      const otherActive = assignmentClaims.filter(
+        (c) => c.id !== myClaim.id && c.status !== "rejected" && c.status !== "Approved",
+      );
+      if (otherActive.length === 0 && assignment.status === "In Progress") {
+        await updateAssignment(assignment.id, { status: "Open" });
+      }
     } finally {
       setBusy(false);
     }
@@ -191,7 +198,11 @@ export default function AssignmentDetailPage() {
           submissionNotes: submissionNotes.trim() || undefined,
           submittedAt: now,
         });
-        if (assignment.status === "In Progress" || assignment.status === "Open") {
+        // Only move the assignment to Submitted if no other members are still actively working it
+        const othersStillActive = assignmentClaims.filter(
+          (c) => c.id !== myClaim.id && (c.status === "claimed" || c.status === "In Progress"),
+        );
+        if (othersStillActive.length === 0 && (assignment.status === "In Progress" || assignment.status === "Open")) {
           await updateAssignment(assignment.id, { status: "Submitted" });
         }
       }
