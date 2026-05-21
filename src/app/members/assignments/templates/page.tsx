@@ -21,7 +21,7 @@ import {
 import { useAuth } from "@/lib/members/authContext";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
-const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
+const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
 const TRACK_DOT: Record<CycleTrack, string> = {

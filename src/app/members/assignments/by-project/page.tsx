@@ -69,9 +69,9 @@ const BIZ_STATUS_BORDER: Record<ProjectStatusValue, string> = {
   Completed: "border-l-white/15",
 };
 
-const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
+const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
-const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", "Approved", "Finalized"];
+const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", "Approved", "Finalized", "Archived"];
 const GROUP_COLORS: ProjectGroup["color"][] = ["green", "blue", "amber", "purple", "gray"];
 const GROUP_STATUSES: ProjectGroup["status"][] = ["Ongoing", "Upcoming", "Completed"];
 
@@ -219,10 +219,11 @@ export default function ByProjectPage() {
   const cards = useMemo((): ProjectCard[] => {
     const result: ProjectCard[] = [];
     const bizMap = new Map(businesses.map((b) => [b.id, b]));
+    const activeAssignments = assignments.filter((a) => a.status !== "Archived");
 
     // Business cards
     const bizAssignments = new Map<string, Assignment[]>();
-    for (const a of assignments) {
+    for (const a of activeAssignments) {
       if (!a.businessId) continue;
       const list = bizAssignments.get(a.businessId) ?? [];
       list.push(a);
@@ -245,7 +246,7 @@ export default function ByProjectPage() {
 
     // Project group cards
     const grpAssignments = new Map<string, Assignment[]>();
-    for (const a of assignments) {
+    for (const a of activeAssignments) {
       if (!a.projectGroupId) continue;
       const list = grpAssignments.get(a.projectGroupId) ?? [];
       list.push(a);
@@ -265,7 +266,7 @@ export default function ByProjectPage() {
       });
     }
 
-    const voltaAssignments = assignments.filter((a) => !a.businessId && !a.projectGroupId);
+    const voltaAssignments = activeAssignments.filter((a) => !a.businessId && !a.projectGroupId);
     if (voltaAssignments.length) {
       result.unshift({
         key: "volta",

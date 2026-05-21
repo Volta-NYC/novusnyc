@@ -36,7 +36,7 @@ export const TRACK_PILL: Record<CycleTrack, string> = {
   General:   "bg-gray-100 text-gray-700 border-gray-200",
 };
 
-export const ALL_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance"];
+export const ALL_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
 
 // ── DIVISION LABELS ───────────────────────────────────────────────────────────
 // Human-readable labels for public-facing track names.
