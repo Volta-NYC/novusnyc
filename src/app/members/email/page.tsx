@@ -1090,6 +1090,9 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
             onAttachmentsChange={setAttachments}
             placeholder="Write your email..."
           />
+          <p className="text-right text-[10px] text-white/35 mt-1">
+            {message.replace(/<[^>]*>/g, "").replace(/&[^;]+;/g, " ").trim().length.toLocaleString()} chars
+          </p>
         </Field>
 
         {status && <p className="text-xs text-white/60">{status}</p>}
