@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, ReactNode } from "react";
+import { useEffect, useRef, useState, ReactNode, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -139,6 +139,8 @@ function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
 function MembersLayoutInner({ children }: { children: ReactNode }) {
   const { user, userProfile, authRole, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profilePopoverOpen, setProfilePopoverOpen] = useState(false);
+  const profilePopoverRef = useRef<HTMLDivElement>(null);
   const [showAckModal, setShowAckModal] = useState(false);
   const [portalBanner, setPortalBanner] = useState<{ message: string; bg: string; text: string } | null>(null);
 
@@ -224,6 +226,25 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     await signOut();
     router.replace("/members/login");
   };
+
+  const closeProfilePopover = useCallback(() => setProfilePopoverOpen(false), []);
+
+  useEffect(() => {
+    if (!profilePopoverOpen) return;
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      if (profilePopoverRef.current?.contains(e.target as Node)) return;
+      closeProfilePopover();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeProfilePopover(); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [profilePopoverOpen, closeProfilePopover]);
 
   // Show a spinner while auth state resolves.
   if (loading || !user) {
@@ -381,24 +402,61 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
         {/* User info and footer actions */}
         <div className={`p-2 border-t ${tone.sidebarBorder} space-y-0.5`}>
-          <div className="px-3 py-2 mb-1">
-            <p className={`${tone.userName} text-xs font-body font-medium truncate`}>{memberDisplayName}</p>
-            <p className={`${tone.userRole} text-[10px] font-body`}>{memberRoleLabel}</p>
+          <div ref={profilePopoverRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setProfilePopoverOpen((v) => !v)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors mb-1 ${tone.navInactive}`}
+            >
+              <span
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                style={lightTheme
+                  ? { backgroundColor: "rgba(133,204,23,0.18)", color: "#5C9911" }
+                  : { backgroundColor: "rgba(133,204,23,0.15)", color: "#85CC17" }}
+              >
+                {(memberDisplayName.charAt(0) || "?").toUpperCase()}
+              </span>
+              <span className="min-w-0 flex-1">
+                <p className={`${tone.userName} text-xs font-body font-medium truncate`}>{memberDisplayName}</p>
+                <p className={`${tone.userRole} text-[10px] font-body`}>{memberRoleLabel}</p>
+              </span>
+              <svg className={`w-3 h-3 shrink-0 transition-transform ${profilePopoverOpen ? "rotate-180" : ""} ${tone.userRole}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+
+            {profilePopoverOpen && (
+              <div className={`absolute bottom-full left-0 right-0 mb-1 rounded-xl border shadow-xl z-50 overflow-hidden ${lightTheme ? "bg-white border-black/10" : "bg-[#1C1F26] border-white/12"}`}>
+                <div className={`px-4 py-3 border-b ${lightTheme ? "border-black/8" : "border-white/8"}`}>
+                  <p className={`text-xs font-semibold font-body truncate ${lightTheme ? "text-black/80" : "text-white/85"}`}>{memberDisplayName}</p>
+                  <p className={`text-[10px] font-body truncate mt-0.5 ${lightTheme ? "text-black/40" : "text-white/40"}`}>{user?.email ?? ""}</p>
+                </div>
+                <div className="p-1">
+                  <Link
+                    href="/members/me"
+                    onClick={closeProfilePopover}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-body transition-colors ${tone.footerLink}`}
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Account settings
+                  </Link>
+                  <Link
+                    href="/"
+                    onClick={closeProfilePopover}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-body transition-colors ${tone.footerLink}`}
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to public site
+                  </Link>
+                  <button
+                    onClick={() => { closeProfilePopover(); void handleSignOut(); }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-body rounded-lg transition-colors ${tone.signOut}`}
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <Link
-            href="/"
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-body rounded-lg transition-colors ${tone.footerLink}`}
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Back to public site
-          </Link>
-          <button
-            onClick={handleSignOut}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-body rounded-lg transition-colors ${tone.signOut}`}
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Sign out
-          </button>
         </div>
       </aside>
 
