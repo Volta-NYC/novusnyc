@@ -114,7 +114,8 @@ export default function AssignmentDetailPage() {
 
   const isLeadership = classification?.status === "leadership";
   const isReserve = classification?.status === "reserve";
-  const isFull = activeClaims.length >= assignment.capacity;
+  const isUnlimited = assignment.capacity === 0;
+  const isFull = !isUnlimited && activeClaims.length >= assignment.capacity;
   const cycleMatches = !activeCycle || !assignment.cycleId || assignment.cycleId === activeCycle.id;
   const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate;
   const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress" || myClaim.status === "rejected");
@@ -184,36 +185,49 @@ export default function AssignmentDetailPage() {
   return (
     <MembersLayout>
       <div className="max-w-3xl mx-auto space-y-5">
-        <header className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
-              ← Back to marketplace
-            </Link>
-            <div className="flex items-center gap-2 mt-2 mb-1">
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[assignmentTrack]}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignmentTrack]}`} />
-                {assignmentTrack}
+
+        {/* Back link */}
+        <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+          ← Back to available work
+        </Link>
+
+        {/* Header card */}
+        <div className={`rounded-2xl border shadow-sm p-5 ${assignment.priority ? "border-amber-300 bg-amber-50/40" : "border-black/8 bg-white"}`}>
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[assignmentTrack]}`}>
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignmentTrack]}`} />
+              {assignmentTrack}
+            </span>
+            {assignment.priority && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                ⚡ Priority
               </span>
-              {assignment.priority && (
-                <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                  Priority
-                </span>
-              )}
-              <span className="text-[#5C9911] font-mono text-sm font-semibold">{assignment.credits} credits</span>
-            </div>
-            <h1 className="font-display font-bold text-black text-2xl">{assignment.title}</h1>
-            <p className="text-sm text-black/55 mt-1">
+            )}
+          </div>
+
+          <h1 className="font-display font-bold text-black text-2xl leading-tight mb-2">{assignment.title}</h1>
+
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-sm text-black/60">
               {business ? (
-                <Link href={`/members/work?businessId=${business.id}`} className="hover:text-black/85">
-                  {business.name}
-                </Link>
+                <span>{business.name}</span>
               ) : (
                 <span>Volta</span>
               )}
               {business?.neighborhood && <span className="text-black/40"> · {business.neighborhood}</span>}
             </p>
+            <div className="flex items-baseline gap-1">
+              <span className="font-display font-bold text-3xl text-[#5C9911] tabular-nums leading-none">{assignment.credits}</span>
+              <span className="text-sm text-[#5C9911]/80 font-medium">{assignment.credits === 1 ? "credit" : "credits"}</span>
+            </div>
           </div>
-        </header>
+
+          {assignment.priority && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-white/60 px-4 py-2.5 text-sm text-amber-900 font-medium">
+              ⚡ This is a priority assignment — it&apos;s high importance for the current cycle.
+            </div>
+          )}
+        </div>
 
         {/* Status banners */}
         {!cycleMatches && (
@@ -233,9 +247,10 @@ export default function AssignmentDetailPage() {
             This assignment requires <strong>{assignment.minRole}</strong> or higher.
           </div>
         )}
+
         {/* Description */}
         <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
-          <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-2">Overview</h2>
+          <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-3">Overview</h2>
           {assignment.description ? (
             <div
               className="prose prose-sm max-w-none text-black/85"
@@ -251,16 +266,33 @@ export default function AssignmentDetailPage() {
           <div className="rounded-2xl border border-black/8 bg-white shadow-sm p-4">
             <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-3">Details</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-black/55">Capacity</dt><dd className="text-black/85">{activeClaims.length} / {assignment.capacity}</dd></div>
+              {!isUnlimited && (
+                <div className="flex justify-between">
+                  <dt className="text-black/55">Spots</dt>
+                  <dd className={`font-medium ${isFull ? "text-red-600" : "text-black/85"}`}>
+                    {activeClaims.length} / {assignment.capacity}{isFull ? " · Full" : ""}
+                  </dd>
+                </div>
+              )}
               {assignment.estimatedHours > 0 && (
-                <div className="flex justify-between"><dt className="text-black/55">Estimate</dt><dd className="text-black/85">~{assignment.estimatedHours}h</dd></div>
+                <div className="flex justify-between">
+                  <dt className="text-black/55">Estimate</dt>
+                  <dd className="text-black/85">~{assignment.estimatedHours}h</dd>
+                </div>
               )}
               {assignmentDeadline && (
-                <div className="flex justify-between"><dt className="text-black/55">Deadline</dt><dd className="text-black/85">{assignmentDeadline}</dd></div>
+                <div className="flex justify-between">
+                  <dt className="text-black/55">Deadline</dt>
+                  <dd className="text-black/85 font-medium">{assignmentDeadline}</dd>
+                </div>
               )}
-              <div className="flex justify-between"><dt className="text-black/55">Min role</dt><dd className="text-black/85">{assignment.minRole}</dd></div>
+              <div className="flex justify-between">
+                <dt className="text-black/55">Minimum role</dt>
+                <dd className="text-black/85">{assignment.minRole}</dd>
+              </div>
             </dl>
           </div>
+
           <div className="rounded-2xl border border-black/8 bg-white shadow-sm p-4">
             <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-3">Working on this</h2>
             {activeClaims.length === 0 ? (
@@ -269,7 +301,9 @@ export default function AssignmentDetailPage() {
               <ul className="space-y-1.5">
                 {activeClaims.map((c) => (
                   <li key={c.id} className="flex items-center justify-between text-sm">
-                    <span className="text-black/85">{c.memberName}{c.memberId === me?.id && " (you)"}</span>
+                    <span className={`${c.memberId === me?.id ? "text-[#5C9911] font-semibold" : "text-black/85"}`}>
+                      {c.memberName}{c.memberId === me?.id && " (you)"}
+                    </span>
                     <span className="text-[10px] uppercase tracking-wider text-black/45">{c.status.replace("_", " ")}</span>
                   </li>
                 ))}
@@ -280,10 +314,10 @@ export default function AssignmentDetailPage() {
 
         {/* My claim card */}
         {myClaim && (
-          <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
+          <section className="rounded-2xl border border-[#85CC17]/30 bg-[#85CC17]/5 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <h2 className="font-display font-bold text-black text-base">Your claim</h2>
-              <span className="inline-flex rounded-full border border-black/12 bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-black/65">
+              <span className="inline-flex rounded-full border border-black/12 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-black/65">
                 {myClaim.status.replace("_", " ")}
               </span>
             </div>
@@ -316,7 +350,7 @@ export default function AssignmentDetailPage() {
             )}
             {myClaim.status === "Approved" && (
               <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
-                Approved — <strong>{myClaim.creditsAwarded ?? assignment.credits} credits</strong> added to your ledger.
+                Approved — <strong>{myClaim.creditsAwarded ?? assignment.credits} {(myClaim.creditsAwarded ?? assignment.credits) === 1 ? "credit" : "credits"}</strong> added to your ledger.
               </div>
             )}
 
@@ -380,8 +414,8 @@ export default function AssignmentDetailPage() {
       {submitOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSubmitOpen(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-5">
-            <h2 className="font-display font-bold text-black text-lg">Submit for approval</h2>
-            <p className="text-sm text-black/55 mt-1 mb-4">A senior associate will review and award credits.</p>
+            <h2 className="font-display font-bold text-black text-lg mb-1">Submit for approval</h2>
+            <p className="text-sm text-black/55 mb-4">A senior associate will review and award credits.</p>
 
             <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Deliverable URL</label>
             <input

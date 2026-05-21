@@ -184,28 +184,26 @@ export default function MarketplacePage() {
                 {t}
               </button>
             ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2 justify-end">
-            <span className="text-[10px] uppercase tracking-wider text-black/40 font-semibold">Sort</span>
-            <select
-              value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as SortKey)}
-              className="rounded-lg border border-black/15 bg-white px-2.5 py-1 text-xs text-black/85 focus:outline-none"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="credits">Most credits</option>
-              <option value="deadline">Soonest deadline</option>
-              <option value="newest">Newest</option>
-            </select>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-wider text-black/40 font-semibold">Sort</span>
+              <select
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value as SortKey)}
+                className="rounded-lg border border-black/15 bg-white px-2.5 py-1 text-xs text-black/85 focus:outline-none"
+              >
+                <option value="recommended">Recommended</option>
+                <option value="credits">Most credits</option>
+                <option value="deadline">Soonest deadline</option>
+                <option value="newest">Newest</option>
+              </select>
+            </div>
           </div>
         </section>
 
         {/* Results */}
         {sorted.length === 0 ? (
           <div className="rounded-2xl border border-black/8 bg-white shadow-sm p-8 text-center">
-            <p className="text-sm text-black/55">
-              Nothing matches these filters right now.
-            </p>
+            <p className="text-sm text-black/55">Nothing matches these filters right now.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -215,59 +213,88 @@ export default function MarketplacePage() {
               const deadline = a.deadlines?.[0]?.date ?? a.deadline ?? "";
               const claimList = claimsByAssignment.get(a.id) ?? [];
               const taken = claimList.filter((c) => c.status !== "rejected").length;
-              const isFull = taken >= a.capacity;
+              const isUnlimited = a.capacity === 0;
+              const isFull = !isUnlimited && taken >= a.capacity;
               const alreadyClaimed = myClaimedIds.has(a.id);
               const otherClaimers = claimList
                 .filter((c) => c.status !== "rejected" && c.memberId !== me?.id)
                 .map((c) => c.memberName)
-                .slice(0, 4);
+                .slice(0, 3);
 
               return (
                 <Link
                   key={a.id}
                   href={`/members/work/${a.id}`}
-                  className="block rounded-2xl border border-black/8 bg-white p-4 hover:border-[#85CC17]/55 hover:shadow-md transition-all"
+                  className={`block rounded-2xl border bg-white transition-all group
+                    ${a.priority
+                      ? "border-l-4 border-amber-300 bg-amber-50/40 hover:border-amber-400 hover:shadow-md"
+                      : "border-black/8 hover:border-[#85CC17]/55 hover:shadow-md"
+                    }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[track]}`} />
-                      {track}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {a.priority && <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Priority</span>}
-                      <span className="text-[#5C9911] font-mono font-semibold text-sm">{a.credits} cr</span>
+                  <div className="p-4">
+                    {/* Top row: track pill + priority badge + credits */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>
+                          <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[track]}`} />
+                          {track}
+                        </span>
+                        {a.priority && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                            ⚡ Priority
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[#5C9911] font-display font-bold text-base tabular-nums shrink-0">
+                        {a.credits} {a.credits === 1 ? "credit" : "credits"}
+                      </span>
                     </div>
-                  </div>
-                  <h3 className="text-base font-semibold text-black/90 mb-1 line-clamp-2">{a.title}</h3>
-                  <p className="text-xs text-black/55 mb-2">
-                    {business ? business.name : "Volta"}
-                    {business?.neighborhood && <span className="text-black/35"> · {business.neighborhood}</span>}
-                  </p>
-                  {a.description && (
-                    <p className="text-xs text-black/55 line-clamp-2 mb-2">
-                      {a.description.replace(/<[^>]+>/g, " ").trim()}
+
+                    {/* Title */}
+                    <h3 className="text-[15px] font-semibold text-black/90 mb-1 leading-snug line-clamp-2">{a.title}</h3>
+
+                    {/* Business */}
+                    <p className="text-sm text-black/65 mb-2">
+                      {business ? business.name : "Volta"}
+                      {business?.neighborhood && <span className="text-black/40"> · {business.neighborhood}</span>}
                     </p>
-                  )}
-                  <div className="flex items-center justify-between gap-2 text-[11px] text-black/45">
-                    <div className="flex items-center gap-2">
-                      <span>{taken} / {a.capacity} spots</span>
-                      {a.estimatedHours > 0 && <span>·</span>}
-                      {a.estimatedHours > 0 && <span>~{a.estimatedHours}h</span>}
+
+                    {/* Description preview */}
+                    {a.description && (
+                      <p className="text-xs text-black/50 line-clamp-2 mb-3">
+                        {a.description.replace(/<[^>]+>/g, " ").trim()}
+                      </p>
+                    )}
+
+                    {/* Footer meta */}
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-black/45 pt-2.5 border-t border-black/6">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {isUnlimited ? (
+                          taken > 0 ? <span>{taken} claiming this</span> : null
+                        ) : (
+                          <span className={isFull ? "text-red-500 font-medium" : ""}>{taken}/{a.capacity} spots{isFull ? " · Full" : ""}</span>
+                        )}
+                        {deadline && <span className="text-black/40">Due {deadline}</span>}
+                      </div>
+                      {alreadyClaimed ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-[#5C9911] font-semibold shrink-0">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#85CC17]" />
+                          You&apos;re on this
+                        </span>
+                      ) : isFull ? (
+                        <span className="text-xs text-red-500 font-medium shrink-0">Full</span>
+                      ) : (
+                        <span className="text-xs text-black/50 font-medium group-hover:text-[#5C9911] transition-colors shrink-0">
+                          View &amp; claim →
+                        </span>
+                      )}
                     </div>
-                    {deadline && <span>Due {deadline}</span>}
-                  </div>
-                  {otherClaimers.length > 0 && (
-                    <p className="mt-2 text-[11px] text-black/45 truncate">
-                      Working on this: {otherClaimers.join(", ")}
-                    </p>
-                  )}
-                  <div className="mt-2 pt-2 border-t border-black/6 flex items-center justify-end">
-                    {alreadyClaimed ? (
-                      <span className="text-xs text-[#5C9911] font-medium">You&apos;re on this assignment →</span>
-                    ) : isFull ? (
-                      <span className="text-xs text-black/35">Full</span>
-                    ) : (
-                      <span className="text-xs text-black/65 font-medium">View &amp; claim →</span>
+
+                    {/* Other claimers */}
+                    {otherClaimers.length > 0 && (
+                      <p className="mt-2 text-[11px] text-black/40 truncate">
+                        Also working on this: {otherClaimers.join(", ")}
+                      </p>
                     )}
                   </div>
                 </Link>

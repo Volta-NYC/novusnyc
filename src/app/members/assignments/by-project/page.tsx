@@ -97,6 +97,7 @@ interface AssignmentFormState {
   credits: number;
   estimatedHours: number;
   minRole: CycleRole;
+  limitClaims: boolean;  // false = unlimited (saves capacity as 0)
   capacity: number;
   deadline: string;
   status: AssignmentStatus;
@@ -115,6 +116,7 @@ const BLANK_ASSIGNMENT: AssignmentFormState = {
   credits: 1,
   estimatedHours: 1,
   minRole: "Analyst",
+  limitClaims: true,
   capacity: 1,
   deadline: "",
   status: "Open",
@@ -353,7 +355,8 @@ export default function ByProjectPage() {
       credits:       a.credits ?? 1,
       estimatedHours: a.estimatedHours ?? 0,
       minRole:       a.minRole ?? "Analyst",
-      capacity:      a.capacity ?? 1,
+      limitClaims:   (a.capacity ?? 0) > 0,
+      capacity:      (a.capacity ?? 0) > 0 ? (a.capacity ?? 1) : 1,
       deadline:      (a.deadlines?.[0]?.date) ?? a.deadline ?? "",
       status:        a.status,
       priority:      Boolean(a.priority),
@@ -398,7 +401,7 @@ export default function ByProjectPage() {
       credits:        Math.max(0, Number(assignmentForm.credits) || 0),
       estimatedHours: Math.max(0, Number(assignmentForm.estimatedHours) || 0),
       minRole:        assignmentForm.minRole,
-      capacity:       Math.max(1, Number(assignmentForm.capacity) || 1),
+      capacity:       assignmentForm.limitClaims ? Math.max(1, Number(assignmentForm.capacity) || 1) : 0,
       deadlines:      assignmentForm.deadline ? [{ label: "Final Deadline", date: assignmentForm.deadline }] : undefined,
       notes:          assignmentForm.notes,
       region:         assignmentForm.region || undefined,
@@ -663,13 +666,13 @@ export default function ByProjectPage() {
                         {/* Row summary */}
                         <button
                           onClick={() => toggleRowExpand(a.id)}
-                          className="w-full flex items-center gap-2 px-4 h-8 hover:bg-white/4 transition-colors text-left"
+                          className={`w-full flex items-center gap-2 px-4 h-8 hover:bg-white/4 transition-colors text-left ${a.priority ? "bg-amber-400/6" : ""}`}
                         >
                           <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[a.track] ?? "bg-gray-400"}`} />
                           <span className="flex-1 min-w-0 text-[11px] text-white/75 truncate">{a.title}</span>
                           {a.priority && (
-                            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-amber-300">
-                              Priority
+                            <span className="shrink-0 members-chip border-amber-400/45 bg-amber-400/15 text-amber-300 text-[9px] font-bold uppercase tracking-wide">
+                              ⚡ Priority
                             </span>
                           )}
                           <span className={`shrink-0 members-chip text-[9px] font-semibold border rounded ${ASSIGNMENT_STATUS_STYLES[a.status]}`}>
@@ -682,11 +685,13 @@ export default function ByProjectPage() {
                         {/* Inline expand */}
                         {isRowExpanded && (
                           <div className="px-4 pb-3 pt-1 flex flex-col gap-2 bg-[#0F1014]">
-                            <div className="flex flex-wrap gap-3 text-[11px] text-white/50">
-                              <span className="text-white/70 font-medium">{a.track}</span>
-                              <span>{a.credits} credits</span>
+                            <div className="flex flex-wrap gap-3 text-[11px] text-white/55">
+                              <span className="text-white/75 font-medium">{a.track}</span>
+                              <span className="text-[#85CC17] font-semibold">{a.credits} {a.credits === 1 ? "credit" : "credits"}</span>
                               {deadline && <span>Due {deadline}</span>}
-                              {a.capacity > 1 && (
+                              {a.capacity === 0 ? (
+                                activeClaims.length > 0 ? <span>{activeClaims.length} claiming</span> : <span className="text-white/30">Unlimited spots</span>
+                              ) : (
                                 <span>{activeClaims.length}/{a.capacity} claimed</span>
                               )}
                             </div>
@@ -814,14 +819,35 @@ export default function ByProjectPage() {
                   onChange={(e) => setAssignmentForm((p) => ({ ...p, credits: Number(e.target.value) }))}
                 />
               </Field>
-              <Field label="Capacity">
-                <Input
-                  type="number"
-                  min={1}
-                  value={assignmentForm.capacity}
-                  onChange={(e) => setAssignmentForm((p) => ({ ...p, capacity: Number(e.target.value) }))}
-                />
-              </Field>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1.5">Claimant limit</label>
+                <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 space-y-2">
+                  <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={assignmentForm.limitClaims}
+                      onChange={(e) => setAssignmentForm((p) => ({ ...p, limitClaims: e.target.checked }))}
+                      className="accent-[#85CC17]"
+                    />
+                    Limit claimants
+                  </label>
+                  {assignmentForm.limitClaims && (
+                    <div className="flex items-center gap-2 pl-5">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={assignmentForm.capacity}
+                        onChange={(e) => setAssignmentForm((p) => ({ ...p, capacity: Number(e.target.value) }))}
+                        className="w-20"
+                      />
+                      <span className="text-xs text-white/40">max</span>
+                    </div>
+                  )}
+                  {!assignmentForm.limitClaims && (
+                    <p className="text-xs text-white/35 pl-5">Unlimited spots.</p>
+                  )}
+                </div>
+              </div>
               <Field label="Min Role">
                 <select
                   value={assignmentForm.minRole}

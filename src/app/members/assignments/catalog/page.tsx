@@ -65,7 +65,8 @@ interface FormState {
   credits: number;
   minRole: CycleRole;
   projectRef: string;
-  maxClaims: string;  // "0" or "" = unlimited
+  limitClaims: boolean;  // false = unlimited (capacity saved as 0)
+  maxClaims: string;     // only used when limitClaims=true
   deadline: string;
   status: AssignmentStatus;  // only used when editing
   priority: boolean;
@@ -78,6 +79,7 @@ const BLANK_FORM: FormState = {
   credits: 1,
   minRole: "Analyst",
   projectRef: "volta",
+  limitClaims: true,
   maxClaims: "1",
   deadline: "",
   status: "Open",
@@ -190,16 +192,17 @@ export default function CatalogPage() {
   const openEdit = (a: Assignment) => {
     const cap = a.capacity ?? 0;
     setForm({
-      title:      a.title,
+      title:       a.title,
       description: a.description ?? "",
-      track:      a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
-      credits:    a.credits,
-      minRole:    a.minRole,
-      projectRef: encodeProjectRef(a.businessId, a.projectGroupId),
-      maxClaims:  cap > 0 ? String(cap) : "",
-      deadline:   a.deadlines?.[0]?.date ?? a.deadline ?? "",
-      status:     a.status,
-      priority:   Boolean(a.priority),
+      track:       a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
+      credits:     a.credits,
+      minRole:     a.minRole,
+      projectRef:  encodeProjectRef(a.businessId, a.projectGroupId),
+      limitClaims: cap > 0,
+      maxClaims:   cap > 0 ? String(cap) : "1",
+      deadline:    a.deadlines?.[0]?.date ?? a.deadline ?? "",
+      status:      a.status,
+      priority:    Boolean(a.priority),
     });
     setEditing(a);
     setModal("edit");
@@ -219,7 +222,7 @@ export default function CatalogPage() {
       minRole:        form.minRole,
       businessId,
       projectGroupId,
-      capacity:       form.maxClaims.trim() ? Math.max(0, Number(form.maxClaims)) : 0,
+      capacity:       form.limitClaims ? Math.max(1, Number(form.maxClaims) || 1) : 0,
       deadlines:      form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
       status:         editing ? form.status : "Open",
       priority:       form.priority,
@@ -381,22 +384,33 @@ export default function CatalogPage() {
             const deadline = a.deadlines?.[0]?.date ?? a.deadline ?? "";
             const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
 
+            const isUnlimited = a.capacity === 0;
+
             return (
               <motion.div
                 key={a.id}
                 variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.18 } } }}
-                className={`flex flex-col rounded-xl border border-white/8 bg-[#13161D] border-l-4 ${TRACK_BORDER[track]} overflow-hidden`}
+                className={`flex flex-col rounded-xl border border-l-4 overflow-hidden
+                  ${a.priority
+                    ? "border-amber-400/40 border-l-amber-400 bg-amber-400/5"
+                    : `border-white/8 bg-[#13161D] ${TRACK_BORDER[track]}`
+                  }`}
               >
                 <div className="flex items-start justify-between gap-2 px-4 pt-3.5 pb-2.5">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[track]}`} />
-                      <span className="text-[10px] text-white/40 uppercase tracking-wide">{track}</span>
+                      <span className="text-[10px] text-white/45 uppercase tracking-wide">{track}</span>
+                      {a.priority && (
+                        <span className="members-chip border-amber-400/45 bg-amber-400/15 text-amber-300 text-[9px] font-bold uppercase tracking-wide">
+                          ⚡ Priority
+                        </span>
+                      )}
                       <span className={`ml-auto members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>
                         {a.status}
                       </span>
                     </div>
-                    <p className="text-[13px] font-semibold text-white/90 leading-snug">{a.title}</p>
+                    <p className="text-[14px] font-semibold text-white/90 leading-snug">{a.title}</p>
                     {proj && (
                       <p className="text-[11px] text-white/55 mt-0.5 truncate">
                         {proj.name}{proj.subtitle && <span> · {proj.subtitle}</span>}
@@ -405,12 +419,13 @@ export default function CatalogPage() {
                   </div>
                 </div>
 
-                <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/50">
-                  {a.priority && <span className="text-amber-300 font-semibold">Priority</span>}
-                  <span className="text-[#85CC17] font-semibold">{a.credits} credits</span>
+                <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
+                  <span className="text-[#85CC17] font-bold">{a.credits} {a.credits === 1 ? "credit" : "credits"}</span>
                   <span>{a.minRole}</span>
                   {deadline && <span>Due {deadline}</span>}
-                  {a.capacity > 0 && (
+                  {isUnlimited ? (
+                    activeClaims.length > 0 ? <span>{activeClaims.length} claiming</span> : <span className="text-white/35">Unlimited spots</span>
+                  ) : (
                     <span>{activeClaims.length}/{a.capacity} claimed</span>
                   )}
                 </div>
@@ -508,24 +523,44 @@ export default function CatalogPage() {
             </Field>
           </div>
 
-          <Field label="Max Claims">
-            <Input
-              type="number"
-              min="0"
-              placeholder="0 = no limit"
-              value={form.maxClaims}
-              onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))}
-            />
-          </Field>
+          <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 space-y-2.5">
+            <label className="flex items-center gap-2 text-sm text-white/75 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.limitClaims}
+                onChange={(e) => setForm((p) => ({ ...p, limitClaims: e.target.checked }))}
+                className="accent-[#85CC17]"
+              />
+              Limit the number of claimants
+            </label>
+            {form.limitClaims && (
+              <div className="flex items-center gap-2 pl-5">
+                <Input
+                  type="number"
+                  min="1"
+                  value={form.maxClaims}
+                  onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))}
+                  className="w-24"
+                />
+                <span className="text-xs text-white/45">max claimants</span>
+              </div>
+            )}
+            {!form.limitClaims && (
+              <p className="text-xs text-white/40 pl-5">Anyone can claim — no cap on spots.</p>
+            )}
+          </div>
 
-          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
             <input
               type="checkbox"
               checked={form.priority}
               onChange={(e) => setForm((p) => ({ ...p, priority: e.target.checked }))}
               className="accent-[#85CC17]"
             />
-            Priority assignment
+            <span>
+              Priority assignment
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— highlighted in amber for members</span>
+            </span>
           </label>
 
           {editing && (
