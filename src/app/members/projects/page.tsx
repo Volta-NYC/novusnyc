@@ -839,23 +839,6 @@ function BusinessesPageInner() {
     await updateBusiness(biz.id, { showcaseFeaturedOnHome: !biz.showcaseFeaturedOnHome });
   };
 
-  // Derive which tracks are active for each business from their linked assignments.
-  const businessTrackMap = useMemo(() => {
-    const map = new Map<string, TrackDivision[]>();
-    for (const a of assignments) {
-      if (!a.businessId || !isTrackDivision(a.track)) continue;
-      const existing = map.get(a.businessId) ?? [];
-      if (!existing.includes(a.track as TrackDivision)) {
-        map.set(a.businessId, [...existing, a.track as TrackDivision]);
-      }
-    }
-    // Sort by canonical TRACK_ORDER for consistent display.
-    map.forEach((tracks, id) => {
-      map.set(id, TRACK_ORDER.filter((t) => tracks.includes(t)));
-    });
-    return map;
-  }, [assignments]);
-
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   const getNeighborhoodLabel = (project: Business): string => {
@@ -975,7 +958,7 @@ function BusinessesPageInner() {
     if (isDiscoveryBusiness(business)) return false;
     // Fine-grained filters (only applied in businesses tab)
     if (filterTracks.size > 0) {
-      const bTracks = businessTrackMap.get(business.id) ?? [];
+      const bTracks = TRACK_ORDER.filter((t) => (business.projectTracks ?? []).includes(t));
       if (!bTracks.some((t) => filterTracks.has(t))) return false;
     }
     if (filterStatuses.size > 0) {
@@ -1281,7 +1264,7 @@ function BusinessesPageInner() {
 
   const renderTrackRow = (b: Business) => {
     const neighborhood = getNeighborhoodLabel(b);
-    const derivedTracks = businessTrackMap.get(b.id) ?? [];
+    const derivedTracks = TRACK_ORDER.filter((t) => (b.projectTracks ?? []).includes(t));
 
     return (
       <tr
@@ -1478,7 +1461,7 @@ function BusinessesPageInner() {
     );
   };
 
-  const _toggleTrackSelection = (track: TrackDivision) => {
+  const toggleTrackSelection = (track: TrackDivision) => {
     const currentTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []).map((item) => normalizeDivision(item));
     const formTrackProjects = normalizedFormTrackProjects();
     const hasTrack = currentTracks.includes(track);
@@ -2331,6 +2314,31 @@ function BusinessesPageInner() {
                 <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from &ldquo;{presetNeighborhood}&rdquo; group</p>
               )}
             </Field>
+          </div>
+
+          {/* ── Tracks ── */}
+          <div className="lg:col-span-2">
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Tracks</p>
+            <div className="flex items-center gap-3">
+              {TRACK_ORDER.map((t) => {
+                const selected = (Array.isArray(form.projectTracks) ? form.projectTracks : []).includes(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => toggleTrackSelection(t)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
+                      selected
+                        ? TRACK_META[t].chipClass
+                        : "border-white/15 text-white/45 hover:text-white/70 hover:border-white/25"
+                    }`}
+                  >
+                    <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_META[t].dotClass}`} />
+                    {TRACK_META[t].label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
         </div>

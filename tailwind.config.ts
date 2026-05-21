@@ -11,6 +11,7 @@ const config: Config = {
   // src/app/page.tsx (COLOR_CLASS_MAP). Tailwind can't see them at scan time.
   safelist: [
     // soft/mid/deep shades used by public home page showcase cards (COLOR_CLASS_MAP)
+    "border-blue-300", // TRACK_META.Tech.chipClass applied dynamically in projects/page.tsx
     "bg-blue-300",  "bg-blue-500",  "bg-blue-700",
     "bg-lime-300",  "bg-lime-500",  "bg-lime-700",
     "bg-amber-300", "bg-amber-500", "bg-amber-700",
