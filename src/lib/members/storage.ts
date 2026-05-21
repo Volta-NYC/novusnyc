@@ -357,6 +357,7 @@ export interface EmailTemplate {
 // ── Automation configs ────────────────────────────────────────────────────────
 
 export interface AutomationConfig {
+  id: string;             // same value as automationId — required by makeSubscriber
   automationId: string;   // stable slug PK, e.g. "cycle_warning"
   label: string;
   description: string;
@@ -742,22 +743,23 @@ function toRow(obj: Record<string, unknown>): Record<string, unknown> {
 // 1. Fetches the full table immediately and calls callback.
 // 2. Opens a Supabase postgres_changes channel; re-fetches on any row change.
 // 3. Returns an unsubscribe function that removes the channel.
-function makeSubscriber<T>(
+function makeSubscriber<T extends { id: string }>(
   table: string,
   transform?: (row: Record<string, unknown>) => T,
   options?: { excludeSoftDeleted?: boolean },
 ) {
   return (callback: (items: T[]) => void): (() => void) => {
+    let current: T[] = [];
+    const applyRow = (row: Record<string, unknown>): T =>
+      transform ? transform(row) : fromRow<T>(row);
+
     const fetchAll = () => {
       let query = supabase.from(table).select("*");
       if (options?.excludeSoftDeleted) query = query.is("deleted_at", null);
       return query.then(({ data, error }) => {
         if (error || !data) { callback([]); return; }
-        callback(
-          (data as Record<string, unknown>[]).map(
-            transform ? (r) => transform(r) : (r) => fromRow<T>(r)
-          )
-        );
+        current = (data as Record<string, unknown>[]).map(applyRow);
+        callback(current);
       });
     };
 
@@ -765,7 +767,24 @@ function makeSubscriber<T>(
 
     const channel = supabase
       .channel(`realtime-${table}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table }, () => void fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p = payload as { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> };
+        if (p.eventType === "INSERT") {
+          if (options?.excludeSoftDeleted && p.new.deleted_at) return;
+          current = [...current, applyRow(p.new)];
+        } else if (p.eventType === "UPDATE") {
+          if (options?.excludeSoftDeleted && p.new.deleted_at) {
+            current = current.filter((x) => x.id !== p.new.id);
+          } else {
+            const updated = applyRow(p.new);
+            current = current.map((x) => x.id === updated.id ? updated : x);
+          }
+        } else if (p.eventType === "DELETE") {
+          current = current.filter((x) => x.id !== p.old.id);
+        }
+        callback(current);
+      })
       .subscribe();
 
     return () => { void supabase.removeChannel(channel); };
@@ -990,6 +1009,7 @@ export const subscribeEmailTemplates =
 
 export const subscribeAutomationConfigs =
   makeSubscriber<AutomationConfig>("automation_configs", (r) => ({
+    id:           String(r.automation_id),
     automationId: String(r.automation_id),
     label:        String(r.label ?? ""),
     description:  String(r.description ?? ""),
