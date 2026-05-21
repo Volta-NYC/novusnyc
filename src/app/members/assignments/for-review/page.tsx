@@ -112,7 +112,7 @@ export default function ForReviewPage() {
     const bA = assignmentById.get(bC.assignmentId);
     switch (col) {
       case 0: return (aA?.title ?? "").localeCompare(bA?.title ?? "");
-      case 1: return (TRACK_RANK[aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.primaryTrack ?? "Tech"] ?? 9);
+      case 1: return (TRACK_RANK[aA?.track ?? aA?.primaryTrack ?? "Tech"] ?? 9) - (TRACK_RANK[bA?.track ?? bA?.primaryTrack ?? "Tech"] ?? 9);
       case 2: return resolveGroupLabel(aA).localeCompare(resolveGroupLabel(bA));
       case 3: return (aC.memberName ?? "").localeCompare(bC.memberName ?? "");
       default: return 0;
@@ -130,7 +130,7 @@ export default function ForReviewPage() {
         return [
           c.memberName,
           a?.title,
-          a?.primaryTrack,
+          a?.track ?? a?.primaryTrack,
           groupLabel,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       })
@@ -416,7 +416,7 @@ export default function ForReviewPage() {
                         switch (col.key) {
                           case "member": return <td key="member" className="px-3 py-0 h-9 text-[11px] text-white/85 align-middle overflow-hidden"><span className="block truncate" title={c.memberName ?? ""}>{c.memberName}</span></td>;
                           case "assignment": return <td key="assignment" className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="font-medium block truncate" title={a?.title ?? ""}>{a?.title ?? "Unknown assignment"}</span></td>;
-                          case "track": return <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle">{a?.primaryTrack ?? "—"}</td>;
+                          case "track": return <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle">{a?.track ?? a?.primaryTrack ?? "—"}</td>;
                           case "credits": return <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a?.credits ?? 0}</td>;
                           case "submitted": return <td key="submitted" className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : "—"}</td>;
                           case "deliverable": return (

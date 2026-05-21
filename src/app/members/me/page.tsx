@@ -129,8 +129,8 @@ export default function MyRecordPage() {
               {me?.role && <span className="text-black/40"> · {me.role}</span>}
             </p>
           </div>
-          <Link href="/members/overview" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
-            ← Back to overview
+          <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+            Browse available work →
           </Link>
         </header>
 

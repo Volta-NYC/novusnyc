@@ -85,6 +85,7 @@ interface ProjectCard {
   assignments: Assignment[];
   bizId?: string;
   grpId?: string;
+  isVolta?: boolean;
 }
 
 interface AssignmentFormState {
@@ -99,6 +100,7 @@ interface AssignmentFormState {
   capacity: number;
   deadline: string;
   status: AssignmentStatus;
+  priority: boolean;
   notes: string;
   region: string;
   teamLabel: string;
@@ -109,13 +111,14 @@ const BLANK_ASSIGNMENT: AssignmentFormState = {
   description: "",
   track: "Tech",
   type: "",
-  projectRef: "",
+  projectRef: "volta",
   credits: 1,
   estimatedHours: 1,
   minRole: "Analyst",
   capacity: 1,
   deadline: "",
   status: "Open",
+  priority: false,
   notes: "",
   region: "",
   teamLabel: "",
@@ -135,7 +138,7 @@ const BLANK_GROUP: GroupFormState = { name: "", description: "", color: "gray", 
 function encodeProjectRef(bizId?: string, grpId?: string): string {
   if (bizId) return `biz:${bizId}`;
   if (grpId) return `grp:${grpId}`;
-  return "";
+  return "volta";
 }
 
 function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: string } {
@@ -257,6 +260,19 @@ export default function ByProjectPage() {
       });
     }
 
+    const voltaAssignments = assignments.filter((a) => !a.businessId && !a.projectGroupId);
+    if (voltaAssignments.length) {
+      result.unshift({
+        key: "volta",
+        label: "Volta",
+        subtitle: "Organization-wide assignments",
+        status: "Ongoing",
+        borderCls: "border-l-[#85CC17]/60",
+        assignments: voltaAssignments,
+        isVolta: true,
+      });
+    }
+
     return result;
   }, [assignments, businesses, projectGroups]);
 
@@ -315,7 +331,7 @@ export default function ByProjectPage() {
       const grp = projectGroups.find((g) => g.id === ref.slice(4));
       return grp ? grp.name : "";
     }
-    return "";
+    return "Volta";
   };
 
   const openCreateAssignment = (prefillRef = "") => {
@@ -340,6 +356,7 @@ export default function ByProjectPage() {
       capacity:      a.capacity ?? 1,
       deadline:      (a.deadlines?.[0]?.date) ?? a.deadline ?? "",
       status:        a.status,
+      priority:      Boolean(a.priority),
       notes:         a.notes ?? "",
       region:        a.region ?? "",
       teamLabel:     a.teamLabel ?? "",
@@ -377,6 +394,7 @@ export default function ByProjectPage() {
       businessId,
       projectGroupId,
       status:         assignmentForm.status,
+      priority:       assignmentForm.priority,
       credits:        Math.max(0, Number(assignmentForm.credits) || 0),
       estimatedHours: Math.max(0, Number(assignmentForm.estimatedHours) || 0),
       minRole:        assignmentForm.minRole,
@@ -388,7 +406,6 @@ export default function ByProjectPage() {
       cycleId:        editingAssignment?.cycleId ?? activeCycle?.id ?? "",
       createdBy:      userProfile?.email || user?.email || user?.id || "unknown",
       difficulty:     editingAssignment?.difficulty ?? "Standard",
-      visibleTracks:  MEMBER_TRACKS,
     };
   };
 
@@ -493,6 +510,19 @@ export default function ByProjectPage() {
           </svg>
           Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size})` : ""}
         </button>
+        {visibleCards.length > 0 && (() => {
+          const allKeys = visibleCards.map((c) => c.key);
+          const allExpanded = allKeys.every((k) => expandedCards.has(k));
+          return (
+            <button
+              type="button"
+              onClick={() => setExpandedCards(allExpanded ? new Set() : new Set(allKeys))}
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/12 bg-transparent text-white/55 hover:text-white hover:border-white/18 text-xs font-medium transition-colors"
+            >
+              {allExpanded ? "Collapse all" : "Expand all"}
+            </button>
+          );
+        })()}
       </div>
 
       {/* Filter panel */}
@@ -567,11 +597,12 @@ export default function ByProjectPage() {
                 ? card.assignments
                 : card.assignments.filter((a) => filterTracks.has(a.track));
 
-            const filteredAssignments = q
+            const filteredAssignments = (q
               ? assignmentsToShow.filter(
                   (a) => a.title.toLowerCase().includes(q) || a.track.toLowerCase().includes(q),
                 )
-              : assignmentsToShow;
+              : assignmentsToShow
+            ).sort((a, b) => Number(Boolean(b.priority)) - Number(Boolean(a.priority)) || a.title.localeCompare(b.title));
 
             const PREVIEW_LIMIT = 4;
             const isCardExpanded = expandedCards.has(card.key);
@@ -636,6 +667,11 @@ export default function ByProjectPage() {
                         >
                           <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[a.track] ?? "bg-gray-400"}`} />
                           <span className="flex-1 min-w-0 text-[11px] text-white/75 truncate">{a.title}</span>
+                          {a.priority && (
+                            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-amber-300">
+                              Priority
+                            </span>
+                          )}
                           <span className={`shrink-0 members-chip text-[9px] font-semibold border rounded ${ASSIGNMENT_STATUS_STYLES[a.status]}`}>
                             {a.status}
                           </span>
@@ -734,7 +770,7 @@ export default function ByProjectPage() {
                 }}
                 className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white/85 focus:outline-none focus:border-[#85CC17]/50"
               >
-                <option value="">— none —</option>
+                <option value="volta">Volta</option>
                 {sortedBusinessOptions.length > 0 && (
                   <optgroup label="Businesses">
                     {sortedBusinessOptions.map((b) => (
@@ -811,6 +847,15 @@ export default function ByProjectPage() {
                 onChange={(e) => setAssignmentForm((p) => ({ ...p, deadline: e.target.value }))}
               />
             </Field>
+            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+              <input
+                type="checkbox"
+                checked={assignmentForm.priority}
+                onChange={(e) => setAssignmentForm((p) => ({ ...p, priority: e.target.checked }))}
+                className="accent-[#85CC17]"
+              />
+              Priority assignment
+            </label>
             <Field label="Description">
               <RichTextEditor
                 ref={editorRef}

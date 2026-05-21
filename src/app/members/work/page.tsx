@@ -76,19 +76,18 @@ export default function MarketplacePage() {
   }, [claims, me]);
 
   const filtered = useMemo(() => {
-    if (!activeCycle) return [];
     const q = search.trim().toLowerCase();
     return assignments
-      .filter((a) => a.cycleId === activeCycle.id)
+      .filter((a) => !activeCycle || !a.cycleId || a.cycleId === activeCycle.id)
       .filter((a) => a.status === "Open" || a.status === "In Progress")
-      .filter((a) => !trackFilter || a.primaryTrack === trackFilter)
+      .filter((a) => !trackFilter || (a.track ?? a.primaryTrack) === trackFilter)
       .filter((a) => {
         if (!q) return true;
         const business = a.businessId ? businessById.get(a.businessId) : undefined;
         return [
           a.title,
           a.description?.replace(/<[^>]+>/g, " "),
-          business?.name,
+          business?.name ?? "Volta",
           business?.neighborhood,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       });
@@ -96,19 +95,25 @@ export default function MarketplacePage() {
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
-    if (sortKey === "credits") return copy.sort((a, b) => b.credits - a.credits);
+    if (sortKey === "credits") return copy.sort((a, b) => Number(Boolean(b.priority)) - Number(Boolean(a.priority)) || b.credits - a.credits);
     if (sortKey === "deadline") {
       return copy.sort((a, b) => {
-        const aMs = a.deadline ? Date.parse(a.deadline) : Number.MAX_SAFE_INTEGER;
-        const bMs = b.deadline ? Date.parse(b.deadline) : Number.MAX_SAFE_INTEGER;
+        const aDeadline = a.deadlines?.[0]?.date ?? a.deadline;
+        const bDeadline = b.deadlines?.[0]?.date ?? b.deadline;
+        const aMs = aDeadline ? Date.parse(aDeadline) : Number.MAX_SAFE_INTEGER;
+        const bMs = bDeadline ? Date.parse(bDeadline) : Number.MAX_SAFE_INTEGER;
+        const priorityDelta = Number(Boolean(b.priority)) - Number(Boolean(a.priority));
+        if (priorityDelta !== 0) return priorityDelta;
         return aMs - bMs;
       });
     }
-    if (sortKey === "newest") return copy.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    if (sortKey === "newest") return copy.sort((a, b) => Number(Boolean(b.priority)) - Number(Boolean(a.priority)) || (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
     // recommended (default): primary track first, then by credits desc
     return copy.sort((a, b) => {
-      const aPrimary = primaryTrack && a.primaryTrack === primaryTrack ? 1 : 0;
-      const bPrimary = primaryTrack && b.primaryTrack === primaryTrack ? 1 : 0;
+      const priorityDelta = Number(Boolean(b.priority)) - Number(Boolean(a.priority));
+      if (priorityDelta !== 0) return priorityDelta;
+      const aPrimary = primaryTrack && (a.track ?? a.primaryTrack) === primaryTrack ? 1 : 0;
+      const bPrimary = primaryTrack && (b.track ?? b.primaryTrack) === primaryTrack ? 1 : 0;
       if (aPrimary !== bPrimary) return bPrimary - aPrimary;
       return b.credits - a.credits;
     });
@@ -128,11 +133,11 @@ export default function MarketplacePage() {
                 <>
                   {activeCycle.name} · {sorted.length} assignment{sorted.length === 1 ? "" : "s"} for you
                 </>
-              ) : "No active cycle yet."}
+              ) : `${sorted.length} published assignment${sorted.length === 1 ? "" : "s"} available`}
             </p>
           </div>
-          <Link href="/members/overview" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
-            ← Back to overview
+          <Link href="/members/me" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+            ← Back to profile
           </Link>
         </header>
 
@@ -199,13 +204,15 @@ export default function MarketplacePage() {
         {sorted.length === 0 ? (
           <div className="rounded-2xl border border-black/8 bg-white shadow-sm p-8 text-center">
             <p className="text-sm text-black/55">
-              {activeCycle ? "Nothing matches these filters right now." : "No active cycle. Check back soon."}
+              Nothing matches these filters right now.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {sorted.map((a) => {
               const business = a.businessId ? businessById.get(a.businessId) : undefined;
+              const track = (a.track ?? a.primaryTrack ?? "Tech") as CycleTrack;
+              const deadline = a.deadlines?.[0]?.date ?? a.deadline ?? "";
               const claimList = claimsByAssignment.get(a.id) ?? [];
               const taken = claimList.filter((c) => c.status !== "rejected").length;
               const isFull = taken >= a.capacity;
@@ -222,19 +229,20 @@ export default function MarketplacePage() {
                   className="block rounded-2xl border border-black/8 bg-white p-4 hover:border-[#85CC17]/55 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[a.primaryTrack ?? "Tech"]}`}>
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[a.primaryTrack ?? "Tech"]}`} />
-                      {a.primaryTrack}
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>
+                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[track]}`} />
+                      {track}
                     </span>
-                    <span className="text-[#5C9911] font-mono font-semibold text-sm">{a.credits} cr</span>
+                    <div className="flex items-center gap-2">
+                      {a.priority && <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Priority</span>}
+                      <span className="text-[#5C9911] font-mono font-semibold text-sm">{a.credits} cr</span>
+                    </div>
                   </div>
                   <h3 className="text-base font-semibold text-black/90 mb-1 line-clamp-2">{a.title}</h3>
-                  {business && (
-                    <p className="text-xs text-black/55 mb-2">
-                      {business.name}
-                      {business.neighborhood && <span className="text-black/35"> · {business.neighborhood}</span>}
-                    </p>
-                  )}
+                  <p className="text-xs text-black/55 mb-2">
+                    {business ? business.name : "Volta"}
+                    {business?.neighborhood && <span className="text-black/35"> · {business.neighborhood}</span>}
+                  </p>
                   {a.description && (
                     <p className="text-xs text-black/55 line-clamp-2 mb-2">
                       {a.description.replace(/<[^>]+>/g, " ").trim()}
@@ -246,7 +254,7 @@ export default function MarketplacePage() {
                       {a.estimatedHours > 0 && <span>·</span>}
                       {a.estimatedHours > 0 && <span>~{a.estimatedHours}h</span>}
                     </div>
-                    {a.deadline && <span>Due {a.deadline}</span>}
+                    {deadline && <span>Due {deadline}</span>}
                   </div>
                   {otherClaimers.length > 0 && (
                     <p className="mt-2 text-[11px] text-black/45 truncate">

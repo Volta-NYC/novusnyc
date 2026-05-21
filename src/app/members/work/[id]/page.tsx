@@ -79,6 +79,8 @@ export default function AssignmentDetailPage() {
   const id = params?.id ?? "";
   const assignment = useMemo(() => assignments.find((a) => a.id === id) ?? null, [assignments, id]);
   const business = assignment?.businessId ? businesses.find((b) => b.id === assignment.businessId) : null;
+  const assignmentTrack = (assignment?.track ?? assignment?.primaryTrack ?? "Tech") as CycleTrack;
+  const assignmentDeadline = assignment?.deadlines?.[0]?.date ?? assignment?.deadline ?? "";
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
   const classification = me ? classifyMember(me) : null;
 
@@ -113,21 +115,21 @@ export default function AssignmentDetailPage() {
   const isLeadership = classification?.status === "leadership";
   const isReserve = classification?.status === "reserve";
   const isFull = activeClaims.length >= assignment.capacity;
-  const cycleMatches = activeCycle && assignment.cycleId === activeCycle.id;
+  const cycleMatches = !activeCycle || !assignment.cycleId || assignment.cycleId === activeCycle.id;
   const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate;
   const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress" || myClaim.status === "rejected");
   const canMarkInProgress = myClaim && myClaim.status === "claimed";
   const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress");
 
   const handleClaim = async () => {
-    if (!me || !activeCycle) return;
+    if (!me) return;
     setBusy(true);
     try {
       await createAssignmentClaim({
         assignmentId: assignment.id,
         memberId: me.id,
         memberName: me.name,
-        cycleId: activeCycle.id,
+        cycleId: activeCycle?.id ?? assignment.cycleId ?? "",
         status: "claimed",
         claimedAt: new Date().toISOString(),
       });
@@ -188,21 +190,28 @@ export default function AssignmentDetailPage() {
               ← Back to marketplace
             </Link>
             <div className="flex items-center gap-2 mt-2 mb-1">
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[assignment.primaryTrack ?? "Tech"]}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignment.primaryTrack ?? "Tech"]}`} />
-                {assignment.primaryTrack}
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[assignmentTrack]}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignmentTrack]}`} />
+                {assignmentTrack}
               </span>
+              {assignment.priority && (
+                <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                  Priority
+                </span>
+              )}
               <span className="text-[#5C9911] font-mono text-sm font-semibold">{assignment.credits} credits</span>
             </div>
             <h1 className="font-display font-bold text-black text-2xl">{assignment.title}</h1>
-            {business && (
-              <p className="text-sm text-black/55 mt-1">
+            <p className="text-sm text-black/55 mt-1">
+              {business ? (
                 <Link href={`/members/work?businessId=${business.id}`} className="hover:text-black/85">
                   {business.name}
                 </Link>
-                {business.neighborhood && <span className="text-black/40"> · {business.neighborhood}</span>}
-              </p>
-            )}
+              ) : (
+                <span>Volta</span>
+              )}
+              {business?.neighborhood && <span className="text-black/40"> · {business.neighborhood}</span>}
+            </p>
           </div>
         </header>
 
@@ -246,8 +255,8 @@ export default function AssignmentDetailPage() {
               {assignment.estimatedHours > 0 && (
                 <div className="flex justify-between"><dt className="text-black/55">Estimate</dt><dd className="text-black/85">~{assignment.estimatedHours}h</dd></div>
               )}
-              {assignment.deadline && (
-                <div className="flex justify-between"><dt className="text-black/55">Deadline</dt><dd className="text-black/85">{assignment.deadline}</dd></div>
+              {assignmentDeadline && (
+                <div className="flex justify-between"><dt className="text-black/55">Deadline</dt><dd className="text-black/85">{assignmentDeadline}</dd></div>
               )}
               <div className="flex justify-between"><dt className="text-black/55">Min role</dt><dd className="text-black/85">{assignment.minRole}</dd></div>
             </dl>

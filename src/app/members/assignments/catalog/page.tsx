@@ -24,7 +24,7 @@ const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", 
 function encodeProjectRef(bizId?: string, grpId?: string): string {
   if (bizId) return `biz:${bizId}`;
   if (grpId) return `grp:${grpId}`;
-  return "";
+  return "volta";
 }
 
 function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: string } {
@@ -67,6 +67,7 @@ interface FormState {
   maxClaims: string;  // "0" or "" = unlimited
   deadline: string;
   status: AssignmentStatus;  // only used when editing
+  priority: boolean;
 }
 
 const BLANK_FORM: FormState = {
@@ -75,10 +76,11 @@ const BLANK_FORM: FormState = {
   track: "Tech",
   credits: 1,
   minRole: "Analyst",
-  projectRef: "",
+  projectRef: "volta",
   maxClaims: "1",
   deadline: "",
   status: "Open",
+  priority: false,
 };
 
 export default function CatalogPage() {
@@ -140,7 +142,7 @@ export default function CatalogPage() {
       if (!grp) return null;
       return { name: grp.name, subtitle: grp.description };
     }
-    return null;
+    return { name: "Volta", subtitle: "Organization-wide" };
   };
 
   const sorted = useMemo(() => {
@@ -155,6 +157,8 @@ export default function CatalogPage() {
           .some((v) => v.toLowerCase().includes(q));
       })
       .sort((a, b) => {
+        const priorityDelta = Number(Boolean(b.priority)) - Number(Boolean(a.priority));
+        if (priorityDelta !== 0) return priorityDelta;
         const ta = TRACK_RANK[(a.track ?? a.primaryTrack ?? "Tech")] ?? 9;
         const tb = TRACK_RANK[(b.track ?? b.primaryTrack ?? "Tech")] ?? 9;
         if (ta !== tb) return ta - tb;
@@ -194,6 +198,7 @@ export default function CatalogPage() {
       maxClaims:  cap > 0 ? String(cap) : "",
       deadline:   a.deadlines?.[0]?.date ?? a.deadline ?? "",
       status:     a.status,
+      priority:   Boolean(a.priority),
     });
     setEditing(a);
     setModal("edit");
@@ -207,7 +212,6 @@ export default function CatalogPage() {
       title,
       description:    form.description,
       track:          form.track,
-      visibleTracks:  MEMBER_TRACKS,
       credits:        Math.max(0, Number(form.credits) || 0),
       difficulty:     editing?.difficulty ?? "Standard",
       estimatedHours: 0,
@@ -217,6 +221,7 @@ export default function CatalogPage() {
       capacity:       form.maxClaims.trim() ? Math.max(0, Number(form.maxClaims)) : 0,
       deadlines:      form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
       status:         editing ? form.status : "Open",
+      priority:       form.priority,
       cycleId:        editing?.cycleId ?? activeCycle?.id ?? "",
       createdBy:      userProfile?.email || user?.email || user?.id || "unknown",
       notes:          "",
@@ -394,6 +399,7 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/50">
+                  {a.priority && <span className="text-amber-300 font-semibold">Priority</span>}
                   <span className="text-[#85CC17] font-semibold">{a.credits} credits</span>
                   <span>{a.minRole}</span>
                   {deadline && <span>Due {deadline}</span>}
@@ -467,7 +473,7 @@ export default function CatalogPage() {
                 onChange={(e) => setForm((p) => ({ ...p, projectRef: e.target.value }))}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
               >
-                <option value="">— None —</option>
+                <option value="volta">Volta</option>
                 {sortedBusinessOptions.length > 0 && (
                   <optgroup label="Businesses">
                     {sortedBusinessOptions.map((b) => (
@@ -504,6 +510,16 @@ export default function CatalogPage() {
               onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))}
             />
           </Field>
+
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+            <input
+              type="checkbox"
+              checked={form.priority}
+              onChange={(e) => setForm((p) => ({ ...p, priority: e.target.checked }))}
+              className="accent-[#85CC17]"
+            />
+            Priority assignment
+          </label>
 
           {editing && (
             <Field label="Status">

@@ -14,9 +14,9 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeAssignmentTemplates, subscribeBusinesses, createAssignment,
+  subscribeAssignmentTemplates, subscribeBusinesses, subscribeCycles, createAssignment,
   createAssignmentTemplate, updateAssignmentTemplate, deleteAssignmentTemplate,
-  type AssignmentTemplate, type Business, type CycleRole, type CycleTrack,
+  type AssignmentTemplate, type Business, type Cycle, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
@@ -54,9 +54,10 @@ const BLANK_FORM: FormState = {
 };
 
 interface FromTemplateForm {
-  businessId: string;
+  projectRef: string;
   title: string;
   deadline: string;
+  priority: boolean;
 }
 
 export default function TemplatesPage() {
@@ -66,6 +67,7 @@ export default function TemplatesPage() {
 
   const [templates, setTemplates] = useState<AssignmentTemplate[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [cycles, setCycles] = useState<Cycle[]>([]);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<AssignmentTemplate | null>(null);
@@ -73,7 +75,7 @@ export default function TemplatesPage() {
 
   const [fromTemplate, setFromTemplate] = useState<AssignmentTemplate | null>(null);
   const [fromTemplateForm, setFromTemplateForm] = useState<FromTemplateForm>({
-    businessId: "", title: "", deadline: "",
+    projectRef: "volta", title: "", deadline: "", priority: false,
   });
   const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
 
@@ -89,6 +91,12 @@ export default function TemplatesPage() {
     return subscribeBusinesses(setBusinesses);
   }, []);
 
+  useEffect(() => {
+    return subscribeCycles(setCycles);
+  }, []);
+
+  const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
+
   const businessOptions = useMemo(
     () => [...businesses].filter((b) => b.name?.trim()).sort((a, b) => a.name.localeCompare(b.name)),
     [businesses],
@@ -102,26 +110,28 @@ export default function TemplatesPage() {
       suggestedDeadline = d.toISOString().slice(0, 10);
     }
     setFromTemplate(t);
-    setFromTemplateForm({ businessId: "", title: t.title, deadline: suggestedDeadline });
+    setFromTemplateForm({ projectRef: "volta", title: t.title, deadline: suggestedDeadline, priority: false });
   };
 
   const handleCreateFromTemplate = async () => {
-    if (!fromTemplate || !fromTemplateForm.businessId) return;
+    if (!fromTemplate) return;
     setFromTemplateCreating(true);
     try {
+      const businessId = fromTemplateForm.projectRef.startsWith("biz:") ? fromTemplateForm.projectRef.slice(4) : undefined;
       await createAssignment({
         title: fromTemplateForm.title.trim() || fromTemplate.title,
         description: fromTemplate.description ?? "",
         track: fromTemplate.track,
-        visibleTracks: ["Tech", "Marketing", "Finance"],
         credits: fromTemplate.credits,
         difficulty: fromTemplate.difficulty ?? "Standard",
         estimatedHours: 0,
         minRole: fromTemplate.minRole,
-        businessId: fromTemplateForm.businessId,
+        businessId,
         capacity: fromTemplate.capacity ?? 0,
         deadlines: fromTemplateForm.deadline ? [{ label: "Final Deadline", date: fromTemplateForm.deadline }] : undefined,
+        priority: fromTemplateForm.priority,
         status: "Open",
+        cycleId: activeCycle?.id ?? "",
         notes: "",
         region: undefined,
         teamLabel: undefined,
@@ -370,13 +380,13 @@ export default function TemplatesPage() {
 
             <Field label="Business" required>
               <select
-                value={fromTemplateForm.businessId}
-                onChange={(e) => setFromTemplateForm((p) => ({ ...p, businessId: e.target.value }))}
+                value={fromTemplateForm.projectRef}
+                onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
               >
-                <option value="">— Select a business —</option>
+                <option value="volta">Volta</option>
                 {businessOptions.map((b) => (
-                  <option key={b.id} value={b.id}>
+                  <option key={b.id} value={`biz:${b.id}`}>
                     {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
                   </option>
                 ))}
@@ -398,6 +408,16 @@ export default function TemplatesPage() {
                 onChange={(e) => setFromTemplateForm((p) => ({ ...p, deadline: e.target.value }))}
               />
             </Field>
+
+            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+              <input
+                type="checkbox"
+                checked={fromTemplateForm.priority}
+                onChange={(e) => setFromTemplateForm((p) => ({ ...p, priority: e.target.checked }))}
+                className="accent-[#85CC17]"
+              />
+              Priority assignment
+            </label>
           </div>
         )}
 
@@ -406,7 +426,7 @@ export default function TemplatesPage() {
           <Btn
             variant="primary"
             onClick={() => void handleCreateFromTemplate()}
-            disabled={!fromTemplateForm.businessId || fromTemplateCreating}
+            disabled={fromTemplateCreating}
           >
             {fromTemplateCreating ? "Creating…" : "Create Assignment"}
           </Btn>

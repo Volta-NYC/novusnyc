@@ -420,6 +420,7 @@ export interface Assignment {
   estimatedHours: number;
   minRole: CycleRole;
   capacity: number;
+  priority?: boolean;
   projectGroupId?: string;          // set when assignment belongs to a standalone project group
   cycleId?: string;
   templateId?: string;             // template used to create this assignment

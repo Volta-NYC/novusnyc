@@ -73,13 +73,9 @@ const ADMIN_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS.filter((item) => ADMIN_NAV_HR
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
   {
-    href: "/members/overview",
-    label: "Dashboard",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>,
-  },
-  {
     href: "/members/me",
     label: "My Profile",
+    activeMatchRoots: ["/members/me", "/members/overview"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   },
   {
@@ -100,6 +96,7 @@ async function sha256(text: string): Promise<string> {
 }
 
 function getDefaultMembersPath(_role: AuthRole | null): string {
+  if (_role === "member") return "/members/me";
   return "/members/overview";
 }
 
@@ -130,7 +127,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
       "/members/assignments",
     ];
   }
-  return ["/members/overview", "/members/work", "/members/me", "/members/handbook"];
+  return ["/members/work", "/members/me", "/members/handbook"];
 }
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
