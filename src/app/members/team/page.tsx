@@ -5,6 +5,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, SkeletonRows, useConfirm,
+  ViewPanel, ViewSection, SortPanel, type SortRule,
 } from "@/components/members/ui";
 import SchoolSelector from "@/components/SchoolSelector";
 import {
@@ -239,10 +240,9 @@ export default function TeamPage() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
   const [showAlternateEmail, setShowAlternateEmail] = useState(false);
-  const [sortRules, setSortRules]     = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_SORT_RULES);
-  const [showSortPanel, setShowSortPanel] = useState(false);
+  const [sortRules, setSortRules]     = useState<SortRule[]>(DEFAULT_SORT_RULES);
   const [hiddenAdminCols, setHiddenAdminCols] = useState<Set<string>>(new Set());
-  const [adminColsMenuOpen, setAdminColsMenuOpen] = useState(false);
+  const [hideInactive, setHideInactive] = useState(true);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   const boardMigrationRef = useRef(false);
@@ -557,6 +557,11 @@ export default function TeamPage() {
   };
 
   const filtered = team.filter(member => {
+    if (hideInactive) {
+      const isInactive = normalizeKey(member.status ?? "") === "inactive";
+      const isReserve = classifyMember(member).status === "reserve";
+      if (isInactive || isReserve) return false;
+    }
     if (!search) return true;
     const q = search.toLowerCase();
     return (member.name ?? "").toLowerCase().includes(q)
@@ -999,19 +1004,35 @@ export default function TeamPage() {
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> 1 check-in behind</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> 2–3 behind</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> 4+ behind / no activity</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive / reserve</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive</span>
         </div>
         {!isMemberRestricted && (
-          <div className="flex items-center gap-2">
-          <div className="relative">
-            <Btn size="sm" variant="ghost" onClick={() => { setAdminColsMenuOpen((v) => !v); setShowSortPanel(false); }}>
-              Columns{hiddenAdminCols.size > 0 ? ` (${hiddenAdminCols.size} hidden)` : ""}
-            </Btn>
-            {adminColsMenuOpen && (
-              <div className="members-col-panel" onClick={(e) => e.stopPropagation()}>
-                <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-white/40">Show / Hide Columns</p>
+          <ViewPanel active={hideInactive || hiddenAdminCols.size > 0 || sortRules.length !== DEFAULT_SORT_RULES.length}>
+            <ViewSection label="Filter">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                <input
+                  type="checkbox"
+                  className="members-checkbox"
+                  checked={hideInactive}
+                  onChange={(e) => setHideInactive(e.target.checked)}
+                />
+                Hide inactive members
+              </label>
+            </ViewSection>
+            <ViewSection label="Sort">
+              <SortPanel
+                rules={sortRules}
+                options={SORT_OPTIONS}
+                onChange={updateSortRule}
+                onAdd={addSortRule}
+                onRemove={removeSortRule}
+                onReset={() => setSortRules(DEFAULT_SORT_RULES)}
+              />
+            </ViewSection>
+            <ViewSection label="Columns">
+              <div className="space-y-1">
                 {ADMIN_COLS.filter((c) => c.key !== "actions").map((col) => (
-                  <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 cursor-pointer text-xs text-white/70">
+                  <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
                     <input
                       type="checkbox"
                       className="members-checkbox"
@@ -1026,74 +1047,8 @@ export default function TeamPage() {
                   </label>
                 ))}
               </div>
-            )}
-          </div>
-          <div className="relative">
-            <Btn size="sm" variant="ghost" onClick={() => { setShowSortPanel((v) => !v); setAdminColsMenuOpen(false); }}>
-              Sort{sortRules.length > 1 ? ` (${sortRules.length})` : ""}
-            </Btn>
-            {showSortPanel && (
-              <div className="absolute top-full right-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-xl z-50 p-3 w-[360px] max-w-[min(92vw,360px)]">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] text-white/45 uppercase tracking-wide">Sort Rules</p>
-                  <button
-                    type="button"
-                    className="text-[10px] text-white/55 hover:text-white transition-colors"
-                    onClick={() => setShowSortPanel(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-                {sortRules.map((rule, idx) => (
-                  <div key={idx} className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] text-white/45 w-[54px]">{idx === 0 ? "Sort by" : "Then by"}</span>
-                    <select
-                      value={rule.col}
-                      onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
-                      className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
-                    >
-                      {SORT_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={rule.dir}
-                      onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
-                      className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[72px]"
-                    >
-                      <option value="asc">A→Z</option>
-                      <option value="desc">Z→A</option>
-                    </select>
-                    {sortRules.length > 1 && (
-                      <button
-                        onClick={() => removeSortRule(idx)}
-                        className="members-icon-btn members-icon-btn-danger h-6 w-6 text-xs"
-                        aria-label="Remove sort rule"
-                        title="Remove sort rule"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div className="mt-2 flex items-center justify-between">
-                  {sortRules.length < SORT_OPTIONS.length ? (
-                    <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
-                      + Add sort level
-                    </button>
-                  ) : <span />}
-                  <button
-                    type="button"
-                    className="text-[10px] text-white/50 hover:text-white/80 transition-colors"
-                    onClick={() => setSortRules(DEFAULT_SORT_RULES)}
-                  >
-                    Reset default
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          </div>
+            </ViewSection>
+          </ViewPanel>
         )}
       </div>
       {/* Team member list */}

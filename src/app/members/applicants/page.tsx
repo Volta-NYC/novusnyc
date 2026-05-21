@@ -1,11 +1,12 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   Btn, Empty, Modal, Field, PageHeader, SearchBar, SkeletonRows, useConfirm,
+  ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import {
   type ApplicationRecord,
@@ -155,13 +156,11 @@ export default function ApplicantsPage() {
   const [bulkPromoting, setBulkPromoting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
-  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
   // Accept modal state
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
   const [acceptRole, setAcceptRole] = useState("Analyst");
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
   const [viewingEvaluationsApp, setViewingEvaluationsApp] = useState<ApplicationRecord | null>(null);
-  const columnsMenuRef = useRef<HTMLDivElement | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const canEdit = authRole === "owner";
@@ -175,32 +174,6 @@ export default function ApplicantsPage() {
 
   // Subscribe to interview slots for resume access control
   useEffect(() => subscribeInterviewSlots(setSlots), []);
-
-  useEffect(() => {
-    if (!columnsMenuOpen) return;
-
-    const closeMenu = () => setColumnsMenuOpen(false);
-    const onPointerDown = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node | null;
-      if (target && columnsMenuRef.current?.contains(target)) return;
-      closeMenu();
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeMenu();
-    };
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("touchstart", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    window.addEventListener("scroll", closeMenu, true);
-
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("touchstart", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("scroll", closeMenu, true);
-    };
-  }, [columnsMenuOpen]);
 
   // Resolve the current user's team member IDs
   const currentInterviewerMemberIds = useMemo(() => {
@@ -712,15 +685,6 @@ export default function ApplicantsPage() {
 
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <SearchBar value={search} onChange={setSearch} placeholder="Search applicants, schools, status..." />
-        <label className="inline-flex items-center gap-2 text-xs text-white/65">
-          <input
-            type="checkbox"
-            checked={showAcceptedApplicants}
-            onChange={(e) => setShowAcceptedApplicants(e.target.checked)}
-            className="members-checkbox"
-          />
-          Show accepted applicants
-        </label>
         {canEdit && selectionMode === "none" && (
           <>
             <Btn
@@ -795,39 +759,34 @@ export default function ApplicantsPage() {
             </Btn>
           </>
         )}
-        <div ref={columnsMenuRef} className="relative ml-auto">
-          <button
-            type="button"
-            className="h-8 px-2.5 rounded-lg border border-white/15 bg-[#0F1014]/95 text-[11px] text-white/70 hover:text-white hover:border-white/30 transition-colors"
-            onClick={() => setColumnsMenuOpen((prev) => !prev)}
-          >
-            Columns
-          </button>
-          {columnsMenuOpen && (
-            <div className="absolute right-0 mt-1 w-52 rounded-lg border border-white/15 bg-[#0F1014] p-2 shadow-xl z-30">
-              <p className="px-1 pb-1 text-[10px] uppercase tracking-wide text-white/45">Show Columns</p>
-              <div className="space-y-1">
-                {ALL_COLUMNS.filter((col) => col.key !== "actions").map((col) => {
-                  const checked = !hiddenColumns.has(col.key);
-                  return (
-                    <label key={col.key} className="flex items-center gap-2 px-1 py-0.5 text-[11px] text-white/80">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => {
-                          if (e.target.checked) showColumn(col.key);
-                          else hideColumn(col.key);
-                        }}
-                        className="members-checkbox"
-                      />
-                      <span className="truncate">{col.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
+        <ViewPanel active={showAcceptedApplicants || hiddenColumns.size > 0}>
+          <ViewSection label="Filter">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+              <input
+                type="checkbox"
+                className="members-checkbox"
+                checked={showAcceptedApplicants}
+                onChange={(e) => setShowAcceptedApplicants(e.target.checked)}
+              />
+              Show accepted applicants
+            </label>
+          </ViewSection>
+          <ViewSection label="Columns">
+            <div className="space-y-1">
+              {ALL_COLUMNS.filter((col) => col.key !== "actions").map((col) => (
+                <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={!hiddenColumns.has(col.key)}
+                    onChange={(e) => { if (e.target.checked) showColumn(col.key); else hideColumn(col.key); }}
+                  />
+                  <span className="truncate">{col.label}</span>
+                </label>
+              ))}
             </div>
-          )}
-        </div>
+          </ViewSection>
+        </ViewPanel>
       </div>
 
       <div className="members-table-shell">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode, useEffect, useId, useRef } from "react";
+import { useState, ReactNode, useCallback, useEffect, useId, useRef } from "react";
 
 // ── BADGE ─────────────────────────────────────────────────────────────────────
 // Maps status/priority/role strings to their Tailwind color classes.
@@ -771,6 +771,128 @@ export function Toggle({ checked, onChange, label }: {
       </div>
       <span className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>
     </label>
+  );
+}
+
+// ── VIEW PANEL ────────────────────────────────────────────────────────────────
+// Unified "View" button + dropdown used by every admin table to host filter,
+// sort, and column-visibility controls in one place.
+
+export interface SortRule { col: number; dir: "asc" | "desc" }
+
+export function SortPanel({
+  rules,
+  options,
+  onChange,
+  onAdd,
+  onRemove,
+  onReset,
+}: {
+  rules: SortRule[];
+  options: { value: number; label: string }[];
+  onChange: (idx: number, field: "col" | "dir", value: number | string) => void;
+  onAdd: () => void;
+  onRemove: (idx: number) => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      {rules.map((rule, idx) => (
+        <div key={idx} className="flex items-center gap-2">
+          <span className="text-[10px] text-white/40 w-[52px] flex-shrink-0">{idx === 0 ? "Sort by" : "Then by"}</span>
+          <select
+            value={rule.col}
+            onChange={(e) => onChange(idx, "col", Number(e.target.value))}
+            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+          >
+            {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <select
+            value={rule.dir}
+            onChange={(e) => onChange(idx, "dir", e.target.value)}
+            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[68px]"
+          >
+            <option value="asc">A→Z</option>
+            <option value="desc">Z→A</option>
+          </select>
+          {rules.length > 1 && (
+            <button
+              type="button"
+              onClick={() => onRemove(idx)}
+              className="members-icon-btn members-icon-btn-danger h-5 w-5 text-[10px] flex-shrink-0"
+            >✕</button>
+          )}
+        </div>
+      ))}
+      <div className="flex items-center justify-between pt-1">
+        {rules.length < options.length ? (
+          <button type="button" onClick={onAdd} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+            + Add level
+          </button>
+        ) : <span />}
+        <button type="button" onClick={onReset} className="text-[10px] text-white/40 hover:text-white/65 transition-colors">
+          Reset default
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function ViewPanel({
+  active,
+  align = "right",
+  children,
+}: {
+  active?: boolean;
+  align?: "left" | "right";
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) close();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open, close]);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+          open || active
+            ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+            : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+        }`}
+      >
+        View
+        {active && !open && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#85CC17] flex-shrink-0" />}
+      </button>
+      {open && (
+        <div
+          className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1 bg-[#1C1F26] border border-white/10 rounded-xl shadow-xl z-50 p-4 w-[300px] max-w-[min(92vw,300px)] space-y-4`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ViewSection({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">{label}</p>
+      {children}
+    </div>
   );
 }
 
