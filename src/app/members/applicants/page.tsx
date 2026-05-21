@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  Btn, Empty, Modal, Field, PageHeader, SearchBar, useConfirm,
+  Btn, Empty, Modal, Field, PageHeader, SearchBar, SkeletonRows, useConfirm,
 } from "@/components/members/ui";
 import {
   type ApplicationRecord,
@@ -147,7 +147,9 @@ export default function ApplicantsPage() {
   const [search, setSearch] = useState("");
   const [showAcceptedApplicants, setShowAcceptedApplicants] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectionMode, setSelectionMode] = useState<"none" | "invite" | "accept">("none");
+  const [selectionMode, setSelectionMode] = useState<"none" | "invite" | "accept" | "status">("none");
+  const [bulkTargetStatus, setBulkTargetStatus] = useState<ApplicationStatus>("New");
+  const [bulkStatusApplying, setBulkStatusApplying] = useState(false);
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
@@ -601,7 +603,7 @@ export default function ApplicantsPage() {
     });
   };
 
-  const enterSelectionMode = (mode: "invite" | "accept") => {
+  const enterSelectionMode = (mode: "invite" | "accept" | "status") => {
     setSelectionMode(mode);
     setSelectedIds([]);
   };
@@ -609,6 +611,30 @@ export default function ApplicantsPage() {
   const exitSelectionMode = () => {
     setSelectionMode("none");
     setSelectedIds([]);
+  };
+
+  const applyBulkStatus = async () => {
+    if (!canManageStatus || selectedIds.length === 0) return;
+    const idsToUpdate = [...selectedIds];
+    const targetStatus = bulkTargetStatus;
+    await ask(async () => {
+      setBulkStatusApplying(true);
+      let succeeded = 0;
+      let failed = 0;
+      for (const id of idsToUpdate) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await updateApplicantServer(id, { status: targetStatus, statusManualOverride: true });
+          succeeded += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      setStatusMessage(`Updated ${succeeded} applicant${succeeded !== 1 ? "s" : ""} to "${targetStatus}"${failed > 0 ? ` (${failed} failed)` : ""}.`);
+      await fetchApplicantsData();
+      setBulkStatusApplying(false);
+      exitSelectionMode();
+    }, `Set ${idsToUpdate.length} applicant${idsToUpdate.length !== 1 ? "s" : ""} to "${targetStatus}"?`);
   };
 
   return (
@@ -711,6 +737,15 @@ export default function ApplicantsPage() {
             >
               Accept Multiple
             </Btn>
+            {canManageStatus && (
+              <Btn
+                size="sm"
+                variant="secondary"
+                onClick={() => enterSelectionMode("status")}
+              >
+                Set Status
+              </Btn>
+            )}
           </>
         )}
         {canEdit && selectionMode !== "none" && (
@@ -735,6 +770,25 @@ export default function ApplicantsPage() {
               >
                 {bulkPromoting ? "Processing..." : `Accept (${selectedIds.length})`}
               </Btn>
+            )}
+            {selectionMode === "status" && (
+              <>
+                <select
+                  value={bulkTargetStatus}
+                  onChange={(e) => setBulkTargetStatus(e.target.value as ApplicationStatus)}
+                  className="h-8 rounded-lg border border-white/15 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                >
+                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <Btn
+                  size="sm"
+                  variant="primary"
+                  onClick={() => void applyBulkStatus()}
+                  disabled={bulkStatusApplying || selectedIds.length === 0}
+                >
+                  {bulkStatusApplying ? "Applying..." : `Set ${selectedIds.length > 0 ? selectedIds.length : ""} to Status`}
+                </Btn>
+              </>
             )}
             <Btn size="sm" variant="ghost" onClick={exitSelectionMode}>
               Cancel
@@ -1031,8 +1085,11 @@ export default function ApplicantsPage() {
         </table>
       </div>
 
-      {loadingData ? <p className="text-xs text-white/40 mt-3">Loading applicants...</p> : null}
-      {!loadingData && filtered.length === 0 && <Empty message="No applicants yet." />}
+      {loadingData ? (
+        <div className="mt-4"><SkeletonRows rows={8} cols={6} /></div>
+      ) : filtered.length === 0 ? (
+        <Empty message="No applicants yet." />
+      ) : null}
 
       {/* Evaluation viewer modal */}
       <Modal

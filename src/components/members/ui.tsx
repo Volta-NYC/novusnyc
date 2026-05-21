@@ -81,6 +81,10 @@ export function Modal({ open, onClose, title, children }: {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") { onClose(); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && dialogRef.current) {
+        const form = dialogRef.current.querySelector<HTMLFormElement>("form");
+        if (form) { e.preventDefault(); form.requestSubmit(); return; }
+      }
       if (e.key !== "Tab" || !dialogRef.current) return;
       const focusable = Array.from(
         dialogRef.current.querySelectorAll<HTMLElement>(
@@ -246,13 +250,35 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
 
 // ── SEARCH BAR ────────────────────────────────────────────────────────────────
 
+// Cmd/Ctrl+K from anywhere on the page focuses the first SearchBar.
+// SearchBar tags its input with data-search-bar so this hook can find it.
+function useSearchBarShortcut() {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        const el = document.querySelector<HTMLInputElement>("input[data-search-bar]");
+        if (el) {
+          e.preventDefault();
+          el.focus();
+          el.select();
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+}
+
 export function SearchBar({ value, onChange, placeholder = "Search…", debounceMs = 250 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   debounceMs?: number;
 }) {
+  useSearchBarShortcut();
   const [local, setLocal] = useState(value);
+  const [focused, setFocused] = useState(false);
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
   useEffect(() => { setLocal(value); }, [value]);
 
@@ -279,12 +305,15 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
       <input
+        data-search-bar=""
         value={local}
         onChange={(e) => handleChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={placeholder}
-        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-9 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-16 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
       />
-      {local && (
+      {local ? (
         <button
           type="button"
           onClick={handleClear}
@@ -296,7 +325,11 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
-      )}
+      ) : !focused ? (
+        <kbd className="hidden sm:inline-flex absolute right-2 top-1/2 -translate-y-1/2 items-center gap-0.5 h-5 px-1.5 rounded border border-white/10 bg-white/5 text-[10px] text-white/40 font-medium pointer-events-none">
+          {isMac ? "⌘" : "Ctrl"}K
+        </kbd>
+      ) : null}
     </div>
   );
 }
@@ -456,8 +489,8 @@ export function StatCard({ label, value, color = "text-[#85CC17]" }: {
 }) {
   return (
     <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
-      <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
-      <p className={`font-display font-bold text-2xl ${color}`}>{value}</p>
+      <p className="text-white/55 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
+      <p className={`font-display font-bold text-2xl tabular-nums ${color}`}>{value}</p>
     </div>
   );
 }
