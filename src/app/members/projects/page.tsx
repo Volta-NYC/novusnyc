@@ -7,7 +7,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
-  Empty, StatCard, AutocompleteInput, useConfirm,
+  Empty, StatCard, AutocompleteInput, SkeletonRows, useConfirm,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
@@ -429,6 +429,7 @@ function BusinessesPageInner() {
     setDeepLinkedProjectId((params.get("projectId") ?? "").trim());
   }, []);
 
+  const [businessesLoaded, setBusinessesLoaded] = useState(false);
   useEffect(
     () =>
       subscribeBusinesses((items) => {
@@ -447,6 +448,7 @@ function BusinessesPageInner() {
             };
           })
         );
+        setBusinessesLoaded(true);
       }),
     []
   );
@@ -1282,7 +1284,15 @@ function BusinessesPageInner() {
     const derivedTracks = businessTrackMap.get(b.id) ?? [];
 
     return (
-      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+      <tr
+        id={`project-${b.id}`}
+        key={b.id}
+        className="border-b border-white/5 hover:bg-white/[0.025] cursor-pointer"
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button,a,input,select")) return;
+          void openEdit(b);
+        }}
+      >
         <td className="px-3 py-0 h-9 align-middle">
           {derivedTracks.length > 0 ? (
             <div className="flex items-center gap-1.5">
@@ -1367,7 +1377,15 @@ function BusinessesPageInner() {
     const neighborhood = getNeighborhoodLabel(b);
     const fromWebsite = b.intakeSource === "website_form";
     return (
-      <tr id={`project-${b.id}`} key={b.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+      <tr
+        id={`project-${b.id}`}
+        key={b.id}
+        className="border-b border-white/5 hover:bg-white/[0.025] cursor-pointer"
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button,a,input,select")) return;
+          void openEdit(b);
+        }}
+      >
         <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
           <span className="font-medium truncate block" title={b.name}>{b.name}</span>
         </td>
@@ -2033,14 +2051,16 @@ function BusinessesPageInner() {
             </thead>
             <tbody>{filtered.map(renderDiscoveryRow)}</tbody>
           </table>
-          {filtered.length === 0 && (
+          {!businessesLoaded ? (
+            <div className="p-4"><SkeletonRows rows={8} cols={6} /></div>
+          ) : filtered.length === 0 ? (
             <div className="p-6">
               <Empty
                 message="No discovery entries. New website-form submissions and any unassigned businesses will land here."
                 action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first project</Btn> : undefined}
               />
             </div>
-          )}
+          ) : null}
         </div>
       ) : (
         <>
@@ -2087,14 +2107,16 @@ function BusinessesPageInner() {
               </thead>
               <tbody>{otherProjects.map((b) => renderTrackRow(b))}</tbody>
             </table>
-            {filtered.length === 0 && (
+            {!businessesLoaded ? (
+              <div className="p-4"><SkeletonRows rows={8} cols={7} /></div>
+            ) : filtered.length === 0 ? (
               <div className="p-6">
                 <Empty
                   message="No businesses found."
                   action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first business</Btn> : undefined}
                 />
               </div>
-            )}
+            ) : null}
           </div>
         </>
       )}

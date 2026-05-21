@@ -4,7 +4,7 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, useConfirm,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, SkeletonRows, useConfirm,
 } from "@/components/members/ui";
 import SchoolSelector from "@/components/SchoolSelector";
 import {
@@ -285,7 +285,8 @@ export default function TeamPage() {
   }, []);
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
-  useEffect(() => subscribeTeam(setTeam), []);
+  const [teamLoaded, setTeamLoaded] = useState(false);
+  useEffect(() => subscribeTeam((items) => { setTeam(items); setTeamLoaded(true); }), []);
 
   // Real-time subscriptions for all supporting data — automatic updates when database changes.
   useEffect(() => {
@@ -1186,7 +1187,14 @@ export default function TeamPage() {
                   const memberStrikes = strikesByMemberId.get(member.id) ?? [];
                   const strikeCount = memberStrikes.length;
                   return (
-                    <tr key={member.id} className="hover:bg-white/3 transition-colors align-middle">
+                    <tr
+                      key={member.id}
+                      className="hover:bg-white/3 transition-colors align-middle cursor-pointer"
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest("button,a,input,select")) return;
+                        setDrawerMember(member);
+                      }}
+                    >
                       {visCols.map((col) => {
                         switch (col.key) {
                           case "name": return (
@@ -1338,12 +1346,14 @@ export default function TeamPage() {
           </div>
         );
       })()}
-      {filtered.length === 0 && (
+      {!teamLoaded ? (
+        <div className="mt-4"><SkeletonRows rows={8} cols={6} /></div>
+      ) : filtered.length === 0 ? (
         <Empty
           message="No team members."
           action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first member</Btn> : undefined}
         />
-      )}
+      ) : null}
 
       <Modal
         open={!!assignmentQuickView}
@@ -1413,16 +1423,16 @@ export default function TeamPage() {
               {activeCycle ? (
                 <div className="grid grid-cols-3 gap-2">
                   <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-white">{ledger.total}</p>
-                    <p className="text-[10px] text-white/45 mt-0.5">Credits earned</p>
+                    <p className="text-lg font-bold text-white tabular-nums">{ledger.total}</p>
+                    <p className="text-[10px] text-white/55 mt-0.5">Credits earned</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-white">{target}</p>
-                    <p className="text-[10px] text-white/45 mt-0.5">Target</p>
+                    <p className="text-lg font-bold text-white tabular-nums">{target}</p>
+                    <p className="text-[10px] text-white/55 mt-0.5">Target</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className={`text-lg font-bold ${dot.checkInsBehind > 0 ? "text-red-400" : "text-emerald-400"}`}>{dot.checkInsBehind > 0 ? `-${dot.checkInsBehind}` : "On track"}</p>
-                    <p className="text-[10px] text-white/45 mt-0.5">Check-ins behind</p>
+                    <p className={`text-lg font-bold tabular-nums ${dot.checkInsBehind > 0 ? "text-red-400" : "text-emerald-400"}`}>{dot.checkInsBehind > 0 ? `-${dot.checkInsBehind}` : "On track"}</p>
+                    <p className="text-[10px] text-white/55 mt-0.5">Check-ins behind</p>
                   </div>
                 </div>
               ) : (
