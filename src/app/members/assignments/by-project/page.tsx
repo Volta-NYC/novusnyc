@@ -6,6 +6,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, Btn, Modal, Field, Input, SearchBar, Empty, useConfirm, Spinner,
+  ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
@@ -169,7 +170,6 @@ export default function ByProjectPage() {
   const [templates, setTemplates]     = useState<AssignmentTemplate[]>([]);
 
   const [search, setSearch]         = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
   const [filterTracks, setFilterTracks]   = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
 
@@ -524,20 +524,39 @@ export default function ByProjectPage() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search projects or assignments…" />
-        <button
-          type="button"
-          onClick={() => setFilterOpen((v) => !v)}
-          className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-            hasActiveFilters || filterOpen
-              ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
-              : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
-          }`}
-        >
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-          </svg>
-          Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size})` : ""}
-        </button>
+        <ViewPanel active={hasActiveFilters}>
+          <ViewSection label="Track">
+            <div className="space-y-1.5">
+              {MEMBER_TRACKS.map((t) => (
+                <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={filterTracks.has(t)}
+                    onChange={() => setFilterTracks((prev) => { const next = new Set(prev); if (next.has(t)) next.delete(t); else next.add(t); return next; })}
+                  />
+                  <span className={`inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${TRACK_DOT[t]}`} />
+                  {t}
+                </label>
+              ))}
+            </div>
+          </ViewSection>
+          <ViewSection label="Project Status">
+            <div className="space-y-1.5">
+              {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
+                <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={filterStatuses.has(s)}
+                    onChange={() => setFilterStatuses((prev) => { const next = new Set(prev); if (next.has(s)) next.delete(s); else next.add(s); return next; })}
+                  />
+                  {s}
+                </label>
+              ))}
+            </div>
+          </ViewSection>
+        </ViewPanel>
         {visibleCards.length > 0 && (() => {
           const allKeys = visibleCards.map((c) => c.key);
           const allExpanded = allKeys.every((k) => expandedCards.has(k));
@@ -552,66 +571,6 @@ export default function ByProjectPage() {
           );
         })()}
       </div>
-
-      {/* Filter panel */}
-      {filterOpen && (
-        <div className="rounded-xl border border-white/10 bg-[#13161D] p-4 mb-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Track</p>
-              <div className="space-y-1.5">
-                {MEMBER_TRACKS.map((t) => (
-                  <label key={t} className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={filterTracks.has(t)}
-                      onChange={() => setFilterTracks((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(t)) next.delete(t); else next.add(t);
-                        return next;
-                      })}
-                      className="accent-[#85CC17]"
-                    />
-                    <span className={`inline-block h-2 w-2 rounded-full ${TRACK_DOT[t]}`} />
-                    <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{t}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Status</p>
-              <div className="space-y-1.5">
-                {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={filterStatuses.has(s)}
-                      onChange={() => setFilterStatuses((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(s)) next.delete(s); else next.add(s);
-                        return next;
-                      })}
-                      className="accent-[#85CC17]"
-                    />
-                    <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{s}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          {hasActiveFilters && (
-            <div className="mt-3 pt-3 border-t border-white/8 flex justify-end">
-              <button
-                type="button"
-                onClick={() => { setFilterTracks(new Set()); setFilterStatuses(new Set()); }}
-                className="text-[11px] text-white/45 hover:text-white/75 transition-colors"
-              >
-                Clear all filters
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Card grid */}
       {visibleCards.length === 0 ? (

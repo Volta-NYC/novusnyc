@@ -8,6 +8,7 @@ import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTab
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
   Empty, StatCard, AutocompleteInput, SkeletonRows, useConfirm,
+  ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
@@ -402,7 +403,6 @@ function BusinessesPageInner() {
   const [presetNeighborhood, setPresetNeighborhood] = useState<string | null>(null);
   // When false (default), only Ongoing businesses are shown in the Businesses tab.
   // Fine-grained filter checkboxes for businesses tab.
-  const [filterOpen, setFilterOpen] = useState(false);
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [filterNeighborhoods, setFilterNeighborhoods] = useState<Set<string>>(new Set());
@@ -1709,112 +1709,59 @@ function BusinessesPageInner() {
               />
             </div>
             {activeTab === "businesses" && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setFilterOpen((v) => !v)}
-                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                    hasActiveFilters || filterOpen
-                      ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
-                      : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-                  </svg>
-                  Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size + filterNeighborhoods.size})` : ""}
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Filter panel */}
-          {activeTab === "businesses" && filterOpen && (
-            <div className="rounded-xl border border-white/10 bg-[#13161D] p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                {/* Track filter */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Track</p>
+              <ViewPanel active={hasActiveFilters}>
+                <ViewSection label="Track">
                   <div className="space-y-1.5">
                     {TRACK_ORDER.map((t) => (
-                      <label key={t} className="flex items-center gap-2 cursor-pointer group">
+                      <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
                         <input
                           type="checkbox"
+                          className="members-checkbox"
                           checked={filterTracks.has(t)}
-                          onChange={() => setFilterTracks((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(t)) next.delete(t); else next.add(t);
-                            return next;
-                          })}
-                          className="accent-[#85CC17]"
+                          onChange={() => setFilterTracks((prev) => { const next = new Set(prev); if (next.has(t)) next.delete(t); else next.add(t); return next; })}
                         />
-                        <span className={`inline-block h-2 w-2 rounded-full ${TRACK_META[t].dotClass}`} />
-                        <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{TRACK_META[t].label}</span>
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${TRACK_META[t].dotClass}`} />
+                        {TRACK_META[t].label}
                       </label>
                     ))}
                   </div>
-                </div>
-
-                {/* Status filter */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Status</p>
+                </ViewSection>
+                <ViewSection label="Status">
                   <div className="space-y-1.5">
                     {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
-                      <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                      <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
                         <input
                           type="checkbox"
+                          className="members-checkbox"
                           checked={filterStatuses.has(s)}
-                          onChange={() => setFilterStatuses((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(s)) next.delete(s); else next.add(s);
-                            return next;
-                          })}
-                          className="accent-[#85CC17]"
+                          onChange={() => setFilterStatuses((prev) => { const next = new Set(prev); if (next.has(s)) next.delete(s); else next.add(s); return next; })}
                         />
-                        <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{s}</span>
+                        {s}
                       </label>
                     ))}
                   </div>
-                </div>
-
-                {/* Neighborhood filter */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Neighborhood</p>
-                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                </ViewSection>
+                <ViewSection label="Neighborhood">
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                     {allNeighborhoods.length === 0 ? (
                       <p className="text-xs text-white/30">No data yet.</p>
                     ) : allNeighborhoods.map((n) => (
-                      <label key={n} className="flex items-center gap-2 cursor-pointer group">
+                      <label key={n} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
                         <input
                           type="checkbox"
+                          className="members-checkbox"
                           checked={filterNeighborhoods.has(n)}
-                          onChange={() => setFilterNeighborhoods((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(n)) next.delete(n); else next.add(n);
-                            return next;
-                          })}
-                          className="accent-[#85CC17]"
+                          onChange={() => setFilterNeighborhoods((prev) => { const next = new Set(prev); if (next.has(n)) next.delete(n); else next.add(n); return next; })}
                         />
-                        <span className="text-xs text-white/65 group-hover:text-white/90 transition-colors">{n}</span>
+                        {n}
                       </label>
                     ))}
                   </div>
-                </div>
-              </div>
+                </ViewSection>
+              </ViewPanel>
+            )}
+          </div>
 
-              {hasActiveFilters && (
-                <div className="mt-3 pt-3 border-t border-white/8 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => { setFilterTracks(new Set()); setFilterStatuses(new Set()); setFilterNeighborhoods(new Set()); }}
-                    className="text-[11px] text-white/45 hover:text-white/75 transition-colors"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
 
