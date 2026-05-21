@@ -68,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("team")
         .select("*")
         .or(`email.eq.${email},alternate_email.eq.${email}`)
+        .is("deleted_at", null)
         .limit(1);
 
       const row = rows?.[0] as Record<string, unknown> | undefined;
