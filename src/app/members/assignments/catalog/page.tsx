@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
 import {
@@ -366,7 +367,12 @@ export default function CatalogPage() {
           action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
+        >
           {sorted.map((a) => {
             const track = (a.track ?? a.primaryTrack ?? "Tech") as CycleTrack;
             const proj = resolveProjectLabel(a);
@@ -376,8 +382,9 @@ export default function CatalogPage() {
             const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
 
             return (
-              <div
+              <motion.div
                 key={a.id}
+                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.18 } } }}
                 className={`flex flex-col rounded-xl border border-white/8 bg-[#13161D] border-l-4 ${TRACK_BORDER[track]} overflow-hidden`}
               >
                 <div className="flex items-start justify-between gap-2 px-4 pt-3.5 pb-2.5">
@@ -391,7 +398,7 @@ export default function CatalogPage() {
                     </div>
                     <p className="text-[13px] font-semibold text-white/90 leading-snug">{a.title}</p>
                     {proj && (
-                      <p className="text-[11px] text-white/40 mt-0.5 truncate">
+                      <p className="text-[11px] text-white/55 mt-0.5 truncate">
                         {proj.name}{proj.subtitle && <span> · {proj.subtitle}</span>}
                       </p>
                     )}
@@ -417,10 +424,10 @@ export default function CatalogPage() {
                 <div className="border-t border-white/5 px-4 py-2 flex justify-end">
                   <Btn variant="ghost" size="sm" onClick={() => openEdit(a)}>Edit</Btn>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       <Modal

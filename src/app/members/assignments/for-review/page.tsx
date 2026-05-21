@@ -528,7 +528,7 @@ export default function ForReviewPage() {
               onChange={(e) => setCreditsOverride(e.target.value)}
             />
           </Field>
-          <p className="text-[11px] text-white/40">
+          <p className="text-[11px] text-white/55">
             Default is the assignment&apos;s full credit value ({approvingClaim?.assignment?.credits ?? 0}). Adjust down for partial completion.
           </p>
         </div>

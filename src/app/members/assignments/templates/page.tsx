@@ -56,6 +56,7 @@ const BLANK_FORM: FormState = {
 interface FromTemplateForm {
   projectRef: string;
   title: string;
+  description: string;
   deadline: string;
   priority: boolean;
 }
@@ -75,7 +76,7 @@ export default function TemplatesPage() {
 
   const [fromTemplate, setFromTemplate] = useState<AssignmentTemplate | null>(null);
   const [fromTemplateForm, setFromTemplateForm] = useState<FromTemplateForm>({
-    projectRef: "volta", title: "", deadline: "", priority: false,
+    projectRef: "volta", title: "", description: "", deadline: "", priority: false,
   });
   const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
 
@@ -110,7 +111,13 @@ export default function TemplatesPage() {
       suggestedDeadline = d.toISOString().slice(0, 10);
     }
     setFromTemplate(t);
-    setFromTemplateForm({ projectRef: "volta", title: t.title, deadline: suggestedDeadline, priority: false });
+    setFromTemplateForm({
+      projectRef: "volta",
+      title: t.title,
+      description: t.description ?? "",
+      deadline: suggestedDeadline,
+      priority: false,
+    });
   };
 
   const handleCreateFromTemplate = async () => {
@@ -120,7 +127,7 @@ export default function TemplatesPage() {
       const businessId = fromTemplateForm.projectRef.startsWith("biz:") ? fromTemplateForm.projectRef.slice(4) : undefined;
       await createAssignment({
         title: fromTemplateForm.title.trim() || fromTemplate.title,
-        description: fromTemplate.description ?? "",
+        description: fromTemplateForm.description,
         track: fromTemplate.track,
         credits: fromTemplate.credits,
         difficulty: fromTemplate.difficulty ?? "Standard",
@@ -371,7 +378,7 @@ export default function TemplatesPage() {
                 </p>
                 {fromTemplate.description && (
                   <p
-                    className="text-[11px] text-white/40 mt-1.5 line-clamp-3 leading-relaxed"
+                    className="text-[11px] text-white/55 mt-1.5 line-clamp-3 leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(fromTemplate.description) }}
                   />
                 )}
@@ -398,6 +405,15 @@ export default function TemplatesPage() {
                 value={fromTemplateForm.title}
                 onChange={(e) => setFromTemplateForm((p) => ({ ...p, title: e.target.value }))}
                 placeholder={fromTemplate.title}
+              />
+            </Field>
+
+            <Field label="Description / more info">
+              <RichTextEditor
+                content={fromTemplateForm.description}
+                onChange={(html) => setFromTemplateForm((p) => ({ ...p, description: html }))}
+                minHeight={160}
+                placeholder="Add member-facing context, links, acceptance criteria, and any business-specific details."
               />
             </Field>
 

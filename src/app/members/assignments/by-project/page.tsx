@@ -625,7 +625,7 @@ export default function ByProjectPage() {
                       <span className="text-[13px] font-semibold text-white/90 truncate">{card.label}</span>
                     </div>
                     {card.subtitle && (
-                      <p className="text-[11px] text-white/40 mt-0.5 truncate">{card.subtitle}</p>
+                      <p className="text-[11px] text-white/55 mt-0.5 truncate">{card.subtitle}</p>
                     )}
                     <p className={`text-[10px] font-semibold mt-0.5 ${statusInfo.cls}`}>{statusInfo.text}</p>
                   </div>
