@@ -12,7 +12,7 @@ import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
   subscribeProjectGroups, subscribeCycles, subscribeAssignmentTemplates,
-  createAssignment, updateAssignment, deleteAssignment,
+  createAssignment, updateAssignment, archiveAssignment, hardDeleteAssignment, deleteAssignmentClaim,
   createProjectGroup, updateProjectGroup, deleteProjectGroup,
   type Assignment, type AssignmentClaim, type AssignmentStatus,
   type Business, type Cycle, type CycleRole, type CycleTrack,
@@ -46,6 +46,7 @@ const ASSIGNMENT_STATUS_STYLES: Record<AssignmentStatus, string> = {
   Submitted: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   Approved: "border-violet-400/30 bg-violet-400/10 text-violet-300",
   Finalized: "border-white/15 bg-white/5 text-white/55",
+  Archived: "border-white/10 bg-white/5 text-white/35",
 };
 
 const BIZ_STATUS_LABEL: Record<ProjectStatusValue, { text: string; cls: string }> = {
@@ -93,15 +94,16 @@ interface AssignmentFormState {
   description: string;
   track: CycleTrack;
   type: string;
-  projectRef: string; // "biz:<id>" | "grp:<id>" | ""
+  projectRef: string;
   credits: number;
   estimatedHours: number;
   minRole: CycleRole;
-  limitClaims: boolean;  // false = unlimited (saves capacity as 0)
+  limitClaims: boolean;
   capacity: number;
   deadline: string;
   status: AssignmentStatus;
   priority: boolean;
+  requiresApproval: boolean;
   notes: string;
   region: string;
   teamLabel: string;
@@ -121,6 +123,7 @@ const BLANK_ASSIGNMENT: AssignmentFormState = {
   deadline: "",
   status: "Open",
   priority: false,
+  requiresApproval: true,
   notes: "",
   region: "",
   teamLabel: "",
@@ -347,22 +350,23 @@ export default function ByProjectPage() {
   const openEditAssignment = (a: Assignment) => {
     const ref = encodeProjectRef(a.businessId, a.projectGroupId);
     setAssignmentForm({
-      title:         a.title,
-      description:   a.description ?? "",
-      track:         a.track ?? "Tech",
-      type:          a.type ?? "",
-      projectRef:    ref,
-      credits:       a.credits ?? 1,
-      estimatedHours: a.estimatedHours ?? 0,
-      minRole:       a.minRole ?? "Analyst",
-      limitClaims:   (a.capacity ?? 0) > 0,
-      capacity:      (a.capacity ?? 0) > 0 ? (a.capacity ?? 1) : 1,
-      deadline:      (a.deadlines?.[0]?.date) ?? a.deadline ?? "",
-      status:        a.status,
-      priority:      Boolean(a.priority),
-      notes:         a.notes ?? "",
-      region:        a.region ?? "",
-      teamLabel:     a.teamLabel ?? "",
+      title:            a.title,
+      description:      a.description ?? "",
+      track:            a.track ?? "Tech",
+      type:             a.type ?? "",
+      projectRef:       ref,
+      credits:          a.credits ?? 1,
+      estimatedHours:   a.estimatedHours ?? 0,
+      minRole:          a.minRole ?? "Analyst",
+      limitClaims:      (a.capacity ?? 0) > 0,
+      capacity:         (a.capacity ?? 0) > 0 ? (a.capacity ?? 1) : 1,
+      deadline:         (a.deadlines?.[0]?.date) ?? a.deadline ?? "",
+      status:           a.status,
+      priority:         Boolean(a.priority),
+      requiresApproval: a.requiresApproval !== false,
+      notes:            a.notes ?? "",
+      region:           a.region ?? "",
+      teamLabel:        a.teamLabel ?? "",
     });
     setBizSearch(refToLabel(ref));
 
@@ -401,9 +405,10 @@ export default function ByProjectPage() {
       credits:        Math.max(0, Number(assignmentForm.credits) || 0),
       estimatedHours: Math.max(0, Number(assignmentForm.estimatedHours) || 0),
       minRole:        assignmentForm.minRole,
-      capacity:       assignmentForm.limitClaims ? Math.max(1, Number(assignmentForm.capacity) || 1) : 0,
-      deadlines:      assignmentForm.deadline ? [{ label: "Final Deadline", date: assignmentForm.deadline }] : undefined,
-      notes:          assignmentForm.notes,
+      capacity:        assignmentForm.limitClaims ? Math.max(1, Number(assignmentForm.capacity) || 1) : 0,
+      deadlines:       assignmentForm.deadline ? [{ label: "Final Deadline", date: assignmentForm.deadline }] : undefined,
+      requiresApproval: assignmentForm.requiresApproval,
+      notes:           assignmentForm.notes,
       region:         assignmentForm.region || undefined,
       teamLabel:      assignmentForm.teamLabel || undefined,
       cycleId:        editingAssignment?.cycleId ?? activeCycle?.id ?? "",
@@ -420,12 +425,31 @@ export default function ByProjectPage() {
     setAssignmentModal(null);
   };
 
-  const handleDeleteAssignment = async () => {
+  const handleArchiveAssignment = async () => {
     if (!editingAssignment) return;
+    const claimList = claimsByAssignment.get(editingAssignment.id) ?? [];
+    const pendingClaims = claimList.filter((c) => c.status !== "Approved" && c.status !== "rejected");
+    const msg = pendingClaims.length > 0
+      ? `Archive "${editingAssignment.title}"? ${pendingClaims.length} pending claim${pendingClaims.length === 1 ? "" : "s"} will be cancelled. Approved credits are preserved.`
+      : `Archive "${editingAssignment.title}"? It will be hidden from the marketplace. Approved credits are preserved.`;
     await ask(async () => {
-      await deleteAssignment(editingAssignment.id);
+      for (const c of pendingClaims) await deleteAssignmentClaim(c.id);
+      await archiveAssignment(editingAssignment.id);
       setAssignmentModal(null);
-    }, `Delete "${editingAssignment.title}"? Existing claims keep their credit history.`);
+    }, msg);
+  };
+
+  const handleHardDeleteAssignment = async () => {
+    if (!editingAssignment) return;
+    const claimList = claimsByAssignment.get(editingAssignment.id) ?? [];
+    const approvedCount = claimList.filter((c) => c.status === "Approved").length;
+    const warn = approvedCount > 0
+      ? ` Warning: ${approvedCount} approved claim${approvedCount === 1 ? "" : "s"} exist — their credit records will also be deleted.`
+      : "";
+    await ask(async () => {
+      await hardDeleteAssignment(editingAssignment.id);
+      setAssignmentModal(null);
+    }, `Permanently delete "${editingAssignment.title}"? This cannot be undone.${warn}`);
   };
 
   // ── Group form helpers ────────────────────────────────────────────────────
@@ -882,6 +906,18 @@ export default function ByProjectPage() {
               />
               Priority assignment
             </label>
+            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+              <input
+                type="checkbox"
+                checked={assignmentForm.requiresApproval}
+                onChange={(e) => setAssignmentForm((p) => ({ ...p, requiresApproval: e.target.checked }))}
+                className="accent-[#85CC17]"
+              />
+              <span>
+                Requires approval
+                <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck to auto-award credits on submit</span>
+              </span>
+            </label>
             <Field label="Description">
               <RichTextEditor
                 ref={editorRef}
@@ -899,12 +935,19 @@ export default function ByProjectPage() {
               />
             </Field>
           </div>
-          <div className="flex items-center gap-2 justify-end mt-5 pt-4 border-t border-white/8">
-            {assignmentModal === "edit" && (
-              <Btn variant="danger" size="sm" onClick={handleDeleteAssignment}>Delete</Btn>
-            )}
-            <Btn variant="ghost" size="sm" onClick={() => setAssignmentModal(null)}>Cancel</Btn>
-            <Btn variant="primary" size="sm" onClick={handleSaveAssignment}>Save</Btn>
+          <div className="flex items-center gap-2 justify-between mt-5 pt-4 border-t border-white/8">
+            <div className="flex gap-2">
+              {assignmentModal === "edit" && editingAssignment?.status !== "Archived" && (
+                <Btn variant="danger" size="sm" onClick={() => void handleArchiveAssignment()}>Archive</Btn>
+              )}
+              {assignmentModal === "edit" && editingAssignment?.status === "Archived" && (
+                <Btn variant="danger" size="sm" onClick={() => void handleHardDeleteAssignment()}>Delete permanently</Btn>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Btn variant="ghost" size="sm" onClick={() => setAssignmentModal(null)}>Cancel</Btn>
+              <Btn variant="primary" size="sm" onClick={() => void handleSaveAssignment()}>Save</Btn>
+            </div>
           </div>
         </Modal>
       )}

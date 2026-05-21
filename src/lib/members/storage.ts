@@ -399,7 +399,8 @@ export type AssignmentStatus =
   | "In Progress"   // at least one active claim
   | "Submitted"     // at least one claim awaiting approval
   | "Approved"      // all claims approved (closed naturally)
-  | "Finalized";    // admin-closed
+  | "Finalized"     // admin-closed
+  | "Archived";     // hidden from members, history preserved; hard-deletable by admins
 
 export interface Assignment {
   id: string;
@@ -421,6 +422,7 @@ export interface Assignment {
   minRole: CycleRole;
   capacity: number;
   priority?: boolean;
+  requiresApproval?: boolean;       // false = auto-approve on member submit; default true
   projectGroupId?: string;          // set when assignment belongs to a standalone project group
   cycleId?: string;
   templateId?: string;             // template used to create this assignment
@@ -1916,6 +1918,22 @@ export async function updateAssignment(id: string, data: Partial<Assignment>): P
   await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: Object.keys(data) } });
 }
 
+export async function archiveAssignment(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("assignments")
+    .update({ status: "Archived", updated_at: nowISO() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: ["status"], note: "archived" } });
+}
+
+export async function hardDeleteAssignment(id: string): Promise<void> {
+  const { error } = await supabase.from("assignments").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
+}
+
+// Legacy soft-delete kept for existing callers; prefer archiveAssignment.
 export async function deleteAssignment(id: string): Promise<void> {
   const { error: assignmentDeleteError } = await supabase
     .from("assignments")

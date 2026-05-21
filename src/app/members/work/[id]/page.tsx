@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
   subscribeCycles, subscribeTeam,
-  createAssignmentClaim, updateAssignmentClaim, deleteAssignmentClaim,
+  createAssignmentClaim, updateAssignment, updateAssignmentClaim, deleteAssignmentClaim,
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember } from "@/lib/members/cycleCompute";
@@ -117,7 +117,8 @@ export default function AssignmentDetailPage() {
   const isUnlimited = assignment.capacity === 0;
   const isFull = !isUnlimited && activeClaims.length >= assignment.capacity;
   const cycleMatches = !activeCycle || !assignment.cycleId || assignment.cycleId === activeCycle.id;
-  const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate;
+  const isArchived = assignment.status === "Archived";
+  const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate && !isArchived;
   const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress" || myClaim.status === "rejected");
   const canMarkInProgress = myClaim && myClaim.status === "claimed";
   const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress");
@@ -134,6 +135,9 @@ export default function AssignmentDetailPage() {
         status: "claimed",
         claimedAt: new Date().toISOString(),
       });
+      if (assignment.status === "Open") {
+        await updateAssignment(assignment.id, { status: "In Progress" });
+      }
     } finally {
       setBusy(false);
     }
@@ -162,18 +166,35 @@ export default function AssignmentDetailPage() {
 
   const handleSubmit = async () => {
     if (!myClaim) return;
-    if (!deliverableUrl.trim()) {
+    const autoApprove = assignment.requiresApproval === false;
+    if (!autoApprove && !deliverableUrl.trim()) {
       alert("A deliverable link or doc is required.");
       return;
     }
     setBusy(true);
     try {
-      await updateAssignmentClaim(myClaim.id, {
-        status: "Submitted",
-        deliverableUrl: deliverableUrl.trim(),
-        submissionNotes: submissionNotes.trim(),
-        submittedAt: new Date().toISOString(),
-      });
+      const now = new Date().toISOString();
+      if (autoApprove) {
+        await updateAssignmentClaim(myClaim.id, {
+          status: "Approved",
+          deliverableUrl: deliverableUrl.trim() || undefined,
+          submissionNotes: submissionNotes.trim() || undefined,
+          submittedAt: now,
+          approvedAt: now,
+          approvedBy: "Auto-approved",
+          creditsAwarded: assignment.credits,
+        });
+      } else {
+        await updateAssignmentClaim(myClaim.id, {
+          status: "Submitted",
+          deliverableUrl: deliverableUrl.trim(),
+          submissionNotes: submissionNotes.trim() || undefined,
+          submittedAt: now,
+        });
+        if (assignment.status === "In Progress" || assignment.status === "Open") {
+          await updateAssignment(assignment.id, { status: "Submitted" });
+        }
+      }
       setSubmitOpen(false);
       setDeliverableUrl("");
       setSubmissionNotes("");
@@ -230,6 +251,11 @@ export default function AssignmentDetailPage() {
         </div>
 
         {/* Status banners */}
+        {assignment.status === "Archived" && (
+          <div className="rounded-xl border border-black/15 bg-black/5 px-4 py-3 text-sm text-black/55">
+            This assignment has been archived and is no longer accepting new claims.
+          </div>
+        )}
         {!cycleMatches && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             This assignment is from a different cycle. It can&apos;t be claimed right now.
@@ -372,7 +398,11 @@ export default function AssignmentDetailPage() {
                   onClick={() => setSubmitOpen(true)}
                   disabled={busy}
                 >
-                  {myClaim.status === "rejected" ? "Resubmit" : "Submit for approval"}
+                  {myClaim.status === "rejected"
+                    ? "Resubmit"
+                    : assignment.requiresApproval === false
+                      ? "Mark complete"
+                      : "Submit for approval"}
                 </Btn>
               )}
               {canUnclaim && (
@@ -411,50 +441,75 @@ export default function AssignmentDetailPage() {
       </div>
 
       {/* Submit modal */}
-      {submitOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSubmitOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-5">
-            <h2 className="font-display font-bold text-black text-lg mb-1">Submit for approval</h2>
-            <p className="text-sm text-black/55 mb-4">A senior associate will review and award credits.</p>
+      {submitOpen && (() => {
+        const autoApprove = assignment.requiresApproval === false;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSubmitOpen(false)}>
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-5">
+              <h2 className="font-display font-bold text-black text-lg mb-1">
+                {autoApprove ? "Mark as complete" : "Submit for approval"}
+              </h2>
+              <p className="text-sm text-black/55 mb-4">
+                {autoApprove
+                  ? `Credits will be awarded immediately — no review needed.`
+                  : "A senior associate will review and award credits."}
+              </p>
 
-            <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Deliverable URL</label>
-            <input
-              type="url"
-              value={deliverableUrl}
-              onChange={(e) => setDeliverableUrl(e.target.value)}
-              placeholder="https://docs.google.com/…"
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#85CC17]/55"
-            />
+              {!autoApprove && (
+                <>
+                  <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Deliverable URL <span className="text-red-500">*</span></label>
+                  <input
+                    type="url"
+                    value={deliverableUrl}
+                    onChange={(e) => setDeliverableUrl(e.target.value)}
+                    placeholder="https://docs.google.com/…"
+                    className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#85CC17]/55"
+                  />
+                </>
+              )}
+              {autoApprove && (
+                <>
+                  <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Link (optional)</label>
+                  <input
+                    type="url"
+                    value={deliverableUrl}
+                    onChange={(e) => setDeliverableUrl(e.target.value)}
+                    placeholder="https://…"
+                    className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#85CC17]/55"
+                  />
+                </>
+              )}
 
-            <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Notes (optional)</label>
-            <textarea
-              rows={3}
-              value={submissionNotes}
-              onChange={(e) => setSubmissionNotes(e.target.value)}
-              placeholder="Anything the reviewer should know."
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#85CC17]/55"
-            />
+              <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Notes (optional)</label>
+              <textarea
+                rows={3}
+                value={submissionNotes}
+                onChange={(e) => setSubmissionNotes(e.target.value)}
+                placeholder={autoApprove ? "Anything you'd like to note." : "Anything the reviewer should know."}
+                className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#85CC17]/55"
+              />
 
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-black/8">
-              <button
-                type="button"
-                onClick={() => setSubmitOpen(false)}
-                className="rounded-lg px-3 py-1.5 text-sm text-black/65 hover:bg-black/5"
-              >
-                Cancel
-              </button>
-              <Btn
-                variant="primary"
-                size="sm"
-                onClick={() => void handleSubmit()}
-                disabled={busy || !deliverableUrl.trim()}
-              >
-                {busy ? "Submitting…" : "Submit"}
-              </Btn>
+              <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-black/8">
+                <button
+                  type="button"
+                  onClick={() => setSubmitOpen(false)}
+                  className="rounded-lg px-3 py-1.5 text-sm text-black/65 hover:bg-black/5"
+                >
+                  Cancel
+                </button>
+                <Btn
+                  variant="primary"
+                  size="sm"
+                  onClick={() => void handleSubmit()}
+                  disabled={busy || (!autoApprove && !deliverableUrl.trim())}
+                >
+                  {busy ? "Saving…" : autoApprove ? "Mark complete" : "Submit"}
+                </Btn>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </MembersLayout>
   );
 }

@@ -14,10 +14,10 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeEmailTemplates,
-  subscribeAutomationConfigs, subscribeProjectGroups,
+  subscribeAutomationConfigs, subscribeProjectGroups, subscribeTeam,
   updateAssignmentClaim,
   type Assignment, type AssignmentClaim, type AutomationConfig, type Business,
-  type EmailTemplate, type CycleTrack, type ProjectGroup,
+  type EmailTemplate, type CycleTrack, type ProjectGroup, type TeamMember,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
@@ -69,6 +69,7 @@ export default function ForReviewPage() {
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [automationConfigs, setAutomationConfigs] = useState<AutomationConfig[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
 
   const [search, setSearch] = useState("");
   const [sortRules, setSortRules] = useState<{ col: number; dir: "asc" | "desc" }[]>(DEFAULT_ASSIGNMENT_SORT_RULES);
@@ -93,12 +94,14 @@ export default function ForReviewPage() {
     const unsub4 = subscribeEmailTemplates(setTemplates);
     const unsub5 = subscribeProjectGroups(setProjectGroups);
     const unsub6 = subscribeAutomationConfigs(setAutomationConfigs);
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); };
+    const unsub7 = subscribeTeam(setTeam);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7(); };
   }, []);
 
   const assignmentById   = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
   const businessById     = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
   const projectGroupById = useMemo(() => new Map(projectGroups.map((g) => [g.id, g])), [projectGroups]);
+  const emailByMemberId  = useMemo(() => new Map(team.map((m) => [m.id, m.email ?? ""])), [team]);
 
   const resolveGroupLabel = (a: Assignment | undefined): string => {
     if (!a) return "";
@@ -185,7 +188,7 @@ export default function ForReviewPage() {
     const assignment = assignmentById.get(claim.assignmentId);
     const business = assignment?.businessId ? businessById.get(assignment.businessId) : undefined;
     const projectGroup = assignment?.projectGroupId ? projectGroupById.get(assignment.projectGroupId) : undefined;
-    return { claim, assignment, business, projectGroup, memberEmail: "" };
+    return { claim, assignment, business, projectGroup, memberEmail: emailByMemberId.get(claim.memberId) ?? "" };
   };
 
   const openApprove = (claim: AssignmentClaim) => {

@@ -12,6 +12,7 @@ import {
   subscribeBusinesses, subscribeCycles, subscribeAssignments, subscribeAssignmentClaims,
   subscribeMemberStrikes, subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
   subscribeApplications, subscribeFinanceAssignments, subscribeAutomationConfigs,
+  createMemberCreditAdjustment, deleteMemberCreditAdjustment,
   type TeamMember, type Business, type FinanceAssignment, type ApplicationRecord,
   type AutomationConfig, type Cycle, type Assignment, type AssignmentClaim,
   type MemberStrike, type MemberCreditAdjustment, type EmailTemplate, type Infraction,
@@ -258,6 +259,9 @@ export default function TeamPage() {
   const sweepRanRef = useRef(false);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
   const [creditSummaryMember, setCreditSummaryMember] = useState<TeamMember | null>(null);
+  const [adjPoints, setAdjPoints] = useState("0");
+  const [adjReason, setAdjReason] = useState("");
+  const [adjBusy, setAdjBusy] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [inviteAllState, setInviteAllState] = useState<"idle" | "running" | "done">("idle");
   const [inviteAllProgress, setInviteAllProgress] = useState({ sent: 0, total: 0 });
@@ -1463,11 +1467,78 @@ export default function TeamPage() {
               {memberClaims.length === 0 && activeCycle && (
                 <p className="text-xs text-white/45">No claims submitted this cycle.</p>
               )}
+
+              {/* Manual adjustments */}
+              {canEdit && activeCycle && (
+                <div className="border-t border-white/8 pt-3 space-y-2">
+                  <p className="text-xs font-semibold text-white/70">Manual credit adjustment</p>
+                  {memberAdjustments.length > 0 && (
+                    <div className="space-y-1">
+                      {memberAdjustments.map((adj) => (
+                        <div key={adj.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/8 bg-[#0F1014] px-3 py-2">
+                          <span className={`text-xs font-mono font-bold ${adj.points >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {adj.points >= 0 ? "+" : ""}{adj.points}
+                          </span>
+                          <span className="text-xs text-white/60 flex-1 truncate">{adj.reason}</span>
+                          <button
+                            type="button"
+                            onClick={() => void ask(async () => { await deleteMemberCreditAdjustment(adj.id); }, `Remove adjustment "${adj.reason}"?`)}
+                            className="members-icon-btn members-icon-btn-danger h-5 w-5 text-[10px] flex-shrink-0"
+                            title="Remove adjustment"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={adjPoints}
+                      onChange={(e) => setAdjPoints(e.target.value)}
+                      placeholder="±pts"
+                      className="w-20 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                    />
+                    <input
+                      type="text"
+                      value={adjReason}
+                      onChange={(e) => setAdjReason(e.target.value)}
+                      placeholder="Reason…"
+                      className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                    />
+                    <Btn
+                      size="sm"
+                      variant="secondary"
+                      disabled={adjBusy || !adjReason.trim() || !adjPoints.trim() || adjPoints === "0"}
+                      onClick={async () => {
+                        if (!activeCycle || !adjReason.trim()) return;
+                        setAdjBusy(true);
+                        try {
+                          await createMemberCreditAdjustment({
+                            memberId: m.id,
+                            memberName: m.name,
+                            cycleId: activeCycle.id,
+                            points: Number(adjPoints) || 0,
+                            reason: adjReason.trim(),
+                            createdBy: user?.email ?? "admin",
+                          });
+                          setAdjPoints("0");
+                          setAdjReason("");
+                        } finally {
+                          setAdjBusy(false);
+                        }
+                      }}
+                    >
+                      Add
+                    </Btn>
+                  </div>
+                  <p className="text-[10px] text-white/35">Use negative numbers to deduct credits.</p>
+                </div>
+              )}
             </div>
           );
         })()}
         <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setCreditSummaryMember(null)}>Close</Btn>
+          <Btn variant="ghost" onClick={() => { setCreditSummaryMember(null); setAdjPoints("0"); setAdjReason(""); }}>Close</Btn>
         </div>
       </Modal>
 

@@ -35,6 +35,7 @@ export default function MarketplacePage() {
   const [search, setSearch] = useState("");
   const [trackFilter, setTrackFilter] = useState<"" | CycleTrack>("");
   const [sortKey, setSortKey] = useState<SortKey>("recommended");
+  const [hideFull, setHideFull] = useState(false);
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => {
@@ -82,6 +83,13 @@ export default function MarketplacePage() {
       .filter((a) => a.status === "Open" || a.status === "In Progress")
       .filter((a) => !trackFilter || (a.track ?? a.primaryTrack) === trackFilter)
       .filter((a) => {
+        if (!hideFull) return true;
+        const isUnlimited = a.capacity === 0;
+        if (isUnlimited) return true;
+        const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
+        return taken < a.capacity;
+      })
+      .filter((a) => {
         if (!q) return true;
         const business = a.businessId ? businessById.get(a.businessId) : undefined;
         return [
@@ -91,7 +99,7 @@ export default function MarketplacePage() {
           business?.neighborhood,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       });
-  }, [assignments, activeCycle, trackFilter, search, businessById]);
+  }, [assignments, activeCycle, trackFilter, hideFull, claimsByAssignment, search, businessById]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -184,7 +192,16 @@ export default function MarketplacePage() {
                 {t}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setHideFull((v) => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  hideFull ? "border-black/85 bg-black text-white" : "border-black/15 bg-white text-black/65 hover:border-black/35"
+                }`}
+              >
+                Hide full
+              </button>
               <span className="text-[10px] uppercase tracking-wider text-black/40 font-semibold">Sort</span>
               <select
                 value={sortKey}

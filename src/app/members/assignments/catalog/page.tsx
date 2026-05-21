@@ -12,7 +12,7 @@ import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
   subscribeProjectGroups,
-  createAssignment, updateAssignment, deleteAssignment,
+  createAssignment, updateAssignment, archiveAssignment, hardDeleteAssignment, deleteAssignmentClaim,
   type Assignment, type AssignmentClaim, type AssignmentStatus, type Business, type Cycle,
   type CycleRole, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
@@ -40,6 +40,7 @@ const STATUS_STYLES: Record<AssignmentStatus, string> = {
   Submitted: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   Approved: "border-violet-400/30 bg-violet-400/10 text-violet-300",
   Finalized: "border-white/15 bg-white/5 text-white/55",
+  Archived: "border-white/10 bg-white/5 text-white/35",
 };
 
 const TRACK_DOT: Record<CycleTrack, string> = {
@@ -65,11 +66,12 @@ interface FormState {
   credits: number;
   minRole: CycleRole;
   projectRef: string;
-  limitClaims: boolean;  // false = unlimited (capacity saved as 0)
-  maxClaims: string;     // only used when limitClaims=true
+  limitClaims: boolean;
+  maxClaims: string;
   deadline: string;
   status: AssignmentStatus;  // only used when editing
   priority: boolean;
+  requiresApproval: boolean;
 }
 
 const BLANK_FORM: FormState = {
@@ -84,6 +86,7 @@ const BLANK_FORM: FormState = {
   deadline: "",
   status: "Open",
   priority: false,
+  requiresApproval: true,
 };
 
 export default function CatalogPage() {
@@ -101,6 +104,7 @@ export default function CatalogPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+  const [showArchived, setShowArchived] = useState(false);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Assignment | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
@@ -152,6 +156,8 @@ export default function CatalogPage() {
     const q = search.trim().toLowerCase();
     return [...assignments]
       .filter((a) => {
+        if (!showArchived && a.status === "Archived") return false;
+        if (showArchived && a.status !== "Archived") return false;
         if (filterTracks.size > 0 && !filterTracks.has(a.track ?? a.primaryTrack ?? "Tech")) return false;
         if (filterStatuses.size > 0 && !filterStatuses.has(a.status)) return false;
         if (!q) return true;
@@ -170,11 +176,13 @@ export default function CatalogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignments, search, filterTracks, filterStatuses, businessById, projectGroupById]);
 
+  const activeAssignments = assignments.filter((a) => a.status !== "Archived");
   const counts = {
-    open: assignments.filter((a) => a.status === "Open").length,
+    open: activeAssignments.filter((a) => a.status === "Open").length,
     claimed: claims.filter((c) => c.status === "claimed" || c.status === "In Progress").length,
     awaitingApproval: claims.filter((c) => c.status === "Submitted").length,
-    completed: claims.filter((c) => c.status === "Approved").length + assignments.filter((a) => a.status === "Approved" || a.status === "Finalized").length,
+    completed: claims.filter((c) => c.status === "Approved").length + activeAssignments.filter((a) => a.status === "Approved" || a.status === "Finalized").length,
+    archived: assignments.filter((a) => a.status === "Archived").length,
   };
 
   const sortedBusinessOptions = useMemo(
@@ -192,17 +200,18 @@ export default function CatalogPage() {
   const openEdit = (a: Assignment) => {
     const cap = a.capacity ?? 0;
     setForm({
-      title:       a.title,
-      description: a.description ?? "",
-      track:       a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
-      credits:     a.credits,
-      minRole:     a.minRole,
-      projectRef:  encodeProjectRef(a.businessId, a.projectGroupId),
-      limitClaims: cap > 0,
-      maxClaims:   cap > 0 ? String(cap) : "1",
-      deadline:    a.deadlines?.[0]?.date ?? a.deadline ?? "",
-      status:      a.status,
-      priority:    Boolean(a.priority),
+      title:           a.title,
+      description:     a.description ?? "",
+      track:           a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
+      credits:         a.credits,
+      minRole:         a.minRole,
+      projectRef:      encodeProjectRef(a.businessId, a.projectGroupId),
+      limitClaims:     cap > 0,
+      maxClaims:       cap > 0 ? String(cap) : "1",
+      deadline:        a.deadlines?.[0]?.date ?? a.deadline ?? "",
+      status:          a.status,
+      priority:        Boolean(a.priority),
+      requiresApproval: a.requiresApproval !== false,
     });
     setEditing(a);
     setModal("edit");
@@ -222,10 +231,11 @@ export default function CatalogPage() {
       minRole:        form.minRole,
       businessId,
       projectGroupId,
-      capacity:       form.limitClaims ? Math.max(1, Number(form.maxClaims) || 1) : 0,
-      deadlines:      form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
-      status:         editing ? form.status : "Open",
-      priority:       form.priority,
+      capacity:        form.limitClaims ? Math.max(1, Number(form.maxClaims) || 1) : 0,
+      deadlines:       form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
+      status:          editing ? form.status : "Open",
+      priority:        form.priority,
+      requiresApproval: form.requiresApproval,
       cycleId:        editing?.cycleId ?? activeCycle?.id ?? "",
       createdBy:      userProfile?.email || user?.email || user?.id || "unknown",
       notes:          "",
@@ -241,10 +251,31 @@ export default function CatalogPage() {
     else setModal(null);
   };
 
-  const handleDelete = async () => {
+  const handleArchive = async () => {
     if (!editing) return;
-    await ask(async () => { await deleteAssignment(editing.id); setModal(null); },
-      `Delete "${editing.title}"? Existing claims keep their credit history.`);
+    const claimList = claimsByAssignment.get(editing.id) ?? [];
+    const pendingClaims = claimList.filter(
+      (c) => c.status !== "Approved" && c.status !== "rejected",
+    );
+    const msg = pendingClaims.length > 0
+      ? `Archive "${editing.title}"? ${pendingClaims.length} pending claim${pendingClaims.length === 1 ? "" : "s"} will be cancelled. Approved credits are preserved.`
+      : `Archive "${editing.title}"? It will be hidden from the marketplace. You can view it and permanently delete it from the Archived filter.`;
+    await ask(async () => {
+      for (const c of pendingClaims) await deleteAssignmentClaim(c.id);
+      await archiveAssignment(editing.id);
+      setModal(null);
+    }, msg);
+  };
+
+  const handleHardDelete = async () => {
+    if (!editing) return;
+    const claimList = claimsByAssignment.get(editing.id) ?? [];
+    const approvedCount = claimList.filter((c) => c.status === "Approved").length;
+    const warn = approvedCount > 0
+      ? ` Warning: ${approvedCount} approved claim${approvedCount === 1 ? "" : "s"} exist — their credit records will also be deleted.`
+      : "";
+    await ask(async () => { await hardDeleteAssignment(editing.id); setModal(null); },
+      `Permanently delete "${editing.title}"? This cannot be undone.${warn}`);
   };
 
   if (loading || authRole === "member") {
@@ -269,11 +300,12 @@ export default function CatalogPage() {
       />
 
       {/* Summary counters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
         <SummaryStat label="Open" value={counts.open} accent="text-[#85CC17]" />
         <SummaryStat label="Claimed / In Progress" value={counts.claimed} accent="text-blue-300" />
         <SummaryStat label="Awaiting approval" value={counts.awaitingApproval} accent="text-yellow-300" />
         <SummaryStat label="Completed" value={counts.completed} accent="text-violet-300" />
+        <SummaryStat label="Archived" value={counts.archived} accent="text-white/40" />
       </div>
 
       {/* Toolbar */}
@@ -287,18 +319,31 @@ export default function CatalogPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setFilterOpen((v) => !v)}
+                onClick={() => { setShowArchived((v) => !v); setFilterTracks(new Set()); setFilterStatuses(new Set()); }}
                 className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                  hasActiveFilters || filterOpen
-                    ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                  showArchived
+                    ? "border-white/30 bg-white/10 text-white/70"
                     : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
                 }`}
               >
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-                </svg>
-                Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size})` : ""}
+                {showArchived ? "← Active" : `Archived${counts.archived > 0 ? ` (${counts.archived})` : ""}`}
               </button>
+              {!showArchived && (
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen((v) => !v)}
+                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                    hasActiveFilters || filterOpen
+                      ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                      : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+                  </svg>
+                  Filter{hasActiveFilters ? ` (${filterTracks.size + filterStatuses.size})` : ""}
+                </button>
+              )}
             </div>
 
             {filterOpen && (
@@ -563,6 +608,19 @@ export default function CatalogPage() {
             </span>
           </label>
 
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.requiresApproval}
+              onChange={(e) => setForm((p) => ({ ...p, requiresApproval: e.target.checked }))}
+              className="accent-[#85CC17]"
+            />
+            <span>
+              Requires approval
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck for simple tasks (follow on social, etc.) to auto-award credits on submit</span>
+            </span>
+          </label>
+
           {editing && (
             <Field label="Status">
               <Select
@@ -575,8 +633,13 @@ export default function CatalogPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
-          <div>
-            {editing && <Btn variant="danger" onClick={() => void handleDelete()}>Delete</Btn>}
+          <div className="flex gap-2">
+            {editing && editing.status !== "Archived" && (
+              <Btn variant="danger" onClick={() => void handleArchive()}>Archive</Btn>
+            )}
+            {editing && editing.status === "Archived" && (
+              <Btn variant="danger" onClick={() => void handleHardDelete()}>Delete permanently</Btn>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
