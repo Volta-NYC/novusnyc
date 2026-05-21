@@ -683,7 +683,7 @@ export default function ApplicantsPage() {
 
       {statusMessage && <p className="text-xs text-white/55 mb-4">{statusMessage}</p>}
 
-      <div className="flex gap-3 mb-4 flex-wrap items-center">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search applicants, schools, status..." />
         {canEdit && selectionMode === "none" && (
           <>
@@ -761,7 +761,7 @@ export default function ApplicantsPage() {
         )}
         <ViewPanel active={showAcceptedApplicants || hiddenColumns.size > 0}>
           <ViewSection label="Filter">
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
               <input
                 type="checkbox"
                 className="members-checkbox"
@@ -774,7 +774,7 @@ export default function ApplicantsPage() {
           <ViewSection label="Columns">
             <div className="space-y-1">
               {ALL_COLUMNS.filter((col) => col.key !== "actions").map((col) => (
-                <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                   <input
                     type="checkbox"
                     className="members-checkbox"

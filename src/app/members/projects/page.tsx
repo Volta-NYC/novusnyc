@@ -1699,69 +1699,64 @@ function BusinessesPageInner() {
       )}
 
       {activeTab !== "showcase" && (
-        <div className="flex flex-col gap-2 mb-4">
-          <div className="flex gap-3 flex-wrap items-center">
-            <div className="flex-1">
-              <SearchBar
-                value={search}
-                onChange={setSearch}
-                placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
-              />
-            </div>
-            {activeTab === "businesses" && (
-              <ViewPanel active={hasActiveFilters}>
-                <ViewSection label="Track">
-                  <div className="space-y-1.5">
-                    {TRACK_ORDER.map((t) => (
-                      <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
-                        <input
-                          type="checkbox"
-                          className="members-checkbox"
-                          checked={filterTracks.has(t)}
-                          onChange={() => setFilterTracks((prev) => { const next = new Set(prev); if (next.has(t)) next.delete(t); else next.add(t); return next; })}
-                        />
-                        <span className={`inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${TRACK_META[t].dotClass}`} />
-                        {TRACK_META[t].label}
-                      </label>
-                    ))}
-                  </div>
-                </ViewSection>
-                <ViewSection label="Status">
-                  <div className="space-y-1.5">
-                    {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
-                      <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
-                        <input
-                          type="checkbox"
-                          className="members-checkbox"
-                          checked={filterStatuses.has(s)}
-                          onChange={() => setFilterStatuses((prev) => { const next = new Set(prev); if (next.has(s)) next.delete(s); else next.add(s); return next; })}
-                        />
-                        {s}
-                      </label>
-                    ))}
-                  </div>
-                </ViewSection>
-                <ViewSection label="Neighborhood">
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                    {allNeighborhoods.length === 0 ? (
-                      <p className="text-xs text-white/30">No data yet.</p>
-                    ) : allNeighborhoods.map((n) => (
-                      <label key={n} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
-                        <input
-                          type="checkbox"
-                          className="members-checkbox"
-                          checked={filterNeighborhoods.has(n)}
-                          onChange={() => setFilterNeighborhoods((prev) => { const next = new Set(prev); if (next.has(n)) next.delete(n); else next.add(n); return next; })}
-                        />
-                        {n}
-                      </label>
-                    ))}
-                  </div>
-                </ViewSection>
-              </ViewPanel>
-            )}
-          </div>
-
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder={isMemberRestricted ? "Search by business name…" : "Search by name, owner, neighborhood, or team member…"}
+          />
+          {activeTab === "businesses" && (
+            <ViewPanel active={hasActiveFilters}>
+              <ViewSection label="Track">
+                <div className="space-y-1.5">
+                  {TRACK_ORDER.map((t) => (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                      <input
+                        type="checkbox"
+                        className="members-checkbox"
+                        checked={filterTracks.has(t)}
+                        onChange={() => setFilterTracks((prev) => { const next = new Set(prev); if (next.has(t)) next.delete(t); else next.add(t); return next; })}
+                      />
+                      <span className={`inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${TRACK_META[t].dotClass}`} />
+                      {TRACK_META[t].label}
+                    </label>
+                  ))}
+                </div>
+              </ViewSection>
+              <ViewSection label="Status">
+                <div className="space-y-1.5">
+                  {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
+                    <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                      <input
+                        type="checkbox"
+                        className="members-checkbox"
+                        checked={filterStatuses.has(s)}
+                        onChange={() => setFilterStatuses((prev) => { const next = new Set(prev); if (next.has(s)) next.delete(s); else next.add(s); return next; })}
+                      />
+                      {s}
+                    </label>
+                  ))}
+                </div>
+              </ViewSection>
+              <ViewSection label="Neighborhood">
+                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {allNeighborhoods.length === 0 ? (
+                    <p className="text-xs text-white/30">No data yet.</p>
+                  ) : allNeighborhoods.map((n) => (
+                    <label key={n} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                      <input
+                        type="checkbox"
+                        className="members-checkbox"
+                        checked={filterNeighborhoods.has(n)}
+                        onChange={() => setFilterNeighborhoods((prev) => { const next = new Set(prev); if (next.has(n)) next.delete(n); else next.add(n); return next; })}
+                      />
+                      {n}
+                    </label>
+                  ))}
+                </div>
+              </ViewSection>
+            </ViewPanel>
+          )}
         </div>
       )}
 

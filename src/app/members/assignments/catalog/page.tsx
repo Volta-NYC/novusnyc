@@ -310,9 +310,7 @@ export default function CatalogPage() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <div className="flex-1 min-w-[180px]">
-          <SearchBar value={search} onChange={setSearch} placeholder="Search title, track, business…" />
-        </div>
+        <SearchBar value={search} onChange={setSearch} placeholder="Search title, track, business…" />
         <button
           type="button"
           onClick={() => { setShowArchived((v) => !v); setFilterTracks(new Set()); setFilterStatuses(new Set()); }}
@@ -329,7 +327,7 @@ export default function CatalogPage() {
             <ViewSection label="Track">
               <div className="space-y-1.5">
                 {MEMBER_TRACKS.map((t) => (
-                  <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                  <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                     <input
                       type="checkbox"
                       className="members-checkbox"
@@ -345,7 +343,7 @@ export default function CatalogPage() {
             <ViewSection label="Status">
               <div className="space-y-1.5">
                 {STATUS_OPTIONS.map((s) => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                  <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                     <input
                       type="checkbox"
                       className="members-checkbox"

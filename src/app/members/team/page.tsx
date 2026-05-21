@@ -997,7 +997,7 @@ export default function TeamPage() {
       </div>
 
       {/* Search controls */}
-      <div className="flex gap-3 mb-4 flex-wrap items-center">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
         <div className="flex items-center gap-3 text-[10px] text-white/55">
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> On pace</span>
@@ -1009,7 +1009,7 @@ export default function TeamPage() {
         {!isMemberRestricted && (
           <ViewPanel active={hideInactive || hiddenAdminCols.size > 0 || sortRules.length !== DEFAULT_SORT_RULES.length}>
             <ViewSection label="Filter">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                 <input
                   type="checkbox"
                   className="members-checkbox"
@@ -1032,7 +1032,7 @@ export default function TeamPage() {
             <ViewSection label="Columns">
               <div className="space-y-1">
                 {ADMIN_COLS.filter((c) => c.key !== "actions").map((col) => (
-                  <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                  <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                     <input
                       type="checkbox"
                       className="members-checkbox"

@@ -522,13 +522,13 @@ export default function ByProjectPage() {
       <SectionTabs tabs={ASSIGNMENTS_TABS} />
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search projects or assignments…" />
         <ViewPanel active={hasActiveFilters}>
           <ViewSection label="Track">
             <div className="space-y-1.5">
               {MEMBER_TRACKS.map((t) => (
-                <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                <label key={t} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                   <input
                     type="checkbox"
                     className="members-checkbox"
@@ -544,7 +544,7 @@ export default function ByProjectPage() {
           <ViewSection label="Project Status">
             <div className="space-y-1.5">
               {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                   <input
                     type="checkbox"
                     className="members-checkbox"

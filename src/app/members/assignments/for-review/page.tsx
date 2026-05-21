@@ -301,14 +301,12 @@ export default function ForReviewPage() {
         }
       />
 
-      <div className="mb-4 flex items-center gap-2">
-        <div className="flex-1">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Search title, type, track, business, neighborhood, claimer…"
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search title, type, track, business, neighborhood, claimer…"
+        />
         <ViewPanel active={hiddenCols.size > 0 || sortRules.length !== DEFAULT_ASSIGNMENT_SORT_RULES.length}>
           <ViewSection label="Sort">
             <SortPanel
@@ -323,7 +321,7 @@ export default function ForReviewPage() {
           <ViewSection label="Columns">
             <div className="space-y-1">
               {REVIEW_COLS.filter((c) => c.key !== "actions").map((col) => (
-                <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 transition-colors">
+                <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                   <input
                     type="checkbox"
                     className="members-checkbox"
@@ -347,7 +345,7 @@ export default function ForReviewPage() {
         const tableWidth = 40 + visCols.reduce((s, c) => s + c.width, 0);
         return (
           <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
-            <table className="table-fixed text-left" style={{ width: tableWidth }}>
+            <table className="table-fixed text-left" style={{ width: "100%", minWidth: tableWidth }}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[40px]">
@@ -422,7 +420,7 @@ export default function ForReviewPage() {
         <div className="mt-6">
           <h2 className="text-white/55 text-xs uppercase tracking-wider font-semibold mb-2">Recent decisions</h2>
           <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
-            <table className="table-fixed text-left" style={{ width: 950 }}>
+            <table className="table-fixed text-left" style={{ width: "100%", minWidth: 950 }}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[180px]">Member</th>

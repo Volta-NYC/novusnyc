@@ -877,7 +877,7 @@ export function ViewPanel({
       </button>
       {open && (
         <div
-          className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1 bg-[#1C1F26] border border-white/10 rounded-xl shadow-xl z-50 p-4 w-[300px] max-w-[min(92vw,300px)] space-y-4`}
+          className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1.5 bg-[#1C1F26] border border-white/10 rounded-xl shadow-2xl z-50 p-4 w-[310px] max-w-[min(92vw,310px)]`}
           onClick={(e) => e.stopPropagation()}
         >
           {children}
@@ -889,8 +889,27 @@ export function ViewPanel({
 
 export function ViewSection({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">{label}</p>
+    <div className="pt-3.5 border-t border-white/8 first:border-t-0 first:pt-0">
+      <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2.5">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+// ── TABLE PRIMITIVES ──────────────────────────────────────────────────────────
+// Shared wrappers used by every admin table for consistent shell + toolbar layout.
+
+export function TableShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
+      {children}
+    </div>
+  );
+}
+
+export function TableToolbar({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4">
       {children}
     </div>
   );
