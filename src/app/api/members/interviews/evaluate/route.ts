@@ -12,8 +12,6 @@ type EvaluateBody = {
 
 type SlotRecord = Record<string, unknown>;
 type ApplicationEntry = { id: string; row: Record<string, unknown> };
-type EvalRecord = Record<string, unknown>;
-type EvalMap = Record<string, EvalRecord>;
 
 const VALID_RATINGS: Rating[] = ["Extremely Qualified", "Qualified", "Decent", "Unqualified"];
 
@@ -47,11 +45,6 @@ function namesLikelyMatch(a: unknown, b: unknown): boolean {
     if (rt.has(token)) overlap += 1;
   });
   return overlap >= 2;
-}
-
-function asEvalMap(value: unknown): EvalMap {
-  if (!value || typeof value !== "object") return {};
-  return value as EvalMap;
 }
 
 function pickApplicationBySlot(
@@ -104,31 +97,15 @@ export async function POST(req: NextRequest) {
   const slot: SlotRecord = { ...(slotData as SlotRecord), id: slotId };
 
   if (action === "delete") {
-    const slotEvalMap = asEvalMap(slot.evaluationByUid);
-    const slotDeletePatch: Record<string, unknown> = {};
-    for (const uid of Object.keys(slotEvalMap)) {
-      slotDeletePatch[`evaluationByUid/${uid}`] = null;
-    }
-    if (Object.keys(slotDeletePatch).length > 0) {
-      await dbPatch(`interviewSlots/${slotId}`, slotDeletePatch);
-    }
+    await dbPatch(`interviewSlots/${slotId}`, { evaluationByUid: null });
 
     const appsData = await dbRead("applications");
     const entries = Object.entries((appsData ?? {}) as Record<string, Record<string, unknown>>)
       .map(([id, row]) => ({ id, row: row ?? {} }));
     const target = pickApplicationBySlot(slot, entries);
-    
     if (target) {
-      const appEvalMap = asEvalMap(target.row.interviewEvaluations);
-      const appDeletePatch: Record<string, unknown> = {};
-      for (const uid of Object.keys(appEvalMap)) {
-        appDeletePatch[`interviewEvaluations/${uid}`] = null;
-      }
-      if (Object.keys(appDeletePatch).length > 0) {
-        await dbPatch(`applications/${target.id}`, appDeletePatch);
-      }
+      await dbPatch(`applications/${target.id}`, { interviewEvaluations: null });
     }
-    
     return NextResponse.json({ success: true, deleted: true });
   }
 
@@ -149,36 +126,22 @@ export async function POST(req: NextRequest) {
     updatedAt: new Date().toISOString(),
   };
 
-  // Strict normalization: keep only one evaluation record per slot.
-  const slotEvalMap = asEvalMap(slot.evaluationByUid);
-  const slotPatch: Record<string, unknown> = {};
-  for (const uid of Object.keys(slotEvalMap)) {
-    if (uid !== verified.caller.uid) {
-      slotPatch[`evaluationByUid/${uid}`] = null;
-    }
-  }
-  slotPatch[`evaluationByUid/${verified.caller.uid}`] = evalEntry;
-  await dbPatch(`interviewSlots/${slotId}`, slotPatch);
+  // Strict normalization: keep only one evaluation per slot (the submitter's).
+  // Write the full jsonb column value — slash-keyed nested paths don't work with PostgREST.
+  await dbPatch(`interviewSlots/${slotId}`, {
+    evaluationByUid: { [verified.caller.uid]: evalEntry },
+  });
 
   const appsData = await dbRead("applications");
   const entries = Object.entries((appsData ?? {}) as Record<string, Record<string, unknown>>)
     .map(([id, row]) => ({ id, row: row ?? {} }));
   const target = pickApplicationBySlot(slot, entries);
   if (target) {
-    const appEvalMap = asEvalMap(target.row.interviewEvaluations);
-    const appPatch: Record<string, unknown> = {};
-    for (const uid of Object.keys(appEvalMap)) {
-      if (uid !== verified.caller.uid) {
-        appPatch[`interviewEvaluations/${uid}`] = null;
-      }
-    }
-    appPatch[`interviewEvaluations/${verified.caller.uid}`] = {
-      ...evalEntry,
-      slotId,
-    };
-    appPatch.status = "Interview Completed";
-    appPatch.updatedAt = new Date().toISOString();
-    await dbPatch(`applications/${target.id}`, appPatch);
+    await dbPatch(`applications/${target.id}`, {
+      interviewEvaluations: { [verified.caller.uid]: { ...evalEntry, slotId } },
+      status: "Interview Completed",
+      updatedAt: new Date().toISOString(),
+    });
   }
 
   return NextResponse.json({ success: true, applicationId: target?.id ?? "" });

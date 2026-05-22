@@ -406,7 +406,7 @@ export async function sendInterviewInviteLinkEmail(input: {
   bookingToken: string;
   fallbackOrigin?: string;
 }): Promise<void> {
-  const link = `${(process.env.NEXT_PUBLIC_SITE_URL || input.fallbackOrigin || "https://voltanyc.org").replace(/\/+$/, "")}/book`;
+  const link = bookingPortalUrl(input.bookingToken, input.fallbackOrigin);
   const rendered = await renderAutomationEmail("interview_invite", {
     applicantName: input.applicantName || "there",
     bookingLink:   link,

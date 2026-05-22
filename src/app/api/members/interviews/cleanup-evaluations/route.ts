@@ -57,26 +57,11 @@ export async function POST(req: NextRequest) {
 
     const validEntries = allEntries.filter(([, row]) => isValidEval(row));
     const canonical = pickCanonicalEval(validEntries);
-    const patch: Record<string, unknown> = {};
 
-    if (!canonical) {
-      for (const [uid] of allEntries) {
-        patch[`evaluationByUid/${uid}`] = null;
-      }
-      deletedLegacyEntries += allEntries.length;
-    } else {
-      for (const [uid, row] of allEntries) {
-        if (uid !== canonical[0] || !isValidEval(row)) {
-          patch[`evaluationByUid/${uid}`] = null;
-          deletedLegacyEntries += 1;
-        }
-      }
-    }
-
-    if (Object.keys(patch).length > 0) {
-      await dbPatch(`interviewSlots/${slotId}`, patch);
-      slotRecordsUpdated += 1;
-    }
+    const newMap: EvalMap = canonical ? { [canonical[0]]: canonical[1] } : {};
+    deletedLegacyEntries += allEntries.length - Object.keys(newMap).length;
+    await dbPatch(`interviewSlots/${slotId}`, { evaluationByUid: Object.keys(newMap).length > 0 ? newMap : null });
+    slotRecordsUpdated += 1;
   }
 
   for (const [appId, app] of Object.entries(applications)) {
@@ -86,26 +71,11 @@ export async function POST(req: NextRequest) {
 
     const validEntries = allEntries.filter(([, row]) => isValidEval(row));
     const canonical = pickCanonicalEval(validEntries);
-    const patch: Record<string, unknown> = {};
 
-    if (!canonical) {
-      for (const [uid] of allEntries) {
-        patch[`interviewEvaluations/${uid}`] = null;
-      }
-      deletedLegacyEntries += allEntries.length;
-    } else {
-      for (const [uid, row] of allEntries) {
-        if (uid !== canonical[0] || !isValidEval(row)) {
-          patch[`interviewEvaluations/${uid}`] = null;
-          deletedLegacyEntries += 1;
-        }
-      }
-    }
-
-    if (Object.keys(patch).length > 0) {
-      await dbPatch(`applications/${appId}`, patch);
-      appRecordsUpdated += 1;
-    }
+    const newMap: EvalMap = canonical ? { [canonical[0]]: canonical[1] } : {};
+    deletedLegacyEntries += allEntries.length - Object.keys(newMap).length;
+    await dbPatch(`applications/${appId}`, { interviewEvaluations: Object.keys(newMap).length > 0 ? newMap : null });
+    appRecordsUpdated += 1;
   }
 
   return NextResponse.json({

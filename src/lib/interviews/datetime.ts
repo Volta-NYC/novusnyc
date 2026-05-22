@@ -84,7 +84,9 @@ export function toInterviewDateTimeKey(value: string): string {
   if (naive) return `${naive[1]}T${naive[2]}:${naive[3]}`;
   const parsed = parseInterviewDateTime(value);
   if (Number.isNaN(parsed.getTime())) return value.slice(0, 16);
-  return `${toInterviewDateString(value)}T${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+  const etHour = formatInterviewInET(value, { hour: "2-digit", hour12: false });
+  const etMinute = formatInterviewInET(value, { minute: "2-digit" });
+  return `${toInterviewDateString(value)}T${etHour.padStart(2, "0")}:${etMinute.padStart(2, "0")}`;
 }
 
 export function formatInterviewInET(

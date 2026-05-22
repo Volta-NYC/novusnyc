@@ -1,5 +1,496 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default function LegacyBookTokenPage() {
-  redirect("/book");
+import { useState, useEffect, useMemo, useCallback, use } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import type { InterviewSlot } from "@/lib/members/storage";
+import { formatInterviewInET, parseInterviewDateTime } from "@/lib/interviews/datetime";
+
+function downloadICS(slot: InterviewSlot, zoomLink: string) {
+  const start = parseInterviewDateTime(slot.datetime);
+  if (Number.isNaN(start.getTime())) return;
+  const end = new Date(start.getTime() + (slot.durationMinutes ?? 30) * 60000);
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Volta NYC//Interview//EN",
+    "BEGIN:VEVENT",
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    "SUMMARY:Interview - Volta NYC",
+  ];
+  const descParts: string[] = [];
+  if (zoomLink) descParts.push(`Join Zoom: ${zoomLink}`);
+  descParts.push("Organized by Volta NYC");
+  lines.push(`DESCRIPTION:${descParts.join("\\n")}`);
+  if (slot.location) lines.push(`LOCATION:${slot.location}`);
+  if (zoomLink) lines.push(`URL:${zoomLink}`);
+  lines.push(
+    `DTSTAMP:${fmt(new Date())}`,
+    `UID:volta-${slot.id}@voltanyc.org`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  );
+  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "volta-nyc-interview.ics";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function formatDayTab(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function formatDayHeading(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+}
+
+function formatTime(isoDatetime: string): string {
+  return formatInterviewInET(isoDatetime, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+}
+
+function formatConfirmed(iso: string): string {
+  return formatInterviewInET(iso, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+}
+
+type PageState = "loading" | "enter_info" | "choose_slot" | "confirmed" | "expired" | "already_booked" | "error";
+
+type InviteData = {
+  applicantName?: string;
+  applicantEmail?: string;
+  multiUse?: boolean;
+};
+
+export default function BookTokenPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = use(params);
+
+  const [state, setState] = useState<PageState>("loading");
+  const [slots, setSlots] = useState<InterviewSlot[]>([]);
+  const [zoomLink, setZoomLink] = useState("");
+  const [invite, setInvite] = useState<InviteData | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmedSlot, setConfirmedSlot] = useState<InterviewSlot | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+
+  const [bookerName, setBookerName] = useState("");
+  const [bookerEmail, setBookerEmail] = useState("");
+  const [infoError, setInfoError] = useState("");
+
+  const loadLatestZoomLink = useCallback(async (): Promise<string> => {
+    try {
+      const res = await fetch("/api/booking/zoom", { cache: "no-store" });
+      if (!res.ok) return "";
+      const data = await res.json() as { zoomLink?: string };
+      const latest = (data.zoomLink ?? "").trim();
+      setZoomLink(latest);
+      return latest;
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const dateSlotMap = useMemo(() => {
+    const map: Record<string, InterviewSlot[]> = {};
+    for (const s of slots) {
+      const day = s.datetime.slice(0, 10);
+      if (!map[day]) map[day] = [];
+      map[day].push(s);
+    }
+    return map;
+  }, [slots]);
+
+  const sortedDates = useMemo(() => Object.keys(dateSlotMap).sort(), [dateSlotMap]);
+  const timesForDate = dateSlotMap[selectedDate] ?? [];
+  const selectedSlot = timesForDate.find((s) => s.datetime === selectedTime) ?? null;
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const daySlots = dateSlotMap[selectedDate] ?? [];
+    if (daySlots.length === 0) return;
+    if (!daySlots.some((s) => s.datetime === selectedTime)) {
+      setSelectedTime(daySlots[0].datetime);
+    }
+  }, [dateSlotMap, selectedDate, selectedTime]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/booking/${token}`, { cache: "no-store" });
+        if (res.status === 410) { setState("expired"); return; }
+        if (res.status === 409) { setState("already_booked"); return; }
+        if (!res.ok) { setState("error"); return; }
+
+        const data = await res.json() as {
+          invite?: InviteData;
+          slots?: InterviewSlot[];
+          zoomLink?: string;
+        };
+
+        const inviteData = data.invite ?? null;
+        setInvite(inviteData);
+        if (inviteData?.applicantName) setBookerName(inviteData.applicantName);
+        if (inviteData?.applicantEmail) setBookerEmail(inviteData.applicantEmail);
+
+        const loaded = data.slots ?? [];
+        setSlots(loaded);
+        setZoomLink(data.zoomLink ?? "");
+
+        if (loaded.length > 0) {
+          const firstDay = loaded[0].datetime.slice(0, 10);
+          setSelectedDate(firstDay);
+          setSelectedTime(loaded[0].datetime);
+        }
+
+        setState("enter_info");
+      } catch {
+        setState("error");
+      }
+    })();
+  }, [token]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      const latest = await loadLatestZoomLink();
+      if (cancelled || !latest) return;
+      setZoomLink(latest);
+    };
+    void refresh();
+    const id = window.setInterval(() => { void refresh(); }, 15000);
+    const onFocus = () => { void refresh(); };
+    const onVis = () => { if (document.visibilityState === "visible") void refresh(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [loadLatestZoomLink]);
+
+  const handleInfoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookerName.trim()) { setInfoError("Please enter your name."); return; }
+    if (!bookerEmail.trim()) { setInfoError("Please enter your email."); return; }
+    setInfoError("");
+    setState("choose_slot");
+  };
+
+  const handleBook = async () => {
+    if (!selectedSlot || !bookerName.trim() || !bookerEmail.trim()) {
+      setState("enter_info");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/booking/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slotId: selectedSlot.id, bookerName: bookerName.trim(), bookerEmail: bookerEmail.trim() }),
+      });
+      if (res.status === 409) {
+        const err = await res.json() as { error?: string };
+        if (err.error === "already_booked") { setState("already_booked"); return; }
+      }
+      if (!res.ok) { setState("error"); return; }
+      setConfirmedSlot(selectedSlot);
+      setState("confirmed");
+    } catch {
+      setState("error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCopyZoom = async () => {
+    try {
+      const latest = await loadLatestZoomLink();
+      if (!latest) return;
+      await navigator.clipboard.writeText(latest);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore clipboard errors
+    }
+  };
+
+  const cardClass = "bg-[#1C1F26] border border-white/8 rounded-2xl overflow-hidden";
+
+  return (
+    <div className="min-h-screen bg-[#0F1014] flex items-center justify-center p-4">
+      <div className="w-full max-w-lg">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
+            <Image src="/logo.png" alt="Volta" width={32} height={32} className="object-contain" />
+            <span className="text-white font-bold text-lg tracking-tight group-hover:text-white/80 transition-colors">VOLTA NYC</span>
+          </Link>
+          <p className="text-white/40 text-sm font-body">Interview Scheduling</p>
+        </div>
+
+        {state === "loading" && (
+          <div className={`${cardClass} p-8 text-center`}>
+            <div className="w-8 h-8 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-white/40 text-sm font-body">Loading your invitation...</p>
+          </div>
+        )}
+
+        {state === "expired" && (
+          <div className={`${cardClass} p-8 text-center space-y-3`}>
+            <div className="w-12 h-12 rounded-full bg-orange-500/15 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h2 className="text-white font-bold text-lg">Invitation expired</h2>
+            <p className="text-white/45 text-sm font-body">This interview invitation has expired or been cancelled. Please contact Volta NYC to request a new one.</p>
+          </div>
+        )}
+
+        {state === "already_booked" && (
+          <div className={`${cardClass} p-8 text-center space-y-3`}>
+            <div className="w-12 h-12 rounded-full bg-[#85CC17]/15 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6 text-[#85CC17]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h2 className="text-white font-bold text-lg">Already booked</h2>
+            <p className="text-white/45 text-sm font-body">Your interview is already scheduled. Check your confirmation email for details.</p>
+          </div>
+        )}
+
+        {state === "error" && (
+          <div className={`${cardClass} p-8 text-center space-y-3`}>
+            <div className="w-12 h-12 rounded-full bg-orange-500/15 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h2 className="text-white font-bold text-lg">Something went wrong</h2>
+            <p className="text-white/40 text-sm font-body">Please refresh and try again, or contact Volta NYC.</p>
+          </div>
+        )}
+
+        {state === "enter_info" && (
+          <div className={cardClass}>
+            <div className="px-6 py-5 border-b border-white/8">
+              <h2 className="text-white font-bold text-xl">Schedule your Interview</h2>
+              <p className="text-white/50 text-sm mt-1 font-body">Confirm your details, then pick a time.</p>
+            </div>
+            <form onSubmit={handleInfoSubmit} className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Name</label>
+                <input
+                  required
+                  value={bookerName}
+                  onChange={(e) => setBookerName(e.target.value)}
+                  placeholder="Jane Smith"
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Email</label>
+                <input
+                  required
+                  type="email"
+                  value={bookerEmail}
+                  onChange={(e) => setBookerEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+                />
+                {invite?.applicantEmail && bookerEmail === invite.applicantEmail && (
+                  <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from your invitation</p>
+                )}
+              </div>
+              {infoError && <p className="text-red-400 text-xs">{infoError}</p>}
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-[#85CC17] text-[#0D0D0D] font-display font-bold text-sm hover:bg-[#72b314] transition-colors"
+              >
+                See Available Times →
+              </button>
+            </form>
+          </div>
+        )}
+
+        {state === "choose_slot" && (
+          <div className={cardClass}>
+            <div className="px-6 py-5 border-b border-white/8">
+              <h2 className="text-white font-bold text-xl">Hi, {bookerName || "there"}!</h2>
+              <p className="text-white/50 text-sm mt-1 font-body">Pick a time that works for you.</p>
+              <p className="text-white/40 text-xs mt-1 font-body">All times are shown in New York time (EST/EDT).</p>
+            </div>
+
+            {slots.length === 0 ? (
+              <div className="text-center py-10 px-6 space-y-2">
+                <p className="text-white/40 text-sm font-body">No available times right now.</p>
+                <p className="text-white/25 text-xs font-body">Please contact Volta NYC to arrange a time.</p>
+              </div>
+            ) : (
+              <div className="px-6 py-5 space-y-5">
+                <div className="grid md:grid-cols-[210px,1fr] gap-4">
+                  <div className="space-y-2">
+                    <p className="text-white/35 text-[11px] uppercase tracking-wider font-body">Choose a day</p>
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                      {sortedDates.map((date) => (
+                        <button
+                          key={date}
+                          onClick={() => {
+                            setSelectedDate(date);
+                            const first = dateSlotMap[date]?.[0];
+                            if (first) setSelectedTime(first.datetime);
+                          }}
+                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg border text-left transition-colors ${
+                            selectedDate === date
+                              ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-white"
+                              : "bg-white/3 border-white/8 text-white/65 hover:bg-white/7 hover:text-white"
+                          }`}
+                        >
+                          <span className="text-sm font-semibold font-body">{formatDayTab(date)}</span>
+                          <span className="text-[11px] text-white/35 font-body">{dateSlotMap[date].length}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
+                    <p className="text-white text-sm font-semibold font-body mb-1">
+                      {selectedDate ? formatDayHeading(selectedDate) : "Select a day"}
+                    </p>
+                    <p className="text-white/40 text-xs font-body mb-3">
+                      {timesForDate.length} available time{timesForDate.length !== 1 ? "s" : ""}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {timesForDate.map((slot) => {
+                        const active = selectedTime === slot.datetime;
+                        return (
+                          <button
+                            key={slot.id}
+                            onClick={() => setSelectedTime(slot.datetime)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-body transition-colors ${
+                              active
+                                ? "bg-[#85CC17] border-[#85CC17] text-[#0D0D0D] font-semibold"
+                                : "bg-white/5 border-white/10 text-white/75 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            {formatTime(slot.datetime)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => void handleBook()}
+                  disabled={!selectedSlot || submitting}
+                  className={`w-full py-3 rounded-xl font-display font-bold text-sm transition-all ${
+                    selectedSlot && !submitting
+                      ? "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+                      : "bg-white/8 text-white/25 cursor-not-allowed"
+                  }`}
+                >
+                  {submitting
+                    ? "Booking..."
+                    : selectedSlot
+                    ? `Confirm — ${formatDayTab(selectedDate)}, ${formatTime(selectedSlot.datetime)}`
+                    : "Select a time above"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {state === "confirmed" && confirmedSlot && (
+          <div className={cardClass}>
+            <div className="px-6 pt-8 pb-5 text-center space-y-3">
+              <div className="w-16 h-16 rounded-full bg-[#85CC17]/15 flex items-center justify-center mx-auto">
+                <svg className="w-8 h-8 text-[#85CC17]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-white font-bold text-xl">You&apos;re booked!</h2>
+                <p className="text-white/50 text-sm mt-1 font-body">See you soon, {bookerName}.</p>
+              </div>
+            </div>
+
+            <div className="mx-6 mb-5 bg-[#0F1014] border border-white/10 rounded-xl p-4 space-y-2.5">
+              <div className="flex items-center gap-2.5 text-sm">
+                <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span className="text-white">{formatConfirmed(confirmedSlot.datetime)}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-sm">
+                <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span className="text-white/70">{confirmedSlot.durationMinutes} minutes</span>
+              </div>
+              {confirmedSlot.location && (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <span className="text-white/70">{confirmedSlot.location}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 pb-5 space-y-2.5">
+              <button
+                onClick={async () => {
+                  const latest = await loadLatestZoomLink();
+                  downloadICS(confirmedSlot, latest);
+                }}
+                className="w-full py-3 rounded-xl bg-white/6 border border-white/10 text-white font-display font-bold text-sm hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="12" y1="15" x2="12" y2="19" /><line x1="10" y1="17" x2="14" y2="17" />
+                </svg>
+                Add to Calendar
+              </button>
+
+              {zoomLink && (
+                <button
+                  onClick={() => void handleCopyZoom()}
+                  className="w-full py-3 rounded-xl bg-[#2D8CFF]/12 border border-[#2D8CFF]/25 text-[#6DB8FF] font-display font-bold text-sm hover:bg-[#2D8CFF]/20 transition-colors flex items-center justify-center gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+                      Copy Zoom Link
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            <div className="px-6 pb-6">
+              <p className="text-white/25 text-xs text-center font-body">
+                Need to reschedule? Use this same link to book a new time — your current slot will be freed automatically.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

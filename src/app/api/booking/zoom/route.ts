@@ -53,13 +53,7 @@ export async function POST(req: NextRequest) {
   payload.updatedBy = caller.uid;
 
   try {
-    try {
-      await dbPatch("interviewSettings", payload);
-    } catch {
-      // Fallback: if token-auth patch fails, try server-side patch without token.
-      // Route access is still role-gated by verifyCaller above.
-      await dbPatch("interviewSettings", payload);
-    }
+    await dbPatch("interviewSettings", payload);
   } catch {
     return NextResponse.json({ error: "save_failed", reason: "db_patch_failed" }, { status: 500 });
   }

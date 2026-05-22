@@ -1002,26 +1002,25 @@ function InterviewsContent() {
     }, "Are you sure you want to delete this evaluation?");
   };
 
-  const markNoShow = async (slot: InterviewSlot) => {
+  const markNoShow = async (slot: InterviewSlot, noShow: boolean) => {
     if (!user) return;
+    const label = slot.bookerName || "this interviewee";
     ask(async () => {
       try {
         const token = await getAuthToken();
-        await fetch("/api/members/interviews/update", {
+        const res = await fetch("/api/members/interviews/no-show", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ slotId: slot.id, patch: { noShow: true } }),
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ slotId: slot.id, noShow }),
         });
-        setPastMessage(`Marked ${slot.bookerName || "interviewee"} as No Show.`);
+        if (!res.ok) throw new Error("failed");
+        setPastMessage(noShow ? `Marked ${label} as No Show.` : `Cleared no-show for ${label}.`);
         setTimeout(() => setPastMessage(null), 2200);
       } catch {
-        setPastMessage("Could not mark as no show.");
+        setPastMessage("Could not update no-show status.");
         setTimeout(() => setPastMessage(null), 2200);
       }
-    }, `Mark ${slot.bookerName || "this interviewee"} as a No Show?`);
+    }, noShow ? `Mark ${label} as a No Show?` : `Clear no-show for ${label}?`);
   };
 
   const finalizeAcceptedFromSlot = async () => {
@@ -1906,7 +1905,7 @@ function InterviewsContent() {
                             ) : (canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) ? (
                               <>
                                 <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
-                                <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
+                                <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot, true)}>No Show</Btn>
                               </>
                             ) : null}
                           </div>
@@ -2004,10 +2003,10 @@ function InterviewsContent() {
                               <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
                             )}
                             {(canDeleteInterviews || canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && !slot.noShow && (
-                              <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot)}>No Show</Btn>
+                              <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot, true)}>No Show</Btn>
                             )}
                             {slot.noShow && (
-                              <span className="text-[10px] text-orange-400 font-semibold px-1">NO SHOW</span>
+                              <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400/60" onClick={() => void markNoShow(slot, false)}>No Show ✕</Btn>
                             )}
                             {canDeleteInterviews && (
                               <Btn size="sm" variant="primary" className="members-pill-btn" onClick={() => setFinalizeSlot(slot)}>Accept</Btn>
