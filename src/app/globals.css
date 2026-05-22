@@ -75,6 +75,25 @@
   --color-portal-input:     15 16 20;   /* input backgrounds       */
   --color-portal-row:       18 21 27;   /* alternating table rows  */
 
+  /* ─── Assignment Status Colors ────────────────────────────────────
+     Used on BOTH member portal (light) and admin portal (dark).
+     Each status has a Tailwind color family — use the 100/800/200
+     shades for light-theme pills and adjust opacity for dark.
+
+     In Progress / Claimed  →  Cyan    (cyan-100 / cyan-800 / cyan-200)
+     Awaiting Review        →  Amber   (amber-100 / amber-800 / amber-200)
+     Completed / Approved   →  Emerald (emerald-100 / emerald-800 / emerald-200)
+     Needs Resubmission     →  Red     (red-100 / red-800 / red-200)
+     Not started / Open     →  Gray    (gray-100 / gray-700 / gray-200)
+     Recurring              →  Purple  (purple-50 / purple-700 / purple-200)
+     Priority / Flagged     →  Amber   (amber-100 / amber-900 / amber-300)
+
+     Track Colors:
+     Tech         →  Blue    (blue-100 / blue-800 / blue-200)   dot: blue-500
+     Marketing    →  Lime    (lime-100 / lime-900 / lime-200)   dot: lime-500
+     Finance      →  Amber   (amber-100 / amber-900 / amber-200) dot: amber-500
+     General      →  Gray    (gray-100 / gray-700 / gray-200)   dot: gray-400   */
+
   /* ─── Legacy aliases (consumed by body/html base styles) ──────── */
   --green: rgb(var(--color-green));
   --blue:  rgb(var(--color-blue));

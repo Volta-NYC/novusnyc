@@ -122,7 +122,6 @@ export default function AssignmentDetailPage() {
   const isArchived = assignment.status === "Archived";
   const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate && !isArchived;
   const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress" || myClaim.status === "rejected");
-  const canMarkInProgress = myClaim && myClaim.status === "claimed";
   const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress");
 
   const isRecurring = Boolean(assignment.recurringEnabled);
@@ -180,16 +179,6 @@ export default function AssignmentDetailPage() {
       }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to claim. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleMarkInProgress = async () => {
-    if (!myClaim) return;
-    setBusy(true);
-    try {
-      await updateAssignmentClaim(myClaim.id, { status: "In Progress" });
     } finally {
       setBusy(false);
     }
@@ -497,16 +486,6 @@ export default function AssignmentDetailPage() {
             )}
 
             <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-black/8">
-              {canMarkInProgress && (
-                <button
-                  type="button"
-                  onClick={() => void handleMarkInProgress()}
-                  disabled={busy}
-                  className="rounded-lg border border-black/15 bg-white px-3 py-1.5 text-sm font-medium text-black/85 hover:border-black/35 disabled:opacity-50"
-                >
-                  Mark in progress
-                </button>
-              )}
               {canSubmit && (
                 <Btn
                   variant="primary"

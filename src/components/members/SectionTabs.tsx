@@ -95,3 +95,8 @@ export const ASSIGNMENTS_TABS: SectionTab[] = [
   { href: "/members/assignments/for-review", label: "For Review" },
   { href: "/members/assignments/templates", label: "Create + Templates" },
 ];
+
+export const WORK_TABS: SectionTab[] = [
+  { href: "/members/work", label: "My Work", exact: true },
+  { href: "/members/work/catalog", label: "Assignment Catalog" },
+];

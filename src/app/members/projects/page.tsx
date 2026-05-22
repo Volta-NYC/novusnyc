@@ -999,7 +999,9 @@ function BusinessesPageInner() {
   );
 
   const hasActiveFilters = filterTracks.size > 0 || filterStatuses.size > 0 || filterNeighborhoods.size > 0;
-  const filtered = sortByStatusThenName(tabScoped.filter(matchesSearch));
+  const filtered = activeTab === "discovery"
+    ? tabScoped.filter(matchesSearch).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
+    : sortByStatusThenName(tabScoped.filter(matchesSearch));
 
   const resolveRecipientsFromAssignedNames = (inputNames: string[]): { emails: string[]; unresolved: string[] } => {
     const unresolved: string[] = [];
