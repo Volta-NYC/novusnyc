@@ -198,6 +198,8 @@ export default function ByProjectPage() {
   const [groupModal, setGroupModal]       = useState<"create" | "edit" | null>(null);
   const [editingGroup, setEditingGroup]   = useState<ProjectGroup | null>(null);
   const [groupForm, setGroupForm]         = useState<GroupFormState>(BLANK_GROUP);
+  const [groupBusy, setGroupBusy]         = useState(false);
+  const [groupError, setGroupError]       = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -375,7 +377,7 @@ export default function ByProjectPage() {
       limitClaims:        (a.capacity ?? 0) > 0,
       capacity:           (a.capacity ?? 0) > 0 ? (a.capacity ?? 1) : 1,
       deadlineType:       isOffset ? "offset" : "hard",
-      hardDeadline:       !isOffset ? (a.deadlines?.[0]?.date ?? a.deadline ?? "") : "",
+      hardDeadline:       !isOffset ? (a.deadlines?.[0]?.date ?? "") : "",
       deadlineOffsetDays: isOffset ? String(a.deadlineOffsetDays ?? "") : "",
       recurringEnabled:   Boolean(a.recurringEnabled),
       checkinIntervalDays: a.checkinIntervalDays != null ? String(a.checkinIntervalDays) : "7",
@@ -447,7 +449,7 @@ export default function ByProjectPage() {
       region:             assignmentForm.region || undefined,
       teamLabel:          assignmentForm.teamLabel || undefined,
       cycleId:            editingAssignment?.cycleId ?? activeCycle?.id ?? "",
-      createdBy:          userProfile?.email || user?.email || user?.id || "unknown",
+      createdBy:          editingAssignment?.createdBy ?? userProfile?.email ?? user?.email ?? user?.id ?? "unknown",
       difficulty:         editingAssignment?.difficulty ?? "Standard",
     };
   };
@@ -500,6 +502,7 @@ export default function ByProjectPage() {
   const openCreateGroup = () => {
     setGroupForm(BLANK_GROUP);
     setEditingGroup(null);
+    setGroupError(null);
     setGroupModal("create");
   };
 
@@ -511,16 +514,25 @@ export default function ByProjectPage() {
       status:      grp.status,
     });
     setEditingGroup(grp);
+    setGroupError(null);
     setGroupModal("edit");
   };
 
   const handleSaveGroup = async () => {
     const name = groupForm.name.trim();
     if (!name) return;
-    const payload = { name, description: groupForm.description, color: groupForm.color, status: groupForm.status, sortOrder: 0 };
-    if (editingGroup) await updateProjectGroup(editingGroup.id, payload);
-    else await createProjectGroup(payload);
-    setGroupModal(null);
+    setGroupBusy(true);
+    setGroupError(null);
+    try {
+      const payload = { name, description: groupForm.description, color: groupForm.color, status: groupForm.status, sortOrder: 0 };
+      if (editingGroup) await updateProjectGroup(editingGroup.id, payload);
+      else await createProjectGroup(payload);
+      setGroupModal(null);
+    } catch (err) {
+      setGroupError(err instanceof Error ? err.message : "Save failed. Please try again.");
+    } finally {
+      setGroupBusy(false);
+    }
   };
 
   const handleDeleteGroup = async () => {
@@ -687,6 +699,7 @@ export default function ByProjectPage() {
                     const activeClaims = claimList.filter((c) => c.status !== "rejected");
                     const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
                     const deadline = a.deadlines?.[0]?.date ?? "";
+
                     return (
                       <div key={a.id} className="border-b border-white/5 last:border-b-0">
                         {/* Row summary */}
@@ -1074,12 +1087,19 @@ export default function ByProjectPage() {
               </Field>
             </div>
           </div>
+          {groupError && (
+            <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 mt-4">
+              {groupError}
+            </p>
+          )}
           <div className="flex items-center gap-2 justify-end mt-5 pt-4 border-t border-white/8">
             {groupModal === "edit" && (
-              <Btn variant="danger" size="sm" onClick={handleDeleteGroup}>Delete</Btn>
+              <Btn variant="danger" size="sm" onClick={handleDeleteGroup} disabled={groupBusy}>Delete</Btn>
             )}
-            <Btn variant="ghost" size="sm" onClick={() => setGroupModal(null)}>Cancel</Btn>
-            <Btn variant="primary" size="sm" onClick={handleSaveGroup}>Save</Btn>
+            <Btn variant="ghost" size="sm" onClick={() => setGroupModal(null)} disabled={groupBusy}>Cancel</Btn>
+            <Btn variant="primary" size="sm" onClick={() => void handleSaveGroup()} disabled={!groupForm.name.trim() || groupBusy}>
+              {groupBusy ? "Saving…" : "Save"}
+            </Btn>
           </div>
         </Modal>
       )}

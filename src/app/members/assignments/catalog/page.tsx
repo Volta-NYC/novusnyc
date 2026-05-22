@@ -185,8 +185,7 @@ export default function CatalogPage() {
         if (ta !== tb) return ta - tb;
         return (a.title || "").localeCompare(b.title || "");
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignments, search, filterTracks, filterStatuses, businessById, projectGroupById]);
+  }, [assignments, search, filterTracks, filterStatuses, showArchived, businessById, projectGroupById]);
 
   const activeAssignments = assignments.filter((a) => a.status !== "Archived");
   const counts = {
@@ -222,7 +221,7 @@ export default function CatalogPage() {
       limitClaims:        cap > 0,
       maxClaims:          cap > 0 ? String(cap) : "1",
       deadlineType:       isOffset ? "offset" : "hard",
-      hardDeadline:       !isOffset ? (a.deadlines?.[0]?.date ?? a.deadline ?? "") : "",
+      hardDeadline:       !isOffset ? (a.deadlines?.[0]?.date ?? "") : "",
       deadlineOffsetDays: isOffset ? String(a.deadlineOffsetDays ?? "") : "",
       status:             a.status,
       priority:           Boolean(a.priority),
@@ -265,7 +264,7 @@ export default function CatalogPage() {
       priority:           form.priority,
       requiresApproval:   form.requiresApproval,
       cycleId:            editing?.cycleId ?? activeCycle?.id ?? "",
-      createdBy:          userProfile?.email || user?.email || user?.id || "unknown",
+      createdBy:          editing?.createdBy ?? userProfile?.email ?? user?.email ?? user?.id ?? "unknown",
       notes:              "",
     };
   };
@@ -413,7 +412,7 @@ export default function CatalogPage() {
             const proj = resolveProjectLabel(a);
             const claimList = claimsByAssignment.get(a.id) ?? [];
             const activeClaims = claimList.filter((c) => c.status !== "rejected");
-            const deadline = a.deadlines?.[0]?.date ?? a.deadline ?? "";
+            const deadline = a.deadlines?.[0]?.date ?? "";
             const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
 
             const isUnlimited = a.capacity === 0;
