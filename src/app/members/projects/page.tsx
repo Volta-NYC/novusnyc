@@ -46,8 +46,10 @@ type DeadlineItem = {
   label: string;
   date: string;
 };
+type TrackStatusValue = TechStatusValue | MarketingStatusValue | ProjectStatusValue;
+
 type TrackProjectInfo = {
-  projectStatus: ProjectStatusValue;
+  projectStatus: TrackStatusValue;
   teamMembers: string[];
   deadlines: DeadlineItem[];
   notes: string;
@@ -174,11 +176,21 @@ function normalizeDivision(value: unknown): TrackDivision {
   return isTrackDivision(value) ? value : "Tech";
 }
 
+const ALL_TRACK_STATUSES = new Set<string>([
+  "Upcoming", "Ongoing", "Completed",
+  "In Development", "Awaiting Client", "Awaiting Deployment",
+  "In Planning", "Consistent Posts",
+]);
+
 function normalizeTrackProjectInfo(value: unknown): TrackProjectInfo | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
+  const rawStatus = String(row.projectStatus ?? "").trim();
+  const projectStatus: TrackStatusValue = ALL_TRACK_STATUSES.has(rawStatus)
+    ? rawStatus as TrackStatusValue
+    : "Upcoming";
   return {
-    projectStatus: normalizeProjectStatus(row.projectStatus),
+    projectStatus,
     teamMembers: Array.isArray(row.teamMembers) ? row.teamMembers.map((item) => String(item ?? "").trim()).filter(Boolean) : [],
     deadlines: normalizeTrackDeadlines(row.deadlines),
     notes: String(row.notes ?? ""),
@@ -430,6 +442,7 @@ function BusinessesPageInner() {
   }, []);
 
   const [businessesLoaded, setBusinessesLoaded] = useState(false);
+  const businessesLoadedRef = useRef(false);
   useEffect(
     () =>
       subscribeBusinesses((items) => {
@@ -448,7 +461,10 @@ function BusinessesPageInner() {
             };
           })
         );
-        setBusinessesLoaded(true);
+        if (!businessesLoadedRef.current) {
+          businessesLoadedRef.current = true;
+          setBusinessesLoaded(true);
+        }
       }),
     []
   );
@@ -1175,11 +1191,19 @@ function BusinessesPageInner() {
     const nextTrackProjects: TrackProjectMap = { ...normalized.trackProjects };
     const current = nextTrackProjects[track];
     if (current) {
-      nextTrackProjects[track] = { ...current, projectStatus: newStatus as ProjectStatusValue };
+      nextTrackProjects[track] = { ...current, projectStatus: newStatus as TrackStatusValue };
     } else {
-      nextTrackProjects[track] = { projectStatus: newStatus as ProjectStatusValue, teamMembers: [], deadlines: TRACK_DEADLINE_DEFAULT, notes: "" };
+      nextTrackProjects[track] = { projectStatus: newStatus as TrackStatusValue, teamMembers: [], deadlines: TRACK_DEADLINE_DEFAULT, notes: "" };
     }
     const overallStatus = deriveOverallStatus(nextTrackProjects, normalized.projectTracks);
+    // Optimistic update — reflect change immediately so the row doesn't jump after the roundtrip.
+    setBusinesses((prev) =>
+      prev.map((b) =>
+        b.id === business.id
+          ? { ...b, trackProjects: nextTrackProjects, projectStatus: overallStatus }
+          : b,
+      ),
+    );
     await updateBusiness(business.id, { trackProjects: nextTrackProjects, projectStatus: overallStatus });
   };
 

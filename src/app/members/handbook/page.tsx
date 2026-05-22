@@ -24,13 +24,13 @@ function HandbookContent() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="font-display font-bold text-black/85 text-2xl">Member Handbook</h1>
         <p className="text-black/45 text-sm mt-1">Policies and guidelines for Volta NYC members.</p>
       </div>
 
-      <div className="bg-white border border-black/8 rounded-xl shadow-sm p-6 md:p-8">
+      <div className="bg-white border border-black/8 rounded-xl shadow-sm p-6 md:p-10">
         {page ? (
           <>
             <div className="flex items-center justify-between mb-5 pb-4 border-b border-black/8">
@@ -43,10 +43,9 @@ function HandbookContent() {
             </div>
             {page.content ? (
               <div
-                className="prose prose-sm max-w-none text-black/70 font-body leading-relaxed whitespace-pre-wrap"
-              >
-                {page.content}
-              </div>
+                className="prose prose-sm prose-headings:font-display prose-headings:text-black/85 prose-p:text-black/70 prose-li:text-black/70 max-w-none font-body leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: page.content }}
+              />
             ) : (
               <p className="text-black/40 text-sm font-body">The handbook is being prepared. Check back soon.</p>
             )}

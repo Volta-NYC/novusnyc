@@ -223,6 +223,18 @@ main {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes confetti-fall {
+  0%   { transform: translateY(0) rotate(var(--cr, 0deg)); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(110px) rotate(calc(var(--cr, 0deg) + 540deg)); opacity: 0; }
+}
+
+.confetti-particle {
+  position: absolute;
+  pointer-events: none;
+  animation: confetti-fall var(--cd, 1.5s) ease-in var(--cy, 0s) both;
+}
+
 /* Tag pill */
 .tag {
   display: inline-block;
