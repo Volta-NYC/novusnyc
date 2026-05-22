@@ -101,7 +101,12 @@ interface AssignmentFormState {
   minRole: CycleRole;
   limitClaims: boolean;
   capacity: number;
-  deadline: string;
+  deadlineType: "hard" | "offset";
+  hardDeadline: string;
+  deadlineOffsetDays: string;
+  recurringEnabled: boolean;
+  checkinIntervalDays: string;
+  maxDurationDays: string;
   status: AssignmentStatus;
   priority: boolean;
   requiresApproval: boolean;
@@ -121,7 +126,12 @@ const BLANK_ASSIGNMENT: AssignmentFormState = {
   minRole: "Analyst",
   limitClaims: true,
   capacity: 1,
-  deadline: "",
+  deadlineType: "hard",
+  hardDeadline: "",
+  deadlineOffsetDays: "",
+  recurringEnabled: false,
+  checkinIntervalDays: "7",
+  maxDurationDays: "",
   status: "Open",
   priority: false,
   requiresApproval: true,
@@ -350,24 +360,30 @@ export default function ByProjectPage() {
 
   const openEditAssignment = (a: Assignment) => {
     const ref = encodeProjectRef(a.businessId, a.projectGroupId);
+    const isOffset = a.deadlineType === "offset";
     setAssignmentForm({
-      title:            a.title,
-      description:      a.description ?? "",
-      track:            a.track ?? "Tech",
-      type:             a.type ?? "",
-      projectRef:       ref,
-      credits:          a.credits ?? 1,
-      estimatedHours:   a.estimatedHours ?? 0,
-      minRole:          a.minRole ?? "Analyst",
-      limitClaims:      (a.capacity ?? 0) > 0,
-      capacity:         (a.capacity ?? 0) > 0 ? (a.capacity ?? 1) : 1,
-      deadline:         (a.deadlines?.[0]?.date) ?? a.deadline ?? "",
-      status:           a.status,
-      priority:         Boolean(a.priority),
-      requiresApproval: a.requiresApproval !== false,
-      notes:            a.notes ?? "",
-      region:           a.region ?? "",
-      teamLabel:        a.teamLabel ?? "",
+      title:              a.title,
+      description:        a.description ?? "",
+      track:              a.track ?? "Tech",
+      type:               a.type ?? "",
+      projectRef:         ref,
+      credits:            a.credits ?? 1,
+      estimatedHours:     a.estimatedHours ?? 0,
+      minRole:            a.minRole ?? "Analyst",
+      limitClaims:        (a.capacity ?? 0) > 0,
+      capacity:           (a.capacity ?? 0) > 0 ? (a.capacity ?? 1) : 1,
+      deadlineType:       isOffset ? "offset" : "hard",
+      hardDeadline:       !isOffset ? (a.deadlines?.[0]?.date ?? a.deadline ?? "") : "",
+      deadlineOffsetDays: isOffset ? String(a.deadlineOffsetDays ?? "") : "",
+      recurringEnabled:   Boolean(a.recurringEnabled),
+      checkinIntervalDays: a.checkinIntervalDays != null ? String(a.checkinIntervalDays) : "7",
+      maxDurationDays:    a.maxDurationDays != null ? String(a.maxDurationDays) : "",
+      status:             a.status,
+      priority:           Boolean(a.priority),
+      requiresApproval:   a.requiresApproval !== false,
+      notes:              a.notes ?? "",
+      region:             a.region ?? "",
+      teamLabel:          a.teamLabel ?? "",
     });
     setBizSearch(refToLabel(ref));
 
@@ -376,17 +392,23 @@ export default function ByProjectPage() {
   };
 
   const applyTemplate = (t: AssignmentTemplate) => {
+    const isOffset = !t.recurringEnabled && (t.deadlineOffsetDays ?? 0) > 0;
     setAssignmentForm((prev) => ({
       ...prev,
-      title:          t.title,
-      description:    t.description ?? "",
-      track:          t.track,
-      type:           t.type ?? "",
-      credits:        t.credits,
-      estimatedHours: t.estimatedHours,
-      minRole:        t.minRole,
-      capacity:       t.capacity,
-      notes:          t.notes ?? "",
+      title:              t.title,
+      description:        t.description ?? "",
+      track:              t.track,
+      type:               t.type ?? "",
+      credits:            t.credits,
+      estimatedHours:     t.estimatedHours,
+      minRole:            t.minRole,
+      capacity:           t.capacity,
+      notes:              t.notes ?? "",
+      recurringEnabled:   Boolean(t.recurringEnabled),
+      checkinIntervalDays: t.checkinIntervalDays != null ? String(t.checkinIntervalDays) : "7",
+      maxDurationDays:    t.maxDurationDays != null ? String(t.maxDurationDays) : "",
+      deadlineType:       isOffset ? "offset" : "hard",
+      deadlineOffsetDays: isOffset ? String(t.deadlineOffsetDays ?? "") : "",
     }));
   };
 
@@ -394,27 +416,36 @@ export default function ByProjectPage() {
     const title = assignmentForm.title.trim();
     if (!title) return null;
     const { businessId, projectGroupId } = decodeProjectRef(assignmentForm.projectRef);
+    const isRecurring = assignmentForm.recurringEnabled;
+    const isOffset = !isRecurring && assignmentForm.deadlineType === "offset";
     return {
       title,
-      description:    assignmentForm.description,
-      track:          assignmentForm.track,
-      type:           assignmentForm.type || undefined,
+      description:        assignmentForm.description,
+      track:              assignmentForm.track,
+      type:               assignmentForm.type || undefined,
       businessId,
       projectGroupId,
-      status:         assignmentForm.status,
-      priority:       assignmentForm.priority,
-      credits:        Math.max(0, Number(assignmentForm.credits) || 0),
-      estimatedHours: Math.max(0, Number(assignmentForm.estimatedHours) || 0),
-      minRole:        assignmentForm.minRole,
-      capacity:        assignmentForm.limitClaims ? Math.max(1, Number(assignmentForm.capacity) || 1) : 0,
-      deadlines:       assignmentForm.deadline ? [{ label: "Final Deadline", date: assignmentForm.deadline }] : undefined,
-      requiresApproval: assignmentForm.requiresApproval,
-      notes:           assignmentForm.notes,
-      region:         assignmentForm.region || undefined,
-      teamLabel:      assignmentForm.teamLabel || undefined,
-      cycleId:        editingAssignment?.cycleId ?? activeCycle?.id ?? "",
-      createdBy:      userProfile?.email || user?.email || user?.id || "unknown",
-      difficulty:     editingAssignment?.difficulty ?? "Standard",
+      status:             assignmentForm.status,
+      priority:           assignmentForm.priority,
+      credits:            Math.max(0, Number(assignmentForm.credits) || 0),
+      estimatedHours:     Math.max(0, Number(assignmentForm.estimatedHours) || 0),
+      minRole:            assignmentForm.minRole,
+      capacity:           assignmentForm.limitClaims ? Math.max(1, Number(assignmentForm.capacity) || 1) : 0,
+      deadlines:          !isRecurring && !isOffset && assignmentForm.hardDeadline
+                            ? [{ label: "Final Deadline", date: assignmentForm.hardDeadline }]
+                            : undefined,
+      deadlineType:       isRecurring ? "hard" : assignmentForm.deadlineType,
+      deadlineOffsetDays: isOffset && assignmentForm.deadlineOffsetDays ? Number(assignmentForm.deadlineOffsetDays) : undefined,
+      recurringEnabled:   isRecurring || undefined,
+      checkinIntervalDays: isRecurring && assignmentForm.checkinIntervalDays ? Number(assignmentForm.checkinIntervalDays) : undefined,
+      maxDurationDays:    isRecurring && assignmentForm.maxDurationDays ? Number(assignmentForm.maxDurationDays) : undefined,
+      requiresApproval:   assignmentForm.requiresApproval,
+      notes:              assignmentForm.notes,
+      region:             assignmentForm.region || undefined,
+      teamLabel:          assignmentForm.teamLabel || undefined,
+      cycleId:            editingAssignment?.cycleId ?? activeCycle?.id ?? "",
+      createdBy:          userProfile?.email || user?.email || user?.id || "unknown",
+      difficulty:         editingAssignment?.difficulty ?? "Standard",
     };
   };
 
@@ -795,7 +826,7 @@ export default function ByProjectPage() {
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
-              <Field label="Credits">
+              <Field label={assignmentForm.recurringEnabled ? "Credits / check-in" : "Credits"}>
                 <Input
                   type="number"
                   min={0}
@@ -811,7 +842,7 @@ export default function ByProjectPage() {
                       type="checkbox"
                       checked={assignmentForm.limitClaims}
                       onChange={(e) => setAssignmentForm((p) => ({ ...p, limitClaims: e.target.checked }))}
-                      className="accent-[#85CC17]"
+                      className="members-checkbox"
                     />
                     Limit claimants
                   </label>
@@ -850,28 +881,96 @@ export default function ByProjectPage() {
                 />
               </Field>
             </div>
-            <Field label="Deadline">
-              <Input
-                type="date"
-                value={assignmentForm.deadline}
-                onChange={(e) => setAssignmentForm((p) => ({ ...p, deadline: e.target.value }))}
+            {/* Recurring toggle */}
+            <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 cursor-pointer">
+              <div>
+                <p className="text-sm text-white/85 font-medium">Recurring check-in assignment</p>
+                <p className="text-[11px] text-white/40 mt-0.5">Credits awarded per check-in, not once on completion.</p>
+              </div>
+              <input
+                type="checkbox"
+                className="members-checkbox"
+                checked={assignmentForm.recurringEnabled}
+                onChange={(e) => setAssignmentForm((p) => ({ ...p, recurringEnabled: e.target.checked }))}
               />
-            </Field>
-            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+            </label>
+
+            {assignmentForm.recurringEnabled ? (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Check-in every (days)">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={assignmentForm.checkinIntervalDays}
+                    placeholder="7"
+                    onChange={(e) => setAssignmentForm((p) => ({ ...p, checkinIntervalDays: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Max duration (days, optional)">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={assignmentForm.maxDurationDays}
+                    placeholder="No limit"
+                    onChange={(e) => setAssignmentForm((p) => ({ ...p, maxDurationDays: e.target.value }))}
+                  />
+                </Field>
+              </div>
+            ) : (
+              <div>
+                <div className="flex gap-2 mb-2">
+                  {(["hard", "offset"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setAssignmentForm((p) => ({ ...p, deadlineType: t }))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                        assignmentForm.deadlineType === t
+                          ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                          : "border-white/12 text-white/45 hover:text-white/70"
+                      }`}
+                    >
+                      {t === "hard" ? "Hard deadline" : "Offset from claim"}
+                    </button>
+                  ))}
+                </div>
+                {assignmentForm.deadlineType === "hard" ? (
+                  <Field label="Deadline date">
+                    <Input
+                      type="date"
+                      value={assignmentForm.hardDeadline}
+                      onChange={(e) => setAssignmentForm((p) => ({ ...p, hardDeadline: e.target.value }))}
+                    />
+                  </Field>
+                ) : (
+                  <Field label="Days after member claims">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={assignmentForm.deadlineOffsetDays}
+                      placeholder="e.g. 7"
+                      onChange={(e) => setAssignmentForm((p) => ({ ...p, deadlineOffsetDays: e.target.value }))}
+                    />
+                  </Field>
+                )}
+              </div>
+            )}
+
+            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
               <input
                 type="checkbox"
                 checked={assignmentForm.priority}
                 onChange={(e) => setAssignmentForm((p) => ({ ...p, priority: e.target.checked }))}
-                className="accent-[#85CC17]"
+                className="members-checkbox"
               />
               Priority assignment
             </label>
-            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
               <input
                 type="checkbox"
                 checked={assignmentForm.requiresApproval}
                 onChange={(e) => setAssignmentForm((p) => ({ ...p, requiresApproval: e.target.checked }))}
-                className="accent-[#85CC17]"
+                className="members-checkbox"
               />
               <span>
                 Requires approval

@@ -69,10 +69,15 @@ interface FormState {
   projectRef: string;
   limitClaims: boolean;
   maxClaims: string;
-  deadline: string;
-  status: AssignmentStatus;  // only used when editing
+  deadlineType: "hard" | "offset";
+  hardDeadline: string;           // ISO date for 'hard' type
+  deadlineOffsetDays: string;     // days from claim for 'offset' type
+  status: AssignmentStatus;
   priority: boolean;
   requiresApproval: boolean;
+  recurringEnabled: boolean;
+  checkinIntervalDays: string;
+  maxDurationDays: string;
 }
 
 const BLANK_FORM: FormState = {
@@ -84,10 +89,15 @@ const BLANK_FORM: FormState = {
   projectRef: "volta",
   limitClaims: true,
   maxClaims: "1",
-  deadline: "",
+  deadlineType: "hard",
+  hardDeadline: "",
+  deadlineOffsetDays: "",
   status: "Open",
   priority: false,
   requiresApproval: true,
+  recurringEnabled: false,
+  checkinIntervalDays: "7",
+  maxDurationDays: "",
 };
 
 export default function CatalogPage() {
@@ -199,19 +209,25 @@ export default function CatalogPage() {
 
   const openEdit = (a: Assignment) => {
     const cap = a.capacity ?? 0;
+    const isOffset = a.deadlineType === "offset";
     setForm({
-      title:           a.title,
-      description:     a.description ?? "",
-      track:           a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
-      credits:         a.credits,
-      minRole:         a.minRole,
-      projectRef:      encodeProjectRef(a.businessId, a.projectGroupId),
-      limitClaims:     cap > 0,
-      maxClaims:       cap > 0 ? String(cap) : "1",
-      deadline:        a.deadlines?.[0]?.date ?? a.deadline ?? "",
-      status:          a.status,
-      priority:        Boolean(a.priority),
-      requiresApproval: a.requiresApproval !== false,
+      title:              a.title,
+      description:        a.description ?? "",
+      track:              a.track ?? (a.primaryTrack as CycleTrack) ?? "Tech",
+      credits:            a.credits,
+      minRole:            a.minRole,
+      projectRef:         encodeProjectRef(a.businessId, a.projectGroupId),
+      limitClaims:        cap > 0,
+      maxClaims:          cap > 0 ? String(cap) : "1",
+      deadlineType:       isOffset ? "offset" : "hard",
+      hardDeadline:       !isOffset ? (a.deadlines?.[0]?.date ?? a.deadline ?? "") : "",
+      deadlineOffsetDays: isOffset ? String(a.deadlineOffsetDays ?? "") : "",
+      status:             a.status,
+      priority:           Boolean(a.priority),
+      requiresApproval:   a.requiresApproval !== false,
+      recurringEnabled:   Boolean(a.recurringEnabled),
+      checkinIntervalDays: a.checkinIntervalDays != null ? String(a.checkinIntervalDays) : "7",
+      maxDurationDays:    a.maxDurationDays != null ? String(a.maxDurationDays) : "",
     });
     setEditing(a);
     setModal("edit");
@@ -221,24 +237,33 @@ export default function CatalogPage() {
     const title = form.title.trim();
     if (!title) return null;
     const { businessId, projectGroupId } = decodeProjectRef(form.projectRef);
+    const isOffset = !form.recurringEnabled && form.deadlineType === "offset";
+    const isRecurring = form.recurringEnabled;
     return {
       title,
-      description:    form.description,
-      track:          form.track,
-      credits:        Math.max(0, Number(form.credits) || 0),
-      difficulty:     editing?.difficulty ?? "Standard",
-      estimatedHours: 0,
-      minRole:        form.minRole,
+      description:        form.description,
+      track:              form.track,
+      credits:            Math.max(0, Number(form.credits) || 0),
+      difficulty:         editing?.difficulty ?? "Standard",
+      estimatedHours:     0,
+      minRole:            form.minRole,
       businessId,
       projectGroupId,
-      capacity:        form.limitClaims ? Math.max(1, Number(form.maxClaims) || 1) : 0,
-      deadlines:       form.deadline ? [{ label: "Final Deadline", date: form.deadline }] : undefined,
-      status:          editing ? form.status : "Open",
-      priority:        form.priority,
-      requiresApproval: form.requiresApproval,
-      cycleId:        editing?.cycleId ?? activeCycle?.id ?? "",
-      createdBy:      userProfile?.email || user?.email || user?.id || "unknown",
-      notes:          "",
+      capacity:           form.limitClaims ? Math.max(1, Number(form.maxClaims) || 1) : 0,
+      deadlines:          !isRecurring && !isOffset && form.hardDeadline
+                            ? [{ label: "Final Deadline", date: form.hardDeadline }]
+                            : undefined,
+      deadlineType:       isRecurring ? "hard" : form.deadlineType,
+      deadlineOffsetDays: isOffset && form.deadlineOffsetDays ? Number(form.deadlineOffsetDays) : undefined,
+      recurringEnabled:   isRecurring || undefined,
+      checkinIntervalDays: isRecurring && form.checkinIntervalDays ? Number(form.checkinIntervalDays) : undefined,
+      maxDurationDays:    isRecurring && form.maxDurationDays ? Number(form.maxDurationDays) : undefined,
+      status:             editing ? form.status : "Open",
+      priority:           form.priority,
+      requiresApproval:   form.requiresApproval,
+      cycleId:            editing?.cycleId ?? activeCycle?.id ?? "",
+      createdBy:          userProfile?.email || user?.email || user?.id || "unknown",
+      notes:              "",
     };
   };
 
@@ -467,7 +492,7 @@ export default function CatalogPage() {
                 onChange={(e) => setForm((p) => ({ ...p, track: e.target.value as CycleTrack }))}
               />
             </Field>
-            <Field label="Credits" required>
+            <Field label={form.recurringEnabled ? "Credits / check-in" : "Credits"} required>
               <Input
                 type="number"
                 min="0"
@@ -484,40 +509,82 @@ export default function CatalogPage() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Project">
-              <select
-                value={form.projectRef}
-                onChange={(e) => setForm((p) => ({ ...p, projectRef: e.target.value }))}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-              >
-                <option value="volta">Volta</option>
-                {sortedBusinessOptions.length > 0 && (
-                  <optgroup label="Businesses">
-                    {sortedBusinessOptions.map((b) => (
-                      <option key={b.id} value={`biz:${b.id}`}>
-                        {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {sortedGroupOptions.length > 0 && (
-                  <optgroup label="Project Groups">
-                    {sortedGroupOptions.map((g) => (
-                      <option key={g.id} value={`grp:${g.id}`}>{g.name}</option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            </Field>
-            <Field label="Deadline">
-              <Input
-                type="date"
-                value={form.deadline}
-                onChange={(e) => setForm((p) => ({ ...p, deadline: e.target.value }))}
-              />
-            </Field>
-          </div>
+          <Field label="Project">
+            <select
+              value={form.projectRef}
+              onChange={(e) => setForm((p) => ({ ...p, projectRef: e.target.value }))}
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+            >
+              <option value="volta">Volta</option>
+              {sortedBusinessOptions.length > 0 && (
+                <optgroup label="Businesses">
+                  {sortedBusinessOptions.map((b) => (
+                    <option key={b.id} value={`biz:${b.id}`}>
+                      {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {sortedGroupOptions.length > 0 && (
+                <optgroup label="Project Groups">
+                  {sortedGroupOptions.map((g) => (
+                    <option key={g.id} value={`grp:${g.id}`}>{g.name}</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </Field>
+
+          {/* Recurring toggle */}
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 cursor-pointer">
+            <div>
+              <p className="text-sm text-white/85 font-medium">Recurring check-in assignment</p>
+              <p className="text-[11px] text-white/40 mt-0.5">Credits awarded per check-in, not once on completion.</p>
+            </div>
+            <input type="checkbox" className="members-checkbox" checked={form.recurringEnabled}
+              onChange={(e) => setForm((p) => ({ ...p, recurringEnabled: e.target.checked }))} />
+          </label>
+
+          {form.recurringEnabled ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Check-in every (days)">
+                <Input type="number" min="1" value={form.checkinIntervalDays} placeholder="7"
+                  onChange={(e) => setForm((p) => ({ ...p, checkinIntervalDays: e.target.value }))} />
+              </Field>
+              <Field label="Max duration (days, optional)">
+                <Input type="number" min="1" value={form.maxDurationDays} placeholder="No limit"
+                  onChange={(e) => setForm((p) => ({ ...p, maxDurationDays: e.target.value }))} />
+              </Field>
+            </div>
+          ) : (
+            <div>
+              <div className="flex gap-2 mb-2">
+                {(["hard", "offset"] as const).map((t) => (
+                  <button key={t} type="button"
+                    onClick={() => setForm((p) => ({ ...p, deadlineType: t }))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      form.deadlineType === t
+                        ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                        : "border-white/12 text-white/45 hover:text-white/70"
+                    }`}
+                  >
+                    {t === "hard" ? "Hard deadline" : "Offset from claim"}
+                  </button>
+                ))}
+              </div>
+              {form.deadlineType === "hard" ? (
+                <Field label="Deadline date">
+                  <Input type="date" value={form.hardDeadline}
+                    onChange={(e) => setForm((p) => ({ ...p, hardDeadline: e.target.value }))} />
+                </Field>
+              ) : (
+                <Field label="Days after member claims">
+                  <Input type="number" min="1" value={form.deadlineOffsetDays} placeholder="e.g. 7"
+                    onChange={(e) => setForm((p) => ({ ...p, deadlineOffsetDays: e.target.value }))} />
+                </Field>
+              )}
+            </div>
+          )}
 
           <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 space-y-2.5">
             <label className="flex items-center gap-2 text-sm text-white/75 cursor-pointer">
@@ -525,7 +592,7 @@ export default function CatalogPage() {
                 type="checkbox"
                 checked={form.limitClaims}
                 onChange={(e) => setForm((p) => ({ ...p, limitClaims: e.target.checked }))}
-                className="accent-[#85CC17]"
+                className="members-checkbox"
               />
               Limit the number of claimants
             </label>
@@ -551,7 +618,7 @@ export default function CatalogPage() {
               type="checkbox"
               checked={form.priority}
               onChange={(e) => setForm((p) => ({ ...p, priority: e.target.checked }))}
-              className="accent-[#85CC17]"
+              className="members-checkbox"
             />
             <span>
               Priority assignment
@@ -564,11 +631,11 @@ export default function CatalogPage() {
               type="checkbox"
               checked={form.requiresApproval}
               onChange={(e) => setForm((p) => ({ ...p, requiresApproval: e.target.checked }))}
-              className="accent-[#85CC17]"
+              className="members-checkbox"
             />
             <span>
               Requires approval
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck for simple tasks (follow on social, etc.) to auto-award credits on submit</span>
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck for simple tasks to auto-award credits on submit</span>
             </span>
           </label>
 

@@ -85,6 +85,10 @@ export function computeCreditLedger(input: {
       approved += claim.creditsAwarded ?? input.assignmentCredits.get(claim.assignmentId) ?? 0;
     } else if (claim.status === "Submitted") {
       pending += input.assignmentCredits.get(claim.assignmentId) ?? 0;
+    } else if (claim.status === "In Progress" && (claim.creditsAwarded ?? 0) > 0) {
+      // Recurring check-in: credits accumulate on claim while it stays In Progress.
+      // creditsAwarded is updated to the running total after each approved check-in.
+      approved += claim.creditsAwarded!;
     }
   }
   let adjustments = 0;

@@ -39,8 +39,11 @@ interface FormState {
   track: CycleTrack;
   credits: number;
   minRole: CycleRole;
-  maxClaims: string;  // "0" or "" = unlimited
-  deadlineOffsetDays: string;
+  maxClaims: string;           // "0" or "" = unlimited
+  recurringEnabled: boolean;
+  deadlineOffsetDays: string;  // used when not recurring
+  checkinIntervalDays: string; // used when recurring
+  maxDurationDays: string;     // optional cap for recurring
 }
 
 const BLANK_FORM: FormState = {
@@ -50,7 +53,10 @@ const BLANK_FORM: FormState = {
   credits: 1,
   minRole: "Analyst",
   maxClaims: "1",
+  recurringEnabled: false,
   deadlineOffsetDays: "",
+  checkinIntervalDays: "7",
+  maxDurationDays: "",
 };
 
 interface FromTemplateForm {
@@ -124,7 +130,8 @@ export default function TemplatesPage() {
     if (!fromTemplate) return;
     setFromTemplateCreating(true);
     try {
-      const businessId = fromTemplateForm.projectRef.startsWith("biz:") ? fromTemplateForm.projectRef.slice(4) : undefined;
+      const bizId = fromTemplateForm.projectRef.startsWith("biz:") ? fromTemplateForm.projectRef.slice(4) : undefined;
+      const isRecurring = fromTemplate.recurringEnabled ?? false;
       await createAssignment({
         title: fromTemplateForm.title.trim() || fromTemplate.title,
         description: fromTemplateForm.description,
@@ -133,9 +140,14 @@ export default function TemplatesPage() {
         difficulty: fromTemplate.difficulty ?? "Standard",
         estimatedHours: 0,
         minRole: fromTemplate.minRole,
-        businessId,
+        businessId: bizId,
         capacity: fromTemplate.capacity ?? 0,
-        deadlines: fromTemplateForm.deadline ? [{ label: "Final Deadline", date: fromTemplateForm.deadline }] : undefined,
+        deadlines: !isRecurring && fromTemplateForm.deadline ? [{ label: "Final Deadline", date: fromTemplateForm.deadline }] : undefined,
+        deadlineType: isRecurring ? "hard" : (fromTemplate.deadlineOffsetDays != null ? "offset" : "hard"),
+        deadlineOffsetDays: !isRecurring ? fromTemplate.deadlineOffsetDays : undefined,
+        recurringEnabled: isRecurring || undefined,
+        checkinIntervalDays: isRecurring ? (fromTemplate.checkinIntervalDays ?? 7) : undefined,
+        maxDurationDays: isRecurring ? fromTemplate.maxDurationDays : undefined,
         priority: fromTemplateForm.priority,
         status: "Open",
         cycleId: activeCycle?.id ?? "",
@@ -179,7 +191,10 @@ export default function TemplatesPage() {
       credits: t.credits,
       minRole: t.minRole,
       maxClaims: cap > 0 ? String(cap) : "",
+      recurringEnabled: t.recurringEnabled ?? false,
       deadlineOffsetDays: t.deadlineOffsetDays != null ? String(t.deadlineOffsetDays) : "",
+      checkinIntervalDays: t.checkinIntervalDays != null ? String(t.checkinIntervalDays) : "7",
+      maxDurationDays: t.maxDurationDays != null ? String(t.maxDurationDays) : "",
     });
     setEditing(t);
     setModal("edit");
@@ -188,7 +203,9 @@ export default function TemplatesPage() {
   const buildPayload = (): Omit<AssignmentTemplate, "id" | "createdAt" | "updatedAt"> | null => {
     const title = form.title.trim();
     if (!title) return null;
-    const offsetDays = form.deadlineOffsetDays.trim() ? Number(form.deadlineOffsetDays) : undefined;
+    const offsetDays = !form.recurringEnabled && form.deadlineOffsetDays.trim() ? Number(form.deadlineOffsetDays) : undefined;
+    const intervalDays = form.recurringEnabled && form.checkinIntervalDays.trim() ? Number(form.checkinIntervalDays) : undefined;
+    const maxDuration = form.recurringEnabled && form.maxDurationDays.trim() ? Number(form.maxDurationDays) : undefined;
     return {
       title,
       description: form.description,
@@ -198,6 +215,9 @@ export default function TemplatesPage() {
       minRole: form.minRole,
       capacity: form.maxClaims.trim() ? Math.max(0, Number(form.maxClaims)) : 0,
       deadlineOffsetDays: offsetDays,
+      recurringEnabled: form.recurringEnabled,
+      checkinIntervalDays: intervalDays,
+      maxDurationDays: maxDuration,
       notes: "",
       difficulty: editing?.difficulty ?? "Standard",
       createdBy: userProfile?.email || user?.email || user?.id || "unknown",
@@ -258,11 +278,11 @@ export default function TemplatesPage() {
           <table className="table-fixed text-left" style={{ width: "100%", minWidth: "860px" }}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[280px]">Title</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[240px]">Title</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Track</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[65px]">Credits</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Minimum Role</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Deadline offset</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Min Role</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Schedule</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[175px]">Actions</th>
               </tr>
             </thead>
@@ -281,7 +301,16 @@ export default function TemplatesPage() {
                   <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{t.credits}</td>
                   <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle">{t.minRole}</td>
                   <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle">
-                    {t.deadlineOffsetDays != null ? `${t.deadlineOffsetDays}d` : <span className="text-white/25">—</span>}
+                    {t.recurringEnabled ? (
+                      <span className="inline-flex items-center gap-1 text-amber-400">
+                        <span>↻</span>
+                        <span>Every {t.checkinIntervalDays ?? 7}d{t.maxDurationDays ? ` · max ${t.maxDurationDays}d` : ""}</span>
+                      </span>
+                    ) : t.deadlineOffsetDays != null ? (
+                      `Due in ${t.deadlineOffsetDays}d`
+                    ) : (
+                      <span className="text-white/25">No deadline</span>
+                    )}
                   </td>
                   <td className="px-3 py-0 h-9 align-middle">
                     <div className="members-row-actions">
@@ -320,7 +349,7 @@ export default function TemplatesPage() {
               <Select options={MEMBER_TRACKS} value={form.track}
                 onChange={(e) => setForm((p) => ({ ...p, track: e.target.value as CycleTrack }))} />
             </Field>
-            <Field label="Credits" required>
+            <Field label={form.recurringEnabled ? "Credits / check-in" : "Credits"} required>
               <Input type="number" min="0" value={String(form.credits)}
                 onChange={(e) => setForm((p) => ({ ...p, credits: Number(e.target.value) || 0 }))} />
             </Field>
@@ -330,16 +359,49 @@ export default function TemplatesPage() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Deadline offset (days from creation)">
-              <Input type="number" min="0" value={form.deadlineOffsetDays} placeholder="e.g. 28"
-                onChange={(e) => setForm((p) => ({ ...p, deadlineOffsetDays: e.target.value }))} />
-            </Field>
-            <Field label="Max Claims">
-              <Input type="number" min="0" placeholder="0 = no limit" value={form.maxClaims}
-                onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))} />
-            </Field>
+          {/* Recurring toggle */}
+          <div>
+            <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 cursor-pointer">
+              <div>
+                <p className="text-sm text-white/85 font-medium">Recurring check-in assignment</p>
+                <p className="text-[11px] text-white/45 mt-0.5">Credits are awarded per check-in rather than once on completion.</p>
+              </div>
+              <input
+                type="checkbox"
+                className="members-checkbox"
+                checked={form.recurringEnabled}
+                onChange={(e) => setForm((p) => ({ ...p, recurringEnabled: e.target.checked }))}
+              />
+            </label>
           </div>
+
+          {form.recurringEnabled ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Check-in every (days)">
+                <Input type="number" min="1" value={form.checkinIntervalDays} placeholder="7"
+                  onChange={(e) => setForm((p) => ({ ...p, checkinIntervalDays: e.target.value }))} />
+              </Field>
+              <Field label="Max duration (days, optional)">
+                <Input type="number" min="1" value={form.maxDurationDays} placeholder="No limit"
+                  onChange={(e) => setForm((p) => ({ ...p, maxDurationDays: e.target.value }))} />
+              </Field>
+              <Field label="Max Claims">
+                <Input type="number" min="0" placeholder="0 = no limit" value={form.maxClaims}
+                  onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))} />
+              </Field>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Deadline offset (days after claim)">
+                <Input type="number" min="0" value={form.deadlineOffsetDays} placeholder="e.g. 7"
+                  onChange={(e) => setForm((p) => ({ ...p, deadlineOffsetDays: e.target.value }))} />
+              </Field>
+              <Field label="Max Claims">
+                <Input type="number" min="0" placeholder="0 = no limit" value={form.maxClaims}
+                  onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))} />
+              </Field>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
@@ -372,9 +434,12 @@ export default function TemplatesPage() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white/90">{fromTemplate.title}</p>
                 <p className="text-[11px] text-white/45 mt-0.5">
-                  {fromTemplate.track} · {fromTemplate.credits} credits · Minimum {fromTemplate.minRole}
+                  {fromTemplate.track} · {fromTemplate.credits} {fromTemplate.recurringEnabled ? "credits/check-in" : "credits"} · Min {fromTemplate.minRole}
                   {fromTemplate.capacity ? ` · max ${fromTemplate.capacity} claims` : ""}
-                  {fromTemplate.deadlineOffsetDays ? ` · due in ${fromTemplate.deadlineOffsetDays}d` : ""}
+                  {fromTemplate.recurringEnabled
+                    ? ` · check-in every ${fromTemplate.checkinIntervalDays ?? 7}d${fromTemplate.maxDurationDays ? ` · max ${fromTemplate.maxDurationDays}d` : ""}`
+                    : fromTemplate.deadlineOffsetDays ? ` · due in ${fromTemplate.deadlineOffsetDays}d` : ""
+                  }
                 </p>
                 {fromTemplate.description && (
                   <p
@@ -417,20 +482,26 @@ export default function TemplatesPage() {
               />
             </Field>
 
-            <Field label="Deadline">
-              <Input
-                type="date"
-                value={fromTemplateForm.deadline}
-                onChange={(e) => setFromTemplateForm((p) => ({ ...p, deadline: e.target.value }))}
-              />
-            </Field>
+            {fromTemplate.recurringEnabled ? (
+              <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-[11px] text-amber-300/80">
+                <span className="font-semibold">↻ Recurring assignment</span> — members earn {fromTemplate.credits} credits per check-in (every {fromTemplate.checkinIntervalDays ?? 7} days{fromTemplate.maxDurationDays ? `, up to ${fromTemplate.maxDurationDays} days` : ""}).
+              </div>
+            ) : (
+              <Field label="Deadline">
+                <Input
+                  type="date"
+                  value={fromTemplateForm.deadline}
+                  onChange={(e) => setFromTemplateForm((p) => ({ ...p, deadline: e.target.value }))}
+                />
+              </Field>
+            )}
 
-            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75">
+            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
               <input
                 type="checkbox"
                 checked={fromTemplateForm.priority}
                 onChange={(e) => setFromTemplateForm((p) => ({ ...p, priority: e.target.checked }))}
-                className="accent-[#85CC17]"
+                className="members-checkbox"
               />
               Priority assignment
             </label>

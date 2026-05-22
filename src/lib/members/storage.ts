@@ -384,7 +384,11 @@ export interface AssignmentTemplate {
   estimatedHours: number;
   minRole: CycleRole;
   capacity: number;
-  deadlineOffsetDays?: number;     // days after creation → suggested deadline
+  deadlineOffsetDays?: number;     // days after claim → suggested deadline (offset mode)
+  // Recurring check-in support
+  recurringEnabled?: boolean;      // true = periodic check-ins with per-check-in credits
+  checkinIntervalDays?: number;    // how often a check-in is due (e.g. 7 = weekly)
+  maxDurationDays?: number;        // optional hard cap on total duration
   notes: string;
   createdAt: string;
   updatedAt: string;
@@ -413,7 +417,7 @@ export interface Assignment {
   status: AssignmentStatus;
   assignedMemberIds?: string[];
   assignedMemberNames?: string[];
-  deadlines?: Array<{ label: string; date: string }>;
+  deadlines?: Array<{ label: string; date: string }>; // hard deadline dates (admin-set)
   deliverableUrl?: string;
   credits: number;
   creditsMax?: number;
@@ -427,6 +431,13 @@ export interface Assignment {
   projectGroupId?: string;          // set when assignment belongs to a standalone project group
   cycleId?: string;
   templateId?: string;             // template used to create this assignment
+  // Deadline system: 'hard' = admin-set date in deadlines[]; 'offset' = days after member claims
+  deadlineType?: "hard" | "offset"; // default 'hard'
+  deadlineOffsetDays?: number;      // used when deadlineType='offset'
+  // Recurring check-in support (credits awarded per approved check-in)
+  recurringEnabled?: boolean;
+  checkinIntervalDays?: number;
+  maxDurationDays?: number;
   // Finance-specific
   region?: string;
   teamLabel?: string;
@@ -477,10 +488,15 @@ export interface AssignmentClaim {
   approvedAt?: string;
   rejectedAt?: string;
   rejectReason?: string;
-  // Awarded credits — usually equal to assignment.credits at approval time, but
-  // approver can adjust (e.g. partial completion). Drives the credit ledger.
+  // Awarded credits — for one-time claims: set at approval. For recurring: cumulative total.
   creditsAwarded?: number;
   approvedBy?: string;
+  // Offset deadline: calculated at claim time when assignment.deadlineType = 'offset'
+  dueDate?: string;               // ISO date string
+  // Recurring check-in tracking
+  checkinsApproved?: number;      // how many check-ins have been approved so far
+  totalCreditsEarned?: number;    // cumulative credits from all check-ins
+  nextCheckinDue?: string;        // ISO date string for next required check-in
 }
 
 // ── Member strikes + credit adjustments ───────────────────────────────────────
@@ -2041,6 +2057,35 @@ export async function deleteAssignmentClaim(id: string): Promise<void> {
   const { error: claimDeleteError } = await supabase.from("assignment_claims").delete().eq("id", id);
   if (claimDeleteError) throw new Error(claimDeleteError.message);
   await writeAuditLog({ action: "delete", collection: "assignmentClaims", recordId: id });
+}
+
+// Approve a recurring check-in. Awards credits for this period, increments the
+// check-in counter, sets the next due date, and resets the claim to In Progress
+// so the member can submit the following period.
+export async function approveCheckinClaim(
+  claim: AssignmentClaim,
+  creditsPerCheckin: number,
+  checkinIntervalDays: number,
+  approvedBy: string,
+): Promise<void> {
+  const newCheckinsApproved = (claim.checkinsApproved ?? 0) + 1;
+  const newTotalCredits = (claim.totalCreditsEarned ?? 0) + creditsPerCheckin;
+  const nextDue = new Date();
+  nextDue.setDate(nextDue.getDate() + checkinIntervalDays);
+  await updateAssignmentClaim(claim.id, {
+    status: "In Progress",
+    checkinsApproved: newCheckinsApproved,
+    totalCreditsEarned: newTotalCredits,
+    // creditsAwarded tracks cumulative total so the credit ledger picks it up
+    creditsAwarded: newTotalCredits,
+    nextCheckinDue: nextDue.toISOString().slice(0, 10),
+    approvedBy,
+    approvedAt: new Date().toISOString(),
+    // clear deliverable/notes for next check-in
+    deliverableUrl: undefined,
+    submissionNotes: undefined,
+    submittedAt: undefined,
+  });
 }
 
 // ── Member strikes ────────────────────────────────────────────────────────────

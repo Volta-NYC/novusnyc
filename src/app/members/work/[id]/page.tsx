@@ -123,10 +123,45 @@ export default function AssignmentDetailPage() {
   const canMarkInProgress = myClaim && myClaim.status === "claimed";
   const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress");
 
+  const isRecurring = Boolean(assignment.recurringEnabled);
+
+  // Effective deadline: for offset type, show claim's dueDate; for hard type, use deadlines[0].
+  const effectiveDeadline = (() => {
+    if (isRecurring) return myClaim?.nextCheckinDue ?? null;
+    if (assignment.deadlineType === "offset") return myClaim?.dueDate ?? null;
+    return assignmentDeadline || null;
+  })();
+
+  const daysUntil = effectiveDeadline
+    ? Math.ceil((new Date(effectiveDeadline).getTime() - Date.now()) / 86_400_000)
+    : null;
+
+  const deadlineColor = daysUntil == null
+    ? "text-black/55"
+    : daysUntil <= 1 ? "text-red-600 font-semibold"
+    : daysUntil <= 3 ? "text-amber-600 font-semibold"
+    : "text-black/80";
+
   const handleClaim = async () => {
     if (!me) return;
     setBusy(true);
     try {
+      // Calculate per-member due date for offset-type assignments
+      const dueDate = !isRecurring && assignment.deadlineType === "offset" && assignment.deadlineOffsetDays
+        ? (() => {
+            const d = new Date();
+            d.setDate(d.getDate() + assignment.deadlineOffsetDays!);
+            return d.toISOString().slice(0, 10);
+          })()
+        : undefined;
+      // For recurring: first check-in is due in checkinIntervalDays
+      const firstCheckinDue = isRecurring && assignment.checkinIntervalDays
+        ? (() => {
+            const d = new Date();
+            d.setDate(d.getDate() + assignment.checkinIntervalDays!);
+            return d.toISOString().slice(0, 10);
+          })()
+        : undefined;
       await createAssignmentClaim({
         assignmentId: assignment.id,
         memberId: me.id,
@@ -134,6 +169,8 @@ export default function AssignmentDetailPage() {
         cycleId: activeCycle?.id ?? assignment.cycleId ?? "",
         status: "claimed",
         claimedAt: new Date().toISOString(),
+        dueDate,
+        nextCheckinDue: firstCheckinDue,
       });
       if (assignment.status === "Open") {
         await updateAssignment(assignment.id, { status: "In Progress" });
@@ -248,9 +285,14 @@ export default function AssignmentDetailPage() {
               )}
               {business?.neighborhood && <span className="text-black/40"> · {business.neighborhood}</span>}
             </p>
-            <div className="flex items-baseline gap-1">
-              <span className="font-display font-bold text-3xl text-[#5C9911] tabular-nums leading-none">{assignment.credits}</span>
-              <span className="text-sm text-[#5C9911]/80 font-medium">{assignment.credits === 1 ? "credit" : "credits"}</span>
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="flex items-baseline gap-1">
+                <span className="font-display font-bold text-3xl text-[#5C9911] tabular-nums leading-none">{assignment.credits}</span>
+                <span className="text-sm text-[#5C9911]/80 font-medium">{isRecurring ? "credits/check-in" : assignment.credits === 1 ? "credit" : "credits"}</span>
+              </div>
+              {isRecurring && (
+                <span className="text-[10px] text-amber-700 font-medium">↻ Recurring · every {assignment.checkinIntervalDays ?? 7} days</span>
+              )}
             </div>
           </div>
 
@@ -317,11 +359,56 @@ export default function AssignmentDetailPage() {
                   <dd className="text-black/85">~{assignment.estimatedHours}h</dd>
                 </div>
               )}
-              {assignmentDeadline && (
-                <div className="flex justify-between">
-                  <dt className="text-black/55">Deadline</dt>
-                  <dd className="text-black/85 font-medium">{assignmentDeadline}</dd>
-                </div>
+              {isRecurring ? (
+                <>
+                  <div className="flex justify-between">
+                    <dt className="text-black/55">Check-in every</dt>
+                    <dd className="text-black/85 font-medium">{assignment.checkinIntervalDays ?? 7} days</dd>
+                  </div>
+                  {assignment.maxDurationDays && (
+                    <div className="flex justify-between">
+                      <dt className="text-black/55">Max duration</dt>
+                      <dd className="text-black/85">{assignment.maxDurationDays} days</dd>
+                    </div>
+                  )}
+                  {effectiveDeadline && (
+                    <div className="flex justify-between">
+                      <dt className="text-black/55">Next check-in</dt>
+                      <dd className={deadlineColor}>
+                        {effectiveDeadline}
+                        {daysUntil != null && (
+                          <span className="ml-1 text-[10px] font-normal">
+                            {daysUntil <= 0 ? "· overdue" : `· ${daysUntil}d`}
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {effectiveDeadline && (
+                    <div className="flex justify-between">
+                      <dt className="text-black/55">
+                        {assignment.deadlineType === "offset" ? "Your deadline" : "Deadline"}
+                      </dt>
+                      <dd className={deadlineColor}>
+                        {effectiveDeadline}
+                        {daysUntil != null && (
+                          <span className={`ml-1 text-[10px] font-normal ${daysUntil <= 3 ? "" : "text-black/45"}`}>
+                            {daysUntil <= 0 ? "· overdue" : `· ${daysUntil}d left`}
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  )}
+                  {!myClaim && assignment.deadlineType === "offset" && assignment.deadlineOffsetDays && !effectiveDeadline && (
+                    <div className="flex justify-between">
+                      <dt className="text-black/55">Deadline</dt>
+                      <dd className="text-black/85">{assignment.deadlineOffsetDays} days after claiming</dd>
+                    </div>
+                  )}
+                </>
               )}
               <div className="flex justify-between">
                 <dt className="text-black/55">Minimum role</dt>
@@ -385,7 +472,15 @@ export default function AssignmentDetailPage() {
                 {myClaim.rejectReason}
               </div>
             )}
-            {myClaim.status === "Approved" && (
+            {isRecurring && (myClaim.checkinsApproved ?? 0) > 0 && (
+              <div className="rounded-lg border border-[#85CC17]/25 bg-[#85CC17]/5 p-3 text-sm text-[#3A6B07] mb-3">
+                <div className="flex items-center justify-between">
+                  <span><strong>{myClaim.checkinsApproved ?? 0}</strong> check-in{(myClaim.checkinsApproved ?? 0) !== 1 ? "s" : ""} approved</span>
+                  <span className="font-bold text-[#5C9911]">+{myClaim.totalCreditsEarned ?? 0} credits earned</span>
+                </div>
+              </div>
+            )}
+            {myClaim.status === "Approved" && !isRecurring && (
               <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
                 Approved — <strong>{myClaim.creditsAwarded ?? assignment.credits} {(myClaim.creditsAwarded ?? assignment.credits) === 1 ? "credit" : "credits"}</strong> added to your ledger.
               </div>
@@ -411,9 +506,11 @@ export default function AssignmentDetailPage() {
                 >
                   {myClaim.status === "rejected"
                     ? "Resubmit"
-                    : assignment.requiresApproval === false
-                      ? "Mark complete"
-                      : "Submit for approval"}
+                    : isRecurring
+                      ? `Submit check-in${(myClaim.checkinsApproved ?? 0) > 0 ? ` #${(myClaim.checkinsApproved ?? 0) + 1}` : ""}`
+                      : assignment.requiresApproval === false
+                        ? "Mark complete"
+                        : "Submit for approval"}
                 </Btn>
               )}
               {canUnclaim && (

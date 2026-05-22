@@ -16,7 +16,7 @@ import {
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeEmailTemplates,
   subscribeAutomationConfigs, subscribeProjectGroups, subscribeTeam,
-  updateAssignmentClaim,
+  updateAssignmentClaim, approveCheckinClaim,
   type Assignment, type AssignmentClaim, type AutomationConfig, type Business,
   type EmailTemplate, type CycleTrack, type ProjectGroup, type TeamMember,
 } from "@/lib/members/storage";
@@ -202,12 +202,17 @@ export default function ForReviewPage() {
   };
 
   const confirmApprove = async (claim: AssignmentClaim, awarded: number) => {
-    await updateAssignmentClaim(claim.id, {
-      status: "Approved",
-      approvedAt: new Date().toISOString(),
-      approvedBy: reviewerLabel,
-      creditsAwarded: awarded,
-    });
+    const assignment = assignmentById.get(claim.assignmentId);
+    if (assignment?.recurringEnabled && assignment.checkinIntervalDays) {
+      await approveCheckinClaim(claim, awarded, assignment.checkinIntervalDays, reviewerLabel);
+    } else {
+      await updateAssignmentClaim(claim.id, {
+        status: "Approved",
+        approvedAt: new Date().toISOString(),
+        approvedBy: reviewerLabel,
+        creditsAwarded: awarded,
+      });
+    }
   };
 
   const handleBulkApprove = async () => {
@@ -457,12 +462,24 @@ export default function ForReviewPage() {
       <Modal
         open={!!approvingClaim}
         onClose={() => setApprovingClaim(null)}
-        title={`Approve · ${approvingClaim?.assignment?.title ?? ""}`}
+        title={
+          approvingClaim?.assignment?.recurringEnabled
+            ? `Approve Check-in · ${approvingClaim?.assignment?.title ?? ""}`
+            : `Approve · ${approvingClaim?.assignment?.title ?? ""}`
+        }
       >
         <div className="space-y-3">
           <p className="text-sm text-white/70">
             <span className="text-white/45">Member:</span> {approvingClaim?.claim.memberName}
           </p>
+          {approvingClaim?.assignment?.recurringEnabled && (
+            <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-300/80">
+              ↻ Recurring — check-in #{(approvingClaim.claim.checkinsApproved ?? 0) + 1} · approving awards {creditsOverride || approvingClaim.assignment.credits} credits and resets for next period.
+              {(approvingClaim.claim.checkinsApproved ?? 0) > 0 && (
+                <span className="block mt-0.5">{approvingClaim.claim.checkinsApproved} previous check-in{approvingClaim.claim.checkinsApproved !== 1 ? "s" : ""} · {approvingClaim.claim.totalCreditsEarned ?? 0} credits earned so far.</span>
+              )}
+            </div>
+          )}
           {approvingClaim?.claim.deliverableUrl && (
             <p className="text-sm">
               <span className="text-white/45">Deliverable:</span>{" "}
@@ -491,12 +508,17 @@ export default function ForReviewPage() {
             />
           </Field>
           <p className="text-[11px] text-white/55">
-            Default is the assignment&apos;s full credit value ({approvingClaim?.assignment?.credits ?? 0}). Adjust down for partial completion.
+            {approvingClaim?.assignment?.recurringEnabled
+              ? `Credits per check-in from the assignment (${approvingClaim?.assignment?.credits ?? 0}). Adjust for this period if needed.`
+              : `Default is the assignment's full credit value (${approvingClaim?.assignment?.credits ?? 0}). Adjust down for partial completion.`
+            }
           </p>
         </div>
         <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-white/8">
           <Btn variant="ghost" onClick={() => setApprovingClaim(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={() => void submitApproval()}>Approve</Btn>
+          <Btn variant="primary" onClick={() => void submitApproval()}>
+            {approvingClaim?.assignment?.recurringEnabled ? "Approve Check-in" : "Approve"}
+          </Btn>
         </div>
       </Modal>
 
