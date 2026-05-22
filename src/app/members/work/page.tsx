@@ -436,16 +436,6 @@ export default function WorkPage() {
             />
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mr-1">Track</span>
-              {/* All button */}
-              <button
-                type="button"
-                onClick={() => setTrackFilters(new Set())}
-                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                  trackFilters.size === 0 ? "border-black/85 bg-black text-white" : "border-black/15 bg-white text-black/65 hover:border-black/35"
-                }`}
-              >
-                All
-              </button>
               {ALL_TRACKS.map((t) => (
                 <button
                   key={t}
