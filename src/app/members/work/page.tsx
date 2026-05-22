@@ -558,7 +558,15 @@ export default function WorkPage() {
                           {isUnlimited && taken > 0 && (
                             <span>{taken} member{taken !== 1 ? "s" : ""} working on this</span>
                           )}
-                          {!a.recurringEnabled && deadline && (
+                          {a.recurringEnabled && a.checkinIntervalDays && (
+                            <span className="text-purple-600 font-medium">
+                              Check-in every {a.checkinIntervalDays} day{a.checkinIntervalDays !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                          {!a.recurringEnabled && a.deadlineType === "offset" && a.deadlineOffsetDays && (
+                            <span>Due {a.deadlineOffsetDays} days after signing up</span>
+                          )}
+                          {!a.recurringEnabled && a.deadlineType !== "offset" && deadline && (
                             <span className={days != null && days <= 3 ? "text-orange-600 font-medium" : ""}>
                               Due {deadline}
                               {days != null && days <= 7 && ` · ${days}d left`}
