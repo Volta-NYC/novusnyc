@@ -67,7 +67,6 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// Admin sees the same first three nav items as Owner (dashboard, projects, assignments).
 const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/assignments/by-project"]);
 const ADMIN_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS.filter((item) => ADMIN_NAV_HREFS.has(item.href));
 
@@ -90,9 +89,18 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
 async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getInitials(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 function getDefaultMembersPath(_role: AuthRole | null): string {
@@ -134,31 +142,44 @@ function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
   return allowedRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
-// ── INNER LAYOUT (has access to AuthContext) ──────────────────────────────────
+// ── INNER LAYOUT ──────────────────────────────────────────────────────────────
 
 function MembersLayoutInner({ children }: { children: ReactNode }) {
   const { user, userProfile, authRole, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false);
   const profilePopoverRef = useRef<HTMLDivElement>(null);
   const [showAckModal, setShowAckModal] = useState(false);
   const [portalBanner, setPortalBanner] = useState<{ message: string; bg: string; text: string } | null>(null);
+
+  // Load collapse preference from localStorage after mount (avoids hydration mismatch).
+  useEffect(() => {
+    const stored = localStorage.getItem("volta-sidebar-collapsed");
+    if (stored === "true") setSidebarCollapsed(true);
+  }, []);
+
+  const toggleCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("volta-sidebar-collapsed", String(next));
+      return next;
+    });
+  };
 
   useEffect(() => subscribeSiteSettings((s) => {
     setPortalBanner(s.portalBannerEnabled && s.portalBannerMessage.trim()
       ? { message: s.portalBannerMessage.trim(), bg: s.portalBannerBg, text: s.portalBannerText }
       : null);
   }), []);
+
   const [ackChecked, setAckChecked] = useState(false);
   const [ackLoading, setAckLoading] = useState(false);
   const [currentContentHash, setCurrentContentHash] = useState("");
-  // Prevents the ack check from re-firing when userProfile gets a new object
-  // reference (e.g. on silent token refresh) after the user has already seen/confirmed.
   const ackCheckFired = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Redirect to login if not authenticated, or sign out deactivated accounts.
   useEffect(() => {
     if (loading) return;
     if (!user) {
@@ -168,10 +189,6 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     }
   }, [loading, user, userProfile, router]);
 
-  // Check handbook acknowledgment for members only. Re-shows if the handbook
-  // content has changed since the user last acknowledged it (hash mismatch).
-  // The ref guard ensures this runs exactly once per session regardless of how
-  // many times userProfile gets a new object reference (e.g. silent token refresh).
   useEffect(() => {
     if (loading || !user || !userProfile || authRole !== "member") return;
     if (ackCheckFired.current) return;
@@ -184,14 +201,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         const content = page?.content ?? "";
         const hash = content ? await sha256(content) : "";
         setCurrentContentHash(hash);
-        // Show if never acknowledged, or if the handbook content has changed.
         if (!ack || (hash && ack.contentHash !== hash)) {
           setShowAckModal(true);
         }
       })
-      .catch(() => {
-        // silently ignore — don't block the user if the check fails
-      });
+      .catch(() => {});
   }, [loading, user, userProfile, authRole]);
 
   const handleConfirmAck = async () => {
@@ -205,7 +219,6 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       });
       setShowAckModal(false);
     } catch {
-      // ignore error — user can dismiss and continue
       setShowAckModal(false);
     } finally {
       setAckLoading(false);
@@ -246,7 +259,6 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     };
   }, [profilePopoverOpen, closeProfilePopover]);
 
-  // Show a spinner while auth state resolves.
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
@@ -260,9 +272,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     authRole === "owner" ? "Owner" :
     authRole === "admin" ? "Admin" :
     "Member";
+  const initials = getInitials(memberDisplayName);
 
-  // Members get the light theme so the surface they live in feels distinct
-  // and reputable; admin/interviewer keep the dense dark theme for power use.
   const lightTheme = authRole === "member";
   const tone = lightTheme
     ? {
@@ -283,6 +294,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         mobileBarText: "text-black/85",
         mobileBarLink: "text-black/45 hover:text-black/70",
         burgerText: "text-black/55",
+        collapseBtn: "text-black/30 hover:text-black/55 hover:bg-black/5",
       }
     : {
         page: "bg-[#0F1014]",
@@ -302,12 +314,17 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         mobileBarText: "text-white",
         mobileBarLink: "text-white/30 hover:text-white/60",
         burgerText: "text-white/50",
+        collapseBtn: "text-white/20 hover:text-white/45 hover:bg-white/4",
       };
+
+  // Sidebar width classes
+  const sidebarW = sidebarCollapsed ? "w-14" : "w-56";
+  const contentPl = sidebarCollapsed ? "lg:pl-14" : "lg:pl-56";
 
   return (
     <div className={`members-portal ${lightTheme ? "members-portal-light" : ""} min-h-screen ${tone.page} flex`}>
 
-      {/* Handbook acknowledgment modal — shown once to members on first login */}
+      {/* Handbook acknowledgment modal */}
       {showAckModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 md:p-8">
@@ -357,30 +374,58 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar — fixed so it doesn't participate in page width calculations */}
-      <aside className={`fixed left-0 top-0 h-full w-56 ${tone.sidebar} z-30 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
-
+      {/* Sidebar */}
+      <aside
+        className={`fixed left-0 top-0 h-full ${sidebarW} ${tone.sidebar} z-30 flex flex-col transition-[width] duration-200 overflow-hidden ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
         {/* Announcement banner */}
         {portalBanner && (
           <div
-            className="px-3 py-2 text-xs font-body font-semibold text-center leading-snug"
+            className="px-3 py-2 text-xs font-body font-semibold text-center leading-snug shrink-0"
             style={{ backgroundColor: portalBanner.bg, color: portalBanner.text }}
           >
-            {portalBanner.message}
+            {!sidebarCollapsed && portalBanner.message}
           </div>
         )}
 
-        {/* Logo */}
-        <div className={`px-4 py-4 border-b ${tone.sidebarBorder} flex items-center gap-2.5`}>
-          <Image src="/logo.png" alt="Volta" width={28} height={28} className="object-contain" />
-          <div>
-            <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
-            <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
-          </div>
+        {/* Logo + collapse toggle */}
+        <div className={`px-3 py-3 border-b ${tone.sidebarBorder} flex items-center shrink-0 ${sidebarCollapsed ? "justify-center" : "justify-between gap-2"}`}>
+          {sidebarCollapsed ? (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              title="Expand sidebar"
+              className="flex items-center justify-center"
+            >
+              <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain" />
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain shrink-0" />
+                <div className="min-w-0">
+                  <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
+                  <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5 truncate`}>Members Portal</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                title="Collapse sidebar"
+                className={`rounded-md p-1 transition-colors shrink-0 ${tone.collapseBtn}`}
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+            </>
+          )}
         </div>
 
-        {/* Navigation links */}
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+        {/* Navigation */}
+        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {visibleNavItems.map((item) => {
             const matchRoots = item.activeMatchRoots?.length ? item.activeMatchRoots : [item.href];
             const isActive = pathname === item.href || matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
@@ -389,42 +434,57 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-body transition-colors ${
-                  isActive ? tone.navActive : tone.navInactive
-                }`}
+                title={sidebarCollapsed ? item.label : undefined}
+                className={`flex items-center rounded-lg text-sm font-body transition-colors ${
+                  sidebarCollapsed ? "justify-center px-2 py-2" : "gap-2.5 px-3 py-2"
+                } ${isActive ? tone.navActive : tone.navInactive}`}
               >
-                <span className={isActive ? tone.navIconActive : tone.navIconInactive}>{item.icon}</span>
-                {item.label}
+                <span className={`shrink-0 ${isActive ? tone.navIconActive : tone.navIconInactive}`}>{item.icon}</span>
+                {!sidebarCollapsed && item.label}
               </Link>
             );
           })}
         </nav>
 
-        {/* User info and footer actions */}
-        <div className={`p-2 border-t ${tone.sidebarBorder} space-y-0.5`}>
+        {/* User / footer */}
+        <div className={`p-2 border-t ${tone.sidebarBorder} space-y-0.5 shrink-0`}>
           <div ref={profilePopoverRef} className="relative">
             <button
               type="button"
               onClick={() => setProfilePopoverOpen((v) => !v)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors mb-1 ${tone.navInactive}`}
+              title={sidebarCollapsed ? memberDisplayName : undefined}
+              className={`w-full flex items-center rounded-lg text-left transition-colors mb-1 ${
+                sidebarCollapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2"
+              } ${tone.navInactive}`}
             >
               <span
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 tracking-tight"
                 style={lightTheme
                   ? { backgroundColor: "rgba(133,204,23,0.18)", color: "#5C9911" }
                   : { backgroundColor: "rgba(133,204,23,0.15)", color: "#85CC17" }}
               >
-                {(memberDisplayName.charAt(0) || "?").toUpperCase()}
+                {initials}
               </span>
-              <span className="min-w-0 flex-1">
-                <p className={`${tone.userName} text-xs font-body font-medium truncate`}>{memberDisplayName}</p>
-                <p className={`${tone.userRole} text-[10px] font-body`}>{memberRoleLabel}</p>
-              </span>
-              <svg className={`w-3 h-3 shrink-0 transition-transform ${profilePopoverOpen ? "rotate-180" : ""} ${tone.userRole}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
+              {!sidebarCollapsed && (
+                <>
+                  <span className="min-w-0 flex-1">
+                    <p className={`${tone.userName} text-xs font-body font-medium truncate`}>{memberDisplayName}</p>
+                    <p className={`${tone.userRole} text-[10px] font-body`}>{memberRoleLabel}</p>
+                  </span>
+                  <svg
+                    className={`w-3 h-3 shrink-0 transition-transform ${profilePopoverOpen ? "rotate-180" : ""} ${tone.userRole}`}
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  >
+                    <polyline points="18 15 12 9 6 15" />
+                  </svg>
+                </>
+              )}
             </button>
 
             {profilePopoverOpen && (
-              <div className={`absolute bottom-full left-0 right-0 mb-1 rounded-xl border shadow-xl z-50 overflow-hidden ${lightTheme ? "bg-white border-black/10" : "bg-[#1C1F26] border-white/12"}`}>
+              <div className={`absolute bottom-full mb-1 rounded-xl border shadow-xl z-50 overflow-hidden ${
+                sidebarCollapsed ? "left-full ml-2 w-48" : "left-0 right-0"
+              } ${lightTheme ? "bg-white border-black/10" : "bg-[#1C1F26] border-white/12"}`}>
                 <div className={`px-4 py-3 border-b ${lightTheme ? "border-black/8" : "border-white/8"}`}>
                   <p className={`text-xs font-semibold font-body truncate ${lightTheme ? "text-black/80" : "text-white/85"}`}>{memberDisplayName}</p>
                   <p className={`text-[10px] font-body truncate mt-0.5 ${lightTheme ? "text-black/40" : "text-white/40"}`}>{user?.email ?? ""}</p>
@@ -460,9 +520,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content column — overflow-x-hidden prevents wide table content from
-          expanding the page and pushing header action buttons off-screen */}
-      <div className="flex-1 lg:pl-56 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
+      {/* Main content */}
+      <div className={`flex-1 ${contentPl} flex flex-col min-h-screen min-w-0 overflow-x-hidden transition-[padding] duration-200`}>
 
         {/* Mobile top bar */}
         <div className={`lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-10 ${tone.mobileBar}`}>
@@ -486,8 +545,6 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 }
 
 // ── PUBLIC EXPORT ─────────────────────────────────────────────────────────────
-// AuthProvider lives in src/app/members/layout.tsx (the Next.js route layout).
-// This component just renders the inner layout; no second provider needed.
 
 export default function MembersLayout({ children }: { children: ReactNode }) {
   return <MembersLayoutInner>{children}</MembersLayoutInner>;
