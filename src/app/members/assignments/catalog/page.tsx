@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -150,7 +150,7 @@ export default function CatalogPage() {
     return map;
   }, [claims]);
 
-  const resolveProjectLabel = (assignment: Assignment): { name: string; subtitle?: string } | null => {
+  const resolveProjectLabel = useCallback((assignment: Assignment): { name: string; subtitle?: string } | null => {
     if (assignment.businessId) {
       const biz = businessById.get(assignment.businessId);
       if (!biz) return null;
@@ -162,7 +162,7 @@ export default function CatalogPage() {
       return { name: grp.name, subtitle: grp.description };
     }
     return { name: "Volta", subtitle: "Organization-wide" };
-  };
+  }, [businessById, projectGroupById]);
 
   const sorted = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -185,7 +185,7 @@ export default function CatalogPage() {
         if (ta !== tb) return ta - tb;
         return (a.title || "").localeCompare(b.title || "");
       });
-  }, [assignments, search, filterTracks, filterStatuses, showArchived, businessById, projectGroupById]);
+  }, [assignments, search, filterTracks, filterStatuses, showArchived, resolveProjectLabel]);
 
   const activeAssignments = assignments.filter((a) => a.status !== "Archived");
   const counts = {

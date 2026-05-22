@@ -101,7 +101,7 @@ function MyClaimRow({
               <span className="text-black/45">Approved {formatDate(claim.approvedAt)}</span>
             )}
             {claim.rejectReason && (
-              <span className="text-black/45 italic">"{claim.rejectReason}"</span>
+              <span className="text-black/45 italic">&ldquo;{claim.rejectReason}&rdquo;</span>
             )}
           </div>
         )}
