@@ -420,7 +420,7 @@ export default function AssignmentDetailPage() {
                 </>
               )}
               <div className="flex justify-between">
-                <dt className="text-black/55">Minimum role</dt>
+                <dt className="text-black/55">Minimum rank</dt>
                 <dd className="text-black/85">{assignment.minRole}</dd>
               </div>
             </dl>
@@ -429,7 +429,7 @@ export default function AssignmentDetailPage() {
           <div className="rounded-2xl border border-black/8 bg-white shadow-sm p-4">
             <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-3">Working on this</h2>
             {activeClaims.length === 0 ? (
-              <p className="text-sm text-black/45">Nobody yet — be the first.</p>
+              <p className="text-sm text-black/45">No one has signed up yet.</p>
             ) : (
               <ul className="space-y-1.5">
                 {activeClaims.map((c) => (
@@ -449,7 +449,7 @@ export default function AssignmentDetailPage() {
         {myClaim && (
           <section className="rounded-2xl border border-[#85CC17]/30 bg-[#85CC17]/5 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <h2 className="font-display font-bold text-black text-base">Your claim</h2>
+              <h2 className="font-display font-bold text-black text-base">Your assignment</h2>
               <span className="inline-flex rounded-full border border-black/12 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-black/65">
                 {myClaim.status.replace("_", " ")}
               </span>
@@ -529,7 +529,7 @@ export default function AssignmentDetailPage() {
                   disabled={busy}
                   className="ml-auto rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                 >
-                  Release claim
+                  Drop this assignment
                 </button>
               )}
             </div>
@@ -546,7 +546,7 @@ export default function AssignmentDetailPage() {
                 disabled={busy}
                 className="w-full"
               >
-                Claim this assignment
+                Sign up for this assignment
               </Btn>
             ) : (
               <p className="text-sm text-center text-black/45">
