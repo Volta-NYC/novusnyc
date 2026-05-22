@@ -236,18 +236,24 @@ export default function MyRecordPage() {
                 </p>
               </>
             ) : (
-              <div className="flex gap-4">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-black/35 font-semibold">Earned</p>
-                  <p className="font-display font-bold text-2xl text-[#5C9911] tabular-nums">{ledger.total}</p>
+              <>
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="font-semibold text-black/75">
+                    <span className="text-[#5C9911]">{ledger.total}</span>
+                    <span className="text-black/35"> credits earned</span>
+                  </span>
+                  {ledger.pending > 0 && (
+                    <span className="text-yellow-700 text-[11px]">+{ledger.pending} pending review</span>
+                  )}
                 </div>
-                {ledger.pending > 0 && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-black/35 font-semibold">Pending</p>
-                    <p className="font-display font-bold text-2xl text-yellow-700 tabular-nums">{ledger.pending}</p>
-                  </div>
-                )}
-              </div>
+                <div className="h-5 rounded-full bg-black/8 overflow-hidden flex">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: ledger.total > 0 ? "100%" : "0%", background: "linear-gradient(90deg, #5C9911, #85CC17)" }}
+                  />
+                </div>
+                <p className="text-[10px] text-black/30 mt-1.5">Leadership roles are not subject to cycle credit targets.</p>
+              </>
             )}
           </section>
         ) : (
