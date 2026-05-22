@@ -17,6 +17,95 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
+// ── Preview pane ──────────────────────────────────────────────────────────────
+
+function TemplatePreview({
+  subject,
+  body,
+  variables,
+  sampleData,
+  onSampleChange,
+}: {
+  subject: string;
+  body: string;
+  variables: string[];
+  sampleData: Record<string, string>;
+  onSampleChange: (name: string, value: string) => void;
+}) {
+  const renderedSubject = useMemo(() => substituteForPreview(subject, sampleData), [subject, sampleData]);
+  const renderedBody = useMemo(() => substituteForPreview(body, sampleData), [body, sampleData]);
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#0F1014] p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45">Preview</p>
+        <p className="text-[10px] text-white/30">Sample values are local only</p>
+      </div>
+
+      {variables.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {variables.map((v) => (
+            <label key={v} className="block">
+              <span className="text-[10px] font-mono text-white/40">{`{{${v}}}`}</span>
+              <input
+                value={sampleData[v] ?? ""}
+                onChange={(e) => onSampleChange(v, e.target.value)}
+                className="mt-0.5 w-full bg-[#13161D] border border-white/10 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-[#85CC17]/40"
+              />
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div className="rounded-lg border border-white/10 bg-white text-black p-4">
+        <p className="text-[10px] text-black/40 mb-0.5">Subject</p>
+        <p className="text-sm font-semibold mb-3">{renderedSubject || <span className="text-black/30 italic">No subject</span>}</p>
+        <hr className="border-black/10 mb-3" />
+        <div
+          className="text-sm leading-relaxed prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: renderedBody }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Reasonable sample values for preview substitution. Falls back to the
+// variable name itself so the preview never shows raw {{x}} placeholders.
+function sampleValue(variable: string): string {
+  switch (variable) {
+    case "memberName": return "Jordan Lee";
+    case "cycleName": return "Summer 2026";
+    case "startDate": return "June 1, 2026";
+    case "endDate": return "September 1, 2026";
+    case "creditsEarned": return "6";
+    case "creditsTarget": return "12";
+    case "creditsAwarded": return "3";
+    case "checkInsBehind": return "2";
+    case "daysRemaining": return "47";
+    case "pacingPercent": return "20";
+    case "strikeReason": return "Missed credit pace — 4 check-ins behind";
+    case "strikeCount": return "1";
+    case "previousRole": return "Associate";
+    case "newRole": return "Senior Analyst";
+    case "outcome": return "On track for next cycle";
+    case "assignmentTitle": return "UI/UX checkup — Petite Dumpling";
+    case "businessName": return " for Petite Dumpling";
+    case "rejectionReason": return "Please add a screenshot of the mobile breakpoint.";
+    case "infractionName": return "Did not respond within 48 hours";
+    case "points": return "2";
+    case "totalPoints": return "5";
+    case "issuedBy": return "Ethan Zhang";
+    case "note": return "Please reply to client emails by EOD.";
+    case "openAssignmentCount": return "12";
+    default: return variable;
+  }
+}
+
+function substituteForPreview(template: string, data: Record<string, string>): string {
+  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, name) => data[name] ?? `{{${name}}}`);
+}
+
 interface FormState {
   label: string;
   description: string;
@@ -36,6 +125,7 @@ export default function EmailTemplatesPage() {
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<EmailTemplate | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
+  const [sampleData, setSampleData] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -68,6 +158,9 @@ export default function EmailTemplatesPage() {
     });
     setEditing(t);
     setModal("edit");
+    const seed: Record<string, string> = {};
+    for (const v of (t.availableVariables ?? [])) seed[v] = sampleValue(v);
+    setSampleData(seed);
     setTimeout(() => editorRef.current?.setContent(t.body || ""), 50);
   };
 
@@ -75,6 +168,7 @@ export default function EmailTemplatesPage() {
     setModal(null);
     setEditing(null);
     setForm(BLANK_FORM);
+    setSampleData({});
   };
 
   const handleSave = async () => {
@@ -223,9 +317,40 @@ export default function EmailTemplatesPage() {
               placeholder="Write the email body… Use {{memberName}}, {{cycleName}}, etc."
             />
           </Field>
-          <p className="text-[11px] text-white/35">
-            Use <code className="text-white/55">{"{{memberName}}"}</code>, <code className="text-white/55">{"{{cycleName}}"}</code>, <code className="text-white/55">{"{{creditsEarned}}"}</code>, etc. as placeholders — they are filled in automatically when the email is sent.
-          </p>
+
+          {(editing?.availableVariables ?? []).length > 0 ? (
+            <>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-1.5">
+                  Variables — click to insert into body
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(editing?.availableVariables ?? []).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => editorRef.current?.insertAtCursor(`{{${v}}}`)}
+                      className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#85CC17]/45 hover:text-white transition-colors"
+                    >
+                      {`{{${v}}}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <TemplatePreview
+                subject={form.subject}
+                body={form.body}
+                variables={editing?.availableVariables ?? []}
+                sampleData={sampleData}
+                onSampleChange={(name, value) => setSampleData((prev) => ({ ...prev, [name]: value }))}
+              />
+            </>
+          ) : (
+            <p className="text-[11px] text-white/35">
+              Use <code className="text-white/55">{"{{memberName}}"}</code>, <code className="text-white/55">{"{{cycleName}}"}</code>, <code className="text-white/55">{"{{creditsEarned}}"}</code>, etc. as placeholders — they are filled in automatically when the email is sent.
+            </p>
+          )}
         </div>
         <div className="flex justify-end gap-2 mt-5 pt-3 border-t border-white/8">
           <Btn variant="ghost" onClick={closeModal}>Cancel</Btn>
