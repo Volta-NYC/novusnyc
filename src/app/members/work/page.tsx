@@ -568,7 +568,7 @@ export default function WorkPage() {
                           {isUnlimited && taken > 0 && (
                             <span>{taken} member{taken !== 1 ? "s" : ""} working on this</span>
                           )}
-                          {deadline && (
+                          {!a.recurringEnabled && deadline && (
                             <span className={days != null && days <= 3 ? "text-orange-600 font-medium" : ""}>
                               Due {deadline}
                               {days != null && days <= 7 && ` · ${days}d left`}

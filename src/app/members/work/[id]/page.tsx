@@ -59,6 +59,7 @@ export default function AssignmentDetailPage() {
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmDrop, setConfirmDrop] = useState(false);
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => {
@@ -196,7 +197,7 @@ export default function AssignmentDetailPage() {
 
   const handleUnclaim = async () => {
     if (!myClaim) return;
-    if (!confirm("Release this claim? Anyone else can pick it up after.")) return;
+    setConfirmDrop(false);
     setBusy(true);
     setActionError(null);
     try {
@@ -219,7 +220,7 @@ export default function AssignmentDetailPage() {
     if (!myClaim) return;
     const autoApprove = assignment.requiresApproval === false;
     if (!autoApprove && !deliverableUrl.trim()) {
-      alert("A deliverable link or doc is required.");
+      setActionError("A deliverable link is required.");
       return;
     }
     setBusy(true);
@@ -522,15 +523,35 @@ export default function AssignmentDetailPage() {
                         : "Submit for approval"}
                 </Btn>
               )}
-              {canUnclaim && (
+              {canUnclaim && !confirmDrop && (
                 <button
                   type="button"
-                  onClick={() => void handleUnclaim()}
+                  onClick={() => setConfirmDrop(true)}
                   disabled={busy}
                   className="ml-auto rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                 >
                   Drop this assignment
                 </button>
+              )}
+              {confirmDrop && (
+                <div className="ml-auto rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex items-center gap-3">
+                  <p className="text-sm text-red-800">Drop this assignment? You&apos;ll lose your spot.</p>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDrop(false)}
+                    className="rounded-lg border border-black/15 bg-white px-3 py-1 text-sm text-black/65 hover:bg-black/5 shrink-0"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleUnclaim()}
+                    disabled={busy}
+                    className="rounded-lg bg-red-600 px-3 py-1 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 shrink-0"
+                  >
+                    {busy ? "Dropping…" : "Drop"}
+                  </button>
+                </div>
               )}
             </div>
           </section>
