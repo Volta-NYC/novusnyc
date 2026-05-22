@@ -85,6 +85,9 @@ export default function TemplatesPage() {
     projectRef: "volta", title: "", description: "", deadline: "", priority: false,
   });
   const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [fromTemplateError, setFromTemplateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -129,8 +132,10 @@ export default function TemplatesPage() {
   const handleCreateFromTemplate = async () => {
     if (!fromTemplate) return;
     setFromTemplateCreating(true);
+    setFromTemplateError(null);
     try {
       const bizId = fromTemplateForm.projectRef.startsWith("biz:") ? fromTemplateForm.projectRef.slice(4) : undefined;
+      const grpId = fromTemplateForm.projectRef.startsWith("grp:") ? fromTemplateForm.projectRef.slice(4) : undefined;
       const isRecurring = fromTemplate.recurringEnabled ?? false;
       await createAssignment({
         title: fromTemplateForm.title.trim() || fromTemplate.title,
@@ -141,22 +146,24 @@ export default function TemplatesPage() {
         estimatedHours: 0,
         minRole: fromTemplate.minRole,
         businessId: bizId,
+        projectGroupId: grpId,
         capacity: fromTemplate.capacity ?? 0,
         deadlines: !isRecurring && fromTemplateForm.deadline ? [{ label: "Final Deadline", date: fromTemplateForm.deadline }] : undefined,
         deadlineType: isRecurring ? "hard" : (fromTemplate.deadlineOffsetDays != null ? "offset" : "hard"),
         deadlineOffsetDays: !isRecurring ? fromTemplate.deadlineOffsetDays : undefined,
-        recurringEnabled: isRecurring || undefined,
+        recurringEnabled: isRecurring,
         checkinIntervalDays: isRecurring ? (fromTemplate.checkinIntervalDays ?? 7) : undefined,
         maxDurationDays: isRecurring ? fromTemplate.maxDurationDays : undefined,
         priority: fromTemplateForm.priority,
+        requiresApproval: true,
         status: "Open",
         cycleId: activeCycle?.id ?? "",
         notes: "",
-        region: undefined,
-        teamLabel: undefined,
         createdBy: userProfile?.email || user?.email || user?.id || "unknown",
       });
       setFromTemplate(null);
+    } catch (err) {
+      setFromTemplateError(err instanceof Error ? err.message : "Failed to create assignment. Please try again.");
     } finally {
       setFromTemplateCreating(false);
     }
@@ -179,6 +186,7 @@ export default function TemplatesPage() {
   const openCreate = () => {
     setForm({ ...BLANK_FORM });
     setEditing(null);
+    setSaveError(null);
     setModal("create");
   };
 
@@ -197,6 +205,7 @@ export default function TemplatesPage() {
       maxDurationDays: t.maxDurationDays != null ? String(t.maxDurationDays) : "",
     });
     setEditing(t);
+    setSaveError(null);
     setModal("edit");
   };
 
@@ -227,12 +236,20 @@ export default function TemplatesPage() {
   const handleSave = async (opts?: { addAnother?: boolean }) => {
     const payload = buildPayload();
     if (!payload) return;
-    if (editing) await updateAssignmentTemplate(editing.id, payload);
-    else await createAssignmentTemplate(payload);
-    if (opts?.addAnother && !editing) {
-      setForm((p) => ({ ...p, title: "" }));
-    } else {
-      setModal(null);
+    setBusy(true);
+    setSaveError(null);
+    try {
+      if (editing) await updateAssignmentTemplate(editing.id, payload);
+      else await createAssignmentTemplate(payload);
+      if (opts?.addAnother && !editing) {
+        setForm((p) => ({ ...p, title: "" }));
+      } else {
+        setModal(null);
+      }
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Save failed. Please try again.");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -404,17 +421,22 @@ export default function TemplatesPage() {
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
+        {saveError && (
+          <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 mt-4">
+            {saveError}
+          </p>
+        )}
+        <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-white/8">
           <div>{editing && <Btn variant="danger" onClick={() => void handleDelete()}>Delete</Btn>}</div>
           <div className="flex gap-2">
-            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn variant="ghost" onClick={() => setModal(null)} disabled={busy}>Cancel</Btn>
             {!editing && (
-              <Btn variant="secondary" onClick={() => void handleSave({ addAnother: true })} disabled={!form.title.trim()}>
+              <Btn variant="secondary" onClick={() => void handleSave({ addAnother: true })} disabled={!form.title.trim() || busy}>
                 Save & New
               </Btn>
             )}
-            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.title.trim()}>
-              {editing ? "Save" : "Create"}
+            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.title.trim() || busy}>
+              {busy ? "Saving…" : editing ? "Save" : "Create"}
             </Btn>
           </div>
         </div>
@@ -508,8 +530,13 @@ export default function TemplatesPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setFromTemplate(null)}>Cancel</Btn>
+        {fromTemplateError && (
+          <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 mt-4">
+            {fromTemplateError}
+          </p>
+        )}
+        <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setFromTemplate(null)} disabled={fromTemplateCreating}>Cancel</Btn>
           <Btn
             variant="primary"
             onClick={() => void handleCreateFromTemplate()}

@@ -192,6 +192,8 @@ export default function ByProjectPage() {
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [assignmentForm, setAssignmentForm]       = useState<AssignmentFormState>(BLANK_ASSIGNMENT);
   const [_bizSearch, setBizSearch] = useState("");
+  const [assignmentBusy, setAssignmentBusy] = useState(false);
+  const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
   const [groupModal, setGroupModal]       = useState<"create" | "edit" | null>(null);
   const [editingGroup, setEditingGroup]   = useState<ProjectGroup | null>(null);
@@ -354,7 +356,7 @@ export default function ByProjectPage() {
     setAssignmentForm({ ...BLANK_ASSIGNMENT, projectRef: prefillRef });
     setEditingAssignment(null);
     setBizSearch(prefillRef ? refToLabel(prefillRef) : "");
-
+    setAssignmentError(null);
     setAssignmentModal("create");
   };
 
@@ -388,6 +390,7 @@ export default function ByProjectPage() {
     setBizSearch(refToLabel(ref));
 
     setEditingAssignment(a);
+    setAssignmentError(null);
     setAssignmentModal("edit");
   };
 
@@ -436,7 +439,7 @@ export default function ByProjectPage() {
                             : undefined,
       deadlineType:       isRecurring ? "hard" : assignmentForm.deadlineType,
       deadlineOffsetDays: isOffset && assignmentForm.deadlineOffsetDays ? Number(assignmentForm.deadlineOffsetDays) : undefined,
-      recurringEnabled:   isRecurring || undefined,
+      recurringEnabled:   assignmentForm.recurringEnabled,
       checkinIntervalDays: isRecurring && assignmentForm.checkinIntervalDays ? Number(assignmentForm.checkinIntervalDays) : undefined,
       maxDurationDays:    isRecurring && assignmentForm.maxDurationDays ? Number(assignmentForm.maxDurationDays) : undefined,
       requiresApproval:   assignmentForm.requiresApproval,
@@ -452,9 +455,17 @@ export default function ByProjectPage() {
   const handleSaveAssignment = async () => {
     const payload = buildAssignmentPayload();
     if (!payload) return;
-    if (editingAssignment) await updateAssignment(editingAssignment.id, payload);
-    else await createAssignment(payload);
-    setAssignmentModal(null);
+    setAssignmentBusy(true);
+    setAssignmentError(null);
+    try {
+      if (editingAssignment) await updateAssignment(editingAssignment.id, payload);
+      else await createAssignment(payload);
+      setAssignmentModal(null);
+    } catch (err) {
+      setAssignmentError(err instanceof Error ? err.message : "Save failed. Please try again.");
+    } finally {
+      setAssignmentBusy(false);
+    }
   };
 
   const handleArchiveAssignment = async () => {
@@ -994,7 +1005,12 @@ export default function ByProjectPage() {
               />
             </Field>
           </div>
-          <div className="flex items-center gap-2 justify-between mt-5 pt-4 border-t border-white/8">
+          {assignmentError && (
+            <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 mt-4">
+              {assignmentError}
+            </p>
+          )}
+          <div className="flex items-center gap-2 justify-between mt-4 pt-4 border-t border-white/8">
             <div className="flex gap-2">
               {assignmentModal === "edit" && editingAssignment?.status !== "Archived" && (
                 <Btn variant="danger" size="sm" onClick={() => void handleArchiveAssignment()}>Archive</Btn>
@@ -1004,8 +1020,10 @@ export default function ByProjectPage() {
               )}
             </div>
             <div className="flex gap-2">
-              <Btn variant="ghost" size="sm" onClick={() => setAssignmentModal(null)}>Cancel</Btn>
-              <Btn variant="primary" size="sm" onClick={() => void handleSaveAssignment()}>Save</Btn>
+              <Btn variant="ghost" size="sm" onClick={() => setAssignmentModal(null)} disabled={assignmentBusy}>Cancel</Btn>
+              <Btn variant="primary" size="sm" onClick={() => void handleSaveAssignment()} disabled={assignmentBusy}>
+                {assignmentBusy ? "Saving…" : "Save"}
+              </Btn>
             </div>
           </div>
         </Modal>

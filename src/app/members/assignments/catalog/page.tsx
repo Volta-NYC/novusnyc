@@ -118,6 +118,8 @@ export default function CatalogPage() {
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Assignment | null>(null);
   const [form, setForm] = useState<FormState>(BLANK_FORM);
+  const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -205,7 +207,7 @@ export default function CatalogPage() {
     [projectGroups],
   );
 
-  const openCreate = () => { setForm({ ...BLANK_FORM }); setEditing(null); setModal("create"); };
+  const openCreate = () => { setForm({ ...BLANK_FORM }); setEditing(null); setSaveError(null); setModal("create"); };
 
   const openEdit = (a: Assignment) => {
     const cap = a.capacity ?? 0;
@@ -230,6 +232,7 @@ export default function CatalogPage() {
       maxDurationDays:    a.maxDurationDays != null ? String(a.maxDurationDays) : "",
     });
     setEditing(a);
+    setSaveError(null);
     setModal("edit");
   };
 
@@ -255,7 +258,7 @@ export default function CatalogPage() {
                             : undefined,
       deadlineType:       isRecurring ? "hard" : form.deadlineType,
       deadlineOffsetDays: isOffset && form.deadlineOffsetDays ? Number(form.deadlineOffsetDays) : undefined,
-      recurringEnabled:   isRecurring || undefined,
+      recurringEnabled:   form.recurringEnabled,
       checkinIntervalDays: isRecurring && form.checkinIntervalDays ? Number(form.checkinIntervalDays) : undefined,
       maxDurationDays:    isRecurring && form.maxDurationDays ? Number(form.maxDurationDays) : undefined,
       status:             editing ? form.status : "Open",
@@ -270,10 +273,18 @@ export default function CatalogPage() {
   const handleSave = async (opts?: { addAnother?: boolean }) => {
     const payload = buildPayload();
     if (!payload) return;
-    if (editing) await updateAssignment(editing.id, payload);
-    else await createAssignment(payload);
-    if (opts?.addAnother && !editing) setForm((prev) => ({ ...prev, title: "" }));
-    else setModal(null);
+    setBusy(true);
+    setSaveError(null);
+    try {
+      if (editing) await updateAssignment(editing.id, payload);
+      else await createAssignment(payload);
+      if (opts?.addAnother && !editing) setForm((prev) => ({ ...prev, title: "" }));
+      else setModal(null);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Save failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleArchive = async () => {
@@ -650,7 +661,12 @@ export default function CatalogPage() {
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
+        {saveError && (
+          <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 mt-4">
+            {saveError}
+          </p>
+        )}
+        <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-white/8">
           <div className="flex gap-2">
             {editing && editing.status !== "Archived" && (
               <Btn variant="danger" onClick={() => void handleArchive()}>Archive</Btn>
@@ -660,18 +676,18 @@ export default function CatalogPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+            <Btn variant="ghost" onClick={() => setModal(null)} disabled={busy}>Cancel</Btn>
             {!editing && (
               <Btn
                 variant="secondary"
                 onClick={() => void handleSave({ addAnother: true })}
-                disabled={!form.title.trim()}
+                disabled={!form.title.trim() || busy}
               >
                 Save & New
               </Btn>
             )}
-            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.title.trim()}>
-              {editing ? "Save" : "Create"}
+            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.title.trim() || busy}>
+              {busy ? "Saving…" : editing ? "Save" : "Create"}
             </Btn>
           </div>
         </div>

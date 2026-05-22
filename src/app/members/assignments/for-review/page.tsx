@@ -81,6 +81,8 @@ export default function ForReviewPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [approvingClaim, setApprovingClaim] = useState<ReviewInput | null>(null);
   const [creditsOverride, setCreditsOverride] = useState<string>("");
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -194,11 +196,13 @@ export default function ForReviewPage() {
     const input = buildReviewInput(claim);
     setApprovingClaim(input);
     setCreditsOverride(String(input.assignment?.credits ?? 0));
+    setReviewError(null);
   };
 
   const openReject = (claim: AssignmentClaim) => {
     setRejectingClaim(buildReviewInput(claim));
     setRejectReason("");
+    setReviewError(null);
   };
 
   const confirmApprove = async (claim: AssignmentClaim, awarded: number) => {
@@ -236,37 +240,53 @@ export default function ForReviewPage() {
   const submitApproval = async () => {
     if (!approvingClaim) return;
     const awarded = Math.max(0, Number(creditsOverride) || 0);
-    await confirmApprove(approvingClaim.claim, awarded);
-    setApprovingClaim(null);
+    setReviewBusy(true);
+    setReviewError(null);
+    try {
+      await confirmApprove(approvingClaim.claim, awarded);
+      setApprovingClaim(null);
+    } catch (err) {
+      setReviewError(err instanceof Error ? err.message : "Approval failed. Please try again.");
+    } finally {
+      setReviewBusy(false);
+    }
   };
 
   const submitRejection = async () => {
     if (!rejectingClaim) return;
     if (!rejectReason.trim()) return;
-    await updateAssignmentClaim(rejectingClaim.claim.id, {
-      status: "rejected",
-      rejectedAt: new Date().toISOString(),
-      approvedBy: reviewerLabel,
-      rejectReason: rejectReason.trim(),
-    });
-    if (user && rejectingClaim.memberEmail) {
-      try {
-        const idToken = await getAuthToken();
-        await dispatchTemplatedEmail({
-          automationId: "assignment_rejected",
-          automationConfigs,
-          templates,
-          toEmail: rejectingClaim.memberEmail,
-          variables: {
-            memberName: rejectingClaim.claim.memberName,
-            assignmentTitle: rejectingClaim.assignment?.title ?? "",
-            rejectionReason: rejectReason.trim(),
-          },
-          idToken,
-        });
-      } catch { /* non-fatal */ }
+    setReviewBusy(true);
+    setReviewError(null);
+    try {
+      await updateAssignmentClaim(rejectingClaim.claim.id, {
+        status: "rejected",
+        rejectedAt: new Date().toISOString(),
+        approvedBy: reviewerLabel,
+        rejectReason: rejectReason.trim(),
+      });
+      if (user && rejectingClaim.memberEmail) {
+        try {
+          const idToken = await getAuthToken();
+          await dispatchTemplatedEmail({
+            automationId: "assignment_rejected",
+            automationConfigs,
+            templates,
+            toEmail: rejectingClaim.memberEmail,
+            variables: {
+              memberName: rejectingClaim.claim.memberName,
+              assignmentTitle: rejectingClaim.assignment?.title ?? "",
+              rejectionReason: rejectReason.trim(),
+            },
+            idToken,
+          });
+        } catch { /* non-fatal */ }
+      }
+      setRejectingClaim(null);
+    } catch (err) {
+      setReviewError(err instanceof Error ? err.message : "Rejection failed. Please try again.");
+    } finally {
+      setReviewBusy(false);
     }
-    setRejectingClaim(null);
   };
 
   const toggleSelected = (id: string) => {
@@ -514,10 +534,15 @@ export default function ForReviewPage() {
             }
           </p>
         </div>
-        <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setApprovingClaim(null)}>Cancel</Btn>
-          <Btn variant="primary" onClick={() => void submitApproval()}>
-            {approvingClaim?.assignment?.recurringEnabled ? "Approve Check-in" : "Approve"}
+        {reviewError && (
+          <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 mt-4">
+            {reviewError}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setApprovingClaim(null)} disabled={reviewBusy}>Cancel</Btn>
+          <Btn variant="primary" onClick={() => void submitApproval()} disabled={reviewBusy}>
+            {reviewBusy ? "Saving…" : approvingClaim?.assignment?.recurringEnabled ? "Approve Check-in" : "Approve"}
           </Btn>
         </div>
       </Modal>
@@ -540,10 +565,15 @@ export default function ForReviewPage() {
             />
           </Field>
         </div>
-        <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setRejectingClaim(null)}>Cancel</Btn>
-          <Btn variant="danger" onClick={() => void submitRejection()} disabled={!rejectReason.trim()}>
-            Send Rejection
+        {reviewError && (
+          <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 mt-4">
+            {reviewError}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setRejectingClaim(null)} disabled={reviewBusy}>Cancel</Btn>
+          <Btn variant="danger" onClick={() => void submitRejection()} disabled={!rejectReason.trim() || reviewBusy}>
+            {reviewBusy ? "Sending…" : "Send Rejection"}
           </Btn>
         </div>
       </Modal>

@@ -481,10 +481,10 @@ export interface AssignmentClaim {
   memberName: string;              // denormalized for display
   cycleId: string;
   status: AssignmentClaimStatus;
-  deliverableUrl?: string;
-  submissionNotes?: string;
+  deliverableUrl?: string | null;
+  submissionNotes?: string | null;
   claimedAt: string;
-  submittedAt?: string;
+  submittedAt?: string | null;
   approvedAt?: string;
   rejectedAt?: string;
   rejectReason?: string;
@@ -2081,10 +2081,11 @@ export async function approveCheckinClaim(
     nextCheckinDue: nextDue.toISOString().slice(0, 10),
     approvedBy,
     approvedAt: new Date().toISOString(),
-    // clear deliverable/notes for next check-in
-    deliverableUrl: undefined,
-    submissionNotes: undefined,
-    submittedAt: undefined,
+    // clear deliverable/notes/submittedAt for next check-in
+    // (null is sent to DB as NULL; undefined is skipped by toRow and leaves stale values)
+    deliverableUrl: null,
+    submissionNotes: null,
+    submittedAt: null,
   });
 }
 

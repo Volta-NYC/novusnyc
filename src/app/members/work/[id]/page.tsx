@@ -58,6 +58,7 @@ export default function AssignmentDetailPage() {
   const [deliverableUrl, setDeliverableUrl] = useState("");
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => {
@@ -145,6 +146,7 @@ export default function AssignmentDetailPage() {
   const handleClaim = async () => {
     if (!me) return;
     setBusy(true);
+    setActionError(null);
     try {
       // Calculate per-member due date for offset-type assignments
       const dueDate = !isRecurring && assignment.deadlineType === "offset" && assignment.deadlineOffsetDays
@@ -175,6 +177,8 @@ export default function AssignmentDetailPage() {
       if (assignment.status === "Open") {
         await updateAssignment(assignment.id, { status: "In Progress" });
       }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to claim. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -194,6 +198,7 @@ export default function AssignmentDetailPage() {
     if (!myClaim) return;
     if (!confirm("Release this claim? Anyone else can pick it up after.")) return;
     setBusy(true);
+    setActionError(null);
     try {
       await deleteAssignmentClaim(myClaim.id);
       // Revert assignment to Open if no other active claims remain
@@ -203,6 +208,8 @@ export default function AssignmentDetailPage() {
       if (otherActive.length === 0 && assignment.status === "In Progress") {
         await updateAssignment(assignment.id, { status: "Open" });
       }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to unclaim. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -246,6 +253,8 @@ export default function AssignmentDetailPage() {
       setSubmitOpen(false);
       setDeliverableUrl("");
       setSubmissionNotes("");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Submission failed. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -546,6 +555,12 @@ export default function AssignmentDetailPage() {
             )}
           </section>
         )}
+
+        {actionError && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            {actionError}
+          </p>
+        )}
       </div>
 
       {/* Submit modal */}
@@ -597,11 +612,17 @@ export default function AssignmentDetailPage() {
                 className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#85CC17]/55"
               />
 
+              {actionError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-3">
+                  {actionError}
+                </p>
+              )}
               <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-black/8">
                 <button
                   type="button"
                   onClick={() => setSubmitOpen(false)}
-                  className="rounded-lg px-3 py-1.5 text-sm text-black/65 hover:bg-black/5"
+                  disabled={busy}
+                  className="rounded-lg px-3 py-1.5 text-sm text-black/65 hover:bg-black/5 disabled:opacity-50"
                 >
                   Cancel
                 </button>
