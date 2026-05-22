@@ -13,6 +13,18 @@ function readText(row: ApplicationRow, keys: string[]): string {
   return "";
 }
 
+function readTextOrArray(row: ApplicationRow, keys: string[]): string {
+  for (const key of keys) {
+    const value = row[key];
+    if (Array.isArray(value)) {
+      const joined = value.map((v) => String(v ?? "").trim()).filter(Boolean).join(", ");
+      if (joined) return joined;
+    }
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
 function normalizeTimestamp(value: unknown, fallbackIso?: string): string {
   if (typeof value === "string" && value.trim()) {
     const ms = Date.parse(value.trim());
@@ -110,7 +122,7 @@ function normalizeApplication(
     grade: readText(row, ["grade", "Grade"]),
     cityState: readText(row, ["cityState", "City, State", "City"]),
     referral: readText(row, ["referral", "How They Heard"]),
-    tracksSelected: readText(row, ["tracksSelected", "Tracks Selected"]),
+    tracksSelected: readTextOrArray(row, ["tracksSelected", "Tracks Selected"]),
     hasResume: readText(row, ["hasResume", "Has Resume"]),
     resumeUrl: readText(row, ["resumeUrl", "Resume URL"]),
     toolsSoftware: readText(row, ["toolsSoftware", "Tools/Software"]),
