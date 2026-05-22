@@ -1,6 +1,6 @@
 "use client";
 
-// Member-facing "My Profile" — XP bar, credit ledger, assignment history, strikes.
+// Member Overview — XP bar, organized active-cycle assignments, credit history.
 // Light theme. Read-only.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,13 +22,10 @@ function normalizeKey(v: string): string {
   return String(v ?? "").trim().toLowerCase();
 }
 
-const CLAIM_STATUS_PILL: Record<string, string> = {
-  claimed: "bg-blue-100 text-blue-800 border-blue-200",
-  "In Progress": "bg-cyan-100 text-cyan-800 border-cyan-200",
-  Submitted: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  Approved: "bg-violet-100 text-violet-800 border-violet-200",
-  rejected: "bg-red-100 text-red-800 border-red-200",
-};
+function formatDate(s: string): string {
+  const d = new Date(s + (s.includes("T") ? "" : "T00:00:00"));
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
 
 // Deterministic confetti so server/client renders match.
 function seededRand(seed: number): number {
@@ -45,6 +42,57 @@ const CONFETTI_PIECES = Array.from({ length: 30 }, (_, i) => ({
   rotate:   Math.floor(seededRand(i * 7 + 5) * 360),
   isCircle: seededRand(i * 7 + 6) > 0.5,
 }));
+
+const STATUS_PILL: Record<string, string> = {
+  "In Progress": "bg-cyan-100 text-cyan-800 border-cyan-200",
+  claimed:       "bg-blue-100 text-blue-800 border-blue-200",
+  Submitted:     "bg-yellow-100 text-yellow-800 border-yellow-200",
+  Approved:      "bg-violet-100 text-violet-800 border-violet-200",
+  rejected:      "bg-red-100 text-red-800 border-red-200",
+};
+
+function ClaimRow({ c, a, biz }: { c: AssignmentClaim; a: Assignment | undefined; biz: Business | undefined }) {
+  const credits = c.status === "Approved" ? (c.creditsAwarded ?? a?.credits ?? 0) : (a?.credits ?? 0);
+  const isRecurring = a?.recurringEnabled;
+  const totalEarned = isRecurring && c.status === "In Progress" ? (c.totalCreditsEarned ?? 0) : null;
+
+  return (
+    <li>
+      <Link href={`/members/work/${c.assignmentId}`} className="flex items-start justify-between gap-3 px-5 py-3.5 hover:bg-black/[0.025] transition-colors">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-black/90 truncate">{a?.title ?? "Assignment removed"}</p>
+          <p className="text-xs text-black/45 mt-0.5">
+            {biz?.name ?? "Volta"}
+            {c.status === "Submitted" && c.submittedAt && (
+              <span className="text-black/30"> · Submitted {formatDate(c.submittedAt)}</span>
+            )}
+            {c.status === "Approved" && c.approvedAt && (
+              <span className="text-black/30"> · Approved {formatDate(c.approvedAt)}</span>
+            )}
+            {(c.status === "In Progress" || c.status === "claimed") && c.dueDate && (
+              <span className="text-black/30"> · Due {formatDate(c.dueDate)}</span>
+            )}
+          </p>
+          {c.status === "rejected" && c.rejectReason && (
+            <p className="text-xs text-red-600 mt-1 line-clamp-1">Rejected: {c.rejectReason}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
+          {c.status === "Approved" ? (
+            <span className="text-xs font-bold text-[#5C9911]">
+              +{totalEarned != null ? totalEarned : credits} cr
+            </span>
+          ) : (
+            <span className="text-xs text-black/45">{credits} cr</span>
+          )}
+          <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STATUS_PILL[c.status] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>
+            {c.status === "claimed" ? "Claimed" : c.status}
+          </span>
+        </div>
+      </Link>
+    </li>
+  );
+}
 
 export default function MyRecordPage() {
   const { user, userProfile } = useAuth();
@@ -94,6 +142,20 @@ export default function MyRecordPage() {
     [myAdjustments, activeCycle],
   );
 
+  // Organized active-cycle claims
+  const myActiveInProgress = useMemo(
+    () => myActiveClaims.filter((c) => c.status === "In Progress" || c.status === "claimed"),
+    [myActiveClaims],
+  );
+  const myActiveSubmitted = useMemo(
+    () => myActiveClaims.filter((c) => c.status === "Submitted"),
+    [myActiveClaims],
+  );
+  const myActiveApproved = useMemo(
+    () => myActiveClaims.filter((c) => c.status === "Approved"),
+    [myActiveClaims],
+  );
+
   const ledger = useMemo(() => {
     const credits = new Map<string, number>();
     for (const a of assignments) credits.set(a.id, a.credits);
@@ -114,7 +176,7 @@ export default function MyRecordPage() {
   const strikePoints = computeStrikePoints(myActiveStrikes);
   const strikeCount = activeCycle ? computeStrikeCount(strikePoints, activeCycle) : 0;
 
-  // XP bar calculations
+  // XP bar
   const earnedPct  = targetCredits > 0 ? Math.min(100, (ledger.total / targetCredits) * 100) : 0;
   const pendingPct = targetCredits > 0 ? Math.min(100 - earnedPct, (ledger.pending / targetCredits) * 100) : 0;
   const isComplete = targetCredits > 0 && ledger.total >= targetCredits;
@@ -131,16 +193,17 @@ export default function MyRecordPage() {
     }
   }, [isComplete]);
 
-  // Group all-time claims by cycle.
+  // Past-cycle history (active cycle shown separately above)
   const claimsByCycle = useMemo(() => {
     const map = new Map<string, AssignmentClaim[]>();
     for (const c of myClaims) {
+      if (c.cycleId === activeCycle?.id) continue;
       const list = map.get(c.cycleId) ?? [];
       list.push(c);
       map.set(c.cycleId, list);
     }
     return map;
-  }, [myClaims]);
+  }, [myClaims, activeCycle]);
 
   const cycleHistory = useMemo(() => {
     const ids = Array.from(claimsByCycle.keys());
@@ -157,21 +220,19 @@ export default function MyRecordPage() {
         {/* ── Header ── */}
         <header className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1">My Profile</p>
             <h1 className="font-display font-bold text-black text-4xl leading-tight">{me?.name ?? "—"}</h1>
             {me?.role && (
               <p className="text-base text-black/55 font-medium mt-1">{me.role}</p>
             )}
           </div>
           <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
-            Browse available work →
+            Browse work →
           </Link>
         </header>
 
         {/* ── Active cycle / XP bar ── */}
         {activeCycle ? (
           <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5 relative overflow-hidden">
-            {/* Confetti burst */}
             {showConfetti && (
               <div className="absolute inset-x-0 top-0 h-36 overflow-hidden pointer-events-none">
                 {CONFETTI_PIECES.map((p, i) => (
@@ -197,15 +258,17 @@ export default function MyRecordPage() {
             <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-black/40 font-semibold">{activeCycle.name}</p>
-                <p className="text-xs text-black/45 mt-0.5">{activeCycle.startDate} → {activeCycle.endDate}</p>
+                <p className="text-xs text-black/45 mt-0.5">
+                  {activeCycle.startDate ? formatDate(activeCycle.startDate) : "—"}
+                  {" → "}
+                  {activeCycle.endDate ? formatDate(activeCycle.endDate) : "—"}
+                </p>
               </div>
-              {/* Strikes pill */}
               <div className={`rounded-full px-3 py-1 text-xs font-semibold border ${strikeCount >= 3 ? "bg-red-100 text-red-700 border-red-200" : strikeCount >= 2 ? "bg-orange-100 text-orange-700 border-orange-200" : "bg-black/5 text-black/50 border-black/10"}`}>
                 {strikeCount} / 3 strikes
               </div>
             </div>
 
-            {/* XP bar */}
             {targetCredits > 0 ? (
               <>
                 <div className="flex items-center justify-between text-xs mb-2">
@@ -260,6 +323,98 @@ export default function MyRecordPage() {
           <p className="text-sm text-black/45">No cycle is active.</p>
         )}
 
+        {/* ── Assignments this cycle ── */}
+        {activeCycle && (
+          <section className="rounded-2xl border border-black/8 bg-white shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-black/6">
+              <h2 className="font-display font-bold text-black text-base">Assignments this cycle</h2>
+              <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+                View all →
+              </Link>
+            </div>
+
+            {myActiveClaims.length === 0 ? (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm text-black/45 mb-3">No assignments claimed yet this cycle.</p>
+                <Link
+                  href="/members/work"
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#85CC17]/40 bg-[#85CC17]/8 px-3 py-1.5 text-sm font-medium text-[#5C9911] hover:bg-[#85CC17]/15 transition-colors"
+                >
+                  Browse available work →
+                </Link>
+              </div>
+            ) : (
+              <div>
+                {/* In Progress */}
+                {myActiveInProgress.length > 0 && (
+                  <div>
+                    <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                      <p className="text-[10px] uppercase tracking-wider text-black/45 font-semibold">
+                        In Progress · {myActiveInProgress.length}
+                      </p>
+                    </div>
+                    <ul className="divide-y divide-black/6">
+                      {myActiveInProgress.map((c) => (
+                        <ClaimRow
+                          key={c.id}
+                          c={c}
+                          a={assignmentsById.get(c.assignmentId)}
+                          biz={(() => { const a = assignmentsById.get(c.assignmentId); return a?.businessId ? businessById.get(a.businessId) : undefined; })()}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Submitted */}
+                {myActiveSubmitted.length > 0 && (
+                  <div className={myActiveInProgress.length > 0 ? "border-t border-black/6" : ""}>
+                    <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-yellow-400 flex-shrink-0" />
+                      <p className="text-[10px] uppercase tracking-wider text-black/45 font-semibold">
+                        Awaiting Review · {myActiveSubmitted.length}
+                      </p>
+                    </div>
+                    <ul className="divide-y divide-black/6">
+                      {myActiveSubmitted.map((c) => (
+                        <ClaimRow
+                          key={c.id}
+                          c={c}
+                          a={assignmentsById.get(c.assignmentId)}
+                          biz={(() => { const a = assignmentsById.get(c.assignmentId); return a?.businessId ? businessById.get(a.businessId) : undefined; })()}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Approved */}
+                {myActiveApproved.length > 0 && (
+                  <div className={(myActiveInProgress.length > 0 || myActiveSubmitted.length > 0) ? "border-t border-black/6" : ""}>
+                    <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-violet-400 flex-shrink-0" />
+                      <p className="text-[10px] uppercase tracking-wider text-black/45 font-semibold">
+                        Completed · {myActiveApproved.length}
+                      </p>
+                    </div>
+                    <ul className="divide-y divide-black/6">
+                      {myActiveApproved.map((c) => (
+                        <ClaimRow
+                          key={c.id}
+                          c={c}
+                          a={assignmentsById.get(c.assignmentId)}
+                          biz={(() => { const a = assignmentsById.get(c.assignmentId); return a?.businessId ? businessById.get(a.businessId) : undefined; })()}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* ── Strikes — active cycle ── */}
         {activeCycle && myActiveStrikes.length > 0 && (
           <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
@@ -307,12 +462,10 @@ export default function MyRecordPage() {
           </section>
         )}
 
-        {/* ── Assignment history ── */}
-        <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
-          <h2 className="font-display font-bold text-black text-base mb-3">Assignment history</h2>
-          {cycleHistory.length === 0 ? (
-            <p className="text-sm text-black/45">No assignments claimed yet.</p>
-          ) : (
+        {/* ── Past cycle history ── */}
+        {cycleHistory.length > 0 && (
+          <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
+            <h2 className="font-display font-bold text-black text-base mb-3">Past cycles</h2>
             <div className="space-y-5">
               {cycleHistory.map((cycle) => {
                 const list = (claimsByCycle.get(cycle.id) ?? []).sort(
@@ -322,7 +475,7 @@ export default function MyRecordPage() {
                   <div key={cycle.id}>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-[10px] uppercase tracking-wider text-black/40 font-semibold">{cycle.name}</p>
-                      <p className="text-xs text-black/45">{list.length} claim{list.length === 1 ? "" : "s"}</p>
+                      <p className="text-xs text-black/45">{list.length} assignment{list.length === 1 ? "" : "s"}</p>
                     </div>
                     <ul className="rounded-lg border border-black/8 divide-y divide-black/6 overflow-hidden">
                       {list.map((c) => {
@@ -340,15 +493,15 @@ export default function MyRecordPage() {
                                   <p className="text-xs text-black/45">
                                     {a?.primaryTrack ?? "—"}
                                     {business?.name && ` · ${business.name}`}
-                                    {c.claimedAt && ` · Claimed ${new Date(c.claimedAt).toLocaleDateString()}`}
+                                    {c.claimedAt && ` · ${formatDate(c.claimedAt)}`}
                                   </p>
                                   {c.status === "rejected" && c.rejectReason && (
                                     <p className="text-xs text-red-700 mt-1">Rejected: {c.rejectReason}</p>
                                   )}
                                 </div>
                                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${CLAIM_STATUS_PILL[c.status] ?? ""}`}>
-                                    {c.status.replace("_", " ")}
+                                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STATUS_PILL[c.status] ?? ""}`}>
+                                    {c.status === "claimed" ? "Claimed" : c.status}
                                   </span>
                                   {c.status === "Approved" && (
                                     <span className="text-xs text-[#5C9911] font-mono">+{c.creditsAwarded ?? a?.credits ?? 0} cr</span>
@@ -364,8 +517,8 @@ export default function MyRecordPage() {
                 );
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
       </div>
     </MembersLayout>
   );
