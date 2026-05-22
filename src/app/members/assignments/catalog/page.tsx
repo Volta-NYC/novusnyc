@@ -451,9 +451,19 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
-                  <span className="text-[#85CC17] font-bold">{a.credits} {a.credits === 1 ? "credit" : "credits"}</span>
+                  <span className="text-[#85CC17] font-bold">
+                    {a.credits} {a.recurringEnabled ? "cr/check-in" : a.credits === 1 ? "credit" : "credits"}
+                  </span>
                   <span>{a.minRole}</span>
-                  {deadline && <span>Due {deadline}</span>}
+                  {a.recurringEnabled && (
+                    <span className="text-purple-400">↻ Every {a.checkinIntervalDays ?? 7} days</span>
+                  )}
+                  {!a.recurringEnabled && a.deadlineType === "offset" && a.deadlineOffsetDays && (
+                    <span>Due {a.deadlineOffsetDays}d after claiming</span>
+                  )}
+                  {!a.recurringEnabled && a.deadlineType !== "offset" && deadline && (
+                    <span>Due {deadline}</span>
+                  )}
                   {isUnlimited ? (
                     activeClaims.length > 0 ? <span>{activeClaims.length} claiming</span> : <span className="text-white/35">Unlimited spots</span>
                   ) : (
@@ -568,17 +578,22 @@ export default function CatalogPage() {
             </div>
           ) : (
             <div>
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-3">
                 {(["hard", "offset"] as const).map((t) => (
                   <button key={t} type="button"
                     onClick={() => setForm((p) => ({ ...p, deadlineType: t }))}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    className={`flex-1 px-3 py-2 rounded-lg text-left border transition-colors ${
                       form.deadlineType === t
-                        ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
-                        : "border-white/12 text-white/45 hover:text-white/70"
+                        ? "border-[#85CC17]/40 bg-[#85CC17]/10"
+                        : "border-white/12 hover:border-white/25"
                     }`}
                   >
-                    {t === "hard" ? "Hard deadline" : "Offset from claim"}
+                    <p className={`text-xs font-semibold ${form.deadlineType === t ? "text-[#9BE22B]" : "text-white/55"}`}>
+                      {t === "hard" ? "Fixed date" : "Days after claiming"}
+                    </p>
+                    <p className={`text-[10px] mt-0.5 ${form.deadlineType === t ? "text-[#9BE22B]/70" : "text-white/30"}`}>
+                      {t === "hard" ? "Same date for everyone" : "Countdown starts when member signs up"}
+                    </p>
                   </button>
                 ))}
               </div>
