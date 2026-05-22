@@ -36,6 +36,14 @@ export const TRACK_PILL: Record<CycleTrack, string> = {
   General:   "bg-gray-100 text-gray-700 border-gray-200",
 };
 
+// bg + text only — use when the border is applied separately (e.g. filter chips)
+export const TRACK_PILL_BASE: Record<CycleTrack, string> = {
+  Tech:      "bg-blue-100 text-blue-800",
+  Marketing: "bg-lime-100 text-lime-900",
+  Finance:   "bg-amber-100 text-amber-900",
+  General:   "bg-gray-100 text-gray-700",
+};
+
 export const ALL_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
 
 // ── DIVISION LABELS ───────────────────────────────────────────────────────────

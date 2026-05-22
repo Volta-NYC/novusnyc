@@ -13,7 +13,7 @@ import {
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
-import { ALL_TRACKS, TRACK_DOT, TRACK_PILL } from "@/lib/members/constants";
+import { ALL_TRACKS, TRACK_DOT, TRACK_PILL, TRACK_PILL_BASE } from "@/lib/members/constants";
 
 type SortKey = "recommended" | "credits" | "deadline" | "newest";
 
@@ -452,7 +452,7 @@ export default function WorkPage() {
                   type="button"
                   onClick={() => toggleTrack(t)}
                   className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                    trackFilters.has(t) ? `${TRACK_PILL[t]} border-black/85` : "border-black/15 bg-white text-black/65 hover:border-black/35"
+                    trackFilters.has(t) ? `${TRACK_PILL_BASE[t]} border-black/85` : "border-black/15 bg-white text-black/65 hover:border-black/35"
                   }`}
                 >
                   <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[t]}`} />
