@@ -1868,7 +1868,7 @@ function BusinessesPageInner() {
                 </div>
               </ViewSection>
               <ViewSection label="Neighborhood">
-                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                <div className="space-y-1.5">
                   {allNeighborhoods.length === 0 ? (
                     <p className="text-xs text-white/30">No data yet.</p>
                   ) : allNeighborhoods.map((n) => (

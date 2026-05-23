@@ -839,7 +839,7 @@ export function SortPanel({
 }
 
 export function ViewPanel({
-  active,
+  active: _active,
   align = "right",
   children,
 }: {
@@ -866,14 +866,9 @@ export function ViewPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-          open || active
-            ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
-            : "border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
-        }`}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
       >
         View
-        {active && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#85CC17] flex-shrink-0" />}
       </button>
       {open && (
         <div
