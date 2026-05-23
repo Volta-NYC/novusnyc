@@ -436,6 +436,7 @@ function BusinessesPageInner() {
   // Showcase tab state
   const [scAddOpen, setScAddOpen] = useState(false);
   const [scAddPickerId, setScAddPickerId] = useState("");
+  const [scAddQuery, setScAddQuery] = useState("");
   const [scAddBusy, setScAddBusy] = useState(false);
   const [scView, setScView] = useState<"showcase" | "home">("showcase");
   const [scDragSrcId, setScDragSrcId] = useState<string | null>(null);
@@ -1842,24 +1843,43 @@ function BusinessesPageInner() {
       {activeTab === "showcase" ? (
         <>
           {/* Add-to-showcase picker modal */}
-          <Modal open={scAddOpen} onClose={() => setScAddOpen(false)} title="Add Business to Showcase">
-            <Field label="Business" required>
-              <select
-                value={scAddPickerId}
-                onChange={(e) => setScAddPickerId(e.target.value)}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-              >
-                <option value="">— Select a business —</option>
-                {[...businesses]
-                  .filter((b) => !b.showcaseEnabled)
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((b) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
+          <Modal open={scAddOpen} onClose={() => { setScAddOpen(false); setScAddQuery(""); setScAddPickerId(""); }} title="Add Business to Showcase">
+            <input
+              autoFocus
+              type="text"
+              value={scAddQuery}
+              onChange={(e) => { setScAddQuery(e.target.value); setScAddPickerId(""); }}
+              placeholder="Search businesses…"
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#85CC17]/45 mb-2"
+            />
+            {(() => {
+              const q = scAddQuery.trim().toLowerCase();
+              const options = [...businesses]
+                .filter((b) => !b.showcaseEnabled)
+                .filter((b) => !q || b.name.toLowerCase().includes(q) || (b.neighborhood ?? "").toLowerCase().includes(q))
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .slice(0, 8);
+              if (options.length === 0) {
+                return <p className="text-sm text-white/35 text-center py-4">{q ? "No matches." : "All businesses are already in the showcase."}</p>;
+              }
+              return (
+                <div className="rounded-lg border border-white/8 overflow-hidden divide-y divide-white/6 mb-4">
+                  {options.map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setScAddPickerId(b.id)}
+                      className={`w-full text-left px-3 py-2.5 text-sm transition-colors ${scAddPickerId === b.id ? "bg-[#85CC17]/15 text-white" : "text-white/75 hover:bg-white/5"}`}
+                    >
+                      <span className="font-medium">{b.name}</span>
+                      {b.neighborhood && <span className="text-white/40 text-xs ml-2">{b.neighborhood}</span>}
+                    </button>
                   ))}
-              </select>
-            </Field>
-            <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-white/8">
-              <Btn variant="ghost" onClick={() => setScAddOpen(false)}>Cancel</Btn>
+                </div>
+              );
+            })()}
+            <div className="flex justify-end gap-2 pt-4 border-t border-white/8">
+              <Btn variant="ghost" onClick={() => { setScAddOpen(false); setScAddQuery(""); setScAddPickerId(""); }}>Cancel</Btn>
               <Btn
                 variant="primary"
                 disabled={!scAddPickerId || scAddBusy}
@@ -1885,7 +1905,7 @@ function BusinessesPageInner() {
               ))}
             </div>
             {canEdit && (
-              <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); }}>+ Add Business</Btn>
+              <Btn variant="primary" onClick={() => { setScAddOpen(true); setScAddPickerId(""); setScAddQuery(""); }}>+ Add Business</Btn>
             )}
           </div>
 
