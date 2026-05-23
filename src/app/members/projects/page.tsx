@@ -432,7 +432,8 @@ function BusinessesPageInner() {
   // When false (default), only Ongoing businesses are shown in the Businesses tab.
   // Fine-grained filter checkboxes for businesses tab.
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
-  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+  const [filterTechStatuses, setFilterTechStatuses] = useState<Set<string>>(new Set());
+  const [filterMarketingStatuses, setFilterMarketingStatuses] = useState<Set<string>>(new Set());
   const [filterNeighborhoods, setFilterNeighborhoods] = useState<Set<string>>(new Set());
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
@@ -1031,8 +1032,15 @@ function BusinessesPageInner() {
       const bTracks = TRACK_ORDER.filter((t) => (business.projectTracks ?? []).includes(t));
       if (!bTracks.some((t) => filterTracks.has(t))) return false;
     }
-    if (filterStatuses.size > 0) {
-      if (!filterStatuses.has(normalizeProjectStatus(business.projectStatus))) return false;
+    if (filterTechStatuses.size > 0) {
+      const norm = normalizeTrackProjectsFromBusiness(business);
+      if (!norm.projectTracks.includes("Tech")) return false;
+      if (!filterTechStatuses.has(norm.trackProjects.Tech?.projectStatus ?? "Upcoming")) return false;
+    }
+    if (filterMarketingStatuses.size > 0) {
+      const norm = normalizeTrackProjectsFromBusiness(business);
+      if (!norm.projectTracks.includes("Marketing")) return false;
+      if (!filterMarketingStatuses.has(norm.trackProjects.Marketing?.projectStatus ?? "Upcoming")) return false;
     }
     if (filterNeighborhoods.size > 0) {
       const n = getNeighborhoodLabel(business);
@@ -1052,7 +1060,7 @@ function BusinessesPageInner() {
     [businesses]
   );
 
-  const hasActiveFilters = filterTracks.size > 0 || filterStatuses.size > 0 || filterNeighborhoods.size > 0;
+  const hasActiveFilters = filterTracks.size > 0 || filterTechStatuses.size > 0 || filterMarketingStatuses.size > 0 || filterNeighborhoods.size > 0;
   const filtered = activeTab === "discovery"
     ? tabScoped.filter(matchesSearch).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
     : sortByStatusThenName(tabScoped.filter(matchesSearch));
@@ -1829,17 +1837,32 @@ function BusinessesPageInner() {
                   ))}
                 </div>
               </ViewSection>
-              <ViewSection label="Status">
+              <ViewSection label="Tech Status">
                 <div className="space-y-1.5">
-                  {(["Ongoing", "Upcoming", "Completed"] as const).map((s) => (
-                    <label key={s} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                  {TECH_STATUSES.map(({ value }) => (
+                    <label key={value} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
                       <input
                         type="checkbox"
                         className="members-checkbox"
-                        checked={filterStatuses.has(s)}
-                        onChange={() => setFilterStatuses((prev) => { const next = new Set(prev); if (next.has(s)) next.delete(s); else next.add(s); return next; })}
+                        checked={filterTechStatuses.has(value)}
+                        onChange={() => setFilterTechStatuses((prev) => { const next = new Set(prev); if (next.has(value)) next.delete(value); else next.add(value); return next; })}
                       />
-                      {s}
+                      {value}
+                    </label>
+                  ))}
+                </div>
+              </ViewSection>
+              <ViewSection label="Marketing Status">
+                <div className="space-y-1.5">
+                  {MARKETING_STATUSES.map(({ value }) => (
+                    <label key={value} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                      <input
+                        type="checkbox"
+                        className="members-checkbox"
+                        checked={filterMarketingStatuses.has(value)}
+                        onChange={() => setFilterMarketingStatuses((prev) => { const next = new Set(prev); if (next.has(value)) next.delete(value); else next.add(value); return next; })}
+                      />
+                      {value}
                     </label>
                   ))}
                 </div>

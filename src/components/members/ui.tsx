@@ -873,7 +873,7 @@ export function ViewPanel({
         }`}
       >
         View
-        {active && !open && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#85CC17] flex-shrink-0" />}
+        {active && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#85CC17] flex-shrink-0" />}
       </button>
       {open && (
         <div
@@ -889,7 +889,7 @@ export function ViewPanel({
 
 export function ViewSection({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="pt-3.5 border-t border-white/8 first:border-t-0 first:pt-0">
+    <div className="pt-3.5 pb-3.5 border-t border-white/8 first:border-t-0 first:pt-0 last:pb-0">
       <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2.5">{label}</p>
       {children}
     </div>
