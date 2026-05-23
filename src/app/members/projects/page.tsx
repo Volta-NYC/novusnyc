@@ -711,7 +711,7 @@ function BusinessesPageInner() {
   };
 
 
-  const handleSave = async (opts?: { addAnother?: boolean }) => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
     const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : [])
       .map((track) => normalizeDivision(track))
@@ -809,23 +809,18 @@ function BusinessesPageInner() {
       } as Omit<Business, "id" | "createdAt" | "updatedAt">);
     }
 
-    // "Save & Add Another" re-opens the modal with the same neighborhood pre-filled.
-    if (opts?.addAnother && !editingBusiness) {
-      openCreate(neighborhood || undefined);
-    } else {
-      setModal(null);
-    }
+    setModal(null);
   };
 
   const handleDeleteFromEdit = async () => {
     if (!editingBusiness) return;
-    const name = editingBusiness.name || "this project";
+    const name = editingBusiness.name || "this business";
     await ask(
       async () => {
         await deleteBusiness(editingBusiness.id);
         setModal(null);
       },
-      `Delete "${name}"? This permanently removes the project from the tracker.`,
+      `Delete "${name}"? This permanently removes the business from the tracker.`,
     );
   };
 
@@ -2011,7 +2006,7 @@ function BusinessesPageInner() {
             <div className="p-6">
               <Empty
                 message="No discovery entries. New website-form submissions and any unassigned businesses will land here."
-                action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first project</Btn> : undefined}
+                action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first business</Btn> : undefined}
               />
             </div>
           ) : null}
@@ -2173,7 +2168,7 @@ function BusinessesPageInner() {
       </Modal>
 
       {/* Create / Edit modal */}
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Project" : "New Project"}>
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Business" : "New Business"}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[74vh] overflow-y-auto pr-2">
           {/* ── Business Info ── */}
           <div className="lg:col-span-2">
@@ -2351,22 +2346,12 @@ function BusinessesPageInner() {
           <div>
             {editingBusiness && (
               <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
-                Delete Project
+                Delete Business
               </Btn>
             )}
           </div>
           <div className="flex gap-2">
             <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-            {!editingBusiness && (
-              <Btn
-                variant="secondary"
-                onClick={() => void handleSave({ addAnother: true })}
-                disabled={!form.name.trim()}
-                title="Save this business and immediately open a new form with the same neighborhood"
-              >
-                Save &amp; Add Another
-              </Btn>
-            )}
             <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim()}>
               {editingBusiness ? "Save" : "Create"}
             </Btn>

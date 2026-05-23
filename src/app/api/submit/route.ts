@@ -124,7 +124,7 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
     city_state: cityState,
     referral: asText(data["How They Heard"]),
     tracks_selected: tracks,
-    has_resume: asText(data["Has Resume"]) || null,
+    has_resume: asText(data["Has Resume"]).toLowerCase() === "yes" ? true : asText(data["Has Resume"]).toLowerCase() === "no" ? false : null,
     resume_url: asText(data["Resume URL"]),
     tools_software: asText(data["Tools/Software"]),
     accomplishment: asText(data.Accomplishment),
@@ -268,7 +268,8 @@ export async function POST(request: Request) {
   if (formType === "application") {
     try {
       await upsertApplicationFromForm(data);
-    } catch {
+    } catch (err) {
+      console.error("application_db_write_failed", err);
       dbWriteFailed = true;
     }
   }
