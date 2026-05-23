@@ -106,16 +106,19 @@ const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ];
 
-const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"] | FinanceStatusValue, number> = {
-  Upcoming: 0,
-  "Not Started": 0,
-  Discovery: 0,
-  "On Hold": 0,
-  Ongoing: 1,
-  Active: 1,
-  "In Progress": 1,
-  Completed: 2,
-  Complete: 2,
+const TECH_STATUS_SORT: Record<string, number> = {
+  "Upcoming": 0,
+  "In Development": 1,
+  "Awaiting Client": 2,
+  "Awaiting Deployment": 3,
+  "Completed": 4,
+};
+
+const MARKETING_STATUS_SORT: Record<string, number> = {
+  "Upcoming": 0,
+  "In Planning": 1,
+  "Awaiting Client": 2,
+  "Consistent Posts": 3,
 };
 
 function normalizeProjectStatus(value: unknown): ProjectStatusValue {
@@ -917,11 +920,27 @@ function BusinessesPageInner() {
       || allTeamNames.some((name) => name.toLowerCase().includes(query));
   };
 
-  // Status sort: Upcoming first, then Ongoing, then Completed; tie-break by name.
   const sortByStatusThenName = (list: Business[]) => {
     return [...list].sort((a, b) => {
-      const statusDelta = PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(a.projectStatus)] - PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(b.projectStatus)];
-      if (statusDelta !== 0) return statusDelta;
+      const aN = normalizeTrackProjectsFromBusiness(a);
+      const bN = normalizeTrackProjectsFromBusiness(b);
+
+      const aTechRank = aN.projectTracks.includes("Tech")
+        ? (TECH_STATUS_SORT[aN.trackProjects.Tech?.projectStatus ?? "Upcoming"] ?? 99)
+        : 99;
+      const bTechRank = bN.projectTracks.includes("Tech")
+        ? (TECH_STATUS_SORT[bN.trackProjects.Tech?.projectStatus ?? "Upcoming"] ?? 99)
+        : 99;
+      if (aTechRank !== bTechRank) return aTechRank - bTechRank;
+
+      const aMarketingRank = aN.projectTracks.includes("Marketing")
+        ? (MARKETING_STATUS_SORT[aN.trackProjects.Marketing?.projectStatus ?? "Upcoming"] ?? 99)
+        : 99;
+      const bMarketingRank = bN.projectTracks.includes("Marketing")
+        ? (MARKETING_STATUS_SORT[bN.trackProjects.Marketing?.projectStatus ?? "Upcoming"] ?? 99)
+        : 99;
+      if (aMarketingRank !== bMarketingRank) return aMarketingRank - bMarketingRank;
+
       return a.name.localeCompare(b.name);
     });
   };
@@ -1392,13 +1411,13 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-3 py-0 h-9 align-middle">
+        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
           {renderTrackStatusCell(b, "Tech")}
         </td>
-        <td className="px-3 py-0 h-9 align-middle">
+        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
           {renderTrackStatusCell(b, "Marketing")}
         </td>
-        <td className="px-3 py-0 h-9 align-middle">
+        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
           {renderTrackStatusCell(b, "Finance")}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
@@ -2100,7 +2119,7 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1286px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1311px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2108,7 +2127,7 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Tech</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
@@ -2125,7 +2144,7 @@ function BusinessesPageInner() {
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1156px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1181px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2133,7 +2152,7 @@ function BusinessesPageInner() {
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Tech</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>
