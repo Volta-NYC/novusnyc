@@ -17,7 +17,7 @@ const moreLinks = [
   { href: "/reports", label: "Reports & Case Studies" },
   { href: "/guides", label: "Guides for Businesses" },
   { href: "/updates", label: "Progress Updates" },
-  { href: "/members/login", label: "Member Login" },
+  { href: "/members", label: "Member Portal" },
 ];
 
 /** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */

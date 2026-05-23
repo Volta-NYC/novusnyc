@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
@@ -95,7 +96,13 @@ function ClaimRow({ c, a, biz }: { c: AssignmentClaim; a: Assignment | undefined
 }
 
 export default function MyRecordPage() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, authRole, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+    if (authRole === "owner" || authRole === "admin") router.replace("/members/projects");
+  }, [loading, authRole, router]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -212,6 +219,8 @@ export default function MyRecordPage() {
       .filter((c): c is Cycle => !!c)
       .sort((a, b) => (b.startDate ?? "").localeCompare(a.startDate ?? ""));
   }, [claimsByCycle, cyclesById]);
+
+  if (loading || authRole === "owner" || authRole === "admin") return null;
 
   return (
     <MembersLayout>

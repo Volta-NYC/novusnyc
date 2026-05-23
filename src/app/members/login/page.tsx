@@ -17,7 +17,7 @@ export default function MembersLogin() {
   const [showReset, setShowReset] = useState(false);
   const router = useRouter();
   const [passwordReset, setPasswordReset] = useState(false);
-  const { user, loading: authLoading } = useAuth();
+  const { user, authRole, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -26,10 +26,10 @@ export default function MembersLogin() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      router.replace("/members");
-    }
-  }, [authLoading, user, router]);
+    if (authLoading || !user) return;
+    if (authRole === "member") { router.replace("/members/me"); return; }
+    router.replace("/members/projects");
+  }, [authLoading, user, authRole, router]);
 
   if (authLoading || user) return null;
 
