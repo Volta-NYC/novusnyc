@@ -152,9 +152,7 @@ export default function Navbar() {
                           key={l.href}
                           href={l.href}
                           className={`block px-4 py-2.5 font-body text-sm transition-colors hover:bg-v-bg ${
-                            l.href === "/members/login"
-                              ? "text-v-green font-semibold"
-                              : pathname === l.href
+                            l.href === "/members" || pathname === l.href
                               ? "text-v-green font-semibold"
                               : "text-v-ink"
                           }`}
@@ -222,7 +220,7 @@ export default function Navbar() {
                     key={l.href}
                     href={l.href}
                     className={`font-body text-base transition-colors ${
-                      l.href === "/members/login" ? "text-v-green" : "text-v-muted hover:text-v-ink"
+                      l.href === "/members" ? "text-v-green font-semibold" : "text-v-muted hover:text-v-ink"
                     }`}
                   >
                     {l.label}
