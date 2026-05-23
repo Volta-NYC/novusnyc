@@ -28,20 +28,20 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/members/projects",
-    label: "Businesses and Projects",
+    label: "Businesses",
     activeMatchRoots: ["/members/projects"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
+  },
+  {
+    href: "/members/bids",
+    label: "Organizations",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/><path d="M10 21v-4h4v4"/></svg>,
   },
   {
     href: "/members/assignments/by-project",
     label: "Assignments",
     activeMatchRoots: ["/members/assignments"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
-  },
-  {
-    href: "/members/bids",
-    label: "Partner Organizations",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/><path d="M10 21v-4h4v4"/></svg>,
   },
   {
     href: "/members/team",
@@ -321,6 +321,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const sidebarW = sidebarCollapsed ? "w-14" : "w-56";
   const contentPl = sidebarCollapsed ? "lg:pl-14" : "lg:pl-56";
 
+  // Shared fade class for text that should hide when the sidebar collapses.
+  const fadeText = `overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-150 ease-in-out ${
+    sidebarCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"
+  }`;
+
   return (
     <div className={`members-portal ${lightTheme ? "members-portal-light" : ""} min-h-screen ${tone.page} flex`}>
 
@@ -376,7 +381,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full ${sidebarW} ${tone.sidebar} z-30 flex flex-col transition-[width] duration-200 overflow-hidden ${
+        className={`fixed left-0 top-0 h-full ${sidebarW} ${tone.sidebar} z-30 flex flex-col transition-[width,transform] duration-200 ease-in-out overflow-hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -386,42 +391,36 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             className="px-3 py-2 text-xs font-body font-semibold text-center leading-snug shrink-0"
             style={{ backgroundColor: portalBanner.bg, color: portalBanner.text }}
           >
-            {!sidebarCollapsed && portalBanner.message}
+            <span className={fadeText}>{portalBanner.message}</span>
           </div>
         )}
 
         {/* Logo + collapse toggle */}
-        <div className={`px-3 py-3 border-b ${tone.sidebarBorder} flex items-center shrink-0 ${sidebarCollapsed ? "justify-center" : "justify-between gap-2"}`}>
-          {sidebarCollapsed ? (
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              title="Expand sidebar"
-              className="flex items-center justify-center"
-            >
-              <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain" />
-            </button>
-          ) : (
-            <>
-              <div className="flex items-center gap-2.5 min-w-0">
-                <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain shrink-0" />
-                <div className="min-w-0">
-                  <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
-                  <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5 truncate`}>Members Portal</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={toggleCollapsed}
-                title="Collapse sidebar"
-                className={`rounded-md p-1 transition-colors shrink-0 ${tone.collapseBtn}`}
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
-              </button>
-            </>
-          )}
+        <div className={`px-3 py-3 border-b ${tone.sidebarBorder} flex items-center gap-2 shrink-0`}>
+          <button
+            type="button"
+            onClick={sidebarCollapsed ? toggleCollapsed : undefined}
+            title={sidebarCollapsed ? "Expand sidebar" : undefined}
+            className={`flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden ${sidebarCollapsed ? "cursor-pointer" : "cursor-default"}`}
+          >
+            <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain shrink-0" />
+            <div className={fadeText}>
+              <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
+              <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            title="Collapse sidebar"
+            className={`rounded-md p-1 transition-[opacity,colors] duration-150 shrink-0 ${tone.collapseBtn} ${
+              sidebarCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
         </div>
 
         {/* Navigation */}
@@ -435,12 +434,12 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? item.label : undefined}
-                className={`flex items-center rounded-lg text-sm font-body transition-colors ${
-                  sidebarCollapsed ? "justify-center px-2 py-2" : "gap-2.5 px-3 py-2"
+                className={`flex items-center gap-2.5 rounded-lg text-sm font-body transition-colors ${
+                  sidebarCollapsed ? "justify-center px-2 py-2" : "px-3 py-2"
                 } ${isActive ? tone.navActive : tone.navInactive}`}
               >
                 <span className={`shrink-0 ${isActive ? tone.navIconActive : tone.navIconInactive}`}>{item.icon}</span>
-                {!sidebarCollapsed && item.label}
+                <span className={fadeText}>{item.label}</span>
               </Link>
             );
           })}
@@ -453,8 +452,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setProfilePopoverOpen((v) => !v)}
               title={sidebarCollapsed ? memberDisplayName : undefined}
-              className={`w-full flex items-center rounded-lg text-left transition-colors mb-1 ${
-                sidebarCollapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2"
+              className={`w-full flex items-center gap-2.5 rounded-lg text-left transition-colors mb-1 ${
+                sidebarCollapsed ? "justify-center p-2" : "px-3 py-2"
               } ${tone.navInactive}`}
             >
               <span
@@ -465,20 +464,18 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
               >
                 {initials}
               </span>
-              {!sidebarCollapsed && (
-                <>
-                  <span className="min-w-0 flex-1">
-                    <p className={`${tone.userName} text-xs font-body font-medium truncate`}>{memberDisplayName}</p>
-                    <p className={`${tone.userRole} text-[10px] font-body`}>{memberRoleLabel}</p>
-                  </span>
-                  <svg
-                    className={`w-3 h-3 shrink-0 transition-transform ${profilePopoverOpen ? "rotate-180" : ""} ${tone.userRole}`}
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  >
-                    <polyline points="18 15 12 9 6 15" />
-                  </svg>
-                </>
-              )}
+              <span className={`${fadeText} flex-1 min-w-0`}>
+                <p className={`${tone.userName} text-xs font-body font-medium truncate`}>{memberDisplayName}</p>
+                <p className={`${tone.userRole} text-[10px] font-body`}>{memberRoleLabel}</p>
+              </span>
+              <svg
+                className={`w-3 h-3 shrink-0 transition-[opacity,transform] duration-150 ${profilePopoverOpen ? "rotate-180" : ""} ${tone.userRole} ${
+                  sidebarCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+                }`}
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
             </button>
 
             {profilePopoverOpen && (
@@ -521,7 +518,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <div className={`flex-1 ${contentPl} flex flex-col min-h-screen min-w-0 overflow-x-hidden transition-[padding] duration-200`}>
+      <div className={`flex-1 ${contentPl} flex flex-col min-h-screen min-w-0 overflow-x-hidden transition-[padding-left] duration-200 ease-in-out`}>
 
         {/* Mobile top bar */}
         <div className={`lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-10 ${tone.mobileBar}`}>
