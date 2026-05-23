@@ -14,6 +14,7 @@ import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
   createBusiness, updateBusiness, deleteBusiness, hardDeleteBusiness,
+  getSiteSettings,
   type Business, type TeamMember, type Assignment, type AssignmentClaim,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -432,6 +433,9 @@ function BusinessesPageInner() {
   const [filterNeighborhoods, setFilterNeighborhoods] = useState<Set<string>>(new Set());
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const [showcaseServiceOptions, setShowcaseServiceOptions] = useState<string[]>(["Website", "SEO", "Social Media", "Graphic Design", "Grants"]);
 
   // Showcase tab state
   const [scAddOpen, setScAddOpen] = useState(false);
@@ -484,6 +488,9 @@ function BusinessesPageInner() {
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeAssignments(setAssignments), []);
   useEffect(() => subscribeAssignmentClaims(setClaims), []);
+  useEffect(() => {
+    getSiteSettings().then((s) => { if (s.services.length > 0) setShowcaseServiceOptions(s.services); });
+  }, []);
   useEffect(() => {
     if (normalizedLegacyColorsRef.current) return;
     if (!canEdit || businesses.length === 0) return;
@@ -1854,13 +1861,14 @@ function BusinessesPageInner() {
             />
             {(() => {
               const q = scAddQuery.trim().toLowerCase();
+              if (!q) return <p className="text-sm text-white/35 text-center py-4">Type a business name to search…</p>;
               const options = [...businesses]
                 .filter((b) => !b.showcaseEnabled)
-                .filter((b) => !q || b.name.toLowerCase().includes(q) || (b.neighborhood ?? "").toLowerCase().includes(q))
+                .filter((b) => b.name.toLowerCase().includes(q) || (b.neighborhood ?? "").toLowerCase().includes(q))
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .slice(0, 8);
               if (options.length === 0) {
-                return <p className="text-sm text-white/35 text-center py-4">{q ? "No matches." : "All businesses are already in the showcase."}</p>;
+                return <p className="text-sm text-white/35 text-center py-4">No matches.</p>;
               }
               return (
                 <div className="rounded-lg border border-white/8 overflow-hidden divide-y divide-white/6 mb-4">
@@ -2365,16 +2373,26 @@ function BusinessesPageInner() {
               const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []);
               const hasTracks = selectedTracks.length > 0;
               if (hasTracks) {
-                const derived = deriveOverallStatus(
-                  Object.fromEntries(
-                    selectedTracks.map((t) => [t, normalizeTrackProjectInfo(form.trackProjects?.[t]) ?? { projectStatus: "Upcoming" as TrackStatusValue, teamMembers: [], deadlines: [], notes: "" }])
-                  ) as TrackProjectMap,
-                  selectedTracks.map((t) => normalizeDivision(t)),
-                );
+                const tpMap = form.trackProjects as TrackProjectMap;
                 return (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/55">Auto-derived from tracks:</span>
-                    <span className="text-xs font-semibold text-white/80">{derived}</span>
+                  <div className="space-y-2">
+                    {selectedTracks.map((rawTrack) => {
+                      const track = normalizeDivision(rawTrack);
+                      const statuses = track === "Tech" ? TECH_STATUSES : track === "Marketing" ? MARKETING_STATUSES : FINANCE_STATUSES;
+                      const currentStatus = tpMap?.[track]?.projectStatus ?? "Upcoming";
+                      return (
+                        <div key={track} className="flex items-center gap-3">
+                          <span className="text-xs text-white/55 w-20 flex-shrink-0">{TRACK_META[track].label}</span>
+                          <select
+                            value={currentStatus}
+                            onChange={(e) => setTrackField(track, "projectStatus", e.target.value)}
+                            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+                          >
+                            {statuses.map(({ value }) => <option key={value} value={value}>{value}</option>)}
+                          </select>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               }
@@ -2415,6 +2433,121 @@ function BusinessesPageInner() {
                 );
               })}
             </div>
+          </div>
+
+          {/* ── Showcase ── */}
+          <div className="lg:col-span-2">
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Public Showcase</p>
+            <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 cursor-pointer mb-3">
+              <div>
+                <p className="text-sm text-white/85 font-medium">Include in public showcase</p>
+                <p className="text-[11px] text-white/40 mt-0.5">Appears on voltanyc.org/showcase and optionally the home page.</p>
+              </div>
+              <input
+                type="checkbox"
+                className="members-checkbox"
+                checked={!!form.showcaseEnabled}
+                onChange={(e) => setField("showcaseEnabled", e.target.checked)}
+              />
+            </label>
+            {form.showcaseEnabled && (
+              <div className="space-y-3 pl-1">
+                <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={!!form.showcaseFeaturedOnHome}
+                    onChange={(e) => setField("showcaseFeaturedOnHome", e.target.checked)}
+                  />
+                  <span>Feature on home page</span>
+                </label>
+                <Field label="Description">
+                  <TextArea
+                    rows={3}
+                    value={form.showcaseDescription ?? ""}
+                    onChange={(e) => setField("showcaseDescription", e.target.value)}
+                    placeholder="Public description shown on the showcase card…"
+                  />
+                </Field>
+                <Field label="Website URL">
+                  <Input
+                    value={form.showcaseUrl ?? ""}
+                    onChange={(e) => setField("showcaseUrl", e.target.value)}
+                    placeholder="https://…"
+                  />
+                </Field>
+                <Field label="Service">
+                  <select
+                    value={(form.showcaseServices ?? [])[0] ?? ""}
+                    onChange={(e) => setField("showcaseServices", e.target.value ? [e.target.value] : [])}
+                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+                  >
+                    <option value="">— none —</option>
+                    {showcaseServiceOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </Field>
+                <Field label="Card color">
+                  <div className="flex flex-wrap gap-1.5">
+                    {SHOWCASE_COLOR_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setField("showcaseColor", opt.value)}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${form.showcaseColor === opt.value ? "border-white scale-110" : "border-white/20 hover:border-white/50"}`}
+                        style={{ backgroundColor: opt.swatch }}
+                        title={opt.label}
+                      />
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Photo">
+                  {(form.showcaseImageData || form.showcaseImageUrl) && (
+                    <div className="mb-2 rounded-xl overflow-hidden border border-white/10" style={{ maxHeight: 140 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.showcaseImageData || form.showcaseImageUrl || ""}
+                        alt="Showcase preview"
+                        className="w-full object-cover"
+                        style={{ maxHeight: 140 }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Btn
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      {form.showcaseImageData || form.showcaseImageUrl ? "Change photo" : "Upload photo"}
+                    </Btn>
+                    {(form.showcaseImageData || form.showcaseImageUrl) && (
+                      <Btn
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setField("showcaseImageData", ""); setField("showcaseImageUrl", ""); }}
+                      >
+                        Remove
+                      </Btn>
+                    )}
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => { setField("showcaseImageData", ev.target?.result as string); };
+                        reader.readAsDataURL(file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-white/35 mt-1.5">Stored in Supabase Storage. Recommended: 16:9, under 2 MB.</p>
+                </Field>
+              </div>
+            )}
           </div>
 
         </div>
