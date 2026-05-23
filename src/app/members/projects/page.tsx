@@ -13,7 +13,7 @@ import {
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
-  createBusiness, updateBusiness, deleteBusiness,
+  createBusiness, updateBusiness, deleteBusiness, hardDeleteBusiness,
   type Business, type TeamMember, type Assignment, type AssignmentClaim,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -831,7 +831,7 @@ function BusinessesPageInner() {
     setModal(null);
   };
 
-  const handleDeleteFromEdit = async () => {
+  const handleArchiveFromEdit = async () => {
     if (!editingBusiness) return;
     const name = editingBusiness.name || "this business";
     await ask(
@@ -839,7 +839,26 @@ function BusinessesPageInner() {
         await deleteBusiness(editingBusiness.id);
         setModal(null);
       },
-      `Archive "${name}"? The business will be hidden from the tracker but not destroyed.`,
+      `Archive "${name}"? It will be hidden from the tracker but can be restored from the database.`,
+    );
+  };
+
+  const handleHardDeleteFromEdit = async () => {
+    if (!editingBusiness) return;
+    const name = editingBusiness.name || "this business";
+    await ask(
+      async () => {
+        await hardDeleteBusiness(editingBusiness.id);
+        setModal(null);
+      },
+      `Permanently delete "${name}"? This cannot be undone.`,
+    );
+  };
+
+  const handleHardDeleteDirect = async (b: Business) => {
+    await ask(
+      async () => { await hardDeleteBusiness(b.id); },
+      `Permanently delete "${b.name || "this entry"}"? This cannot be undone.`,
     );
   };
 
@@ -1511,6 +1530,7 @@ function BusinessesPageInner() {
                 </Btn>
               )}
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
+              <Btn size="sm" variant="danger" onClick={() => void handleHardDeleteDirect(b)}>Delete</Btn>
             </div>
           )}
         </td>
@@ -2381,9 +2401,14 @@ function BusinessesPageInner() {
         <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-white/8">
           <div>
             {editingBusiness && (
-              <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
-                Archive Business
-              </Btn>
+              <div className="flex gap-2">
+                <Btn variant="danger" onClick={() => void handleArchiveFromEdit()} title="Hide from tracker (recoverable)">
+                  Archive
+                </Btn>
+                <Btn variant="danger" onClick={() => void handleHardDeleteFromEdit()} title="Permanently delete — cannot be undone">
+                  Delete
+                </Btn>
+              </div>
             )}
           </div>
           <div className="flex gap-2">

@@ -1198,6 +1198,15 @@ export async function deleteBusiness(id: string): Promise<void> {
   await writeAuditLog({ action: "delete", collection: "businesses", recordId: id });
 }
 
+export async function hardDeleteBusiness(id: string): Promise<void> {
+  const { error: bizDeleteError } = await supabase
+    .from("businesses")
+    .delete()
+    .eq("id", id);
+  if (bizDeleteError) throw new Error(bizDeleteError.message);
+  await writeAuditLog({ action: "delete", collection: "businesses", recordId: id, details: { permanent: true } });
+}
+
 // ── Team ──────────────────────────────────────────────────────────────────────
 
 export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt">): Promise<void> {
