@@ -4,6 +4,7 @@ import { getSupabaseAdmin, writeAuditLog } from "@/lib/supabaseAdmin";
 import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 import { buildConfirmedAccountAcceptanceTemplate } from "@/lib/server/applicantEmails";
 import { renderAutomationEmail } from "@/lib/server/templateRenderer";
+import { loadEmailTemplate } from "@/lib/server/emailTemplates";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,25 @@ type DecisionEmailBody = {
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
+
+const DEFAULT_ACCEPTED_NEW_SUBJECT = "Congratulations — You've been accepted to Volta NYC";
+const DEFAULT_ACCEPTED_NEW_HTML = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="background-color:#ffffff;margin:0;padding:0;">
+  <div style="font-family:Garamond,'EB Garamond',serif;font-size:15px;line-height:1.7;color:#111111;max-width:520px;margin:0 auto;padding:32px 24px;">
+    <img src="https://voltanyc.org/logo.png" alt="Volta NYC" width="36" style="display:block;margin-bottom:28px;">
+    <p style="margin:0 0 16px;">Hi {{firstName}},</p>
+    <p style="margin:0 0 16px;">Congratulations! You've been accepted to Volta NYC.</p>
+    <p style="margin:0 0 24px;">Click below to set up your member portal account and get started:</p>
+    <p style="margin:0 0 24px;">
+      <a href="{{link}}" style="display:inline-block;background-color:#85CC17;color:#0d0d0d;font-weight:700;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;">Set Up Your Account</a>
+    </p>
+    <p style="margin:0 0 16px;font-size:13px;color:#555555;"><em>This link expires in 24 hours. If it expires, you can always request a new one at: <a href="{{signupUrl}}" style="color:#85CC17;">{{signupUrl}}</a></em></p>
+    <p style="margin:24px 0 0;">Best,<br>Ethan Zhang<br>Volta NYC</p>
+  </div>
+</body>
+</html>`;
 
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);
@@ -38,29 +58,31 @@ export async function POST(req: NextRequest) {
 
   const sb = getSupabaseAdmin();
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
+  const signupUrl = `${baseUrl}/members/signup?email=${encodeURIComponent(applicantEmail)}`;
 
-  // Check if this email already has a confirmed auth account.
-  // inviteUserByEmail is unsafe on confirmed accounts; fall back to nodemailer.
+  const from = getDefaultFromAddress();
+  let transporter: ReturnType<typeof createTransportForFrom>["transporter"];
+  try {
+    transporter = createTransportForFrom(from).transporter;
+  } catch {
+    return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
+  }
+
+  const firstName = applicantName.split(" ")[0] || applicantName;
+
+  // Check whether this email already has a confirmed Supabase auth account.
   let confirmedAccountExists = false;
+  let hasAnyAuthAccount = false;
   try {
     const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
     const match = users.find(u => u.email?.toLowerCase() === applicantEmail);
     confirmedAccountExists = !!(match?.email_confirmed_at);
-  } catch { /* treat as unconfirmed */ }
+    hasAnyAuthAccount = !!match;
+  } catch { /* treat as new user */ }
 
   if (confirmedAccountExists) {
-    const from = getDefaultFromAddress();
-    let transporter: ReturnType<typeof createTransportForFrom>["transporter"];
-    try {
-      transporter = createTransportForFrom(from).transporter;
-    } catch {
-      return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
-    }
-    const firstName = applicantName.split(" ")[0] || applicantName;
-    const rendered = await renderAutomationEmail("applicant_accepted", {
-      applicantName,
-      firstName,
-    });
+    // Already has a portal account — just send the acceptance notification.
+    const rendered = await renderAutomationEmail("applicant_accepted", { applicantName, firstName });
     const fallback = buildConfirmedAccountAcceptanceTemplate({ name: applicantName });
     await transporter.sendMail({
       from: resolveFromWithName(from),
@@ -68,18 +90,75 @@ export async function POST(req: NextRequest) {
       to: applicantEmail,
       subject: rendered?.subject ?? fallback.subject,
       text: fallback.text,
-      html: rendered?.html    ?? fallback.html,
+      html: rendered?.html ?? fallback.html,
     });
   } else {
-    // No confirmed account — use inviteUserByEmail so Supabase sends the
-    // acceptance+invite email via its configured SMTP.
-    const { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(applicantEmail, {
-      redirectTo: `${baseUrl}/members/signup`,
-      data: { full_name: applicantName },
-    });
-    if (inviteErr) {
-      return NextResponse.json({ error: "invite_failed", detail: inviteErr.message }, { status: 500 });
+    // No confirmed account — create auth user if needed, then send acceptance + setup link.
+    if (!hasAnyAuthAccount) {
+      const { error: createErr } = await sb.auth.admin.createUser({
+        email: applicantEmail,
+        email_confirm: false,
+        user_metadata: { full_name: applicantName },
+      });
+      // Ignore "already registered" — the generateLink call below handles it.
+      if (createErr && !createErr.message.toLowerCase().includes("already")) {
+        return NextResponse.json({ error: "user_create_failed", detail: createErr.message }, { status: 500 });
+      }
     }
+
+    // Generate an invite OTP link that redirects back to our signup page.
+    let otpLink: string | null = null;
+    const { data: inviteData, error: inviteErr } = await sb.auth.admin.generateLink({
+      type: "invite",
+      email: applicantEmail,
+      options: { redirectTo: signupUrl, data: { full_name: applicantName } },
+    });
+    otpLink = inviteData?.properties?.action_link ?? null;
+
+    // Fall back to magiclink if invite-type fails (e.g. already confirmed via a race).
+    if (inviteErr || !otpLink) {
+      const { data: magicData } = await sb.auth.admin.generateLink({
+        type: "magiclink",
+        email: applicantEmail,
+        options: { redirectTo: signupUrl },
+      });
+      otpLink = magicData?.properties?.action_link ?? null;
+    }
+
+    if (!otpLink) {
+      return NextResponse.json({ error: "invite_link_failed" }, { status: 500 });
+    }
+
+    const { subject, html } = await loadEmailTemplate(
+      "applicant_accepted_new_user",
+      { name: applicantName, firstName, link: otpLink, signupUrl },
+      { subject: DEFAULT_ACCEPTED_NEW_SUBJECT, html: DEFAULT_ACCEPTED_NEW_HTML }
+    );
+
+    const text = [
+      `Hi ${firstName},`,
+      "",
+      "Congratulations! You've been accepted to Volta NYC.",
+      "",
+      "Click the link below to set up your member portal account:",
+      otpLink,
+      "",
+      "This link expires in 24 hours. If it expires, you can always request a new one at:",
+      signupUrl,
+      "",
+      "Best,",
+      "Ethan Zhang",
+      "Volta NYC",
+    ].join("\n");
+
+    await transporter.sendMail({
+      from: resolveFromWithName(from),
+      replyTo: getDefaultReplyToAddress(from),
+      to: applicantEmail,
+      subject,
+      text,
+      html,
+    });
   }
 
   await writeAuditLog({
