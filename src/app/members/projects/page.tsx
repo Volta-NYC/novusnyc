@@ -98,13 +98,13 @@ const TEAM_EMAIL_FROM_OPTIONS = [
 ];
 
 const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
-  Ongoing: 0,
-  Upcoming: 1,
+  Upcoming: 0,
+  "Not Started": 0,
+  Discovery: 0,
+  "On Hold": 0,
+  Ongoing: 1,
+  Active: 1,
   Completed: 2,
-  Active: 0,
-  "On Hold": 1,
-  "Not Started": 1,
-  Discovery: 1,
   Complete: 2,
 };
 
@@ -727,7 +727,9 @@ function BusinessesPageInner() {
         notes: "",
       };
     }
-    const overallStatus = deriveOverallStatus(nextTrackProjects, selectedTracks);
+    const overallStatus = selectedTracks.length > 0
+      ? deriveOverallStatus(nextTrackProjects, selectedTracks)
+      : (normalizeProjectStatus(form.projectStatus) as ProjectStatusValue);
     const primaryDivision = derivePrimaryDivision(selectedTracks);
     const flattenedTeamMembers = TRACK_ORDER.flatMap((track) => nextTrackProjects[track]?.teamMembers ?? []);
     const primaryNotes = nextTrackProjects[primaryDivision]?.notes ?? "";
@@ -874,15 +876,11 @@ function BusinessesPageInner() {
       || allTeamNames.some((name) => name.toLowerCase().includes(query));
   };
 
-  // Status sort puts Ongoing on top, then Upcoming, then Completed; tie-break by business name.
+  // Status sort: Upcoming first, then Ongoing, then Completed; tie-break by name.
   const sortByStatusThenName = (list: Business[]) => {
     return [...list].sort((a, b) => {
       const statusDelta = PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(a.projectStatus)] - PROJECT_STATUS_SORT_ORDER[normalizeProjectStatus(b.projectStatus)];
       if (statusDelta !== 0) return statusDelta;
-      const aNeighborhood = (a.neighborhood ?? a.showcaseNeighborhood ?? "").trim();
-      const bNeighborhood = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim();
-      const neighborhoodDelta = aNeighborhood.localeCompare(bNeighborhood);
-      if (neighborhoodDelta !== 0) return neighborhoodDelta;
       return a.name.localeCompare(b.name);
     });
   };
@@ -1276,7 +1274,12 @@ function BusinessesPageInner() {
             setPopoverPos(null);
           } else {
             const r = e.currentTarget.getBoundingClientRect();
-            setPopoverPos({ top: r.bottom + 4, left: r.left });
+            const spaceBelow = window.innerHeight - r.bottom;
+            const estimatedHeight = 220;
+            const top = spaceBelow >= estimatedHeight
+              ? r.bottom + 4
+              : r.top - estimatedHeight - 4;
+            setPopoverPos({ top, left: r.left });
             setOpenStatusPopover({ id: b.id, track });
           }
         }}
@@ -2282,6 +2285,40 @@ function BusinessesPageInner() {
                 <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from &ldquo;{presetNeighborhood}&rdquo; group</p>
               )}
             </Field>
+          </div>
+
+          {/* ── Status ── */}
+          <div className="lg:col-span-2">
+            <p className="text-white/30 text-xs uppercase tracking-wider font-body mb-2">Status</p>
+            {(() => {
+              const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : []);
+              const hasTracks = selectedTracks.length > 0;
+              if (hasTracks) {
+                const derived = deriveOverallStatus(
+                  Object.fromEntries(
+                    selectedTracks.map((t) => [t, normalizeTrackProjectInfo(form.trackProjects?.[t]) ?? { projectStatus: "Upcoming" as TrackStatusValue, teamMembers: [], deadlines: [], notes: "" }])
+                  ) as TrackProjectMap,
+                  selectedTracks.map((t) => normalizeDivision(t)),
+                );
+                return (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/55">Auto-derived from tracks:</span>
+                    <span className="text-xs font-semibold text-white/80">{derived}</span>
+                  </div>
+                );
+              }
+              return (
+                <select
+                  value={form.projectStatus ?? "Upcoming"}
+                  onChange={(e) => setField("projectStatus", e.target.value)}
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+                >
+                  <option value="Upcoming">Upcoming</option>
+                  <option value="Ongoing">Ongoing</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              );
+            })()}
           </div>
 
           {/* ── Tracks ── */}
