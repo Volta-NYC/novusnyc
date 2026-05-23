@@ -520,6 +520,27 @@ export default function ForReviewPage() {
             </div>
           )}
           <Field label="Credits to award" required>
+            <div className="flex gap-1.5 mb-2">
+              {[1, 0.75, 0.5, 0].map((pct) => {
+                const val = Math.round((approvingClaim?.assignment?.credits ?? 0) * pct);
+                const label = pct === 1 ? "Full" : pct === 0 ? "None" : `${pct * 100}%`;
+                return (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setCreditsOverride(String(val))}
+                    className={`flex-1 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
+                      creditsOverride === String(val)
+                        ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                        : "border-white/12 text-white/45 hover:border-white/25 hover:text-white/70"
+                    }`}
+                  >
+                    {label}
+                    <span className="block text-[9px] opacity-70">{val} cr</span>
+                  </button>
+                );
+              })}
+            </div>
             <Input
               type="number"
               min="0"

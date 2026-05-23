@@ -1445,6 +1445,24 @@ export default function TeamPage() {
                       ))}
                     </div>
                   )}
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {[+1, +2, +5, -1, -2, -3].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setAdjPoints(String(n))}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border transition-colors ${
+                          adjPoints === String(n)
+                            ? n > 0
+                              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                              : "border-red-400/40 bg-red-400/10 text-red-300"
+                            : "border-white/12 text-white/45 hover:border-white/25 hover:text-white/70"
+                        }`}
+                      >
+                        {n > 0 ? `+${n}` : n}
+                      </button>
+                    ))}
+                  </div>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
@@ -1486,7 +1504,6 @@ export default function TeamPage() {
                       Add
                     </Btn>
                   </div>
-                  <p className="text-[10px] text-white/35">Use negative numbers to deduct credits.</p>
                 </div>
               )}
             </div>

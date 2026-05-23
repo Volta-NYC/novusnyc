@@ -194,6 +194,8 @@ export default function ByProjectPage() {
   const [_bizSearch, setBizSearch] = useState("");
   const [assignmentBusy, setAssignmentBusy] = useState(false);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
 
   const [groupModal, setGroupModal]       = useState<"create" | "edit" | null>(null);
   const [editingGroup, setEditingGroup]   = useState<ProjectGroup | null>(null);
@@ -359,6 +361,8 @@ export default function ByProjectPage() {
     setEditingAssignment(null);
     setBizSearch(prefillRef ? refToLabel(prefillRef) : "");
     setAssignmentError(null);
+    setTemplateSearch("");
+    setTemplateDropdownOpen(false);
     setAssignmentModal("create");
   };
 
@@ -795,16 +799,44 @@ export default function ByProjectPage() {
             {/* Template picker */}
             {assignmentModal === "create" && templates.length > 0 && (
               <Field label="Use Template">
-                <select
-                  value=""
-                  onChange={(e) => { const t = templates.find((x) => x.id === e.target.value); if (t) applyTemplate(t); }}
-                  className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50"
-                >
-                  <option value="">— select template —</option>
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>{t.track} · {t.title}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={templateSearch}
+                    onChange={(e) => { setTemplateSearch(e.target.value); setTemplateDropdownOpen(true); }}
+                    onFocus={() => setTemplateDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setTemplateDropdownOpen(false), 150)}
+                    placeholder="Search templates…"
+                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#85CC17]/50"
+                  />
+                  {templateDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-[#13161D] border border-white/12 rounded-xl overflow-hidden shadow-xl max-h-52 overflow-y-auto">
+                      {templates
+                        .filter((t) => {
+                          const q = templateSearch.trim().toLowerCase();
+                          return !q || t.title.toLowerCase().includes(q) || (t.track ?? "").toLowerCase().includes(q);
+                        })
+                        .slice(0, 12)
+                        .map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onMouseDown={() => { applyTemplate(t); setTemplateSearch(`${t.track} · ${t.title}`); setTemplateDropdownOpen(false); }}
+                            className="w-full text-left px-3 py-2 hover:bg-white/[0.06] transition-colors"
+                          >
+                            <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wide mr-2">{t.track}</span>
+                            <span className="text-sm text-white/85">{t.title}</span>
+                          </button>
+                        ))}
+                      {templates.filter((t) => {
+                        const q = templateSearch.trim().toLowerCase();
+                        return !q || t.title.toLowerCase().includes(q) || (t.track ?? "").toLowerCase().includes(q);
+                      }).length === 0 && (
+                        <p className="px-3 py-2 text-sm text-white/35">No templates match.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </Field>
             )}
             <Field label="Title">

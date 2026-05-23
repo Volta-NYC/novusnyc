@@ -25,7 +25,17 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
   "Interview Scheduled",
   "Interview Completed",
   "Accepted",
+  "Not Accepted",
 ];
+
+const VALID_NEXT_STATUSES: Record<ApplicationStatus, ApplicationStatus[]> = {
+  "New":                   ["New", "Invited for Interview"],
+  "Invited for Interview": ["Invited for Interview", "Interview Scheduled", "New"],
+  "Interview Scheduled":   ["Interview Scheduled", "Interview Completed", "Invited for Interview"],
+  "Interview Completed":   ["Interview Completed", "Accepted", "Not Accepted", "Interview Scheduled"],
+  "Accepted":              ["Accepted", "Interview Completed"],
+  "Not Accepted":          ["Not Accepted", "Interview Completed"],
+};
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   "New": "bg-white/10 text-white/75 border border-white/20",
@@ -33,6 +43,7 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   "Interview Scheduled": "bg-blue-500/20 text-blue-200 border border-blue-400/35",
   "Interview Completed": "bg-purple-500/20 text-purple-200 border border-purple-400/35",
   "Accepted": "bg-emerald-500/20 text-emerald-200 border border-emerald-400/35",
+  "Not Accepted": "bg-red-500/15 text-red-300 border border-red-400/30",
 };
 function normalize(v: string): string {
   return v.trim().replace(/\s+/g, " ").toLowerCase();
@@ -865,7 +876,7 @@ export default function ApplicantsPage() {
                                 onChange={(e) => void updateRowStatus(app, e.target.value as ApplicationStatus)}
                                 className={`members-no-cell-scroll rounded-full px-2 py-0.5 text-[10px] font-semibold focus:outline-none ${STATUS_BADGE_CLASS[app.status] ?? STATUS_BADGE_CLASS["New"]}`}
                               >
-                                {STATUS_OPTIONS.map((status) => (
+                                {(VALID_NEXT_STATUSES[app.status] ?? STATUS_OPTIONS).map((status) => (
                                   <option key={status} value={status}>{status}</option>
                                 ))}
                               </select>
@@ -932,8 +943,10 @@ export default function ApplicantsPage() {
                               >
                                 Resume
                               </a>
+                            ) : app.resumeUrl && !showResume ? (
+                              <span className="text-white/25 italic text-[10px]">Hidden</span>
                             ) : (
-                              <span className="text-white/30">N/A</span>
+                              <span className="text-white/25">—</span>
                             )}
                           </td>
                         );

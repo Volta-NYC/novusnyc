@@ -1518,14 +1518,14 @@ function BusinessesPageInner() {
           {canEdit && (
             <div className="members-row-actions">
               <Btn size="sm" variant="secondary" onClick={() => openProjectEmailModal(b)}>Email</Btn>
-              {fromDiscovery && (
+              {(fromDiscovery || fromWebsite) && (
                 <Btn
                   size="sm"
                   variant="secondary"
                   onClick={() => void (async () => {
                     await updateBusiness(b.id, { intakeSource: null as unknown as Business["intakeSource"] });
                   })()}
-                  title="Move this lead out of Discovery into the main Businesses tab"
+                  title="Move this lead into the main Businesses tab"
                 >
                   Promote
                 </Btn>

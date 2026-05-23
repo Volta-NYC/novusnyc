@@ -12,6 +12,7 @@ import {
   getHandbookPage, upsertHandbookPage, type HandbookPage,
   getSiteSettings, updateSiteSettings, type SiteSettings,
   subscribeInfractions, createInfraction, updateInfraction, deleteInfraction,
+  subscribeBusinesses, type Business,
   type Infraction,
   getAuditLogsList, type AuditLogEntry,
 } from "@/lib/members/storage";
@@ -266,15 +267,29 @@ function ApplicationsTab() {
 // ── TAB: SERVICES ─────────────────────────────────────────────────────────────
 
 function ServicesTab() {
+  const { ask, Dialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const [services, setServices] = useState<string[]>([]);
   const [newService, setNewService] = useState("");
+  const [businesses, setBusinesses] = useState<Business[]>([]);
 
   useEffect(() => {
     getSiteSettings().then((s) => { setServices(s.services); setLoading(false); });
   }, []);
+
+  useEffect(() => subscribeBusinesses(setBusinesses), []);
+
+  const usageCount = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const b of businesses) {
+      for (const svc of (b.showcaseServices ?? b.activeServices ?? [])) {
+        counts[svc] = (counts[svc] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [businesses]);
 
   const save = async () => {
     setSaving(true);
@@ -296,33 +311,52 @@ function ServicesTab() {
     setNewService("");
   };
 
-  const removeService = (i: number) => setServices((prev) => prev.filter((_, idx) => idx !== i));
+  const removeService = (i: number) => {
+    const svc = services[i];
+    const count = usageCount[svc] ?? 0;
+    if (count > 0) {
+      void ask(
+        async () => { setServices((prev) => prev.filter((_, idx) => idx !== i)); },
+        `"${svc}" is used by ${count} business${count === 1 ? "" : "es"}. Remove it from the list? Existing businesses keep their data.`,
+      );
+    } else {
+      setServices((prev) => prev.filter((_, idx) => idx !== i));
+    }
+  };
   const renameService = (i: number, val: string) => setServices((prev) => prev.map((s, idx) => idx === i ? val : s));
 
   if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   return (
     <div className="max-w-lg space-y-4">
+      <Dialog />
       <Card title="Active Services" subtitle="These appear in the showcase filter, business edit form, and application form.">
         <div className="space-y-2 mb-4">
-          {services.map((svc, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={svc}
-                onChange={(e) => renameService(i, e.target.value)}
-                className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
-              />
-              <button
-                type="button"
-                onClick={() => removeService(i)}
-                className="text-white/30 hover:text-red-400 transition-colors text-xs px-1"
-                aria-label="Remove"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          {services.map((svc, i) => {
+            const count = usageCount[svc] ?? 0;
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={svc}
+                  onChange={(e) => renameService(i, e.target.value)}
+                  className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+                />
+                <span className="text-[10px] text-white/35 w-16 text-right shrink-0">
+                  {count > 0 ? `${count} biz` : "unused"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeService(i)}
+                  className={`transition-colors text-xs px-1 ${count > 0 ? "text-amber-400/50 hover:text-red-400" : "text-white/30 hover:text-red-400"}`}
+                  aria-label="Remove"
+                  title={count > 0 ? `Used by ${count} business${count === 1 ? "" : "es"}` : "Remove"}
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
         </div>
 
         <div className="flex gap-2 mb-4">
@@ -666,6 +700,7 @@ function EmailsTab() {
   const [editing, setEditing]     = useState<Record<string, { subject: string; body: string }>>({});
   const [saving, setSaving]       = useState<Record<string, boolean>>({});
   const [status, setStatus]       = useState<Record<string, string>>({});
+  const [expanded, setExpanded]   = useState<Record<string, boolean>>({ "invite": true });
 
   useEffect(() => {
     void (async () => {
@@ -728,39 +763,56 @@ function EmailsTab() {
         const meta = EMAIL_TEMPLATE_META[key] ?? { label: key, description: "" };
         const row  = templates.find(t => t.key === key);
         const vals = editing[key] ?? { subject: "", body: "" };
+        const isExpanded = expanded[key] ?? false;
+        const lastSaved = row?.updated_at
+          ? `Last saved ${new Date(row.updated_at).toLocaleString()}${row.updated_by ? ` by ${row.updated_by}` : ""}`
+          : "Not yet saved";
         return (
-          <Card
-            key={key}
-            title={meta.label}
-            subtitle={row?.updated_at
-              ? `Last saved: ${new Date(row.updated_at).toLocaleString()}${row.updated_by ? ` by ${row.updated_by}` : ""}`
-              : meta.description}
-          >
-            <div className="space-y-3">
+          <div key={key} className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setExpanded(e => ({ ...e, [key]: !isExpanded }))}
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.03] transition-colors"
+            >
               <div>
-                <label className="block text-xs text-white/50 font-body mb-1">Subject</label>
-                <input
-                  type="text"
-                  value={vals.subject}
-                  onChange={e => setEditing(ed => ({ ...ed, [key]: { ...vals, subject: e.target.value } }))}
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
-                  placeholder="Email subject line"
-                />
+                <p className="font-display font-bold text-white">{meta.label}</p>
+                <p className="text-white/40 text-xs mt-0.5">{lastSaved}</p>
               </div>
-              <div>
-                <label className="block text-xs text-white/50 font-body mb-1">Body</label>
-                <EmailBodyEditor
-                  content={vals.body}
-                  onChange={body => setEditing(ed => ({ ...ed, [key]: { ...vals, body } }))}
-                  placeholder={`Write the email body… Use {{firstName}}, {{name}}, {{link}}`}
-                />
+              <svg
+                viewBox="0 0 24 24"
+                className={`h-4 w-4 text-white/40 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                fill="none" stroke="currentColor" strokeWidth="2"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {isExpanded && (
+              <div className="px-5 pb-5 space-y-3 border-t border-white/8">
+                <div className="pt-4">
+                  <label className="block text-xs text-white/50 font-body mb-1">Subject</label>
+                  <input
+                    type="text"
+                    value={vals.subject}
+                    onChange={e => setEditing(ed => ({ ...ed, [key]: { ...vals, subject: e.target.value } }))}
+                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+                    placeholder="Email subject line"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-white/50 font-body mb-1">Body</label>
+                  <EmailBodyEditor
+                    content={vals.body}
+                    onChange={body => setEditing(ed => ({ ...ed, [key]: { ...vals, body } }))}
+                    placeholder={`Write the email body… Use {{firstName}}, {{name}}, {{link}}`}
+                  />
+                </div>
+                <div className="pt-1">
+                  <SaveBtn saving={saving[key] ?? false} onClick={() => void handleSave(key)} />
+                </div>
+                <StatusMsg msg={status[key] ?? ""} />
               </div>
-            </div>
-            <div className="mt-4">
-              <SaveBtn saving={saving[key] ?? false} onClick={() => void handleSave(key)} />
-            </div>
-            <StatusMsg msg={status[key] ?? ""} />
-          </Card>
+            )}
+          </div>
         );
       })}
     </div>
