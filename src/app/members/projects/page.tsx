@@ -413,6 +413,8 @@ function BusinessesPageInner() {
   const [projectEmailAttachments, setProjectEmailAttachments] = useState<File[]>([]);
   // Tracks the neighborhood pre-filled when opening the modal from a group's + button.
   const [presetNeighborhood, setPresetNeighborhood] = useState<string | null>(null);
+  // True when the create modal was opened from the discovery tab (sets intakeSource:"discovery").
+  const [isDiscoveryCreate, setIsDiscoveryCreate] = useState(false);
   // When false (default), only Ongoing businesses are shown in the Businesses tab.
   // Fine-grained filter checkboxes for businesses tab.
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
@@ -583,9 +585,11 @@ function BusinessesPageInner() {
   };
 
   // Pass `neighborhood` to pre-fill the field (e.g. when clicking + on a group header).
-  const openCreate = (neighborhood?: string) => {
+  // Pass `forDiscovery: true` when creating from the discovery tab.
+  const openCreate = (neighborhood?: string, forDiscovery = false) => {
     setForm({ ...BLANK_FORM, ...(neighborhood !== undefined ? { neighborhood } : {}) });
     setPresetNeighborhood(neighborhood ?? null);
+    setIsDiscoveryCreate(forDiscovery);
     setEditingBusiness(null);
     setShowOwnerAltEmail(false);
     setShowAlternatePhone(false);
@@ -806,6 +810,7 @@ function BusinessesPageInner() {
       await createBusiness({
         ...payload,
         sortIndex: nextSortIndex(businesses),
+        ...(isDiscoveryCreate ? { intakeSource: "discovery" as const } : {}),
       } as Omit<Business, "id" | "createdAt" | "updatedAt">);
     }
 
@@ -885,17 +890,13 @@ function BusinessesPageInner() {
     return normalized.projectTracks.includes(track);
   };
 
-  // Discovery tab is a permanent record: always shows website-form intake entries,
-  // even after they've been promoted to a track. Also shows unassigned entries with no tracks.
-  const isDiscoveryEntry = (business: Business): boolean => {
-    return business.intakeSource === "website_form"
-      || normalizeTrackProjectsFromBusiness(business).projectTracks.length === 0;
-  };
+  // Discovery tab shows entries explicitly tagged as discovery (website form or manually added).
+  const isDiscoveryEntry = (business: Business): boolean =>
+    business.intakeSource === "website_form" || business.intakeSource === "discovery";
 
-  // True only when the business has NOT been promoted to any track yet (no projectTracks).
-  const isDiscoveryBusiness = (business: Business): boolean => {
-    return normalizeTrackProjectsFromBusiness(business).projectTracks.length === 0;
-  };
+  // Hides from the businesses tab — same set as discovery entries.
+  const isDiscoveryBusiness = (business: Business): boolean =>
+    business.intakeSource === "website_form" || business.intakeSource === "discovery";
 
 
   const teamNameCounts = new Map<string, number>();
@@ -1383,6 +1384,7 @@ function BusinessesPageInner() {
   const renderDiscoveryRow = (b: Business) => {
     const neighborhood = getNeighborhoodLabel(b);
     const fromWebsite = b.intakeSource === "website_form";
+    const fromDiscovery = b.intakeSource === "discovery";
     return (
       <tr
         id={`project-${b.id}`}
@@ -1451,12 +1453,14 @@ function BusinessesPageInner() {
         <td className="px-3 py-0 h-9 text-[11px] align-middle">
           {fromWebsite ? (
             <span className="text-white/65">Website form</span>
+          ) : fromDiscovery ? (
+            <span className="text-white/65">Discovery</span>
           ) : (
             <span className="text-white/30">In-person</span>
           )}
         </td>
         <td className="px-3 py-0 h-9 text-[11px] align-middle">
-          {fromWebsite ? (
+          {fromWebsite || fromDiscovery ? (
             <span className="text-white/50">{b.createdAt ? new Date(b.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-white/25">—</span>}</span>
           ) : (
             <input
@@ -1708,7 +1712,9 @@ function BusinessesPageInner() {
               >
                 Export CSV
               </Btn>
-              <Btn variant="primary" onClick={() => openCreate()}>+ New Business</Btn>
+              <Btn variant="primary" onClick={() => openCreate(undefined, activeTab === "discovery")}>
+                {activeTab === "discovery" ? "+ Add to Discovery" : "+ New Business"}
+              </Btn>
             </div>
           ) : undefined
         }
@@ -2005,8 +2011,8 @@ function BusinessesPageInner() {
           ) : filtered.length === 0 ? (
             <div className="p-6">
               <Empty
-                message="No discovery entries. New website-form submissions and any unassigned businesses will land here."
-                action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first business</Btn> : undefined}
+                message="No discovery entries yet. Website form submissions land here automatically. Use '+ Add to Discovery' to add leads manually."
+                action={canEdit ? <Btn variant="primary" onClick={() => openCreate(undefined, true)}>Add to Discovery</Btn> : undefined}
               />
             </div>
           ) : null}
@@ -2168,7 +2174,7 @@ function BusinessesPageInner() {
       </Modal>
 
       {/* Create / Edit modal */}
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Business" : "New Business"}>
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={editingBusiness ? "Edit Business" : isDiscoveryCreate ? "Add to Discovery" : "New Business"}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[74vh] overflow-y-auto pr-2">
           {/* ── Business Info ── */}
           <div className="lg:col-span-2">

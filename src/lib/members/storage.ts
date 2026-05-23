@@ -74,7 +74,7 @@ export interface Business {
   driveFolderUrl?: string;    // legacy field
   clientNotes?: string;       // legacy field
   sortIndex?: number;
-  intakeSource?: "website_form";
+  intakeSource?: "website_form" | "discovery";
   referredBy?: string;
   // Public-site showcase configuration (optional, managed in Projects UI).
   showcaseEnabled?: boolean;
