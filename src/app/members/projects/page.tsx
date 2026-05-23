@@ -27,6 +27,7 @@ type ProjectStatusValue = "Upcoming" | "Ongoing" | "Completed";
 
 type TechStatusValue = "Upcoming" | "In Development" | "Awaiting Client" | "Awaiting Deployment" | "Completed";
 type MarketingStatusValue = "Upcoming" | "In Planning" | "Awaiting Client" | "Consistent Posts";
+type FinanceStatusValue = "Upcoming" | "In Progress" | "Completed";
 
 const TECH_STATUSES: Array<{ value: TechStatusValue }> = [
   { value: "Upcoming" },
@@ -42,11 +43,18 @@ const MARKETING_STATUSES: Array<{ value: MarketingStatusValue }> = [
   { value: "Awaiting Client" },
   { value: "Consistent Posts" },
 ];
+
+const FINANCE_STATUSES: Array<{ value: FinanceStatusValue }> = [
+  { value: "Upcoming" },
+  { value: "In Progress" },
+  { value: "Completed" },
+];
+
 type DeadlineItem = {
   label: string;
   date: string;
 };
-type TrackStatusValue = TechStatusValue | MarketingStatusValue | ProjectStatusValue;
+type TrackStatusValue = TechStatusValue | MarketingStatusValue | FinanceStatusValue | ProjectStatusValue;
 
 type TrackProjectInfo = {
   projectStatus: TrackStatusValue;
@@ -97,13 +105,14 @@ const TEAM_EMAIL_FROM_OPTIONS = [
   { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ];
 
-const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"], number> = {
+const PROJECT_STATUS_SORT_ORDER: Record<Business["projectStatus"] | FinanceStatusValue, number> = {
   Upcoming: 0,
   "Not Started": 0,
   Discovery: 0,
   "On Hold": 0,
   Ongoing: 1,
   Active: 1,
+  "In Progress": 1,
   Completed: 2,
   Complete: 2,
 };
@@ -113,7 +122,8 @@ function normalizeProjectStatus(value: unknown): ProjectStatusValue {
   if (raw === "Completed" || raw === "Complete" || raw === "Done") return "Completed";
   if (raw === "Upcoming" || raw === "Not Started" || raw === "On Hold" || raw === "Discovery") return "Upcoming";
   if (raw === "Ongoing" || raw === "Active" || raw === "In Development" || raw === "Awaiting Client" ||
-      raw === "Awaiting Deployment" || raw === "In Planning" || raw === "Consistent Posts") return "Ongoing";
+      raw === "Awaiting Deployment" || raw === "In Planning" || raw === "Consistent Posts" ||
+      raw === "In Progress") return "Ongoing";
   return "Upcoming";
 }
 
@@ -389,7 +399,7 @@ function BusinessesPageInner() {
   const [assignments, setAssignments]         = useState<Assignment[]>([]);
   const [claims, setClaims]                   = useState<AssignmentClaim[]>([]);
   const [search, setSearch]                   = useState("");
-  const [openStatusPopover, setOpenStatusPopover] = useState<{ id: string; track: "Tech" | "Marketing" } | null>(null);
+  const [openStatusPopover, setOpenStatusPopover] = useState<{ id: string; track: TrackDivision } | null>(null);
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [form, setForm]                       = useState(BLANK_FORM);
@@ -433,7 +443,7 @@ function BusinessesPageInner() {
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user, userProfile } = useAuth();
-  const canEdit = authRole === "owner";
+  const canEdit = authRole === "owner" || authRole === "admin";
   const [deepLinkedProjectId, setDeepLinkedProjectId] = useState("");
   const handledProjectDeepLinkRef = useRef<string>("");
 
@@ -786,8 +796,12 @@ function BusinessesPageInner() {
     }
 
     if (editingBusiness) {
+      const wasDiscovery = editingBusiness.intakeSource === "discovery";
+      const nowHasTracks = selectedTracks.length > 0;
       await updateBusiness(editingBusiness.id, {
         ...payload,
+        // Promote out of discovery automatically when tracks are assigned.
+        ...(wasDiscovery && nowHasTracks ? { intakeSource: null as unknown as Business["intakeSource"] } : {}),
         // Remove deprecated keys from legacy entries.
         activeServices: null as unknown as string[],
         languages: null as unknown as string[],
@@ -825,7 +839,7 @@ function BusinessesPageInner() {
         await deleteBusiness(editingBusiness.id);
         setModal(null);
       },
-      `Delete "${name}"? This permanently removes the business from the tracker.`,
+      `Archive "${name}"? The business will be hidden from the tracker but not destroyed.`,
     );
   };
 
@@ -1181,7 +1195,7 @@ function BusinessesPageInner() {
 
   // Inline status pill change — updates all active tracks to the new status, then
   // recomputes the derived overall projectStatus.
-  const handleQuickStatusChange = async (business: Business, track: "Tech" | "Marketing", newStatus: string) => {
+  const handleQuickStatusChange = async (business: Business, track: TrackDivision, newStatus: string) => {
     setOpenStatusPopover(null);
     const normalized = normalizeTrackProjectsFromBusiness(business);
     const nextTrackProjects: TrackProjectMap = { ...normalized.trackProjects };
@@ -1252,7 +1266,7 @@ function BusinessesPageInner() {
     }
   };
 
-  const renderTrackStatusCell = (b: Business, track: "Tech" | "Marketing") => {
+  const renderTrackStatusCell = (b: Business, track: TrackDivision) => {
     const normalized = normalizeTrackProjectsFromBusiness(b);
 
     if (!normalized.projectTracks.includes(track)) return <span className="text-white/25">—</span>;
@@ -1356,6 +1370,9 @@ function BusinessesPageInner() {
         </td>
         <td className="px-3 py-0 h-9 align-middle">
           {renderTrackStatusCell(b, "Marketing")}
+        </td>
+        <td className="px-3 py-0 h-9 align-middle">
+          {renderTrackStatusCell(b, "Finance")}
         </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
@@ -1481,6 +1498,18 @@ function BusinessesPageInner() {
           {canEdit && (
             <div className="members-row-actions">
               <Btn size="sm" variant="secondary" onClick={() => openProjectEmailModal(b)}>Email</Btn>
+              {fromDiscovery && (
+                <Btn
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void (async () => {
+                    await updateBusiness(b.id, { intakeSource: null as unknown as Business["intakeSource"] });
+                  })()}
+                  title="Move this lead out of Discovery into the main Businesses tab"
+                >
+                  Promote
+                </Btn>
+              )}
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
             </div>
           )}
@@ -2023,7 +2052,7 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1156px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1286px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2033,6 +2062,7 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Tech</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
                   </thead>
@@ -2063,11 +2093,11 @@ function BusinessesPageInner() {
               <tbody>{otherProjects.map((b) => renderTrackRow(b))}</tbody>
             </table>
             {!businessesLoaded ? (
-              <div className="p-4"><SkeletonRows rows={8} cols={7} /></div>
+              <div className="p-4"><SkeletonRows rows={8} cols={8} /></div>
             ) : filtered.length === 0 ? (
               <div className="p-6">
                 <Empty
-                  message="No businesses found."
+                  message="No businesses found. Create one from the '+ New Business' button above."
                   action={canEdit ? <Btn variant="primary" onClick={() => openCreate()}>Add first business</Btn> : undefined}
                 />
               </div>
@@ -2352,7 +2382,7 @@ function BusinessesPageInner() {
           <div>
             {editingBusiness && (
               <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
-                Delete Business
+                Archive Business
               </Btn>
             )}
           </div>
@@ -2373,7 +2403,7 @@ function BusinessesPageInner() {
         const { track } = openStatusPopover;
         const normalized = normalizeTrackProjectsFromBusiness(b);
         const currentStatus = normalized.trackProjects[track]?.projectStatus ?? "Upcoming";
-        const statuses = track === "Tech" ? TECH_STATUSES : MARKETING_STATUSES;
+        const statuses = track === "Tech" ? TECH_STATUSES : track === "Marketing" ? MARKETING_STATUSES : FINANCE_STATUSES;
         return (
           <div
             onClick={(e) => e.stopPropagation()}
