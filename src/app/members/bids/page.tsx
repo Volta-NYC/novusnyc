@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/members/authContext";
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
 const STATUSES   = ["Active Partner", "In Conversation", "Outreach", "Paused"] as const;
-const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
+const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island", "New York (All Boroughs)"];
 type BidViewMode = "cards" | "compact";
 
 type BidStatusOption = (typeof STATUSES)[number];
@@ -56,7 +56,7 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
 const BID_ALL_COLS = [
   { key: "name",       label: "Name",        width: 240, restricted: false, adminOnly: false },
   { key: "status",     label: "Status",      width: 140, restricted: false, adminOnly: false },
-  { key: "borough",    label: "Borough",     width: 170, restricted: false, adminOnly: false },
+  { key: "borough",    label: "Borough / Region", width: 190, restricted: false, adminOnly: false },
   { key: "contact",    label: "Contact",     width: 260, restricted: true,  adminOnly: false },
   { key: "nextAction", label: "Next Action", width: 240, restricted: true,  adminOnly: false },
   { key: "actions",    label: "Actions",     width: 110, restricted: false, adminOnly: true  },
@@ -180,13 +180,13 @@ export default function BIDTrackerPage() {
 
   const handleDeleteFromEdit = async () => {
     if (!editingBID) return;
-    const name = editingBID.name || "this BID";
+    const name = editingBID.name || "this organization";
     await ask(
       async () => {
         await deleteBID(editingBID.id);
         setModal(null);
       },
-      `Delete "${name}"? This permanently removes it from the BID tracker.`,
+      `Delete "${name}"? This permanently removes it from Partner Organizations.`,
     );
   };
 
@@ -220,20 +220,20 @@ export default function BIDTrackerPage() {
       <Dialog />
 
       <PageHeader
-        title="BID Tracker"
-        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New BID</Btn> : undefined}
+        title="Partner Organizations"
+        action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Partner</Btn> : undefined}
       />
 
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatCard label="Total BIDs"      value={stats.total} />
+        <StatCard label="Total Partners"  value={stats.total} />
         <StatCard label="Active Partners" value={stats.active} color="text-green-400" />
         <StatCard label="In Pipeline"     value={stats.pipeline} color="text-blue-400" />
       </div>
 
       {/* Search and filter controls */}
       <div className="flex gap-3 mb-4 flex-wrap items-center">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or borough…" />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by name or location…" />
         {viewMode === "compact" && (
           <div className="relative">
             <Btn size="sm" variant="ghost" onClick={() => setBidColsMenuOpen((v) => !v)}>
@@ -290,7 +290,7 @@ export default function BIDTrackerPage() {
                   <p className="text-white font-semibold leading-snug break-words">{bid.name}</p>
                   {!isMemberRestricted ? (
                     <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
-                      <span>{bid.borough || "No borough"}</span>
+                      <span>{bid.borough || "No location"}</span>
                       <span>•</span>
                       <span>{bid.contactName || "No contact"}</span>
                       {bid.contactEmail && (
@@ -304,8 +304,8 @@ export default function BIDTrackerPage() {
                     </div>
                   ) : (
                     <div className="text-xs text-white/45">
-                      {bid.borough || "No borough"}
-                    </div>
+                      {bid.borough || "No location"}
+</div>
                   )}
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge label={normalizeBidStatus(bid.status)} />
@@ -331,8 +331,8 @@ export default function BIDTrackerPage() {
         {filtered.length === 0 && (
           <div className="sm:col-span-2 lg:col-span-3">
             <Empty
-              message="No BIDs match your filters."
-              action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first BID</Btn> : undefined}
+              message="No partners match your filters."
+              action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first partner</Btn> : undefined}
             />
           </div>
         )}
@@ -403,7 +403,7 @@ export default function BIDTrackerPage() {
                 {sorted.length === 0 && (
                   <tr>
                     <td className="px-3 py-4 text-white/40 text-xs" colSpan={visCols.length}>
-                      No BIDs match your filters.
+                      No partners match your filters.
                     </td>
                   </tr>
                 )}
@@ -414,13 +414,13 @@ export default function BIDTrackerPage() {
       })()}
 
       {/* Create / Edit modal */}
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === "create" ? "New BID" : "Edit BID"}>
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === "create" ? "New Partner Organization" : "Edit Partner Organization"}>
         <div className="max-h-[70vh] overflow-y-auto pr-1 space-y-4">
 
           {/* Form fields */}
           <div className="grid grid-cols-2 gap-4">
-            <Field label="BID Name" required>
-              <Input value={form.name} onChange={e => setField("name", e.target.value)} placeholder="e.g. Park Slope BID" />
+            <Field label="Organization Name" required>
+              <Input value={form.name} onChange={e => setField("name", e.target.value)} placeholder="e.g. Park Slope BID, NYC Chamber of Commerce" />
             </Field>
             <Field label="Status">
               <Select options={STATUSES} value={form.status} onChange={e => setField("status", e.target.value)} />
@@ -434,7 +434,7 @@ export default function BIDTrackerPage() {
             <Field label="Phone">
               <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
             </Field>
-            <Field label="Borough">
+            <Field label="Borough / Region">
               <Select options={["", ...BOROUGHS]} value={form.borough} onChange={e => setField("borough", e.target.value)} />
             </Field>
             <div className="col-span-2">
@@ -455,7 +455,7 @@ export default function BIDTrackerPage() {
           <div>
             {editingBID && (
               <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
-                Delete BID
+                Delete Partner
               </Btn>
             )}
           </div>
@@ -466,13 +466,13 @@ export default function BIDTrackerPage() {
                 variant="secondary"
                 onClick={() => void handleSave({ addAnother: true })}
                 disabled={!form.name.trim()}
-                title="Save this BID and open a new form with the same borough"
+                title="Save this partner and open a new form with the same borough"
               >
                 Save &amp; Add Another
               </Btn>
             )}
             <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim()}>
-              {editingBID ? "Save Changes" : "Create BID"}
+              {editingBID ? "Save Changes" : "Create"}
             </Btn>
           </div>
         </div>
