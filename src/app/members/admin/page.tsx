@@ -578,15 +578,10 @@ function ManageFrontendTab() {
 // ── TAB: INFRACTIONS ──────────────────────────────────────────────────────────
 
 const POINT_OPTIONS = [
-  { value: 1, label: "1 — minor" },
-  { value: 2, label: "2 — major" },
-  { value: 3, label: "3 — severe" },
+  { value: 1, label: "1 point" },
+  { value: 2, label: "2 points" },
+  { value: 3, label: "3 points" },
 ];
-const POINTS_PILL: Record<number, string> = {
-  1: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
-  2: "border-orange-400/30 bg-orange-400/10 text-orange-300",
-  3: "border-red-400/30 bg-red-400/10 text-red-300",
-};
 const BLANK_INFRACTION: Omit<Infraction, "id" | "createdAt" | "updatedAt"> = { name: "", description: "", points: 1 };
 
 function InfractionsTab() {
@@ -647,8 +642,8 @@ function InfractionsTab() {
                 <td className="px-3 py-2.5 text-sm text-white/90">{i.name}</td>
                 <td className="px-3 py-2.5 text-xs text-white/65">{i.description || <span className="text-white/30">—</span>}</td>
                 <td className="px-3 py-2.5">
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${POINTS_PILL[i.points] ?? ""}`}>
-                    {i.points} pt{i.points === 1 ? "" : "s"}
+                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60">
+                    {i.points} {i.points === 1 ? "pt" : "pts"}
                   </span>
                 </td>
                 <td className="px-3 py-2.5"><Btn size="sm" variant="secondary" onClick={() => openEdit(i)}>Edit</Btn></td>
@@ -677,7 +672,7 @@ function InfractionsTab() {
             >
               {POINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
-            <p className="text-[11px] text-white/40 mt-1.5">1 = minor, 2 = major, 3 = severe.</p>
+            <p className="text-[11px] text-white/40 mt-1.5">Higher point values are more severe. See the handbook for thresholds.</p>
           </Field>
         </div>
         <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">

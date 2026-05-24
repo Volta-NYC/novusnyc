@@ -8,12 +8,7 @@ import {
 } from "@/lib/members/storage";
 import { Spinner } from "@/components/members/ui";
 
-const POINTS_PILL: Record<number, string> = {
-  1: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
-  2: "border-orange-400/30 bg-orange-400/10 text-orange-300",
-  3: "border-red-400/30 bg-red-400/10 text-red-300",
-};
-const POINTS_LABEL: Record<number, string> = { 1: "Minor", 2: "Major", 3: "Severe" };
+const POINTS_PILL = "border-white/20 bg-black/5 text-black/60";
 
 function HandbookContent() {
   const [page, setPage] = useState<HandbookPage | null>(null);
@@ -90,8 +85,8 @@ function HandbookContent() {
                       <td className="px-4 py-2.5 font-body font-medium text-black/80 text-sm">{inf.name}</td>
                       <td className="px-4 py-2.5 font-body text-black/55 text-sm">{inf.description || <span className="text-black/30">—</span>}</td>
                       <td className="px-4 py-2.5">
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${POINTS_PILL[inf.points] ?? ""}`}>
-                          {inf.points} pt — {POINTS_LABEL[inf.points] ?? ""}
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${POINTS_PILL}`}>
+                          {inf.points} {inf.points === 1 ? "pt" : "pts"}
                         </span>
                       </td>
                     </tr>
