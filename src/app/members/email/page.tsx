@@ -118,7 +118,7 @@ const SYSTEM_TEMPLATE_SEEDS: Array<{
     label: "Infraction notice",
     description: "Sent when an admin manually issues an infraction.",
     subject: "Infraction logged — {{infractionName}}",
-    body: "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} points). Total this cycle: {{totalPoints}}.</p>",
+    body: "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} demerits). Total this cycle: {{totalPoints}} demerits.</p>",
     variables: ["memberName", "infractionName", "points", "totalPoints", "issuedBy", "note"],
   },
   {

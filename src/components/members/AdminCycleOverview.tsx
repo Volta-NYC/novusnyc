@@ -269,10 +269,10 @@ function CycleSummary({ cycle }: { cycle: Cycle }) {
 
       <SummaryBlock title="Strike thresholds">
         <p className="text-white/70 text-xs leading-relaxed">
-          1st strike at <span className="text-[#85CC17]">{cycle.strikeThresholds.warning}</span> pts (warning) ·
-          2nd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.demotion}</span> pts (auto-demote
+          1st strike at <span className="text-[#85CC17]">{cycle.strikeThresholds.warning}</span> demerits (warning) ·
+          2nd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.demotion}</span> demerits (auto-demote
           for Analyst → Reserve, Sr Analyst → Analyst, Associate → Sr Analyst) ·
-          3rd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.reserve}</span> pts (Reserve)
+          3rd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.reserve}</span> demerits (Reserve)
         </p>
       </SummaryBlock>
 
@@ -465,9 +465,9 @@ function CycleEditor({
         </div>
 
         <div>
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Strike thresholds (points)</p>
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Strike thresholds (demerits)</p>
           <p className="text-[11px] text-white/55 mb-3 leading-relaxed">
-            Members accumulate points from infractions. Each level triggers an action:
+            Members accumulate demerits from infractions. Each level triggers an action:
             <br/>
             • <span className="text-yellow-300">1st strike</span> — warning email.
             <br/>

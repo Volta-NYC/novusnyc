@@ -259,7 +259,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                         {s.note && <p className="text-white/60 mt-0.5 italic">{s.note}</p>}
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span className="text-[#85CC17] font-mono text-[11px]">{s.points} pt{s.points === 1 ? "" : "s"}</span>
+                        <span className="text-[#85CC17] font-mono text-[11px]">{s.points} {s.points === 1 ? "demerit" : "demerits"}</span>
                         <button
                           type="button"
                           onClick={() => void handleRevokeStrike(s.id)}
@@ -294,12 +294,12 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                     >
                       <option value="">— Select infraction —</option>
                       {sortedInfractions.map((i) => (
-                        <option key={i.id} value={i.id}>{i.name} ({i.points} pt{i.points === 1 ? "" : "s"})</option>
+                        <option key={i.id} value={i.id}>{i.name} ({i.points} {i.points === 1 ? "demerit" : "demerits"})</option>
                       ))}
                     </select>
                   </Field>
                   <div className="grid grid-cols-2 gap-2">
-                    <Field label="Points override (optional)">
+                    <Field label="Demerits override (optional)">
                       <Input
                         type="number"
                         min="0"

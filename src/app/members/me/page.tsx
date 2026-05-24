@@ -473,7 +473,7 @@ export default function MyRecordPage() {
                       </p>
                       {s.note && <p className="text-xs text-black/65 mt-1">{s.note}</p>}
                     </div>
-                    <span className="text-[#5C9911] font-mono text-sm flex-shrink-0">{s.points} pts</span>
+                    <span className="text-[#5C9911] font-mono text-sm flex-shrink-0">{s.points} {s.points === 1 ? "demerit" : "demerits"}</span>
                   </li>
                 ))}
             </ul>

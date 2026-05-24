@@ -59,6 +59,9 @@ function HandbookContent() {
             ) : (
               <p className="text-black/40 text-sm font-body">The handbook is being prepared. Check back soon.</p>
             )}
+            <div className="mt-5 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-xs text-sky-700 font-body leading-relaxed">
+              <span className="font-semibold">Note:</span> Specific numbers in this handbook — credit requirements, promotion targets, and demerit thresholds — may be updated at the start of each cycle. The most accurate, up-to-date values are always shown on your <span className="font-semibold">Overview</span> page.
+            </div>
           </>
         ) : (
           <div className="py-8 text-center">
@@ -69,14 +72,14 @@ function HandbookContent() {
         {sortedInfractions.length > 0 && (
           <div className="mt-8 pt-8 border-t border-black/8">
             <h3 className="font-display font-bold text-black/85 text-base mb-1">Infraction Reference</h3>
-            <p className="text-black/45 text-sm font-body mb-4">Point values assigned for each type of infraction.</p>
+            <p className="text-black/45 text-sm font-body mb-4">Demerit values assigned for each type of infraction. Current strike thresholds are shown on your Overview page.</p>
             <div className="rounded-xl border border-black/8 overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="bg-black/[0.03] border-b border-black/8">
                   <tr>
                     <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[35%]">Infraction</th>
                     <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45">Description</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[90px]">Points</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[100px]">Demerits</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -86,7 +89,7 @@ function HandbookContent() {
                       <td className="px-4 py-2.5 font-body text-black/55 text-sm">{inf.description || <span className="text-black/30">—</span>}</td>
                       <td className="px-4 py-2.5">
                         <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${POINTS_PILL}`}>
-                          {inf.points} {inf.points === 1 ? "pt" : "pts"}
+                          {inf.points} {inf.points === 1 ? "demerit" : "demerits"}
                         </span>
                       </td>
                     </tr>

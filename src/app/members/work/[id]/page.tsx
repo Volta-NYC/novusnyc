@@ -125,9 +125,9 @@ export default function AssignmentDetailPage() {
   const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate && !isArchived
     && (!hasApprovedClaim || assignment.allowMultipleCompletions === true);
   const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress" || myClaim.status === "rejected");
-  // Drop window: member can only drop within 24 hours of claiming
+  // Drop window: member can only drop within 12 hours of claiming
   const hoursHeld = myClaim ? (Date.now() - new Date(myClaim.claimedAt).getTime()) / 3_600_000 : Infinity;
-  const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress") && hoursHeld <= 24;
+  const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress") && hoursHeld <= 12;
 
   const isRecurring = Boolean(assignment.recurringEnabled);
 

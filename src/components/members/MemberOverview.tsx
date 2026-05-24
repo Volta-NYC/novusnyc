@@ -295,7 +295,7 @@ export default function MemberOverviewPage() {
                     ))}
                   </div>
                   <span className="text-xs text-black/45 ml-1">
-                    ({strikePoints} pts · {strikeCount} of 3)
+                    ({strikePoints} demerits · {strikeCount} of 3)
                   </span>
                 </div>
                 <button
@@ -324,7 +324,7 @@ export default function MemberOverviewPage() {
                             </p>
                           </div>
                           <span className="text-[#5C9911] font-mono text-sm flex-shrink-0">
-                            {s.points} pts
+                            {s.points} {s.points === 1 ? "demerit" : "demerits"}
                           </span>
                         </div>
                       ))
@@ -424,7 +424,7 @@ export default function MemberOverviewPage() {
             <div>
               <h2 className="font-display font-bold text-black text-base">Rules &amp; expectations</h2>
               <p className="text-xs text-black/55 mt-0.5">
-                {visibleInfractions.length} ways to earn points · {rulesExpanded ? "click to collapse" : "click to expand"}
+                {visibleInfractions.length} ways to earn demerits · {rulesExpanded ? "click to collapse" : "click to expand"}
               </p>
             </div>
             <span className="text-black/45 text-sm">{rulesExpanded ? "▴" : "▾"}</span>
@@ -443,7 +443,7 @@ export default function MemberOverviewPage() {
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
                         <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${pointsPill(i.points)}`}>
-                          {i.points} pt{i.points === 1 ? "" : "s"}
+                          {i.points} {i.points === 1 ? "demerit" : "demerits"}
                         </span>
                       </div>
                     </div>

@@ -616,9 +616,9 @@ function ManageFrontendTab() {
 // ── TAB: INFRACTIONS ──────────────────────────────────────────────────────────
 
 const POINT_OPTIONS = [
-  { value: 1, label: "1 point" },
-  { value: 2, label: "2 points" },
-  { value: 3, label: "3 points" },
+  { value: 1, label: "1 demerit" },
+  { value: 2, label: "2 demerits" },
+  { value: 3, label: "3 demerits" },
 ];
 const BLANK_INFRACTION: Omit<Infraction, "id" | "createdAt" | "updatedAt"> = { name: "", description: "", points: 1 };
 
@@ -659,7 +659,7 @@ function InfractionsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display font-bold text-white">Infraction Catalog</h2>
-          <p className="text-white/40 text-sm mt-0.5">Define infraction types and their point values. Issue them per-member via the Manage button in the team directory.</p>
+          <p className="text-white/40 text-sm mt-0.5">Define infraction types and their demerit values. Issue them per-member via the Manage button in the team directory.</p>
         </div>
         <Btn variant="primary" onClick={openCreate}>+ New Infraction</Btn>
       </div>
@@ -670,7 +670,7 @@ function InfractionsTab() {
             <tr>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[30%]">Name</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45">Description</th>
-              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[100px]">Points</th>
+              <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[110px]">Demerits</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[80px]">Actions</th>
             </tr>
           </thead>
@@ -681,7 +681,7 @@ function InfractionsTab() {
                 <td className="px-3 py-2.5 text-xs text-white/65">{i.description || <span className="text-white/30">—</span>}</td>
                 <td className="px-3 py-2.5">
                   <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60">
-                    {i.points} {i.points === 1 ? "pt" : "pts"}
+                    {i.points} {i.points === 1 ? "demerit" : "demerits"}
                   </span>
                 </td>
                 <td className="px-3 py-2.5"><Btn size="sm" variant="secondary" onClick={() => openEdit(i)}>Edit</Btn></td>
@@ -702,7 +702,7 @@ function InfractionsTab() {
           <Field label="Description">
             <TextArea rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="When this should be issued — guidance for the admin issuing it." />
           </Field>
-          <Field label="Points" required>
+          <Field label="Demerits" required>
             <select
               value={String(form.points)}
               onChange={(e) => setForm((p) => ({ ...p, points: Number(e.target.value) || 1 }))}
@@ -710,7 +710,7 @@ function InfractionsTab() {
             >
               {POINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
-            <p className="text-[11px] text-white/40 mt-1.5">Higher point values are more severe. See the handbook for thresholds.</p>
+            <p className="text-[11px] text-white/40 mt-1.5">Higher demerit values are more severe. See the handbook for thresholds.</p>
           </Field>
         </div>
         <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/8">
