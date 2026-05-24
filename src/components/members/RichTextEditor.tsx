@@ -440,6 +440,7 @@ export interface RichTextEditorProps {
   minHeight?: number;
   attachments?: File[];
   onAttachmentsChange?: (files: File[]) => void;
+  lightMode?: boolean;
 }
 
 export interface RichTextEditorHandle {
@@ -455,6 +456,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
   minHeight = 240,
   attachments = [],
   onAttachmentsChange,
+  lightMode = false,
 }: RichTextEditorProps, ref) {
   const [showTextColor, setShowTextColor] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
@@ -488,7 +490,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     },
     editorProps: {
       attributes: {
-        class: "prose-rte focus:outline-none",
+        class: lightMode ? "prose-rte prose-rte-light focus:outline-none" : "prose-rte focus:outline-none",
         style: `min-height: ${minHeight}px; padding: 12px;`,
       },
     },
@@ -784,7 +786,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
       </div>
 
       {/* ── Editor area ── */}
-      <div className="bg-[#0F1014] border border-t-0 border-white/10 rounded-b-lg overflow-hidden">
+      <div className={lightMode
+        ? "bg-white border border-t-0 border-black/10 rounded-b-lg overflow-hidden"
+        : "bg-[#0F1014] border border-t-0 border-white/10 rounded-b-lg overflow-hidden"
+      }>
         <style>{`
           .prose-rte {
             color: rgba(255,255,255,0.85);
@@ -826,6 +831,19 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             color: rgba(255,255,255,0.2);
             pointer-events: none;
             height: 0;
+          }
+          /* Light mode overrides */
+          .prose-rte-light {
+            color: rgba(0,0,0,0.85);
+          }
+          .prose-rte-light blockquote {
+            color: rgba(0,0,0,0.55);
+          }
+          .prose-rte-light hr {
+            border-top: 1px solid rgba(0,0,0,0.1);
+          }
+          .prose-rte-light p.is-editor-empty:first-child::before {
+            color: rgba(0,0,0,0.25);
           }
         `}</style>
         <EditorContent editor={editor} />

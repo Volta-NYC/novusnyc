@@ -814,7 +814,7 @@ function HandbookTab() {
             </div>
             <div>
               <label className="block text-xs text-white/50 font-body mb-1">Content</label>
-              <RichTextEditor content={content} onChange={setContent} />
+              <RichTextEditor content={content} onChange={setContent} lightMode={true} />
             </div>
           </div>
           <div className="mt-4">

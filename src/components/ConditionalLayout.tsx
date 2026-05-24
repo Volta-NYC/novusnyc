@@ -13,7 +13,7 @@ export default function ConditionalLayout({ children }: { children: React.ReactN
     <>
       {!isMembersPage && <PublicBanner />}
       {!isMembersPage && <Navbar />}
-      <main id="main-content">{children}</main>
+      <main id="main-content" className={!isMembersPage ? "bg-v-bg" : undefined}>{children}</main>
       {!isMembersPage && <Footer />}
     </>
   );
