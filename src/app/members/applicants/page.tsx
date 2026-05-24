@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  Btn, Empty, Modal, Field, PageHeader, SearchBar, SkeletonRows, useConfirm,
+  Btn, BulkActionBar, Empty, Modal, Field, PageHeader, SearchBar, SkeletonRows, useBulkSelect, useConfirm,
   ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import {
@@ -158,8 +158,7 @@ export default function ApplicantsPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState("");
   const [showAcceptedApplicants, setShowAcceptedApplicants] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectionMode, setSelectionMode] = useState<"none" | "invite" | "accept" | "status">("none");
+  const { selected, toggle, toggleAll, clear, isSelected, allSelected, someSelected, count: selectedCount } = useBulkSelect();
   const [bulkTargetStatus, setBulkTargetStatus] = useState<ApplicationStatus>("New");
   const [bulkStatusApplying, setBulkStatusApplying] = useState(false);
   const [sendingInvites, setSendingInvites] = useState(false);
@@ -417,17 +416,16 @@ export default function ApplicantsPage() {
   };
 
   const inviteSelected = async () => {
-    if (!canEdit || selectedIds.length === 0) {
+    if (!canEdit || selected.size === 0) {
       setStatusMessage("Select at least one applicant.");
       return;
     }
     setSendingInvites(true);
     try {
-      const result = await sendInterviewInviteEmails(selectedIds, "initial", false);
+      const result = await sendInterviewInviteEmails(Array.from(selected), "initial", false);
       setStatusMessage(`Invite selected result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
       await fetchApplicantsData();
-      setSelectionMode("none");
-      setSelectedIds([]);
+      clear();
     } catch {
       setStatusMessage("Could not send invite emails to selected applicants.");
     } finally {
@@ -489,13 +487,13 @@ export default function ApplicantsPage() {
   };
 
   const skipInterviewForSelected = async () => {
-    if (!canEdit || selectedIds.length === 0) {
+    if (!canEdit || selected.size === 0) {
       setStatusMessage("Select at least one applicant.");
       return;
     }
     setBulkPromoting(true);
     try {
-      const selectedApps = applications.filter((app) => selectedIds.includes(app.id));
+      const selectedApps = applications.filter((app) => selected.has(app.id));
       let ok = 0;
       let failed = 0;
       for (const app of selectedApps) {
@@ -507,8 +505,7 @@ export default function ApplicantsPage() {
           failed += 1;
         }
       }
-      setSelectedIds([]);
-      setSelectionMode("none");
+      clear();
       setStatusMessage(`Accept selected complete — ${ok} succeeded, ${failed} failed.`);
       await fetchApplicantsData();
     } finally {
@@ -568,7 +565,7 @@ export default function ApplicantsPage() {
 
   const tableMinWidth = visibleColumns.reduce(
     (sum, col) => sum + (COLUMN_WIDTH_PX[col.key] ?? 150),
-    selectionMode !== "none" ? 32 : 0,
+    32,
   );
 
   const hideColumn = (key: ColumnKey) => {
@@ -587,19 +584,9 @@ export default function ApplicantsPage() {
     });
   };
 
-  const enterSelectionMode = (mode: "invite" | "accept" | "status") => {
-    setSelectionMode(mode);
-    setSelectedIds([]);
-  };
-
-  const exitSelectionMode = () => {
-    setSelectionMode("none");
-    setSelectedIds([]);
-  };
-
   const applyBulkStatus = async () => {
-    if (!canManageStatus || selectedIds.length === 0) return;
-    const idsToUpdate = [...selectedIds];
+    if (!canManageStatus || selected.size === 0) return;
+    const idsToUpdate = Array.from(selected);
     const targetStatus = bulkTargetStatus;
     await ask(async () => {
       setBulkStatusApplying(true);
@@ -617,7 +604,7 @@ export default function ApplicantsPage() {
       setStatusMessage(`Updated ${succeeded} applicant${succeeded !== 1 ? "s" : ""} to "${targetStatus}"${failed > 0 ? ` (${failed} failed)` : ""}.`);
       await fetchApplicantsData();
       setBulkStatusApplying(false);
-      exitSelectionMode();
+      clear();
     }, `Set ${idsToUpdate.length} applicant${idsToUpdate.length !== 1 ? "s" : ""} to "${targetStatus}"?`);
   };
 
@@ -696,80 +683,6 @@ export default function ApplicantsPage() {
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search applicants, schools, status..." />
-        {canEdit && selectionMode === "none" && (
-          <>
-            <Btn
-              size="sm"
-              variant="secondary"
-              onClick={() => enterSelectionMode("invite")}
-            >
-              Invite Multiple
-            </Btn>
-            <Btn
-              size="sm"
-              variant="primary"
-              onClick={() => enterSelectionMode("accept")}
-            >
-              Accept Multiple
-            </Btn>
-            {canManageStatus && (
-              <Btn
-                size="sm"
-                variant="secondary"
-                onClick={() => enterSelectionMode("status")}
-              >
-                Set Status
-              </Btn>
-            )}
-          </>
-        )}
-        {canEdit && selectionMode !== "none" && (
-          <>
-            <span className="text-xs text-white/55">{selectedIds.length} selected</span>
-            {selectionMode === "invite" && (
-              <Btn
-                size="sm"
-                variant="secondary"
-                onClick={inviteSelected}
-                disabled={sendingInvites || selectedIds.length === 0}
-              >
-                {sendingInvites ? "Sending..." : `Send Invites (${selectedIds.length})`}
-              </Btn>
-            )}
-            {selectionMode === "accept" && (
-              <Btn
-                size="sm"
-                variant="primary"
-                onClick={skipInterviewForSelected}
-                disabled={bulkPromoting || selectedIds.length === 0}
-              >
-                {bulkPromoting ? "Processing..." : `Accept (${selectedIds.length})`}
-              </Btn>
-            )}
-            {selectionMode === "status" && (
-              <>
-                <select
-                  value={bulkTargetStatus}
-                  onChange={(e) => setBulkTargetStatus(e.target.value as ApplicationStatus)}
-                  className="h-8 rounded-lg border border-white/15 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
-                >
-                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <Btn
-                  size="sm"
-                  variant="primary"
-                  onClick={() => void applyBulkStatus()}
-                  disabled={bulkStatusApplying || selectedIds.length === 0}
-                >
-                  {bulkStatusApplying ? "Applying..." : `Set ${selectedIds.length > 0 ? selectedIds.length : ""} to Status`}
-                </Btn>
-              </>
-            )}
-            <Btn size="sm" variant="ghost" onClick={exitSelectionMode}>
-              Cancel
-            </Btn>
-          </>
-        )}
         <ViewPanel active={showAcceptedApplicants || hiddenColumns.size > 0}>
           <ViewSection label="Filter">
             <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
@@ -804,19 +717,15 @@ export default function ApplicantsPage() {
         <table className="members-grid-table w-full table-fixed text-[10px] leading-4 [&_td]:overflow-hidden" style={{ minWidth: `${tableMinWidth}px` }}>
           <thead className="bg-[#0F1014] border-b border-white/8">
             <tr>
-              {selectionMode !== "none" && (
-                <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[32px]">
-                  <input
-                    type="checkbox"
-                    className="members-checkbox"
-                    checked={selectableFilteredIds.length > 0 && selectableFilteredIds.every((id) => selectedIds.includes(id))}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(selectableFilteredIds);
-                      else setSelectedIds([]);
-                    }}
-                  />
-                </th>
-              )}
+              <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[32px]">
+                <input
+                  type="checkbox"
+                  className="members-checkbox"
+                  checked={allSelected(selectableFilteredIds)}
+                  ref={(el) => { if (el) el.indeterminate = someSelected(selectableFilteredIds); }}
+                  onChange={(e) => toggleAll(selectableFilteredIds, e.target.checked)}
+                />
+              </th>
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -852,19 +761,14 @@ export default function ApplicantsPage() {
               const canAcceptAction = !isAccepted;
               return (
                 <tr key={app.id} className="hover:bg-white/3 transition-colors">
-                  {selectionMode !== "none" && (
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="checkbox"
-                        className="members-checkbox"
-                        checked={selectedIds.includes(app.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) setSelectedIds((prev) => Array.from(new Set([...prev, app.id])));
-                          else setSelectedIds((prev) => prev.filter((id) => id !== app.id));
-                        }}
-                      />
-                    </td>
-                  )}
+                  <td className="px-2 py-1.5">
+                    <input
+                      type="checkbox"
+                      className="members-checkbox"
+                      checked={isSelected(app.id)}
+                      onChange={() => toggle(app.id)}
+                    />
+                  </td>
                   {visibleColumns.map((col) => {
                     switch (col.key) {
                       case "status":
@@ -1062,6 +966,46 @@ export default function ApplicantsPage() {
       ) : filtered.length === 0 ? (
         <Empty message="No applicants yet." />
       ) : null}
+
+      {canEdit && (
+        <BulkActionBar count={selectedCount} onClear={clear}>
+          <Btn
+            size="sm"
+            variant="secondary"
+            onClick={() => void inviteSelected()}
+            disabled={sendingInvites}
+          >
+            {sendingInvites ? "Sending…" : "Send Invites"}
+          </Btn>
+          <Btn
+            size="sm"
+            variant="primary"
+            onClick={() => void skipInterviewForSelected()}
+            disabled={bulkPromoting}
+          >
+            {bulkPromoting ? "Accepting…" : "Accept"}
+          </Btn>
+          {canManageStatus && (
+            <>
+              <select
+                value={bulkTargetStatus}
+                onChange={(e) => setBulkTargetStatus(e.target.value as ApplicationStatus)}
+                className="h-7 rounded-lg border border-white/15 bg-[#0F1014] px-2 text-[11px] text-white focus:outline-none focus:border-[#85CC17]/45"
+              >
+                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <Btn
+                size="sm"
+                variant="secondary"
+                onClick={() => void applyBulkStatus()}
+                disabled={bulkStatusApplying}
+              >
+                {bulkStatusApplying ? "Applying…" : "Set Status"}
+              </Btn>
+            </>
+          )}
+        </BulkActionBar>
+      )}
 
       {/* Evaluation viewer modal */}
       <Modal

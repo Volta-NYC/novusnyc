@@ -1132,3 +1132,70 @@ export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
     </div>
   );
 }
+
+// ── BULK SELECT ───────────────────────────────────────────────────────────────
+
+export function useBulkSelect() {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggle = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback((ids: string[], checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) ids.forEach((id) => next.add(id));
+      else ids.forEach((id) => next.delete(id));
+      return next;
+    });
+  }, []);
+
+  const clear = useCallback(() => setSelected(new Set()), []);
+
+  const isSelected = useCallback((id: string) => selected.has(id), [selected]);
+  const allSelected = useCallback(
+    (ids: string[]) => ids.length > 0 && ids.every((id) => selected.has(id)),
+    [selected],
+  );
+  const someSelected = useCallback(
+    (ids: string[]) => ids.length > 0 && ids.some((id) => selected.has(id)) && !ids.every((id) => selected.has(id)),
+    [selected],
+  );
+
+  return { selected, toggle, toggleAll, clear, isSelected, allSelected, someSelected, count: selected.size };
+}
+
+// ── BULK ACTION BAR ───────────────────────────────────────────────────────────
+
+export function BulkActionBar({
+  count,
+  onClear,
+  children,
+}: {
+  count: number;
+  onClear: () => void;
+  children: ReactNode;
+}) {
+  if (count === 0) return null;
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl bg-[#1A1D25] border border-white/12 shadow-2xl px-4 py-2.5 whitespace-nowrap">
+      <span className="text-xs text-white/55 font-medium">{count} selected</span>
+      <div className="h-4 w-px bg-white/12" />
+      {children}
+      <div className="h-4 w-px bg-white/12" />
+      <button
+        type="button"
+        onClick={onClear}
+        className="text-[10px] text-white/35 hover:text-white/65 transition-colors"
+      >
+        ✕ Clear
+      </button>
+    </div>
+  );
+}
