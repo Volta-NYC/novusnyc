@@ -226,7 +226,8 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-3">Do you have a resume to attach?</label>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-1">Do you have a resume to attach?</label>
+        <p className="font-body text-xs text-v-muted mb-3">A resume is required to be considered for any role above the entry-level Analyst position.</p>
         <div className="flex gap-3">
           <button
             type="button"
