@@ -144,6 +144,11 @@ function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
   return allowedRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
 }
 
+// Module-level: persists across page navigations within a tab but resets on full
+// page reload. Prevents the ack modal from re-showing on every soft navigation
+// after the member has already confirmed (or been shown the modal) this session.
+let _ackSessionDone = false;
+
 // ── INNER LAYOUT ──────────────────────────────────────────────────────────────
 
 function MembersLayoutInner({ children }: { children: ReactNode }) {
@@ -195,7 +200,6 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   const [ackChecked, setAckChecked] = useState(false);
   const [ackLoading, setAckLoading] = useState(false);
-  const ackCheckFired = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -210,19 +214,23 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading || !user || !userProfile || authRole !== "member") return;
-    if (handbookAckRequiredAt === undefined) return; // wait for settings to load
-    if (ackCheckFired.current) return;
-    ackCheckFired.current = true;
+    if (handbookAckRequiredAt === undefined) return;
+    // Module-level guard: the check runs at most once per browser session
+    // regardless of how many times MembersLayoutInner remounts (one per page).
+    if (_ackSessionDone) return;
+    _ackSessionDone = true;
     getMemberAcknowledgment(userProfile.id, "credit-infraction-policy")
       .then((ack) => {
         const needsAck = !ack || (handbookAckRequiredAt !== null && ack.acknowledgedAt < handbookAckRequiredAt);
-        // Don't block the handbook itself — member is already reading it.
         if (needsAck && !pathname.startsWith("/members/handbook")) {
           setShowAckModal(true);
         }
       })
       .catch(() => {});
-  }, [loading, user, userProfile, authRole, handbookAckRequiredAt, pathname]);
+  // pathname intentionally excluded: the check should fire once per session,
+  // not re-run on every navigation.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user, userProfile, authRole, handbookAckRequiredAt]);
 
   const handleConfirmAck = async () => {
     if (!userProfile) return;
@@ -495,14 +503,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                   <p className={`text-[10px] font-body truncate mt-0.5 ${lightTheme ? "text-black/40" : "text-white/40"}`}>{user?.email ?? ""}</p>
                 </div>
                 <div className="p-1">
-                  <Link
-                    href="/members/me"
-                    onClick={closeProfilePopover}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-body transition-colors ${tone.footerLink}`}
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Account settings
-                  </Link>
+                  {authRole === "member" && (
+                    <Link
+                      href="/members/me"
+                      onClick={closeProfilePopover}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-body transition-colors ${tone.footerLink}`}
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Account settings
+                    </Link>
+                  )}
                   <Link
                     href="/"
                     onClick={closeProfilePopover}

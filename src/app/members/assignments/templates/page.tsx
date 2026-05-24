@@ -21,7 +21,7 @@ import {
 import { useAuth } from "@/lib/members/authContext";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
-const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
+const MEMBER_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
 const TRACK_DOT: Record<CycleTrack, string> = {
@@ -31,7 +31,7 @@ const TRACK_DOT: Record<CycleTrack, string> = {
   General: "bg-gray-400",
 };
 
-const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2, General: 3 };
+const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 
 interface FormState {
   title: string;

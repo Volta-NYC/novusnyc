@@ -44,7 +44,7 @@ export const TRACK_PILL_BASE: Record<CycleTrack, string> = {
   General:   "bg-gray-100 text-gray-700",
 };
 
-export const ALL_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
+export const ALL_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 
 // ── DIVISION LABELS ───────────────────────────────────────────────────────────
 // Human-readable labels for public-facing track names.

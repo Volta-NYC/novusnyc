@@ -23,7 +23,7 @@ import {
 import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
 
-const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2, General: 3 };
+const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 
 // col 0=Title, 1=Track, 2=Business Name, 3=Claimer Names
 const ASSIGNMENT_SORT_OPTIONS = [
@@ -172,15 +172,12 @@ export default function ForReviewPage() {
     );
   };
 
-  const recentDecisions = useMemo(() => {
-    return claims
-      .filter((c) => c.status === "Approved" || c.status === "rejected")
-      .sort((a, b) => {
-        const ta = a.approvedAt ?? a.rejectedAt ?? "";
-        const tb = b.approvedAt ?? b.rejectedAt ?? "";
-        return tb.localeCompare(ta);
-      })
-      .slice(0, 12);
+  const assignmentLog = useMemo(() => {
+    return [...claims].sort((a, b) => {
+      const ta = a.approvedAt ?? a.rejectedAt ?? a.submittedAt ?? a.claimedAt ?? "";
+      const tb = b.approvedAt ?? b.rejectedAt ?? b.submittedAt ?? b.claimedAt ?? "";
+      return tb.localeCompare(ta);
+    });
   }, [claims]);
 
   const reviewerLabel = userProfile?.email || user?.email || user?.id || "unknown";
@@ -441,43 +438,62 @@ export default function ForReviewPage() {
         );
       })()}
 
-      {recentDecisions.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-white/55 text-xs uppercase tracking-wider font-semibold mb-2">Recent decisions</h2>
-          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
-            <table className="table-fixed text-left" style={{ width: "100%", minWidth: 950 }}>
-              <thead className="bg-[#0F1014] border-b border-white/8">
+      <div className="mt-6">
+        <h2 className="text-white/55 text-xs uppercase tracking-wider font-semibold mb-2">Full Assignment Log · {assignmentLog.length}</h2>
+        <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
+          <table className="table-fixed text-left" style={{ width: "100%", minWidth: 1000 }}>
+            <thead className="bg-[#0F1014] border-b border-white/8">
+              <tr>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[180px]">Member</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[260px]">Assignment</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[115px]">Status</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[65px]">Credits</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Reviewer</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">When</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assignmentLog.length === 0 && (
                 <tr>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[180px]">Member</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[290px]">Assignment</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Decision</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[70px]">Credits</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Reviewer</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">When</th>
+                  <td colSpan={6} className="px-3 py-6 text-center text-[11px] text-white/30">No assignment activity yet.</td>
                 </tr>
-              </thead>
-              <tbody>
-                {recentDecisions.map((c) => {
-                  const a = assignmentById.get(c.assignmentId);
-                  const when = c.approvedAt ?? c.rejectedAt ?? "";
-                  return (
-                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.025]">
-                      <td className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="block truncate">{c.memberName}</span></td>
-                      <td className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle overflow-hidden"><span className="block truncate" title={a?.title ?? ""}>{a?.title ?? "—"}</span></td>
-                      <td className="px-3 py-0 h-9 text-[11px] align-middle">
-                        <span className={`members-chip ${c.status === "Approved" ? "border-violet-400/30 bg-violet-400/10 text-violet-300" : "border-red-400/30 bg-red-400/10 text-red-300"}`}>{c.status}</span>
-                      </td>
-                      <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{c.status === "Approved" ? c.creditsAwarded ?? "—" : "—"}</td>
-                      <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle overflow-hidden"><span className="block truncate">{c.approvedBy ?? "—"}</span></td>
-                      <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{when ? new Date(when).toLocaleDateString() : "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              )}
+              {assignmentLog.map((c) => {
+                const a = assignmentById.get(c.assignmentId);
+                const statusKey = c.status as string;
+                const statusStyles: Record<string, string> = {
+                  claimed:       "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+                  "In Progress": "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+                  Submitted:     "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+                  "Under Review":"border-orange-400/30 bg-orange-400/10 text-orange-300",
+                  Approved:      "border-violet-400/30 bg-violet-400/10 text-violet-300",
+                  rejected:      "border-red-400/30 bg-red-400/10 text-red-300",
+                };
+                const statusLabel: Record<string, string> = {
+                  claimed: "In Progress",
+                };
+                const when = c.approvedAt ?? c.rejectedAt ?? c.submittedAt ?? c.claimedAt ?? "";
+                return (
+                  <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.025]">
+                    <td className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="block truncate">{c.memberName}</span></td>
+                    <td className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle overflow-hidden"><span className="block truncate" title={a?.title ?? ""}>{a?.title ?? "—"}</span></td>
+                    <td className="px-3 py-0 h-9 text-[11px] align-middle">
+                      <span className={`members-chip ${statusStyles[statusKey] ?? "border-white/15 bg-white/5 text-white/50"}`}>
+                        {statusLabel[statusKey] ?? c.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">
+                      {c.status === "Approved" ? (c.creditsAwarded ?? "—") : <span className="text-white/25">{a?.credits ?? "—"}</span>}
+                    </td>
+                    <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle overflow-hidden"><span className="block truncate">{c.approvedBy ?? "—"}</span></td>
+                    <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{when ? new Date(when).toLocaleDateString() : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       <Modal
         open={!!approvingClaim}

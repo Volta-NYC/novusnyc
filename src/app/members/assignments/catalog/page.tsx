@@ -19,7 +19,7 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
-const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
+const MEMBER_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", "Approved", "Finalized"];
 
@@ -58,7 +58,7 @@ const TRACK_BORDER: Record<CycleTrack, string> = {
   General: "border-l-gray-400/50",
 };
 
-const TRACK_RANK: Record<CycleTrack, number> = { Tech: 0, Marketing: 1, Finance: 2, General: 3 };
+const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 
 interface FormState {
   title: string;
@@ -758,51 +758,48 @@ export default function CatalogPage() {
 
       {/* Claims detail modal */}
       {claimsModal && (() => {
-        const claimList = claimsByAssignment.get(claimsModal.id) ?? [];
-        const GROUPS: { label: string; statuses: string[]; color: string }[] = [
-          { label: "Active",    statuses: ["claimed", "In Progress"], color: "text-cyan-300" },
-          { label: "Submitted", statuses: ["Submitted"],              color: "text-yellow-300" },
-          { label: "Approved",  statuses: ["Approved"],               color: "text-violet-300" },
-          { label: "Rejected",  statuses: ["rejected"],               color: "text-red-300" },
-        ];
+        const claimList = [...(claimsByAssignment.get(claimsModal.id) ?? [])].sort(
+          (a, b) => (b.claimedAt ?? "").localeCompare(a.claimedAt ?? ""),
+        );
+        const STATUS_CHIP: Record<string, string> = {
+          claimed:       "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+          "In Progress": "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+          Submitted:     "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+          Approved:      "border-violet-400/30 bg-violet-400/10 text-violet-300",
+          rejected:      "border-red-400/30 bg-red-400/10 text-red-300",
+        };
         return (
-          <Modal open onClose={() => setClaimsModal(null)} title={`${claimsModal.title} — Claims`}>
-            <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-1">
+          <Modal open onClose={() => setClaimsModal(null)} title={`${claimsModal.title} — Claims (${claimList.length})`}>
+            <div className="space-y-2 max-h-[65vh] overflow-y-auto pr-1">
               {claimList.length === 0 && (
                 <p className="text-sm text-white/45">No claims yet.</p>
               )}
-              {GROUPS.map(({ label, statuses, color }) => {
-                const group = claimList.filter((c) => statuses.includes(c.status));
-                if (group.length === 0) return null;
-                return (
-                  <div key={label}>
-                    <p className={`text-[10px] uppercase tracking-wider font-semibold mb-2 ${color}`}>{label} · {group.length}</p>
-                    <div className="space-y-2">
-                      {group.map((c) => (
-                        <div key={c.id} className="bg-[#0F1014] rounded-lg px-3 py-2.5 text-xs space-y-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-white/85 font-medium">{c.memberName}</span>
-                            <span className="text-white/30 shrink-0">claimed {new Date(c.claimedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                          </div>
-                          {c.dueDate && <p className="text-white/40">Due {c.dueDate}</p>}
-                          {c.deliverableUrl && (
-                            <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline underline-offset-2 block truncate">
-                              {c.deliverableUrl}
-                            </a>
-                          )}
-                          {c.submissionNotes && <p className="text-white/55 line-clamp-3">{c.submissionNotes}</p>}
-                          {c.status === "Approved" && c.creditsAwarded !== undefined && (
-                            <p className="text-violet-300">{c.creditsAwarded} credit{c.creditsAwarded !== 1 ? "s" : ""} awarded{c.approvedBy ? ` by ${c.approvedBy}` : ""}</p>
-                          )}
-                          {c.status === "rejected" && c.rejectReason && (
-                            <p className="text-red-300/80">Reason: {c.rejectReason}</p>
-                          )}
-                        </div>
-                      ))}
+              {claimList.map((c) => (
+                <div key={c.id} className="bg-[#0F1014] rounded-lg px-3 py-2.5 text-xs space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-white/85 font-medium">{c.memberName}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`members-chip ${STATUS_CHIP[c.status] ?? "border-white/15 bg-white/5 text-white/50"}`}>
+                        {c.status === "claimed" ? "In Progress" : c.status}
+                      </span>
+                      <span className="text-white/30">claimed {new Date(c.claimedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                     </div>
                   </div>
-                );
-              })}
+                  {c.dueDate && <p className="text-white/40">Due {c.dueDate}</p>}
+                  {c.deliverableUrl && (
+                    <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline underline-offset-2 block truncate">
+                      {c.deliverableUrl}
+                    </a>
+                  )}
+                  {c.submissionNotes && <p className="text-white/55 line-clamp-3">{c.submissionNotes}</p>}
+                  {c.status === "Approved" && c.creditsAwarded !== undefined && (
+                    <p className="text-violet-300">{c.creditsAwarded} credit{c.creditsAwarded !== 1 ? "s" : ""} awarded{c.approvedBy ? ` by ${c.approvedBy}` : ""}</p>
+                  )}
+                  {c.status === "rejected" && c.rejectReason && (
+                    <p className="text-red-300/80">Reason: {c.rejectReason}</p>
+                  )}
+                </div>
+              ))}
             </div>
           </Modal>
         );
