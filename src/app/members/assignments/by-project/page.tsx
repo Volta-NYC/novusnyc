@@ -10,6 +10,7 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import MasonryGrid from "@/components/MasonryGrid";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
   subscribeProjectGroups, subscribeCycles, subscribeAssignmentTemplates,
@@ -183,8 +184,6 @@ export default function ByProjectPage() {
   const [filterTracks, setFilterTracks]   = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
 
-  // per-card "show all assignments" toggle (keyed by card.key)
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   // per-assignment inline expand (keyed by assignment.id)
   const [expandedRows, setExpandedRows]   = useState<Set<string>>(new Set());
 
@@ -321,12 +320,6 @@ export default function ByProjectPage() {
       });
   }, [cards, filterTracks, filterStatuses, q]);
 
-  const toggleCardExpand = (key: string) =>
-    setExpandedCards((prev) => {
-      const n = new Set(prev);
-      if (n.has(key)) { n.delete(key); } else { n.add(key); }
-      return n;
-    });
   const toggleRowExpand = (id: string) =>
     setExpandedRows((prev) => {
       const n = new Set(prev);
@@ -616,26 +609,13 @@ export default function ByProjectPage() {
             </div>
           </ViewSection>
         </ViewPanel>
-        {visibleCards.length > 0 && (() => {
-          const allKeys = visibleCards.map((c) => c.key);
-          const allExpanded = allKeys.every((k) => expandedCards.has(k));
-          return (
-            <button
-              type="button"
-              onClick={() => setExpandedCards(allExpanded ? new Set() : new Set(allKeys))}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/12 bg-transparent text-white/55 hover:text-white hover:border-white/18 text-xs font-medium transition-colors"
-            >
-              {allExpanded ? "Collapse all" : "Expand all"}
-            </button>
-          );
-        })()}
       </div>
 
       {/* Card grid */}
       {visibleCards.length === 0 ? (
         <Empty message={q ? "No projects match your search." : "No active projects with assignments."} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <MasonryGrid itemIds={visibleCards.map((c) => c.key)} itemWidth={320} gap={16}>
           {visibleCards.map((card) => {
             const statusInfo = BIZ_STATUS_LABEL[card.status];
             const assignmentsToShow =
@@ -649,13 +629,6 @@ export default function ByProjectPage() {
                 )
               : assignmentsToShow
             ).sort((a, b) => Number(Boolean(b.priority)) - Number(Boolean(a.priority)) || a.title.localeCompare(b.title));
-
-            const PREVIEW_LIMIT = 4;
-            const isCardExpanded = expandedCards.has(card.key);
-            const visibleAssignments = isCardExpanded
-              ? filteredAssignments
-              : filteredAssignments.slice(0, PREVIEW_LIMIT);
-            const hiddenCount = filteredAssignments.length - PREVIEW_LIMIT;
 
             const grp = card.grpId ? projectGroups.find((g) => g.id === card.grpId) : null;
 
@@ -698,7 +671,7 @@ export default function ByProjectPage() {
                   {filteredAssignments.length === 0 && (
                     <p className="text-[11px] text-white/30 px-4 py-3">No assignments.</p>
                   )}
-                  {visibleAssignments.map((a) => {
+                  {filteredAssignments.map((a) => {
                     const isRowExpanded = expandedRows.has(a.id);
                     const claimList = claimsByAssignment.get(a.id) ?? [];
                     const activeClaims = claimList.filter((c) => c.status !== "rejected");
@@ -771,27 +744,11 @@ export default function ByProjectPage() {
                       </div>
                     );
                   })}
-                  {!isCardExpanded && hiddenCount > 0 && (
-                    <button
-                      onClick={() => toggleCardExpand(card.key)}
-                      className="text-[11px] text-white/35 hover:text-white/65 px-4 py-2 text-left transition-colors"
-                    >
-                      + {hiddenCount} more
-                    </button>
-                  )}
-                  {isCardExpanded && filteredAssignments.length > PREVIEW_LIMIT && (
-                    <button
-                      onClick={() => toggleCardExpand(card.key)}
-                      className="text-[11px] text-white/35 hover:text-white/65 px-4 py-2 text-left transition-colors"
-                    >
-                      Show less
-                    </button>
-                  )}
                 </div>
               </div>
             );
           })}
-        </div>
+        </MasonryGrid>
       )}
 
       {/* Assignment modal */}

@@ -798,44 +798,42 @@ function HandbookTab() {
   if (loading) return <div className="flex items-center justify-center h-32"><Spinner size="sm" /></div>;
 
   return (
-    <div className="max-w-2xl space-y-4">
-      <Card title="Credit & Infraction Policy" subtitle={page?.updatedAt ? `Last saved: ${new Date(page.updatedAt).toLocaleString()}${page.updatedBy ? ` by ${page.updatedBy}` : ""}` : "Edit the handbook page shown to members. Members must acknowledge this page on first login."}>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs text-white/50 font-body mb-1">Page Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
-              placeholder="Credit & Infraction Policy"
-            />
+    <div className="space-y-4">
+      <div className="max-w-2xl space-y-4">
+        <Card title="Credit & Infraction Policy" subtitle={page?.updatedAt ? `Last saved: ${new Date(page.updatedAt).toLocaleString()}${page.updatedBy ? ` by ${page.updatedBy}` : ""}` : "Edit the handbook page shown to members. Members must acknowledge this page on first login."}>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-white/50 font-body mb-1">Page Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+                placeholder="Credit & Infraction Policy"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-white/50 font-body mb-1">Content</label>
+              <RichTextEditor content={content} onChange={setContent} />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-white/50 font-body mb-1">Content</label>
-            <RichTextEditor content={content} onChange={setContent} />
+          <div className="mt-4">
+            <SaveBtn saving={saving} onClick={() => void handleSave()} />
           </div>
-        </div>
-        <div className="mt-4">
-          <SaveBtn saving={saving} onClick={() => void handleSave()} />
-        </div>
-        <StatusMsg msg={statusMessage} />
-      </Card>
+          <StatusMsg msg={statusMessage} />
+        </Card>
 
-      <Card title="Re-show popup for all members" subtitle="Use this after updating the policy if you want every member to acknowledge it again. Clears all existing acknowledgments — members will see the policy popup again on their next login.">
-        <Btn variant="danger" onClick={handleResetAcks} disabled={resetting}>
-          {resetting ? "Resetting..." : "Reset acknowledgments for all members"}
-        </Btn>
-        <StatusMsg msg={resetMessage} />
-      </Card>
+        <Card title="Re-show popup for all members" subtitle="Use this after updating the policy if you want every member to acknowledge it again. Clears all existing acknowledgments — members will see the policy popup again on their next login.">
+          <Btn variant="danger" onClick={handleResetAcks} disabled={resetting}>
+            {resetting ? "Resetting..." : "Reset acknowledgments for all members"}
+          </Btn>
+          <StatusMsg msg={resetMessage} />
+        </Card>
+      </div>
 
       <ResetDialog />
 
-      <div className="pt-2 border-t border-white/8 mt-10">
-        <div className="pb-3 mb-6">
-          <h2 className="font-display font-bold text-white text-lg">Infraction Catalog</h2>
-          <p className="text-white/40 text-sm mt-0.5">Define infraction types and point values. These are shown to members in the handbook below the policy text. Issue them per-member via the team directory.</p>
-        </div>
+      <div className="pt-2 border-t border-white/8 mt-6">
         <InfractionsTab />
       </div>
     </div>
