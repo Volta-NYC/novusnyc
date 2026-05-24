@@ -38,7 +38,7 @@ const OWNER_NAV_ITEMS: NavItem[] = [
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/><path d="M10 21v-4h4v4"/></svg>,
   },
   {
-    href: "/members/assignments/by-project",
+    href: "/members/assignments/catalog",
     label: "Assignments",
     activeMatchRoots: ["/members/assignments"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
@@ -67,7 +67,7 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/assignments/by-project"]);
+const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/assignments/catalog"]);
 const ADMIN_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS.filter((item) => ADMIN_NAV_HREFS.has(item.href));
 
 const MEMBER_NAV_ITEMS: NavItem[] = [

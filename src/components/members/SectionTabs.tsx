@@ -90,8 +90,8 @@ export const EMAIL_TABS: SectionTab[] = [
 
 // Assignments: by-project grouped view, flat list, review queue, templates.
 export const ASSIGNMENTS_TABS: SectionTab[] = [
-  { href: "/members/assignments/by-project", label: "By Project" },
   { href: "/members/assignments/catalog", label: "All Assignments" },
+  { href: "/members/assignments/by-project", label: "By Project" },
   { href: "/members/assignments/for-review", label: "For Review" },
   { href: "/members/assignments/templates", label: "Create + Templates" },
 ];

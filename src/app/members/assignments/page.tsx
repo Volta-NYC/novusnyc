@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 export default function AssignmentsIndex() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/members/assignments/by-business");
+    router.replace("/members/assignments/catalog");
   }, [router]);
   return null;
 }
