@@ -7,7 +7,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, Btn, Modal, Field, Input, Select, Empty, useConfirm, SearchBar, Spinner,
-  ViewPanel, ViewSection,
+  ViewPanel, ViewSection, SearchSelect, type SearchSelectOption,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
@@ -206,6 +206,20 @@ export default function CatalogPage() {
     () => [...projectGroups].sort((a, b) => a.name.localeCompare(b.name)),
     [projectGroups],
   );
+
+  const projectOptions = useMemo<SearchSelectOption[]>(() => [
+    { value: "volta", label: "Volta", subtitle: "Internal" },
+    ...sortedBusinessOptions.map((b) => ({
+      value: `biz:${b.id}`,
+      label: b.name,
+      subtitle: ["Business", b.neighborhood].filter(Boolean).join(" · "),
+    })),
+    ...sortedGroupOptions.map((g) => ({
+      value: `grp:${g.id}`,
+      label: g.name,
+      subtitle: "Project Group",
+    })),
+  ], [sortedBusinessOptions, sortedGroupOptions]);
 
   const openCreate = () => { setForm({ ...BLANK_FORM }); setEditing(null); setSaveError(null); setModal("create"); };
 
@@ -533,29 +547,12 @@ export default function CatalogPage() {
           </div>
 
           <Field label="Project">
-            <select
+            <SearchSelect
               value={form.projectRef}
-              onChange={(e) => setForm((p) => ({ ...p, projectRef: e.target.value }))}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-            >
-              <option value="volta">Volta</option>
-              {sortedBusinessOptions.length > 0 && (
-                <optgroup label="Businesses">
-                  {sortedBusinessOptions.map((b) => (
-                    <option key={b.id} value={`biz:${b.id}`}>
-                      {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {sortedGroupOptions.length > 0 && (
-                <optgroup label="Project Groups">
-                  {sortedGroupOptions.map((g) => (
-                    <option key={g.id} value={`grp:${g.id}`}>{g.name}</option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+              onChange={(v) => setForm((p) => ({ ...p, projectRef: v }))}
+              options={projectOptions}
+              placeholder="Select project…"
+            />
           </Field>
 
           {/* Recurring toggle */}

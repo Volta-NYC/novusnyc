@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const runtime = "nodejs";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -31,10 +34,11 @@ function normalizeHtmlBody(input: string): string {
 }
 
 function applyPlaceholders(input: string, meta: Record<string, string>): string {
-  return input.replace(/\{\{\s*(firstName|fullName|memberName|school|grade|projects|assignmentTitle|assignmentCode|finalDeadline|region)\s*\}\}/g, (_match, key: string) => {
+  return input.replace(/\{\{\s*(firstName|fullName|memberName|school|grade|projects|assignmentTitle|assignmentCode|finalDeadline|region|portalLink|magicLink)\s*\}\}/g, (_match, key: string) => {
     if (key === "firstName") {
       return (meta.firstName || meta.fullName || meta.memberName || "").split(/\s+/)[0] ?? "";
     }
+    if (key === "portalLink") return "https://voltanyc.org/members";
     return meta[key] ?? "";
   });
 }
@@ -134,6 +138,24 @@ export async function POST(req: NextRequest) {
 
   const fallbackToAddress = dedupedTo.length > 0 ? undefined : selectedFrom;
   const hasPlaceholders = /\{\{\s*\w+\s*\}\}/.test(subject) || /\{\{\s*\w+\s*\}\}/.test(message);
+
+  // Pre-generate Supabase magic links per-recipient if {{magicLink}} is used.
+  if (hasPlaceholders && /\{\{\s*magicLink\s*\}\}/.test(subject + message) && recipientMeta.size > 0) {
+    const sb = getSupabaseAdmin();
+    const portalUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://voltanyc.org").trim() + "/members";
+    for (const [recipientEmail, meta] of recipientMeta) {
+      try {
+        const { data } = await sb.auth.admin.generateLink({
+          type: "magiclink",
+          email: recipientEmail,
+          options: { redirectTo: portalUrl },
+        });
+        meta.magicLink = data?.properties?.action_link ?? portalUrl;
+      } catch {
+        meta.magicLink = portalUrl;
+      }
+    }
+  }
 
   try {
     if (hasPlaceholders && recipientMeta.size > 0) {

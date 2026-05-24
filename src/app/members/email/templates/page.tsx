@@ -98,6 +98,9 @@ function sampleValue(variable: string): string {
     case "issuedBy": return "Ethan Zhang";
     case "note": return "Please reply to client emails by EOD.";
     case "openAssignmentCount": return "12";
+    case "link":       return "https://voltanyc.org/members";
+    case "portalLink": return "https://voltanyc.org/members";
+    case "magicLink":  return "https://voltanyc.org/members";
     default: return variable;
   }
 }
@@ -114,6 +117,52 @@ interface FormState {
 }
 
 const BLANK_FORM: FormState = { label: "", description: "", subject: "", body: "" };
+
+const TEMPLATE_LINK_DESCRIPTIONS: Record<string, string> = {
+  invite:              "One-time invite link — recipient clicks to confirm their email and set up their portal account (expires in 24 hrs)",
+  applicant_accepted:  "Portal access link — direct sign-in for existing accounts, or a one-time invite link for brand-new members",
+  "password-reset":    "Password reset link — recipient clicks to set a new password (expires in 1 hr)",
+};
+
+const VARIABLE_DESCRIPTIONS: Record<string, string> = {
+  firstName:           "Recipient's first name",
+  name:                "Recipient's full name",
+  memberName:          "Member's full name",
+  cycleName:           "Active cycle name",
+  startDate:           "Cycle start date",
+  endDate:             "Cycle end date",
+  creditsEarned:       "Credits earned so far this cycle",
+  creditsTarget:       "Total credit target for this cycle",
+  creditsAwarded:      "Credits awarded for this assignment",
+  checkInsBehind:      "Number of check-ins behind pace",
+  daysRemaining:       "Days remaining in the cycle",
+  pacingPercent:       "Expected % completion at this point in the cycle",
+  strikeReason:        "Reason a strike was issued",
+  strikeCount:         "Total strikes this cycle",
+  previousRole:        "Role before the change",
+  newRole:             "Role after the change",
+  outcome:             "Cycle outcome summary",
+  assignmentTitle:     "Title of the assignment",
+  businessName:        "Business name for the assignment",
+  rejectionReason:     "Reviewer's rejection feedback",
+  infractionName:      "Infraction type name",
+  points:              "Points for this infraction",
+  totalPoints:         "Total infraction points this cycle",
+  issuedBy:            "Admin who issued the infraction",
+  note:                "Optional note from the admin",
+  openAssignmentCount: "Number of open assignments in the marketplace",
+};
+
+const LINK_VARIABLES = [
+  {
+    variable: "{{portalLink}}",
+    description: "Direct link to voltanyc.org/members — static, always works for any recipient",
+  },
+  {
+    variable: "{{magicLink}}",
+    description: "One-click sign-in link, generated per-recipient by Supabase at send time — expires in 1 hour",
+  },
+];
 
 export default function EmailTemplatesPage() {
   const { authRole, user, loading } = useAuth();
@@ -321,20 +370,29 @@ export default function EmailTemplatesPage() {
           {(editing?.availableVariables ?? []).length > 0 ? (
             <>
               <div>
-                <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-1.5">
-                  Variables — click to insert into body
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">
+                  Variables — click to insert
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {(editing?.availableVariables ?? []).map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => editorRef.current?.insertAtCursor(`{{${v}}}`)}
-                      className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#85CC17]/45 hover:text-white transition-colors"
-                    >
-                      {`{{${v}}}`}
-                    </button>
-                  ))}
+                <div className="space-y-1.5">
+                  {(editing?.availableVariables ?? []).map((v) => {
+                    const description = v === "link" && editing?.key
+                      ? (TEMPLATE_LINK_DESCRIPTIONS[editing.key] ?? "Resolved link — type depends on where this template is used")
+                      : (VARIABLE_DESCRIPTIONS[v] ?? "");
+                    return (
+                      <div key={v} className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => editorRef.current?.insertAtCursor(`{{${v}}}`)}
+                          className="shrink-0 inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#85CC17]/45 hover:text-white transition-colors"
+                        >
+                          {`{{${v}}}`}
+                        </button>
+                        {description && (
+                          <span className="text-[11px] text-white/40 font-body">{description}</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -347,9 +405,26 @@ export default function EmailTemplatesPage() {
               />
             </>
           ) : (
-            <p className="text-[11px] text-white/35">
-              Use <code className="text-white/55">{"{{memberName}}"}</code>, <code className="text-white/55">{"{{cycleName}}"}</code>, <code className="text-white/55">{"{{creditsEarned}}"}</code>, etc. as placeholders — they are filled in automatically when the email is sent.
-            </p>
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">
+                Link variables — click to insert
+              </p>
+              {LINK_VARIABLES.map((lv) => (
+                <div key={lv.variable} className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => editorRef.current?.insertAtCursor(lv.variable)}
+                    className="shrink-0 inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#85CC17]/45 hover:text-white transition-colors"
+                  >
+                    {lv.variable}
+                  </button>
+                  <span className="text-[11px] text-white/40 font-body">{lv.description}</span>
+                </div>
+              ))}
+              <p className="text-[11px] text-white/30 pt-1">
+                Other variables like <code className="text-white/50">{"{{memberName}}"}</code> and <code className="text-white/50">{"{{cycleName}}"}</code> are available for automation-triggered templates.
+              </p>
+            </div>
           )}
         </div>
         <div className="flex justify-end gap-2 mt-5 pt-3 border-t border-white/8">

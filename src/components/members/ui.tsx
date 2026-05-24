@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode, useCallback, useEffect, useId, useRef } from "react";
+import { useState, ReactNode, useCallback, useEffect, useId, useMemo, useRef } from "react";
 
 // ── BADGE ─────────────────────────────────────────────────────────────────────
 // Maps status/priority/role strings to their Tailwind color classes.
@@ -455,6 +455,170 @@ export function AutocompleteTagInput({
   );
 }
 
+// ── SEARCH SELECT ─────────────────────────────────────────────────────────────
+// Searchable dropdown that replaces native <select> for lists with many options.
+// Keyboard: ArrowDown/Up to navigate, Enter to commit, Escape to close.
+
+export interface SearchSelectOption {
+  value: string;
+  label: string;
+  subtitle?: string;
+}
+
+export function SearchSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select…",
+  clearable = false,
+  emptyLabel = "No matches",
+  className = "",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: SearchSelectOption[];
+  placeholder?: string;
+  clearable?: boolean;
+  emptyLabel?: string;
+  className?: string;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selected = useMemo(() => options.find((o) => o.value === value) ?? null, [options, value]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(
+      (o) =>
+        o.label.toLowerCase().includes(q) ||
+        (o.subtitle?.toLowerCase().includes(q) ?? false),
+    );
+  }, [options, query]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+        setFocusedIndex(-1);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const openDropdown = () => {
+    setQuery("");
+    setFocusedIndex(-1);
+    setOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const commit = (v: string) => {
+    onChange(v);
+    setOpen(false);
+    setQuery("");
+    setFocusedIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const clearRow = clearable ? 1 : 0;
+    const total = filtered.length + clearRow;
+    if (e.key === "Escape") { setOpen(false); setQuery(""); return; }
+    if (e.key === "ArrowDown") { e.preventDefault(); setFocusedIndex((i) => Math.min(i + 1, total - 1)); return; }
+    if (e.key === "ArrowUp") { e.preventDefault(); setFocusedIndex((i) => Math.max(i - 1, 0)); return; }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (clearable && focusedIndex === 0) { commit(""); return; }
+      const item = filtered[focusedIndex - clearRow];
+      if (item) commit(item.value);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className={`relative w-full ${className}`}>
+      <button
+        type="button"
+        onClick={() => (open ? setOpen(false) : openDropdown())}
+        className={`w-full flex items-center justify-between bg-[#0F1014] border rounded-lg px-3 py-2.5 text-sm text-left transition-colors ${open ? "border-[#85CC17]/50" : "border-white/10 hover:border-white/20"}`}
+      >
+        <span className={selected ? "text-white" : "text-white/30"}>
+          {selected?.label ?? placeholder}
+        </span>
+        <svg
+          className={`w-4 h-4 text-white/40 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#1C1F26] border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+          <div className="p-2 border-b border-white/8">
+            <div className="relative">
+              <svg
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setFocusedIndex(-1); }}
+                onKeyDown={handleKeyDown}
+                placeholder="Type to filter…"
+                className="w-full bg-[#0F1014] border border-white/8 rounded-md pl-8 pr-3 py-1.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40"
+              />
+            </div>
+          </div>
+          <ul className="max-h-52 overflow-y-auto py-1">
+            {clearable && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => commit("")}
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors text-white/35 hover:bg-white/5 ${focusedIndex === 0 ? "bg-white/8" : ""}`}
+                >
+                  — None —
+                </button>
+              </li>
+            )}
+            {filtered.length === 0 ? (
+              <li className="px-3 py-3 text-sm text-white/25 text-center">{emptyLabel}</li>
+            ) : (
+              filtered.map((opt, i) => {
+                const fi = i + (clearable ? 1 : 0);
+                return (
+                  <li key={opt.value}>
+                    <button
+                      type="button"
+                      onClick={() => commit(opt.value)}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${opt.value === value ? "text-[#85CC17] bg-[#85CC17]/8" : "text-white/85 hover:bg-white/5"} ${focusedIndex === fi ? "bg-white/8" : ""}`}
+                    >
+                      <span className="block">{opt.label}</span>
+                      {opt.subtitle && (
+                        <span className="block text-[10px] text-white/35 mt-0.5">{opt.subtitle}</span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── PAGE HEADER ───────────────────────────────────────────────────────────────
 // Renders the page title, optional subtitle, and an optional action area (e.g. "Add" button).
 // Uses min-w-0 on the title so it can shrink, and flex-shrink-0 on the action
@@ -756,20 +920,19 @@ export function CopyButton({ text, label }: { text: string; label?: string }) {
 export function Toggle({ checked, onChange, label }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-  label: string;
+  label?: string;
 }) {
   return (
-    <label className="flex items-center gap-3 cursor-pointer select-none group">
+    <label className={`flex items-center cursor-pointer select-none ${label ? "gap-3 group" : "w-fit"}`}>
       <div
         onClick={() => onChange(!checked)}
-        className={`relative rounded-full flex-shrink-0 cursor-pointer transition-colors ${checked ? "bg-[#85CC17]" : "bg-white/15"}`}
-        style={{ height: "22px", width: "40px" }}
+        className={`relative h-[22px] w-10 rounded-full flex-shrink-0 cursor-pointer transition-colors ${checked ? "bg-[#85CC17]" : "bg-white/15"}`}
       >
         <div
           className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}
         />
       </div>
-      <span className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>
+      {label && <span className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>}
     </label>
   );
 }
