@@ -59,9 +59,6 @@ function HandbookContent() {
             ) : (
               <p className="text-black/40 text-sm font-body">The handbook is being prepared. Check back soon.</p>
             )}
-            <div className="mt-5 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-xs text-sky-700 font-body leading-relaxed">
-              <span className="font-semibold">Note:</span> Specific numbers in this handbook — credit requirements, promotion targets, and demerit thresholds — may be updated at the start of each cycle. The most accurate, up-to-date values are always shown on your <span className="font-semibold">Overview</span> page.
-            </div>
           </>
         ) : (
           <div className="py-8 text-center">
