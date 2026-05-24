@@ -13,7 +13,7 @@ import {
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
-  createBusiness, updateBusiness, deleteBusiness, hardDeleteBusiness,
+  createBusiness, updateBusiness, hardDeleteBusiness,
   getSiteSettings,
   type Business, type TeamMember, type Assignment, type AssignmentClaim,
 } from "@/lib/members/storage";
@@ -435,6 +435,8 @@ function BusinessesPageInner() {
   const [filterTechStatuses, setFilterTechStatuses] = useState<Set<string>>(new Set());
   const [filterMarketingStatuses, setFilterMarketingStatuses] = useState<Set<string>>(new Set());
   const [filterNeighborhoods, setFilterNeighborhoods] = useState<Set<string>>(new Set());
+  const [hideArchived, setHideArchived] = useState(true);
+  const [showOnlyArchived, setShowOnlyArchived] = useState(false);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -846,12 +848,15 @@ function BusinessesPageInner() {
   const handleArchiveFromEdit = async () => {
     if (!editingBusiness) return;
     const name = editingBusiness.name || "this business";
+    const isCurrentlyArchived = !!editingBusiness.archived;
     await ask(
       async () => {
-        await deleteBusiness(editingBusiness.id);
+        await updateBusiness(editingBusiness.id, { archived: !isCurrentlyArchived });
         setModal(null);
       },
-      `Archive "${name}"? It will be hidden from the tracker but can be restored from the database.`,
+      isCurrentlyArchived
+        ? `Unarchive "${name}"? It will reappear in the main businesses list.`
+        : `Archive "${name}"? It will be hidden by default but can be found with the "Show only archived" filter.`,
     );
   };
 
@@ -1027,6 +1032,12 @@ function BusinessesPageInner() {
     if (activeTab === "showcase") return false; // showcase tab renders its own list
     // "businesses" tab: only entries promoted to at least one track
     if (isDiscoveryBusiness(business)) return false;
+    // Archived visibility
+    if (showOnlyArchived) {
+      if (!business.archived) return false;
+    } else if (hideArchived) {
+      if (business.archived) return false;
+    }
     // Fine-grained filters (only applied in businesses tab)
     if (filterTracks.size > 0) {
       const bTracks = TRACK_ORDER.filter((t) => (business.projectTracks ?? []).includes(t));
@@ -1060,7 +1071,7 @@ function BusinessesPageInner() {
     [businesses]
   );
 
-  const hasActiveFilters = filterTracks.size > 0 || filterTechStatuses.size > 0 || filterMarketingStatuses.size > 0 || filterNeighborhoods.size > 0;
+  const hasActiveFilters = filterTracks.size > 0 || filterTechStatuses.size > 0 || filterMarketingStatuses.size > 0 || filterNeighborhoods.size > 0 || showOnlyArchived || !hideArchived;
   const filtered = activeTab === "discovery"
     ? tabScoped.filter(matchesSearch).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
     : sortByStatusThenName(tabScoped.filter(matchesSearch));
@@ -1241,8 +1252,8 @@ function BusinessesPageInner() {
     }
   };
 
-  // Counts across all assigned businesses (excludes discovery).
-  const assignedBusinesses = businesses.filter((b) => !isDiscoveryBusiness(b));
+  // Counts across all assigned businesses (excludes discovery and archived).
+  const assignedBusinesses = businesses.filter((b) => !isDiscoveryBusiness(b) && !b.archived);
   const ongoingCount = assignedBusinesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Ongoing").length;
   const upcomingCount = assignedBusinesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Upcoming").length;
   const completedCount = assignedBusinesses.filter((b) => normalizeProjectStatus(b.projectStatus) === "Completed").length;
@@ -1381,6 +1392,9 @@ function BusinessesPageInner() {
         <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-medium truncate" title={b.name}>{b.name}</span>
+            {b.archived && (
+              <span className="flex-shrink-0 rounded-full border border-white/15 bg-white/5 px-1.5 py-px text-[9px] font-semibold text-white/35 uppercase tracking-wide">Archived</span>
+            )}
           </div>
         </td>
         <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
@@ -1882,6 +1896,28 @@ function BusinessesPageInner() {
                       {n}
                     </label>
                   ))}
+                </div>
+              </ViewSection>
+              <ViewSection label="Archived">
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                    <input
+                      type="checkbox"
+                      className="members-checkbox"
+                      checked={hideArchived}
+                      onChange={(e) => { setHideArchived(e.target.checked); if (e.target.checked) setShowOnlyArchived(false); }}
+                    />
+                    Hide archived businesses
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                    <input
+                      type="checkbox"
+                      className="members-checkbox"
+                      checked={showOnlyArchived}
+                      onChange={(e) => { setShowOnlyArchived(e.target.checked); if (e.target.checked) setHideArchived(false); }}
+                    />
+                    Show only archived
+                  </label>
                 </div>
               </ViewSection>
             </ViewPanel>
@@ -2597,8 +2633,8 @@ function BusinessesPageInner() {
           <div>
             {editingBusiness && (
               <div className="flex gap-2">
-                <Btn variant="danger" onClick={() => void handleArchiveFromEdit()} title="Hide from tracker (recoverable)">
-                  Archive
+                <Btn variant="danger" onClick={() => void handleArchiveFromEdit()} title={editingBusiness.archived ? "Restore to main list" : "Hide from main list (recoverable)"}>
+                  {editingBusiness.archived ? "Unarchive" : "Archive"}
                 </Btn>
                 <Btn variant="danger" onClick={() => void handleHardDeleteFromEdit()} title="Permanently delete — cannot be undone">
                   Delete

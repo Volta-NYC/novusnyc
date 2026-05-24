@@ -75,6 +75,7 @@ export interface Business {
   clientNotes?: string;       // legacy field
   sortIndex?: number;
   intakeSource?: "website_form" | "discovery";
+  archived?: boolean;
   referredBy?: string;
   // Public-site showcase configuration (optional, managed in Projects UI).
   showcaseEnabled?: boolean;

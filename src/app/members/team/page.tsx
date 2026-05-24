@@ -243,6 +243,7 @@ export default function TeamPage() {
   const [sortRules, setSortRules]     = useState<SortRule[]>(DEFAULT_SORT_RULES);
   const [hiddenAdminCols, setHiddenAdminCols] = useState<Set<string>>(new Set());
   const [hideInactive, setHideInactive] = useState(true);
+  const [showOnlyInactive, setShowOnlyInactive] = useState(false);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   const boardMigrationRef = useRef(false);
@@ -557,10 +558,13 @@ export default function TeamPage() {
   };
 
   const filtered = team.filter(member => {
-    if (hideInactive) {
-      const isInactive = normalizeKey(member.status ?? "") === "inactive";
-      const isReserve = classifyMember(member).status === "reserve";
-      if (isInactive || isReserve) return false;
+    const isInactive = normalizeKey(member.status ?? "") === "inactive";
+    const isReserve = classifyMember(member).status === "reserve";
+    const isInactiveOrReserve = isInactive || isReserve;
+    if (showOnlyInactive) {
+      if (!isInactiveOrReserve) return false;
+    } else if (hideInactive) {
+      if (isInactiveOrReserve) return false;
     }
     if (!search) return true;
     const q = search.toLowerCase();
@@ -1007,17 +1011,28 @@ export default function TeamPage() {
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive</span>
         </div>
         {!isMemberRestricted && (
-          <ViewPanel active={hideInactive || hiddenAdminCols.size > 0 || sortRules.length !== DEFAULT_SORT_RULES.length}>
+          <ViewPanel active={hideInactive || showOnlyInactive || hiddenAdminCols.size > 0 || sortRules.length !== DEFAULT_SORT_RULES.length}>
             <ViewSection label="Filter">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
-                <input
-                  type="checkbox"
-                  className="members-checkbox"
-                  checked={hideInactive}
-                  onChange={(e) => setHideInactive(e.target.checked)}
-                />
-                Hide inactive members
-              </label>
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={hideInactive}
+                    onChange={(e) => { setHideInactive(e.target.checked); if (e.target.checked) setShowOnlyInactive(false); }}
+                  />
+                  Hide inactive members
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={showOnlyInactive}
+                    onChange={(e) => { setShowOnlyInactive(e.target.checked); if (e.target.checked) setHideInactive(false); }}
+                  />
+                  Show only inactive
+                </label>
+              </div>
             </ViewSection>
             <ViewSection label="Sort">
               <SortPanel
