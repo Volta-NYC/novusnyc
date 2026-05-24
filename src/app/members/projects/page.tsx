@@ -1433,6 +1433,22 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
+        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+          {isMemberRestricted ? (
+            <span className="text-white/40">—</span>
+          ) : b.phone ? (
+            <a
+              href={`tel:${b.phone.replace(/[^\d+]/g, "")}`}
+              className="block truncate text-white/75 hover:text-white"
+              title={b.phone}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {formatPhone(b.phone)}
+            </a>
+          ) : (
+            <span className="text-white/30">—</span>
+          )}
+        </td>
         <td className="px-3 py-0 h-9 align-middle overflow-hidden">
           {renderTrackStatusCell(b, "Tech")}
         </td>
@@ -2178,7 +2194,7 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1311px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1431px"}}>
                   <thead className="bg-[#0F1014] border-b border-white/8">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2186,8 +2202,9 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Phone</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech Status</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
@@ -2203,7 +2220,7 @@ function BusinessesPageInner() {
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1181px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1301px"}}>
               <thead className="bg-[#0F1014] border-b border-white/8">
                 <tr>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2211,8 +2228,9 @@ function BusinessesPageInner() {
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Email</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Phone</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech Status</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>
               </thead>
