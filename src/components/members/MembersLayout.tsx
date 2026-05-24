@@ -396,31 +396,37 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         )}
 
         {/* Logo + collapse toggle */}
-        <div className={`px-3 py-3 border-b ${tone.sidebarBorder} flex items-center gap-2 shrink-0`}>
-          <button
-            type="button"
-            onClick={sidebarCollapsed ? toggleCollapsed : undefined}
-            title={sidebarCollapsed ? "Expand sidebar" : undefined}
-            className={`flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden ${sidebarCollapsed ? "cursor-pointer" : "cursor-default"}`}
-          >
-            <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain shrink-0" />
-            <div className={fadeText}>
-              <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
-              <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
+        <div className={`px-3 py-3 border-b ${tone.sidebarBorder} shrink-0`}>
+          {sidebarCollapsed ? (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              title="Expand sidebar"
+              className="flex items-center justify-center w-full"
+            >
+              <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain" />
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <Image src="/logo.png" alt="Volta" width={26} height={26} className="object-contain shrink-0" />
+                <div className="min-w-0">
+                  <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
+                  <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                title="Collapse sidebar"
+                className={`rounded-md p-1 shrink-0 transition-colors ${tone.collapseBtn}`}
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
             </div>
-          </button>
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            title="Collapse sidebar"
-            className={`rounded-md p-1 transition-[opacity,colors] duration-150 shrink-0 ${tone.collapseBtn} ${
-              sidebarCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-            }`}
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
+          )}
         </div>
 
         {/* Navigation */}

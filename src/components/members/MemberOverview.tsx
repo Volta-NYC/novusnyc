@@ -499,7 +499,7 @@ function RecommendedCard({ assignment, business }: { assignment: Assignment; bus
       <div className="flex items-center gap-2 mb-1.5">
         <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignment.primaryTrack ?? "Tech"]}`} />
         <p className="text-[10px] uppercase tracking-wider text-black/45 font-semibold">{assignment.primaryTrack}</p>
-        <span className="ml-auto text-sm text-[#5C9911] font-mono font-semibold">{assignment.credits} cr</span>
+        <span className="ml-auto text-sm text-[#5C9911] font-mono font-semibold">{assignment.credits} credits</span>
       </div>
       <p className="text-sm font-medium text-black/90 mb-1 line-clamp-2">{assignment.title}</p>
       {business && (

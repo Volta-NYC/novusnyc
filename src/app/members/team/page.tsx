@@ -1407,7 +1407,7 @@ export default function TeamPage() {
                         <div key={claim.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/8 bg-[#0F1014] px-3 py-2">
                           <span className="text-xs text-white/70 truncate">{assignment?.title ?? claim.assignmentId}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-white/50">{credits.get(claim.assignmentId) ?? "?"} cr</span>
+                            <span className="text-xs text-white/50">{credits.get(claim.assignmentId) ?? "?"} credits</span>
                             <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${claim.status === "Approved" ? "bg-emerald-500/15 text-emerald-300" : claim.status === "rejected" ? "bg-red-500/15 text-red-300" : "bg-yellow-500/15 text-yellow-300"}`}>
                               {claim.status}
                             </span>

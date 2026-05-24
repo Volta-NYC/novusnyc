@@ -81,10 +81,10 @@ function ClaimRow({ c, a, biz }: { c: AssignmentClaim; a: Assignment | undefined
         <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
           {c.status === "Approved" ? (
             <span className="text-xs font-bold text-[#5C9911]">
-              +{totalEarned != null ? totalEarned : credits} cr
+              +{totalEarned != null ? totalEarned : credits} credits
             </span>
           ) : (
-            <span className="text-xs text-black/45">{credits} cr</span>
+            <span className="text-xs text-black/45">{credits} credits</span>
           )}
           <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STATUS_PILL[c.status] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>
             {c.status === "claimed" ? "Claimed" : c.status}
@@ -513,7 +513,7 @@ export default function MyRecordPage() {
                                     {c.status === "claimed" ? "Claimed" : c.status}
                                   </span>
                                   {c.status === "Approved" && (
-                                    <span className="text-xs text-[#5C9911] font-mono">+{c.creditsAwarded ?? a?.credits ?? 0} cr</span>
+                                    <span className="text-xs text-[#5C9911] font-mono">+{c.creditsAwarded ?? a?.credits ?? 0} credits</span>
                                   )}
                                 </div>
                               </div>

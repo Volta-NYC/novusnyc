@@ -536,7 +536,7 @@ export default function ForReviewPage() {
                     }`}
                   >
                     {label}
-                    <span className="block text-[9px] opacity-70">{val} cr</span>
+                    <span className="block text-[9px] opacity-70">{val} credits</span>
                   </button>
                 );
               })}

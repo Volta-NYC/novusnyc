@@ -72,7 +72,7 @@ function MyClaimRow({
             ) : (
               <span className="text-black/40">No deadline set</span>
             )}
-            <span className="text-[#5C9911] font-medium">Submit work to earn {creditsDisplay} cr →</span>
+            <span className="text-[#5C9911] font-medium">Submit work to earn {creditsDisplay} credits →</span>
           </div>
         )}
 
@@ -99,9 +99,9 @@ function MyClaimRow({
 
       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
         {claim.status === "Approved" ? (
-          <span className="text-sm font-bold text-[#5C9911]">+{creditsDisplay} cr</span>
+          <span className="text-sm font-bold text-[#5C9911]">+{creditsDisplay} credits</span>
         ) : (
-          <span className="text-xs text-black/40">{assignment.credits} cr</span>
+          <span className="text-xs text-black/40">{assignment.credits} credits</span>
         )}
         <StatusBadge status={claim.status} />
       </div>

@@ -732,7 +732,7 @@ export default function ByProjectPage() {
                             <div className="flex flex-wrap gap-3 text-[11px] text-white/55">
                               <span className="text-white/75 font-medium">{a.track}</span>
                               <span className="text-[#85CC17] font-semibold">
-                                {a.credits} {a.recurringEnabled ? "cr/check-in" : a.credits === 1 ? "credit" : "credits"}
+                                {a.credits} {a.recurringEnabled ? "credits/check-in" : a.credits === 1 ? "credit" : "credits"}
                               </span>
                               {a.recurringEnabled && (
                                 <span className="text-purple-400">↻ Every {a.checkinIntervalDays ?? 7} days</span>

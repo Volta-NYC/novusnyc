@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/members/authContext";
 
 export type SectionTab = {
   href: string;
@@ -37,13 +38,17 @@ export default function SectionTabs({
   tabs: SectionTab[];
   className?: string;
 }) {
+  const { authRole } = useAuth();
+  const lightTheme = authRole === "member";
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = (searchParams?.get("tab") ?? "").toLowerCase();
 
   return (
     <div className={`mb-4 overflow-x-auto pb-1 ${className}`}>
-      <div className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-[#12151B] p-1 min-w-max">
+      <div className={`inline-flex items-center gap-1 rounded-xl border p-1 min-w-max ${
+        lightTheme ? "border-black/10 bg-black/[0.04]" : "border-white/10 bg-[#12151B]"
+      }`}>
         {tabs.map((tab) => {
           const active = isTabActive(pathname, currentTab, tab);
           return (
@@ -52,8 +57,12 @@ export default function SectionTabs({
               href={tab.href}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
                 active
-                  ? "bg-[#85CC17]/15 text-[#9BE22B] border border-[#85CC17]/30"
-                  : "text-white/55 hover:text-white/85 hover:bg-white/5 border border-transparent"
+                  ? lightTheme
+                    ? "bg-[#85CC17]/15 text-[#5C9911] border border-[#85CC17]/30"
+                    : "bg-[#85CC17]/15 text-[#9BE22B] border border-[#85CC17]/30"
+                  : lightTheme
+                    ? "text-black/55 hover:text-black/85 hover:bg-black/5 border border-transparent"
+                    : "text-white/55 hover:text-white/85 hover:bg-white/5 border border-transparent"
               }`}
             >
               {tab.label}

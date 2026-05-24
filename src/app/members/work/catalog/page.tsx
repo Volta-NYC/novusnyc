@@ -267,7 +267,7 @@ export default function CatalogPage() {
                         )}
                       </div>
                       <span className="text-[#5C9911] font-display font-bold text-base tabular-nums shrink-0">
-                        {a.credits} {a.recurringEnabled ? "cr / check-in" : a.credits === 1 ? "credit" : "credits"}
+                        {a.credits} {a.recurringEnabled ? "credits / check-in" : a.credits === 1 ? "credit" : "credits"}
                       </span>
                     </div>
 
