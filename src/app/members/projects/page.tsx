@@ -436,6 +436,8 @@ function BusinessesPageInner() {
   const [filterMarketingStatuses, setFilterMarketingStatuses] = useState<Set<string>>(new Set());
   const [filterNeighborhoods, setFilterNeighborhoods] = useState<Set<string>>(new Set());
   const [hideArchived, setHideArchived] = useState(true);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showOnlyArchived, setShowOnlyArchived] = useState(false);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
@@ -619,6 +621,7 @@ function BusinessesPageInner() {
     setShowAlternatePhone(false);
     setMemberInputByTrack({ Tech: "", Marketing: "", Finance: "" });
     setMemberInputErrorByTrack({});
+    setSaveError(null);
     setModal("create");
   };
 
@@ -658,6 +661,7 @@ function BusinessesPageInner() {
     setShowAlternatePhone(!!(b.alternatePhone ?? "").trim());
     setMemberInputByTrack({ Tech: "", Marketing: "", Finance: "" });
     setMemberInputErrorByTrack({});
+    setSaveError(null);
     setModal("edit");
   };
 
@@ -741,6 +745,8 @@ function BusinessesPageInner() {
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
+    setSaveBusy(true);
+    setSaveError(null);
     const selectedTracks = (Array.isArray(form.projectTracks) ? form.projectTracks : [])
       .map((track) => normalizeDivision(track))
       .filter((track, index, arr) => arr.indexOf(track) === index);
@@ -809,40 +815,43 @@ function BusinessesPageInner() {
       payload.showcaseFeaturedOnHome = false;
     }
 
-    if (editingBusiness) {
-      const wasDiscovery = editingBusiness.intakeSource === "discovery";
-      const nowHasTracks = selectedTracks.length > 0;
-      await updateBusiness(editingBusiness.id, {
-        ...payload,
-        // Promote out of discovery automatically when tracks are assigned.
-        ...(wasDiscovery && nowHasTracks ? { intakeSource: null as unknown as Business["intakeSource"] } : {}),
-        // Remove deprecated keys from legacy entries.
-        activeServices: null as unknown as string[],
-        languages: null as unknown as string[],
-        githubUrl: null as unknown as string,
-        driveFolderUrl: null as unknown as string,
-        clientNotes: null as unknown as string,
-        firstContactDate: null as unknown as string,
-        teamLead: null as unknown as string,
-        showcaseName: null as unknown as string,
-        showcaseType: showcaseEnabled ? payload.showcaseType : (null as unknown as string),
-        showcaseNeighborhood: showcaseEnabled ? payload.showcaseNeighborhood : (null as unknown as string),
-        showcaseServices: showcaseEnabled ? payload.showcaseServices : (null as unknown as string[]),
-        showcaseStatus: null as unknown as Business["showcaseStatus"],
-        showcaseDescription: showcaseEnabled ? payload.showcaseDescription : (null as unknown as string),
-        showcaseUrl: showcaseEnabled ? payload.showcaseUrl : (null as unknown as string),
-        showcaseImageUrl: showcaseEnabled ? payload.showcaseImageUrl : (null as unknown as string),
-        showcaseImageData: showcaseEnabled ? payload.showcaseImageData : (null as unknown as string),
-      });
-    } else {
-      await createBusiness({
-        ...payload,
-        sortIndex: nextSortIndex(businesses),
-        ...(isDiscoveryCreate ? { intakeSource: "discovery" as const } : {}),
-      } as Omit<Business, "id" | "createdAt" | "updatedAt">);
+    try {
+      if (editingBusiness) {
+        const wasDiscovery = editingBusiness.intakeSource === "discovery";
+        const nowHasTracks = selectedTracks.length > 0;
+        await updateBusiness(editingBusiness.id, {
+          ...payload,
+          ...(wasDiscovery && nowHasTracks ? { intakeSource: null as unknown as Business["intakeSource"] } : {}),
+          activeServices: null as unknown as string[],
+          languages: null as unknown as string[],
+          githubUrl: null as unknown as string,
+          driveFolderUrl: null as unknown as string,
+          clientNotes: null as unknown as string,
+          firstContactDate: null as unknown as string,
+          teamLead: null as unknown as string,
+          showcaseName: null as unknown as string,
+          showcaseType: showcaseEnabled ? payload.showcaseType : (null as unknown as string),
+          showcaseNeighborhood: showcaseEnabled ? payload.showcaseNeighborhood : (null as unknown as string),
+          showcaseServices: showcaseEnabled ? payload.showcaseServices : (null as unknown as string[]),
+          showcaseStatus: null as unknown as Business["showcaseStatus"],
+          showcaseDescription: showcaseEnabled ? payload.showcaseDescription : (null as unknown as string),
+          showcaseUrl: showcaseEnabled ? payload.showcaseUrl : (null as unknown as string),
+          showcaseImageUrl: showcaseEnabled ? payload.showcaseImageUrl : (null as unknown as string),
+          showcaseImageData: showcaseEnabled ? payload.showcaseImageData : (null as unknown as string),
+        });
+      } else {
+        await createBusiness({
+          ...payload,
+          sortIndex: nextSortIndex(businesses),
+          ...(isDiscoveryCreate ? { intakeSource: "discovery" as const } : {}),
+        } as Omit<Business, "id" | "createdAt" | "updatedAt">);
+      }
+      setModal(null);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Save failed. Please try again.");
+    } finally {
+      setSaveBusy(false);
     }
-
-    setModal(null);
   };
 
   const handleArchiveFromEdit = async () => {
@@ -2660,11 +2669,18 @@ function BusinessesPageInner() {
               </div>
             )}
           </div>
-          <div className="flex gap-2">
-            <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
-            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim()}>
-              {editingBusiness ? "Save" : "Create"}
-            </Btn>
+          <div className="flex flex-col gap-2 items-end">
+            {saveError && (
+              <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 w-full">
+                {saveError}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+              <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim() || saveBusy}>
+                {saveBusy ? "Saving…" : editingBusiness ? "Save" : "Create"}
+              </Btn>
+            </div>
           </div>
         </div>
       </Modal>
