@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Btn, Field, Input, SearchBar, Spinner, Toggle } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
-import EmailBodyEditor from "@/components/members/EmailBodyEditor";
 import { useAuth } from "@/lib/members/authContext";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -37,27 +36,23 @@ const EXPORT_OPTIONS = [
 ] as const;
 
 type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-type AdminTab = "data" | "applications" | "services" | "banners" | "infractions" | "handbook" | "emails" | "audit";
+type AdminTab = "data" | "frontend" | "handbook" | "audit";
 
 const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
-  data:         "/members/admin",
-  applications: "/members/admin/applications",
-  services:     "/members/admin/services",
-  banners:      "/members/admin/banners",
-  infractions:  "/members/admin/infractions",
-  handbook:     "/members/admin/handbook",
-  emails:       "/members/admin/emails",
-  audit:        "/members/admin/audit-logs",
+  data:     "/members/admin",
+  frontend: "/members/admin/frontend",
+  handbook: "/members/admin/handbook",
+  audit:    "/members/admin/audit-logs",
 };
 
 function getAdminTab(pathname: string): AdminTab {
-  if (pathname.startsWith("/members/admin/applications")) return "applications";
-  if (pathname.startsWith("/members/admin/services"))     return "services";
-  if (pathname.startsWith("/members/admin/banners"))      return "banners";
-  if (pathname.startsWith("/members/admin/infractions"))  return "infractions";
-  if (pathname.startsWith("/members/admin/handbook"))     return "handbook";
-  if (pathname.startsWith("/members/admin/emails"))       return "emails";
-  if (pathname.startsWith("/members/admin/audit-logs"))   return "audit";
+  if (pathname.startsWith("/members/admin/frontend") ||
+      pathname.startsWith("/members/admin/applications") ||
+      pathname.startsWith("/members/admin/services") ||
+      pathname.startsWith("/members/admin/banners"))     return "frontend";
+  if (pathname.startsWith("/members/admin/handbook") ||
+      pathname.startsWith("/members/admin/infractions")) return "handbook";
+  if (pathname.startsWith("/members/admin/audit-logs")) return "audit";
   return "data";
 }
 
@@ -550,7 +545,35 @@ function BannersTab() {
   );
 }
 
-// ── TAB: ROLES ────────────────────────────────────────────────────────────────
+// ── TAB: MANAGE FRONTEND ─────────────────────────────────────────────────────
+
+function FrontendSection({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="pb-3 mb-5 border-b border-white/8">
+      <h2 className="font-display font-bold text-white text-lg">{title}</h2>
+      {subtitle && <p className="text-white/40 text-sm mt-0.5">{subtitle}</p>}
+    </div>
+  );
+}
+
+function ManageFrontendTab() {
+  return (
+    <div className="space-y-14">
+      <section>
+        <FrontendSection title="Applications" subtitle="Control whether the public /apply page accepts new submissions." />
+        <ApplicationsTab />
+      </section>
+      <section>
+        <FrontendSection title="Services" subtitle="Manage the service options shown in the showcase filter, business edit form, and application form." />
+        <ServicesTab />
+      </section>
+      <section>
+        <FrontendSection title="Banners" subtitle="Configure announcement banners shown on the public site and members portal." />
+        <BannersTab />
+      </section>
+    </div>
+  );
+}
 
 // ── TAB: INFRACTIONS ──────────────────────────────────────────────────────────
 
@@ -669,155 +692,7 @@ function InfractionsTab() {
   );
 }
 
-// ── TAB: HANDBOOK ─────────────────────────────────────────────────────────────
-
-// ── TAB: EMAILS ───────────────────────────────────────────────────────────────
-
-interface EmailTemplateRow {
-  key: string;
-  label: string;
-  description: string;
-  subject: string;
-  body: string;
-  updated_at: string | null;
-  updated_by: string | null;
-}
-
-const EMAIL_TEMPLATE_VARS = [
-  { v: "{{name}}",      desc: "Member's full name" },
-  { v: "{{firstName}}", desc: "Member's first name" },
-  { v: "{{link}}",      desc: "The action link (invite or setup link)" },
-];
-
-const EMAIL_TEMPLATE_META: Record<string, { label: string; description: string }> = {
-  "invite":     { label: "Member Invite",     description: "Sent by admin when inviting a member. Contains a permanent link (never expires)." },
-  "setup-link": { label: "Portal Setup Link", description: "Sent when a member requests a fresh setup link. Contains a one-time OTP link (expires in 24 hours)." },
-};
-
-function EmailsTab() {
-  const [templates, setTemplates] = useState<EmailTemplateRow[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [editing, setEditing]     = useState<Record<string, { subject: string; body: string }>>({});
-  const [saving, setSaving]       = useState<Record<string, boolean>>({});
-  const [status, setStatus]       = useState<Record<string, string>>({});
-  const [expanded, setExpanded]   = useState<Record<string, boolean>>({ "invite": true });
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const token = await getAuthToken();
-        const res = await fetch("/api/members/admin/email-templates", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const { templates: rows } = await res.json() as { templates: EmailTemplateRow[] };
-        setTemplates(rows ?? []);
-        const initial: Record<string, { subject: string; body: string }> = {};
-        for (const t of rows ?? []) initial[t.key] = { subject: t.subject, body: t.body };
-        setEditing(initial);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const handleSave = async (key: string) => {
-    const vals = editing[key];
-    if (!vals) return;
-    setSaving(s => ({ ...s, [key]: true }));
-    setStatus(s => ({ ...s, [key]: "" }));
-    try {
-      const token = await getAuthToken();
-      const res = await fetch("/api/members/admin/email-templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ key, subject: vals.subject, html: vals.body }),
-      });
-      setStatus(s => ({ ...s, [key]: res.ok ? "Saved." : "Save failed. Please try again." }));
-      if (res.ok) {
-        setTemplates(ts => ts.map(t => t.key === key ? { ...t, subject: vals.subject, body: vals.body, updated_at: new Date().toISOString() } : t));
-      }
-    } catch {
-      setStatus(s => ({ ...s, [key]: "Save failed. Please try again." }));
-    } finally {
-      setSaving(s => ({ ...s, [key]: false }));
-    }
-  };
-
-  if (loading) return <div className="flex items-center justify-center h-32"><Spinner size="sm" /></div>;
-
-  return (
-    <div className="max-w-2xl space-y-6">
-      <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4">
-        <p className="text-xs text-white/50 font-body mb-2 font-semibold uppercase tracking-wider">Available variables</p>
-        <div className="flex flex-wrap gap-2">
-          {EMAIL_TEMPLATE_VARS.map(({ v, desc }) => (
-            <div key={v} className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1">
-              <code className="text-[#85CC17] text-xs font-mono">{v}</code>
-              <span className="text-white/40 text-xs">— {desc}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {["invite", "setup-link"].map((key) => {
-        const meta = EMAIL_TEMPLATE_META[key] ?? { label: key, description: "" };
-        const row  = templates.find(t => t.key === key);
-        const vals = editing[key] ?? { subject: "", body: "" };
-        const isExpanded = expanded[key] ?? false;
-        const lastSaved = row?.updated_at
-          ? `Last saved ${new Date(row.updated_at).toLocaleString()}${row.updated_by ? ` by ${row.updated_by}` : ""}`
-          : "Not yet saved";
-        return (
-          <div key={key} className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setExpanded(e => ({ ...e, [key]: !isExpanded }))}
-              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.03] transition-colors"
-            >
-              <div>
-                <p className="font-display font-bold text-white">{meta.label}</p>
-                <p className="text-white/40 text-xs mt-0.5">{lastSaved}</p>
-              </div>
-              <svg
-                viewBox="0 0 24 24"
-                className={`h-4 w-4 text-white/40 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                fill="none" stroke="currentColor" strokeWidth="2"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {isExpanded && (
-              <div className="px-5 pb-5 space-y-3 border-t border-white/8">
-                <div className="pt-4">
-                  <label className="block text-xs text-white/50 font-body mb-1">Subject</label>
-                  <input
-                    type="text"
-                    value={vals.subject}
-                    onChange={e => setEditing(ed => ({ ...ed, [key]: { ...vals, subject: e.target.value } }))}
-                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
-                    placeholder="Email subject line"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-white/50 font-body mb-1">Body</label>
-                  <EmailBodyEditor
-                    content={vals.body}
-                    onChange={body => setEditing(ed => ({ ...ed, [key]: { ...vals, body } }))}
-                    placeholder={`Write the email body… Use {{firstName}}, {{name}}, {{link}}`}
-                  />
-                </div>
-                <div className="pt-1">
-                  <SaveBtn saving={saving[key] ?? false} onClick={() => void handleSave(key)} />
-                </div>
-                <StatusMsg msg={status[key] ?? ""} />
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+// ── TAB: HANDBOOK (merged with Infractions) ────────────────────────────────────
 
 function HandbookTab() {
   const { user } = useAuth();
@@ -922,6 +797,14 @@ function HandbookTab() {
       </Card>
 
       <ResetDialog />
+
+      <div className="pt-2 border-t border-white/8 mt-10">
+        <div className="pb-3 mb-6">
+          <h2 className="font-display font-bold text-white text-lg">Infraction Catalog</h2>
+          <p className="text-white/40 text-sm mt-0.5">Define infraction types and point values. These are shown to members in the handbook below the policy text. Issue them per-member via the team directory.</p>
+        </div>
+        <InfractionsTab />
+      </div>
     </div>
   );
 }
@@ -933,6 +816,7 @@ function AuditLogTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState("");
   const [actionFilter, setActionFilter] = useState<"all" | "create" | "update" | "delete">("all");
+  const [detailEntry, setDetailEntry] = useState<AuditLogEntry | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1033,8 +917,18 @@ function AuditLogTab() {
                     <td className="py-2 pr-3 text-white/70 font-mono">{e.collection}</td>
                     <td className="py-2 pr-3 text-white/40 font-mono text-[10px]">{e.recordId ?? "—"}</td>
                     <td className="py-2 pr-3 text-white/70">{e.actorName || e.actorEmail || "—"}</td>
-                    <td className="py-2 pr-3 text-white/40 font-mono text-[10px] max-w-[320px] truncate" title={JSON.stringify(e.details ?? {})}>
-                      {e.details ? JSON.stringify(e.details) : ""}
+                    <td className="py-2 pr-3">
+                      {e.details && Object.keys(e.details).length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setDetailEntry(e)}
+                          className="text-[10px] text-white/40 hover:text-white/75 underline underline-offset-2 transition-colors font-mono"
+                        >
+                          {Object.keys(e.details).length} field{Object.keys(e.details).length !== 1 ? "s" : ""} changed
+                        </button>
+                      ) : (
+                        <span className="text-white/20 text-[10px]">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1043,6 +937,43 @@ function AuditLogTab() {
           </div>
         )}
       </Card>
+
+      {detailEntry && (
+        <Modal open onClose={() => setDetailEntry(null)} title={`${detailEntry.action.toUpperCase()} · ${detailEntry.collection}`}>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs bg-[#0F1014] rounded-lg p-3">
+              <span className="text-white/40">Actor</span>
+              <span className="text-white/80">{detailEntry.actorName || detailEntry.actorEmail || "—"}</span>
+              <span className="text-white/40">When</span>
+              <span className="text-white/80">{new Date(detailEntry.timestamp).toLocaleString()}</span>
+              {detailEntry.recordId && (
+                <>
+                  <span className="text-white/40">Record ID</span>
+                  <span className="text-white/55 font-mono text-[10px] break-all">{detailEntry.recordId}</span>
+                </>
+              )}
+            </div>
+            {detailEntry.details && Object.keys(detailEntry.details).length > 0 && (
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Changed fields</p>
+                <div className="rounded-lg border border-white/8 overflow-hidden divide-y divide-white/6">
+                  {Object.entries(detailEntry.details).map(([key, val]) => (
+                    <div key={key} className="grid grid-cols-[160px_1fr] gap-3 px-3 py-2 text-xs">
+                      <span className="text-white/45 font-mono truncate">{key}</span>
+                      <span className="text-white/75 break-words">
+                        {typeof val === "object" ? JSON.stringify(val) : String(val ?? "—")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-[10px] text-white/25 pt-1">
+              Note: the audit log records what was written, not the previous state — point-in-time undo requires storing before-snapshots, which is a planned schema improvement.
+            </p>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -1068,14 +999,10 @@ function AdminContent() {
   }
 
   const TABS: { key: AdminTab; label: string }[] = [
-    { key: "data",         label: "Data" },
-    { key: "applications", label: "Applications" },
-    { key: "services",     label: "Services" },
-    { key: "banners",      label: "Banners" },
-    { key: "infractions",  label: "Infractions" },
-    { key: "emails",       label: "Emails" },
-    { key: "handbook",     label: "Handbook" },
-    { key: "audit",        label: "Audit Log" },
+    { key: "data",     label: "Data" },
+    { key: "frontend", label: "Manage Frontend" },
+    { key: "handbook", label: "Handbook" },
+    { key: "audit",    label: "Audit Log" },
   ];
 
   return (
@@ -1099,14 +1026,10 @@ function AdminContent() {
         ))}
       </div>
 
-      {activeTab === "data"         && <DataTab />}
-      {activeTab === "applications" && <ApplicationsTab />}
-      {activeTab === "services"     && <ServicesTab />}
-      {activeTab === "banners"      && <BannersTab />}
-      {activeTab === "infractions"  && <InfractionsTab />}
-      {activeTab === "emails"       && <EmailsTab />}
-      {activeTab === "handbook"     && <HandbookTab />}
-      {activeTab === "audit"        && <AuditLogTab />}
+      {activeTab === "data"     && <DataTab />}
+      {activeTab === "frontend" && <ManageFrontendTab />}
+      {activeTab === "handbook" && <HandbookTab />}
+      {activeTab === "audit"    && <AuditLogTab />}
     </>
   );
 }

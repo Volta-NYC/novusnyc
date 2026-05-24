@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import { getHandbookPage, type HandbookPage } from "@/lib/members/storage";
+import {
+  getHandbookPage, subscribeInfractions,
+  type HandbookPage, type Infraction,
+} from "@/lib/members/storage";
 import { Spinner } from "@/components/members/ui";
+
+const POINTS_PILL: Record<number, string> = {
+  1: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+  2: "border-orange-400/30 bg-orange-400/10 text-orange-300",
+  3: "border-red-400/30 bg-red-400/10 text-red-300",
+};
+const POINTS_LABEL: Record<number, string> = { 1: "Minor", 2: "Major", 3: "Severe" };
 
 function HandbookContent() {
   const [page, setPage] = useState<HandbookPage | null>(null);
+  const [infractions, setInfractions] = useState<Infraction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,6 +25,10 @@ function HandbookContent() {
       .then(setPage)
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => subscribeInfractions(setInfractions), []);
+
+  const sortedInfractions = [...infractions].sort((a, b) => (a.points - b.points) || a.name.localeCompare(b.name));
 
   if (loading) {
     return (
@@ -53,6 +68,37 @@ function HandbookContent() {
         ) : (
           <div className="py-8 text-center">
             <p className="text-black/40 text-sm font-body">The handbook is being prepared. Check back soon.</p>
+          </div>
+        )}
+
+        {sortedInfractions.length > 0 && (
+          <div className="mt-8 pt-8 border-t border-black/8">
+            <h3 className="font-display font-bold text-black/85 text-base mb-1">Infraction Reference</h3>
+            <p className="text-black/45 text-sm font-body mb-4">Point values assigned for each type of infraction.</p>
+            <div className="rounded-xl border border-black/8 overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-black/[0.03] border-b border-black/8">
+                  <tr>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[35%]">Infraction</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45">Description</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[90px]">Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedInfractions.map((inf) => (
+                    <tr key={inf.id} className="border-b border-black/6 last:border-b-0 align-top">
+                      <td className="px-4 py-2.5 font-body font-medium text-black/80 text-sm">{inf.name}</td>
+                      <td className="px-4 py-2.5 font-body text-black/55 text-sm">{inf.description || <span className="text-black/30">—</span>}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${POINTS_PILL[inf.points] ?? ""}`}>
+                          {inf.points} pt — {POINTS_LABEL[inf.points] ?? ""}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
