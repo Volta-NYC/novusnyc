@@ -439,6 +439,10 @@ function BusinessesPageInner() {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showOnlyArchived, setShowOnlyArchived] = useState(false);
+  const [promoteModal, setPromoteModal] = useState<Business | null>(null);
+  const [promoteModalTracks, setPromoteModalTracks] = useState<Set<TrackDivision>>(new Set());
+  const [promoteModalStatuses, setPromoteModalStatuses] = useState<Partial<Record<TrackDivision, string>>>({});
+  const [promoteBusy, setPromoteBusy] = useState(false);
   const normalizedLegacyColorsRef = useRef(false);
   const normalizedLegacyTracksRef = useRef(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -886,6 +890,41 @@ function BusinessesPageInner() {
       async () => { await hardDeleteBusiness(b.id); },
       `Permanently delete "${b.name || "this entry"}"? This cannot be undone.`,
     );
+  };
+
+  const openPromoteModal = (b: Business) => {
+    setPromoteModal(b);
+    setPromoteModalTracks(new Set());
+    setPromoteModalStatuses({});
+  };
+
+  const handlePromote = async () => {
+    if (!promoteModal || promoteModalTracks.size === 0) return;
+    setPromoteBusy(true);
+    const tracks = [...promoteModalTracks] as TrackDivision[];
+    const nextTrackProjects: TrackProjectMap = {};
+    for (const track of tracks) {
+      nextTrackProjects[track] = {
+        projectStatus: (promoteModalStatuses[track] ?? "Upcoming") as TrackStatusValue,
+        teamMembers: [],
+        deadlines: [...TRACK_DEADLINE_DEFAULT],
+        notes: "",
+      };
+    }
+    const overallStatus = deriveOverallStatus(nextTrackProjects, tracks);
+    const primaryDivision = derivePrimaryDivision(tracks);
+    try {
+      await updateBusiness(promoteModal.id, {
+        projectTracks: tracks,
+        trackProjects: nextTrackProjects,
+        projectStatus: overallStatus,
+        division: primaryDivision,
+        intakeSource: null as unknown as Business["intakeSource"],
+      });
+      setPromoteModal(null);
+    } finally {
+      setPromoteBusy(false);
+    }
   };
 
   // ── Showcase tab handlers ────────────────────────────────────────────────────
@@ -1590,15 +1629,12 @@ function BusinessesPageInner() {
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
             <div className="members-row-actions">
-              <Btn size="sm" variant="secondary" onClick={() => openProjectEmailModal(b)}>Email</Btn>
               {(fromDiscovery || fromWebsite) && (
                 <Btn
                   size="sm"
-                  variant="secondary"
-                  onClick={() => void (async () => {
-                    await updateBusiness(b.id, { intakeSource: null as unknown as Business["intakeSource"] });
-                  })()}
-                  title="Move this lead into the main Businesses tab"
+                  variant="primary"
+                  onClick={() => openPromoteModal(b)}
+                  title="Assign to a track and move to the Businesses tab"
                 >
                   Promote
                 </Btn>
@@ -1808,6 +1844,72 @@ function BusinessesPageInner() {
   return (
     <MembersLayout>
       <Dialog />
+
+      {/* Promote modal — assign track(s) + initial status before moving to Businesses */}
+      <Modal
+        open={promoteModal !== null}
+        onClose={() => setPromoteModal(null)}
+        title={`Promote "${promoteModal?.name ?? ""}"`}
+      >
+        <p className="text-sm text-white/55 font-body mb-4">
+          Choose which track(s) this business will be assigned to. It will move out of Discovery and into the Businesses tab.
+        </p>
+        <div className="space-y-2 mb-5">
+          {TRACK_ORDER.map((track) => {
+            const checked = promoteModalTracks.has(track);
+            const statuses = track === "Tech" ? TECH_STATUSES : track === "Marketing" ? MARKETING_STATUSES : FINANCE_STATUSES;
+            return (
+              <div
+                key={track}
+                className={`rounded-xl border p-3 transition-colors ${checked ? "border-[#85CC17]/30 bg-[#85CC17]/5" : "border-white/8 bg-[#0F1014]"}`}
+              >
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="members-checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      setPromoteModalTracks((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(track)) next.delete(track);
+                        else next.add(track);
+                        return next;
+                      });
+                    }}
+                  />
+                  <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_META[track].dotClass}`} />
+                  <span className="text-sm font-medium text-white/85 font-body">{TRACK_META[track].label}</span>
+                </label>
+                {checked && (
+                  <div className="mt-2.5 pl-8">
+                    <Field label="Initial status">
+                      <Select
+                        options={statuses.map((s) => s.value)}
+                        value={(promoteModalStatuses[track] ?? "Upcoming") as string}
+                        onChange={(e) => setPromoteModalStatuses((prev) => ({ ...prev, [track]: e.target.value }))}
+                      />
+                    </Field>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {promoteModalTracks.size === 0 && (
+          <p className="text-xs text-white/35 font-body mb-4">Select at least one track to continue.</p>
+        )}
+        <div className="flex items-center justify-end gap-2 pt-4 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setPromoteModal(null)}>Cancel</Btn>
+          <Btn
+            variant="primary"
+            onClick={() => void handlePromote()}
+            disabled={promoteModalTracks.size === 0 || promoteBusy}
+          >
+            {promoteBusy ? "Promoting…" : "Promote to Businesses"}
+          </Btn>
+        </div>
+      </Modal>
+
       <SectionTabs tabs={PROJECT_GROUP_TABS} />
 
       <PageHeader
@@ -2170,18 +2272,18 @@ function BusinessesPageInner() {
         </>
       ) : activeTab === "discovery" ? (
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1390px"}}>
+          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1100px"}}>
             <thead className="bg-[#0F1014] border-b border-white/8">
               <tr>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[220px]">Business Name</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Neighborhood</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Owner</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[230px]">Primary Email</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Phone</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Source</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Date</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[150px]">Referred By</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Actions</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Business Name</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Neighborhood</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[210px]">Primary Email</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Phone</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[90px]">Source</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Date</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Referred By</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Actions</th>
               </tr>
             </thead>
             <tbody>{filtered.map(renderDiscoveryRow)}</tbody>

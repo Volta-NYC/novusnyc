@@ -155,6 +155,22 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     if (stored === "true") setSidebarCollapsed(true);
   }, []);
 
+  // Reset the public-site banner offset and fix body background for the portal.
+  // When navigating from a public page that had an active banner, --banner-h stays set
+  // on the root element and gives the body a padding-top, showing the off-white body
+  // background as a white bar above the portal layout. Reset it on mount.
+  useEffect(() => {
+    document.documentElement.style.setProperty("--banner-h", "0px");
+    const prevBody = document.body.style.backgroundColor;
+    const prevHtml = document.documentElement.style.backgroundColor;
+    document.body.style.backgroundColor = "#0F1014";
+    document.documentElement.style.backgroundColor = "#0F1014";
+    return () => {
+      document.body.style.backgroundColor = prevBody;
+      document.documentElement.style.backgroundColor = prevHtml;
+    };
+  }, []);
+
   const toggleCollapsed = () => {
     setSidebarCollapsed((prev) => {
       const next = !prev;
