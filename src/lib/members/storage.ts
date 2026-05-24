@@ -1730,18 +1730,19 @@ export type PortalRole = "Analyst" | "Senior Analyst" | "Associate" | "Reserve";
 export type PortalPermissions = Record<PortalRole, Record<PortalPermissionKey, boolean>>;
 
 export interface SiteSettings {
-  applicationsPaused:   boolean;
-  applicationsPausedMsg: string;
-  services:             string[];
-  publicBannerEnabled:  boolean;
-  publicBannerMessage:  string;
-  publicBannerBg:       string;
-  publicBannerText:     string;
-  portalBannerEnabled:  boolean;
-  portalBannerMessage:  string;
-  portalBannerBg:       string;
-  portalBannerText:     string;
-  permissions:          PortalPermissions;
+  applicationsPaused:       boolean;
+  applicationsPausedMsg:    string;
+  services:                 string[];
+  publicBannerEnabled:      boolean;
+  publicBannerMessage:      string;
+  publicBannerBg:           string;
+  publicBannerText:         string;
+  portalBannerEnabled:      boolean;
+  portalBannerMessage:      string;
+  portalBannerBg:           string;
+  portalBannerText:         string;
+  permissions:              PortalPermissions;
+  handbookAckRequiredAt:    string | null;
 }
 
 const DEFAULT_PERMISSIONS: PortalPermissions = {
@@ -1764,6 +1765,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   portalBannerBg:        "#85CC17",
   portalBannerText:      "#0D0D0D",
   permissions:           DEFAULT_PERMISSIONS,
+  handbookAckRequiredAt: null,
 };
 
 function parsePermissions(raw: unknown): PortalPermissions {
@@ -1796,6 +1798,7 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
     portalBannerBg:        String(r.portal_banner_bg ?? DEFAULT_SITE_SETTINGS.portalBannerBg),
     portalBannerText:      String(r.portal_banner_text ?? DEFAULT_SITE_SETTINGS.portalBannerText),
     permissions:           parsePermissions(r.permissions),
+    handbookAckRequiredAt: r.handbook_ack_required_at ? String(r.handbook_ack_required_at) : null,
   };
 }
 
@@ -1832,6 +1835,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.portalBannerBg        !== undefined) row.portal_banner_bg        = patch.portalBannerBg;
   if (patch.portalBannerText      !== undefined) row.portal_banner_text      = patch.portalBannerText;
   if (patch.permissions           !== undefined) row.permissions             = patch.permissions;
+  if (patch.handbookAckRequiredAt !== undefined) row.handbook_ack_required_at = patch.handbookAckRequiredAt;
   const { error } = await supabase.from("site_settings").update(row).eq("id", "singleton");
   if (error) throw new Error(error.message);
   void writeAuditLog({ action: "update", collection: "siteSettings", recordId: "singleton", details: { fields: Object.keys(patch) } });

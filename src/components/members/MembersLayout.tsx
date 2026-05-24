@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
-import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment, getHandbookPage, subscribeSiteSettings } from "@/lib/members/storage";
+import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment, subscribeSiteSettings } from "@/lib/members/storage";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -92,11 +92,6 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
-async function sha256(text: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 function getInitials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -152,6 +147,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const profilePopoverRef = useRef<HTMLDivElement>(null);
   const [showAckModal, setShowAckModal] = useState(false);
   const [portalBanner, setPortalBanner] = useState<{ message: string; bg: string; text: string } | null>(null);
+  const [handbookAckRequiredAt, setHandbookAckRequiredAt] = useState<string | null | undefined>(undefined);
 
   // Load collapse preference from localStorage after mount (avoids hydration mismatch).
   useEffect(() => {
@@ -171,11 +167,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     setPortalBanner(s.portalBannerEnabled && s.portalBannerMessage.trim()
       ? { message: s.portalBannerMessage.trim(), bg: s.portalBannerBg, text: s.portalBannerText }
       : null);
+    setHandbookAckRequiredAt(s.handbookAckRequiredAt);
   }), []);
 
   const [ackChecked, setAckChecked] = useState(false);
   const [ackLoading, setAckLoading] = useState(false);
-  const [currentContentHash, setCurrentContentHash] = useState("");
   const ackCheckFired = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -191,22 +187,19 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading || !user || !userProfile || authRole !== "member") return;
+    if (handbookAckRequiredAt === undefined) return; // wait for settings to load
     if (ackCheckFired.current) return;
     ackCheckFired.current = true;
-    Promise.all([
-      getMemberAcknowledgment(userProfile.id, "credit-infraction-policy"),
-      getHandbookPage("credit-infraction-policy"),
-    ])
-      .then(async ([ack, page]) => {
-        const content = page?.content ?? "";
-        const hash = content ? await sha256(content) : "";
-        setCurrentContentHash(hash);
-        if (!ack || (hash && ack.contentHash !== hash)) {
+    getMemberAcknowledgment(userProfile.id, "credit-infraction-policy")
+      .then((ack) => {
+        const needsAck = !ack || (handbookAckRequiredAt !== null && ack.acknowledgedAt < handbookAckRequiredAt);
+        // Don't block the handbook itself — member is already reading it.
+        if (needsAck && !pathname.startsWith("/members/handbook")) {
           setShowAckModal(true);
         }
       })
       .catch(() => {});
-  }, [loading, user, userProfile, authRole]);
+  }, [loading, user, userProfile, authRole, handbookAckRequiredAt, pathname]);
 
   const handleConfirmAck = async () => {
     if (!userProfile) return;
@@ -215,7 +208,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       await createMemberAcknowledgment({
         memberId: userProfile.id,
         pageSlug: "credit-infraction-policy",
-        contentHash: currentContentHash,
+        contentHash: "",
       });
       setShowAckModal(false);
     } catch {
@@ -334,8 +327,6 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             </p>
             <a
               href="/members/handbook"
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm text-[#5C9911] hover:text-[#85CC17] font-body font-medium mb-5 transition-colors"
             >
               Read the Handbook →

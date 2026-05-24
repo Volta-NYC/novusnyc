@@ -556,6 +556,40 @@ function FrontendSection({ title, subtitle }: { title: string; subtitle?: string
   );
 }
 
+function HandbookAckResetSection() {
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<"idle" | "done" | "error">("idle");
+
+  const handleReset = async () => {
+    setBusy(true);
+    setStatus("idle");
+    try {
+      await updateSiteSettings({ handbookAckRequiredAt: new Date().toISOString() });
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex items-start justify-between gap-6">
+      <div className="min-w-0">
+        <p className="text-sm text-white/85 font-body font-medium">Require all members to re-confirm the handbook</p>
+        <p className="text-xs text-white/40 font-body mt-0.5">
+          Members will see the acknowledgment prompt on their next portal visit. Has no effect on admins or owners.
+        </p>
+        {status === "done" && <p className="text-xs text-[#85CC17] mt-1.5">Done — all members will be prompted on next login.</p>}
+        {status === "error" && <p className="text-xs text-red-400 mt-1.5">Something went wrong. Try again.</p>}
+      </div>
+      <Btn variant="secondary" onClick={() => void handleReset()} disabled={busy}>
+        {busy ? "Resetting…" : "Reset acknowledgments"}
+      </Btn>
+    </div>
+  );
+}
+
 function ManageFrontendTab() {
   return (
     <div className="space-y-14">
@@ -570,6 +604,10 @@ function ManageFrontendTab() {
       <section>
         <FrontendSection title="Banners" subtitle="Configure announcement banners shown on the public site and members portal." />
         <BannersTab />
+      </section>
+      <section>
+        <FrontendSection title="Member Handbook" subtitle="Control when members are prompted to re-read and re-confirm the handbook." />
+        <HandbookAckResetSection />
       </section>
     </div>
   );
