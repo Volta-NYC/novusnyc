@@ -12,11 +12,8 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeCycles, createCycle, updateCycle, deleteCycle, activateCycleExclusive,
-  type Cycle, type CycleRole,
+  type Cycle,
 } from "@/lib/members/storage";
-
-const TRACKS: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
-const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
 // Default starting point for a fresh cycle. Targets are placeholders; thresholds
 // follow the spec — 1st strike at 3 points (one severe / two majors / three minors),
@@ -28,9 +25,8 @@ const BLANK_CYCLE: Omit<Cycle, "id" | "createdAt" | "updatedAt"> = {
   active: false,
   pacingPercentPerCheckin: 20,
   creditTargets: {
-    Tech:      { Analyst: 0, "Senior Analyst": 0, Associate: 0 },
-    Marketing: { Analyst: 0, "Senior Analyst": 0, Associate: 0 },
-    Finance:   { Analyst: 0, "Senior Analyst": 0, Associate: 0 },
+    baseRequirement: 40,
+    promotionTargets: { Analyst: 20, "Senior Analyst": 40, Associate: 60 },
   },
   strikeThresholds: { warning: 0, demotion: 0, reserve: 0 },
 };
@@ -281,30 +277,34 @@ function CycleSummary({ cycle }: { cycle: Cycle }) {
       </SummaryBlock>
 
       <SummaryBlock title="Credit targets">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-white/40">
-                <th className="text-left font-normal pr-3 pb-1">Track</th>
-                {ROLES.map((role) => (
-                  <th key={role} className="text-right font-normal px-2 pb-1">{role}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {TRACKS.map((track) => (
-                <tr key={track} className="border-t border-white/5">
-                  <td className="text-white/70 py-1 pr-3">{track}</td>
-                  {ROLES.map((role) => (
-                    <td key={role} className="text-right text-[#85CC17] py-1 px-2">
-                      {cycle.creditTargets[track][role]}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {(() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const t = cycle.creditTargets as any;
+          const base = t?.baseRequirement as number | undefined;
+          const promo = t?.promotionTargets as { Analyst?: number; "Senior Analyst"?: number; Associate?: number } | undefined;
+          return base !== undefined ? (
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-white/55">Base requirement</span>
+                <span className="text-[#85CC17] font-semibold">{base} credits</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/55">Analyst → Senior Analyst</span>
+                <span className="text-violet-300 font-semibold">+{promo?.Analyst ?? 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/55">Sr Analyst → Associate</span>
+                <span className="text-violet-300 font-semibold">+{promo?.["Senior Analyst"] ?? 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/55">Associate → next tier</span>
+                <span className="text-violet-300 font-semibold">+{promo?.Associate ?? 0}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-white/40 text-xs">Legacy format — edit to update.</p>
+          );
+        })()}
       </SummaryBlock>
     </div>
   );
@@ -338,13 +338,26 @@ function CycleEditor({
   saveLabel: string;
   activeBadge: boolean;
 }) {
-  const setTarget = (track: "Tech" | "Marketing" | "Finance", role: CycleRole, raw: string) => {
-    const value = Math.max(0, Number(raw) || 0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ct = draft.creditTargets as any;
+  const baseReq: number = ct?.baseRequirement ?? 40;
+  const promoTargets = (ct?.promotionTargets ?? { Analyst: 20, "Senior Analyst": 40, Associate: 60 }) as Record<string, number>;
+
+  const setBase = (raw: string) => {
     onChange({
       creditTargets: {
-        ...draft.creditTargets,
-        [track]: { ...draft.creditTargets[track], [role]: value },
-      },
+        baseRequirement: Math.max(0, Number(raw) || 0),
+        promotionTargets: promoTargets,
+      } as Cycle["creditTargets"],
+    });
+  };
+
+  const setPromo = (role: string, raw: string) => {
+    onChange({
+      creditTargets: {
+        baseRequirement: baseReq,
+        promotionTargets: { ...promoTargets, [role]: Math.max(0, Number(raw) || 0) },
+      } as Cycle["creditTargets"],
     });
   };
 
@@ -408,35 +421,46 @@ function CycleEditor({
 
         <div>
           <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Credit targets</p>
-          <div className="rounded-xl border border-white/10 bg-[#0F1014] p-3 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-white/40 text-xs">
-                  <th className="text-left font-normal pr-3 pb-1.5">Track</th>
-                  {ROLES.map((role) => (
-                    <th key={role} className="text-right font-normal px-2 pb-1.5">{role}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {TRACKS.map((track) => (
-                  <tr key={track} className="border-t border-white/5">
-                    <td className="text-white/70 py-1.5 pr-3">{track}</td>
-                    {ROLES.map((role) => (
-                      <td key={role} className="px-1 py-1">
-                        <input
-                          type="number"
-                          min="0"
-                          value={String(draft.creditTargets[track][role])}
-                          onChange={(e) => setTarget(track, role, e.target.value)}
-                          className="w-20 ml-auto block bg-[#11141A] border border-white/10 rounded-md px-2 py-1 text-right text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <p className="text-[11px] text-white/45 mb-3 leading-relaxed">
+            Every member must earn the base requirement each quarter. Extra credits beyond the base are counted toward promotion consideration — the thresholds apply regardless of track.
+          </p>
+          <div className="rounded-xl border border-white/10 bg-[#0F1014] p-3 space-y-3">
+            <Field label="Base requirement (credits to complete the cycle)">
+              <Input
+                type="number"
+                min="0"
+                value={String(baseReq)}
+                onChange={(e) => setBase(e.target.value)}
+                className="max-w-[120px]"
+              />
+            </Field>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-white/35">Additional credits for promotion consideration</p>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Analyst → Sr Analyst">
+                <Input
+                  type="number"
+                  min="0"
+                  value={String(promoTargets.Analyst ?? 20)}
+                  onChange={(e) => setPromo("Analyst", e.target.value)}
+                />
+              </Field>
+              <Field label="Sr Analyst → Associate">
+                <Input
+                  type="number"
+                  min="0"
+                  value={String(promoTargets["Senior Analyst"] ?? 40)}
+                  onChange={(e) => setPromo("Senior Analyst", e.target.value)}
+                />
+              </Field>
+              <Field label="Associate → next tier">
+                <Input
+                  type="number"
+                  min="0"
+                  value={String(promoTargets.Associate ?? 60)}
+                  onChange={(e) => setPromo("Associate", e.target.value)}
+                />
+              </Field>
+            </div>
           </div>
         </div>
 

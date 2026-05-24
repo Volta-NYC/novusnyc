@@ -54,12 +54,22 @@ export function pickPrimaryTrack(member: TeamMember): CycleTrack {
   return "Tech";
 }
 
-export function lookupCreditTarget(cycle: Cycle, track: CycleTrack, role: CycleRole): number {
-  // CycleCreditTargets only has Tech/Marketing/Finance; General assignments
-  // don't have a per-cycle credit target.
+export function lookupCreditTarget(cycle: Cycle, _track: CycleTrack, _role: CycleRole): number {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const targets = cycle.creditTargets as any;
-  return (targets[track]?.[role] as number | undefined) ?? 0;
+  // New flat format: { baseRequirement, promotionTargets }
+  if (typeof targets?.baseRequirement === "number") return targets.baseRequirement;
+  // Legacy per-track-role format
+  return (targets?.[_track]?.[_role] as number | undefined) ?? 0;
+}
+
+export function lookupPromotionTargets(cycle: Cycle): { Analyst: number; "Senior Analyst": number; Associate: number } | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const targets = cycle.creditTargets as any;
+  if (targets?.promotionTargets && typeof targets.promotionTargets === "object") {
+    return targets.promotionTargets as { Analyst: number; "Senior Analyst": number; Associate: number };
+  }
+  return null;
 }
 
 // ── Credit ledger ─────────────────────────────────────────────────────────────

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { WORK_TABS } from "@/components/members/SectionTabs";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
@@ -93,11 +92,20 @@ export default function CatalogPage() {
     );
   }, [claims, me]);
 
+  const myApprovedAssignmentIds = useMemo(() => {
+    if (!me) return new Set<string>();
+    return new Set(
+      claims.filter((c) => c.memberId === me.id && c.status === "Approved").map((c) => c.assignmentId)
+    );
+  }, [claims, me]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return assignments
       .filter((a) => !activeCycle || !a.cycleId || a.cycleId === activeCycle.id)
       .filter((a) => a.status === "Open" || a.status === "In Progress")
+      // Hide assignments this member already completed (unless allowMultipleCompletions)
+      .filter((a) => !myApprovedAssignmentIds.has(a.id) || a.allowMultipleCompletions === true)
       .filter((a) => {
         if (trackFilters.size === 0) return true;
         return trackFilters.has((a.track ?? a.primaryTrack ?? "General") as CycleTrack);
@@ -119,7 +127,7 @@ export default function CatalogPage() {
           business?.neighborhood,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       });
-  }, [assignments, activeCycle, trackFilters, hideUnavailable, claimsByAssignment, search, businessById]);
+  }, [assignments, activeCycle, trackFilters, hideUnavailable, claimsByAssignment, search, businessById, myApprovedAssignmentIds]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -151,13 +159,11 @@ export default function CatalogPage() {
     <MembersLayout>
       <div className="max-w-5xl mx-auto space-y-6">
         <header>
-          <h1 className="font-display font-bold text-black text-3xl">Work</h1>
+          <h1 className="font-display font-bold text-black text-3xl">Assignment Catalog</h1>
           <p className="text-sm text-black/50 mt-1">
             {sorted.length} assignment{sorted.length !== 1 ? "s" : ""} available
           </p>
         </header>
-
-        <SectionTabs tabs={WORK_TABS} />
 
         {(isLeadership || isReserve) && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -263,6 +269,16 @@ export default function CatalogPage() {
                         {a.recurringEnabled && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
                             ↻ Recurring
+                          </span>
+                        )}
+                        {a.applicationRequired && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                            ✉ Apply first
+                          </span>
+                        )}
+                        {a.requiresApproval === false && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                            ✓ Auto-approved
                           </span>
                         )}
                       </div>

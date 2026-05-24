@@ -16,6 +16,7 @@ type NavItem = {
   label: string;
   icon: React.ReactNode;
   activeMatchRoots?: string[];
+  excludeMatchRoots?: string[];
 };
 
 // ── NAV ITEM LIST ─────────────────────────────────────────────────────────────
@@ -79,9 +80,15 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/members/work",
-    label: "Work",
+    label: "My Work",
     activeMatchRoots: ["/members/work"],
+    excludeMatchRoots: ["/members/work/catalog"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>,
+  },
+  {
+    href: "/members/work/catalog",
+    label: "Catalog",
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
   },
   {
     href: "/members/handbook",
@@ -130,7 +137,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
       "/members/assignments",
     ];
   }
-  return ["/members/work", "/members/me", "/members/handbook"];
+  return ["/members/work", "/members/me", "/members/handbook", "/members/work/catalog"];
 }
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
@@ -424,7 +431,9 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {visibleNavItems.map((item) => {
             const matchRoots = item.activeMatchRoots?.length ? item.activeMatchRoots : [item.href];
-            const isActive = pathname === item.href || matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
+            const inMatch = pathname === item.href || matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
+            const excluded = item.excludeMatchRoots?.some((root) => pathname === root || pathname.startsWith(`${root}/`)) ?? false;
+            const isActive = inMatch && !excluded;
             return (
               <Link
                 key={item.href}

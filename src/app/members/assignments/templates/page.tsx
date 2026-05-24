@@ -39,11 +39,14 @@ interface FormState {
   track: CycleTrack;
   credits: number;
   minRole: CycleRole;
-  maxClaims: string;           // "0" or "" = unlimited
+  maxClaims: string;              // "0" or "" = unlimited
+  requiresApproval: boolean;
+  applicationRequired: boolean;
+  allowMultipleCompletions: boolean;
   recurringEnabled: boolean;
-  deadlineOffsetDays: string;  // used when not recurring
-  checkinIntervalDays: string; // used when recurring
-  maxDurationDays: string;     // optional cap for recurring
+  deadlineOffsetDays: string;     // used when not recurring
+  checkinIntervalDays: string;    // used when recurring
+  maxDurationDays: string;        // optional cap for recurring
 }
 
 const BLANK_FORM: FormState = {
@@ -53,6 +56,9 @@ const BLANK_FORM: FormState = {
   credits: 1,
   minRole: "Analyst",
   maxClaims: "1",
+  requiresApproval: true,
+  applicationRequired: false,
+  allowMultipleCompletions: false,
   recurringEnabled: false,
   deadlineOffsetDays: "",
   checkinIntervalDays: "7",
@@ -63,7 +69,6 @@ interface FromTemplateForm {
   projectRef: string;
   title: string;
   description: string;
-  deadline: string;
   priority: boolean;
 }
 
@@ -82,7 +87,7 @@ export default function TemplatesPage() {
 
   const [fromTemplate, setFromTemplate] = useState<AssignmentTemplate | null>(null);
   const [fromTemplateForm, setFromTemplateForm] = useState<FromTemplateForm>({
-    projectRef: "volta", title: "", description: "", deadline: "", priority: false,
+    projectRef: "volta", title: "", description: "", priority: false,
   });
   const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -113,18 +118,11 @@ export default function TemplatesPage() {
   );
 
   const openFromTemplate = (t: AssignmentTemplate) => {
-    let suggestedDeadline = "";
-    if (t.deadlineOffsetDays != null) {
-      const d = new Date();
-      d.setDate(d.getDate() + t.deadlineOffsetDays);
-      suggestedDeadline = d.toISOString().slice(0, 10);
-    }
     setFromTemplate(t);
     setFromTemplateForm({
       projectRef: "volta",
       title: t.title,
       description: t.description ?? "",
-      deadline: suggestedDeadline,
       priority: false,
     });
   };
@@ -148,14 +146,15 @@ export default function TemplatesPage() {
         businessId: bizId,
         projectGroupId: grpId,
         capacity: fromTemplate.capacity ?? 0,
-        deadlines: !isRecurring && fromTemplateForm.deadline ? [{ label: "Final Deadline", date: fromTemplateForm.deadline }] : undefined,
         deadlineType: isRecurring ? "hard" : (fromTemplate.deadlineOffsetDays != null ? "offset" : "hard"),
         deadlineOffsetDays: !isRecurring ? fromTemplate.deadlineOffsetDays : undefined,
         recurringEnabled: isRecurring,
         checkinIntervalDays: isRecurring ? (fromTemplate.checkinIntervalDays ?? 7) : undefined,
         maxDurationDays: isRecurring ? fromTemplate.maxDurationDays : undefined,
         priority: fromTemplateForm.priority,
-        requiresApproval: true,
+        requiresApproval: fromTemplate.requiresApproval !== false,
+        applicationRequired: fromTemplate.applicationRequired,
+        allowMultipleCompletions: fromTemplate.allowMultipleCompletions,
         status: "Open",
         cycleId: activeCycle?.id ?? "",
         notes: "",
@@ -199,6 +198,9 @@ export default function TemplatesPage() {
       credits: t.credits,
       minRole: t.minRole,
       maxClaims: cap > 0 ? String(cap) : "",
+      requiresApproval: t.requiresApproval !== false,
+      applicationRequired: Boolean(t.applicationRequired),
+      allowMultipleCompletions: Boolean(t.allowMultipleCompletions),
       recurringEnabled: t.recurringEnabled ?? false,
       deadlineOffsetDays: t.deadlineOffsetDays != null ? String(t.deadlineOffsetDays) : "",
       checkinIntervalDays: t.checkinIntervalDays != null ? String(t.checkinIntervalDays) : "7",
@@ -223,6 +225,9 @@ export default function TemplatesPage() {
       estimatedHours: 0,
       minRole: form.minRole,
       capacity: form.maxClaims.trim() ? Math.max(0, Number(form.maxClaims)) : 0,
+      requiresApproval: form.requiresApproval,
+      applicationRequired: form.applicationRequired,
+      allowMultipleCompletions: form.allowMultipleCompletions,
       deadlineOffsetDays: offsetDays,
       recurringEnabled: form.recurringEnabled,
       checkinIntervalDays: intervalDays,
@@ -419,6 +424,30 @@ export default function TemplatesPage() {
               </Field>
             </div>
           )}
+
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
+            <input type="checkbox" className="members-checkbox" checked={form.requiresApproval}
+              onChange={(e) => setForm((p) => ({ ...p, requiresApproval: e.target.checked }))} />
+            <span>Requires approval
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck to auto-award credits on submit</span>
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
+            <input type="checkbox" className="members-checkbox" checked={form.applicationRequired}
+              onChange={(e) => setForm((p) => ({ ...p, applicationRequired: e.target.checked }))} />
+            <span>Requires pre-approval
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— members told to email board first; admin alerted on claim</span>
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
+            <input type="checkbox" className="members-checkbox" checked={form.allowMultipleCompletions}
+              onChange={(e) => setForm((p) => ({ ...p, allowMultipleCompletions: e.target.checked }))} />
+            <span>Allow multiple completions
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— member can re-claim after approval (off by default)</span>
+            </span>
+          </label>
         </div>
 
         {saveError && (
@@ -508,14 +537,14 @@ export default function TemplatesPage() {
               <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-[11px] text-amber-300/80">
                 <span className="font-semibold">↻ Recurring assignment</span> — members earn {fromTemplate.credits} credits per check-in (every {fromTemplate.checkinIntervalDays ?? 7} days{fromTemplate.maxDurationDays ? `, up to ${fromTemplate.maxDurationDays} days` : ""}).
               </div>
+            ) : fromTemplate.deadlineOffsetDays != null ? (
+              <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/50">
+                Deadline is set automatically — {fromTemplate.deadlineOffsetDays} days after each member claims. Edit the assignment to add a hard deadline instead.
+              </div>
             ) : (
-              <Field label="Deadline">
-                <Input
-                  type="date"
-                  value={fromTemplateForm.deadline}
-                  onChange={(e) => setFromTemplateForm((p) => ({ ...p, deadline: e.target.value }))}
-                />
-              </Field>
+              <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/50">
+                No deadline configured. You can add one by editing the assignment after creating it.
+              </div>
             )}
 
             <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">

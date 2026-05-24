@@ -75,6 +75,8 @@ interface FormState {
   status: AssignmentStatus;
   priority: boolean;
   requiresApproval: boolean;
+  applicationRequired: boolean;
+  allowMultipleCompletions: boolean;
   recurringEnabled: boolean;
   checkinIntervalDays: string;
   maxDurationDays: string;
@@ -95,6 +97,8 @@ const BLANK_FORM: FormState = {
   status: "Open",
   priority: false,
   requiresApproval: true,
+  applicationRequired: false,
+  allowMultipleCompletions: false,
   recurringEnabled: false,
   checkinIntervalDays: "7",
   maxDurationDays: "",
@@ -240,7 +244,9 @@ export default function CatalogPage() {
       deadlineOffsetDays: isOffset ? String(a.deadlineOffsetDays ?? "") : "",
       status:             a.status,
       priority:           Boolean(a.priority),
-      requiresApproval:   a.requiresApproval !== false,
+      requiresApproval:         a.requiresApproval !== false,
+      applicationRequired:      Boolean(a.applicationRequired),
+      allowMultipleCompletions: Boolean(a.allowMultipleCompletions),
       recurringEnabled:   Boolean(a.recurringEnabled),
       checkinIntervalDays: a.checkinIntervalDays != null ? String(a.checkinIntervalDays) : "7",
       maxDurationDays:    a.maxDurationDays != null ? String(a.maxDurationDays) : "",
@@ -275,9 +281,11 @@ export default function CatalogPage() {
       recurringEnabled:   form.recurringEnabled,
       checkinIntervalDays: isRecurring && form.checkinIntervalDays ? Number(form.checkinIntervalDays) : undefined,
       maxDurationDays:    isRecurring && form.maxDurationDays ? Number(form.maxDurationDays) : undefined,
-      status:             editing ? form.status : "Open",
-      priority:           form.priority,
-      requiresApproval:   form.requiresApproval,
+      status:                   editing ? form.status : "Open",
+      priority:                 form.priority,
+      requiresApproval:         form.requiresApproval,
+      applicationRequired:      form.applicationRequired,
+      allowMultipleCompletions: form.allowMultipleCompletions,
       cycleId:            editing?.cycleId ?? activeCycle?.id ?? "",
       createdBy:          editing?.createdBy ?? userProfile?.email ?? user?.email ?? user?.id ?? "unknown",
       notes:              "",
@@ -450,6 +458,21 @@ export default function CatalogPage() {
                       {a.priority && (
                         <span className="members-chip border-amber-400/45 bg-amber-400/15 text-amber-300 text-[9px] font-bold uppercase tracking-wide">
                           ⚡ Priority
+                        </span>
+                      )}
+                      {a.applicationRequired && (
+                        <span className="members-chip border-blue-400/40 bg-blue-400/10 text-blue-300 text-[9px] font-semibold">
+                          ✉ Apply first
+                        </span>
+                      )}
+                      {a.requiresApproval === false && (
+                        <span className="members-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-300 text-[9px] font-semibold">
+                          ✓ Auto-approved
+                        </span>
+                      )}
+                      {a.allowMultipleCompletions && (
+                        <span className="members-chip border-purple-400/40 bg-purple-400/10 text-purple-300 text-[9px] font-semibold">
+                          ↻ Repeatable
                         </span>
                       )}
                       <span className={`ml-auto members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>
@@ -660,7 +683,33 @@ export default function CatalogPage() {
             />
             <span>
               Requires approval
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck for simple tasks to auto-award credits on submit</span>
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck to auto-award credits on member submit</span>
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.applicationRequired}
+              onChange={(e) => setForm((p) => ({ ...p, applicationRequired: e.target.checked }))}
+              className="members-checkbox"
+            />
+            <span>
+              Requires pre-approval
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— members told to email board first; admin alerted when someone claims</span>
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.allowMultipleCompletions}
+              onChange={(e) => setForm((p) => ({ ...p, allowMultipleCompletions: e.target.checked }))}
+              className="members-checkbox"
+            />
+            <span>
+              Allow multiple completions
+              <span className="ml-1.5 text-white/35 text-xs font-normal">— members can re-claim after approval (off by default)</span>
             </span>
           </label>
 

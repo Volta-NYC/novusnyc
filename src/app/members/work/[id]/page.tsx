@@ -120,9 +120,14 @@ export default function AssignmentDetailPage() {
   const isFull = !isUnlimited && activeClaims.length >= assignment.capacity;
   const cycleMatches = !activeCycle || !assignment.cycleId || assignment.cycleId === activeCycle.id;
   const isArchived = assignment.status === "Archived";
-  const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate && !isArchived;
+  // Members who already completed this assignment can only re-claim if allowMultipleCompletions is true
+  const hasApprovedClaim = assignmentClaims.some((c) => c.memberId === me?.id && c.status === "Approved");
+  const canClaim = !!me && !myClaim && !isFull && !isLeadership && !isReserve && cycleMatches && meetsRoleGate && !isArchived
+    && (!hasApprovedClaim || assignment.allowMultipleCompletions === true);
   const canSubmit = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress" || myClaim.status === "rejected");
-  const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress");
+  // Drop window: member can only drop within 24 hours of claiming
+  const hoursHeld = myClaim ? (Date.now() - new Date(myClaim.claimedAt).getTime()) / 3_600_000 : Infinity;
+  const canUnclaim = myClaim && (myClaim.status === "claimed" || myClaim.status === "In Progress") && hoursHeld <= 24;
 
   const isRecurring = Boolean(assignment.recurringEnabled);
 
@@ -325,6 +330,12 @@ export default function AssignmentDetailPage() {
             This assignment requires <strong>{assignment.minRole}</strong> or higher.
           </div>
         )}
+        {assignment.applicationRequired && !myClaim && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            <p className="font-semibold mb-1">Pre-approval required</p>
+            <p>This assignment requires you to discuss it with a senior associate before signing up. Please email <a href="mailto:info@voltanyc.org" className="underline font-medium">info@voltanyc.org</a> first, then claim it once you&apos;ve been approved.</p>
+          </div>
+        )}
 
         {/* Description */}
         <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
@@ -502,15 +513,19 @@ export default function AssignmentDetailPage() {
                         : "Submit for approval"}
                 </Btn>
               )}
-              {canUnclaim && !confirmDrop && (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDrop(true)}
-                  disabled={busy}
-                  className="ml-auto rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-                >
-                  Drop this assignment
-                </button>
+              {(myClaim?.status === "claimed" || myClaim?.status === "In Progress") && !confirmDrop && (
+                canUnclaim ? (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDrop(true)}
+                    disabled={busy}
+                    className="ml-auto rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    Drop this assignment
+                  </button>
+                ) : (
+                  <p className="ml-auto text-xs text-black/35">Drop window closed (24 h after claiming)</p>
+                )
               )}
               {confirmDrop && (
                 <div className="ml-auto rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex items-center gap-3">

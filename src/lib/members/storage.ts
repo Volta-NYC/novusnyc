@@ -268,9 +268,12 @@ export type CycleTrack = "Tech" | "Marketing" | "Finance" | "General";
 export type CycleRole = "Analyst" | "Senior Analyst" | "Associate";
 
 export interface CycleCreditTargets {
-  Tech: Record<CycleRole, number>;
-  Marketing: Record<CycleRole, number>;
-  Finance: Record<CycleRole, number>;
+  baseRequirement: number;
+  promotionTargets: {
+    Analyst: number;
+    "Senior Analyst": number;
+    Associate: number;
+  };
 }
 
 export interface CycleStrikeThresholds {
@@ -385,6 +388,9 @@ export interface AssignmentTemplate {
   estimatedHours: number;
   minRole: CycleRole;
   capacity: number;
+  requiresApproval?: boolean;
+  applicationRequired?: boolean;    // true = member must contact board before claiming
+  allowMultipleCompletions?: boolean;
   deadlineOffsetDays?: number;     // days after claim → suggested deadline (offset mode)
   // Recurring check-in support
   recurringEnabled?: boolean;      // true = periodic check-ins with per-check-in credits
@@ -429,6 +435,8 @@ export interface Assignment {
   capacity: number;
   priority?: boolean;
   requiresApproval?: boolean;       // false = auto-approve on member submit; default true
+  applicationRequired?: boolean;    // true = member must contact board before claiming; admin alerted on claim
+  allowMultipleCompletions?: boolean; // true = same member can claim again after Approved; default false
   projectGroupId?: string;          // set when assignment belongs to a standalone project group
   cycleId?: string;
   templateId?: string;             // template used to create this assignment

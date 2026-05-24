@@ -3,7 +3,6 @@
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { WORK_TABS } from "@/components/members/SectionTabs";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
@@ -45,7 +44,7 @@ function MyClaimRow({
   const isOverdue = days != null && days <= 0;
   const creditsDisplay = claim.status === "Approved"
     ? (claim.creditsAwarded ?? assignment.credits)
-    : (claim.totalCreditsEarned ?? null) ?? assignment.credits;
+    : assignment.credits;
 
   return (
     <Link
@@ -202,8 +201,6 @@ export default function MyWorkPage() {
             {hasMyClaims && ` · ${myClaims.length} assignment${myClaims.length !== 1 ? "s" : ""}`}
           </p>
         </header>
-
-        <SectionTabs tabs={WORK_TABS} />
 
         {(isLeadership || isReserve) && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

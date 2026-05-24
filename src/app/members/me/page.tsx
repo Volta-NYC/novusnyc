@@ -16,7 +16,7 @@ import {
 } from "@/lib/members/storage";
 import {
   classifyMember, computeCreditLedger, computeStrikeCount, computeStrikePoints,
-  lookupCreditTarget, pickPrimaryTrack,
+  lookupCreditTarget, lookupPromotionTargets, pickPrimaryTrack,
 } from "@/lib/members/cycleCompute";
 
 function normalizeKey(v: string): string {
@@ -183,10 +183,19 @@ export default function MyRecordPage() {
   const strikePoints = computeStrikePoints(myActiveStrikes);
   const strikeCount = activeCycle ? computeStrikeCount(strikePoints, activeCycle) : 0;
 
-  // XP bar
+  // XP bar — base requirement
   const earnedPct  = targetCredits > 0 ? Math.min(100, (ledger.total / targetCredits) * 100) : 0;
   const pendingPct = targetCredits > 0 ? Math.min(100 - earnedPct, (ledger.pending / targetCredits) * 100) : 0;
   const isComplete = targetCredits > 0 && ledger.total >= targetCredits;
+
+  // Promotion bar — shown after base is complete
+  const promotionTargets = activeCycle ? lookupPromotionTargets(activeCycle) : null;
+  const promoThreshold = classification?.cycleRole && promotionTargets
+    ? (promotionTargets[classification.cycleRole as keyof typeof promotionTargets] ?? 0)
+    : 0;
+  const extraCredits = isComplete ? Math.max(0, ledger.total - targetCredits) : 0;
+  const promoPct = promoThreshold > 0 ? Math.min(100, (extraCredits / promoThreshold) * 100) : 0;
+  const promoReached = promoThreshold > 0 && extraCredits >= promoThreshold;
 
   // Confetti — fires once when bar first fills.
   const [showConfetti, setShowConfetti] = useState(false);
@@ -303,9 +312,33 @@ export default function MyRecordPage() {
                 </div>
                 <p className="text-[10px] text-black/35 mt-1.5">
                   {isComplete
-                    ? "🎉 Cycle target reached — our board will review and notify you about promotion soon."
-                    : `${targetCredits} credits needed to advance to next rank`}
+                    ? "🎉 Cycle requirement complete!"
+                    : `${targetCredits} credits required to complete the cycle`}
                 </p>
+
+                {/* Promotion bar — appears once base is complete */}
+                {isComplete && promoThreshold > 0 && (
+                  <div className="mt-4 pt-4 border-t border-black/8">
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <span className="font-semibold text-black/75">
+                        <span className="text-violet-600">{extraCredits}</span>
+                        <span className="text-black/35"> / {promoThreshold} bonus credits</span>
+                      </span>
+                      <span className="text-[11px] text-violet-600 font-medium">Promotion consideration</span>
+                    </div>
+                    <div className="h-4 rounded-full bg-black/8 overflow-hidden flex relative border border-black/10">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${promoPct}%`, background: "linear-gradient(90deg, #7C3AED, #A78BFA)" }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-black/35 mt-1.5">
+                      {promoReached
+                        ? "🌟 Promotion threshold reached — the board will consider you for advancement."
+                        : `Earn ${promoThreshold - extraCredits} more beyond the base to be considered for promotion to the next role.`}
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
               <>
