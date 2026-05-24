@@ -202,6 +202,7 @@ export default function ByProjectPage() {
   const [groupForm, setGroupForm]         = useState<GroupFormState>(BLANK_GROUP);
   const [groupBusy, setGroupBusy]         = useState(false);
   const [groupError, setGroupError]       = useState<string | null>(null);
+  const [claimsModal, setClaimsModal]     = useState<Assignment | null>(null);
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -759,6 +760,11 @@ export default function ByProjectPage() {
                             )}
                             <div className="flex gap-2 mt-1">
                               <Btn variant="secondary" size="sm" onClick={() => openEditAssignment(a)}>Edit</Btn>
+                              {claimList.length > 0 && (
+                                <Btn variant="secondary" size="sm" onClick={() => setClaimsModal(a)}>
+                                  Claims ({claimList.length})
+                                </Btn>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1152,6 +1158,58 @@ export default function ByProjectPage() {
       )}
 
       <Dialog />
+
+      {/* Claims detail modal */}
+      {claimsModal && (() => {
+        const claimList = claimsByAssignment.get(claimsModal.id) ?? [];
+        const GROUPS: { label: string; statuses: string[]; color: string }[] = [
+          { label: "Active",    statuses: ["claimed", "In Progress"], color: "text-cyan-300" },
+          { label: "Submitted", statuses: ["Submitted"],              color: "text-yellow-300" },
+          { label: "Approved",  statuses: ["Approved"],               color: "text-violet-300" },
+          { label: "Rejected",  statuses: ["rejected"],               color: "text-red-300" },
+        ];
+        return (
+          <Modal open onClose={() => setClaimsModal(null)} title={`${claimsModal.title} — Claims`}>
+            <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-1">
+              {claimList.length === 0 && (
+                <p className="text-sm text-white/45">No claims yet.</p>
+              )}
+              {GROUPS.map(({ label, statuses, color }) => {
+                const group = claimList.filter((c) => statuses.includes(c.status));
+                if (group.length === 0) return null;
+                return (
+                  <div key={label}>
+                    <p className={`text-[10px] uppercase tracking-wider font-semibold mb-2 ${color}`}>{label} · {group.length}</p>
+                    <div className="space-y-2">
+                      {group.map((c) => (
+                        <div key={c.id} className="bg-[#0F1014] rounded-lg px-3 py-2.5 text-xs space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-white/85 font-medium">{c.memberName}</span>
+                            <span className="text-white/30 shrink-0">claimed {new Date(c.claimedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                          </div>
+                          {c.dueDate && <p className="text-white/40">Due {c.dueDate}</p>}
+                          {c.deliverableUrl && (
+                            <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline underline-offset-2 block truncate">
+                              {c.deliverableUrl}
+                            </a>
+                          )}
+                          {c.submissionNotes && <p className="text-white/55 line-clamp-3">{c.submissionNotes}</p>}
+                          {c.status === "Approved" && c.creditsAwarded !== undefined && (
+                            <p className="text-violet-300">{c.creditsAwarded} credit{c.creditsAwarded !== 1 ? "s" : ""} awarded{c.approvedBy ? ` by ${c.approvedBy}` : ""}</p>
+                          )}
+                          {c.status === "rejected" && c.rejectReason && (
+                            <p className="text-red-300/80">Reason: {c.rejectReason}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Modal>
+        );
+      })()}
     </MembersLayout>
   );
 }
