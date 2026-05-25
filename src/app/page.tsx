@@ -132,7 +132,7 @@ function CurrentProjectsFallback() {
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">In the field right now</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Some of our best work</h2>
           </div>
           <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
             See all work →
@@ -154,7 +154,7 @@ async function CurrentProjectsSection() {
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">In the field right now</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Some of our best work</h2>
           </div>
           <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
             See all work →
