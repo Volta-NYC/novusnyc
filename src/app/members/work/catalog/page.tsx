@@ -190,13 +190,16 @@ export default function CatalogPage() {
                 type="button"
                 onClick={() => toggleTrack(t)}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                  trackFilters.has(t) ? `${TRACK_PILL_BASE[t]} border-black/85` : "border-black/15 bg-white text-black/65 hover:border-black/35"
+                  trackFilters.has(t) ? `${TRACK_PILL_BASE[t]} border-black/70 ring-1 ring-black/25` : "border-black/15 bg-white text-black/65 hover:border-black/35"
                 }`}
               >
                 <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[t]}`} />
                 {t}
               </button>
             ))}
+            {trackFilters.size === 0 && (
+              <span className="text-[11px] text-black/35 ml-1">All tracks shown — select one to filter</span>
+            )}
             <div className="ml-auto flex items-center gap-3">
               <button
                 type="button"
@@ -316,7 +319,7 @@ export default function CatalogPage() {
                           </span>
                         )}
                         {!a.recurringEnabled && a.deadlineType === "offset" && a.deadlineOffsetDays && (
-                          <span>Due {a.deadlineOffsetDays} days after signing up</span>
+                          <span>Due {a.deadlineOffsetDays} {a.deadlineOffsetDays === 1 ? "day" : "days"} after signing up</span>
                         )}
                         {!a.recurringEnabled && a.deadlineType !== "offset" && deadline && (
                           <span className={days != null && days <= 3 ? "text-orange-600 font-medium" : ""}>

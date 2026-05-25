@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn, resetPassword } from "@/lib/members/supabaseAuth";
+import { signIn } from "@/lib/members/supabaseAuth";
 import { Btn, Input, PasswordInput } from "@/components/members/ui";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -13,10 +13,8 @@ export default function MembersLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resetSent, setResetSent] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const router = useRouter();
   const [passwordReset, setPasswordReset] = useState(false);
+  const router = useRouter();
   const { user, authRole, loading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -53,19 +51,6 @@ export default function MembersLogin() {
     }
   };
 
-  const handleReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      await resetPassword(email.trim().toLowerCase());
-      setResetSent(true);
-    } catch {
-      setError("Could not send reset email. Check your address and try again.");
-    }
-    setLoading(false);
-  };
-
   return (
     <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
@@ -81,107 +66,55 @@ export default function MembersLogin() {
           </div>
         )}
 
-        {!showReset ? (
-          <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-                Email
-              </label>
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@email.com"
-                autoComplete="email"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-                Password
-              </label>
-              <PasswordInput
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            <Btn type="submit" variant="primary" disabled={loading} className="w-full py-3">
-              {loading ? "Signing in…" : "Sign In"}
-            </Btn>
-          </form>
-        ) : resetSent ? (
-          <div className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 text-center">
-            <p className="text-[#85CC17] font-semibold mb-2">Check your email</p>
-            <p className="text-white/50 text-sm">
-              We sent a password reset link to <span className="text-white/80">{email}</span>.
-            </p>
-            <Btn
-              type="button"
-              variant="ghost"
-              onClick={() => { setShowReset(false); setResetSent(false); }}
-              className="mt-4 text-sm"
-            >
-              ← Back to sign in
-            </Btn>
+        <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+              Email
+            </label>
+            <Input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={(e) => e.target.select()}
+              placeholder="you@email.com"
+              autoComplete="email"
+              autoFocus
+            />
           </div>
-        ) : (
-          <form onSubmit={handleReset} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
-            <p className="text-white/60 text-sm">Enter your email and we&apos;ll send a reset link.</p>
-            <div>
-              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
-                Email
-              </label>
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@email.com"
-                autoComplete="email"
-                autoFocus
-              />
-            </div>
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-            <Btn type="submit" variant="primary" disabled={loading} className="w-full py-3">
-              {loading ? "Sending…" : "Send Reset Link"}
-            </Btn>
-            <Btn
-              type="button"
-              variant="ghost"
-              onClick={() => setShowReset(false)}
-              className="w-full text-sm"
-            >
-              ← Back to sign in
-            </Btn>
-          </form>
-        )}
 
-        {!showReset && !resetSent && (
-          <p className="text-center mt-4 text-sm font-body">
-            <button
-              onClick={() => setShowReset(true)}
-              className="text-white/50 hover:text-white/70 transition-colors"
-            >
-              Forgot password?
-            </button>
-          </p>
-        )}
+          <div>
+            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+              Password
+            </label>
+            <PasswordInput
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <Btn type="submit" variant="primary" disabled={loading} className="w-full py-3">
+            {loading ? "Signing in…" : "Sign In"}
+          </Btn>
+        </form>
+
+        <p className="text-center mt-4 text-sm font-body">
+          <Link
+            href="/members/forgot-password"
+            className="text-white/50 hover:text-white/70 transition-colors"
+          >
+            Forgot password?
+          </Link>
+        </p>
         <p className="text-center mt-3">
           <Link href="/" className="text-white/40 text-sm hover:text-white/60 transition-colors">
             ← Back to home page

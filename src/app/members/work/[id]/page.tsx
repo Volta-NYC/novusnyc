@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Btn } from "@/components/members/ui";
-import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import { sanitizeHtml, linkifyHtml } from "@/lib/sanitizeHtml";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
@@ -101,8 +101,8 @@ export default function AssignmentDetailPage() {
       <MembersLayout>
         <div className="max-w-3xl mx-auto py-12 text-center">
           <p className="text-sm text-black/55">Assignment not found.</p>
-          <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] mt-3 inline-block">
-            ← Back to marketplace
+          <Link href="/members/work/catalog" className="text-xs text-[#5C9911] hover:text-[#85CC17] mt-3 inline-block">
+            ← Back to catalog
           </Link>
         </div>
       </MembersLayout>
@@ -260,7 +260,7 @@ export default function AssignmentDetailPage() {
       <div className="max-w-3xl mx-auto space-y-5">
 
         {/* Back link */}
-        <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+        <Link href="/members/work/catalog" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
           ← Back to available work
         </Link>
 
@@ -291,7 +291,7 @@ export default function AssignmentDetailPage() {
             </p>
             <div className="flex flex-col items-end gap-0.5">
               <div className="flex items-baseline gap-1">
-                <span className="font-display font-bold text-3xl text-[#5C9911] tabular-nums leading-none">{assignment.credits}</span>
+                <span className="font-body font-bold text-xl text-[#5C9911] tabular-nums leading-none">{assignment.credits}</span>
                 <span className="text-sm text-[#5C9911]/80 font-medium">{isRecurring ? "credits/check-in" : assignment.credits === 1 ? "credit" : "credits"}</span>
               </div>
               {isRecurring && (
@@ -343,7 +343,7 @@ export default function AssignmentDetailPage() {
           {assignment.description ? (
             <div
               className="prose prose-sm max-w-none text-black/85"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(assignment.description) }}
+              dangerouslySetInnerHTML={{ __html: linkifyHtml(sanitizeHtml(assignment.description)) }}
             />
           ) : (
             <p className="text-sm text-black/45">No description yet — ask the senior associate who created this for context.</p>

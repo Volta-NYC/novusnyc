@@ -7,7 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
-import { type AuthRole, getMemberAcknowledgment, createMemberAcknowledgment, subscribeSiteSettings } from "@/lib/members/storage";
+import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
+import { supabase } from "@/lib/supabaseClient";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -17,6 +18,10 @@ type NavItem = {
   icon: React.ReactNode;
   activeMatchRoots?: string[];
   excludeMatchRoots?: string[];
+  // When true, only the exact href activates this item — no prefix matching.
+  activeOnlyExact?: boolean;
+  // Activates when pathname.startsWith(root) for any entry here (no equality check).
+  startWithRoots?: string[];
 };
 
 // ── NAV ITEM LIST ─────────────────────────────────────────────────────────────
@@ -81,13 +86,14 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/work",
     label: "My Work",
-    activeMatchRoots: ["/members/work"],
-    excludeMatchRoots: ["/members/work/catalog"],
+    activeOnlyExact: true,
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>,
   },
   {
     href: "/members/work/catalog",
     label: "Catalog",
+    // Match /members/work/catalog and all detail pages /members/work/[id]
+    startWithRoots: ["/members/work/"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
   },
   {
@@ -137,7 +143,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
       "/members/assignments",
     ];
   }
-  return ["/members/work", "/members/me", "/members/handbook", "/members/work/catalog"];
+  return ["/members/work", "/members/me", "/members/handbook", "/members/work/catalog", "/members/settings"];
 }
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
@@ -166,6 +172,17 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("volta-sidebar-collapsed");
     if (stored === "true") setSidebarCollapsed(true);
   }, []);
+
+  // Set the body background to the portal surface color so there's no dark flash
+  // before the portal shell mounts, and no dark overscroll on iOS (mobile scroll).
+  // Reverts on unmount so navigating back to the public site restores the dark bg.
+  useEffect(() => {
+    if (loading) return;
+    const isLight = authRole === "member";
+    document.body.style.backgroundColor = isLight ? "#F5F6F8" : "#0D0F14";
+    localStorage.setItem("volta-portal-theme", isLight ? "light" : "dark");
+    return () => { document.body.style.backgroundColor = ""; };
+  }, [authRole, loading]);
 
   // When navigating from a public page with an active banner, --banner-h stays set
   // on the root element and gives the body a padding-top. Reset it on mount.
@@ -209,27 +226,23 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     // regardless of how many times MembersLayoutInner remounts (one per page).
     if (_ackSessionDone) return;
     _ackSessionDone = true;
-    getMemberAcknowledgment(userProfile.id, "credit-infraction-policy")
-      .then((ack) => {
-        const needsAck = !ack || (handbookAckRequiredAt !== null && ack.acknowledgedAt < handbookAckRequiredAt);
-        if (needsAck && !pathname.startsWith("/members/handbook")) {
-          setShowAckModal(true);
-        }
-      })
-      .catch(() => {});
+    // Acknowledgment is persisted in Supabase auth user metadata so it survives
+    // across sessions without requiring a separate table query or RLS policy.
+    const ackedAt = (user.user_metadata?.handbook_acknowledged_at as string | undefined) ?? null;
+    const needsAck = !ackedAt || (handbookAckRequiredAt !== null && ackedAt < handbookAckRequiredAt);
+    if (needsAck && !pathname.startsWith("/members/handbook")) {
+      setShowAckModal(true);
+    }
   // pathname intentionally excluded: the check should fire once per session,
   // not re-run on every navigation.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, userProfile, authRole, handbookAckRequiredAt]);
 
   const handleConfirmAck = async () => {
-    if (!userProfile) return;
     setAckLoading(true);
     try {
-      await createMemberAcknowledgment({
-        memberId: userProfile.id,
-        pageSlug: "credit-infraction-policy",
-        contentHash: "",
+      await supabase.auth.updateUser({
+        data: { handbook_acknowledged_at: new Date().toISOString() },
       });
       setShowAckModal(false);
     } catch {
@@ -429,7 +442,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {visibleNavItems.map((item) => {
             const matchRoots = item.activeMatchRoots?.length ? item.activeMatchRoots : [item.href];
-            const inMatch = pathname === item.href || matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
+            const inMatch = item.activeOnlyExact
+              ? pathname === item.href
+              : (pathname === item.href
+                  || matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`))
+                  || (item.startWithRoots?.some((root) => pathname.startsWith(root)) ?? false));
             const excluded = item.excludeMatchRoots?.some((root) => pathname === root || pathname.startsWith(`${root}/`)) ?? false;
             const isActive = inMatch && !excluded;
             return (
@@ -438,6 +455,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? item.label : undefined}
+                aria-label={sidebarCollapsed ? item.label : undefined}
                 className={`flex items-center gap-2.5 rounded-lg text-sm font-body transition-colors ${
                   sidebarCollapsed ? "justify-center px-2 py-2" : "px-3 py-2"
                 } ${isActive ? tone.navActive : tone.navInactive}`}
@@ -456,6 +474,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setProfilePopoverOpen((v) => !v)}
               title={sidebarCollapsed ? memberDisplayName : undefined}
+              aria-label={sidebarCollapsed ? memberDisplayName : undefined}
               className={`w-full flex items-center gap-2.5 rounded-lg text-left transition-colors mb-1 ${
                 sidebarCollapsed ? "justify-center p-2" : "px-3 py-2"
               } ${tone.navInactive}`}
@@ -493,6 +512,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                   <p className={`text-[10px] font-body truncate mt-0.5 ${lightTheme ? "text-black/40" : "text-white/40"}`}>{user?.email ?? ""}</p>
                 </div>
                 <div className="p-1">
+                  {authRole === "member" && (
+                    <Link
+                      href="/members/settings"
+                      onClick={closeProfilePopover}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-body transition-colors ${tone.footerLink}`}
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                      Account settings
+                    </Link>
+                  )}
                   <Link
                     href="/"
                     onClick={closeProfilePopover}

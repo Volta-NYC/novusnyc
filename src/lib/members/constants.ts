@@ -36,12 +36,15 @@ export const TRACK_PILL: Record<CycleTrack, string> = {
   General:   "bg-gray-100 text-gray-700 border-gray-200",
 };
 
-// bg + text only — use when the border is applied separately (e.g. filter chips)
+// bg + text only — use when the border is applied separately (e.g. filter chips).
+// All four tracks use a solid filled background so selected vs. unselected is
+// clearly distinguishable. General uses gray-200 (not gray-100) for sufficient
+// contrast against the white unselected pill.
 export const TRACK_PILL_BASE: Record<CycleTrack, string> = {
   Tech:      "bg-blue-100 text-blue-800",
   Marketing: "bg-lime-100 text-lime-900",
   Finance:   "bg-amber-100 text-amber-900",
-  General:   "bg-gray-100 text-gray-700",
+  General:   "bg-gray-200 text-gray-800",
 };
 
 export const ALL_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
