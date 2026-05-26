@@ -2274,7 +2274,7 @@ function BusinessesPageInner() {
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
           <table className="table-fixed text-left" style={{width: "100%", minWidth: "1100px"}}>
             <thead className="bg-[#0F1014]">
-              <tr className="border-b border-white/8">
+              <tr className="members-header-sep">
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Business Name</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Neighborhood</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
@@ -2307,7 +2307,7 @@ function BusinessesPageInner() {
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
                 <table className="table-fixed text-left" style={{width: "100%", minWidth: "1431px"}}>
                   <thead className="bg-[#0F1014]">
-                    <tr className="border-b border-white/8">
+                    <tr className="members-header-sep">
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
@@ -2333,7 +2333,7 @@ function BusinessesPageInner() {
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
             <table className="table-fixed text-left" style={{width: "100%", minWidth: "1301px"}}>
               <thead className="bg-[#0F1014]">
-                <tr className="border-b border-white/8">
+                <tr className="members-header-sep">
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>

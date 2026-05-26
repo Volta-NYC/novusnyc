@@ -1834,7 +1834,7 @@ function InterviewsContent() {
             <div className="members-table-shell">
               <table className="members-grid-table w-full min-w-[1280px] table-fixed text-[11px] leading-4 [&_td]:overflow-hidden">
                 <thead className="bg-[#0F1014]">
-                  <tr className="border-b border-white/8">
+                  <tr className="members-header-sep">
                     {["Name", "Email", "Time", "Interviewer(s)", "Eval", "Resume", "Actions"].map((col) => (
                       <th
                         key={col}
@@ -1937,7 +1937,7 @@ function InterviewsContent() {
             <div className="members-table-shell">
               <table className="members-grid-table w-full min-w-[1280px] table-fixed text-[11px] leading-4 [&_td]:overflow-hidden">
                 <thead className="bg-[#0F1014]">
-                  <tr className="border-b border-white/8">
+                  <tr className="members-header-sep">
                     {["Name", "Email", "Time", "Interviewer(s)", "Eval", "Resume", "Actions"].map((col) => (
                       <th
                         key={col}

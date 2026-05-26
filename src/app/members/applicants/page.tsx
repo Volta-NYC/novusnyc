@@ -716,7 +716,7 @@ export default function ApplicantsPage() {
       <div className="members-table-shell">
         <table className="members-grid-table w-full table-fixed text-[10px] leading-4 [&_td]:overflow-hidden" style={{ minWidth: `${tableMinWidth}px` }}>
           <thead className="bg-[#0F1014]">
-            <tr className="border-b border-white/8">
+            <tr className="members-header-sep">
               <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[32px]">
                 <input
                   type="checkbox"

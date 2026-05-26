@@ -1071,7 +1071,7 @@ export default function TeamPage() {
         <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto relative select-text">
           <table className="table-fixed text-left text-[10px] leading-4" style={{ width: "100%", minWidth: 780 }}>
             <thead className="bg-[#0F1014]">
-              <tr className="border-b border-white/8">
+              <tr className="members-header-sep">
                 <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap w-[280px]">Name</th>
                 <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap">School</th>
                 <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap w-[80px]">HS Class</th>
@@ -1122,7 +1122,7 @@ export default function TeamPage() {
           <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto relative select-text">
             <table className="table-fixed text-left text-[10px] leading-4" style={{ width: "100%", minWidth: tableWidth }}>
               <thead className="bg-[#0F1014]">
-                <tr className="border-b border-white/8">
+                <tr className="members-header-sep">
                   {visCols.map((col) => {
                     const sortable = typeof col.sortCol === "number";
                     const primaryRule = sortRules[0];

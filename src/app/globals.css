@@ -479,6 +479,13 @@ main {
   vertical-align: middle;
 }
 
+/* Header separator — applied to <th> cells so it renders in both
+   border-collapse:collapse and border-separate table modes. Borders on <tr>
+   are ignored in the collapsed model, so the rule must target cells. */
+.members-portal table thead tr.members-header-sep > th {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .members-portal .members-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

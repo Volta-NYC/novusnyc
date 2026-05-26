@@ -349,7 +349,7 @@ export default function BIDTrackerPage() {
           <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto mb-6">
             <table className="table-fixed text-left text-[11px]" style={{ width: tableWidth }}>
               <thead className="bg-[#0F1014]">
-                <tr className="border-b border-white/8">
+                <tr className="members-header-sep">
                   {visCols.map((col) => (
                     <th key={col.key} style={{ width: col.width }} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 whitespace-nowrap">
                       <span className="inline-flex items-center">

@@ -148,7 +148,7 @@ export default function AutomationsPage() {
         <div className="rounded-xl border border-white/10 bg-[#13161D] overflow-hidden">
           <table className="w-full text-[11px]">
             <thead className="bg-[#0F1014]">
-              <tr className="border-b border-white/8">
+              <tr className="members-header-sep">
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[220px]">Automation</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45">Linked Template</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[80px]">Enabled</th>

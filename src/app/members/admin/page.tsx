@@ -667,7 +667,7 @@ function InfractionsTab() {
       <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-[#0F1014]">
-            <tr className="border-b border-white/8">
+            <tr className="members-header-sep">
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[30%]">Name</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45">Description</th>
               <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/45 w-[110px]">Demerits</th>
@@ -925,7 +925,7 @@ function AuditLogTab() {
           <div className="overflow-x-auto -mx-2 px-2">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-white/8 text-white/40 uppercase tracking-wider text-[10px]">
+                <tr className="members-header-sep text-white/40 uppercase tracking-wider text-[10px]">
                   <th className="text-left py-2 pr-3 font-medium">When</th>
                   <th className="text-left py-2 pr-3 font-medium">Action</th>
                   <th className="text-left py-2 pr-3 font-medium">Collection</th>
