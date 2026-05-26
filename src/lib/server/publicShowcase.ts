@@ -561,7 +561,8 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
 }
 
 export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
-  const sb = getSupabaseAdmin();
+  let sb;
+  try { sb = getSupabaseAdmin(); } catch { return []; }
 
   const [businessRows, { data: bidsRows }] = await Promise.all([
     fetchBusinesses(),
@@ -682,7 +683,8 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
 
 
 export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string }> {
-  const sb = getSupabaseAdmin();
+  let sb;
+  try { sb = getSupabaseAdmin(); } catch { return { paused: false, message: "" }; }
   const { data } = await sb.from("site_settings").select("applications_paused, applications_paused_msg").eq("id", "singleton").maybeSingle();
   if (!data) return { paused: false, message: "" };
   const r = data as Record<string, unknown>;
