@@ -323,6 +323,7 @@ export type SystemEmailTemplateKey =
   | "cycle_end_summary"
   | "assignment_approved"
   | "assignment_rejected"
+  | "assignment_update"
   | "infraction_notice"
   | "monthly_portal_reminder"
   | "biweekly_checkin"

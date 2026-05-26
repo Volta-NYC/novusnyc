@@ -12,12 +12,13 @@ import {
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
-  subscribeProjectGroups, subscribeAssignmentUpdates, createAssignmentUpdate,
+  subscribeProjectGroups, subscribeAssignmentUpdates,
   createAssignment, updateAssignment, archiveAssignment, hardDeleteAssignment, deleteAssignmentClaim,
   type Assignment, type AssignmentClaim, type AssignmentStatus, type AssignmentUpdate,
   type Business, type Cycle, type CycleRole, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 const MEMBER_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
@@ -114,8 +115,11 @@ export default function CatalogPage() {
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [assignmentUpdates, setAssignmentUpdates] = useState<AssignmentUpdate[]>([]);
-  const [updateMessage, setUpdateMessage] = useState("");
-  const [postingUpdate, setPostingUpdate] = useState(false);
+  const [updatesModal, setUpdatesModal] = useState<Assignment | null>(null);
+  const [updateDraft, setUpdateDraft] = useState("");
+  const [sendingUpdate, setSendingUpdate] = useState(false);
+  const [updateSendError, setUpdateSendError] = useState<string | null>(null);
+  const [updateSendSuccess, setUpdateSendSuccess] = useState(false);
 
   const [search, setSearch] = useState("");
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
@@ -157,6 +161,16 @@ export default function CatalogPage() {
     }
     return map;
   }, [claims]);
+
+  const updatesByAssignment = useMemo(() => {
+    const map = new Map<string, AssignmentUpdate[]>();
+    for (const u of assignmentUpdates) {
+      const list = map.get(u.assignmentId) ?? [];
+      list.push(u);
+      map.set(u.assignmentId, list);
+    }
+    return map;
+  }, [assignmentUpdates]);
 
   const resolveProjectLabel = useCallback((assignment: Assignment): { name: string; subtitle?: string } | null => {
     if (assignment.businessId) {
@@ -339,19 +353,37 @@ export default function CatalogPage() {
       `Permanently delete "${editing.title}"? This cannot be undone.${warn}`);
   };
 
-  const handlePostUpdate = async () => {
-    if (!claimsModal || !updateMessage.trim()) return;
-    const trimmed = updateMessage.trim();
-    setPostingUpdate(true);
+  const closeUpdatesModal = () => {
+    setUpdatesModal(null);
+    setUpdateDraft("");
+    setUpdateSendError(null);
+    setUpdateSendSuccess(false);
+  };
+
+  const handleSendUpdate = async () => {
+    if (!updatesModal || !updateDraft.trim()) return;
+    setSendingUpdate(true);
+    setUpdateSendError(null);
+    setUpdateSendSuccess(false);
     try {
-      await createAssignmentUpdate({
-        assignmentId: claimsModal.id,
-        message: trimmed,
-        postedBy: userProfile?.email ?? user?.email ?? "Admin",
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/assignments/post-update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ assignmentId: updatesModal.id, message: updateDraft.trim() }),
       });
-      setUpdateMessage("");
+      const data = await res.json() as { saved?: boolean; emailsSent?: number; emailsSkipped?: number; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Send failed");
+      setUpdateDraft("");
+      setUpdateSendSuccess(true);
+      setTimeout(() => setUpdateSendSuccess(false), 4000);
+    } catch (err) {
+      setUpdateSendError(err instanceof Error ? err.message : "Send failed. Please try again.");
     } finally {
-      setPostingUpdate(false);
+      setSendingUpdate(false);
     }
   };
 
@@ -542,7 +574,23 @@ export default function CatalogPage() {
                   </div>
                 )}
 
-                <div className="border-t border-white/5 px-4 py-2 flex justify-end">
+                <div className="border-t border-white/5 px-4 py-2 flex items-center justify-between gap-2">
+                  {(() => {
+                    const updateCount = updatesByAssignment.get(a.id)?.length ?? 0;
+                    const activeClaimers = (claimsByAssignment.get(a.id) ?? []).filter(
+                      (c) => c.status !== "rejected" && c.status !== "Approved",
+                    );
+                    return (
+                      <Btn
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setUpdatesModal(a)}
+                        title={activeClaimers.length > 0 ? `Send update to ${activeClaimers.length} claimant${activeClaimers.length !== 1 ? "s" : ""}` : "No active claimants"}
+                      >
+                        {updateCount > 0 ? `Updates (${updateCount})` : "Send Update"}
+                      </Btn>
+                    );
+                  })()}
                   <Btn variant="ghost" size="sm" onClick={() => openEdit(a)}>Edit</Btn>
                 </div>
               </motion.div>
@@ -799,8 +847,8 @@ export default function CatalogPage() {
           rejected:      "border-red-400/30 bg-red-400/10 text-red-300",
         };
         return (
-          <Modal open onClose={() => { setClaimsModal(null); setUpdateMessage(""); }} title={`${claimsModal.title} — Claims (${claimList.length})`}>
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+          <Modal open onClose={() => setClaimsModal(null)} title={`${claimsModal.title} — Claims (${claimList.length})`}>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
               {claimList.length === 0 && (
                 <p className="text-sm text-white/45">No claims yet.</p>
               )}
@@ -831,46 +879,103 @@ export default function CatalogPage() {
                 </div>
               ))}
             </div>
+            <div className="flex justify-end mt-4 pt-4 border-t border-white/8">
+              <Btn variant="ghost" onClick={() => setClaimsModal(null)}>Close</Btn>
+            </div>
+          </Modal>
+        );
+      })()}
 
-            {/* Admin updates section */}
-            <div className="mt-4 pt-4 border-t border-white/8">
-              <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-3">Post an Update</p>
-              {(() => {
-                const updates = assignmentUpdates
-                  .filter((u) => u.assignmentId === claimsModal.id)
-                  .sort((a, b) => a.postedAt.localeCompare(b.postedAt));
-                return (
-                  <>
-                    {updates.length > 0 && (
-                      <div className="space-y-2 mb-3 max-h-[18vh] overflow-y-auto pr-1">
-                        {updates.map((u) => (
-                          <div key={u.id} className="rounded-lg border border-[#85CC17]/15 bg-[#85CC17]/5 px-3 py-2 text-xs">
-                            <p className="text-white/85">{u.message}</p>
-                            <p className="text-white/35 mt-1">{u.postedBy} · {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</p>
-                          </div>
-                        ))}
+      {/* Send Update modal — emails all active claimants */}
+      {updatesModal && (() => {
+        const activeClaimers = (claimsByAssignment.get(updatesModal.id) ?? []).filter(
+          (c) => c.status !== "rejected" && c.status !== "Approved",
+        );
+        const updateHistory = [...(updatesByAssignment.get(updatesModal.id) ?? [])].sort(
+          (a, b) => a.postedAt.localeCompare(b.postedAt),
+        );
+        return (
+          <Modal open onClose={closeUpdatesModal} title={`Send Update · ${updatesModal.title}`}>
+            <div className="space-y-4">
+
+              {/* Who receives this */}
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">
+                  Recipients
+                </p>
+                {activeClaimers.length === 0 ? (
+                  <p className="text-xs text-white/35 italic">
+                    No active claimants — the update will be saved but no one will be emailed.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeClaimers.map((c) => (
+                      <span key={c.id} className="members-chip border-white/15 bg-white/5 text-white/65">
+                        {c.memberName}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Previous updates */}
+              {updateHistory.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">
+                    Update history
+                  </p>
+                  <div className="space-y-2 max-h-[22vh] overflow-y-auto pr-1">
+                    {updateHistory.map((u) => (
+                      <div key={u.id} className="rounded-lg border border-[#85CC17]/15 bg-[#85CC17]/5 px-3 py-2.5 text-xs">
+                        <p className="text-white/85 whitespace-pre-wrap">{u.message}</p>
+                        <p className="text-white/35 mt-1.5">
+                          {u.postedBy} · {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                        </p>
                       </div>
-                    )}
-                    <textarea
-                      rows={3}
-                      value={updateMessage}
-                      onChange={(e) => setUpdateMessage(e.target.value)}
-                      placeholder="Write a message visible to all members working on this assignment…"
-                      className="w-full rounded-lg border border-white/12 bg-[#0F1014] px-3 py-2 text-sm text-white/80 placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 resize-none"
-                    />
-                    <div className="flex justify-end mt-2">
-                      <Btn
-                        size="sm"
-                        variant="secondary"
-                        disabled={!updateMessage.trim() || postingUpdate}
-                        onClick={() => void handlePostUpdate()}
-                      >
-                        {postingUpdate ? "Posting…" : "Post Update"}
-                      </Btn>
-                    </div>
-                  </>
-                );
-              })()}
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Compose */}
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">
+                  New update
+                </label>
+                <textarea
+                  rows={5}
+                  value={updateDraft}
+                  onChange={(e) => setUpdateDraft(e.target.value)}
+                  placeholder={`Write an update for ${activeClaimers.length > 0 ? `${activeClaimers.length} claimant${activeClaimers.length !== 1 ? "s" : ""}` : "this assignment"} — they'll see it in the portal and receive it by email.`}
+                  className="w-full rounded-lg border border-white/12 bg-[#0F1014] px-3 py-2.5 text-sm text-white/80 placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 resize-none"
+                />
+              </div>
+
+              {updateSendSuccess && (
+                <p className="text-xs text-[#85CC17] bg-[#85CC17]/10 border border-[#85CC17]/20 rounded-lg px-3 py-2">
+                  ✓ Update sent — {activeClaimers.length} member{activeClaimers.length !== 1 ? "s" : ""} notified by email.
+                </p>
+              )}
+              {updateSendError && (
+                <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
+                  {updateSendError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-white/8">
+              <Btn variant="ghost" onClick={closeUpdatesModal} disabled={sendingUpdate}>Close</Btn>
+              <Btn
+                variant="primary"
+                disabled={!updateDraft.trim() || sendingUpdate}
+                onClick={() => void handleSendUpdate()}
+              >
+                {sendingUpdate
+                  ? "Sending…"
+                  : activeClaimers.length > 0
+                    ? `Send to ${activeClaimers.length}`
+                    : "Save Update"}
+              </Btn>
             </div>
           </Modal>
         );

@@ -35,7 +35,7 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 
 | File | Purpose |
 |---|---|
-| `src/lib/supabaseClient.ts` | Singleton anon Supabase client — safe in client components |
+| `src/lib/supabaseClient.ts` | Lazy-Proxy anon Supabase client — defers `createClient` until first use (safe to import in SSG modules) |
 | `src/lib/supabaseAdmin.ts` | Service-role admin client — **server only, never import client-side** |
 | `src/lib/members/storage.ts` | All data types + `subscribe*` realtime functions + CRUD helpers |
 | `src/lib/members/authContext.tsx` | React `AuthProvider` + `useAuth()` hook |

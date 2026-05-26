@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 export default function FinanceAssignmentsRedirect() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/members/assignments/by-business");
+    router.replace("/members/assignments/by-project");
   }, [router]);
   return null;
 }

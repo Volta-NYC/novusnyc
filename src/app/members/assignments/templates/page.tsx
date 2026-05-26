@@ -45,9 +45,9 @@ interface FormState {
   applicationRequired: boolean;
   allowMultipleCompletions: boolean;
   recurringEnabled: boolean;
-  deadlineOffsetDays: string;     // used when not recurring
-  checkinIntervalDays: string;    // used when recurring
-  maxDurationDays: string;        // optional cap for recurring
+  deadlineOffsetDays: string;
+  checkinIntervalDays: string;
+  maxDurationDays: string;
 }
 
 const BLANK_FORM: FormState = {
@@ -73,6 +73,41 @@ interface FromTemplateForm {
   description: string;
   priority: boolean;
 }
+
+// ── Shared sub-components ────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40 mb-2">
+      {children}
+    </p>
+  );
+}
+
+interface ToggleRowProps {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
+function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
+  return (
+    <label className="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer select-none">
+      <div className="min-w-0">
+        <p className="text-sm text-white/85 font-medium">{label}</p>
+        <p className="text-[11px] text-white/40 mt-0.5 leading-snug">{description}</p>
+      </div>
+      <input
+        type="checkbox"
+        className="members-checkbox flex-shrink-0"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TemplatesPage() {
   const { authRole, user, userProfile, loading } = useAuth();
@@ -100,17 +135,9 @@ export default function TemplatesPage() {
     if (!loading && authRole === "member") router.replace("/members/projects");
   }, [authRole, loading, router]);
 
-  useEffect(() => {
-    return subscribeAssignmentTemplates(setTemplates);
-  }, []);
-
-  useEffect(() => {
-    return subscribeBusinesses(setBusinesses);
-  }, []);
-
-  useEffect(() => {
-    return subscribeCycles(setCycles);
-  }, []);
+  useEffect(() => { return subscribeAssignmentTemplates(setTemplates); }, []);
+  useEffect(() => { return subscribeBusinesses(setBusinesses); }, []);
+  useEffect(() => { return subscribeCycles(setCycles); }, []);
 
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
 
@@ -121,12 +148,7 @@ export default function TemplatesPage() {
 
   const openFromTemplate = (t: AssignmentTemplate) => {
     setFromTemplate(t);
-    setFromTemplateForm({
-      projectRef: "volta",
-      title: t.title,
-      description: t.description ?? "",
-      priority: false,
-    });
+    setFromTemplateForm({ projectRef: "volta", title: t.title, description: t.description ?? "", priority: false });
   };
 
   const handleCreateFromTemplate = async () => {
@@ -173,23 +195,15 @@ export default function TemplatesPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = q
-      ? templates.filter(
-          (t) => t.title.toLowerCase().includes(q) || t.track.toLowerCase().includes(q),
-        )
+      ? templates.filter((t) => t.title.toLowerCase().includes(q) || t.track.toLowerCase().includes(q))
       : templates;
     return [...list].sort((a, b) => {
       const td = (TRACK_RANK[a.track] ?? 9) - (TRACK_RANK[b.track] ?? 9);
-      if (td !== 0) return td;
-      return a.title.localeCompare(b.title);
+      return td !== 0 ? td : a.title.localeCompare(b.title);
     });
   }, [templates, search]);
 
-  const openCreate = () => {
-    setForm({ ...BLANK_FORM });
-    setEditing(null);
-    setSaveError(null);
-    setModal("create");
-  };
+  const openCreate = () => { setForm({ ...BLANK_FORM }); setEditing(null); setSaveError(null); setModal("create"); };
 
   const openEdit = (t: AssignmentTemplate) => {
     const cap = t.capacity ?? 0;
@@ -213,6 +227,9 @@ export default function TemplatesPage() {
     setSaveError(null);
     setModal("edit");
   };
+
+  const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
+    setForm((p) => ({ ...p, [key]: val }));
 
   const buildPayload = (): Omit<AssignmentTemplate, "id" | "createdAt" | "updatedAt"> | null => {
     const title = form.title.trim();
@@ -249,11 +266,8 @@ export default function TemplatesPage() {
     try {
       if (editing) await updateAssignmentTemplate(editing.id, payload);
       else await createAssignmentTemplate(payload);
-      if (opts?.addAnother && !editing) {
-        setForm((p) => ({ ...p, title: "" }));
-      } else {
-        setModal(null);
-      }
+      if (opts?.addAnother && !editing) setForm((p) => ({ ...p, title: "" }));
+      else setModal(null);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Save failed. Please try again.");
     } finally {
@@ -272,9 +286,7 @@ export default function TemplatesPage() {
   if (loading || authRole === "member") {
     return (
       <MembersLayout>
-        <div className="flex items-center justify-center h-64">
-          <Spinner />
-        </div>
+        <div className="flex items-center justify-center h-64"><Spinner /></div>
       </MembersLayout>
     );
   }
@@ -290,7 +302,7 @@ export default function TemplatesPage() {
       />
 
       <div className="mb-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search title, track, or notes…" />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search title or track…" />
       </div>
 
       {filtered.length === 0 ? (
@@ -339,7 +351,7 @@ export default function TemplatesPage() {
                   </td>
                   <td className="px-3 py-0 h-9 align-middle">
                     <div className="members-row-actions">
-                      <Btn size="sm" variant="primary" onClick={() => openFromTemplate(t)}>Create +</Btn>
+                      <Btn size="sm" variant="primary" onClick={() => openFromTemplate(t)}>Use +</Btn>
                       <Btn size="sm" variant="secondary" onClick={() => openEdit(t)}>Edit</Btn>
                     </div>
                   </td>
@@ -350,131 +362,165 @@ export default function TemplatesPage() {
         </div>
       )}
 
+      {/* ── New / Edit Template modal ──────────────────────────────────────── */}
       <Modal
         open={modal !== null}
         onClose={() => setModal(null)}
         title={editing ? "Edit Template" : "New Template"}
       >
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="space-y-5 max-h-[72vh] overflow-y-auto pr-1">
+
+          {/* Core */}
           <Field label="Title" required>
-            <Input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} placeholder="e.g. SEO Audit, Financial Model, Website Mockup" />
+            <Input
+              value={form.title}
+              onChange={(e) => set("title", e.target.value)}
+              placeholder="e.g. SEO Audit, Financial Model, Website Mockup"
+            />
           </Field>
 
           <Field label="Description">
             <RichTextEditor
               content={form.description}
-              onChange={(html) => setForm((p) => ({ ...p, description: html }))}
-              minHeight={140}
+              onChange={(html) => set("description", html)}
+              minHeight={120}
               placeholder="What this assignment typically involves. Admins can edit this per-assignment when creating from this template."
             />
           </Field>
 
+          {/* Classification */}
           <div className="grid grid-cols-3 gap-3">
             <Field label="Track" required>
-              <Select options={MEMBER_TRACKS} value={form.track}
-                onChange={(e) => setForm((p) => ({ ...p, track: e.target.value as CycleTrack }))} />
+              <Select
+                options={MEMBER_TRACKS}
+                value={form.track}
+                onChange={(e) => set("track", e.target.value as CycleTrack)}
+              />
             </Field>
             <Field label={form.recurringEnabled ? "Credits / check-in" : "Credits"} required>
-              <Input type="number" min="0" value={String(form.credits)}
-                onChange={(e) => setForm((p) => ({ ...p, credits: Number(e.target.value) || 0 }))} />
+              <Input
+                type="number"
+                min="0"
+                value={String(form.credits)}
+                onChange={(e) => set("credits", Number(e.target.value) || 0)}
+              />
             </Field>
             <Field label="Minimum Role">
-              <Select options={ROLES} value={form.minRole}
-                onChange={(e) => setForm((p) => ({ ...p, minRole: e.target.value as CycleRole }))} />
+              <Select
+                options={ROLES}
+                value={form.minRole}
+                onChange={(e) => set("minRole", e.target.value as CycleRole)}
+              />
             </Field>
           </div>
 
-          {/* Recurring toggle */}
+          {/* Schedule */}
           <div>
-            <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 cursor-pointer">
-              <div>
-                <p className="text-sm text-white/85 font-medium">Recurring check-in assignment</p>
-                <p className="text-[11px] text-white/45 mt-0.5">Credits are awarded per check-in rather than once on completion.</p>
-              </div>
-              <input
-                type="checkbox"
-                className="members-checkbox"
+            <SectionLabel>Schedule</SectionLabel>
+            <div className="rounded-xl border border-white/10 bg-[#0F1014]">
+              <ToggleRow
+                label="Recurring check-in"
+                description="Credits are awarded per check-in rather than once on completion."
                 checked={form.recurringEnabled}
-                onChange={(e) => setForm((p) => ({ ...p, recurringEnabled: e.target.checked }))}
+                onChange={(v) => set("recurringEnabled", v)}
               />
-            </label>
-          </div>
-
-          {form.recurringEnabled ? (
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Check-in every (days)">
-                <Input type="number" min="1" value={form.checkinIntervalDays} placeholder="7"
-                  onChange={(e) => setForm((p) => ({ ...p, checkinIntervalDays: e.target.value }))} />
-              </Field>
-              <Field label="Max duration (days, optional)">
-                <Input type="number" min="1" value={form.maxDurationDays} placeholder="No limit"
-                  onChange={(e) => setForm((p) => ({ ...p, maxDurationDays: e.target.value }))} />
-              </Field>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Deadline offset (days after claim)">
-                <Input type="number" min="0" value={form.deadlineOffsetDays} placeholder="e.g. 7"
-                  onChange={(e) => setForm((p) => ({ ...p, deadlineOffsetDays: e.target.value }))} />
-              </Field>
-            </div>
-          )}
-
-          <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 space-y-2.5">
-            <p className="text-[10px] text-white/40 uppercase tracking-wide font-semibold">Who can claim</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setForm((p) => ({ ...p, limitClaims: false }))}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${!form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
-              >
-                For everyone
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm((p) => ({ ...p, limitClaims: true }))}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
-              >
-                Limited spots
-              </button>
-            </div>
-            {form.limitClaims && (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min="1"
-                  value={form.maxClaims}
-                  onChange={(e) => setForm((p) => ({ ...p, maxClaims: e.target.value }))}
-                  className="w-24"
-                />
-                <span className="text-xs text-white/45">max claimants</span>
+            {form.recurringEnabled ? (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <Field label="Check-in every (days)">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={form.checkinIntervalDays}
+                    placeholder="7"
+                    onChange={(e) => set("checkinIntervalDays", e.target.value)}
+                  />
+                </Field>
+                <Field label="Max duration (days, optional)">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={form.maxDurationDays}
+                    placeholder="No limit"
+                    onChange={(e) => set("maxDurationDays", e.target.value)}
+                  />
+                </Field>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <Field label="Deadline (days after claim, optional)">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={form.deadlineOffsetDays}
+                    placeholder="e.g. 7"
+                    onChange={(e) => set("deadlineOffsetDays", e.target.value)}
+                  />
+                </Field>
               </div>
             )}
           </div>
 
-          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-            <input type="checkbox" className="members-checkbox" checked={form.requiresApproval}
-              onChange={(e) => setForm((p) => ({ ...p, requiresApproval: e.target.checked }))} />
-            <span>Requires approval
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck to auto-award credits on submit</span>
-            </span>
-          </label>
+          {/* Participation */}
+          <div>
+            <SectionLabel>Participation</SectionLabel>
+            <div className="rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => set("limitClaims", false)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${!form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+                >
+                  For everyone
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set("limitClaims", true)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+                >
+                  Limited spots
+                </button>
+              </div>
+              {form.limitClaims && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={form.maxClaims}
+                    onChange={(e) => set("maxClaims", e.target.value)}
+                    className="w-24"
+                  />
+                  <span className="text-xs text-white/45">max claimants</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-            <input type="checkbox" className="members-checkbox" checked={form.applicationRequired}
-              onChange={(e) => setForm((p) => ({ ...p, applicationRequired: e.target.checked }))} />
-            <span>Requires pre-approval
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— members told to email board first; admin alerted on claim</span>
-            </span>
-          </label>
+          {/* Options */}
+          <div>
+            <SectionLabel>Options</SectionLabel>
+            <div className="rounded-xl border border-white/10 bg-[#0F1014] divide-y divide-white/[0.07]">
+              <ToggleRow
+                label="Requires approval"
+                description="Admin must manually approve submissions before credits are awarded."
+                checked={form.requiresApproval}
+                onChange={(v) => set("requiresApproval", v)}
+              />
+              <ToggleRow
+                label="Requires pre-approval"
+                description="Members are told to contact the board before claiming; admin is alerted on claim."
+                checked={form.applicationRequired}
+                onChange={(v) => set("applicationRequired", v)}
+              />
+              <ToggleRow
+                label="Allow multiple completions"
+                description="Member can re-claim and complete again after each approval."
+                checked={form.allowMultipleCompletions}
+                onChange={(v) => set("allowMultipleCompletions", v)}
+              />
+            </div>
+          </div>
 
-          <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-            <input type="checkbox" className="members-checkbox" checked={form.allowMultipleCompletions}
-              onChange={(e) => setForm((p) => ({ ...p, allowMultipleCompletions: e.target.checked }))} />
-            <span>Allow multiple completions
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— member can re-claim after approval (off by default)</span>
-            </span>
-          </label>
         </div>
 
         {saveError && (
@@ -492,97 +538,103 @@ export default function TemplatesPage() {
               </Btn>
             )}
             <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.title.trim() || busy}>
-              {busy ? "Saving…" : editing ? "Save" : "Create"}
+              {busy ? "Saving…" : editing ? "Save" : "Create Template"}
             </Btn>
           </div>
         </div>
       </Modal>
 
-      {/* ── Create from Template modal ─────────────────────────── */}
+      {/* ── Create Assignment from Template modal ─────────────────────────── */}
       <Modal
         open={fromTemplate !== null}
         onClose={() => setFromTemplate(null)}
-        title="Create Assignment from Template"
+        title="Create Assignment"
       >
         {fromTemplate && (
-          <div className="space-y-4">
-            {/* Template summary */}
+          <div className="space-y-5">
+
+            {/* Template badge */}
             <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 flex items-start gap-3">
-              <span className={`mt-0.5 inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${TRACK_DOT[fromTemplate.track]}`} />
+              <span className={`mt-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[fromTemplate.track]}`} />
               <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-white/35 mb-0.5">Template</p>
                 <p className="text-sm font-semibold text-white/90">{fromTemplate.title}</p>
-                <p className="text-[11px] text-white/45 mt-0.5">
+                <p className="text-[11px] text-white/40 mt-0.5">
                   {fromTemplate.track} · {fromTemplate.credits} {fromTemplate.recurringEnabled ? "credits/check-in" : "credits"} · Min {fromTemplate.minRole}
-                  {fromTemplate.capacity ? ` · max ${fromTemplate.capacity} claims` : ""}
+                  {fromTemplate.capacity ? ` · ${fromTemplate.capacity} spots` : " · Open"}
                   {fromTemplate.recurringEnabled
-                    ? ` · check-in every ${fromTemplate.checkinIntervalDays ?? 7}d${fromTemplate.maxDurationDays ? ` · max ${fromTemplate.maxDurationDays}d` : ""}`
-                    : fromTemplate.deadlineOffsetDays ? ` · due in ${fromTemplate.deadlineOffsetDays}d` : ""
-                  }
+                    ? ` · ↻ every ${fromTemplate.checkinIntervalDays ?? 7}d${fromTemplate.maxDurationDays ? `, max ${fromTemplate.maxDurationDays}d` : ""}`
+                    : fromTemplate.deadlineOffsetDays != null ? ` · due in ${fromTemplate.deadlineOffsetDays}d` : ""}
                 </p>
-                {fromTemplate.description && (
-                  <p
-                    className="text-[11px] text-white/55 mt-1.5 line-clamp-3 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(fromTemplate.description) }}
-                  />
-                )}
               </div>
             </div>
 
-            <Field label="Business" required>
-              <select
-                value={fromTemplateForm.projectRef}
-                onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
-              >
-                <option value="volta">Volta</option>
-                {businessOptions.map((b) => (
-                  <option key={b.id} value={`biz:${b.id}`}>
-                    {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            {/* Assignment details */}
+            <div>
+              <SectionLabel>Assignment</SectionLabel>
+              <div className="space-y-3">
+                <Field label="Business" required>
+                  <select
+                    value={fromTemplateForm.projectRef}
+                    onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
+                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+                  >
+                    <option value="volta">Volta (org-wide)</option>
+                    {businessOptions.map((b) => (
+                      <option key={b.id} value={`biz:${b.id}`}>
+                        {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
 
-            <Field label="Assignment title">
-              <Input
-                value={fromTemplateForm.title}
-                onChange={(e) => setFromTemplateForm((p) => ({ ...p, title: e.target.value }))}
-                placeholder={fromTemplate.title}
-              />
-            </Field>
+                <Field label="Title">
+                  <Input
+                    value={fromTemplateForm.title}
+                    onChange={(e) => setFromTemplateForm((p) => ({ ...p, title: e.target.value }))}
+                    placeholder={fromTemplate.title}
+                  />
+                </Field>
 
-            <Field label="Description / more info">
-              <RichTextEditor
-                content={fromTemplateForm.description}
-                onChange={(html) => setFromTemplateForm((p) => ({ ...p, description: html }))}
-                minHeight={160}
-                placeholder="Add member-facing context, links, acceptance criteria, and any business-specific details."
-              />
-            </Field>
+                <Field label="Description / more info">
+                  <RichTextEditor
+                    content={fromTemplateForm.description}
+                    onChange={(html) => setFromTemplateForm((p) => ({ ...p, description: html }))}
+                    minHeight={140}
+                    placeholder="Add member-facing context, links, acceptance criteria, or business-specific details."
+                  />
+                </Field>
+              </div>
+            </div>
 
+            {/* Deadline notice */}
             {fromTemplate.recurringEnabled ? (
-              <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-[11px] text-amber-300/80">
-                <span className="font-semibold">↻ Recurring assignment</span> — members earn {fromTemplate.credits} credits per check-in (every {fromTemplate.checkinIntervalDays ?? 7} days{fromTemplate.maxDurationDays ? `, up to ${fromTemplate.maxDurationDays} days` : ""}).
+              <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-[11px] text-amber-300/75 leading-relaxed">
+                <span className="font-semibold">↻ Recurring</span> — members earn {fromTemplate.credits} credit{fromTemplate.credits !== 1 ? "s" : ""} per check-in (every {fromTemplate.checkinIntervalDays ?? 7} days{fromTemplate.maxDurationDays ? `, up to ${fromTemplate.maxDurationDays} days` : ""}).
               </div>
             ) : fromTemplate.deadlineOffsetDays != null ? (
-              <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/50">
-                Deadline is set automatically — {fromTemplate.deadlineOffsetDays} days after each member claims. Edit the assignment to add a hard deadline instead.
+              <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/45 leading-relaxed">
+                Deadline will be set automatically — {fromTemplate.deadlineOffsetDays} day{fromTemplate.deadlineOffsetDays !== 1 ? "s" : ""} after each member claims. Edit the assignment afterwards to set a hard date instead.
               </div>
             ) : (
-              <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/50">
+              <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/45 leading-relaxed">
                 No deadline configured. You can add one by editing the assignment after creating it.
               </div>
             )}
 
-            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={fromTemplateForm.priority}
-                onChange={(e) => setFromTemplateForm((p) => ({ ...p, priority: e.target.checked }))}
-                className="members-checkbox"
-              />
-              Priority assignment
-            </label>
+            {/* Options */}
+            <div>
+              <SectionLabel>Options</SectionLabel>
+              <div className="rounded-xl border border-white/10 bg-[#0F1014]">
+                <ToggleRow
+                  label="Priority"
+                  description="Marks this assignment as high-priority for the current cycle."
+                  checked={fromTemplateForm.priority}
+                  onChange={(v) => setFromTemplateForm((p) => ({ ...p, priority: v }))}
+                />
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -593,11 +645,7 @@ export default function TemplatesPage() {
         )}
         <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-white/8">
           <Btn variant="ghost" onClick={() => setFromTemplate(null)} disabled={fromTemplateCreating}>Cancel</Btn>
-          <Btn
-            variant="primary"
-            onClick={() => void handleCreateFromTemplate()}
-            disabled={fromTemplateCreating}
-          >
+          <Btn variant="primary" onClick={() => void handleCreateFromTemplate()} disabled={fromTemplateCreating}>
             {fromTemplateCreating ? "Creating…" : "Create Assignment"}
           </Btn>
         </div>

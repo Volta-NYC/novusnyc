@@ -19,6 +19,10 @@ function normalizeEmail(email: string): string {
 }
 
 const DEFAULT_ACCEPTED_SUBJECT = "Congratulations — You've been accepted to Volta NYC";
+
+// {{link}} resolves to a permanent /members/signup?email=... URL — it never expires.
+// The member visits that page and clicks "Send me a setup link" to receive a fresh
+// 24-hour OTP in a separate email.
 const DEFAULT_ACCEPTED_HTML = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
@@ -27,10 +31,11 @@ const DEFAULT_ACCEPTED_HTML = `<!DOCTYPE html>
     <img src="https://voltanyc.org/logo.png" alt="Volta NYC" width="36" style="display:block;margin-bottom:28px;">
     <p style="margin:0 0 16px;">Hi {{firstName}},</p>
     <p style="margin:0 0 16px;">Congratulations! You've been accepted to Volta NYC.</p>
-    <p style="margin:0 0 24px;">Click below to access the member portal and get started:</p>
+    <p style="margin:0 0 24px;">Click below to set up your member portal account:</p>
     <p style="margin:0 0 24px;">
-      <a href="{{link}}" style="display:inline-block;background-color:#85CC17;color:#0d0d0d;font-weight:700;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;">Access Member Portal</a>
+      <a href="{{link}}" style="display:inline-block;background-color:#85CC17;color:#0d0d0d;font-weight:700;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;">Set Up Your Account</a>
     </p>
+    <p style="margin:0 0 8px;font-size:13px;color:#666666;">You'll be taken to a page where you can request a secure setup link. The link can be re-requested at any time, so this email doesn't expire.</p>
     <p style="margin:24px 0 0;">Best,<br>Ethan Zhang<br>Volta NYC</p>
   </div>
 </body>
@@ -71,17 +76,15 @@ export async function POST(req: NextRequest) {
 
   // Check whether this email already has a confirmed Supabase auth account.
   let confirmedAccountExists = false;
-  let hasAnyAuthAccount = false;
   try {
     const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
     const match = users.find(u => u.email?.toLowerCase() === applicantEmail);
     confirmedAccountExists = !!(match?.email_confirmed_at);
-    hasAnyAuthAccount = !!match;
   } catch { /* treat as new user */ }
 
   if (confirmedAccountExists) {
-    // Already has a portal account — just send the acceptance notification.
-    const rendered = await renderAutomationEmail("applicant_accepted", { applicantName, firstName, link: "https://voltanyc.org/members" });
+    // Already has a portal account — notify of acceptance, link directly to portal.
+    const rendered = await renderAutomationEmail("applicant_accepted", { applicantName, firstName, link: `${baseUrl}/members` });
     const fallback = buildConfirmedAccountAcceptanceTemplate({ name: applicantName });
     await transporter.sendMail({
       from: resolveFromWithName(from),
@@ -92,45 +95,12 @@ export async function POST(req: NextRequest) {
       html: rendered?.html ?? fallback.html,
     });
   } else {
-    // No confirmed account — create auth user if needed, then send acceptance + setup link.
-    if (!hasAnyAuthAccount) {
-      const { error: createErr } = await sb.auth.admin.createUser({
-        email: applicantEmail,
-        email_confirm: false,
-        user_metadata: { full_name: applicantName },
-      });
-      // Ignore "already registered" — the generateLink call below handles it.
-      if (createErr && !createErr.message.toLowerCase().includes("already")) {
-        return NextResponse.json({ error: "user_create_failed", detail: createErr.message }, { status: 500 });
-      }
-    }
-
-    // Generate an invite OTP link that redirects back to our signup page.
-    let otpLink: string | null = null;
-    const { data: inviteData, error: inviteErr } = await sb.auth.admin.generateLink({
-      type: "invite",
-      email: applicantEmail,
-      options: { redirectTo: signupUrl, data: { full_name: applicantName } },
-    });
-    otpLink = inviteData?.properties?.action_link ?? null;
-
-    // Fall back to magiclink if invite-type fails (e.g. already confirmed via a race).
-    if (inviteErr || !otpLink) {
-      const { data: magicData } = await sb.auth.admin.generateLink({
-        type: "magiclink",
-        email: applicantEmail,
-        options: { redirectTo: signupUrl },
-      });
-      otpLink = magicData?.properties?.action_link ?? null;
-    }
-
-    if (!otpLink) {
-      return NextResponse.json({ error: "invite_link_failed" }, { status: 500 });
-    }
-
+    // No confirmed portal account — send permanent signup link.
+    // The member visits /members/signup?email=... and clicks "Send me a setup link"
+    // to receive a fresh 24-hour OTP on demand. This email never expires.
     const { subject, html } = await loadEmailTemplate(
       "applicant_accepted",
-      { name: applicantName, firstName, link: otpLink },
+      { name: applicantName, firstName, link: signupUrl },
       { subject: DEFAULT_ACCEPTED_SUBJECT, html: DEFAULT_ACCEPTED_HTML }
     );
 
@@ -139,8 +109,11 @@ export async function POST(req: NextRequest) {
       "",
       "Congratulations! You've been accepted to Volta NYC.",
       "",
-      "Click the link below to access the member portal:",
-      otpLink,
+      "Click the link below to set up your member portal account:",
+      signupUrl,
+      "",
+      "You'll be taken to a page where you can request a secure setup link.",
+      "The link can be re-requested at any time, so this email doesn't expire.",
       "",
       "Best,",
       "Ethan Zhang",

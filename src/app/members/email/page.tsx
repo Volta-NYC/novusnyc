@@ -114,6 +114,14 @@ const SYSTEM_TEMPLATE_SEEDS: Array<{
     variables: ["memberName", "assignmentTitle", "rejectionReason"],
   },
   {
+    key: "assignment_update",
+    label: "Assignment update",
+    description: "Sent to active claimants when an admin posts an update on an assignment.",
+    subject: "Update on {{assignmentTitle}}",
+    body: "<p>Hi {{memberName}},</p><p>Your team posted an update on the assignment <strong>{{assignmentTitle}}</strong>{{businessNamePart}}.</p><div style=\"margin:16px 0;padding:14px 18px;border-left:3px solid #85CC17;background:#f9fdf5;color:#1a1a1a;border-radius:0 6px 6px 0;font-size:14px;line-height:1.6;\">{{messageFmt}}</div><p><a href=\"{{portalLink}}\" style=\"color:#5c9911;font-weight:600;\">View in portal →</a></p>",
+    variables: ["memberName", "assignmentTitle", "message", "messageFmt", "businessName", "businessNamePart", "portalLink"],
+  },
+  {
     key: "infraction_notice",
     label: "Infraction notice",
     description: "Sent when an admin manually issues an infraction.",
