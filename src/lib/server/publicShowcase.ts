@@ -33,6 +33,7 @@ export interface PublicShowcaseCard {
   url?: string;
   imageUrl?: string;
   featuredOnHome: boolean;
+  sortIndex?: number;
 }
 
 export interface PublicMapEntry {
@@ -257,6 +258,9 @@ function normalizeDescription(value: unknown): string {
 }
 
 function compareCards(a: PublicShowcaseCard, b: PublicShowcaseCard): number {
+  const ai = a.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  const bi = b.sortIndex ?? Number.MAX_SAFE_INTEGER;
+  if (ai !== bi) return ai - bi;
   return a.name.localeCompare(b.name);
 }
 
@@ -432,6 +436,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();
     const featuredOnHome = asBool(row.showcaseFeaturedOnHome, status !== "Upcoming");
+    const sortIndex = typeof row.sortIndex === "number" ? row.sortIndex : undefined;
 
     const card: PublicShowcaseCard = {
       id,
@@ -445,6 +450,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
       url: url || undefined,
       imageUrl: imageUrl || undefined,
       featuredOnHome,
+      sortIndex,
     };
 
     if (asBool(row.showcaseEnabled, false)) {

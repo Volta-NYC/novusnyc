@@ -11,6 +11,7 @@ import {
   ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
+import MasonryGrid from "@/components/MasonryGrid";
 import {
   subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
   createBusiness, updateBusiness, hardDeleteBusiness,
@@ -2166,7 +2167,11 @@ function BusinessesPageInner() {
             }
 
             return (
-              <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
+              <MasonryGrid
+                itemIds={sorted.map((b) => b.id)}
+                itemWidth={290}
+                gap={scView === "home" ? 20 : 24}
+              >
                 {sorted.map((b) => {
                   const colorSwatch = SHOWCASE_COLOR_OPTIONS.find((o) => o.value === b.showcaseColor)?.swatch ?? "#3B82F6";
                   const imgUrl = b.showcaseImageUrl || null;
@@ -2183,7 +2188,7 @@ function BusinessesPageInner() {
                       onDragOver={(e) => handleDragOver(e, b.id)}
                       onDrop={(e) => void handleDrop(e, b.id)}
                       onDragEnd={handleDragEnd}
-                      className="rounded-2xl overflow-hidden flex flex-col relative select-none"
+                      className="rounded-2xl overflow-hidden flex flex-col relative select-none project-card"
                       style={{
                         background: "#F8F7F4",
                         border: isDragOver ? `2px solid ${colorSwatch}` : "1px solid #E4E2DC",
@@ -2194,44 +2199,46 @@ function BusinessesPageInner() {
                         transition: "opacity 0.15s, transform 0.15s, border 0.1s, box-shadow 0.1s",
                       }}
                     >
-                      {/* color bar */}
+                      {/* color bar — matches public h-2 (8px) */}
                       <div style={{ backgroundColor: colorSwatch, height: "8px", flexShrink: 0 }} />
-                      {/* image */}
-                      <div className="mx-4 mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid #E4E2DC", background: "white" }}>
+                      {/* image — natural aspect ratio, matches public frontend */}
+                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl overflow-hidden" style={{ border: "1px solid #E4E2DC", background: "white" }}>
                         {imgUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={imgUrl} alt={b.name} className="w-full object-cover" style={{ height: "120px" }} />
+                          <img src={imgUrl} alt={b.name} className="block w-full h-auto" />
                         ) : (
-                          <div className="w-full flex items-center justify-center" style={{ height: "120px", color: "#C4C2BC", fontSize: "28px" }}>
-                            &#9728;
+                          <div className="w-full flex items-center justify-center" style={{ height: "160px", color: "#C4C2BC" }}>
+                            <span className="font-body text-xs uppercase tracking-wider">Project photo coming soon</span>
                           </div>
                         )}
                       </div>
-                      {/* content */}
-                      <div className="px-4 pt-3 pb-4 flex flex-col flex-1">
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {services.slice(0, 2).map((s) => (
-                            <span key={s} className="px-2 py-0.5 rounded-full text-[10px] font-semibold border" style={{ background: "#EFF6FF", borderColor: "#BFDBFE", color: "#1D4ED8" }}>{s}</span>
-                          ))}
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${status === "Ongoing" ? "bg-lime-100 border-lime-200 text-lime-700" : status === "Completed" ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-slate-100 border-slate-200 text-slate-600"}`}>
+                      {/* content — matches public p-7 layout exactly */}
+                      <div className="p-7 flex flex-col">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex gap-2 flex-wrap">
+                            {services.map((s) => (
+                              <span key={s} className="tag border" style={{ background: "#EFF6FF", borderColor: "#BFDBFE", color: "#1D4ED8" }}>{s}</span>
+                            ))}
+                          </div>
+                          <span className={`tag text-xs flex-shrink-0 ml-2 ${status === "Completed" ? "bg-lime-100 text-lime-700" : status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
                             {status}
                           </span>
                         </div>
-                        <p className="font-bold text-sm mb-0.5" style={{ color: "#1A1A18", fontFamily: "var(--font-display, sans-serif)" }}>{b.name}</p>
+                        <h3 className="font-display font-bold text-xl mb-1" style={{ color: "#1A1A18" }}>{b.name}</h3>
+                        <p className="font-body text-sm mb-3" style={{ color: "#6B6B65" }}>{b.showcaseType || "Digital & Tech"}</p>
                         {b.showcaseDescription && (
-                          <p className="text-xs line-clamp-2 flex-1" style={{ color: "#6B6B65" }}>{b.showcaseDescription}</p>
+                          <p className="font-body text-sm" style={{ color: "#6B6B65" }}>{b.showcaseDescription}</p>
                         )}
-                        {neighborhood && (
-                          <p className="text-[10px] mt-1" style={{ color: "#9B9B95" }}>{neighborhood}</p>
-                        )}
-                        {b.showcaseUrl && (
-                          <p className="text-[10px] mt-1 font-medium" style={{ color: "#4B7A0A" }}>View live site →</p>
-                        )}
+                        <div className="flex items-center justify-between mt-4">
+                          {neighborhood && (
+                            <p className="font-body text-xs" style={{ color: "#9B9B95" }}>📍 {neighborhood}</p>
+                          )}
+                          {b.showcaseUrl && (
+                            <span className="font-body text-xs font-semibold" style={{ color: "#4B7A0A" }}>View live site →</span>
+                          )}
+                        </div>
                       </div>
-                      {/* action overlay */}
-                      <div className="absolute top-3 right-2 flex gap-1 opacity-0 hover:opacity-100 group-hover:opacity-100 transition-opacity" style={{ pointerEvents: "auto" }}>
-                        <span />
-                      </div>
+                      {/* admin action buttons — gradient overlay at bottom */}
                       <div
                         className="absolute inset-x-0 bottom-0 flex gap-1.5 px-3 py-2 justify-end items-center"
                         style={{ background: "linear-gradient(to top, rgba(248,247,244,0.98) 70%, transparent)", pointerEvents: "auto" }}
@@ -2266,7 +2273,7 @@ function BusinessesPageInner() {
                     </div>
                   );
                 })}
-              </div>
+              </MasonryGrid>
             );
           })()}
         </>
