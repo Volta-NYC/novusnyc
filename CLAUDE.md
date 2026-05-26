@@ -40,12 +40,14 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 | `src/lib/members/storage.ts` | All data types + `subscribe*` realtime functions + CRUD helpers |
 | `src/lib/members/authContext.tsx` | React `AuthProvider` + `useAuth()` hook |
 | `src/lib/members/supabaseAuth.ts` | `signIn` / `signOut` / `resetPassword` / `getAuthToken` |
+| `src/lib/schemas.ts` | Zod-like validation for `ContactFormValues` and `ApplicationFormValues` |
 | `src/components/members/ui.tsx` | Shared design system: `Btn`, `Modal`, `Field`, `Input`, `Select`, `Badge`, `SearchBar`, `Empty`, `useConfirm` |
 | `src/components/members/MembersLayout.tsx` | Portal shell with sidebar nav |
-| `src/components/members/SectionTabs.tsx` | Tab navigation; also exports tab arrays (`ASSIGNMENTS_TABS`, `PROJECT_GROUP_TABS`, etc.) |
+| `src/components/members/SectionTabs.tsx` | Tab navigation; exports tab arrays (`ASSIGNMENTS_TABS`, `PROJECT_GROUP_TABS`, etc.). `MEMBERS_GROUP_TABS` exists but is no longer rendered on the Team page (single tab, removed). |
 | `src/components/members/RichTextEditor.tsx` | Tiptap wrapper; exposes `insertAtCursor` via `forwardRef` / `RichTextEditorHandle` |
 | `src/app/members/layout.tsx` | Wraps all `/members/*` pages with `<AuthProvider>` |
 | `src/app/globals.css` | Design token `:root` variables + shared utility classes |
+| `src/app/api/submit/route.ts` | Handles contact + application form submissions; writes to Supabase and forwards to Google Sheets backup |
 | `supabase/migrations/` | Ordered SQL migrations for the linked Supabase project |
 
 ### Auth roles
@@ -122,12 +124,25 @@ npm start          # serve the production build locally
 - Use `Btn`, `Modal`, `Field`, `Input`, `Select` from `ui.tsx` — never raw `<button>` / `<input>` in portal pages.
 - `Btn` variants: `primary` (green fill), `secondary` (white/8 glass), `ghost` (text only), `danger` (red tint).
 - Row heights in tables: `h-9`. Text sizes: header labels `text-[10px] uppercase tracking-wide`, cell content `text-[11px]`.
-- Chip/badge pattern: `members-chip` class + status-specific border/bg/text classes.
+- Status/badge pattern: use `<Badge label={value} />` from `ui.tsx`. Colors are defined in `BADGE_COLORS` in `ui.tsx`. Add new status values there when introducing new statuses.
+- Empty cells (no data): `<span className="text-white/25">—</span>`.
 
 ### UI — Public site (light theme)
 - Use `v-*` Tailwind color tokens (`v-green`, `v-blue`, `v-ink`, `v-muted`, `v-border`, `v-bg`, `v-dark`).
 - Fonts: `font-display` for headings (Space Grotesk), `font-body` for all body copy (DM Sans).
 - Wrap scroll containers in `overflow-x-auto` without `snap-x` — free scrolling, no forced card snapping.
+
+### Business directory — track status values
+
+The Business Directory (`/members/projects`) has **two separate status columns**: Tech and Marketing. Each only appears if the business has that track assigned; otherwise shows `—`.
+
+**Tech statuses:** `Upcoming` · `In Development` · `Awaiting Client` · `Awaiting Deployment` · `Completed`
+
+**Marketing statuses:** `Upcoming` · `In Planning` · `Awaiting Client` · `Consistent Posts`
+
+Status values are stored inside the `track_projects` JSONB column per-track (e.g. `track_projects->'Tech'->>'projectStatus'`). The overall `project_status` column is derived via `deriveOverallStatus()` and used only for sort/filter/counts — it is not displayed directly. There is no legacy fallback from `project_status` to per-track display; all data has been migrated. Do not add legacy fallback logic.
+
+Colors for all status values are defined in `BADGE_COLORS` in `src/components/members/ui.tsx` and rendered via the `Badge` component.
 
 ### Services / filters
 Active service options for businesses: `Website`, `SEO`, `Social Media`, `Graphic Design`, `Grants`.
