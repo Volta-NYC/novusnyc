@@ -71,6 +71,9 @@ interface FromTemplateForm {
   title: string;
   description: string;
   priority: boolean;
+  requiresApproval: boolean;
+  applicationRequired: boolean;
+  allowMultipleCompletions: boolean;
 }
 
 // ── Shared sub-components ────────────────────────────────────────────────────
@@ -124,6 +127,7 @@ export default function TemplatesPage() {
   const [fromTemplate, setFromTemplate] = useState<AssignmentTemplate | null>(null);
   const [fromTemplateForm, setFromTemplateForm] = useState<FromTemplateForm>({
     projectRef: "volta", title: "", description: "", priority: false,
+    requiresApproval: true, applicationRequired: false, allowMultipleCompletions: false,
   });
   const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -147,7 +151,15 @@ export default function TemplatesPage() {
 
   const openFromTemplate = (t: AssignmentTemplate) => {
     setFromTemplate(t);
-    setFromTemplateForm({ projectRef: "volta", title: t.title, description: t.description ?? "", priority: false });
+    setFromTemplateForm({
+      projectRef: "volta",
+      title: t.title,
+      description: t.description ?? "",
+      priority: false,
+      requiresApproval: t.requiresApproval !== false,
+      applicationRequired: Boolean(t.applicationRequired),
+      allowMultipleCompletions: Boolean(t.allowMultipleCompletions),
+    });
   };
 
   const handleCreateFromTemplate = async () => {
@@ -175,9 +187,9 @@ export default function TemplatesPage() {
         checkinIntervalDays: isRecurring ? (fromTemplate.checkinIntervalDays ?? 7) : undefined,
         maxDurationDays: isRecurring ? fromTemplate.maxDurationDays : undefined,
         priority: fromTemplateForm.priority,
-        requiresApproval: fromTemplate.requiresApproval !== false,
-        applicationRequired: fromTemplate.applicationRequired,
-        allowMultipleCompletions: fromTemplate.allowMultipleCompletions,
+        requiresApproval: fromTemplateForm.requiresApproval,
+        applicationRequired: fromTemplateForm.applicationRequired,
+        allowMultipleCompletions: fromTemplateForm.allowMultipleCompletions,
         status: "Open",
         cycleId: activeCycle?.id ?? "",
         notes: "",
@@ -624,12 +636,30 @@ export default function TemplatesPage() {
             {/* Options */}
             <div>
               <SectionLabel>Options</SectionLabel>
-              <div className="rounded-xl border border-white/10 bg-[#0F1014]">
+              <div className="rounded-xl border border-white/10 bg-[#0F1014] divide-y divide-white/[0.07]">
                 <ToggleRow
                   label="Priority"
                   description="Marks this assignment as high-priority for the current cycle."
                   checked={fromTemplateForm.priority}
                   onChange={(v) => setFromTemplateForm((p) => ({ ...p, priority: v }))}
+                />
+                <ToggleRow
+                  label="Requires approval"
+                  description="Admin must manually approve submissions before credits are awarded."
+                  checked={fromTemplateForm.requiresApproval}
+                  onChange={(v) => setFromTemplateForm((p) => ({ ...p, requiresApproval: v }))}
+                />
+                <ToggleRow
+                  label="Requires pre-approval"
+                  description="Members are told to contact the board before claiming; admin is alerted on claim."
+                  checked={fromTemplateForm.applicationRequired}
+                  onChange={(v) => setFromTemplateForm((p) => ({ ...p, applicationRequired: v }))}
+                />
+                <ToggleRow
+                  label="Allow multiple completions"
+                  description="Member can re-claim and complete again after each approval."
+                  checked={fromTemplateForm.allowMultipleCompletions}
+                  onChange={(v) => setFromTemplateForm((p) => ({ ...p, allowMultipleCompletions: v }))}
                 />
               </div>
             </div>
