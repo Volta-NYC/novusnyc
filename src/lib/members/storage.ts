@@ -407,12 +407,11 @@ export interface AssignmentTemplate {
 export type AssignmentDifficulty = string; // admin-configurable, free-form
 
 export type AssignmentStatus =
-  | "Open"          // visible in marketplace, accepting claims
-  | "In Progress"   // at least one active claim
-  | "Submitted"     // at least one claim awaiting approval
-  | "Approved"      // all claims approved (closed naturally)
-  | "Finalized"     // admin-closed
-  | "Archived";     // hidden from members, history preserved; hard-deletable by admins
+  | "Open"          // visible in catalog; accepting new claims
+  | "Active"        // at least one claim in progress
+  | "Under Review"  // at least one submission pending admin approval
+  | "Completed"     // all work done and credits awarded
+  | "Archived";     // manually hidden; history preserved; hard-deletable by admins
 
 export interface Assignment {
   id: string;
@@ -668,10 +667,10 @@ export interface AuditLogEntry {
 function normalizeAssignmentStatus(raw: unknown): AssignmentStatus {
   const v = String(raw ?? "").trim().toLowerCase().replace(/_/g, " ");
   if (v === "open") return "Open";
-  if (v === "in progress") return "In Progress";
-  if (v === "submitted") return "Submitted";
-  if (v === "approved") return "Approved";
-  if (v === "closed" || v === "finalized") return "Finalized";
+  if (v === "active" || v === "in progress") return "Active";
+  if (v === "under review" || v === "submitted") return "Under Review";
+  if (v === "completed" || v === "approved" || v === "finalized" || v === "closed") return "Completed";
+  if (v === "archived") return "Archived";
   return "Open";
 }
 

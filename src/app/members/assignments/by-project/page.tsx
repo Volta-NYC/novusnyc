@@ -44,10 +44,9 @@ const TRACK_DOT: Record<CycleTrack, string> = {
 
 const ASSIGNMENT_STATUS_STYLES: Record<AssignmentStatus, string> = {
   Open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
-  "In Progress": "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
-  Submitted: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
-  Approved: "border-violet-400/30 bg-violet-400/10 text-violet-300",
-  Finalized: "border-white/15 bg-white/5 text-white/55",
+  Active: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  "Under Review": "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+  Completed: "border-violet-400/30 bg-violet-400/10 text-violet-300",
   Archived: "border-white/10 bg-white/5 text-white/35",
 };
 
@@ -73,7 +72,7 @@ const BIZ_STATUS_BORDER: Record<ProjectStatusValue, string> = {
 
 const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
-const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "In Progress", "Submitted", "Approved", "Finalized", "Archived"];
+const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "Active", "Under Review", "Completed", "Archived"];
 const GROUP_COLORS: ProjectGroup["color"][] = ["green", "blue", "amber", "purple", "gray"];
 const GROUP_STATUSES: ProjectGroup["status"][] = ["Ongoing", "Upcoming", "Completed"];
 

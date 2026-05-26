@@ -163,7 +163,7 @@ export default function MemberOverviewPage() {
       claimsByAssignment.set(c.assignmentId, list);
     }
     const open = assignments
-      .filter((a) => a.status === "Open" || a.status === "In Progress")
+      .filter((a) => a.status === "Open" || a.status === "Active")
       .filter((a) => a.cycleId === activeCycle.id)
       .filter((a) => !claimedAssignmentIds.has(a.id))
       .filter((a) => {

@@ -102,7 +102,7 @@ export default function CatalogPage() {
     const q = search.trim().toLowerCase();
     return assignments
       .filter((a) => !activeCycle || !a.cycleId || a.cycleId === activeCycle.id)
-      .filter((a) => a.status === "Open" || a.status === "In Progress")
+      .filter((a) => a.status === "Open" || a.status === "Active")
       // Hide assignments this member already completed (unless allowMultipleCompletions)
       .filter((a) => !myApprovedAssignmentIds.has(a.id) || a.allowMultipleCompletions === true)
       // Always hide full assignments from the member catalog

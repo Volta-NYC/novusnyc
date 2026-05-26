@@ -190,7 +190,7 @@ export default function AssignmentDetailPage() {
         nextCheckinDue: firstCheckinDue,
       });
       if (assignment.status === "Open") {
-        await updateAssignment(assignment.id, { status: "In Progress" });
+        await updateAssignment(assignment.id, { status: "Active" });
       }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to claim. Please try again.");
@@ -210,7 +210,7 @@ export default function AssignmentDetailPage() {
       const otherActive = assignmentClaims.filter(
         (c) => c.id !== myClaim.id && c.status !== "rejected" && c.status !== "Approved",
       );
-      if (otherActive.length === 0 && assignment.status === "In Progress") {
+      if (otherActive.length === 0 && assignment.status === "Active") {
         await updateAssignment(assignment.id, { status: "Open" });
       }
     } catch (err) {
@@ -259,8 +259,8 @@ export default function AssignmentDetailPage() {
         const othersStillActive = assignmentClaims.filter(
           (c) => c.id !== myClaim.id && (c.status === "claimed" || c.status === "In Progress"),
         );
-        if (othersStillActive.length === 0 && (assignment.status === "In Progress" || assignment.status === "Open")) {
-          await updateAssignment(assignment.id, { status: "Submitted" });
+        if (othersStillActive.length === 0 && (assignment.status === "Active" || assignment.status === "Open")) {
+          await updateAssignment(assignment.id, { status: "Under Review" });
         }
       }
       setSubmitOpen(false);
