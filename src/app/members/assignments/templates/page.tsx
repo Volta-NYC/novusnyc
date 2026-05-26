@@ -19,7 +19,6 @@ import {
   type AssignmentTemplate, type Business, type Cycle, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
-import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 const MEMBER_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
