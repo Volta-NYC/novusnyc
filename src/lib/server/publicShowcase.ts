@@ -81,18 +81,22 @@ async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>
   if (businessesCache && now - businessesCache.fetchedAt < BUSINESSES_CACHE_TTL_MS) {
     return businessesCache.data;
   }
-  const sb = getSupabaseAdmin();
-  const { data } = await sb.from("businesses").select("*").is("deleted_at", null);
-  const obj: Record<string, Record<string, unknown>> = {};
-  for (const row of data ?? []) {
-    const r = row as Record<string, unknown>;
-    const id = String(r.id ?? "");
-    if (!id) continue;
-    // Normalize snake_case keys to camelCase for the rest of the logic.
-    obj[id] = snakeToCamelRow(r);
+  try {
+    const sb = getSupabaseAdmin();
+    const { data } = await sb.from("businesses").select("*").is("deleted_at", null);
+    const obj: Record<string, Record<string, unknown>> = {};
+    for (const row of data ?? []) {
+      const r = row as Record<string, unknown>;
+      const id = String(r.id ?? "");
+      if (!id) continue;
+      // Normalize snake_case keys to camelCase for the rest of the logic.
+      obj[id] = snakeToCamelRow(r);
+    }
+    businessesCache = { data: obj, fetchedAt: now };
+    return obj;
+  } catch {
+    return {};
   }
-  businessesCache = { data: obj, fetchedAt: now };
-  return obj;
 }
 
 function snakeToCamelRow(row: Record<string, unknown>): Record<string, unknown> {
@@ -495,7 +499,9 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
 }
 
 export async function getPublicLiveStats(): Promise<PublicLiveStats> {
-  const sb = getSupabaseAdmin();
+  const ZERO: PublicLiveStats = { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, caseStudies: 0, educationalReports: 0, bidPartners: 0 };
+  let sb;
+  try { sb = getSupabaseAdmin(); } catch { return ZERO; }
 
   const [businessRows, { data: financeRows }, { data: bidsRows }] = await Promise.all([
     fetchBusinesses(),
