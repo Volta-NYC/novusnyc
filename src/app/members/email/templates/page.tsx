@@ -285,8 +285,8 @@ export default function EmailTemplatesPage() {
       ) : (
         <div className="rounded-xl border border-white/10 bg-[#13161D] overflow-hidden">
           <table className="w-full text-[11px]">
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
+            <thead className="bg-[#0F1014]">
+              <tr className="border-b border-white/8">
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[220px]">Name</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45">Subject</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 w-[90px]">Type</th>

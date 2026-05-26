@@ -298,8 +298,8 @@ export default function TemplatesPage() {
       ) : (
         <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
           <table className="table-fixed text-left" style={{ width: "100%", minWidth: "860px" }}>
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
+            <thead className="bg-[#0F1014]">
+              <tr className="border-b border-white/8">
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[240px]">Title</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Track</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[65px]">Credits</th>

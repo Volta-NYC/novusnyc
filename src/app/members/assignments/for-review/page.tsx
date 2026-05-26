@@ -368,8 +368,8 @@ export default function ForReviewPage() {
         return (
           <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
             <table className="table-fixed text-left" style={{ width: "100%", minWidth: tableWidth }}>
-              <thead className="bg-[#0F1014] border-b border-white/8">
-                <tr>
+              <thead className="bg-[#0F1014]">
+                <tr className="border-b border-white/8">
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[40px]">
                     <input type="checkbox" className="members-checkbox"
                       checked={queue.length > 0 && queue.every((c) => selectedIds.has(c.id))}
@@ -445,8 +445,8 @@ export default function ForReviewPage() {
         <h2 className="text-white/55 text-xs uppercase tracking-wider font-semibold mb-2">Full Assignment Log · {assignmentLog.length}</h2>
         <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
           <table className="table-fixed text-left" style={{ width: "100%", minWidth: 1000 }}>
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
+            <thead className="bg-[#0F1014]">
+              <tr className="border-b border-white/8">
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[180px]">Member</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[260px]">Assignment</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[115px]">Status</th>

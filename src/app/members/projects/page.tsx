@@ -1636,7 +1636,7 @@ function BusinessesPageInner() {
                   onClick={() => openPromoteModal(b)}
                   title="Assign to a track and move to the Businesses tab"
                 >
-                  Promote
+                  Add to Businesses
                 </Btn>
               )}
               <Btn size="sm" variant="secondary" onClick={() => openEdit(b)}>Edit</Btn>
@@ -1849,7 +1849,7 @@ function BusinessesPageInner() {
       <Modal
         open={promoteModal !== null}
         onClose={() => setPromoteModal(null)}
-        title={`Promote "${promoteModal?.name ?? ""}"`}
+        title={`Add "${promoteModal?.name ?? ""}" to Businesses`}
       >
         <p className="text-sm text-white/55 font-body mb-4">
           Choose which track(s) this business will be assigned to. It will move out of Discovery and into the Businesses tab.
@@ -1905,7 +1905,7 @@ function BusinessesPageInner() {
             onClick={() => void handlePromote()}
             disabled={promoteModalTracks.size === 0 || promoteBusy}
           >
-            {promoteBusy ? "Promoting…" : "Promote to Businesses"}
+            {promoteBusy ? "Adding…" : "Add to Businesses"}
           </Btn>
         </div>
       </Modal>
@@ -2273,8 +2273,8 @@ function BusinessesPageInner() {
       ) : activeTab === "discovery" ? (
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
           <table className="table-fixed text-left" style={{width: "100%", minWidth: "1100px"}}>
-            <thead className="bg-[#0F1014] border-b border-white/8">
-              <tr>
+            <thead className="bg-[#0F1014]">
+              <tr className="border-b border-white/8">
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Business Name</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[110px]">Neighborhood</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Owner</th>
@@ -2306,8 +2306,8 @@ function BusinessesPageInner() {
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
                 <table className="table-fixed text-left" style={{width: "100%", minWidth: "1431px"}}>
-                  <thead className="bg-[#0F1014] border-b border-white/8">
-                    <tr>
+                  <thead className="bg-[#0F1014]">
+                    <tr className="border-b border-white/8">
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>
@@ -2332,8 +2332,8 @@ function BusinessesPageInner() {
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
             <table className="table-fixed text-left" style={{width: "100%", minWidth: "1301px"}}>
-              <thead className="bg-[#0F1014] border-b border-white/8">
-                <tr>
+              <thead className="bg-[#0F1014]">
+                <tr className="border-b border-white/8">
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[200px]">Business Name</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Neighborhood</th>

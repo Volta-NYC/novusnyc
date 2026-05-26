@@ -92,8 +92,7 @@ function getServiceTagClass(service: string): string {
 async function getHomeProjects(): Promise<HomeProject[]> {
   const publicShowcase = await getPublicShowcaseCards();
   const featuredHomeCards = publicShowcase
-    .filter((card) => card.featuredOnHome)
-    .slice(0, 6);
+    .filter((card) => card.featuredOnHome);
 
   const homeProjects = featuredHomeCards.length > 0
     ? featuredHomeCards.map((card) => ({
