@@ -665,12 +665,12 @@ export interface AuditLogEntry {
 // formalised. Normalise on read so all callers see canonical Title-Case values.
 
 function normalizeAssignmentStatus(raw: unknown): AssignmentStatus {
-  const v = String(raw ?? "").trim().toLowerCase().replace(/_/g, " ");
-  if (v === "open") return "Open";
-  if (v === "active" || v === "in progress") return "Active";
-  if (v === "under review" || v === "submitted") return "Under Review";
-  if (v === "completed" || v === "approved" || v === "finalized" || v === "closed") return "Completed";
-  if (v === "archived") return "Archived";
+  const v = String(raw ?? "").trim();
+  if (v === "Open") return "Open";
+  if (v === "Active") return "Active";
+  if (v === "Under Review") return "Under Review";
+  if (v === "Completed") return "Completed";
+  if (v === "Archived") return "Archived";
   return "Open";
 }
 
