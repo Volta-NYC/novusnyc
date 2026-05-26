@@ -76,7 +76,7 @@ function HandbookContent() {
                   <tr>
                     <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[35%]">Infraction</th>
                     <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45">Description</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[100px]">Demerits</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/45 w-[110px]">Demerits</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -85,7 +85,7 @@ function HandbookContent() {
                       <td className="px-4 py-2.5 font-body font-medium text-black/80 text-sm">{inf.name}</td>
                       <td className="px-4 py-2.5 font-body text-black/55 text-sm">{inf.description || <span className="text-black/30">—</span>}</td>
                       <td className="px-4 py-2.5">
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${POINTS_PILL}`}>
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${POINTS_PILL}`}>
                           {inf.points} {inf.points === 1 ? "demerit" : "demerits"}
                         </span>
                       </td>

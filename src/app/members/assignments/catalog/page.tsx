@@ -660,17 +660,25 @@ export default function CatalogPage() {
           )}
 
           <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 space-y-2.5">
-            <label className="flex items-center gap-2 text-sm text-white/75 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.limitClaims}
-                onChange={(e) => setForm((p) => ({ ...p, limitClaims: e.target.checked }))}
-                className="members-checkbox"
-              />
-              Limit the number of claimants
-            </label>
+            <p className="text-[10px] text-white/40 uppercase tracking-wide font-semibold">Who can claim</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((p) => ({ ...p, limitClaims: false }))}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${!form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+              >
+                For everyone
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((p) => ({ ...p, limitClaims: true }))}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+              >
+                Limited spots
+              </button>
+            </div>
             {form.limitClaims && (
-              <div className="flex items-center gap-2 pl-5">
+              <div className="flex items-center gap-2">
                 <Input
                   type="number"
                   min="1"
@@ -680,9 +688,6 @@ export default function CatalogPage() {
                 />
                 <span className="text-xs text-white/45">max claimants</span>
               </div>
-            )}
-            {!form.limitClaims && (
-              <p className="text-xs text-white/40 pl-5">Anyone can claim — no cap on spots.</p>
             )}
           </div>
 

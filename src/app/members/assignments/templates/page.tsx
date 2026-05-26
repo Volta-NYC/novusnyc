@@ -39,7 +39,8 @@ interface FormState {
   track: CycleTrack;
   credits: number;
   minRole: CycleRole;
-  maxClaims: string;              // "0" or "" = unlimited
+  limitClaims: boolean;
+  maxClaims: string;
   requiresApproval: boolean;
   applicationRequired: boolean;
   allowMultipleCompletions: boolean;
@@ -55,6 +56,7 @@ const BLANK_FORM: FormState = {
   track: "Tech",
   credits: 1,
   minRole: "Analyst",
+  limitClaims: true,
   maxClaims: "1",
   requiresApproval: true,
   applicationRequired: false,
@@ -197,7 +199,8 @@ export default function TemplatesPage() {
       track: t.track,
       credits: t.credits,
       minRole: t.minRole,
-      maxClaims: cap > 0 ? String(cap) : "",
+      limitClaims: cap > 0,
+      maxClaims: cap > 0 ? String(cap) : "1",
       requiresApproval: t.requiresApproval !== false,
       applicationRequired: Boolean(t.applicationRequired),
       allowMultipleCompletions: Boolean(t.allowMultipleCompletions),
@@ -224,7 +227,7 @@ export default function TemplatesPage() {
       credits: Math.max(0, Number(form.credits) || 0),
       estimatedHours: 0,
       minRole: form.minRole,
-      capacity: form.maxClaims.trim() ? Math.max(0, Number(form.maxClaims)) : 0,
+      capacity: form.limitClaims ? Math.max(1, Number(form.maxClaims) || 1) : 0,
       requiresApproval: form.requiresApproval,
       applicationRequired: form.applicationRequired,
       allowMultipleCompletions: form.allowMultipleCompletions,
