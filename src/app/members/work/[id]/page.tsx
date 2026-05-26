@@ -12,9 +12,10 @@ import { sanitizeHtml, linkifyHtml } from "@/lib/sanitizeHtml";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
-  subscribeCycles, subscribeTeam,
+  subscribeCycles, subscribeTeam, subscribeAssignmentUpdates,
   createAssignmentClaim, updateAssignment, updateAssignmentClaim, deleteAssignmentClaim,
-  type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
+  type Assignment, type AssignmentClaim, type AssignmentUpdate,
+  type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember } from "@/lib/members/cycleCompute";
 
@@ -53,6 +54,7 @@ export default function AssignmentDetailPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [claims, setClaims] = useState<AssignmentClaim[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [allUpdates, setAllUpdates] = useState<AssignmentUpdate[]>([]);
 
   const [submitOpen, setSubmitOpen] = useState(false);
   const [deliverableUrl, setDeliverableUrl] = useState("");
@@ -67,7 +69,8 @@ export default function AssignmentDetailPage() {
     const unsub2 = subscribeAssignments(setAssignments);
     const unsub3 = subscribeAssignmentClaims(setClaims);
     const unsub4 = subscribeBusinesses(setBusinesses);
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
+    const unsub5 = subscribeAssignmentUpdates(setAllUpdates);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); };
   }, []);
 
   const me = useMemo(() => {
@@ -95,6 +98,13 @@ export default function AssignmentDetailPage() {
     [assignmentClaims, me],
   );
   const activeClaims = assignmentClaims.filter((c) => c.status !== "rejected");
+
+  const assignmentUpdates = useMemo(
+    () => allUpdates
+      .filter((u) => u.assignmentId === id)
+      .sort((a, b) => a.postedAt.localeCompare(b.postedAt)),
+    [allUpdates, id],
+  );
 
   if (!assignment) {
     return (
@@ -213,8 +223,16 @@ export default function AssignmentDetailPage() {
   const handleSubmit = async () => {
     if (!myClaim) return;
     const autoApprove = assignment.requiresApproval === false;
-    if (!autoApprove && !deliverableUrl.trim()) {
-      setActionError("A deliverable link is required.");
+    const trimmedUrl = deliverableUrl.trim();
+    if (!autoApprove) {
+      if (!trimmedUrl) { setActionError("A deliverable link is required."); return; }
+      if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
+        setActionError("Please enter a valid URL starting with https://");
+        return;
+      }
+    }
+    if (trimmedUrl && !trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
+      setActionError("Please enter a valid URL starting with https://");
       return;
     }
     setBusy(true);
@@ -349,6 +367,23 @@ export default function AssignmentDetailPage() {
             <p className="text-sm text-black/45">No description yet — ask the senior associate who created this for context.</p>
           )}
         </section>
+
+        {/* Admin updates */}
+        {assignmentUpdates.length > 0 && (
+          <section className="rounded-2xl border border-[#85CC17]/20 bg-[#85CC17]/3 shadow-sm p-5">
+            <h2 className="text-[10px] uppercase tracking-wider text-[#5C9911]/70 font-semibold mb-3">Updates from your team</h2>
+            <div className="space-y-3">
+              {assignmentUpdates.map((u) => (
+                <div key={u.id} className="rounded-xl border border-black/8 bg-white px-4 py-3">
+                  <p className="text-sm text-black/85">{u.message}</p>
+                  <p className="text-[11px] text-black/40 mt-1.5">
+                    {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Meta + claimers */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -581,61 +616,88 @@ export default function AssignmentDetailPage() {
       {/* Submit modal */}
       {submitOpen && (() => {
         const autoApprove = assignment.requiresApproval === false;
+        const urlValid = deliverableUrl.trim().startsWith("http://") || deliverableUrl.trim().startsWith("https://");
+        const urlEntered = deliverableUrl.trim().length > 0;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSubmitOpen(false)}>
-            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-5">
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-6">
               <h2 className="font-display font-bold text-black text-lg mb-1">
-                {autoApprove ? "Mark as complete" : "Submit for approval"}
+                {isRecurring
+                  ? `Submit check-in${(myClaim?.checkinsApproved ?? 0) > 0 ? ` #${(myClaim!.checkinsApproved! + 1)}` : ""}`
+                  : autoApprove ? "Mark as complete" : "Submit your work"}
               </h2>
-              <p className="text-sm text-black/55 mb-4">
+              <p className="text-sm text-black/55 mb-5">
                 {autoApprove
-                  ? `Credits will be awarded immediately — no review needed.`
-                  : "A senior associate will review and award credits."}
+                  ? "Credits will be awarded immediately — no review needed."
+                  : isRecurring
+                    ? "A senior associate will review your check-in and award credits."
+                    : "A senior associate will review your submission and award credits."}
               </p>
 
-              {!autoApprove && (
-                <>
-                  <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Deliverable URL <span className="text-red-500">*</span></label>
-                  <input
-                    type="url"
-                    value={deliverableUrl}
-                    onChange={(e) => setDeliverableUrl(e.target.value)}
-                    placeholder="https://docs.google.com/…"
-                    className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#85CC17]/55"
-                  />
-                </>
-              )}
-              {autoApprove && (
-                <>
-                  <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Link (optional)</label>
-                  <input
-                    type="url"
-                    value={deliverableUrl}
-                    onChange={(e) => setDeliverableUrl(e.target.value)}
-                    placeholder="https://…"
-                    className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#85CC17]/55"
-                  />
-                </>
-              )}
+              {/* Link field */}
+              <div className="mb-4">
+                <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1.5">
+                  {autoApprove ? "Link to your work" : "Link to your deliverable"}
+                  {!autoApprove && <span className="text-red-500 ml-1">*</span>}
+                  {autoApprove && <span className="text-black/30 ml-1 normal-case font-normal">optional</span>}
+                </label>
+                <input
+                  type="url"
+                  value={deliverableUrl}
+                  onChange={(e) => setDeliverableUrl(e.target.value)}
+                  placeholder="https://docs.google.com/…"
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                    urlEntered && !urlValid
+                      ? "border-red-300 focus:border-red-400"
+                      : urlEntered && urlValid
+                        ? "border-[#85CC17]/55 focus:border-[#85CC17]/80"
+                        : "border-black/15 focus:border-[#85CC17]/55"
+                  }`}
+                />
+                {urlEntered && urlValid && (
+                  <p className="text-[11px] text-[#5C9911] mt-1 flex items-center gap-1">
+                    <span>↗</span>
+                    <a href={deliverableUrl.trim()} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 truncate max-w-[360px] inline-block align-bottom">
+                      {deliverableUrl.trim()}
+                    </a>
+                  </p>
+                )}
+                {urlEntered && !urlValid && (
+                  <p className="text-[11px] text-red-500 mt-1">URL must start with https://</p>
+                )}
+                {!autoApprove && !urlEntered && (
+                  <p className="text-[11px] text-black/35 mt-1">Paste a Google Doc, Figma, GitHub, or any public link.</p>
+                )}
+              </div>
 
-              <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1">Notes (optional)</label>
-              <textarea
-                rows={3}
-                value={submissionNotes}
-                onChange={(e) => setSubmissionNotes(e.target.value)}
-                placeholder={autoApprove ? "Anything you'd like to note." : "Anything the reviewer should know."}
-                className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#85CC17]/55"
-              />
+              {/* Notes field */}
+              <div className="mb-1">
+                <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1.5">
+                  Notes
+                  <span className="text-black/30 ml-1 normal-case font-normal">optional</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={submissionNotes}
+                  onChange={(e) => setSubmissionNotes(e.target.value)}
+                  placeholder={
+                    autoApprove
+                      ? "Anything you'd like to note about what you did."
+                      : "Context for the reviewer — what you built, any caveats, or questions."
+                  }
+                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#85CC17]/55 resize-none"
+                />
+              </div>
 
               {actionError && (
                 <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-3">
                   {actionError}
                 </p>
               )}
-              <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-black/8">
+              <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-black/8">
                 <button
                   type="button"
-                  onClick={() => setSubmitOpen(false)}
+                  onClick={() => { setSubmitOpen(false); setActionError(null); }}
                   disabled={busy}
                   className="rounded-lg px-3 py-1.5 text-sm text-black/65 hover:bg-black/5 disabled:opacity-50"
                 >
@@ -645,9 +707,9 @@ export default function AssignmentDetailPage() {
                   variant="primary"
                   size="sm"
                   onClick={() => void handleSubmit()}
-                  disabled={busy || (!autoApprove && !deliverableUrl.trim())}
+                  disabled={busy || (!autoApprove && !deliverableUrl.trim()) || (urlEntered && !urlValid)}
                 >
-                  {busy ? "Saving…" : autoApprove ? "Mark complete" : "Submit"}
+                  {busy ? "Submitting…" : autoApprove ? "Mark complete" : "Submit for review"}
                 </Btn>
               </div>
             </div>

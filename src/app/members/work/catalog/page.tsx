@@ -35,7 +35,6 @@ export default function CatalogPage() {
   const [search, setSearch] = useState("");
   const [trackFilters, setTrackFilters] = useState<Set<CycleTrack>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("recommended");
-  const [hideUnavailable, setHideUnavailable] = useState(false);
   const trackInitRef = useRef(false);
 
   useEffect(() => subscribeTeam(setTeam), []);
@@ -106,16 +105,15 @@ export default function CatalogPage() {
       .filter((a) => a.status === "Open" || a.status === "In Progress")
       // Hide assignments this member already completed (unless allowMultipleCompletions)
       .filter((a) => !myApprovedAssignmentIds.has(a.id) || a.allowMultipleCompletions === true)
+      // Always hide full assignments from the member catalog
+      .filter((a) => {
+        if (a.capacity === 0) return true;
+        const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
+        return taken < a.capacity;
+      })
       .filter((a) => {
         if (trackFilters.size === 0) return true;
         return trackFilters.has((a.track ?? a.primaryTrack ?? "General") as CycleTrack);
-      })
-      .filter((a) => {
-        if (!hideUnavailable) return true;
-        const isUnlimited = a.capacity === 0;
-        if (isUnlimited) return true;
-        const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
-        return taken < a.capacity;
       })
       .filter((a) => {
         if (!q) return true;
@@ -127,7 +125,7 @@ export default function CatalogPage() {
           business?.neighborhood,
         ].some((v) => String(v ?? "").toLowerCase().includes(q));
       });
-  }, [assignments, activeCycle, trackFilters, hideUnavailable, claimsByAssignment, search, businessById, myApprovedAssignmentIds]);
+  }, [assignments, activeCycle, trackFilters, claimsByAssignment, search, businessById, myApprovedAssignmentIds]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -201,15 +199,6 @@ export default function CatalogPage() {
               <span className="text-[11px] text-black/35 ml-1">All tracks shown — select one to filter</span>
             )}
             <div className="ml-auto flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setHideUnavailable((v) => !v)}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                  hideUnavailable ? "border-black/85 bg-black text-white" : "border-black/15 bg-white text-black/65 hover:border-black/35"
-                }`}
-              >
-                Available spots only
-              </button>
               <span className="text-[10px] uppercase tracking-wider text-black/40 font-semibold">Sort</span>
               <select
                 value={sortKey}

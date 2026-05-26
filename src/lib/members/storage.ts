@@ -558,6 +558,14 @@ export interface MemberAcknowledgment {
   acknowledgedAt: string;
 }
 
+export interface AssignmentUpdate {
+  id: string;
+  assignmentId: string;
+  message: string;
+  postedBy: string;   // email of the admin who posted
+  postedAt: string;
+}
+
 // ── Auth and invite types ─────────────────────────────────────────────────────
 
 export type AuthRole = "owner" | "admin" | "member";
@@ -2109,6 +2117,21 @@ export async function approveCheckinClaim(
     submissionNotes: null,
     submittedAt: null,
   });
+}
+
+// ── Assignment updates (admin → member messages) ──────────────────────────────
+
+export const subscribeAssignmentUpdates =
+  makeSubscriber<AssignmentUpdate>("assignment_updates");
+
+export async function createAssignmentUpdate(
+  data: Omit<AssignmentUpdate, "id" | "postedAt">,
+): Promise<void> {
+  const id = genId();
+  const { error } = await supabase
+    .from("assignment_updates")
+    .insert(toRow({ ...data, id, postedAt: nowISO() }));
+  if (error) throw new Error(error.message);
 }
 
 // ── Member strikes ────────────────────────────────────────────────────────────

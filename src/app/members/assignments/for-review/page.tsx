@@ -34,14 +34,13 @@ const ASSIGNMENT_SORT_OPTIONS = [
 ];
 
 const REVIEW_COLS = [
-  { key: "member",      label: "Member",      width: 180 },
-  { key: "assignment",  label: "Assignment",  width: 280 },
-  { key: "track",       label: "Track",       width: 90  },
-  { key: "credits",     label: "Credits",     width: 65  },
-  { key: "submitted",   label: "Submitted",   width: 110 },
-  { key: "deliverable", label: "Deliverable", width: 150 },
-  { key: "notes",       label: "Notes",       width: 180 },
-  { key: "actions",     label: "Actions",     width: 160 },
+  { key: "member",     label: "Member",     width: 180 },
+  { key: "assignment", label: "Assignment", width: 280 },
+  { key: "track",      label: "Track",      width: 90  },
+  { key: "credits",    label: "Credits",    width: 65  },
+  { key: "submitted",  label: "Submitted",  width: 150 },
+  { key: "submission", label: "Submission", width: 120 },
+  { key: "actions",    label: "Actions",    width: 160 },
 ];
 
 const DEFAULT_ASSIGNMENT_SORT_RULES: SortRule[] = [
@@ -77,6 +76,7 @@ export default function ForReviewPage() {
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  const [viewingClaim, setViewingClaim] = useState<ReviewInput | null>(null);
   const [rejectingClaim, setRejectingClaim] = useState<ReviewInput | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [approvingClaim, setApprovingClaim] = useState<ReviewInput | null>(null);
@@ -402,17 +402,20 @@ export default function ForReviewPage() {
                           case "assignment": return <td key="assignment" className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="font-medium block truncate" title={a?.title ?? ""}>{a?.title ?? "Unknown assignment"}</span></td>;
                           case "track": return <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle">{a?.track ?? a?.primaryTrack ?? "—"}</td>;
                           case "credits": return <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a?.credits ?? 0}</td>;
-                          case "submitted": return <td key="submitted" className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : "—"}</td>;
-                          case "deliverable": return (
-                            <td key="deliverable" className="px-3 py-0 h-9 text-[11px] align-middle overflow-hidden">
-                              {c.deliverableUrl ? (
-                                <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer"
-                                  className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline block truncate"
-                                  title={c.deliverableUrl}>Open ↗</a>
-                              ) : <span className="text-white/30">—</span>}
+                          case "submitted": return <td key="submitted" className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle whitespace-nowrap">{c.submittedAt ? new Date(c.submittedAt).toLocaleString([], { dateStyle: "short", timeStyle: "medium" }) : "—"}</td>;
+                          case "submission": return (
+                            <td key="submission" className="px-3 py-0 h-9 text-[11px] align-middle">
+                              {c.deliverableUrl || c.submissionNotes ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setViewingClaim(buildReviewInput(c))}
+                                  className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline font-medium"
+                                >
+                                  View ↗
+                                </button>
+                              ) : <span className="text-white/25">—</span>}
                             </td>
                           );
-                          case "notes": return <td key="notes" className="px-3 py-0 h-9 text-[11px] text-white/45 align-middle overflow-hidden"><span className="block truncate" title={c.submissionNotes ?? ""}>{c.submissionNotes || <span className="text-white/25">—</span>}</span></td>;
                           case "actions": return (
                             <td key="actions" className="px-2 py-0 h-9 align-middle">
                               <div className="members-row-actions">
@@ -486,7 +489,7 @@ export default function ForReviewPage() {
                       {c.status === "Approved" ? (c.creditsAwarded ?? "—") : <span className="text-white/25">{a?.credits ?? "—"}</span>}
                     </td>
                     <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle overflow-hidden"><span className="block truncate">{c.approvedBy ?? "—"}</span></td>
-                    <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle">{when ? new Date(when).toLocaleDateString() : "—"}</td>
+                    <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle whitespace-nowrap">{when ? new Date(when).toLocaleString([], { dateStyle: "short", timeStyle: "medium" }) : "—"}</td>
                   </tr>
                 );
               })}
@@ -494,6 +497,73 @@ export default function ForReviewPage() {
           </table>
         </div>
       </div>
+
+      {/* Unified submission view */}
+      <Modal
+        open={!!viewingClaim}
+        onClose={() => setViewingClaim(null)}
+        title={`Submission · ${viewingClaim?.claim.memberName ?? ""}`}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-sm text-white/70">
+              <span className="text-white/45">Assignment:</span>{" "}
+              <span className="text-white/85 font-medium">{viewingClaim?.assignment?.title ?? "—"}</span>
+            </p>
+            <p className="text-[11px] text-white/40">
+              Submitted {viewingClaim?.claim.submittedAt
+                ? new Date(viewingClaim.claim.submittedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+                : "—"}
+            </p>
+          </div>
+
+          {viewingClaim?.claim.deliverableUrl ? (
+            <div className="rounded-lg border border-[#85CC17]/20 bg-[#85CC17]/5 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">Deliverable Link</p>
+              <a
+                href={viewingClaim.claim.deliverableUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline break-all text-sm"
+              >
+                {viewingClaim.claim.deliverableUrl}
+              </a>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-white/8 bg-white/3 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Deliverable Link</p>
+              <p className="text-sm text-white/25">No link submitted</p>
+            </div>
+          )}
+
+          {viewingClaim?.claim.submissionNotes ? (
+            <div className="rounded-lg border border-white/10 bg-[#0F1014] p-3">
+              <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">Member Notes</p>
+              <p className="text-sm text-white/75 whitespace-pre-wrap">{viewingClaim.claim.submissionNotes}</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-white/8 bg-white/3 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Member Notes</p>
+              <p className="text-sm text-white/25">No notes submitted</p>
+            </div>
+          )}
+
+          {viewingClaim?.assignment?.recurringEnabled && (
+            <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-300/80">
+              ↻ Recurring · check-in #{(viewingClaim.claim.checkinsApproved ?? 0) + 1}
+              {(viewingClaim.claim.checkinsApproved ?? 0) > 0 && (
+                <span className="block mt-0.5">{viewingClaim.claim.checkinsApproved} previous check-in{viewingClaim.claim.checkinsApproved !== 1 ? "s" : ""} · {viewingClaim.claim.totalCreditsEarned ?? 0} credits earned so far.</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-white/8">
+          <Btn variant="ghost" onClick={() => setViewingClaim(null)}>Close</Btn>
+          <Btn variant="danger" onClick={() => { setViewingClaim(null); openReject(viewingClaim!.claim); }}>Reject</Btn>
+          <Btn variant="primary" onClick={() => { setViewingClaim(null); openApprove(viewingClaim!.claim); }}>Approve</Btn>
+        </div>
+      </Modal>
 
       <Modal
         open={!!approvingClaim}

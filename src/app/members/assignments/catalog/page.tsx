@@ -12,10 +12,10 @@ import {
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
-  subscribeProjectGroups,
+  subscribeProjectGroups, subscribeAssignmentUpdates, createAssignmentUpdate,
   createAssignment, updateAssignment, archiveAssignment, hardDeleteAssignment, deleteAssignmentClaim,
-  type Assignment, type AssignmentClaim, type AssignmentStatus, type Business, type Cycle,
-  type CycleRole, type CycleTrack, type ProjectGroup,
+  type Assignment, type AssignmentClaim, type AssignmentStatus, type AssignmentUpdate,
+  type Business, type Cycle, type CycleRole, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -114,6 +114,9 @@ export default function CatalogPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [assignmentUpdates, setAssignmentUpdates] = useState<AssignmentUpdate[]>([]);
+  const [updateMessage, setUpdateMessage] = useState("");
+  const [postingUpdate, setPostingUpdate] = useState(false);
 
   const [search, setSearch] = useState("");
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
@@ -138,7 +141,8 @@ export default function CatalogPage() {
       setAssignments(authRole !== "member" ? all : all.filter((a) => a.status === "Open"));
     });
     const unsub5 = subscribeProjectGroups(setProjectGroups);
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); };
+    const unsub6 = subscribeAssignmentUpdates(setAssignmentUpdates);
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); };
   }, [authRole]);
 
   const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
@@ -336,6 +340,22 @@ export default function CatalogPage() {
       `Permanently delete "${editing.title}"? This cannot be undone.${warn}`);
   };
 
+  const handlePostUpdate = async () => {
+    if (!claimsModal || !updateMessage.trim()) return;
+    const trimmed = updateMessage.trim();
+    setPostingUpdate(true);
+    try {
+      await createAssignmentUpdate({
+        assignmentId: claimsModal.id,
+        message: trimmed,
+        postedBy: userProfile?.email ?? user?.email ?? "Admin",
+      });
+      setUpdateMessage("");
+    } finally {
+      setPostingUpdate(false);
+    }
+  };
+
   if (loading || authRole === "member") {
     return (
       <MembersLayout>
@@ -506,9 +526,15 @@ export default function CatalogPage() {
                     activeClaims.length > 0
                       ? <button type="button" onClick={() => setClaimsModal(a)} className="hover:text-white/85 underline-offset-2 hover:underline transition-colors">{activeClaims.length} claiming</button>
                       : <span className="text-white/35">Unlimited spots</span>
-                  ) : (
-                    <button type="button" onClick={() => setClaimsModal(a)} className="hover:text-white/85 underline-offset-2 hover:underline transition-colors">{activeClaims.length}/{a.capacity} claimed</button>
-                  )}
+                  ) : (() => {
+                    const isFull = activeClaims.length >= (a.capacity ?? 0);
+                    return (
+                      <button type="button" onClick={() => setClaimsModal(a)} className="hover:text-white/85 underline-offset-2 hover:underline transition-colors inline-flex items-center gap-1.5">
+                        {activeClaims.length}/{a.capacity} claimed
+                        {isFull && <span className="members-chip border-red-400/30 bg-red-400/10 text-red-300 text-[9px]">Full</span>}
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 {claimerNames.length > 0 && (
@@ -769,8 +795,8 @@ export default function CatalogPage() {
           rejected:      "border-red-400/30 bg-red-400/10 text-red-300",
         };
         return (
-          <Modal open onClose={() => setClaimsModal(null)} title={`${claimsModal.title} — Claims (${claimList.length})`}>
-            <div className="space-y-2 max-h-[65vh] overflow-y-auto pr-1">
+          <Modal open onClose={() => { setClaimsModal(null); setUpdateMessage(""); }} title={`${claimsModal.title} — Claims (${claimList.length})`}>
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
               {claimList.length === 0 && (
                 <p className="text-sm text-white/45">No claims yet.</p>
               )}
@@ -800,6 +826,47 @@ export default function CatalogPage() {
                   )}
                 </div>
               ))}
+            </div>
+
+            {/* Admin updates section */}
+            <div className="mt-4 pt-4 border-t border-white/8">
+              <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-3">Post an Update</p>
+              {(() => {
+                const updates = assignmentUpdates
+                  .filter((u) => u.assignmentId === claimsModal.id)
+                  .sort((a, b) => a.postedAt.localeCompare(b.postedAt));
+                return (
+                  <>
+                    {updates.length > 0 && (
+                      <div className="space-y-2 mb-3 max-h-[18vh] overflow-y-auto pr-1">
+                        {updates.map((u) => (
+                          <div key={u.id} className="rounded-lg border border-[#85CC17]/15 bg-[#85CC17]/5 px-3 py-2 text-xs">
+                            <p className="text-white/85">{u.message}</p>
+                            <p className="text-white/35 mt-1">{u.postedBy} · {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      rows={3}
+                      value={updateMessage}
+                      onChange={(e) => setUpdateMessage(e.target.value)}
+                      placeholder="Write a message visible to all members working on this assignment…"
+                      className="w-full rounded-lg border border-white/12 bg-[#0F1014] px-3 py-2 text-sm text-white/80 placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 resize-none"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <Btn
+                        size="sm"
+                        variant="secondary"
+                        disabled={!updateMessage.trim() || postingUpdate}
+                        onClick={() => void handlePostUpdate()}
+                      >
+                        {postingUpdate ? "Posting…" : "Post Update"}
+                      </Btn>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </Modal>
         );
