@@ -30,6 +30,13 @@ const TRACK_DOT: Record<CycleTrack, string> = {
   General: "bg-gray-400",
 };
 
+const TRACK_PILL: Record<CycleTrack, string> = {
+  Tech:      "border-blue-400/30 bg-blue-400/10 text-blue-300",
+  Marketing: "border-lime-400/30 bg-lime-400/10 text-lime-300",
+  Finance:   "border-amber-400/30 bg-amber-400/10 text-amber-300",
+  General:   "border-white/20 bg-white/8 text-white/55",
+};
+
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 
 interface FormState {
@@ -76,8 +83,6 @@ interface FromTemplateForm {
   allowMultipleCompletions: boolean;
 }
 
-// ── Shared sub-components ────────────────────────────────────────────────────
-
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40 mb-2">
@@ -108,8 +113,6 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
     </label>
   );
 }
-
-// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TemplatesPage() {
   const { authRole, user, userProfile, loading } = useAuth();
@@ -245,9 +248,9 @@ export default function TemplatesPage() {
   const buildPayload = (): Omit<AssignmentTemplate, "id" | "createdAt" | "updatedAt"> | null => {
     const title = form.title.trim();
     if (!title) return null;
-    const offsetDays = !form.recurringEnabled && form.deadlineOffsetDays.trim() ? Number(form.deadlineOffsetDays) : undefined;
+    const offsetDays  = !form.recurringEnabled && form.deadlineOffsetDays.trim() ? Number(form.deadlineOffsetDays) : undefined;
     const intervalDays = form.recurringEnabled && form.checkinIntervalDays.trim() ? Number(form.checkinIntervalDays) : undefined;
-    const maxDuration = form.recurringEnabled && form.maxDurationDays.trim() ? Number(form.maxDurationDays) : undefined;
+    const maxDuration  = form.recurringEnabled && form.maxDurationDays.trim() ? Number(form.maxDurationDays) : undefined;
     return {
       title,
       description: form.description,
@@ -309,6 +312,7 @@ export default function TemplatesPage() {
 
       <PageHeader
         title="Assignments"
+        subtitle={`${filtered.length} template${filtered.length === 1 ? "" : "s"}`}
         action={<Btn variant="primary" onClick={openCreate}>+ New Template</Btn>}
       />
 
@@ -323,51 +327,92 @@ export default function TemplatesPage() {
         />
       ) : (
         <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
-          <table className="table-fixed text-left" style={{ width: "100%", minWidth: "860px" }}>
+          <table className="w-full text-left" style={{ minWidth: "800px" }}>
             <thead className="bg-[#0F1014]">
               <tr className="members-header-sep">
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[240px]">Title</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Track</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[65px]">Credits</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Min Role</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[160px]">Schedule</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[175px]">Actions</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">Title</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-28">Track</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-24 text-right">Credits</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-32">Min Role</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-44">Schedule</th>
+                <th className="px-4 py-3 w-44" />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-white/5 hover:bg-white/[0.025]">
-                  <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
-                    <span className="font-medium block truncate" title={t.title}>{t.title}</span>
-                  </td>
-                  <td className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[t.track]}`} />
-                      {t.track}
-                    </span>
-                  </td>
-                  <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{t.credits}</td>
-                  <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle">{t.minRole}</td>
-                  <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle">
-                    {t.recurringEnabled ? (
-                      <span className="inline-flex items-center gap-1 text-amber-400">
-                        <span>↻</span>
-                        <span>Every {t.checkinIntervalDays ?? 7}d{t.maxDurationDays ? ` · max ${t.maxDurationDays}d` : ""}</span>
+              {filtered.map((t) => {
+                const descText = t.description
+                  ? t.description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+                  : "";
+                return (
+                  <tr key={t.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3.5 align-top">
+                      <p className="text-[13px] font-semibold text-white/90 leading-snug">{t.title}</p>
+                      {descText && (
+                        <p className="text-[11px] text-white/40 mt-0.5 line-clamp-2 leading-relaxed">{descText}</p>
+                      )}
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {t.requiresApproval === false && (
+                          <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/8 px-2 py-0.5 text-[10px] text-emerald-300/80">Auto-approved</span>
+                        )}
+                        {t.applicationRequired && (
+                          <span className="inline-flex items-center rounded-full border border-blue-400/25 bg-blue-400/8 px-2 py-0.5 text-[10px] text-blue-300/80">Pre-approval</span>
+                        )}
+                        {t.allowMultipleCompletions && (
+                          <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-white/45">Repeatable</span>
+                        )}
+                        {(t.capacity ?? 0) > 0 && (
+                          <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-white/45">{t.capacity} spot{t.capacity !== 1 ? "s" : ""}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 align-top">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${TRACK_PILL[t.track]}`}>
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${TRACK_DOT[t.track]}`} />
+                        {t.track}
                       </span>
-                    ) : t.deadlineOffsetDays != null ? (
-                      `Due in ${t.deadlineOffsetDays}d`
-                    ) : (
-                      <span className="text-white/25">No deadline</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-0 h-9 align-middle">
-                    <div className="members-row-actions">
-                      <Btn size="sm" variant="primary" onClick={() => openFromTemplate(t)}>Use +</Btn>
-                      <Btn size="sm" variant="secondary" onClick={() => openEdit(t)}>Edit</Btn>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3.5 align-top text-right">
+                      <span className="text-[15px] font-semibold text-[#85CC17]">{t.credits}</span>
+                      {t.recurringEnabled && (
+                        <span className="text-[10px] text-[#85CC17]/55 font-normal ml-1">/check-in</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 align-top">
+                      <span className="text-[12px] text-white/60">{t.minRole}</span>
+                    </td>
+                    <td className="px-4 py-3.5 align-top">
+                      {t.recurringEnabled ? (
+                        <span className="inline-flex items-center gap-1.5 text-[12px] text-amber-400/80">
+                          <span>↻</span>
+                          <span>Every {t.checkinIntervalDays ?? 7}d{t.maxDurationDays ? ` · max ${t.maxDurationDays}d` : ""}</span>
+                        </span>
+                      ) : t.deadlineOffsetDays != null ? (
+                        <span className="text-[12px] text-white/55">Due in {t.deadlineOffsetDays}d</span>
+                      ) : (
+                        <span className="text-[12px] text-white/25">No deadline</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 align-top">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openFromTemplate(t)}
+                          className="px-3 py-1.5 rounded-lg border border-[#85CC17]/30 bg-[#85CC17]/[0.08] text-[11px] text-[#9BE22B]/80 hover:border-[#85CC17]/50 hover:bg-[#85CC17]/[0.14] hover:text-[#9BE22B] transition-colors font-medium whitespace-nowrap"
+                        >
+                          Use Template
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEdit(t)}
+                          className="px-3 py-1.5 rounded-lg border border-white/12 bg-white/[0.04] text-[11px] text-white/55 hover:border-white/25 hover:bg-white/[0.07] hover:text-white/80 transition-colors"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -381,7 +426,6 @@ export default function TemplatesPage() {
       >
         <div className="space-y-5 max-h-[72vh] overflow-y-auto pr-1">
 
-          {/* Core */}
           <Field label="Title" required>
             <Input
               value={form.title}
@@ -399,7 +443,6 @@ export default function TemplatesPage() {
             />
           </Field>
 
-          {/* Classification */}
           <div className="grid grid-cols-3 gap-3">
             <Field label="Track" required>
               <Select
@@ -425,7 +468,6 @@ export default function TemplatesPage() {
             </Field>
           </div>
 
-          {/* Schedule */}
           <div>
             <SectionLabel>Schedule</SectionLabel>
             <div className="rounded-xl border border-white/10 bg-[#0F1014]">
@@ -458,7 +500,7 @@ export default function TemplatesPage() {
                 </Field>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="mt-3">
                 <Field label="Deadline (days after claim, optional)">
                   <Input
                     type="number"
@@ -472,7 +514,6 @@ export default function TemplatesPage() {
             )}
           </div>
 
-          {/* Participation */}
           <div>
             <SectionLabel>Participation</SectionLabel>
             <div className="rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 space-y-3">
@@ -507,7 +548,6 @@ export default function TemplatesPage() {
             </div>
           </div>
 
-          {/* Options */}
           <div>
             <SectionLabel>Options</SectionLabel>
             <div className="rounded-xl border border-white/10 bg-[#0F1014] divide-y divide-white/[0.07]">
@@ -563,8 +603,6 @@ export default function TemplatesPage() {
       >
         {fromTemplate && (
           <div className="space-y-5">
-
-            {/* Template badge */}
             <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 flex items-start gap-3">
               <span className={`mt-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${TRACK_DOT[fromTemplate.track]}`} />
               <div className="min-w-0">
@@ -580,7 +618,6 @@ export default function TemplatesPage() {
               </div>
             </div>
 
-            {/* Assignment details */}
             <div>
               <SectionLabel>Assignment</SectionLabel>
               <div className="space-y-3">
@@ -618,14 +655,13 @@ export default function TemplatesPage() {
               </div>
             </div>
 
-            {/* Deadline notice */}
             {fromTemplate.recurringEnabled ? (
               <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-[11px] text-amber-300/75 leading-relaxed">
                 <span className="font-semibold">↻ Recurring</span> — members earn {fromTemplate.credits} credit{fromTemplate.credits !== 1 ? "s" : ""} per check-in (every {fromTemplate.checkinIntervalDays ?? 7} days{fromTemplate.maxDurationDays ? `, up to ${fromTemplate.maxDurationDays} days` : ""}).
               </div>
             ) : fromTemplate.deadlineOffsetDays != null ? (
               <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/45 leading-relaxed">
-                Deadline will be set automatically — {fromTemplate.deadlineOffsetDays} day{fromTemplate.deadlineOffsetDays !== 1 ? "s" : ""} after each member claims. Edit the assignment afterwards to set a hard date instead.
+                Deadline will be set automatically — {fromTemplate.deadlineOffsetDays} day{fromTemplate.deadlineOffsetDays !== 1 ? "s" : ""} after each member claims.
               </div>
             ) : (
               <div className="rounded-xl border border-white/8 bg-[#0F1014] px-4 py-3 text-[11px] text-white/45 leading-relaxed">
@@ -633,7 +669,6 @@ export default function TemplatesPage() {
               </div>
             )}
 
-            {/* Options */}
             <div>
               <SectionLabel>Options</SectionLabel>
               <div className="rounded-xl border border-white/10 bg-[#0F1014] divide-y divide-white/[0.07]">
@@ -663,7 +698,6 @@ export default function TemplatesPage() {
                 />
               </div>
             </div>
-
           </div>
         )}
 

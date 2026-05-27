@@ -23,32 +23,37 @@ import {
 import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
 
+const TRACK_DOT: Record<CycleTrack, string> = {
+  Tech: "bg-blue-500",
+  Marketing: "bg-lime-500",
+  Finance: "bg-amber-500",
+  General: "bg-gray-400",
+};
+
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 
-// col 0=Title, 1=Track, 2=Business Name, 3=Claimer Names
-const ASSIGNMENT_SORT_OPTIONS = [
+const SORT_OPTIONS = [
   { value: 0, label: "Title" },
   { value: 1, label: "Track" },
   { value: 2, label: "Business Name" },
-  { value: 3, label: "Claimer Names" },
+  { value: 3, label: "Claimer Name" },
 ];
 
-const REVIEW_COLS = [
-  { key: "member",     label: "Member",     width: 180 },
-  { key: "assignment", label: "Assignment", width: 280 },
-  { key: "track",      label: "Track",      width: 90  },
-  { key: "credits",    label: "Credits",    width: 65  },
-  { key: "submitted",  label: "Submitted",  width: 150 },
-  { key: "submission", label: "Submission", width: 120 },
-  { key: "actions",    label: "Actions",    width: 160 },
-];
-
-const DEFAULT_ASSIGNMENT_SORT_RULES: SortRule[] = [
+const DEFAULT_SORT_RULES: SortRule[] = [
   { col: 1, dir: "asc" },
   { col: 0, dir: "asc" },
   { col: 2, dir: "asc" },
   { col: 3, dir: "asc" },
 ];
+
+const LOG_STATUS_STYLES: Record<string, string> = {
+  claimed:        "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  "In Progress":  "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  Submitted:      "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
+  "Under Review": "border-orange-400/30 bg-orange-400/10 text-orange-300",
+  Approved:       "border-violet-400/30 bg-violet-400/10 text-violet-300",
+  rejected:       "border-red-400/30 bg-red-400/10 text-red-300",
+};
 
 interface ReviewInput {
   claim: AssignmentClaim;
@@ -72,8 +77,7 @@ export default function ForReviewPage() {
   const [team, setTeam] = useState<TeamMember[]>([]);
 
   const [search, setSearch] = useState("");
-  const [sortRules, setSortRules] = useState<SortRule[]>(DEFAULT_ASSIGNMENT_SORT_RULES);
-  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const [sortRules, setSortRules] = useState<SortRule[]>(DEFAULT_SORT_RULES);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [viewingClaim, setViewingClaim] = useState<ReviewInput | null>(null);
@@ -89,14 +93,14 @@ export default function ForReviewPage() {
   }, [authRole, loading, router]);
 
   useEffect(() => {
-    const unsub1 = subscribeAssignmentClaims(setClaims);
-    const unsub2 = subscribeAssignments(setAssignments);
-    const unsub3 = subscribeBusinesses(setBusinesses);
-    const unsub4 = subscribeEmailTemplates(setTemplates);
-    const unsub5 = subscribeProjectGroups(setProjectGroups);
-    const unsub6 = subscribeAutomationConfigs(setAutomationConfigs);
-    const unsub7 = subscribeTeam(setTeam);
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7(); };
+    const u1 = subscribeAssignmentClaims(setClaims);
+    const u2 = subscribeAssignments(setAssignments);
+    const u3 = subscribeBusinesses(setBusinesses);
+    const u4 = subscribeEmailTemplates(setTemplates);
+    const u5 = subscribeProjectGroups(setProjectGroups);
+    const u6 = subscribeAutomationConfigs(setAutomationConfigs);
+    const u7 = subscribeTeam(setTeam);
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); };
   }, []);
 
   const assignmentById   = useMemo(() => new Map(assignments.map((a) => [a.id, a])), [assignments]);
@@ -130,13 +134,8 @@ export default function ForReviewPage() {
       .filter((c) => {
         if (!q) return true;
         const a = assignmentById.get(c.assignmentId);
-        const groupLabel = resolveGroupLabel(a);
-        return [
-          c.memberName,
-          a?.title,
-          a?.track ?? a?.primaryTrack,
-          groupLabel,
-        ].some((v) => String(v ?? "").toLowerCase().includes(q));
+        return [c.memberName, a?.title, a?.track ?? a?.primaryTrack, resolveGroupLabel(a)]
+          .some((v) => String(v ?? "").toLowerCase().includes(q));
       })
       .sort((a, b) => {
         for (const rule of sortRules) {
@@ -149,42 +148,37 @@ export default function ForReviewPage() {
   }, [claims, assignmentById, businessById, search, sortRules]);
 
   const addSortRule = () => {
-    const usedCols = new Set(sortRules.map((r) => r.col));
-    const next = ASSIGNMENT_SORT_OPTIONS.find((o) => !usedCols.has(o.value));
+    const used = new Set(sortRules.map((r) => r.col));
+    const next = SORT_OPTIONS.find((o) => !used.has(o.value));
     if (!next) return;
-    setSortRules((prev) => [...prev, { col: next.value, dir: "asc" }]);
+    setSortRules((p) => [...p, { col: next.value, dir: "asc" }]);
   };
 
   const removeSortRule = (idx: number) => {
-    setSortRules((prev) => {
-      const next = prev.filter((_, i) => i !== idx);
-      return next.length === 0 ? [...DEFAULT_ASSIGNMENT_SORT_RULES] : next;
+    setSortRules((p) => {
+      const n = p.filter((_, i) => i !== idx);
+      return n.length === 0 ? [...DEFAULT_SORT_RULES] : n;
     });
   };
 
-  const updateSortRule = (idx: number, field: "col" | "dir", value: number | string) => {
-    setSortRules((prev) =>
-      prev.map((rule, i) => {
-        if (i !== idx) return rule;
-        if (field === "col") return { ...rule, col: Number(value) };
-        return { ...rule, dir: value as "asc" | "desc" };
-      }),
+  const updateSortRule = (idx: number, field: "col" | "dir", value: number | string) =>
+    setSortRules((p) =>
+      p.map((r, i) => i !== idx ? r : field === "col" ? { ...r, col: Number(value) } : { ...r, dir: value as "asc" | "desc" }),
     );
-  };
 
-  const assignmentLog = useMemo(() => {
-    return [...claims].sort((a, b) => {
+  const assignmentLog = useMemo(() =>
+    [...claims].sort((a, b) => {
       const ta = a.approvedAt ?? a.rejectedAt ?? a.submittedAt ?? a.claimedAt ?? "";
       const tb = b.approvedAt ?? b.rejectedAt ?? b.submittedAt ?? b.claimedAt ?? "";
       return tb.localeCompare(ta);
-    });
-  }, [claims]);
+    }),
+  [claims]);
 
   const reviewerLabel = userProfile?.email || user?.email || user?.id || "unknown";
 
   const buildReviewInput = (claim: AssignmentClaim): ReviewInput => {
     const assignment = assignmentById.get(claim.assignmentId);
-    const business = assignment?.businessId ? businessById.get(assignment.businessId) : undefined;
+    const business   = assignment?.businessId    ? businessById.get(assignment.businessId)       : undefined;
     const projectGroup = assignment?.projectGroupId ? projectGroupById.get(assignment.projectGroupId) : undefined;
     return { claim, assignment, business, projectGroup, memberEmail: emailByMemberId.get(claim.memberId) ?? "" };
   };
@@ -219,19 +213,16 @@ export default function ForReviewPage() {
   const handleBulkApprove = async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
-    await ask(
-      async () => {
-        for (const id of ids) {
-          const claim = claims.find((c) => c.id === id);
-          if (!claim) continue;
-          const a = assignmentById.get(claim.assignmentId);
-          // eslint-disable-next-line no-await-in-loop
-          await confirmApprove(claim, a?.credits ?? 0);
-        }
-        setSelectedIds(new Set());
-      },
-      `Approve ${ids.length} submission${ids.length === 1 ? "" : "s"} at their default credit values?`,
-    );
+    await ask(async () => {
+      for (const id of ids) {
+        const claim = claims.find((c) => c.id === id);
+        if (!claim) continue;
+        const a = assignmentById.get(claim.assignmentId);
+        // eslint-disable-next-line no-await-in-loop
+        await confirmApprove(claim, a?.credits ?? 0);
+      }
+      setSelectedIds(new Set());
+    }, `Approve ${ids.length} submission${ids.length === 1 ? "" : "s"} at their default credit values?`);
   };
 
   const submitApproval = async () => {
@@ -250,8 +241,7 @@ export default function ForReviewPage() {
   };
 
   const submitRejection = async () => {
-    if (!rejectingClaim) return;
-    if (!rejectReason.trim()) return;
+    if (!rejectingClaim || !rejectReason.trim()) return;
     setReviewBusy(true);
     setReviewError(null);
     try {
@@ -286,20 +276,13 @@ export default function ForReviewPage() {
     }
   };
 
-  const toggleSelected = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
+  const toggleSelected = (id: string) =>
+    setSelectedIds((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   if (loading || authRole === "member") {
     return (
       <MembersLayout>
-        <div className="flex items-center justify-center h-64">
-          <Spinner />
-        </div>
+        <div className="flex items-center justify-center h-64"><Spinner /></div>
       </MembersLayout>
     );
   }
@@ -311,185 +294,203 @@ export default function ForReviewPage() {
 
       <PageHeader
         title="Assignments"
-        subtitle={`For Review — current assignments awaiting review. ${queue.length} submission${queue.length === 1 ? "" : "s"} pending.`}
+        subtitle={`For Review — ${queue.length} submission${queue.length === 1 ? "" : "s"} pending`}
         action={
-          <Btn
-            variant="secondary"
-            disabled={selectedIds.size === 0}
-            onClick={() => void handleBulkApprove()}
-          >
+          <Btn variant="secondary" disabled={selectedIds.size === 0} onClick={() => void handleBulkApprove()}>
             Approve {selectedIds.size > 0 ? `(${selectedIds.size})` : ""}
           </Btn>
         }
       />
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search title, type, track, business, neighborhood, claimer…"
-        />
-        <ViewPanel active={hiddenCols.size > 0 || sortRules.length !== DEFAULT_ASSIGNMENT_SORT_RULES.length}>
+        <SearchBar value={search} onChange={setSearch} placeholder="Search member, assignment, track, business…" />
+        <ViewPanel active={sortRules.length !== DEFAULT_SORT_RULES.length}>
           <ViewSection label="Sort">
             <SortPanel
               rules={sortRules}
-              options={ASSIGNMENT_SORT_OPTIONS}
+              options={SORT_OPTIONS}
               onChange={updateSortRule}
               onAdd={addSortRule}
               onRemove={removeSortRule}
-              onReset={() => setSortRules([...DEFAULT_ASSIGNMENT_SORT_RULES])}
+              onReset={() => setSortRules([...DEFAULT_SORT_RULES])}
             />
-          </ViewSection>
-          <ViewSection label="Columns">
-            <div className="space-y-1">
-              {REVIEW_COLS.filter((c) => c.key !== "actions").map((col) => (
-                <label key={col.key} className="flex items-center gap-2 cursor-pointer text-xs text-white/70 hover:text-white/90 hover:bg-white/[0.05] transition-colors rounded-md py-0.5 px-1 -mx-1">
-                  <input
-                    type="checkbox"
-                    className="members-checkbox"
-                    checked={!hiddenCols.has(col.key)}
-                    onChange={(e) => setHiddenCols((prev) => {
-                      const next = new Set(prev);
-                      if (e.target.checked) next.delete(col.key); else next.add(col.key);
-                      return next;
-                    })}
-                  />
-                  {col.label}
-                </label>
-              ))}
-            </div>
           </ViewSection>
         </ViewPanel>
       </div>
 
-      {(() => {
-        const visCols = REVIEW_COLS.filter((c) => !hiddenCols.has(c.key));
-        const tableWidth = 40 + visCols.reduce((s, c) => s + c.width, 0);
-        return (
-          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
-            <table className="table-fixed text-left" style={{ width: "100%", minWidth: tableWidth }}>
-              <thead className="bg-[#0F1014]">
-                <tr className="members-header-sep">
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[40px]">
-                    <input type="checkbox" className="members-checkbox"
-                      checked={queue.length > 0 && queue.every((c) => selectedIds.has(c.id))}
-                      onChange={(e) => { if (e.target.checked) setSelectedIds(new Set(queue.map((c) => c.id))); else setSelectedIds(new Set()); }}
+      {/* ── Pending queue ──────────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
+        <table className="w-full text-left" style={{ minWidth: "860px" }}>
+          <thead className="bg-[#0F1014]">
+            <tr className="members-header-sep">
+              <th className="px-4 py-3 w-10">
+                <input
+                  type="checkbox"
+                  className="members-checkbox"
+                  checked={queue.length > 0 && queue.every((c) => selectedIds.has(c.id))}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedIds(new Set(queue.map((c) => c.id)));
+                    else setSelectedIds(new Set());
+                  }}
+                />
+              </th>
+              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-44">Member</th>
+              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">Assignment</th>
+              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-24">Track</th>
+              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-20 text-right">Credits</th>
+              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-32">Submitted</th>
+              <th className="px-4 py-3 w-48" />
+            </tr>
+          </thead>
+          <tbody>
+            {queue.map((c) => {
+              const a    = assignmentById.get(c.assignmentId);
+              const track = (a?.track ?? a?.primaryTrack ?? "General") as CycleTrack;
+              const groupLabel = resolveGroupLabel(a);
+              const hasSubmission = !!(c.deliverableUrl || c.submissionNotes);
+              return (
+                <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-3.5 align-top">
+                    <input
+                      type="checkbox"
+                      className="members-checkbox mt-0.5"
+                      checked={selectedIds.has(c.id)}
+                      onChange={() => toggleSelected(c.id)}
                     />
-                  </th>
-                  {visCols.map((col) => (
-                    <th key={col.key} style={{ width: col.width }} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 whitespace-nowrap">
-                      <span className="inline-flex items-center">
-                        {col.label}
-                        {col.key !== "actions" && (
-                          <button className="members-col-hide-btn" onClick={() => setHiddenCols((p) => new Set([...p, col.key]))} title={`Hide ${col.label}`}>✕</button>
-                        )}
+                  </td>
+                  <td className="px-4 py-3.5 align-top">
+                    <p className="text-[13px] font-semibold text-white/90 leading-snug">{c.memberName}</p>
+                    {c.submittedAt && (
+                      <p className="text-[11px] text-white/35 mt-0.5">
+                        {new Date(c.submittedAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                        {" · "}
+                        {new Date(c.submittedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 align-top">
+                    <p className="text-[13px] font-semibold text-white/90 leading-snug">
+                      {a?.title ?? "Unknown assignment"}
+                    </p>
+                    {groupLabel && <p className="text-[11px] text-white/40 mt-0.5">{groupLabel}</p>}
+                    {a?.recurringEnabled && (
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/8 px-2 py-0.5 text-[10px] text-amber-300/80">
+                        ↻ Recurring · check-in #{(c.checkinsApproved ?? 0) + 1}
                       </span>
-                    </th>
-                  ))}
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 align-top">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-white/60">
+                      <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${TRACK_DOT[track]}`} />
+                      {track}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 align-top text-right">
+                    <span className="text-[15px] font-semibold text-[#85CC17]">{a?.credits ?? 0}</span>
+                  </td>
+                  <td className="px-4 py-3.5 align-top">
+                    {hasSubmission ? (
+                      <button
+                        type="button"
+                        onClick={() => setViewingClaim(buildReviewInput(c))}
+                        className="px-3 py-1.5 rounded-lg border border-[#85CC17]/25 bg-[#85CC17]/[0.06] text-[11px] text-[#9BE22B]/75 hover:border-[#85CC17]/40 hover:bg-[#85CC17]/[0.1] hover:text-[#9BE22B] transition-colors"
+                      >
+                        View ↗
+                      </button>
+                    ) : (
+                      <span className="text-white/25 text-[11px]">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 align-top">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openApprove(c)}
+                        className="px-3 py-1.5 rounded-lg border border-[#85CC17]/30 bg-[#85CC17]/[0.08] text-[11px] text-[#9BE22B]/80 hover:border-[#85CC17]/50 hover:bg-[#85CC17]/[0.14] hover:text-[#9BE22B] transition-colors font-medium"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openReject(c)}
+                        className="px-3 py-1.5 rounded-lg border border-red-400/25 bg-red-400/[0.06] text-[11px] text-red-300/75 hover:border-red-400/40 hover:bg-red-400/[0.1] hover:text-red-300 transition-colors font-medium"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {queue.map((c) => {
-                  const a = assignmentById.get(c.assignmentId);
-                  return (
-                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.025]">
-                      <td className="px-3 py-0 h-9 align-middle">
-                        <input type="checkbox" className="members-checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelected(c.id)} />
-                      </td>
-                      {visCols.map((col) => {
-                        switch (col.key) {
-                          case "member": return <td key="member" className="px-3 py-0 h-9 text-[11px] text-white/85 align-middle overflow-hidden"><span className="block truncate" title={c.memberName ?? ""}>{c.memberName}</span></td>;
-                          case "assignment": return <td key="assignment" className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="font-medium block truncate" title={a?.title ?? ""}>{a?.title ?? "Unknown assignment"}</span></td>;
-                          case "track": return <td key="track" className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle">{a?.track ?? a?.primaryTrack ?? "—"}</td>;
-                          case "credits": return <td key="credits" className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">{a?.credits ?? 0}</td>;
-                          case "submitted": return <td key="submitted" className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle whitespace-nowrap">{c.submittedAt ? new Date(c.submittedAt).toLocaleString([], { dateStyle: "short", timeStyle: "medium" }) : "—"}</td>;
-                          case "submission": return (
-                            <td key="submission" className="px-3 py-0 h-9 text-[11px] align-middle">
-                              {c.deliverableUrl || c.submissionNotes ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setViewingClaim(buildReviewInput(c))}
-                                  className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline font-medium"
-                                >
-                                  View ↗
-                                </button>
-                              ) : <span className="text-white/25">—</span>}
-                            </td>
-                          );
-                          case "actions": return (
-                            <td key="actions" className="px-2 py-0 h-9 align-middle">
-                              <div className="members-row-actions">
-                                <Btn size="sm" variant="primary" onClick={() => openApprove(c)}>Approve</Btn>
-                                <Btn size="sm" variant="danger" onClick={() => openReject(c)}>Reject</Btn>
-                              </div>
-                            </td>
-                          );
-                          default: return null;
-                        }
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {queue.length === 0 && (
-              <div className="p-6">
-                <Empty message={search ? "Nothing matches your search." : "Nothing waiting on review. Inbox zero."} />
-              </div>
-            )}
+              );
+            })}
+          </tbody>
+        </table>
+        {queue.length === 0 && (
+          <div className="p-8">
+            <Empty message={search ? "Nothing matches your search." : "Nothing waiting on review. Inbox zero."} />
           </div>
-        );
-      })()}
+        )}
+      </div>
 
-      <div className="mt-6">
-        <h2 className="text-white/55 text-xs uppercase tracking-wider font-semibold mb-2">Full Assignment Log · {assignmentLog.length}</h2>
+      {/* ── Full assignment log ────────────────────────────────────────────── */}
+      <div className="mt-8">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35 mb-3">
+          Full Assignment Log · {assignmentLog.length}
+        </p>
         <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto">
-          <table className="table-fixed text-left" style={{ width: "100%", minWidth: 1000 }}>
+          <table className="w-full text-left" style={{ minWidth: "800px" }}>
             <thead className="bg-[#0F1014]">
               <tr className="members-header-sep">
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[180px]">Member</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[260px]">Assignment</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[115px]">Status</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[65px]">Credits</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Reviewer</th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">When</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-44">Member</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">Assignment</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-28">Status</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-20 text-right">Credits</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-40">Reviewer</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-32">When</th>
               </tr>
             </thead>
             <tbody>
               {assignmentLog.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-[11px] text-white/30">No assignment activity yet.</td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-[11px] text-white/30">
+                    No assignment activity yet.
+                  </td>
                 </tr>
               )}
               {assignmentLog.map((c) => {
                 const a = assignmentById.get(c.assignmentId);
-                const statusKey = c.status as string;
-                const statusStyles: Record<string, string> = {
-                  claimed:       "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
-                  "In Progress": "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
-                  Submitted:     "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
-                  "Under Review":"border-orange-400/30 bg-orange-400/10 text-orange-300",
-                  Approved:      "border-violet-400/30 bg-violet-400/10 text-violet-300",
-                  rejected:      "border-red-400/30 bg-red-400/10 text-red-300",
-                };
-                const statusLabel: Record<string, string> = {
-                  claimed: "In Progress",
-                };
+                const groupLabel = resolveGroupLabel(a);
                 const when = c.approvedAt ?? c.rejectedAt ?? c.submittedAt ?? c.claimedAt ?? "";
+                const statusKey = c.status as string;
+                const statusLabel: Record<string, string> = { claimed: "In Progress" };
                 return (
-                  <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.025]">
-                    <td className="px-3 py-0 h-9 text-[11px] text-white/80 align-middle overflow-hidden"><span className="block truncate">{c.memberName}</span></td>
-                    <td className="px-3 py-0 h-9 text-[11px] text-white/70 align-middle overflow-hidden"><span className="block truncate" title={a?.title ?? ""}>{a?.title ?? "—"}</span></td>
-                    <td className="px-3 py-0 h-9 text-[11px] align-middle">
-                      <span className={`members-chip ${statusStyles[statusKey] ?? "border-white/15 bg-white/5 text-white/50"}`}>
+                  <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3.5 align-top">
+                      <span className="text-[12px] text-white/80 font-medium">{c.memberName}</span>
+                    </td>
+                    <td className="px-4 py-3.5 align-top">
+                      <p className="text-[12px] text-white/75">{a?.title ?? "—"}</p>
+                      {groupLabel && <p className="text-[11px] text-white/35 mt-0.5">{groupLabel}</p>}
+                    </td>
+                    <td className="px-4 py-3.5 align-top">
+                      <span className={`members-chip ${LOG_STATUS_STYLES[statusKey] ?? "border-white/15 bg-white/5 text-white/50"}`}>
                         {statusLabel[statusKey] ?? c.status}
                       </span>
                     </td>
-                    <td className="px-3 py-0 h-9 text-[11px] text-[#85CC17] font-mono align-middle">
-                      {c.status === "Approved" ? (c.creditsAwarded ?? "—") : <span className="text-white/25">{a?.credits ?? "—"}</span>}
+                    <td className="px-4 py-3.5 align-top text-right">
+                      {c.status === "Approved" ? (
+                        <span className="text-[13px] font-semibold text-[#85CC17]">{c.creditsAwarded ?? "—"}</span>
+                      ) : (
+                        <span className="text-[11px] text-white/25">{a?.credits ?? "—"}</span>
+                      )}
                     </td>
-                    <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle overflow-hidden"><span className="block truncate">{c.approvedBy ?? "—"}</span></td>
-                    <td className="px-3 py-0 h-9 text-[11px] text-white/50 align-middle whitespace-nowrap">{when ? new Date(when).toLocaleString([], { dateStyle: "short", timeStyle: "medium" }) : "—"}</td>
+                    <td className="px-4 py-3.5 align-top">
+                      <span className="text-[11px] text-white/45 block truncate">{c.approvedBy ?? "—"}</span>
+                    </td>
+                    <td className="px-4 py-3.5 align-top">
+                      <span className="text-[11px] text-white/45 whitespace-nowrap">
+                        {when ? new Date(when).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "—"}
+                      </span>
+                    </td>
                   </tr>
                 );
               })}
@@ -498,7 +499,7 @@ export default function ForReviewPage() {
         </div>
       </div>
 
-      {/* Unified submission view */}
+      {/* ── Submission viewer ─────────────────────────────────────────────── */}
       <Modal
         open={!!viewingClaim}
         onClose={() => setViewingClaim(null)}
@@ -552,7 +553,10 @@ export default function ForReviewPage() {
             <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-300/80">
               ↻ Recurring · check-in #{(viewingClaim.claim.checkinsApproved ?? 0) + 1}
               {(viewingClaim.claim.checkinsApproved ?? 0) > 0 && (
-                <span className="block mt-0.5">{viewingClaim.claim.checkinsApproved} previous check-in{viewingClaim.claim.checkinsApproved !== 1 ? "s" : ""} · {viewingClaim.claim.totalCreditsEarned ?? 0} credits earned so far.</span>
+                <span className="block mt-0.5">
+                  {viewingClaim.claim.checkinsApproved} previous check-in{viewingClaim.claim.checkinsApproved !== 1 ? "s" : ""}
+                  {" · "}{viewingClaim.claim.totalCreditsEarned ?? 0} credits earned so far.
+                </span>
               )}
             </div>
           )}
@@ -565,6 +569,7 @@ export default function ForReviewPage() {
         </div>
       </Modal>
 
+      {/* ── Approve modal ─────────────────────────────────────────────────── */}
       <Modal
         open={!!approvingClaim}
         onClose={() => setApprovingClaim(null)}
@@ -582,7 +587,10 @@ export default function ForReviewPage() {
             <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-[11px] text-amber-300/80">
               ↻ Recurring — check-in #{(approvingClaim.claim.checkinsApproved ?? 0) + 1} · approving awards {creditsOverride || approvingClaim.assignment.credits} credits and resets for next period.
               {(approvingClaim.claim.checkinsApproved ?? 0) > 0 && (
-                <span className="block mt-0.5">{approvingClaim.claim.checkinsApproved} previous check-in{approvingClaim.claim.checkinsApproved !== 1 ? "s" : ""} · {approvingClaim.claim.totalCreditsEarned ?? 0} credits earned so far.</span>
+                <span className="block mt-0.5">
+                  {approvingClaim.claim.checkinsApproved} previous check-in{approvingClaim.claim.checkinsApproved !== 1 ? "s" : ""}
+                  {" · "}{approvingClaim.claim.totalCreditsEarned ?? 0} credits earned so far.
+                </span>
               )}
             </div>
           )}
@@ -654,6 +662,7 @@ export default function ForReviewPage() {
         </div>
       </Modal>
 
+      {/* ── Reject modal ──────────────────────────────────────────────────── */}
       <Modal
         open={!!rejectingClaim}
         onClose={() => setRejectingClaim(null)}
