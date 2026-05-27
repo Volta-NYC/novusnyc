@@ -2134,6 +2134,11 @@ export async function createAssignmentUpdate(
   if (error) throw new Error(error.message);
 }
 
+export async function deleteAssignmentUpdate(id: string): Promise<void> {
+  const { error } = await supabase.from("assignment_updates").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 // ── Member strikes ────────────────────────────────────────────────────────────
 
 export async function createMemberStrike(data: Omit<MemberStrike, "id" | "issuedAt">): Promise<string | null> {

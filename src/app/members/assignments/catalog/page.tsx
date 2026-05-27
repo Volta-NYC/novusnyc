@@ -14,6 +14,7 @@ import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
   subscribeProjectGroups, subscribeAssignmentUpdates,
   createAssignment, updateAssignment, archiveAssignment, hardDeleteAssignment, deleteAssignmentClaim,
+  deleteAssignmentUpdate,
   type Assignment, type AssignmentClaim, type AssignmentStatus, type AssignmentUpdate,
   type Business, type Cycle, type CycleRole, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
@@ -931,9 +932,19 @@ export default function CatalogPage() {
                     {updateHistory.map((u) => (
                       <div key={u.id} className="rounded-lg border border-[#85CC17]/15 bg-[#85CC17]/5 px-3 py-2.5 text-xs">
                         <p className="text-white/85 whitespace-pre-wrap">{u.message}</p>
-                        <p className="text-white/35 mt-1.5">
-                          {u.postedBy} · {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
-                        </p>
+                        <div className="flex items-center justify-between gap-2 mt-1.5">
+                          <p className="text-white/35">
+                            {u.postedBy} · {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => void deleteAssignmentUpdate(u.id)}
+                            className="text-white/25 hover:text-red-400 transition-colors shrink-0"
+                            title="Delete update"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
