@@ -646,58 +646,49 @@ export default function ByProjectPage() {
                 className={`rounded-xl border border-white/8 bg-[#13161D] border-l-4 ${card.borderCls} overflow-hidden`}
               >
                 {/* Section header */}
-                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/8">
+                <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-white/8">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="text-[13px] font-semibold text-white/90 truncate">{card.label}</span>
+                    <span className="text-[15px] font-bold text-white/90 truncate">{card.label}</span>
                     {card.subtitle && (
-                      <span className="text-[11px] text-white/40 truncate hidden sm:block">{card.subtitle}</span>
+                      <span className="text-[12px] text-white/40 truncate hidden sm:block">{card.subtitle}</span>
                     )}
-                    <span className={`text-[10px] font-semibold shrink-0 ${statusInfo.cls}`}>{statusInfo.text}</span>
-                    <span className="text-[10px] text-white/25 shrink-0">
+                    <span className={`text-[11px] font-semibold shrink-0 ${statusInfo.cls}`}>{statusInfo.text}</span>
+                    <span className="text-[11px] text-white/25 shrink-0">
                       {filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? "s" : ""}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {grp && (
                       <button
                         onClick={() => openEditGroup(grp)}
-                        className="text-[10px] text-white/30 hover:text-white/65 px-2 py-1 rounded transition-colors"
+                        className="px-3 py-1.5 rounded-lg border border-white/12 bg-white/[0.04] text-[11px] text-white/50 hover:border-white/25 hover:text-white/80 hover:bg-white/[0.07] transition-colors"
                       >
                         Edit Group
                       </button>
                     )}
                     <button
                       onClick={() => openCreateAssignment(card.key)}
-                      className="text-[10px] text-white/30 hover:text-[#9BE22B] px-2 py-1 rounded transition-colors"
+                      className="px-3 py-1.5 rounded-lg border border-[#85CC17]/30 bg-[#85CC17]/[0.08] text-[11px] text-[#9BE22B]/80 hover:text-[#9BE22B] hover:border-[#85CC17]/50 hover:bg-[#85CC17]/[0.13] transition-colors font-medium"
                     >
-                      + Add
+                      + Add Assignment
                     </button>
                   </div>
                 </div>
 
                 {/* Assignment table */}
                 {filteredAssignments.length === 0 ? (
-                  <p className="text-[11px] text-white/30 px-4 py-3">No assignments match filters.</p>
+                  <p className="text-[12px] text-white/30 px-5 py-4">No assignments match filters.</p>
                 ) : (
-                  <table className="w-full table-fixed">
-                    <colgroup>
-                      <col className="w-auto" />
-                      <col className="w-24" />
-                      <col className="w-16" />
-                      <col className="w-24" />
-                      <col className="w-36" />
-                      <col className="w-36" />
-                      <col className="w-36" />
-                    </colgroup>
+                  <table className="w-full">
                     <thead>
                       <tr className="border-b border-white/5">
-                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-4 py-2 text-left">Assignment</th>
-                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Status</th>
-                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Cred.</th>
-                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Cap.</th>
-                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Deadline</th>
-                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Claimants</th>
-                        <th />
+                        <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-5 py-3 text-left">Assignment</th>
+                        <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-left w-28">Status</th>
+                        <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-right w-24">Credits</th>
+                        <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-left w-28">Capacity</th>
+                        <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-left w-40">Deadline</th>
+                        <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-left w-44">Claimants</th>
+                        <th className="w-44" />
                       </tr>
                     </thead>
                     <tbody>
@@ -708,7 +699,7 @@ export default function ByProjectPage() {
                         const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
                         const deadline = a.deadlines?.[0]?.date ?? "";
                         const deadlineLabel = a.recurringEnabled
-                          ? `↻ every ${a.checkinIntervalDays ?? 7}d`
+                          ? `↻ every ${a.checkinIntervalDays ?? 7} days`
                           : a.deadlineType === "offset" && a.deadlineOffsetDays
                           ? `+${a.deadlineOffsetDays}d after claim`
                           : deadline || "—";
@@ -717,88 +708,104 @@ export default function ByProjectPage() {
                           <Fragment key={a.id}>
                             <tr
                               onClick={() => toggleRowExpand(a.id)}
-                              className={`border-b border-white/5 cursor-pointer hover:bg-white/[0.025] transition-colors ${a.priority ? "bg-amber-400/5" : ""}`}
+                              className={`border-b border-white/5 cursor-pointer hover:bg-white/[0.025] transition-colors ${a.priority ? "bg-amber-400/[0.035]" : ""}`}
                             >
                               {/* Title */}
-                              <td className="px-4 py-2.5 min-w-0 overflow-hidden">
-                                <div className="flex items-center gap-2">
-                                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[a.track] ?? "bg-gray-400"}`} />
-                                  <span className="text-[12px] text-white/80 truncate">{a.title}</span>
-                                  {a.priority && <span className="shrink-0 text-[9px] text-amber-300 font-bold">⚡</span>}
-                                  {a.recurringEnabled && <span className="shrink-0 text-[9px] text-purple-400">↻</span>}
+                              <td className="px-5 py-3.5 min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className={`shrink-0 w-2 h-2 rounded-full ${TRACK_DOT[a.track] ?? "bg-gray-400"}`} />
+                                  <span className="text-[13px] font-semibold text-white/85">{a.title}</span>
+                                  {a.priority && <span className="shrink-0 text-[10px] text-amber-300 font-bold">⚡</span>}
+                                  {a.recurringEnabled && <span className="shrink-0 text-[10px] text-purple-400">↻</span>}
                                 </div>
-                                <p className="text-[10px] text-white/35 pl-3.5 mt-0.5">{a.track}</p>
+                                <p className="text-[11px] text-white/35 pl-3.5">{a.track}</p>
                               </td>
                               {/* Status */}
-                              <td className="px-3 py-2.5">
-                                <span className={`members-chip text-[9px] font-semibold border ${ASSIGNMENT_STATUS_STYLES[a.status]}`}>
+                              <td className="px-4 py-3.5 w-28">
+                                <span className={`members-chip text-[10px] font-semibold border ${ASSIGNMENT_STATUS_STYLES[a.status]}`}>
                                   {a.status}
                                 </span>
                               </td>
                               {/* Credits */}
-                              <td className="px-3 py-2.5 text-[12px] text-[#9BE22B]">
-                                {a.credits}
+                              <td className="px-4 py-3.5 w-24 text-right">
+                                <span className="text-[14px] font-semibold text-[#85CC17]">{a.credits}</span>
+                                {a.recurringEnabled && <span className="text-[10px] text-[#85CC17]/55 ml-1">/check-in</span>}
                               </td>
                               {/* Capacity */}
-                              <td className="px-3 py-2.5 text-[12px]">
+                              <td className="px-4 py-3.5 w-28 text-[12px]">
                                 {a.capacity === 0 ? (
-                                  <span className="text-white/25">∞</span>
+                                  <span className="text-white/25">Unlimited</span>
                                 ) : (
-                                  <span className={activeClaims.length >= a.capacity ? "text-amber-300" : "text-white/55"}>
-                                    {activeClaims.length}/{a.capacity}
+                                  <span className={activeClaims.length >= a.capacity ? "text-amber-300 font-semibold" : "text-white/55"}>
+                                    {activeClaims.length} / {a.capacity}
                                   </span>
                                 )}
                               </td>
                               {/* Deadline */}
-                              <td className="px-3 py-2.5 text-[11px] text-white/45 truncate">
+                              <td className="px-4 py-3.5 w-40 text-[12px] text-white/50">
                                 {deadlineLabel}
                               </td>
                               {/* Claimants */}
-                              <td className="px-3 py-2.5 text-[11px] text-white/45 truncate overflow-hidden">
+                              <td className="px-4 py-3.5 w-44 text-[12px] text-white/50 truncate max-w-[11rem]">
                                 {claimerNames.length > 0 ? claimerNames.join(", ") : <span className="text-white/25">—</span>}
                               </td>
                               {/* Actions */}
-                              <td className="px-3 py-2.5">
-                                <div className="flex items-center justify-end gap-1">
+                              <td className="px-4 py-3.5 w-44">
+                                <div className="flex items-center justify-end gap-2">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); openEditAssignment(a); }}
-                                    className="text-[10px] text-white/30 hover:text-white/70 px-1.5 py-0.5 rounded transition-colors"
+                                    className="px-3 py-1.5 rounded-lg border border-white/12 bg-white/[0.04] text-[11px] text-white/55 hover:border-white/25 hover:text-white/85 hover:bg-white/[0.07] transition-colors"
                                   >
                                     Edit
                                   </button>
                                   {claimList.length > 0 && (
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
-                                      className="text-[10px] text-white/30 hover:text-white/70 px-1.5 py-0.5 rounded transition-colors whitespace-nowrap"
+                                      className="px-3 py-1.5 rounded-lg border border-cyan-400/25 bg-cyan-400/[0.06] text-[11px] text-cyan-300/75 hover:text-cyan-300 hover:border-cyan-400/40 transition-colors whitespace-nowrap"
                                     >
                                       Claims ({claimList.length})
                                     </button>
                                   )}
-                                  <span className={`text-[10px] text-white/20 ml-1 transition-transform inline-block ${isRowExpanded ? "rotate-180" : ""}`}>▾</span>
+                                  <span className={`text-[11px] text-white/25 ml-1 transition-transform inline-block ${isRowExpanded ? "rotate-180" : ""}`}>▾</span>
                                 </div>
                               </td>
                             </tr>
                             {/* Inline expand */}
                             {isRowExpanded && (
-                              <tr key={a.id + "-expand"} className="border-b border-white/5 bg-[#0F1014]">
-                                <td colSpan={7} className="px-5 py-3">
-                                  <div className="flex flex-col gap-2">
-                                    {a.description && (
-                                      <div
-                                        className="text-[11px] text-white/55 prose-invert"
-                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
-                                      />
-                                    )}
-                                    {a.notes && (
-                                      <p className="text-[11px] text-white/35 italic">{a.notes}</p>
-                                    )}
-                                    <div className="flex flex-wrap gap-4 text-[11px] text-white/35 mt-0.5">
-                                      <span>Min role: {a.minRole}</span>
-                                      {!!a.estimatedHours && <span>{a.estimatedHours}h est.</span>}
-                                      {a.requiresApproval
-                                        ? <span>Requires approval</span>
-                                        : <span className="text-[#9BE22B]/60">Auto-approved</span>
-                                      }
+                              <tr key={a.id + "-expand"} className="border-b border-white/5 bg-[#0B0D12]">
+                                <td colSpan={7} className="px-6 py-4">
+                                  <div className="flex gap-8">
+                                    <div className="flex-1 min-w-0 space-y-3">
+                                      {a.description && (
+                                        <div
+                                          className="text-[13px] text-white/65 prose-invert leading-relaxed"
+                                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
+                                        />
+                                      )}
+                                      {a.notes && (
+                                        <div>
+                                          <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-1">Internal Notes</p>
+                                          <p className="text-[13px] text-white/45 italic">{a.notes}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="shrink-0 min-w-[140px] space-y-2.5">
+                                      <div>
+                                        <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Min Role</p>
+                                        <p className="text-[13px] text-white/60">{a.minRole}</p>
+                                      </div>
+                                      {!!a.estimatedHours && (
+                                        <div>
+                                          <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Est. Time</p>
+                                          <p className="text-[13px] text-white/60">{a.estimatedHours}h</p>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Approval</p>
+                                        <p className={`text-[13px] ${a.requiresApproval ? "text-white/55" : "text-[#9BE22B]/70"}`}>
+                                          {a.requiresApproval ? "Manual review" : "Auto-approved"}
+                                        </p>
+                                      </div>
                                     </div>
                                   </div>
                                 </td>

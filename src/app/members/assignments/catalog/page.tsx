@@ -563,13 +563,13 @@ export default function CatalogPage() {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="bg-[#0D0F14] border-b border-white/10">
-                <th className="w-7 px-3 py-2.5" />
-                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35">Title</th>
-                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-40">Project</th>
-                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-28">Status</th>
-                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-20 text-right">Credits</th>
-                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-20">Cap</th>
-                <th className="px-3 py-2.5 w-36" />
+                <th className="w-9 px-4 py-3" />
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">Assignment</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-44">Project</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-32">Status</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-24 text-right">Credits</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-24">Capacity</th>
+                <th className="px-4 py-3 w-56" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05]">
@@ -590,35 +590,36 @@ export default function CatalogPage() {
                         onClick={() => toggleGroup(row.groupKey)}
                         className="cursor-pointer hover:bg-white/[0.03] transition-colors bg-[#13161D]"
                       >
-                        <td className="pl-3 py-2.5">
-                          <span className={`inline-block w-1.5 h-1.5 rounded-full ${TRACK_DOT[row.track]}`} />
+                        <td className="pl-4 py-3.5">
+                          <span className={`inline-block w-2 h-2 rounded-full ${TRACK_DOT[row.track]}`} />
                         </td>
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-semibold text-white/85">{row.title}</span>
-                            <span className="text-[10px] text-white/35 font-medium bg-white/[0.06] border border-white/10 rounded px-1.5 py-0.5">
-                              ×{row.assignments.length}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[14px] font-semibold text-white/90">{row.title}</span>
+                            <span className="text-[11px] text-white/40 font-medium bg-white/[0.06] border border-white/10 rounded-full px-2 py-0.5">
+                              ×{row.assignments.length} projects
                             </span>
                           </div>
+                          <p className="text-[11px] text-white/35 mt-0.5">{row.track}</p>
                         </td>
-                        <td className="px-3 py-2.5 text-[11px] text-white/40">
+                        <td className="px-4 py-3.5 text-[12px] text-white/40">
                           {row.assignments.length} projects
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td className="px-4 py-3.5">
                           <div className="flex flex-wrap gap-1">
                             {statuses.map((s) => (
-                              <span key={s} className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[s]}`}>{s}</span>
+                              <span key={s} className={`members-chip text-[10px] font-semibold ${STATUS_STYLES[s]}`}>{s}</span>
                             ))}
                           </div>
                         </td>
-                        <td className="px-3 py-2.5 text-right text-[11px] text-[#85CC17] font-semibold">
-                          {row.assignments[0].credits} cr
+                        <td className="px-4 py-3.5 text-right text-[13px] text-[#85CC17] font-semibold">
+                          {row.assignments[0].credits}
                         </td>
-                        <td className="px-3 py-2.5 text-[11px] text-white/40">
-                          {totalCap === 0 ? "∞" : `${totalActive}/${totalCap}`}
+                        <td className="px-4 py-3.5 text-[12px] text-white/45">
+                          {totalCap === 0 ? <span className="text-white/25">∞</span> : `${totalActive} / ${totalCap}`}
                         </td>
-                        <td className="pr-3 py-2.5 text-right">
-                          <span className={`text-white/25 text-[10px] inline-block transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                        <td className="pr-4 py-3.5 text-right">
+                          <span className={`text-white/30 text-[11px] inline-block transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
                         </td>
                       </tr>
                       {isOpen && row.assignments.map((a) => {
@@ -627,37 +628,47 @@ export default function CatalogPage() {
                         const activeClaims = claimList.filter((c) => c.status !== "rejected");
                         const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
                         return (
-                          <tr key={a.id} className="bg-[#0A0C10] border-l-2 border-l-white/10 hover:bg-white/[0.02] transition-colors">
-                            <td className="pl-4 py-2">
-                              <span className={`inline-block w-1 h-1 rounded-full ${TRACK_DOT[a.track]}`} />
+                          <tr key={a.id} className="bg-[#0B0D12] border-l-2 border-l-white/8 hover:bg-white/[0.02] transition-colors">
+                            <td className="pl-5 py-3">
+                              <span className={`inline-block w-1.5 h-1.5 rounded-full ${TRACK_DOT[a.track]}`} />
                             </td>
-                            <td className="px-3 py-2 text-[12px] text-white/65 pl-6">
-                              <div className="flex items-center gap-1.5">
-                                {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
-                                <span>{proj?.name ?? "Volta"}</span>
+                            <td className="px-4 py-3 pl-6 text-[13px] text-white/65">
+                              <div className="flex items-center gap-2">
+                                {a.priority && <span className="text-amber-400 text-[11px]">⚡</span>}
+                                <span className="font-medium">{proj?.name ?? "Volta"}</span>
                                 {proj?.subtitle && <span className="text-white/30">· {proj.subtitle}</span>}
                               </div>
                             </td>
-                            <td className="px-3 py-2" />
-                            <td className="px-3 py-2">
-                              <span className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                            <td className="px-4 py-3" />
+                            <td className="px-4 py-3">
+                              <span className={`members-chip text-[10px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
                             </td>
-                            <td className="px-3 py-2 text-right text-[11px] text-[#85CC17] font-semibold">
-                              {a.credits} cr
+                            <td className="px-4 py-3 text-right text-[13px] text-[#85CC17] font-semibold">
+                              {a.credits}
                             </td>
-                            <td className="px-3 py-2 text-[11px]">
+                            <td className="px-4 py-3 text-[12px]">
                               {a.capacity === 0
-                                ? <span className="text-white/30">∞</span>
-                                : <span className={isFull ? "text-red-400 font-medium" : "text-white/55"}>
-                                    {activeClaims.length}/{a.capacity}{isFull ? " ●" : ""}
+                                ? <span className="text-white/25">∞</span>
+                                : <span className={isFull ? "text-amber-400 font-medium" : "text-white/50"}>
+                                    {activeClaims.length} / {a.capacity}{isFull ? " ●" : ""}
                                   </span>
                               }
                             </td>
-                            <td className="pr-3 py-2 text-right">
-                              <div className="flex items-center justify-end gap-3">
-                                <button onClick={(e) => { e.stopPropagation(); openEdit(a); }} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">Edit</button>
+                            <td className="pr-4 py-3">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); openEdit(a); }}
+                                  className="px-3 py-1.5 rounded-lg border border-white/12 bg-white/[0.04] text-[11px] text-white/55 hover:border-white/25 hover:text-white/85 hover:bg-white/[0.07] transition-colors"
+                                >
+                                  Edit
+                                </button>
                                 {claimList.length > 0 && (
-                                  <button onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">Claims ({claimList.length})</button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
+                                    className="px-3 py-1.5 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.05] text-[11px] text-cyan-300/70 hover:text-cyan-300 hover:border-cyan-400/35 transition-colors"
+                                  >
+                                    Claims ({claimList.length})
+                                  </button>
                                 )}
                               </div>
                             </td>
@@ -685,82 +696,133 @@ export default function CatalogPage() {
                     <tr
                       key={a.id}
                       onClick={() => toggleRow(a.id)}
-                      className={`cursor-pointer hover:bg-white/[0.03] transition-colors ${a.priority ? "bg-amber-400/[0.04]" : "bg-[#13161D]"}`}
+                      className={`cursor-pointer hover:bg-white/[0.03] transition-colors ${a.priority ? "bg-amber-400/[0.035]" : "bg-[#13161D]"}`}
                     >
-                      <td className="pl-3 py-2.5">
-                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${TRACK_DOT[track]}`} />
+                      <td className="pl-4 py-4">
+                        <span className={`inline-block w-2 h-2 rounded-full ${TRACK_DOT[track]}`} />
                       </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
-                          <span className="text-[13px] font-semibold text-white/85">{a.title}</span>
-                          {a.recurringEnabled && <span className="text-purple-400/70 text-[10px]">↻</span>}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          {a.priority && <span className="text-amber-400 text-[11px]">⚡</span>}
+                          <span className="text-[14px] font-semibold text-white/90">{a.title}</span>
+                          {a.recurringEnabled && <span className="text-purple-400/80 text-[11px]">↻</span>}
                           {a.applicationRequired && (
-                            <span className="members-chip border-blue-400/40 bg-blue-400/10 text-blue-300 text-[9px]">Apply first</span>
+                            <span className="members-chip border-blue-400/40 bg-blue-400/10 text-blue-300 text-[10px]">Apply first</span>
                           )}
                           {a.requiresApproval === false && (
-                            <span className="members-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-300 text-[9px]">Auto-approved</span>
+                            <span className="members-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-300 text-[10px]">Auto-approved</span>
                           )}
                         </div>
+                        <p className="text-[11px] text-white/35 mb-1">{track}</p>
+                        {a.description && (
+                          <div
+                            className="text-[12px] text-white/55 line-clamp-2 prose-invert leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
+                          />
+                        )}
                       </td>
-                      <td className="px-3 py-2.5 text-[11px] text-white/55 truncate max-w-[160px]">
-                        {proj?.name ?? "—"}
-                        {proj?.subtitle && <span className="text-white/30 ml-1">· {proj.subtitle}</span>}
+                      <td className="px-4 py-4 text-[12px] text-white/60">
+                        <p className="font-medium">{proj?.name ?? "—"}</p>
+                        {proj?.subtitle && <p className="text-white/35 text-[11px] mt-0.5">{proj.subtitle}</p>}
                       </td>
-                      <td className="px-3 py-2.5">
-                        <span className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                      <td className="px-4 py-4">
+                        <span className={`members-chip text-[10px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-right text-[11px] text-[#85CC17] font-semibold whitespace-nowrap">
-                        {a.credits} {a.recurringEnabled ? "cr/chk" : "cr"}
+                      <td className="px-4 py-4 text-right text-[14px] text-[#85CC17] font-semibold whitespace-nowrap">
+                        {a.credits}
+                        {a.recurringEnabled && <span className="text-[10px] text-[#85CC17]/60 font-normal ml-1">/check-in</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-[11px]">
+                      <td className="px-4 py-4 text-[12px]">
                         {a.capacity === 0
-                          ? <span className="text-white/30">∞</span>
-                          : <span className={isFull ? "text-red-400 font-medium" : "text-white/55"}>
-                              {activeClaims.length}/{a.capacity}{isFull ? " ●" : ""}
+                          ? <span className="text-white/25">∞</span>
+                          : <span className={isFull ? "text-amber-400 font-semibold" : "text-white/55"}>
+                              {activeClaims.length} / {a.capacity}{isFull ? " ●" : ""}
                             </span>
                         }
                       </td>
-                      <td className="pr-3 py-2.5">
-                        <div className="flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="pr-4 py-4">
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setUpdatesModal(a)}
-                            className="text-[11px] text-white/35 hover:text-white/70 transition-colors"
+                            className={`px-3 py-1.5 rounded-lg border text-[11px] transition-colors ${
+                              updateCount > 0
+                                ? "border-[#85CC17]/30 bg-[#85CC17]/[0.07] text-[#9BE22B]/80 hover:text-[#9BE22B] hover:border-[#85CC17]/50"
+                                : "border-white/12 bg-white/[0.04] text-white/45 hover:border-white/22 hover:text-white/70 hover:bg-white/[0.07]"
+                            }`}
                           >
                             {updateCount > 0 ? `Updates (${updateCount})` : "Updates"}
                           </button>
                           {claimList.length > 0 && (
-                            <button onClick={() => setClaimsModal(a)} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">
+                            <button
+                              onClick={() => setClaimsModal(a)}
+                              className="px-3 py-1.5 rounded-lg border border-cyan-400/25 bg-cyan-400/[0.06] text-[11px] text-cyan-300/75 hover:text-cyan-300 hover:border-cyan-400/40 transition-colors"
+                            >
                               Claims ({claimList.length})
                             </button>
                           )}
-                          <button onClick={() => openEdit(a)} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">Edit</button>
-                          <span className={`text-white/20 text-[10px] inline-block transition-transform ${isExpanded ? "rotate-180" : ""}`}>▾</span>
+                          <button
+                            onClick={() => openEdit(a)}
+                            className="px-3 py-1.5 rounded-lg border border-white/12 bg-white/[0.04] text-[11px] text-white/55 hover:border-white/25 hover:text-white/85 hover:bg-white/[0.07] transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <span className={`text-white/25 text-[11px] inline-block transition-transform ml-1 ${isExpanded ? "rotate-180" : ""}`}>▾</span>
                         </div>
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr key={`${a.id}-detail`}>
-                        <td colSpan={7} className="bg-[#0A0C10] px-4 pb-3 pt-1.5 border-b border-white/5">
-                          <div className="flex gap-6">
-                            <div className="flex-1 min-w-0 space-y-1.5">
+                        <td colSpan={7} className="bg-[#0B0D12] px-6 pb-5 pt-3 border-b border-white/5">
+                          <div className="flex gap-8">
+                            <div className="flex-1 min-w-0 space-y-3">
                               {a.description && (
                                 <div
-                                  className="text-[11px] text-white/50 line-clamp-4 prose-invert"
+                                  className="text-[13px] text-white/65 prose-invert leading-relaxed"
                                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
                                 />
                               )}
                               {claimerNames.length > 0 && (
-                                <p className="text-[11px] text-white/40">Claimants: {claimerNames.join(", ")}</p>
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-1">Claimants</p>
+                                  <p className="text-[13px] text-white/55">{claimerNames.join(", ")}</p>
+                                </div>
                               )}
-                              {a.notes && <p className="text-[11px] text-white/30 italic">{a.notes}</p>}
+                              {a.notes && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-1">Internal Notes</p>
+                                  <p className="text-[13px] text-white/45 italic">{a.notes}</p>
+                                </div>
+                              )}
                             </div>
-                            <div className="shrink-0 text-[11px] text-white/40 space-y-1 text-right">
-                              <p>{a.minRole}+</p>
-                              {a.estimatedHours > 0 && <p>~{a.estimatedHours}h</p>}
-                              {!a.recurringEnabled && deadline && <p>Due {deadline}</p>}
-                              {a.recurringEnabled && <p>Every {a.checkinIntervalDays ?? 7}d</p>}
-                              {a.deadlineType === "offset" && a.deadlineOffsetDays && <p>Due {a.deadlineOffsetDays}d after claim</p>}
+                            <div className="shrink-0 min-w-[140px] space-y-2.5">
+                              <div>
+                                <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Min Role</p>
+                                <p className="text-[13px] text-white/60">{a.minRole}</p>
+                              </div>
+                              {a.estimatedHours > 0 && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Est. Time</p>
+                                  <p className="text-[13px] text-white/60">~{a.estimatedHours}h</p>
+                                </div>
+                              )}
+                              {!a.recurringEnabled && deadline && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Deadline</p>
+                                  <p className="text-[13px] text-white/60">{deadline}</p>
+                                </div>
+                              )}
+                              {a.recurringEnabled && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Check-in</p>
+                                  <p className="text-[13px] text-white/60">Every {a.checkinIntervalDays ?? 7} days</p>
+                                </div>
+                              )}
+                              {a.deadlineType === "offset" && a.deadlineOffsetDays && !a.recurringEnabled && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Deadline</p>
+                                  <p className="text-[13px] text-white/60">+{a.deadlineOffsetDays}d after claim</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
