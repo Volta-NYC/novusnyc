@@ -360,7 +360,7 @@ export default function TemplatesPage() {
                         {t.allowMultipleCompletions && (
                           <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-white/45">Repeatable</span>
                         )}
-                        {(t.capacity ?? 0) > 0 && (
+                        {(t.capacity ?? 0) > 0 && (t.capacity ?? 0) < 500 && (
                           <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-white/45">{t.capacity} spot{t.capacity !== 1 ? "s" : ""}</span>
                         )}
                       </div>
@@ -610,7 +610,7 @@ export default function TemplatesPage() {
                 <p className="text-sm font-semibold text-white/90">{fromTemplate.title}</p>
                 <p className="text-[11px] text-white/40 mt-0.5">
                   {fromTemplate.track} · {fromTemplate.credits} {fromTemplate.recurringEnabled ? "credits/check-in" : "credits"} · Min {fromTemplate.minRole}
-                  {fromTemplate.capacity ? ` · ${fromTemplate.capacity} spots` : " · Open"}
+                  {fromTemplate.capacity && fromTemplate.capacity < 500 ? ` · ${fromTemplate.capacity} spots` : " · Open"}
                   {fromTemplate.recurringEnabled
                     ? ` · ↻ every ${fromTemplate.checkinIntervalDays ?? 7}d${fromTemplate.maxDurationDays ? `, max ${fromTemplate.maxDurationDays}d` : ""}`
                     : fromTemplate.deadlineOffsetDays != null ? ` · due in ${fromTemplate.deadlineOffsetDays}d` : ""}

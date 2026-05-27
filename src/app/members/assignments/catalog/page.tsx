@@ -616,7 +616,7 @@ export default function CatalogPage() {
                           {row.assignments[0].credits}
                         </td>
                         <td className="px-4 py-3.5 text-[12px] text-white/45">
-                          {totalCap === 0 ? <span className="text-white/25">∞</span> : `${totalActive} / ${totalCap}`}
+                          {totalCap === 0 ? <span className="text-white/30 text-[11px]">Unlimited</span> : `${totalActive} / ${totalCap}`}
                         </td>
                         <td className="pr-4 py-3.5 text-right">
                           <span className={`text-white/30 text-[11px] inline-block transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
@@ -648,7 +648,7 @@ export default function CatalogPage() {
                             </td>
                             <td className="px-4 py-3 text-[12px]">
                               {a.capacity === 0
-                                ? <span className="text-white/25">∞</span>
+                                ? <span className="text-white/30 text-[11px]">Unlimited</span>
                                 : <span className={isFull ? "text-amber-400 font-medium" : "text-white/50"}>
                                     {activeClaims.length} / {a.capacity}{isFull ? " ●" : ""}
                                   </span>

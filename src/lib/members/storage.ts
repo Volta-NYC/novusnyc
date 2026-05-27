@@ -1216,6 +1216,11 @@ export async function deleteBusiness(id: string): Promise<void> {
 }
 
 export async function hardDeleteBusiness(id: string): Promise<void> {
+  const { error: assignmentsDeleteError } = await supabase
+    .from("assignments")
+    .delete()
+    .eq("business_id", id);
+  if (assignmentsDeleteError) throw new Error(assignmentsDeleteError.message);
   const { error: bizDeleteError } = await supabase
     .from("businesses")
     .delete()
