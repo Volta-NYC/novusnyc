@@ -678,7 +678,6 @@ export default function CatalogPage() {
             const proj = resolveProjectLabel(a);
             const claimList = claimsByAssignment.get(a.id) ?? [];
             const activeClaims = claimList.filter((c) => c.status !== "rejected");
-            const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
             const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
             const deadline = a.deadlines?.[0]?.date ?? "";
             const updateCount = updatesByAssignment.get(a.id)?.length ?? 0;
@@ -745,12 +744,6 @@ export default function CatalogPage() {
                     </span>
                   )}
                 </div>
-
-                {claimerNames.length > 0 && (
-                  <div className="px-4 pb-2 text-[11px] text-white/35 truncate">
-                    {claimerNames.join(", ")}
-                  </div>
-                )}
 
                 {/* Action footer */}
                 <div className="mt-auto border-t border-white/5 px-4 py-2 flex items-center justify-end gap-1.5">

@@ -687,7 +687,6 @@ export default function ByProjectPage() {
                         <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-right w-24">Credits</th>
                         <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-left w-28">Capacity</th>
                         <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-left w-40">Deadline</th>
-                        <th className="text-[11px] uppercase tracking-wider text-white/35 font-semibold px-4 py-3 text-left w-44">Claimants</th>
                         <th className="w-44" />
                       </tr>
                     </thead>
@@ -696,7 +695,6 @@ export default function ByProjectPage() {
                         const isRowExpanded = expandedRows.has(a.id);
                         const claimList = claimsByAssignment.get(a.id) ?? [];
                         const activeClaims = claimList.filter((c) => c.status !== "rejected");
-                        const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
                         const deadline = a.deadlines?.[0]?.date ?? "";
                         const deadlineLabel = a.recurringEnabled
                           ? `↻ every ${a.checkinIntervalDays ?? 7} days`
@@ -745,10 +743,6 @@ export default function ByProjectPage() {
                               <td className="px-4 py-3.5 w-40 text-[12px] text-white/50">
                                 {deadlineLabel}
                               </td>
-                              {/* Claimants */}
-                              <td className="px-4 py-3.5 w-44 text-[12px] text-white/50 truncate max-w-[11rem]">
-                                {claimerNames.length > 0 ? claimerNames.join(", ") : <span className="text-white/25">—</span>}
-                              </td>
                               {/* Actions */}
                               <td className="px-4 py-3.5 w-40">
                                 <div className="flex items-center justify-end gap-1.5 flex-nowrap">
@@ -777,7 +771,7 @@ export default function ByProjectPage() {
                             {/* Inline expand */}
                             {isRowExpanded && (
                               <tr key={a.id + "-expand"} className="border-b border-white/5 bg-[#0B0D12]">
-                                <td colSpan={7} className="px-6 py-4">
+                                <td colSpan={6} className="px-6 py-4">
                                   <div className="flex gap-8">
                                     <div className="flex-1 min-w-0 space-y-3">
                                       {a.description && (
