@@ -220,25 +220,31 @@ export default function CatalogPage() {
       });
   }, [assignments, search, filterTracks, filterStatuses, showArchived, resolveProjectLabel]);
 
-  // Group same-title+track assignments into collapsible families
   const tableRows = useMemo((): TableRow[] => {
     const buckets = new Map<string, Assignment[]>();
     for (const a of sorted) {
-      const key = `${a.track}::${a.title}`;
+      const key = a.projectGroupId
+        ? `grp:${a.projectGroupId}`
+        : a.businessId
+          ? `biz:${a.businessId}`
+          : "volta-internal";
       const list = buckets.get(key) ?? [];
       list.push(a);
       buckets.set(key, list);
     }
     const rows: TableRow[] = [];
     for (const [key, asns] of buckets) {
+      const proj = resolveProjectLabel(asns[0]);
+      const projName = proj?.name ?? "Volta Internal";
+      const track = (asns[0].track ?? asns[0].primaryTrack ?? "General") as CycleTrack;
       if (asns.length >= 2) {
-        rows.push({ type: "group", groupKey: key, track: asns[0].track, title: asns[0].title, assignments: asns });
+        rows.push({ type: "group", groupKey: key, track, title: projName, assignments: asns });
       } else {
         rows.push({ type: "single", assignment: asns[0] });
       }
     }
     return rows;
-  }, [sorted]);
+  }, [sorted, resolveProjectLabel]);
 
   const activeAssignments = assignments.filter((a) => a.status !== "Archived");
   const counts = {
@@ -584,7 +590,7 @@ export default function CatalogPage() {
                         <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[row.track]}`} />
                         <span className="text-[10px] text-white/45 uppercase tracking-wide">{row.track}</span>
                         <span className="members-chip border-white/10 bg-white/[0.05] text-white/40 text-[9px] font-medium">
-                          ×{row.assignments.length} projects
+                          ×{row.assignments.length} assignments
                         </span>
                         {statuses.map((s) => (
                           <span key={s} className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[s]}`}>{s}</span>
@@ -607,7 +613,6 @@ export default function CatalogPage() {
                   {isOpen && (
                     <div className="border-t border-white/5 divide-y divide-white/[0.04]">
                       {row.assignments.map((a) => {
-                        const proj = resolveProjectLabel(a);
                         const claimList = claimsByAssignment.get(a.id) ?? [];
                         const activeClaims = claimList.filter((c) => c.status !== "rejected");
                         const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
@@ -617,8 +622,7 @@ export default function CatalogPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
-                                <span className="text-[12px] font-medium text-white/75 truncate">{proj?.name ?? "Volta Internal"}</span>
-                                {proj?.subtitle && <span className="text-[10px] text-white/35">· {proj.subtitle}</span>}
+                                <span className="text-[12px] font-medium text-white/75 truncate">{a.title}</span>
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>

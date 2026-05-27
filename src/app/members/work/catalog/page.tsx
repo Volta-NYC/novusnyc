@@ -6,8 +6,8 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
-  subscribeCycles, subscribeTeam,
-  type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
+  subscribeCycles, subscribeTeam, subscribeProjectGroups,
+  type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember, type ProjectGroup,
 } from "@/lib/members/storage";
 import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { ALL_TRACKS, TRACK_DOT } from "@/lib/members/constants";
@@ -71,11 +71,10 @@ interface CardProps {
   taken: number;
   alreadyClaimed: boolean;
   claimStatus?: string;
-  projectName: string;
   onClick: () => void;
 }
 
-function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, projectName, onClick }: CardProps) {
+function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onClick }: CardProps) {
   const track      = (a.track ?? a.primaryTrack ?? "General") as CycleTrack;
   const isUnlimited = a.capacity === 0;
   const isFull      = !isUnlimited && taken >= a.capacity;
@@ -102,7 +101,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, pro
           </div>
           <div className="min-w-0">
             <p className={`text-[13px] font-bold leading-snug ${isFull ? "text-black/30" : "text-black/85 group-hover:text-black"} transition-colors`}>
-              {projectName}
+              {a.title}
             </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>
@@ -494,6 +493,7 @@ export default function CatalogPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [claims, setClaims]         = useState<AssignmentClaim[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
 
   const [search, setSearch]           = useState("");
   const [trackFilters, setTrackFilters] = useState<Set<CycleTrack>>(new Set());
@@ -502,6 +502,7 @@ export default function CatalogPage() {
   const trackInitRef = useRef(false);
 
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeProjectGroups(setProjectGroups), []);
   useEffect(() => {
     const u1 = subscribeCycles(setCycles);
     const u2 = subscribeAssignments(setAssignments);
@@ -518,10 +519,11 @@ export default function CatalogPage() {
     ) ?? null;
   }, [team, user, userProfile]);
 
-  const activeCycle   = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
-  const primaryTrack  = me ? pickPrimaryTrack(me) : null;
-  const classification = me ? classifyMember(me) : null;
-  const businessById  = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
+  const activeCycle      = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
+  const primaryTrack     = me ? pickPrimaryTrack(me) : null;
+  const classification   = me ? classifyMember(me) : null;
+  const businessById     = useMemo(() => new Map(businesses.map((b) => [b.id, b])), [businesses]);
+  const projectGroupById = useMemo(() => new Map(projectGroups.map((g) => [g.id, g])), [projectGroups]);
 
   // Pre-select primary track on first load
   useEffect(() => {
@@ -567,41 +569,39 @@ export default function CatalogPage() {
       .filter((a) => !myApprovedAssignmentIds.has(a.id) || a.allowMultipleCompletions === true);
   }, [assignments, activeCycle, myApprovedAssignmentIds]);
 
-  // Build all groups (before search filter, so search operates at group level)
+  // Build all groups — one section per project (group or business), showing assignment titles inside cards
   const allGroups = useMemo((): AssignmentGroup[] => {
-    const map = new Map<string, { group: AssignmentGroup; bizNames: Set<string> }>();
+    const map = new Map<string, AssignmentGroup>();
 
     for (const a of candidates) {
-      // Per-assignment track + role filter
       if (trackFilters.size > 0 && !trackFilters.has((a.track ?? a.primaryTrack ?? "General") as CycleTrack)) continue;
       if (roleFilters.size > 0 && !roleFilters.has(a.minRole)) continue;
 
-      const key = a.title;
-      if (!map.has(key)) {
-        map.set(key, {
-          group: { key, label: a.title, sub: "", all: [], available: [], full: [] },
-          bizNames: new Set(),
-        });
+      const projectKey = a.projectGroupId ?? (a.businessId ? `biz:${a.businessId}` : "volta-internal");
+      const projectLabel = a.projectGroupId
+        ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta Internal")
+        : a.businessId
+          ? (businessById.get(a.businessId)?.name ?? "Volta Internal")
+          : "Volta Internal";
+
+      if (!map.has(projectKey)) {
+        map.set(projectKey, { key: projectKey, label: projectLabel, sub: "", all: [], available: [], full: [] });
       }
-      const entry = map.get(key)!;
-      const bizName = a.businessId ? (businessById.get(a.businessId)?.name ?? "Volta Internal") : "Volta Internal";
-      entry.bizNames.add(bizName);
-      entry.group.all.push(a);
+      const group = map.get(projectKey)!;
+      group.all.push(a);
       const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
       const isFull = a.capacity !== 0 && taken >= a.capacity;
-      if (isFull) entry.group.full.push(a); else entry.group.available.push(a);
+      if (isFull) group.full.push(a); else group.available.push(a);
     }
 
-    return [...map.values()]
-      .map(({ group, bizNames }) => ({ ...group, sub: [...bizNames].join(" · ") }))
-      .sort((a, b) => {
-        const aPriority = a.all.some((x) => x.priority);
-        const bPriority = b.all.some((x) => x.priority);
-        if (aPriority && !bPriority) return -1;
-        if (!aPriority && bPriority) return 1;
-        return a.label.localeCompare(b.label);
-      });
-  }, [candidates, trackFilters, roleFilters, businessById, claimsByAssignment]);
+    return [...map.values()].sort((a, b) => {
+      const aPriority = a.all.some((x) => x.priority);
+      const bPriority = b.all.some((x) => x.priority);
+      if (aPriority && !bPriority) return -1;
+      if (!aPriority && bPriority) return 1;
+      return a.label.localeCompare(b.label);
+    });
+  }, [candidates, trackFilters, roleFilters, projectGroupById, businessById, claimsByAssignment]);
 
   // Search filters at GROUP level — shows all assignments in matching groups
   const groups = useMemo(() => {
@@ -716,7 +716,6 @@ export default function CatalogPage() {
                   {group.available.map((a) => {
                     const taken   = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
                     const status  = myClaimedIds.get(a.id);
-                    const projectName = a.businessId ? (businessById.get(a.businessId)?.name ?? "Volta Internal") : "Volta Internal";
                     return (
                       <AssignmentCard
                         key={a.id}
@@ -724,7 +723,6 @@ export default function CatalogPage() {
                         taken={taken}
                         alreadyClaimed={myClaimedIds.has(a.id)}
                         claimStatus={status}
-                        projectName={projectName}
                         onClick={() => setSelectedAssignment(a)}
                       />
                     );
@@ -737,14 +735,12 @@ export default function CatalogPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {group.full.map((a) => {
                     const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
-                    const projectName = a.businessId ? (businessById.get(a.businessId)?.name ?? "Volta Internal") : "Volta Internal";
                     return (
                       <AssignmentCard
                         key={a.id}
                         assignment={a}
                         taken={taken}
                         alreadyClaimed={false}
-                        projectName={projectName}
                         onClick={() => setSelectedAssignment(a)}
                       />
                     );
