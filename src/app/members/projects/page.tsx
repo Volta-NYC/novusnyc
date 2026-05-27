@@ -2188,7 +2188,7 @@ function BusinessesPageInner() {
                       onDragOver={(e) => handleDragOver(e, b.id)}
                       onDrop={(e) => void handleDrop(e, b.id)}
                       onDragEnd={handleDragEnd}
-                      className="rounded-2xl overflow-hidden flex flex-col relative select-none project-card"
+                      className="rounded-2xl overflow-hidden flex flex-col select-none project-card"
                       style={{
                         background: "#F8F7F4",
                         border: isDragOver ? `2px solid ${colorSwatch}` : "1px solid #E4E2DC",
@@ -2238,10 +2238,10 @@ function BusinessesPageInner() {
                           )}
                         </div>
                       </div>
-                      {/* admin action buttons — gradient overlay at bottom */}
+                      {/* admin action buttons — sits below card content */}
                       <div
-                        className="absolute inset-x-0 bottom-0 flex gap-1.5 px-3 py-2 justify-end items-center"
-                        style={{ background: "linear-gradient(to top, rgba(248,247,244,0.98) 70%, transparent)", pointerEvents: "auto" }}
+                        className="flex gap-1.5 px-3 py-2 justify-end items-center border-t"
+                        style={{ borderColor: "#E4E2DC", background: "#F2F1EE" }}
                         onMouseDown={(e) => e.stopPropagation()}
                       >
                         <button
