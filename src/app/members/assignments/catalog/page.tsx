@@ -9,7 +9,6 @@ import {
   ViewPanel, ViewSection, SearchSelect, type SearchSelectOption,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
-import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
   subscribeProjectGroups, subscribeAssignmentUpdates,
@@ -52,6 +51,13 @@ const TRACK_DOT: Record<CycleTrack, string> = {
 };
 
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
+
+const TRACK_BORDER: Record<CycleTrack, string> = {
+  Tech: "border-l-blue-500/50",
+  Marketing: "border-l-lime-500/50",
+  Finance: "border-l-amber-500/50",
+  General: "border-l-gray-400/50",
+};
 
 type TableRow =
   | { type: "group"; groupKey: string; track: CycleTrack; title: string; assignments: Assignment[] }
@@ -135,8 +141,6 @@ export default function CatalogPage() {
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Inline row expansion for single rows; group expansion keyed by groupKey
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -268,9 +272,6 @@ export default function CatalogPage() {
       subtitle: "Project Group",
     })),
   ], [sortedBusinessOptions, sortedGroupOptions]);
-
-  const toggleRow = (id: string) =>
-    setExpandedRows((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const toggleGroup = (key: string) =>
     setExpandedGroups((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
@@ -552,299 +553,243 @@ export default function CatalogPage() {
         )}
       </div>
 
-      {/* Assignment table */}
+      {/* Assignment card grid */}
       {sorted.length === 0 ? (
         <Empty
           message={search || filterTracks.size > 0 || filterStatuses.size > 0 ? "No assignments match your filters." : "No assignments in the catalog yet."}
           action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
         />
       ) : (
-        <div className="rounded-xl border border-white/8 overflow-hidden">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="bg-[#0D0F14] border-b border-white/10">
-                <th className="w-9 px-4 py-3" />
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">Assignment</th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-44">Project</th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-32">Status</th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-24 text-right">Credits</th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 w-24">Capacity</th>
-                <th className="px-4 py-3 w-56" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.05]">
-              {tableRows.map((row) => {
-                if (row.type === "group") {
-                  const isOpen = expandedGroups.has(row.groupKey);
-                  const statuses = [...new Set(row.assignments.map((a) => a.status))];
-                  const totalActive = row.assignments.reduce((sum, a) => {
-                    const ac = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
-                    return sum + ac;
-                  }, 0);
-                  const totalCap = row.assignments.reduce((sum, a) => sum + (a.capacity ?? 0), 0);
-
-                  return (
-                    <>
-                      <tr
-                        key={row.groupKey}
-                        onClick={() => toggleGroup(row.groupKey)}
-                        className="cursor-pointer hover:bg-white/[0.03] transition-colors bg-[#13161D]"
-                      >
-                        <td className="pl-4 py-3.5">
-                          <span className={`inline-block w-2 h-2 rounded-full ${TRACK_DOT[row.track]}`} />
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-[14px] font-semibold text-white/90">{row.title}</span>
-                            <span className="text-[11px] text-white/40 font-medium bg-white/[0.06] border border-white/10 rounded-full px-2 py-0.5">
-                              ×{row.assignments.length} projects
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-white/35 mt-0.5">{row.track}</p>
-                        </td>
-                        <td className="px-4 py-3.5 text-[12px] text-white/40">
-                          {row.assignments.length} projects
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex flex-wrap gap-1">
-                            {statuses.map((s) => (
-                              <span key={s} className={`members-chip text-[10px] font-semibold ${STATUS_STYLES[s]}`}>{s}</span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5 text-right text-[13px] text-[#85CC17] font-semibold">
-                          {row.assignments[0].credits}
-                        </td>
-                        <td className="px-4 py-3.5 text-[12px] text-white/45">
-                          {totalCap === 0 ? <span className="text-white/30 text-[11px]">Unlimited</span> : `${totalActive} / ${totalCap}`}
-                        </td>
-                        <td className="pr-4 py-3.5 text-right">
-                          <span className={`text-white/30 text-[11px] inline-block transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
-                        </td>
-                      </tr>
-                      {isOpen && row.assignments.map((a) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {tableRows.map((row) => {
+            if (row.type === "group") {
+              const isOpen = expandedGroups.has(row.groupKey);
+              const totalActive = row.assignments.reduce((sum, a) => {
+                return sum + (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
+              }, 0);
+              const totalCap = row.assignments.reduce((sum, a) => sum + (a.capacity ?? 0), 0);
+              const statuses = [...new Set(row.assignments.map((a) => a.status))];
+              return (
+                <div
+                  key={row.groupKey}
+                  className={`flex flex-col rounded-xl border border-l-4 overflow-hidden border-white/8 bg-[#13161D] ${TRACK_BORDER[row.track]}`}
+                >
+                  {/* Group header */}
+                  <div
+                    className="flex items-start justify-between gap-2 px-4 pt-3.5 pb-2.5 cursor-pointer hover:bg-white/[0.025] transition-colors"
+                    onClick={() => toggleGroup(row.groupKey)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[row.track]}`} />
+                        <span className="text-[10px] text-white/45 uppercase tracking-wide">{row.track}</span>
+                        <span className="members-chip border-white/10 bg-white/[0.05] text-white/40 text-[9px] font-medium">
+                          ×{row.assignments.length} projects
+                        </span>
+                        {statuses.map((s) => (
+                          <span key={s} className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[s]}`}>{s}</span>
+                        ))}
+                      </div>
+                      <p className="text-[14px] font-semibold text-white/90 leading-snug">{row.title}</p>
+                    </div>
+                    <span className={`shrink-0 text-white/25 text-[11px] mt-1 inline-block transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                  </div>
+                  {/* Group meta */}
+                  <div className="border-t border-white/5 px-4 py-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/50">
+                    <span className="text-[#85CC17] font-bold">{row.assignments[0].credits} {row.assignments[0].credits === 1 ? "credit" : "credits"}</span>
+                    <span>{row.assignments[0].minRole}</span>
+                    {totalCap === 0
+                      ? <span className="text-white/30">Unlimited spots</span>
+                      : <span>{totalActive}/{totalCap} claimed</span>
+                    }
+                  </div>
+                  {/* Expanded sub-items */}
+                  {isOpen && (
+                    <div className="border-t border-white/5 divide-y divide-white/[0.04]">
+                      {row.assignments.map((a) => {
                         const proj = resolveProjectLabel(a);
                         const claimList = claimsByAssignment.get(a.id) ?? [];
                         const activeClaims = claimList.filter((c) => c.status !== "rejected");
                         const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
+                        const updateCount = updatesByAssignment.get(a.id)?.length ?? 0;
                         return (
-                          <tr key={a.id} className="bg-[#0B0D12] border-l-2 border-l-white/8 hover:bg-white/[0.02] transition-colors">
-                            <td className="pl-5 py-3">
-                              <span className={`inline-block w-1.5 h-1.5 rounded-full ${TRACK_DOT[a.track]}`} />
-                            </td>
-                            <td className="px-4 py-3 pl-6 text-[13px] text-white/65">
-                              <div className="flex items-center gap-2">
-                                {a.priority && <span className="text-amber-400 text-[11px]">⚡</span>}
-                                <span className="font-medium">{proj?.name ?? "Volta"}</span>
-                                {proj?.subtitle && <span className="text-white/30">· {proj.subtitle}</span>}
+                          <div key={a.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
+                                <span className="text-[12px] font-medium text-white/75 truncate">{proj?.name ?? "Volta Internal"}</span>
+                                {proj?.subtitle && <span className="text-[10px] text-white/35">· {proj.subtitle}</span>}
                               </div>
-                            </td>
-                            <td className="px-4 py-3" />
-                            <td className="px-4 py-3">
-                              <span className={`members-chip text-[10px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
-                            </td>
-                            <td className="px-4 py-3 text-right text-[13px] text-[#85CC17] font-semibold">
-                              {a.credits}
-                            </td>
-                            <td className="px-4 py-3 text-[12px]">
-                              {a.capacity === 0
-                                ? <span className="text-white/30 text-[11px]">Unlimited</span>
-                                : <span className={isFull ? "text-amber-400 font-medium" : "text-white/50"}>
-                                    {activeClaims.length} / {a.capacity}{isFull ? " ●" : ""}
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                                {a.capacity > 0 && (
+                                  <span className={`text-[10px] ${isFull ? "text-amber-400 font-medium" : "text-white/35"}`}>
+                                    {activeClaims.length}/{a.capacity}{isFull ? " · Full" : ""}
                                   </span>
-                              }
-                            </td>
-                            <td className="pr-4 py-3">
-                              <div className="flex items-center justify-end gap-1.5 flex-nowrap">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); openEdit(a); }}
-                                  className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
-                                >
-                                  Edit
-                                </button>
-                                {claimList.length > 0 && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
-                                    title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                                    className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
-                                  >
-                                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                    </svg>
-                                    <span>{claimList.length}</span>
-                                  </button>
                                 )}
                               </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </>
-                  );
-                }
-
-                // Single assignment row
-                const a = row.assignment;
-                const track = (a.track ?? a.primaryTrack ?? "Tech") as CycleTrack;
-                const proj = resolveProjectLabel(a);
-                const claimList = claimsByAssignment.get(a.id) ?? [];
-                const activeClaims = claimList.filter((c) => c.status !== "rejected");
-                const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
-                const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
-                const isExpanded = expandedRows.has(a.id);
-                const deadline = a.deadlines?.[0]?.date ?? "";
-                const updateCount = updatesByAssignment.get(a.id)?.length ?? 0;
-
-                return (
-                  <>
-                    <tr
-                      key={a.id}
-                      onClick={() => toggleRow(a.id)}
-                      className={`cursor-pointer hover:bg-white/[0.03] transition-colors ${a.priority ? "bg-amber-400/[0.035]" : "bg-[#13161D]"}`}
-                    >
-                      <td className="pl-4 py-4">
-                        <span className={`inline-block w-2 h-2 rounded-full ${TRACK_DOT[track]}`} />
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          {a.priority && <span className="text-amber-400 text-[11px]">⚡</span>}
-                          <span className="text-[14px] font-semibold text-white/90">{a.title}</span>
-                          {a.recurringEnabled && <span className="text-purple-400/80 text-[11px]">↻</span>}
-                          {a.applicationRequired && (
-                            <span className="members-chip border-blue-400/40 bg-blue-400/10 text-blue-300 text-[10px]">Apply first</span>
-                          )}
-                          {a.requiresApproval === false && (
-                            <span className="members-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-300 text-[10px]">Auto-approved</span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-white/35 mb-1">{track}</p>
-                        {a.description && (
-                          <div
-                            className="text-[12px] text-white/55 line-clamp-2 prose-invert leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
-                          />
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-[12px] text-white/60">
-                        <p className="font-medium">{proj?.name ?? "—"}</p>
-                        {proj?.subtitle && <p className="text-white/35 text-[11px] mt-0.5">{proj.subtitle}</p>}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`members-chip text-[10px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
-                      </td>
-                      <td className="px-4 py-4 text-right text-[14px] text-[#85CC17] font-semibold whitespace-nowrap">
-                        {a.credits}
-                        {a.recurringEnabled && <span className="text-[10px] text-[#85CC17]/60 font-normal ml-1">/check-in</span>}
-                      </td>
-                      <td className="px-4 py-4 text-[12px]">
-                        {a.capacity === 0
-                          ? <span className="text-white/25">∞</span>
-                          : <span className={isFull ? "text-amber-400 font-semibold" : "text-white/55"}>
-                              {activeClaims.length} / {a.capacity}{isFull ? " ●" : ""}
-                            </span>
-                        }
-                      </td>
-                      <td className="pr-4 py-4">
-                        <div className="flex items-center justify-end gap-1.5 flex-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => setUpdatesModal(a)}
-                            title={updateCount > 0 ? `${updateCount} update${updateCount !== 1 ? "s" : ""}` : "Updates"}
-                            className={`h-7 inline-flex items-center gap-1 px-2 rounded-md border text-[10px] font-medium transition-colors whitespace-nowrap ${
-                              updateCount > 0
-                                ? "bg-[#85CC17]/[0.08] border-[#85CC17]/25 text-[#9BE22B]/80 hover:text-[#9BE22B] hover:bg-[#85CC17]/[0.13] hover:border-[#85CC17]/40"
-                                : "bg-white/[0.03] border-white/12 text-white/30 hover:text-white/55 hover:bg-white/[0.05] hover:border-white/20"
-                            }`}
-                          >
-                            <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                            </svg>
-                            {updateCount > 0 && <span>{updateCount}</span>}
-                          </button>
-                          {claimList.length > 0 && (
-                            <button
-                              onClick={() => setClaimsModal(a)}
-                              title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                              className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
-                            >
-                              <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                              </svg>
-                              <span>{claimList.length}</span>
-                            </button>
-                          )}
-                          <button
-                            onClick={() => openEdit(a)}
-                            className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <span className={`w-4 text-center text-white/20 text-[11px] inline-block transition-transform ${isExpanded ? "rotate-180" : ""}`}>▾</span>
-                        </div>
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr key={`${a.id}-detail`}>
-                        <td colSpan={7} className="bg-[#0B0D12] px-6 pb-5 pt-3 border-b border-white/5">
-                          <div className="flex gap-8">
-                            <div className="flex-1 min-w-0 space-y-3">
-                              {a.description && (
-                                <div
-                                  className="text-[13px] text-white/65 prose-invert leading-relaxed"
-                                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
-                                />
-                              )}
-                              {claimerNames.length > 0 && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-1">Claimants</p>
-                                  <p className="text-[13px] text-white/55">{claimerNames.join(", ")}</p>
-                                </div>
-                              )}
-                              {a.notes && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-1">Internal Notes</p>
-                                  <p className="text-[13px] text-white/45 italic">{a.notes}</p>
-                                </div>
-                              )}
                             </div>
-                            <div className="shrink-0 min-w-[140px] space-y-2.5">
-                              <div>
-                                <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Min Role</p>
-                                <p className="text-[13px] text-white/60">{a.minRole}</p>
-                              </div>
-                              {a.estimatedHours > 0 && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Est. Time</p>
-                                  <p className="text-[13px] text-white/60">~{a.estimatedHours}h</p>
-                                </div>
+                            <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setUpdatesModal(a); }}
+                                title={updateCount > 0 ? `${updateCount} update${updateCount !== 1 ? "s" : ""}` : "Updates"}
+                                className={`h-7 inline-flex items-center gap-1 px-2 rounded-md border text-[10px] font-medium transition-colors whitespace-nowrap ${
+                                  updateCount > 0
+                                    ? "bg-[#85CC17]/[0.08] border-[#85CC17]/25 text-[#9BE22B]/80 hover:text-[#9BE22B] hover:bg-[#85CC17]/[0.13] hover:border-[#85CC17]/40"
+                                    : "bg-white/[0.03] border-white/12 text-white/30 hover:text-white/55 hover:bg-white/[0.05] hover:border-white/20"
+                                }`}
+                              >
+                                <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                </svg>
+                                {updateCount > 0 && <span>{updateCount}</span>}
+                              </button>
+                              {claimList.length > 0 && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
+                                  title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
+                                  className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
+                                >
+                                  <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                  </svg>
+                                  <span>{claimList.length}</span>
+                                </button>
                               )}
-                              {!a.recurringEnabled && deadline && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Deadline</p>
-                                  <p className="text-[13px] text-white/60">{deadline}</p>
-                                </div>
-                              )}
-                              {a.recurringEnabled && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Check-in</p>
-                                  <p className="text-[13px] text-white/60">Every {a.checkinIntervalDays ?? 7} days</p>
-                                </div>
-                              )}
-                              {a.deadlineType === "offset" && a.deadlineOffsetDays && !a.recurringEnabled && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Deadline</p>
-                                  <p className="text-[13px] text-white/60">+{a.deadlineOffsetDays}d after claim</p>
-                                </div>
-                              )}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); openEdit(a); }}
+                                className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
+                              >
+                                Edit
+                              </button>
                             </div>
                           </div>
-                        </td>
-                      </tr>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Single assignment card
+            const a = row.assignment;
+            const track = (a.track ?? a.primaryTrack ?? "Tech") as CycleTrack;
+            const proj = resolveProjectLabel(a);
+            const claimList = claimsByAssignment.get(a.id) ?? [];
+            const activeClaims = claimList.filter((c) => c.status !== "rejected");
+            const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
+            const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
+            const deadline = a.deadlines?.[0]?.date ?? "";
+            const updateCount = updatesByAssignment.get(a.id)?.length ?? 0;
+            const isUnlimited = a.capacity === 0;
+
+            return (
+              <div
+                key={a.id}
+                className={`flex flex-col rounded-xl border border-l-4 overflow-hidden ${
+                  a.priority
+                    ? "border-amber-400/40 border-l-amber-400 bg-amber-400/5"
+                    : `border-white/8 bg-[#13161D] ${TRACK_BORDER[track]}`
+                }`}
+              >
+                {/* Card header */}
+                <div className="flex items-start justify-between gap-2 px-4 pt-3.5 pb-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[track]}`} />
+                      <span className="text-[10px] text-white/45 uppercase tracking-wide">{track}</span>
+                      {a.priority && (
+                        <span className="members-chip border-amber-400/45 bg-amber-400/15 text-amber-300 text-[9px] font-bold uppercase tracking-wide">⚡ Priority</span>
+                      )}
+                      {a.applicationRequired && (
+                        <span className="members-chip border-blue-400/40 bg-blue-400/10 text-blue-300 text-[9px] font-semibold">✉ Apply first</span>
+                      )}
+                      {a.requiresApproval === false && (
+                        <span className="members-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-300 text-[9px] font-semibold">✓ Auto-approved</span>
+                      )}
+                      {a.allowMultipleCompletions && (
+                        <span className="members-chip border-purple-400/40 bg-purple-400/10 text-purple-300 text-[9px] font-semibold">↻ Repeatable</span>
+                      )}
+                      <span className={`ml-auto members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                    </div>
+                    <p className="text-[14px] font-semibold text-white/90 leading-snug">{a.title}</p>
+                    {proj && (
+                      <p className="text-[11px] text-white/55 mt-0.5 truncate">
+                        {proj.name}{proj.subtitle && <span className="text-white/35"> · {proj.subtitle}</span>}
+                      </p>
                     )}
-                  </>
-                );
-              })}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+
+                {/* Meta row */}
+                <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
+                  <span className="text-[#85CC17] font-bold">
+                    {a.credits} {a.recurringEnabled ? "credits/check-in" : a.credits === 1 ? "credit" : "credits"}
+                  </span>
+                  <span>{a.minRole}</span>
+                  {a.recurringEnabled && <span className="text-purple-400">↻ Every {a.checkinIntervalDays ?? 7} days</span>}
+                  {!a.recurringEnabled && a.deadlineType === "offset" && a.deadlineOffsetDays && (
+                    <span>Due {a.deadlineOffsetDays}d after claiming</span>
+                  )}
+                  {!a.recurringEnabled && a.deadlineType !== "offset" && deadline && (
+                    <span>Due {deadline}</span>
+                  )}
+                  {isUnlimited ? (
+                    activeClaims.length > 0
+                      ? <span>{activeClaims.length} claiming</span>
+                      : <span className="text-white/30">Unlimited spots</span>
+                  ) : (
+                    <span className={isFull ? "text-amber-400 font-medium" : ""}>
+                      {activeClaims.length}/{a.capacity} claimed{isFull && <span className="ml-1 members-chip border-amber-400/30 bg-amber-400/10 text-amber-300 text-[9px]">Full</span>}
+                    </span>
+                  )}
+                </div>
+
+                {claimerNames.length > 0 && (
+                  <div className="px-4 pb-2 text-[11px] text-white/35 truncate">
+                    {claimerNames.join(", ")}
+                  </div>
+                )}
+
+                {/* Action footer */}
+                <div className="mt-auto border-t border-white/5 px-4 py-2 flex items-center justify-end gap-1.5">
+                  <button
+                    onClick={() => setUpdatesModal(a)}
+                    title={updateCount > 0 ? `${updateCount} update${updateCount !== 1 ? "s" : ""}` : "Updates"}
+                    className={`h-7 inline-flex items-center gap-1 px-2 rounded-md border text-[10px] font-medium transition-colors whitespace-nowrap ${
+                      updateCount > 0
+                        ? "bg-[#85CC17]/[0.08] border-[#85CC17]/25 text-[#9BE22B]/80 hover:text-[#9BE22B] hover:bg-[#85CC17]/[0.13] hover:border-[#85CC17]/40"
+                        : "bg-white/[0.03] border-white/12 text-white/30 hover:text-white/55 hover:bg-white/[0.05] hover:border-white/20"
+                    }`}
+                  >
+                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    {updateCount > 0 && <span>{updateCount}</span>}
+                  </button>
+                  {claimList.length > 0 && (
+                    <button
+                      onClick={() => setClaimsModal(a)}
+                      title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
+                      className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
+                    >
+                      <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                      <span>{claimList.length}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => openEdit(a)}
+                    className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
