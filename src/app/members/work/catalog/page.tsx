@@ -578,7 +578,7 @@ export default function CatalogPage() {
         const biz = a.businessId ? businessById.get(a.businessId) : undefined;
         map.set(key, {
           key,
-          label: biz?.name ?? "Volta — Org-wide",
+          label: biz?.name ?? "Volta Internal",
           sub: biz?.neighborhood ?? "",
           all: [],
           available: [],

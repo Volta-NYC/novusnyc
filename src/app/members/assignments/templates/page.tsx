@@ -627,7 +627,7 @@ export default function TemplatesPage() {
                     onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
                     className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
                   >
-                    <option value="volta">Volta (org-wide)</option>
+                    <option value="volta">Volta Internal</option>
                     {businessOptions.map((b) => (
                       <option key={b.id} value={`biz:${b.id}`}>
                         {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
