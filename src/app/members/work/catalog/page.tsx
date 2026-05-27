@@ -7,10 +7,10 @@ import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
   subscribeCycles, subscribeTeam,
-  type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleRole, type CycleTrack, type TeamMember,
+  type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
-import { ALL_TRACKS, TRACK_DOT, CYCLE_ROLES } from "@/lib/members/constants";
+import { ALL_TRACKS, TRACK_DOT } from "@/lib/members/constants";
 
 // ── Track SVG icons ───────────────────────────────────────────────────────────
 
@@ -491,7 +491,7 @@ export default function CatalogPage() {
 
   const [search, setSearch]           = useState("");
   const [trackFilters, setTrackFilters] = useState<Set<CycleTrack>>(new Set());
-  const [roleFilters, setRoleFilters]   = useState<Set<CycleRole>>(new Set());
+  const [roleFilters, setRoleFilters]   = useState<Set<string>>(new Set());
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const trackInitRef = useRef(false);
 
@@ -552,9 +552,6 @@ export default function CatalogPage() {
     setTrackFilters((p) => { const n = new Set(p); if (n.has(t)) n.delete(t); else n.add(t); return n; });
   }, []);
 
-  const toggleRole = useCallback((r: CycleRole) => {
-    setRoleFilters((p) => { const n = new Set(p); if (n.has(r)) n.delete(r); else n.add(r); return n; });
-  }, []);
 
   // Base candidates (status + cycle + completion filters — NOT search or track)
   const candidates = useMemo(() => {
@@ -571,7 +568,7 @@ export default function CatalogPage() {
     for (const a of candidates) {
       // Per-assignment track + role filter
       if (trackFilters.size > 0 && !trackFilters.has((a.track ?? a.primaryTrack ?? "General") as CycleTrack)) continue;
-      if (roleFilters.size > 0 && !roleFilters.has(a.minRole as CycleRole)) continue;
+      if (roleFilters.size > 0 && !roleFilters.has(a.minRole)) continue;
 
       const key = a.businessId ?? "volta";
       if (!map.has(key)) {
@@ -630,8 +627,8 @@ export default function CatalogPage() {
   return (
     <MembersLayout>
       {/* ── Command Bar ─────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-white/95 backdrop-blur-md border-b border-black/8">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-3 mb-2">
           {/* Search */}
           <div className="relative flex-1 min-w-48">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30" viewBox="0 0 16 16" fill="none">
@@ -643,12 +640,12 @@ export default function CatalogPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search projects…"
-              className="w-full bg-white border border-black/10 rounded-lg pl-8 pr-3 py-2 text-[13px] text-black/75 placeholder-black/25 focus:outline-none focus:border-[#85CC17]/50"
+              className="w-full bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2.5 text-[13px] text-black/75 placeholder-black/25 focus:outline-none focus:border-[#85CC17]/50"
             />
           </div>
 
           {/* Track filters */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {ALL_TRACKS.map((t) => (
               <button
                 key={t}
@@ -665,45 +662,25 @@ export default function CatalogPage() {
               </button>
             ))}
           </div>
-
-          {/* Role filters */}
-          <div className="flex items-center gap-1.5">
-            {(CYCLE_ROLES as readonly CycleRole[]).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => toggleRole(r)}
-                className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                  roleFilters.has(r)
-                    ? "border-violet-300 bg-violet-50 text-violet-700"
-                    : "border-black/10 bg-white text-black/35 hover:text-black/60 hover:border-black/20"
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Active filter summary */}
-        {(trackFilters.size > 0 || roleFilters.size > 0 || search) && (
-          <div className="flex items-center gap-3 mt-2.5 text-[11px] text-black/40">
+        {(trackFilters.size > 0 || search) && (
+          <div className="flex items-center gap-3 text-[11px] text-black/40">
             <span>{totalCount} assignment{totalCount !== 1 ? "s" : ""} across {groups.length} project{groups.length !== 1 ? "s" : ""}</span>
-            {(trackFilters.size > 0 || roleFilters.size > 0 || search) && (
-              <button
-                type="button"
-                onClick={() => { setSearch(""); setTrackFilters(new Set()); setRoleFilters(new Set()); }}
-                className="text-black/30 hover:text-black/60 underline underline-offset-2 transition-colors"
-              >
-                Clear filters
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => { setSearch(""); setTrackFilters(new Set()); setRoleFilters(new Set()); }}
+              className="text-black/30 hover:text-black/60 underline underline-offset-2 transition-colors"
+            >
+              Clear filters
+            </button>
           </div>
         )}
       </div>
 
       {/* ── Page body ───────────────────────────────────────────────────── */}
-      <div className="mt-6 space-y-10">
+      <div className="space-y-10">
 
         {(isLeadership || isReserve) && (
           <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
