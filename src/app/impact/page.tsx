@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 function boosted(n: number): number {
-  return Math.ceil((n * 1.2) / 10) * 10;
+  return Math.ceil(n / 10) * 10;
 }
 
 const impactAreas = [

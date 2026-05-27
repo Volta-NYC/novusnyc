@@ -153,7 +153,7 @@ export default function ShowcaseClient({
               <div className="flex gap-8 md:pb-2">
                 {[
                   { value: formatCounter(totalBusinesses), label: "Businesses" },
-                  { value: formatCounter(orgPartners), label: "Community organizations" },
+                  { value: formatCounter(orgPartners, true), label: "Community organizations" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>

@@ -77,7 +77,7 @@ export default async function About() {
                 { value: formatCounter(liveStats.marketingProjects), label: "Marketing\nprojects", color: "text-lime-600" },
                 { value: formatCounter(liveStats.caseStudies), label: "Case studies\nby students", color: "text-pink-500" },
                 { value: formatCounter(liveStats.educationalReports), label: "Educational guides\nfor merchants", color: "text-amber-500" },
-                { value: formatCounter(liveStats.bidPartners), label: "Community\norganizations", color: "text-purple-500" },
+                { value: formatCounter(liveStats.bidPartners, true), label: "Community\norganizations", color: "text-purple-500" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06}>
                   <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">

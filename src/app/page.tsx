@@ -313,7 +313,7 @@ async function LiveHomeStats() {
       value: formatCounter(studentPublicationsAndResearchProjects),
       label: "Student Publications and Research Projects",
     },
-    { value: formatCounter(liveStats.bidPartners), label: "Community Organizations" },
+    { value: formatCounter(liveStats.bidPartners, true), label: "Community Organizations" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;
