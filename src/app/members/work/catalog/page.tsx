@@ -71,7 +71,7 @@ interface CardProps {
 
 function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onClick }: CardProps) {
   const track      = (a.track ?? a.primaryTrack ?? "General") as CycleTrack;
-  const isUnlimited = a.capacity === 0 || a.capacity >= 500;
+  const isUnlimited = a.capacity === 0;
   const isFull      = !isUnlimited && taken >= a.capacity;
   const pct         = isUnlimited ? 0 : Math.min(taken / a.capacity, 1);
 
@@ -204,7 +204,7 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
   const track = ((a?.track ?? a?.primaryTrack ?? "General") as CycleTrack);
   const activeClaims = claimList.filter((c) => c.status !== "rejected");
   const taken = activeClaims.length;
-  const isUnlimited = !a || a.capacity === 0 || a.capacity >= 500;
+  const isUnlimited = !a || a.capacity === 0;
   const isFull = !isUnlimited && taken >= (a?.capacity ?? 0);
   const pct = (a && !isUnlimited) ? Math.min(taken / a.capacity, 1) : 0;
   const myClaim = a ? claimList.find((c) => c.memberId === me?.id && c.status !== "rejected") : null;
@@ -588,7 +588,7 @@ export default function CatalogPage() {
       const g = map.get(key)!;
       g.all.push(a);
       const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
-      const isUnlimited = a.capacity === 0 || a.capacity >= 500;
+      const isUnlimited = a.capacity === 0;
       const isFull = !isUnlimited && taken >= a.capacity;
       if (isFull) g.full.push(a); else g.available.push(a);
     }
