@@ -655,19 +655,23 @@ export default function CatalogPage() {
                               }
                             </td>
                             <td className="pr-4 py-3">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); openEdit(a); }}
-                                  className="px-3 py-1.5 rounded-lg border border-white/12 bg-white/[0.04] text-[11px] text-white/55 hover:border-white/25 hover:text-white/85 hover:bg-white/[0.07] transition-colors"
+                                  className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/10 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
                                 >
                                   Edit
                                 </button>
                                 {claimList.length > 0 && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
-                                    className="px-3 py-1.5 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.05] text-[11px] text-cyan-300/70 hover:text-cyan-300 hover:border-cyan-400/35 transition-colors"
+                                    title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
+                                    className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/20 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/35 text-[10px] font-medium transition-colors whitespace-nowrap"
                                   >
-                                    Claims ({claimList.length})
+                                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    <span>{claimList.length}</span>
                                   </button>
                                 )}
                               </div>
@@ -741,32 +745,40 @@ export default function CatalogPage() {
                         }
                       </td>
                       <td className="pr-4 py-4">
-                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5 flex-nowrap" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setUpdatesModal(a)}
-                            className={`px-3 py-1.5 rounded-lg border text-[11px] transition-colors ${
+                            title={updateCount > 0 ? `${updateCount} update${updateCount !== 1 ? "s" : ""}` : "Updates"}
+                            className={`h-7 inline-flex items-center gap-1 px-2 rounded-md border text-[10px] font-medium transition-colors whitespace-nowrap ${
                               updateCount > 0
-                                ? "border-[#85CC17]/30 bg-[#85CC17]/[0.07] text-[#9BE22B]/80 hover:text-[#9BE22B] hover:border-[#85CC17]/50"
-                                : "border-white/12 bg-white/[0.04] text-white/45 hover:border-white/22 hover:text-white/70 hover:bg-white/[0.07]"
+                                ? "bg-[#85CC17]/[0.08] border-[#85CC17]/25 text-[#9BE22B]/80 hover:text-[#9BE22B] hover:bg-[#85CC17]/[0.13] hover:border-[#85CC17]/40"
+                                : "bg-transparent border-white/8 text-white/25 hover:text-white/50 hover:bg-white/[0.04] hover:border-white/15"
                             }`}
                           >
-                            {updateCount > 0 ? `Updates (${updateCount})` : "Updates"}
+                            <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                            {updateCount > 0 && <span>{updateCount}</span>}
                           </button>
                           {claimList.length > 0 && (
                             <button
                               onClick={() => setClaimsModal(a)}
-                              className="px-3 py-1.5 rounded-lg border border-cyan-400/25 bg-cyan-400/[0.06] text-[11px] text-cyan-300/75 hover:text-cyan-300 hover:border-cyan-400/40 transition-colors"
+                              title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
+                              className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/20 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/35 text-[10px] font-medium transition-colors whitespace-nowrap"
                             >
-                              Claims ({claimList.length})
+                              <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                              </svg>
+                              <span>{claimList.length}</span>
                             </button>
                           )}
                           <button
                             onClick={() => openEdit(a)}
-                            className="px-3 py-1.5 rounded-lg border border-white/12 bg-white/[0.04] text-[11px] text-white/55 hover:border-white/25 hover:text-white/85 hover:bg-white/[0.07] transition-colors"
+                            className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/10 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
                           >
                             Edit
                           </button>
-                          <span className={`text-white/25 text-[11px] inline-block transition-transform ml-1 ${isExpanded ? "rotate-180" : ""}`}>▾</span>
+                          <span className={`w-4 text-center text-white/20 text-[11px] inline-block transition-transform ${isExpanded ? "rotate-180" : ""}`}>▾</span>
                         </div>
                       </td>
                     </tr>
