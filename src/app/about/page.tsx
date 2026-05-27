@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
-import { aboutValues, aboutTimeline, teamMembers } from "@/data";
+import { aboutValues, teamMembers } from "@/data";
 import { formatCounter } from "@/lib/formatCounter";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
@@ -207,64 +207,6 @@ export default async function About() {
                 </AnimatedSection>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HISTORY / TIMELINE ─────────────────────────────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-8">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we started</h2>
-          </AnimatedSection>
-
-          {/* Mobile: vertical timeline */}
-          <div className="md:hidden">
-            {aboutTimeline.map((t, i) => (
-              <AnimatedSection key={t.label} delay={i * 0.12}>
-                <div className={`relative flex gap-6 ${i < aboutTimeline.length - 1 ? "pb-10" : ""}`}>
-                  {i < aboutTimeline.length - 1 && (
-                    <div className="absolute left-8 top-16 bottom-0 -translate-x-1/2 w-0.5 bg-v-border" />
-                  )}
-                  <div className="w-16 h-16 rounded-full bg-v-bg border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 flex-shrink-0">
-                    <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
-                    <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
-                  </div>
-                  <div className="flex-1 pt-3 min-w-0">
-                    <h3 className="font-display font-bold text-v-ink text-xl mb-2">{t.label}</h3>
-                    <p className="font-body text-v-muted text-base leading-relaxed">{t.desc}</p>
-                    {t.tentative && (
-                      <p className="font-body text-xs text-v-muted/60 italic mt-1">Tentative</p>
-                    )}
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-
-          {/* Desktop: horizontal timeline */}
-          <div className="hidden md:block">
-            <div className="relative">
-              {/* Connector line */}
-              <div className="absolute top-10 left-0 right-0 h-0.5 bg-v-border" />
-              <div className="grid grid-cols-4 gap-6">
-                {aboutTimeline.map((t, i) => (
-                  <AnimatedSection key={t.label} delay={i * 0.1}>
-                    <div className="relative flex flex-col items-center text-center pt-0">
-                      <div className="w-20 h-20 rounded-full bg-v-bg border-2 border-v-green flex flex-col items-center justify-center shadow-sm z-10 mb-5">
-                        <span className="font-display font-bold text-v-green text-xs leading-tight">{t.month}</span>
-                        <span className="font-display font-bold text-v-green text-xs leading-tight">{t.year}</span>
-                      </div>
-                      <h3 className="font-display font-bold text-v-ink text-base mb-2">{t.label}</h3>
-                      <p className="font-body text-sm text-v-muted leading-relaxed">{t.desc}</p>
-                      {t.tentative && (
-                        <p className="font-body text-xs text-v-muted/60 italic mt-1">Tentative</p>
-                      )}
-                    </div>
-                  </AnimatedSection>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </section>

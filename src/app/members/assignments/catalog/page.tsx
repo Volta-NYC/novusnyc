@@ -285,19 +285,22 @@ export default function CatalogPage() {
       track:              form.track,
       credits:            Math.max(0, Number(form.credits) || 0),
       difficulty:         editing?.difficulty ?? "Standard",
-      estimatedHours:     0,
+      estimatedHours:     editing?.estimatedHours ?? 0,
+      type:               editing?.type,
+      region:             editing?.region,
+      teamLabel:          editing?.teamLabel,
       minRole:            form.minRole,
       businessId,
       projectGroupId,
       capacity:           form.limitClaims ? Math.max(1, Number(form.maxClaims) || 1) : 0,
       deadlines:          !isRecurring && !isOffset && form.hardDeadline
                             ? [{ label: "Final Deadline", date: form.hardDeadline }]
-                            : undefined,
+                            : null,
       deadlineType:       isRecurring ? "hard" : form.deadlineType,
-      deadlineOffsetDays: isOffset && form.deadlineOffsetDays ? Number(form.deadlineOffsetDays) : undefined,
+      deadlineOffsetDays: isOffset && form.deadlineOffsetDays ? Number(form.deadlineOffsetDays) : null,
       recurringEnabled:   form.recurringEnabled,
-      checkinIntervalDays: isRecurring && form.checkinIntervalDays ? Number(form.checkinIntervalDays) : undefined,
-      maxDurationDays:    isRecurring && form.maxDurationDays ? Number(form.maxDurationDays) : undefined,
+      checkinIntervalDays: isRecurring && form.checkinIntervalDays ? Number(form.checkinIntervalDays) : null,
+      maxDurationDays:    isRecurring && form.maxDurationDays ? Number(form.maxDurationDays) : null,
       status:                   editing ? form.status : "Open",
       priority:                 form.priority,
       requiresApproval:         form.requiresApproval,
@@ -305,7 +308,7 @@ export default function CatalogPage() {
       allowMultipleCompletions: form.allowMultipleCompletions,
       cycleId:            editing?.cycleId ?? activeCycle?.id ?? "",
       createdBy:          editing?.createdBy ?? userProfile?.email ?? user?.email ?? user?.id ?? "unknown",
-      notes:              "",
+      notes:              editing?.notes ?? "",
     };
   };
 

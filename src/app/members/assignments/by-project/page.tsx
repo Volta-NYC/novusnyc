@@ -33,7 +33,6 @@ function normalizeBizStatus(raw: unknown): ProjectStatusValue {
   return "Upcoming";
 }
 
-const STATUS_TIER: Record<ProjectStatusValue, number> = { Ongoing: 0, Upcoming: 1, Completed: 2 };
 
 const TRACK_DOT: Record<CycleTrack, string> = {
   Tech: "bg-blue-500",
@@ -110,6 +109,8 @@ interface AssignmentFormState {
   status: AssignmentStatus;
   priority: boolean;
   requiresApproval: boolean;
+  applicationRequired: boolean;
+  allowMultipleCompletions: boolean;
   notes: string;
   region: string;
   teamLabel: string;
@@ -135,6 +136,8 @@ const BLANK_ASSIGNMENT: AssignmentFormState = {
   status: "Open",
   priority: false,
   requiresApproval: true,
+  applicationRequired: false,
+  allowMultipleCompletions: false,
   notes: "",
   region: "",
   teamLabel: "",
@@ -313,8 +316,8 @@ export default function ByProjectPage() {
         return nameMatch || assignmentMatch;
       })
       .sort((a, b) => {
-        const td = STATUS_TIER[a.status] - STATUS_TIER[b.status];
-        if (td !== 0) return td;
+        const cd = b.assignments.length - a.assignments.length;
+        if (cd !== 0) return cd;
         return a.label.localeCompare(b.label);
       });
   }, [cards, filterTracks, filterStatuses, q]);
@@ -380,11 +383,13 @@ export default function ByProjectPage() {
       checkinIntervalDays: a.checkinIntervalDays != null ? String(a.checkinIntervalDays) : "7",
       maxDurationDays:    a.maxDurationDays != null ? String(a.maxDurationDays) : "",
       status:             a.status,
-      priority:           Boolean(a.priority),
-      requiresApproval:   a.requiresApproval !== false,
-      notes:              a.notes ?? "",
-      region:             a.region ?? "",
-      teamLabel:          a.teamLabel ?? "",
+      priority:                 Boolean(a.priority),
+      requiresApproval:         a.requiresApproval !== false,
+      applicationRequired:      Boolean(a.applicationRequired),
+      allowMultipleCompletions: Boolean(a.allowMultipleCompletions),
+      notes:                    a.notes ?? "",
+      region:                   a.region ?? "",
+      teamLabel:                a.teamLabel ?? "",
     });
     setBizSearch(refToLabel(ref));
 
@@ -405,6 +410,9 @@ export default function ByProjectPage() {
       estimatedHours:     t.estimatedHours,
       minRole:            t.minRole,
       capacity:           t.capacity,
+      requiresApproval:         t.requiresApproval !== false,
+      applicationRequired:      Boolean(t.applicationRequired),
+      allowMultipleCompletions: Boolean(t.allowMultipleCompletions),
       notes:              t.notes ?? "",
       recurringEnabled:   Boolean(t.recurringEnabled),
       checkinIntervalDays: t.checkinIntervalDays != null ? String(t.checkinIntervalDays) : "7",
@@ -435,13 +443,15 @@ export default function ByProjectPage() {
       capacity:           assignmentForm.limitClaims ? Math.max(1, Number(assignmentForm.capacity) || 1) : 0,
       deadlines:          !isRecurring && !isOffset && assignmentForm.hardDeadline
                             ? [{ label: "Final Deadline", date: assignmentForm.hardDeadline }]
-                            : undefined,
+                            : null,
       deadlineType:       isRecurring ? "hard" : assignmentForm.deadlineType,
-      deadlineOffsetDays: isOffset && assignmentForm.deadlineOffsetDays ? Number(assignmentForm.deadlineOffsetDays) : undefined,
+      deadlineOffsetDays: isOffset && assignmentForm.deadlineOffsetDays ? Number(assignmentForm.deadlineOffsetDays) : null,
       recurringEnabled:   assignmentForm.recurringEnabled,
-      checkinIntervalDays: isRecurring && assignmentForm.checkinIntervalDays ? Number(assignmentForm.checkinIntervalDays) : undefined,
-      maxDurationDays:    isRecurring && assignmentForm.maxDurationDays ? Number(assignmentForm.maxDurationDays) : undefined,
-      requiresApproval:   assignmentForm.requiresApproval,
+      checkinIntervalDays: isRecurring && assignmentForm.checkinIntervalDays ? Number(assignmentForm.checkinIntervalDays) : null,
+      maxDurationDays:    isRecurring && assignmentForm.maxDurationDays ? Number(assignmentForm.maxDurationDays) : null,
+      requiresApproval:         assignmentForm.requiresApproval,
+      applicationRequired:      assignmentForm.applicationRequired,
+      allowMultipleCompletions: assignmentForm.allowMultipleCompletions,
       notes:              assignmentForm.notes,
       region:             assignmentForm.region || undefined,
       teamLabel:          assignmentForm.teamLabel || undefined,

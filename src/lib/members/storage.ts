@@ -392,11 +392,11 @@ export interface AssignmentTemplate {
   requiresApproval?: boolean;
   applicationRequired?: boolean;    // true = member must contact board before claiming
   allowMultipleCompletions?: boolean;
-  deadlineOffsetDays?: number;     // days after claim → suggested deadline (offset mode)
+  deadlineOffsetDays?: number | null; // null clears offset when switching to recurring
   // Recurring check-in support
   recurringEnabled?: boolean;      // true = periodic check-ins with per-check-in credits
-  checkinIntervalDays?: number;    // how often a check-in is due (e.g. 7 = weekly)
-  maxDurationDays?: number;        // optional hard cap on total duration
+  checkinIntervalDays?: number | null; // null clears when switching away from recurring
+  maxDurationDays?: number | null;     // null clears when switching away from recurring
   notes: string;
   createdAt: string;
   updatedAt: string;
@@ -424,7 +424,7 @@ export interface Assignment {
   status: AssignmentStatus;
   assignedMemberIds?: string[];
   assignedMemberNames?: string[];
-  deadlines?: Array<{ label: string; date: string }>; // hard deadline dates (admin-set)
+  deadlines?: Array<{ label: string; date: string }> | null; // hard deadline dates; null clears them
   deliverableUrl?: string;
   credits: number;
   creditsMax?: number;
@@ -442,11 +442,11 @@ export interface Assignment {
   templateId?: string;             // template used to create this assignment
   // Deadline system: 'hard' = admin-set date in deadlines[]; 'offset' = days after member claims
   deadlineType?: "hard" | "offset"; // default 'hard'
-  deadlineOffsetDays?: number;      // used when deadlineType='offset'
+  deadlineOffsetDays?: number | null; // null clears the offset when switching to hard/recurring
   // Recurring check-in support (credits awarded per approved check-in)
   recurringEnabled?: boolean;
-  checkinIntervalDays?: number;
-  maxDurationDays?: number;
+  checkinIntervalDays?: number | null; // null clears when switching away from recurring
+  maxDurationDays?: number | null;     // null clears when switching away from recurring
   // Finance-specific
   region?: string;
   teamLabel?: string;
