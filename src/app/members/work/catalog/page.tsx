@@ -16,18 +16,23 @@ import { ALL_TRACKS, TRACK_DOT } from "@/lib/members/constants";
 
 function TrackIcon({ track, className = "w-4 h-4" }: { track: CycleTrack; className?: string }) {
   if (track === "Tech") return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M7 6L3 10l4 4M13 6l4 4-4 4M11.5 4.5l-3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 8L3 12L8 16" />
+      <path d="M16 8L21 12L16 16" />
     </svg>
   );
   if (track === "Marketing") return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M15 4.5v11M15 4.5C12 4.5 9 6.5 6 6.5H5a2.5 2.5 0 000 5h1c3 0 6 2 9 2M6 11.5v3.5a1 1 0 001 1h1a1 1 0 001-1v-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20l4.5-1.2L19 8.3a1.6 1.6 0 0 0 0-2.2l-1.1-1.1a1.6 1.6 0 0 0-2.2 0L5.2 15.5L4 20z" />
+      <path d="M13.5 6.5l4 4" />
     </svg>
   );
   if (track === "Finance") return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 14l4-4.5 3.5 3 4-5.5 2.5 2M3 17h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19h16" />
+      <path d="M7 16v-4" />
+      <path d="M12 16V9" />
+      <path d="M17 16v-10" />
     </svg>
   );
   // General — stylized Volta lightning bolt
@@ -56,7 +61,7 @@ const TRACK_PILL: Record<CycleTrack, string> = {
   Tech:      "border-blue-200 bg-blue-50 text-blue-700",
   Marketing: "border-lime-300 bg-lime-50 text-lime-800",
   Finance:   "border-amber-200 bg-amber-50 text-amber-700",
-  General:   "border-[#85CC17]/30 bg-[#85CC17]/8 text-[#5C9911]",
+  General:   "border-gray-300 bg-gray-100 text-gray-700",
 };
 
 // ── Assignment card ───────────────────────────────────────────────────────────
@@ -66,10 +71,11 @@ interface CardProps {
   taken: number;
   alreadyClaimed: boolean;
   claimStatus?: string;
+  projectName: string;
   onClick: () => void;
 }
 
-function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onClick }: CardProps) {
+function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, projectName, onClick }: CardProps) {
   const track      = (a.track ?? a.primaryTrack ?? "General") as CycleTrack;
   const isUnlimited = a.capacity === 0;
   const isFull      = !isUnlimited && taken >= a.capacity;
@@ -96,7 +102,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
           </div>
           <div className="min-w-0">
             <p className={`text-[13px] font-bold leading-snug ${isFull ? "text-black/30" : "text-black/85 group-hover:text-black"} transition-colors`}>
-              {a.title}
+              {projectName}
             </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>
@@ -563,38 +569,38 @@ export default function CatalogPage() {
 
   // Build all groups (before search filter, so search operates at group level)
   const allGroups = useMemo((): AssignmentGroup[] => {
-    const map = new Map<string, AssignmentGroup>();
+    const map = new Map<string, { group: AssignmentGroup; bizNames: Set<string> }>();
 
     for (const a of candidates) {
       // Per-assignment track + role filter
       if (trackFilters.size > 0 && !trackFilters.has((a.track ?? a.primaryTrack ?? "General") as CycleTrack)) continue;
       if (roleFilters.size > 0 && !roleFilters.has(a.minRole)) continue;
 
-      const key = a.businessId ?? "volta";
+      const key = a.title;
       if (!map.has(key)) {
-        const biz = a.businessId ? businessById.get(a.businessId) : undefined;
         map.set(key, {
-          key,
-          label: biz?.name ?? "Volta Internal",
-          sub: biz?.neighborhood ?? "",
-          all: [],
-          available: [],
-          full: [],
+          group: { key, label: a.title, sub: "", all: [], available: [], full: [] },
+          bizNames: new Set(),
         });
       }
-      const g = map.get(key)!;
-      g.all.push(a);
+      const entry = map.get(key)!;
+      const bizName = a.businessId ? (businessById.get(a.businessId)?.name ?? "Volta Internal") : "Volta Internal";
+      entry.bizNames.add(bizName);
+      entry.group.all.push(a);
       const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
-      const isUnlimited = a.capacity === 0;
-      const isFull = !isUnlimited && taken >= a.capacity;
-      if (isFull) g.full.push(a); else g.available.push(a);
+      const isFull = a.capacity !== 0 && taken >= a.capacity;
+      if (isFull) entry.group.full.push(a); else entry.group.available.push(a);
     }
 
-    return [...map.values()].sort((a, b) => {
-      if (a.key === "volta") return -1;
-      if (b.key === "volta") return 1;
-      return a.label.localeCompare(b.label);
-    });
+    return [...map.values()]
+      .map(({ group, bizNames }) => ({ ...group, sub: [...bizNames].join(" · ") }))
+      .sort((a, b) => {
+        const aPriority = a.all.some((x) => x.priority);
+        const bPriority = b.all.some((x) => x.priority);
+        if (aPriority && !bPriority) return -1;
+        if (!aPriority && bPriority) return 1;
+        return a.label.localeCompare(b.label);
+      });
   }, [candidates, trackFilters, roleFilters, businessById, claimsByAssignment]);
 
   // Search filters at GROUP level — shows all assignments in matching groups
@@ -612,11 +618,14 @@ export default function CatalogPage() {
 
   // Use live data, fall back to mock when no assignments are loaded yet
   const displayGroups = assignments.length === 0
-    ? [{
-        key: "mock", label: "Sample Project", sub: "East Village", all: MOCK,
-        available: MOCK.filter((a) => a.capacity === 0 || 0 < a.capacity),
+    ? MOCK.map((a) => ({
+        key: a.title,
+        label: a.title,
+        sub: "Sample Project",
+        all: [a],
+        available: a.capacity === 0 || 0 < a.capacity ? [a] : [],
         full: [],
-      }]
+      }))
     : groups;
 
   const selectedBusiness = selectedAssignment?.businessId
@@ -639,7 +648,7 @@ export default function CatalogPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search projects…"
+              placeholder="Search assignments…"
               className="w-full bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2.5 text-[13px] text-black/75 placeholder-black/25 focus:outline-none focus:border-[#85CC17]/50"
             />
           </div>
@@ -667,7 +676,7 @@ export default function CatalogPage() {
         {/* Active filter summary */}
         {(trackFilters.size > 0 || search) && (
           <div className="flex items-center gap-3 text-[11px] text-black/40">
-            <span>{totalCount} assignment{totalCount !== 1 ? "s" : ""} across {groups.length} project{groups.length !== 1 ? "s" : ""}</span>
+            <span>{totalCount} assignment{totalCount !== 1 ? "s" : ""} across {groups.length} type{groups.length !== 1 ? "s" : ""}</span>
             <button
               type="button"
               onClick={() => { setSearch(""); setTrackFilters(new Set()); setRoleFilters(new Set()); }}
@@ -707,6 +716,7 @@ export default function CatalogPage() {
                   {group.available.map((a) => {
                     const taken   = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
                     const status  = myClaimedIds.get(a.id);
+                    const projectName = a.businessId ? (businessById.get(a.businessId)?.name ?? "Volta Internal") : "Volta Internal";
                     return (
                       <AssignmentCard
                         key={a.id}
@@ -714,6 +724,7 @@ export default function CatalogPage() {
                         taken={taken}
                         alreadyClaimed={myClaimedIds.has(a.id)}
                         claimStatus={status}
+                        projectName={projectName}
                         onClick={() => setSelectedAssignment(a)}
                       />
                     );
@@ -726,12 +737,14 @@ export default function CatalogPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {group.full.map((a) => {
                     const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
+                    const projectName = a.businessId ? (businessById.get(a.businessId)?.name ?? "Volta Internal") : "Volta Internal";
                     return (
                       <AssignmentCard
                         key={a.id}
                         assignment={a}
                         taken={taken}
                         alreadyClaimed={false}
+                        projectName={projectName}
                         onClick={() => setSelectedAssignment(a)}
                       />
                     );

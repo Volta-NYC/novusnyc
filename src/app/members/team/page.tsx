@@ -52,8 +52,8 @@ function getMemberTrack(member: TeamMember): TrackKey {
 function getTrackAvatarClasses(track: TrackKey): { bgClass: string; textClass: string } {
   switch (track) {
     case "Tech":      return { bgClass: "bg-blue-100",        textClass: "text-blue-900" };
-    case "Marketing": return { bgClass: "bg-amber-100",       textClass: "text-amber-800" };
-    case "Finance":   return { bgClass: "bg-green-100",       textClass: "text-green-900" };
+    case "Marketing": return { bgClass: "bg-lime-100",         textClass: "text-lime-800" };
+    case "Finance":   return { bgClass: "bg-amber-100",       textClass: "text-amber-800" };
     case "Other":     return { bgClass: "bg-gray-100",        textClass: "text-gray-700" };
     default:          return { bgClass: "bg-[#85CC17]/15",    textClass: "text-[#85CC17]" };
   }
