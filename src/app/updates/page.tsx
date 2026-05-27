@@ -88,7 +88,7 @@ export default function ProgressUpdatesPage() {
                           className={embed.kind === "Instagram"
                             ? "w-full max-w-[420px] rounded-xl border border-v-border bg-white"
                             : "w-full rounded-xl border border-v-border bg-white"}
-                          style={embed.kind === "Instagram" ? { minHeight: 560 } : { minHeight: 520 }}
+                          style={embed.kind === "Instagram" ? { minHeight: 720 } : { minHeight: 750 }}
                           loading="lazy"
                         />
                       </div>
