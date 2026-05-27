@@ -63,6 +63,22 @@ export const businessGuides: GuideEntry[] = [
 
 export const progressUpdates: UpdateEntry[] = [
   {
+    id: "linkedin-7464042184758030336",
+    title: "Two-Month Progress Update",
+    date: "2026-05-23",
+    summary: "LinkedIn update from the Volta NYC team.",
+    highlights: [],
+    linkedinUrn: "urn:li:activity:7464042184758030336",
+  },
+  {
+    id: "linkedin-7441949940219564033",
+    title: "Apply to Volta NYC",
+    date: "2026-03-23",
+    summary: "LinkedIn update from the Volta NYC team.",
+    highlights: [],
+    linkedinUrn: "urn:li:activity:7441949940219564033",
+  },
+  {
     id: "instagram-dvbs-6ldvk9",
     title: "Instagram Project Update",
     date: "2026-02-21",
