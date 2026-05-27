@@ -18,7 +18,7 @@ import {
   type InterviewSlot,
   type ApplicationRecord,
 } from "@/lib/members/storage";
-import { Btn, Field, Modal, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm, Spinner } from "@/components/members/ui";
+import { Btn, Field, Modal, Select, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm, Spinner } from "@/components/members/ui";
 import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
 import {
   formatInterviewInET,
@@ -2600,10 +2600,9 @@ function InterviewsContent() {
               : ""}
           </p>
           <Field label="New Time">
-            <select
+            <Select
               value={rescheduleTargetSlotId}
               onChange={(e) => setRescheduleTargetSlotId(e.target.value)}
-              className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               {availableFutureSlots.length === 0 && (
                 <option value="">No available interview times</option>
@@ -2613,7 +2612,7 @@ function InterviewsContent() {
                   {formatDateTime(slot.datetime)}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           {rescheduleMessage && <p className="text-xs text-white/55">{rescheduleMessage}</p>}
         </div>
@@ -2652,16 +2651,15 @@ function InterviewsContent() {
             {evaluationSlot ? `${evaluationSlot.bookerName || "Interviewee"} · ${formatDateTime(evaluationSlot.datetime)}` : ""}
           </p>
           <Field label="Evaluation">
-            <select
+            <Select
               value={evaluationRating}
               onChange={(e) => setEvaluationRating(e.target.value as "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified" | "")}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               <option value="" disabled>Select a rating...</option>
               {["Extremely Qualified", "Qualified", "Decent", "Unqualified"].map((value) => (
                 <option key={value} value={value}>{value}</option>
               ))}
-            </select>
+            </Select>
           </Field>
 
           <Field label="Comments">
@@ -2704,15 +2702,14 @@ function InterviewsContent() {
             {finalizeSlot ? `${finalizeSlot.bookerName || "Interviewee"} · ${formatDateTime(finalizeSlot.datetime)}` : ""}
           </p>
           <Field label="Team Role">
-            <select
+            <Select
               value={finalizeRole}
               onChange={(e) => setFinalizeRole(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               {["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Project Lead"].map((role) => (
                 <option key={role} value={role}>{role}</option>
               ))}
-            </select>
+            </Select>
           </Field>
           <label className="inline-flex items-center gap-2 text-sm text-white/65">
             <input

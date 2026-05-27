@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import { Btn, Input, Field } from "@/components/members/ui";
+import { Btn } from "@/components/members/ui";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeTeam, updateTeamMember,
@@ -76,37 +76,52 @@ export default function SettingsPage() {
         <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
           <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-4">Profile</h2>
           <form onSubmit={handleSave} className="space-y-4">
-            <Field label="Display Name">
-              <Input
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Display Name</label>
+              <input
+                className="w-full bg-white border border-black/12 rounded-lg px-3 py-2.5 text-sm text-black/85 placeholder-black/30 focus:outline-none focus:border-[#85CC17]/60 transition-colors"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Your full name"
                 required
               />
-            </Field>
+            </div>
 
-            <Field label="Email">
-              <Input
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Email</label>
+              <input
+                className="w-full bg-black/4 border border-black/8 rounded-lg px-3 py-2.5 text-sm text-black/50 cursor-not-allowed"
                 value={userProfile?.email ?? user?.email ?? ""}
                 readOnly
                 disabled
-                className="opacity-60 cursor-not-allowed"
               />
               <p className="text-[11px] text-black/40 mt-1">
                 To change your email, contact your cycle lead.
               </p>
-            </Field>
+            </div>
 
             {(me?.divisions?.length ?? 0) > 0 && (
-              <Field label="Division(s)">
-                <Input value={(me?.divisions ?? []).join(", ")} readOnly disabled className="opacity-60 cursor-not-allowed" />
-              </Field>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Division(s)</label>
+                <input
+                  className="w-full bg-black/4 border border-black/8 rounded-lg px-3 py-2.5 text-sm text-black/50 cursor-not-allowed"
+                  value={(me?.divisions ?? []).join(", ")}
+                  readOnly
+                  disabled
+                />
+              </div>
             )}
 
             {me?.role && (
-              <Field label="Role">
-                <Input value={me.role} readOnly disabled className="opacity-60 cursor-not-allowed" />
-              </Field>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Role</label>
+                <input
+                  className="w-full bg-black/4 border border-black/8 rounded-lg px-3 py-2.5 text-sm text-black/50 cursor-not-allowed"
+                  value={me.role}
+                  readOnly
+                  disabled
+                />
+              </div>
             )}
 
             {saveError && (

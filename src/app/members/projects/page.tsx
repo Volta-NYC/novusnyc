@@ -2323,7 +2323,7 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Phone</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech Status</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
-                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance Status</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
                   </thead>
@@ -2349,7 +2349,7 @@ function BusinessesPageInner() {
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Phone</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[155px]">Tech Status</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
-                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance Status</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>
               </thead>
@@ -2431,15 +2431,14 @@ function BusinessesPageInner() {
             <Input value={projectEmailSubject} onChange={(e) => setProjectEmailSubject(e.target.value)} />
           </Field>
           <Field label="Send from" required>
-            <select
+            <Select
               value={projectEmailFrom}
               onChange={(e) => setProjectEmailFrom(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               {TEAM_EMAIL_FROM_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="Message" required>
             <RichTextEditor
@@ -2612,15 +2611,14 @@ function BusinessesPageInner() {
                 );
               }
               return (
-                <select
+                <Select
                   value={form.projectStatus ?? "Upcoming"}
                   onChange={(e) => setField("projectStatus", e.target.value)}
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
                 >
                   <option value="Upcoming">Upcoming</option>
                   <option value="Ongoing">Ongoing</option>
                   <option value="Completed">Completed</option>
-                </select>
+                </Select>
               );
             })()}
           </div>
@@ -2692,14 +2690,13 @@ function BusinessesPageInner() {
                   />
                 </Field>
                 <Field label="Service">
-                  <select
+                  <Select
                     value={(form.showcaseServices ?? [])[0] ?? ""}
                     onChange={(e) => setField("showcaseServices", e.target.value ? [e.target.value] : [])}
-                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
                   >
                     <option value="">— none —</option>
                     {showcaseServiceOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </Select>
                 </Field>
                 <Field label="Card color">
                   <div className="flex flex-wrap gap-1.5">

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { EMAIL_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Field, Btn, Empty, Modal, Input, useConfirm,
+  PageHeader, Field, Btn, Empty, Modal, Input, Select, useConfirm,
 } from "@/components/members/ui";
 import EmailBodyEditor, { type EmailBodyEditorHandle } from "@/components/members/EmailBodyEditor";
 import {
@@ -1060,22 +1060,20 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
         </div>
 
         <Field label="Subject" required>
-          <input
+          <Input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
           />
         </Field>
         <Field label="Send from" required>
-          <select
+          <Select
             value={fromAddress}
             onChange={(e) => setFromAddress(e.target.value)}
-            className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
           >
             {TEAM_EMAIL_FROM_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </Select>
         </Field>
         <Field label="Message" required>
           <div className="mb-2 flex flex-wrap items-center gap-2">

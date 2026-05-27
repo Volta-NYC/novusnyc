@@ -622,10 +622,9 @@ export default function TemplatesPage() {
               <SectionLabel>Assignment</SectionLabel>
               <div className="space-y-3">
                 <Field label="Business" required>
-                  <select
+                  <Select
                     value={fromTemplateForm.projectRef}
                     onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
-                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
                   >
                     <option value="volta">Volta Internal</option>
                     {businessOptions.map((b) => (
@@ -633,7 +632,7 @@ export default function TemplatesPage() {
                         {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </Field>
 
                 <Field label="Title">

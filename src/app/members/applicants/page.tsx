@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  Btn, BulkActionBar, Empty, Modal, Field, PageHeader, SearchBar, SkeletonRows, useBulkSelect, useConfirm,
+  Btn, BulkActionBar, Empty, Modal, Field, PageHeader, SearchBar, Select, SkeletonRows, useBulkSelect, useConfirm,
   ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import {
@@ -98,10 +98,10 @@ function formatDateTime(value: string): string {
 type ColumnKey = "status" | "actions" | "name" | "email" | "school" | "grade" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
-  { key: "status", label: "Status" },
-  { key: "actions", label: "Actions" },
   { key: "name", label: "Name" },
   { key: "email", label: "Email" },
+  { key: "status", label: "Status" },
+  { key: "actions", label: "Actions" },
   { key: "school", label: "School Name" },
   { key: "grade", label: "HS Class" },
   { key: "cityState", label: "City, State" },
@@ -626,15 +626,14 @@ export default function ApplicantsPage() {
             {acceptModalApp ? `${acceptModalApp.fullName} · ${acceptModalApp.email}` : ""}
           </p>
           <Field label="Team Role">
-            <select
+            <Select
               value={acceptRole}
               onChange={(e) => setAcceptRole(e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               {["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Board"].map((role) => (
                 <option key={role} value={role}>{role}</option>
               ))}
-            </select>
+            </Select>
           </Field>
           <label className="inline-flex items-center gap-2 text-sm text-white/65">
             <input

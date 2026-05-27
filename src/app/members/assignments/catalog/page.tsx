@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Btn, Modal, Field, Input, Select, Empty, useConfirm, SearchBar, Spinner,
+  PageHeader, Btn, Modal, Field, Input, Select, TextArea, Empty, useConfirm, SearchBar, Spinner,
   ViewPanel, ViewSection, SearchSelect, type SearchSelectOption,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
@@ -1076,11 +1076,10 @@ export default function CatalogPage() {
                       <div key={u.id} className="rounded-lg border border-[#85CC17]/15 bg-[#85CC17]/5 px-3 py-2.5 text-xs">
                         {editingUpdateId === u.id ? (
                           <div className="flex flex-col gap-2">
-                            <textarea
+                            <TextArea
                               rows={3}
                               value={editingUpdateText}
                               onChange={(e) => setEditingUpdateText(e.target.value)}
-                              className="w-full bg-[#0F1014] border border-white/15 rounded-lg px-3 py-2 text-sm text-white/85 placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 resize-none"
                             />
                             {updateActionError && (
                               <p className="text-red-400 text-[11px]">{updateActionError}</p>
@@ -1143,12 +1142,11 @@ export default function CatalogPage() {
               {/* Compose */}
               <div>
                 <label className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">New update</label>
-                <textarea
+                <TextArea
                   rows={5}
                   value={updateDraft}
                   onChange={(e) => setUpdateDraft(e.target.value)}
                   placeholder={`Write an update for ${activeClaimers.length > 0 ? `${activeClaimers.length} claimant${activeClaimers.length !== 1 ? "s" : ""}` : "this assignment"} — they'll see it in the portal and receive it by email.`}
-                  className="w-full rounded-lg border border-white/12 bg-[#0F1014] px-3 py-2.5 text-sm text-white/80 placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 resize-none"
                 />
               </div>
 

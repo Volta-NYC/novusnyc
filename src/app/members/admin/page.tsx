@@ -3,7 +3,7 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
-import { Btn, Field, Input, SearchBar, Spinner, Toggle } from "@/components/members/ui";
+import { Btn, Field, Input, Select, SearchBar, Spinner, Toggle } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import { useAuth } from "@/lib/members/authContext";
 import { useRouter, usePathname } from "next/navigation";
@@ -703,13 +703,12 @@ function InfractionsTab() {
             <TextArea rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="When this should be issued — guidance for the admin issuing it." />
           </Field>
           <Field label="Demerits" required>
-            <select
+            <Select
               value={String(form.points)}
               onChange={(e) => setForm((p) => ({ ...p, points: Number(e.target.value) || 1 }))}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               {POINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </Select>
             <p className="text-[11px] text-white/40 mt-1.5">Higher demerit values are more severe. See the handbook for thresholds.</p>
           </Field>
         </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, Btn, Modal, Field, Input, SearchBar, Empty, useConfirm, Spinner,
+  PageHeader, Btn, Modal, Field, Input, Select, SearchBar, Empty, useConfirm, Spinner,
   ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
@@ -880,14 +880,13 @@ export default function ByProjectPage() {
               />
             </Field>
             <Field label="Project">
-              <select
+              <Select
                 value={assignmentForm.projectRef}
                 onChange={(e) => {
                   const val = e.target.value;
                   setAssignmentForm((p) => ({ ...p, projectRef: val }));
                   setBizSearch(val ? (refToLabel(val) ?? "") : "");
                 }}
-                className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white/85 focus:outline-none focus:border-[#85CC17]/50"
               >
                 <option value="volta">Volta</option>
                 {sortedBusinessOptions.length > 0 && (
@@ -904,26 +903,24 @@ export default function ByProjectPage() {
                     ))}
                   </optgroup>
                 )}
-              </select>
+              </Select>
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Track">
-                <select
+                <Select
                   value={assignmentForm.track}
                   onChange={(e) => setAssignmentForm((p) => ({ ...p, track: e.target.value as CycleTrack }))}
-                  className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50"
                 >
                   {MEMBER_TRACKS.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Status">
-                <select
+                <Select
                   value={assignmentForm.status}
                   onChange={(e) => setAssignmentForm((p) => ({ ...p, status: e.target.value as AssignmentStatus }))}
-                  className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50"
                 >
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label={assignmentForm.recurringEnabled ? "Credits / check-in" : "Credits"}>
                 <Input
@@ -963,13 +960,12 @@ export default function ByProjectPage() {
                 </div>
               </div>
               <Field label="Min Role">
-                <select
+                <Select
                   value={assignmentForm.minRole}
                   onChange={(e) => setAssignmentForm((p) => ({ ...p, minRole: e.target.value as CycleRole }))}
-                  className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50"
                 >
                   {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Est. Hours">
                 <Input
@@ -1146,24 +1142,22 @@ export default function ByProjectPage() {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Status">
-                <select
+                <Select
                   value={groupForm.status}
                   onChange={(e) => setGroupForm((p) => ({ ...p, status: e.target.value as ProjectGroup["status"] }))}
-                  className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50"
                 >
                   {GROUP_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Color">
-                <select
+                <Select
                   value={groupForm.color}
                   onChange={(e) => setGroupForm((p) => ({ ...p, color: e.target.value as ProjectGroup["color"] }))}
-                  className="w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50"
                 >
                   {GROUP_COLORS.map((c) => (
                     <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                   ))}
-                </select>
+                </Select>
               </Field>
             </div>
           </div>

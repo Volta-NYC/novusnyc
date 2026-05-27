@@ -4,7 +4,7 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 import { useRef, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, Empty, SkeletonRows, useConfirm,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, useConfirm,
   ViewPanel, ViewSection, SortPanel, type SortRule,
 } from "@/components/members/ui";
 import SchoolSelector from "@/components/SchoolSelector";
@@ -1001,15 +1001,8 @@ export default function TeamPage() {
       </div>
 
       {/* Search controls */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name, email, school, or grade…" />
-        <div className="flex items-center gap-3 text-[10px] text-white/55">
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> On pace</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> 1 check-in behind</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> 2–3 behind</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> 4+ behind / no activity</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive</span>
-        </div>
         {!isMemberRestricted && (
           <ViewPanel active={hideInactive || showOnlyInactive || hiddenAdminCols.size > 0 || sortRules.length !== DEFAULT_SORT_RULES.length}>
             <ViewSection label="Filter">
@@ -1065,6 +1058,13 @@ export default function TeamPage() {
             </ViewSection>
           </ViewPanel>
         )}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 mb-4 text-[10px] text-white/55">
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> On pace</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> 1 check-in behind</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> 2–3 behind</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> 4+ behind / no activity</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive</span>
       </div>
       {/* Team member list */}
       {isMemberRestricted ? (
@@ -1578,29 +1578,27 @@ export default function TeamPage() {
             />
           </Field>
           <Field label="High School Class Year">
-            <select
+            <Select
               value={form.grade ?? ""}
               onChange={e => setField("grade", e.target.value)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               <option value="">Select class year</option>
               {GRADE_OPTIONS.map((option) => (
                 <option key={option} value={option}>{option}</option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="Track">
-            <select
+            <Select
               value={getMemberTrack({ ...(form as TeamMember), id: "", createdAt: "" })}
               onChange={(e) => setTrack(e.target.value as TrackKey)}
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
             >
               <option value="—">—</option>
               <option value="Tech">Tech</option>
               <option value="Marketing">Marketing</option>
               <option value="Finance">Finance</option>
               <option value="Other">Other</option>
-            </select>
+            </Select>
           </Field>
           <Field label="Date Accepted">
             <Input
