@@ -190,7 +190,7 @@ export default function CatalogPage() {
       if (!grp) return null;
       return { name: grp.name, subtitle: grp.description };
     }
-    return { name: "Volta", subtitle: "Organization-wide" };
+    return { name: "Volta Internal", subtitle: "Internal assignments" };
   }, [businessById, projectGroupById]);
 
   const sorted = useMemo(() => {
@@ -658,7 +658,7 @@ export default function CatalogPage() {
                               <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); openEdit(a); }}
-                                  className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/10 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
+                                  className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
                                 >
                                   Edit
                                 </button>
@@ -666,7 +666,7 @@ export default function CatalogPage() {
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
                                     title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                                    className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/20 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/35 text-[10px] font-medium transition-colors whitespace-nowrap"
+                                    className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
                                   >
                                     <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -752,7 +752,7 @@ export default function CatalogPage() {
                             className={`h-7 inline-flex items-center gap-1 px-2 rounded-md border text-[10px] font-medium transition-colors whitespace-nowrap ${
                               updateCount > 0
                                 ? "bg-[#85CC17]/[0.08] border-[#85CC17]/25 text-[#9BE22B]/80 hover:text-[#9BE22B] hover:bg-[#85CC17]/[0.13] hover:border-[#85CC17]/40"
-                                : "bg-transparent border-white/8 text-white/25 hover:text-white/50 hover:bg-white/[0.04] hover:border-white/15"
+                                : "bg-white/[0.03] border-white/12 text-white/30 hover:text-white/55 hover:bg-white/[0.05] hover:border-white/20"
                             }`}
                           >
                             <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -764,7 +764,7 @@ export default function CatalogPage() {
                             <button
                               onClick={() => setClaimsModal(a)}
                               title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                              className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/20 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/35 text-[10px] font-medium transition-colors whitespace-nowrap"
+                              className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
                             >
                               <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -774,7 +774,7 @@ export default function CatalogPage() {
                           )}
                           <button
                             onClick={() => openEdit(a)}
-                            className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/10 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
+                            className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
                           >
                             Edit
                           </button>

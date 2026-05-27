@@ -288,7 +288,7 @@ export default function ByProjectPage() {
       result.unshift({
         key: "volta",
         label: "Volta",
-        subtitle: "Organization-wide assignments",
+        subtitle: "Internal assignments",
         status: "Ongoing",
         borderCls: "border-l-[#85CC17]/60",
         assignments: voltaAssignments,
@@ -756,7 +756,7 @@ export default function ByProjectPage() {
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
                                       title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                                      className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/20 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/35 text-[10px] font-medium transition-colors whitespace-nowrap"
+                                      className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
                                     >
                                       <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -766,7 +766,7 @@ export default function ByProjectPage() {
                                   )}
                                   <button
                                     onClick={(e) => { e.stopPropagation(); openEditAssignment(a); }}
-                                    className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/10 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
+                                    className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
                                   >
                                     Edit
                                   </button>
