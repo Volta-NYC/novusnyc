@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
@@ -10,7 +10,6 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/members/RichTextEditor";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
-import MasonryGrid from "@/components/MasonryGrid";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
   subscribeProjectGroups, subscribeCycles, subscribeAssignmentTemplates,
@@ -620,11 +619,11 @@ export default function ByProjectPage() {
         </ViewPanel>
       </div>
 
-      {/* Card grid */}
+      {/* Section list */}
       {visibleCards.length === 0 ? (
         <Empty message={q ? "No projects match your search." : "No active projects with assignments."} />
       ) : (
-        <MasonryGrid itemIds={visibleCards.map((c) => c.key)} itemWidth={320} gap={16}>
+        <div className="flex flex-col gap-5">
           {visibleCards.map((card) => {
             const statusInfo = BIZ_STATUS_LABEL[card.status];
             const assignmentsToShow =
@@ -644,120 +643,177 @@ export default function ByProjectPage() {
             return (
               <div
                 key={card.key}
-                className={`flex flex-col rounded-xl border border-white/8 bg-[#13161D] border-l-4 ${card.borderCls} overflow-hidden`}
+                className={`rounded-xl border border-white/8 bg-[#13161D] border-l-4 ${card.borderCls} overflow-hidden`}
               >
-                {/* Card header */}
-                <div className="flex items-start justify-between gap-2 px-4 pt-4 pb-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold text-white/90 truncate">{card.label}</span>
-                    </div>
+                {/* Section header */}
+                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/8">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <span className="text-[13px] font-semibold text-white/90 truncate">{card.label}</span>
                     {card.subtitle && (
-                      <p className="text-[11px] text-white/55 mt-0.5 truncate">{card.subtitle}</p>
+                      <span className="text-[11px] text-white/40 truncate hidden sm:block">{card.subtitle}</span>
                     )}
-                    <p className={`text-[10px] font-semibold mt-0.5 ${statusInfo.cls}`}>{statusInfo.text}</p>
+                    <span className={`text-[10px] font-semibold shrink-0 ${statusInfo.cls}`}>{statusInfo.text}</span>
+                    <span className="text-[10px] text-white/25 shrink-0">
+                      {filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? "s" : ""}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {grp && (
                       <button
                         onClick={() => openEditGroup(grp)}
-                        className="text-[10px] text-white/30 hover:text-white/65 px-1.5 py-1 rounded transition-colors"
+                        className="text-[10px] text-white/30 hover:text-white/65 px-2 py-1 rounded transition-colors"
                       >
-                        Edit
+                        Edit Group
                       </button>
                     )}
                     <button
                       onClick={() => openCreateAssignment(card.key)}
-                      className="text-[10px] text-white/30 hover:text-[#9BE22B] px-1.5 py-1 rounded transition-colors"
+                      className="text-[10px] text-white/30 hover:text-[#9BE22B] px-2 py-1 rounded transition-colors"
                     >
                       + Add
                     </button>
                   </div>
                 </div>
 
-                {/* Assignment rows */}
-                <div className="flex flex-col border-t border-white/5">
-                  {filteredAssignments.length === 0 && (
-                    <p className="text-[11px] text-white/30 px-4 py-3">No assignments.</p>
-                  )}
-                  {filteredAssignments.map((a) => {
-                    const isRowExpanded = expandedRows.has(a.id);
-                    const claimList = claimsByAssignment.get(a.id) ?? [];
-                    const activeClaims = claimList.filter((c) => c.status !== "rejected");
-                    const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
-                    const deadline = a.deadlines?.[0]?.date ?? "";
+                {/* Assignment table */}
+                {filteredAssignments.length === 0 ? (
+                  <p className="text-[11px] text-white/30 px-4 py-3">No assignments match filters.</p>
+                ) : (
+                  <table className="w-full table-fixed">
+                    <colgroup>
+                      <col className="w-auto" />
+                      <col className="w-24" />
+                      <col className="w-16" />
+                      <col className="w-24" />
+                      <col className="w-36" />
+                      <col className="w-36" />
+                      <col className="w-36" />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b border-white/5">
+                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-4 py-2 text-left">Assignment</th>
+                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Status</th>
+                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Cred.</th>
+                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Cap.</th>
+                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Deadline</th>
+                        <th className="text-[10px] uppercase tracking-wide text-white/30 font-semibold px-3 py-2 text-left">Claimants</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAssignments.map((a) => {
+                        const isRowExpanded = expandedRows.has(a.id);
+                        const claimList = claimsByAssignment.get(a.id) ?? [];
+                        const activeClaims = claimList.filter((c) => c.status !== "rejected");
+                        const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
+                        const deadline = a.deadlines?.[0]?.date ?? "";
+                        const deadlineLabel = a.recurringEnabled
+                          ? `↻ every ${a.checkinIntervalDays ?? 7}d`
+                          : a.deadlineType === "offset" && a.deadlineOffsetDays
+                          ? `+${a.deadlineOffsetDays}d after claim`
+                          : deadline || "—";
 
-                    return (
-                      <div key={a.id} className="border-b border-white/5 last:border-b-0">
-                        {/* Row summary */}
-                        <button
-                          onClick={() => toggleRowExpand(a.id)}
-                          className={`w-full flex items-center gap-2 px-4 h-8 hover:bg-white/4 transition-colors text-left ${a.priority ? "bg-amber-400/6" : ""}`}
-                        >
-                          <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[a.track] ?? "bg-gray-400"}`} />
-                          <span className="flex-1 min-w-0 text-[11px] text-white/75 truncate">{a.title}</span>
-                          {a.priority && (
-                            <span className="shrink-0 members-chip border-amber-400/45 bg-amber-400/15 text-amber-300 text-[9px] font-bold uppercase tracking-wide">
-                              ⚡ Priority
-                            </span>
-                          )}
-                          <span className={`shrink-0 members-chip text-[9px] font-semibold border rounded ${ASSIGNMENT_STATUS_STYLES[a.status]}`}>
-                            {a.status}
-                          </span>
-                          <span className={`shrink-0 text-[10px] text-white/25 transition-transform ${isRowExpanded ? "rotate-180" : ""}`}>
-                            ▾
-                          </span>
-                        </button>
-                        {/* Inline expand */}
-                        {isRowExpanded && (
-                          <div className="px-4 pb-3 pt-1 flex flex-col gap-2 bg-[#0F1014]">
-                            <div className="flex flex-wrap gap-3 text-[11px] text-white/55">
-                              <span className="text-white/75 font-medium">{a.track}</span>
-                              <span className="text-[#85CC17] font-semibold">
-                                {a.credits} {a.recurringEnabled ? "credits/check-in" : a.credits === 1 ? "credit" : "credits"}
-                              </span>
-                              {a.recurringEnabled && (
-                                <span className="text-purple-400">↻ Every {a.checkinIntervalDays ?? 7} days</span>
-                              )}
-                              {!a.recurringEnabled && a.deadlineType === "offset" && a.deadlineOffsetDays && (
-                                <span>Due {a.deadlineOffsetDays}d after claiming</span>
-                              )}
-                              {!a.recurringEnabled && a.deadlineType !== "offset" && deadline && (
-                                <span>Due {deadline}</span>
-                              )}
-                              {a.capacity === 0 ? (
-                                activeClaims.length > 0 ? <span>{activeClaims.length} claiming</span> : <span className="text-white/30">Unlimited spots</span>
-                              ) : (
-                                <span>{activeClaims.length}/{a.capacity} claimed</span>
-                              )}
-                            </div>
-                            {claimerNames.length > 0 && (
-                              <p className="text-[11px] text-white/45">{claimerNames.join(", ")}</p>
+                        return (
+                          <Fragment key={a.id}>
+                            <tr
+                              onClick={() => toggleRowExpand(a.id)}
+                              className={`border-b border-white/5 cursor-pointer hover:bg-white/[0.025] transition-colors ${a.priority ? "bg-amber-400/5" : ""}`}
+                            >
+                              {/* Title */}
+                              <td className="px-4 py-2.5 min-w-0 overflow-hidden">
+                                <div className="flex items-center gap-2">
+                                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[a.track] ?? "bg-gray-400"}`} />
+                                  <span className="text-[12px] text-white/80 truncate">{a.title}</span>
+                                  {a.priority && <span className="shrink-0 text-[9px] text-amber-300 font-bold">⚡</span>}
+                                  {a.recurringEnabled && <span className="shrink-0 text-[9px] text-purple-400">↻</span>}
+                                </div>
+                                <p className="text-[10px] text-white/35 pl-3.5 mt-0.5">{a.track}</p>
+                              </td>
+                              {/* Status */}
+                              <td className="px-3 py-2.5">
+                                <span className={`members-chip text-[9px] font-semibold border ${ASSIGNMENT_STATUS_STYLES[a.status]}`}>
+                                  {a.status}
+                                </span>
+                              </td>
+                              {/* Credits */}
+                              <td className="px-3 py-2.5 text-[12px] text-[#9BE22B]">
+                                {a.credits}
+                              </td>
+                              {/* Capacity */}
+                              <td className="px-3 py-2.5 text-[12px]">
+                                {a.capacity === 0 ? (
+                                  <span className="text-white/25">∞</span>
+                                ) : (
+                                  <span className={activeClaims.length >= a.capacity ? "text-amber-300" : "text-white/55"}>
+                                    {activeClaims.length}/{a.capacity}
+                                  </span>
+                                )}
+                              </td>
+                              {/* Deadline */}
+                              <td className="px-3 py-2.5 text-[11px] text-white/45 truncate">
+                                {deadlineLabel}
+                              </td>
+                              {/* Claimants */}
+                              <td className="px-3 py-2.5 text-[11px] text-white/45 truncate overflow-hidden">
+                                {claimerNames.length > 0 ? claimerNames.join(", ") : <span className="text-white/25">—</span>}
+                              </td>
+                              {/* Actions */}
+                              <td className="px-3 py-2.5">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); openEditAssignment(a); }}
+                                    className="text-[10px] text-white/30 hover:text-white/70 px-1.5 py-0.5 rounded transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  {claimList.length > 0 && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
+                                      className="text-[10px] text-white/30 hover:text-white/70 px-1.5 py-0.5 rounded transition-colors whitespace-nowrap"
+                                    >
+                                      Claims ({claimList.length})
+                                    </button>
+                                  )}
+                                  <span className={`text-[10px] text-white/20 ml-1 transition-transform inline-block ${isRowExpanded ? "rotate-180" : ""}`}>▾</span>
+                                </div>
+                              </td>
+                            </tr>
+                            {/* Inline expand */}
+                            {isRowExpanded && (
+                              <tr key={a.id + "-expand"} className="border-b border-white/5 bg-[#0F1014]">
+                                <td colSpan={7} className="px-5 py-3">
+                                  <div className="flex flex-col gap-2">
+                                    {a.description && (
+                                      <div
+                                        className="text-[11px] text-white/55 prose-invert"
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
+                                      />
+                                    )}
+                                    {a.notes && (
+                                      <p className="text-[11px] text-white/35 italic">{a.notes}</p>
+                                    )}
+                                    <div className="flex flex-wrap gap-4 text-[11px] text-white/35 mt-0.5">
+                                      <span>Min role: {a.minRole}</span>
+                                      {!!a.estimatedHours && <span>{a.estimatedHours}h est.</span>}
+                                      {a.requiresApproval
+                                        ? <span>Requires approval</span>
+                                        : <span className="text-[#9BE22B]/60">Auto-approved</span>
+                                      }
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
                             )}
-                            {a.description && (
-                              <div
-                                className="text-[11px] text-white/55 prose-invert line-clamp-3"
-                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
-                              />
-                            )}
-                            <div className="flex gap-2 mt-1">
-                              <Btn variant="secondary" size="sm" onClick={() => openEditAssignment(a)}>Edit</Btn>
-                              {claimList.length > 0 && (
-                                <Btn variant="secondary" size="sm" onClick={() => setClaimsModal(a)}>
-                                  Claims ({claimList.length})
-                                </Btn>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                          </Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
               </div>
             );
           })}
-        </MasonryGrid>
+        </div>
       )}
 
       {/* Assignment modal */}

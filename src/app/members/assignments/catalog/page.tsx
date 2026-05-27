@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
 import {
@@ -10,11 +9,11 @@ import {
   ViewPanel, ViewSection, SearchSelect, type SearchSelectOption,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses, subscribeCycles,
   subscribeProjectGroups, subscribeAssignmentUpdates,
   createAssignment, updateAssignment, archiveAssignment, hardDeleteAssignment, deleteAssignmentClaim,
-  deleteAssignmentUpdate,
   type Assignment, type AssignmentClaim, type AssignmentStatus, type AssignmentUpdate,
   type Business, type Cycle, type CycleRole, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
@@ -52,14 +51,11 @@ const TRACK_DOT: Record<CycleTrack, string> = {
   General: "bg-gray-400",
 };
 
-const TRACK_BORDER: Record<CycleTrack, string> = {
-  Tech: "border-l-blue-500/50",
-  Marketing: "border-l-lime-500/50",
-  Finance: "border-l-amber-500/50",
-  General: "border-l-gray-400/50",
-};
-
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
+
+type TableRow =
+  | { type: "group"; groupKey: string; track: CycleTrack; title: string; assignments: Assignment[] }
+  | { type: "single"; assignment: Assignment };
 
 interface FormState {
   title: string;
@@ -71,8 +67,8 @@ interface FormState {
   limitClaims: boolean;
   maxClaims: string;
   deadlineType: "hard" | "offset";
-  hardDeadline: string;           // ISO date for 'hard' type
-  deadlineOffsetDays: string;     // days from claim for 'offset' type
+  hardDeadline: string;
+  deadlineOffsetDays: string;
   status: AssignmentStatus;
   priority: boolean;
   requiresApproval: boolean;
@@ -122,6 +118,12 @@ export default function CatalogPage() {
   const [updateSendError, setUpdateSendError] = useState<string | null>(null);
   const [updateSendSuccess, setUpdateSendSuccess] = useState(false);
 
+  // Per-update edit state
+  const [editingUpdateId, setEditingUpdateId] = useState<string | null>(null);
+  const [editingUpdateText, setEditingUpdateText] = useState("");
+  const [updateActionBusy, setUpdateActionBusy] = useState(false);
+  const [updateActionError, setUpdateActionError] = useState<string | null>(null);
+
   const [search, setSearch] = useState("");
   const [filterTracks, setFilterTracks] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
@@ -132,6 +134,10 @@ export default function CatalogPage() {
   const [form, setForm] = useState<FormState>(BLANK_FORM);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Inline row expansion for single rows; group expansion keyed by groupKey
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!loading && authRole === "member") router.replace("/members/projects");
@@ -210,6 +216,26 @@ export default function CatalogPage() {
       });
   }, [assignments, search, filterTracks, filterStatuses, showArchived, resolveProjectLabel]);
 
+  // Group same-title+track assignments into collapsible families
+  const tableRows = useMemo((): TableRow[] => {
+    const buckets = new Map<string, Assignment[]>();
+    for (const a of sorted) {
+      const key = `${a.track}::${a.title}`;
+      const list = buckets.get(key) ?? [];
+      list.push(a);
+      buckets.set(key, list);
+    }
+    const rows: TableRow[] = [];
+    for (const [key, asns] of buckets) {
+      if (asns.length >= 2) {
+        rows.push({ type: "group", groupKey: key, track: asns[0].track, title: asns[0].title, assignments: asns });
+      } else {
+        rows.push({ type: "single", assignment: asns[0] });
+      }
+    }
+    return rows;
+  }, [sorted]);
+
   const activeAssignments = assignments.filter((a) => a.status !== "Archived");
   const counts = {
     open: activeAssignments.filter((a) => a.status === "Open").length,
@@ -242,6 +268,12 @@ export default function CatalogPage() {
       subtitle: "Project Group",
     })),
   ], [sortedBusinessOptions, sortedGroupOptions]);
+
+  const toggleRow = (id: string) =>
+    setExpandedRows((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+
+  const toggleGroup = (key: string) =>
+    setExpandedGroups((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
   const openCreate = () => { setForm({ ...BLANK_FORM }); setEditing(null); setSaveError(null); setModal("create"); };
 
@@ -362,6 +394,9 @@ export default function CatalogPage() {
     setUpdateDraft("");
     setUpdateSendError(null);
     setUpdateSendSuccess(false);
+    setEditingUpdateId(null);
+    setEditingUpdateText("");
+    setUpdateActionError(null);
   };
 
   const handleSendUpdate = async () => {
@@ -388,6 +423,51 @@ export default function CatalogPage() {
       setUpdateSendError(err instanceof Error ? err.message : "Send failed. Please try again.");
     } finally {
       setSendingUpdate(false);
+    }
+  };
+
+  const handleDeleteUpdate = async (updateId: string) => {
+    setUpdateActionBusy(true);
+    setUpdateActionError(null);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/assignments/manage-update", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: updateId }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Delete failed");
+      setAssignmentUpdates((prev) => prev.filter((u) => u.id !== updateId));
+    } catch (err) {
+      setUpdateActionError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setUpdateActionBusy(false);
+    }
+  };
+
+  const handleSaveUpdateEdit = async (updateId: string) => {
+    if (!editingUpdateText.trim()) return;
+    setUpdateActionBusy(true);
+    setUpdateActionError(null);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/assignments/manage-update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: updateId, message: editingUpdateText.trim() }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Save failed");
+      setAssignmentUpdates((prev) =>
+        prev.map((u) => u.id === updateId ? { ...u, message: editingUpdateText.trim() } : u)
+      );
+      setEditingUpdateId(null);
+      setEditingUpdateText("");
+    } catch (err) {
+      setUpdateActionError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setUpdateActionBusy(false);
     }
   };
 
@@ -472,137 +552,229 @@ export default function CatalogPage() {
         )}
       </div>
 
-      {/* Card grid */}
+      {/* Assignment table */}
       {sorted.length === 0 ? (
         <Empty
           message={search || filterTracks.size > 0 || filterStatuses.size > 0 ? "No assignments match your filters." : "No assignments in the catalog yet."}
           action={<Btn variant="primary" onClick={openCreate}>+ New Assignment</Btn>}
         />
       ) : (
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
-          initial="hidden"
-          animate="visible"
-          variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
-        >
-          {sorted.map((a) => {
-            const track = (a.track ?? a.primaryTrack ?? "Tech") as CycleTrack;
-            const proj = resolveProjectLabel(a);
-            const claimList = claimsByAssignment.get(a.id) ?? [];
-            const activeClaims = claimList.filter((c) => c.status !== "rejected");
-            const deadline = a.deadlines?.[0]?.date ?? "";
-            const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
+        <div className="rounded-xl border border-white/8 overflow-hidden">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="bg-[#0D0F14] border-b border-white/10">
+                <th className="w-7 px-3 py-2.5" />
+                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35">Title</th>
+                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-40">Project</th>
+                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-28">Status</th>
+                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-20 text-right">Credits</th>
+                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-white/35 w-20">Cap</th>
+                <th className="px-3 py-2.5 w-36" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.05]">
+              {tableRows.map((row) => {
+                if (row.type === "group") {
+                  const isOpen = expandedGroups.has(row.groupKey);
+                  const statuses = [...new Set(row.assignments.map((a) => a.status))];
+                  const totalActive = row.assignments.reduce((sum, a) => {
+                    const ac = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
+                    return sum + ac;
+                  }, 0);
+                  const totalCap = row.assignments.reduce((sum, a) => sum + (a.capacity ?? 0), 0);
 
-            const isUnlimited = a.capacity === 0;
-
-            return (
-              <motion.div
-                key={a.id}
-                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.18 } } }}
-                className={`flex flex-col rounded-xl border border-l-4 overflow-hidden
-                  ${a.priority
-                    ? "border-amber-400/40 border-l-amber-400 bg-amber-400/5"
-                    : `border-white/8 bg-[#13161D] ${TRACK_BORDER[track]}`
-                  }`}
-              >
-                <div className="flex items-start justify-between gap-2 px-4 pt-3.5 pb-2.5">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${TRACK_DOT[track]}`} />
-                      <span className="text-[10px] text-white/45 uppercase tracking-wide">{track}</span>
-                      {a.priority && (
-                        <span className="members-chip border-amber-400/45 bg-amber-400/15 text-amber-300 text-[9px] font-bold uppercase tracking-wide">
-                          ⚡ Priority
-                        </span>
-                      )}
-                      {a.applicationRequired && (
-                        <span className="members-chip border-blue-400/40 bg-blue-400/10 text-blue-300 text-[9px] font-semibold">
-                          ✉ Apply first
-                        </span>
-                      )}
-                      {a.requiresApproval === false && (
-                        <span className="members-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-300 text-[9px] font-semibold">
-                          ✓ Auto-approved
-                        </span>
-                      )}
-                      {a.allowMultipleCompletions && (
-                        <span className="members-chip border-purple-400/40 bg-purple-400/10 text-purple-300 text-[9px] font-semibold">
-                          ↻ Repeatable
-                        </span>
-                      )}
-                      <span className={`ml-auto members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>
-                        {a.status}
-                      </span>
-                    </div>
-                    <p className="text-[14px] font-semibold text-white/90 leading-snug">{a.title}</p>
-                    {proj && (
-                      <p className="text-[11px] text-white/55 mt-0.5 truncate">
-                        {proj.name}{proj.subtitle && <span> · {proj.subtitle}</span>}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
-                  <span className="text-[#85CC17] font-bold">
-                    {a.credits} {a.recurringEnabled ? "credits/check-in" : a.credits === 1 ? "credit" : "credits"}
-                  </span>
-                  <span>{a.minRole}</span>
-                  {a.recurringEnabled && (
-                    <span className="text-purple-400">↻ Every {a.checkinIntervalDays ?? 7} days</span>
-                  )}
-                  {!a.recurringEnabled && a.deadlineType === "offset" && a.deadlineOffsetDays && (
-                    <span>Due {a.deadlineOffsetDays}d after claiming</span>
-                  )}
-                  {!a.recurringEnabled && a.deadlineType !== "offset" && deadline && (
-                    <span>Due {deadline}</span>
-                  )}
-                  {isUnlimited ? (
-                    activeClaims.length > 0
-                      ? <button type="button" onClick={() => setClaimsModal(a)} className="hover:text-white/85 underline-offset-2 hover:underline transition-colors">{activeClaims.length} claiming</button>
-                      : <span className="text-white/35">Unlimited spots</span>
-                  ) : (() => {
-                    const isFull = activeClaims.length >= (a.capacity ?? 0);
-                    return (
-                      <button type="button" onClick={() => setClaimsModal(a)} className="hover:text-white/85 underline-offset-2 hover:underline transition-colors inline-flex items-center gap-1.5">
-                        {activeClaims.length}/{a.capacity} claimed
-                        {isFull && <span className="members-chip border-red-400/30 bg-red-400/10 text-red-300 text-[9px]">Full</span>}
-                      </button>
-                    );
-                  })()}
-                </div>
-
-                {claimerNames.length > 0 && (
-                  <div className="px-4 pb-2 text-[11px] text-white/35 truncate">
-                    {claimerNames.join(", ")}
-                  </div>
-                )}
-
-                <div className="border-t border-white/5 px-4 py-2 flex items-center justify-between gap-2">
-                  {(() => {
-                    const updateCount = updatesByAssignment.get(a.id)?.length ?? 0;
-                    const activeClaimers = (claimsByAssignment.get(a.id) ?? []).filter(
-                      (c) => c.status !== "rejected" && c.status !== "Approved",
-                    );
-                    return (
-                      <Btn
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setUpdatesModal(a)}
-                        title={activeClaimers.length > 0 ? `Send update to ${activeClaimers.length} claimant${activeClaimers.length !== 1 ? "s" : ""}` : "No active claimants"}
+                  return (
+                    <>
+                      <tr
+                        key={row.groupKey}
+                        onClick={() => toggleGroup(row.groupKey)}
+                        className="cursor-pointer hover:bg-white/[0.03] transition-colors bg-[#13161D]"
                       >
-                        {updateCount > 0 ? `Updates (${updateCount})` : "Send Update"}
-                      </Btn>
-                    );
-                  })()}
-                  <Btn variant="ghost" size="sm" onClick={() => openEdit(a)}>Edit</Btn>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+                        <td className="pl-3 py-2.5">
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full ${TRACK_DOT[row.track]}`} />
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-semibold text-white/85">{row.title}</span>
+                            <span className="text-[10px] text-white/35 font-medium bg-white/[0.06] border border-white/10 rounded px-1.5 py-0.5">
+                              ×{row.assignments.length}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-[11px] text-white/40">
+                          {row.assignments.length} projects
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex flex-wrap gap-1">
+                            {statuses.map((s) => (
+                              <span key={s} className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[s]}`}>{s}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-right text-[11px] text-[#85CC17] font-semibold">
+                          {row.assignments[0].credits} cr
+                        </td>
+                        <td className="px-3 py-2.5 text-[11px] text-white/40">
+                          {totalCap === 0 ? "∞" : `${totalActive}/${totalCap}`}
+                        </td>
+                        <td className="pr-3 py-2.5 text-right">
+                          <span className={`text-white/25 text-[10px] inline-block transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                        </td>
+                      </tr>
+                      {isOpen && row.assignments.map((a) => {
+                        const proj = resolveProjectLabel(a);
+                        const claimList = claimsByAssignment.get(a.id) ?? [];
+                        const activeClaims = claimList.filter((c) => c.status !== "rejected");
+                        const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
+                        return (
+                          <tr key={a.id} className="bg-[#0A0C10] border-l-2 border-l-white/10 hover:bg-white/[0.02] transition-colors">
+                            <td className="pl-4 py-2">
+                              <span className={`inline-block w-1 h-1 rounded-full ${TRACK_DOT[a.track]}`} />
+                            </td>
+                            <td className="px-3 py-2 text-[12px] text-white/65 pl-6">
+                              <div className="flex items-center gap-1.5">
+                                {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
+                                <span>{proj?.name ?? "Volta"}</span>
+                                {proj?.subtitle && <span className="text-white/30">· {proj.subtitle}</span>}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2" />
+                            <td className="px-3 py-2">
+                              <span className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                            </td>
+                            <td className="px-3 py-2 text-right text-[11px] text-[#85CC17] font-semibold">
+                              {a.credits} cr
+                            </td>
+                            <td className="px-3 py-2 text-[11px]">
+                              {a.capacity === 0
+                                ? <span className="text-white/30">∞</span>
+                                : <span className={isFull ? "text-red-400 font-medium" : "text-white/55"}>
+                                    {activeClaims.length}/{a.capacity}{isFull ? " ●" : ""}
+                                  </span>
+                              }
+                            </td>
+                            <td className="pr-3 py-2 text-right">
+                              <div className="flex items-center justify-end gap-3">
+                                <button onClick={(e) => { e.stopPropagation(); openEdit(a); }} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">Edit</button>
+                                {claimList.length > 0 && (
+                                  <button onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">Claims ({claimList.length})</button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </>
+                  );
+                }
+
+                // Single assignment row
+                const a = row.assignment;
+                const track = (a.track ?? a.primaryTrack ?? "Tech") as CycleTrack;
+                const proj = resolveProjectLabel(a);
+                const claimList = claimsByAssignment.get(a.id) ?? [];
+                const activeClaims = claimList.filter((c) => c.status !== "rejected");
+                const claimerNames = activeClaims.map((c) => c.memberName ?? "").filter(Boolean);
+                const isFull = a.capacity > 0 && activeClaims.length >= a.capacity;
+                const isExpanded = expandedRows.has(a.id);
+                const deadline = a.deadlines?.[0]?.date ?? "";
+                const updateCount = updatesByAssignment.get(a.id)?.length ?? 0;
+
+                return (
+                  <>
+                    <tr
+                      key={a.id}
+                      onClick={() => toggleRow(a.id)}
+                      className={`cursor-pointer hover:bg-white/[0.03] transition-colors ${a.priority ? "bg-amber-400/[0.04]" : "bg-[#13161D]"}`}
+                    >
+                      <td className="pl-3 py-2.5">
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${TRACK_DOT[track]}`} />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
+                          <span className="text-[13px] font-semibold text-white/85">{a.title}</span>
+                          {a.recurringEnabled && <span className="text-purple-400/70 text-[10px]">↻</span>}
+                          {a.applicationRequired && (
+                            <span className="members-chip border-blue-400/40 bg-blue-400/10 text-blue-300 text-[9px]">Apply first</span>
+                          )}
+                          {a.requiresApproval === false && (
+                            <span className="members-chip border-emerald-400/40 bg-emerald-400/10 text-emerald-300 text-[9px]">Auto-approved</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 text-[11px] text-white/55 truncate max-w-[160px]">
+                        {proj?.name ?? "—"}
+                        {proj?.subtitle && <span className="text-white/30 ml-1">· {proj.subtitle}</span>}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-[11px] text-[#85CC17] font-semibold whitespace-nowrap">
+                        {a.credits} {a.recurringEnabled ? "cr/chk" : "cr"}
+                      </td>
+                      <td className="px-3 py-2.5 text-[11px]">
+                        {a.capacity === 0
+                          ? <span className="text-white/30">∞</span>
+                          : <span className={isFull ? "text-red-400 font-medium" : "text-white/55"}>
+                              {activeClaims.length}/{a.capacity}{isFull ? " ●" : ""}
+                            </span>
+                        }
+                      </td>
+                      <td className="pr-3 py-2.5">
+                        <div className="flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => setUpdatesModal(a)}
+                            className="text-[11px] text-white/35 hover:text-white/70 transition-colors"
+                          >
+                            {updateCount > 0 ? `Updates (${updateCount})` : "Updates"}
+                          </button>
+                          {claimList.length > 0 && (
+                            <button onClick={() => setClaimsModal(a)} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">
+                              Claims ({claimList.length})
+                            </button>
+                          )}
+                          <button onClick={() => openEdit(a)} className="text-[11px] text-white/35 hover:text-white/70 transition-colors">Edit</button>
+                          <span className={`text-white/20 text-[10px] inline-block transition-transform ${isExpanded ? "rotate-180" : ""}`}>▾</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr key={`${a.id}-detail`}>
+                        <td colSpan={7} className="bg-[#0A0C10] px-4 pb-3 pt-1.5 border-b border-white/5">
+                          <div className="flex gap-6">
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              {a.description && (
+                                <div
+                                  className="text-[11px] text-white/50 line-clamp-4 prose-invert"
+                                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.description) }}
+                                />
+                              )}
+                              {claimerNames.length > 0 && (
+                                <p className="text-[11px] text-white/40">Claimants: {claimerNames.join(", ")}</p>
+                              )}
+                              {a.notes && <p className="text-[11px] text-white/30 italic">{a.notes}</p>}
+                            </div>
+                            <div className="shrink-0 text-[11px] text-white/40 space-y-1 text-right">
+                              <p>{a.minRole}+</p>
+                              {a.estimatedHours > 0 && <p>~{a.estimatedHours}h</p>}
+                              {!a.recurringEnabled && deadline && <p>Due {deadline}</p>}
+                              {a.recurringEnabled && <p>Every {a.checkinIntervalDays ?? 7}d</p>}
+                              {a.deadlineType === "offset" && a.deadlineOffsetDays && <p>Due {a.deadlineOffsetDays}d after claim</p>}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
+      {/* Edit / Create modal */}
       <Modal
         open={modal !== null}
         onClose={() => setModal(null)}
@@ -655,7 +827,6 @@ export default function CatalogPage() {
             />
           </Field>
 
-          {/* Recurring toggle */}
           <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 cursor-pointer">
             <div>
               <p className="text-sm text-white/85 font-medium">Recurring check-in assignment</p>
@@ -744,55 +915,23 @@ export default function CatalogPage() {
           </div>
 
           <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.priority}
-              onChange={(e) => setForm((p) => ({ ...p, priority: e.target.checked }))}
-              className="members-checkbox"
-            />
-            <span>
-              Priority assignment
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— highlighted in amber for members</span>
-            </span>
+            <input type="checkbox" checked={form.priority} onChange={(e) => setForm((p) => ({ ...p, priority: e.target.checked }))} className="members-checkbox" />
+            <span>Priority assignment <span className="ml-1.5 text-white/35 text-xs font-normal">— highlighted in amber for members</span></span>
           </label>
 
           <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.requiresApproval}
-              onChange={(e) => setForm((p) => ({ ...p, requiresApproval: e.target.checked }))}
-              className="members-checkbox"
-            />
-            <span>
-              Requires approval
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck to auto-award credits on member submit</span>
-            </span>
+            <input type="checkbox" checked={form.requiresApproval} onChange={(e) => setForm((p) => ({ ...p, requiresApproval: e.target.checked }))} className="members-checkbox" />
+            <span>Requires approval <span className="ml-1.5 text-white/35 text-xs font-normal">— uncheck to auto-award credits on member submit</span></span>
           </label>
 
           <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.applicationRequired}
-              onChange={(e) => setForm((p) => ({ ...p, applicationRequired: e.target.checked }))}
-              className="members-checkbox"
-            />
-            <span>
-              Requires pre-approval
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— members told to email board first; admin alerted when someone claims</span>
-            </span>
+            <input type="checkbox" checked={form.applicationRequired} onChange={(e) => setForm((p) => ({ ...p, applicationRequired: e.target.checked }))} className="members-checkbox" />
+            <span>Requires pre-approval <span className="ml-1.5 text-white/35 text-xs font-normal">— members told to email board first; admin alerted when someone claims</span></span>
           </label>
 
           <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white/75 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.allowMultipleCompletions}
-              onChange={(e) => setForm((p) => ({ ...p, allowMultipleCompletions: e.target.checked }))}
-              className="members-checkbox"
-            />
-            <span>
-              Allow multiple completions
-              <span className="ml-1.5 text-white/35 text-xs font-normal">— members can re-claim after approval (off by default)</span>
-            </span>
+            <input type="checkbox" checked={form.allowMultipleCompletions} onChange={(e) => setForm((p) => ({ ...p, allowMultipleCompletions: e.target.checked }))} className="members-checkbox" />
+            <span>Allow multiple completions <span className="ml-1.5 text-white/35 text-xs font-normal">— members can re-claim after approval (off by default)</span></span>
           </label>
 
           {editing && (
@@ -890,7 +1029,7 @@ export default function CatalogPage() {
         );
       })()}
 
-      {/* Send Update modal — emails all active claimants */}
+      {/* Send Update + history modal */}
       {updatesModal && (() => {
         const activeClaimers = (claimsByAssignment.get(updatesModal.id) ?? []).filter(
           (c) => c.status !== "rejected" && c.status !== "Approved",
@@ -899,63 +1038,99 @@ export default function CatalogPage() {
           (a, b) => a.postedAt.localeCompare(b.postedAt),
         );
         return (
-          <Modal open onClose={closeUpdatesModal} title={`Send Update · ${updatesModal.title}`}>
+          <Modal open onClose={closeUpdatesModal} title={`Updates · ${updatesModal.title}`}>
             <div className="space-y-4">
 
-              {/* Who receives this */}
+              {/* Recipients */}
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">
-                  Recipients
-                </p>
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">Recipients</p>
                 {activeClaimers.length === 0 ? (
-                  <p className="text-xs text-white/35 italic">
-                    No active claimants — the update will be saved but no one will be emailed.
-                  </p>
+                  <p className="text-xs text-white/35 italic">No active claimants — updates are saved but no one is emailed.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {activeClaimers.map((c) => (
-                      <span key={c.id} className="members-chip border-white/15 bg-white/5 text-white/65">
-                        {c.memberName}
-                      </span>
+                      <span key={c.id} className="members-chip border-white/15 bg-white/5 text-white/65">{c.memberName}</span>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Previous updates */}
+              {/* Update history with edit / delete */}
               {updateHistory.length > 0 && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">
-                    Update history
-                  </p>
-                  <div className="space-y-2 max-h-[22vh] overflow-y-auto pr-1">
+                  <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">Update history</p>
+                  <div className="space-y-2 max-h-[28vh] overflow-y-auto pr-1">
                     {updateHistory.map((u) => (
                       <div key={u.id} className="rounded-lg border border-[#85CC17]/15 bg-[#85CC17]/5 px-3 py-2.5 text-xs">
-                        <p className="text-white/85 whitespace-pre-wrap">{u.message}</p>
-                        <div className="flex items-center justify-between gap-2 mt-1.5">
-                          <p className="text-white/35">
-                            {u.postedBy} · {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => void deleteAssignmentUpdate(u.id)}
-                            className="text-white/25 hover:text-red-400 transition-colors shrink-0"
-                            title="Delete update"
-                          >
-                            ✕
-                          </button>
-                        </div>
+                        {editingUpdateId === u.id ? (
+                          <div className="flex flex-col gap-2">
+                            <textarea
+                              rows={3}
+                              value={editingUpdateText}
+                              onChange={(e) => setEditingUpdateText(e.target.value)}
+                              className="w-full bg-[#0F1014] border border-white/15 rounded-lg px-3 py-2 text-sm text-white/85 placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 resize-none"
+                            />
+                            {updateActionError && (
+                              <p className="text-red-400 text-[11px]">{updateActionError}</p>
+                            )}
+                            <div className="flex justify-end gap-3">
+                              <button
+                                type="button"
+                                onClick={() => { setEditingUpdateId(null); setEditingUpdateText(""); setUpdateActionError(null); }}
+                                className="text-[11px] text-white/40 hover:text-white/70"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleSaveUpdateEdit(u.id)}
+                                disabled={updateActionBusy || !editingUpdateText.trim()}
+                                className="text-[11px] text-[#85CC17] hover:text-[#9BE22B] disabled:opacity-40"
+                              >
+                                {updateActionBusy ? "Saving…" : "Save"}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-white/85 whitespace-pre-wrap">{u.message}</p>
+                            <div className="flex items-center justify-between gap-2 mt-1.5">
+                              <p className="text-white/35 text-[11px] truncate">
+                                {u.postedBy} · {new Date(u.postedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                              </p>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditingUpdateId(u.id); setEditingUpdateText(u.message); setUpdateActionError(null); }}
+                                  disabled={updateActionBusy}
+                                  className="text-[11px] text-white/35 hover:text-white/70 transition-colors disabled:opacity-40"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteUpdate(u.id)}
+                                  disabled={updateActionBusy}
+                                  className="text-[11px] text-white/25 hover:text-red-400 transition-colors disabled:opacity-40"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
+                  {updateActionError && !editingUpdateId && (
+                    <p className="text-xs text-red-400 mt-2">{updateActionError}</p>
+                  )}
                 </div>
               )}
 
               {/* Compose */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">
-                  New update
-                </label>
+                <label className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">New update</label>
                 <textarea
                   rows={5}
                   value={updateDraft}
