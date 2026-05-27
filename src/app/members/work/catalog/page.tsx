@@ -39,24 +39,24 @@ function TrackIcon({ track, className = "w-4 h-4" }: { track: CycleTrack; classN
 }
 
 const TRACK_COLOR: Record<CycleTrack, string> = {
-  Tech:      "text-blue-400",
-  Marketing: "text-lime-400",
-  Finance:   "text-amber-400",
-  General:   "text-[#85CC17]",
+  Tech:      "text-blue-600",
+  Marketing: "text-lime-700",
+  Finance:   "text-amber-600",
+  General:   "text-[#5C9911]",
 };
 
 const TRACK_ICON_BG: Record<CycleTrack, string> = {
-  Tech:      "bg-blue-500/10 border-blue-500/20",
-  Marketing: "bg-lime-500/10 border-lime-500/20",
-  Finance:   "bg-amber-500/10 border-amber-500/20",
-  General:   "bg-[#85CC17]/10 border-[#85CC17]/20",
+  Tech:      "bg-blue-50 border-blue-200",
+  Marketing: "bg-lime-50 border-lime-200",
+  Finance:   "bg-amber-50 border-amber-200",
+  General:   "bg-[#85CC17]/8 border-[#85CC17]/25",
 };
 
-const TRACK_PILL_DARK: Record<CycleTrack, string> = {
-  Tech:      "border-blue-400/30 bg-blue-400/10 text-blue-300",
-  Marketing: "border-lime-400/30 bg-lime-400/10 text-lime-300",
-  Finance:   "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  General:   "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
+const TRACK_PILL: Record<CycleTrack, string> = {
+  Tech:      "border-blue-200 bg-blue-50 text-blue-700",
+  Marketing: "border-lime-300 bg-lime-50 text-lime-800",
+  Finance:   "border-amber-200 bg-amber-50 text-amber-700",
+  General:   "border-[#85CC17]/30 bg-[#85CC17]/8 text-[#5C9911]",
 };
 
 // ── Assignment card ───────────────────────────────────────────────────────────
@@ -79,12 +79,12 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
     <button
       type="button"
       onClick={onClick}
-      className={`group w-full text-left rounded-2xl border bg-[#13161D] flex flex-col transition-all duration-200 overflow-hidden
+      className={`group w-full text-left rounded-2xl border bg-white flex flex-col transition-all duration-200 overflow-hidden
         ${isFull
-          ? "opacity-45 border-white/5 cursor-default"
+          ? "opacity-40 border-black/5 cursor-default"
           : a.priority
-            ? "border-l-4 border-l-amber-400 border-t-amber-400/20 border-r-amber-400/20 border-b-amber-400/20 hover:border-l-amber-400 hover:bg-[#151A1E] hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5"
-            : "border-white/8 hover:border-[#85CC17]/35 hover:bg-[#151A1E] hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5"
+            ? "border-l-4 border-l-amber-500 border-t-amber-200 border-r-amber-200 border-b-amber-200 hover:border-l-amber-500 hover:bg-amber-50/40 hover:shadow-md hover:shadow-black/8 hover:-translate-y-0.5"
+            : "border-black/8 hover:border-[#85CC17]/40 hover:bg-[#85CC17]/[0.02] hover:shadow-md hover:shadow-black/8 hover:-translate-y-0.5"
         }`}
     >
       {/* Card header */}
@@ -95,20 +95,20 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
             <TrackIcon track={track} className={`w-4 h-4 ${TRACK_COLOR[track]}`} />
           </div>
           <div className="min-w-0">
-            <p className={`text-[13px] font-bold leading-snug ${isFull ? "text-white/40" : "text-white/90 group-hover:text-white"} transition-colors`}>
+            <p className={`text-[13px] font-bold leading-snug ${isFull ? "text-black/30" : "text-black/85 group-hover:text-black"} transition-colors`}>
               {a.title}
             </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL_DARK[track]}`}>
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>
                 {track}
               </span>
               {a.priority && !isFull && (
-                <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                   ⚡ Priority
                 </span>
               )}
               {a.requiresApproval === false && (
-                <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                   ✓ Auto-approved
                 </span>
               )}
@@ -118,8 +118,8 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
 
         {/* Credits badge */}
         <div className={`flex-shrink-0 text-right ${isFull ? "opacity-40" : ""}`}>
-          <p className="text-[17px] font-bold text-[#85CC17] leading-none tabular-nums">+{a.credits}</p>
-          <p className="text-[9px] text-[#85CC17]/60 uppercase tracking-wider mt-0.5">
+          <p className="text-[17px] font-bold text-[#5C9911] leading-none tabular-nums">+{a.credits}</p>
+          <p className="text-[9px] text-[#5C9911]/60 uppercase tracking-wider mt-0.5">
             {a.recurringEnabled ? "/ check-in" : a.credits === 1 ? "credit" : "credits"}
           </p>
         </div>
@@ -128,7 +128,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
       {/* Description */}
       {a.description && (
         <div className="px-4 pb-3">
-          <p className={`text-[11px] leading-relaxed line-clamp-2 ${isFull ? "text-white/25" : "text-white/45"}`}>
+          <p className={`text-[11px] leading-relaxed line-clamp-2 ${isFull ? "text-black/20" : "text-black/45"}`}>
             {a.description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}
           </p>
         </div>
@@ -139,7 +139,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
         {/* Capacity bar */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className={`text-[10px] font-medium ${isFull ? "text-white/25" : "text-white/40"}`}>
+            <span className={`text-[10px] font-medium ${isFull ? "text-black/25" : "text-black/40"}`}>
               {isUnlimited
                 ? "Open to all"
                 : isFull
@@ -147,18 +147,18 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
                   : `${taken} / ${a.capacity} claimed`}
             </span>
             {alreadyClaimed && !isFull && (
-              <span className="text-[10px] font-semibold text-[#85CC17]/80">
+              <span className="text-[10px] font-semibold text-[#5C9911]">
                 {claimStatus === "Submitted" ? "✓ Submitted" : claimStatus === "Approved" ? "✓ Done" : "✓ In Progress"}
               </span>
             )}
             {isFull && (
-              <span className="text-[10px] font-semibold text-white/30">Closed</span>
+              <span className="text-[10px] font-semibold text-black/30">Closed</span>
             )}
           </div>
           {!isUnlimited && (
-            <div className="h-1 rounded-full bg-white/8 overflow-hidden">
+            <div className="h-1 rounded-full bg-black/8 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-white/20" : "bg-[#85CC17]"}`}
+                className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-black/15" : "bg-[#85CC17]"}`}
                 style={{ width: `${Math.max(pct * 100, isFull ? 100 : 0)}%` }}
               />
             </div>
@@ -168,20 +168,20 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
         {/* Deadline / recurring */}
         <div className="flex items-center gap-2 flex-wrap">
           {a.recurringEnabled && a.checkinIntervalDays && (
-            <span className="text-[10px] text-amber-400/70">↻ Every {a.checkinIntervalDays}d</span>
+            <span className="text-[10px] text-amber-600/70">↻ Every {a.checkinIntervalDays}d</span>
           )}
           {!a.recurringEnabled && (() => {
             const d = a.deadlines?.[0]?.date ?? a.deadline ?? "";
             if (!d) return null;
             const days = Math.round((Date.parse(d) - Date.now()) / 86400000);
             return (
-              <span className={`text-[10px] ${days <= 3 ? "text-orange-400/80" : "text-white/30"}`}>
+              <span className={`text-[10px] ${days <= 3 ? "text-orange-600/80" : "text-black/30"}`}>
                 {days <= 0 ? "Overdue" : `Due in ${days}d`}
               </span>
             );
           })()}
           {a.applicationRequired && (
-            <span className="text-[10px] text-blue-400/70">✉ Apply first</span>
+            <span className="text-[10px] text-blue-600/70">✉ Apply first</span>
           )}
         </div>
       </div>
@@ -223,29 +223,29 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
 
       {/* Drawer panel */}
       <div
-        className={`fixed right-0 top-0 h-full w-full max-w-lg z-50 bg-[#0F1117] border-l border-white/8 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed right-0 top-0 h-full w-full max-w-lg z-50 bg-white border-l border-black/8 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         {!a ? null : (
           <>
             {/* Drawer header */}
-            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-white/8">
+            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-black/8">
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`flex-shrink-0 w-9 h-9 rounded-xl border flex items-center justify-center ${TRACK_ICON_BG[track]}`}>
                   <TrackIcon track={track} className={`w-5 h-5 ${TRACK_COLOR[track]}`} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL_DARK[track]}`}>{track}</span>
-                    {a.priority && <span className="inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">⚡ Priority</span>}
-                    {a.recurringEnabled && <span className="inline-flex items-center rounded-full border border-purple-400/30 bg-purple-400/10 px-2 py-0.5 text-[10px] font-semibold text-purple-300">↻ Recurring</span>}
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>{track}</span>
+                    {a.priority && <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">⚡ Priority</span>}
+                    {a.recurringEnabled && <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">↻ Recurring</span>}
                   </div>
-                  <h2 className="text-[15px] font-bold text-white/95 leading-snug">{a.title}</h2>
+                  <h2 className="text-[15px] font-bold text-black/90 leading-snug">{a.title}</h2>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 flex items-center justify-center transition-colors mt-0.5"
+                className="flex-shrink-0 w-8 h-8 rounded-lg bg-black/5 hover:bg-black/10 text-black/35 hover:text-black/70 flex items-center justify-center transition-colors mt-0.5"
               >
                 <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
                   <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
@@ -259,31 +259,31 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
               {/* Business */}
               {business && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="text-white/40">Project:</span>
-                  <span className="text-white/85 font-medium">{business.name}</span>
-                  {business.neighborhood && <span className="text-white/35">· {business.neighborhood}</span>}
+                  <span className="text-black/40">Project:</span>
+                  <span className="text-black/80 font-medium">{business.name}</span>
+                  {business.neighborhood && <span className="text-black/35">· {business.neighborhood}</span>}
                 </div>
               )}
 
               {/* Flags */}
               <div className="flex flex-wrap gap-2">
                 {a.requiresApproval === false && (
-                  <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/8 px-3 py-1 text-[11px] font-semibold text-emerald-300">✓ Auto-approved — no review needed</span>
+                  <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">✓ Auto-approved — no review needed</span>
                 )}
                 {a.applicationRequired && (
-                  <span className="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-400/8 px-3 py-1 text-[11px] font-semibold text-blue-300">✉ Pre-approval required</span>
+                  <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700">✉ Pre-approval required</span>
                 )}
                 {a.allowMultipleCompletions && (
-                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white/50">Repeatable</span>
+                  <span className="inline-flex items-center rounded-full border border-black/10 bg-black/[0.03] px-3 py-1 text-[11px] font-semibold text-black/45">Repeatable</span>
                 )}
               </div>
 
               {/* Description */}
               {a.description && (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30 mb-2">Description</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-black/30 mb-2">Description</p>
                   <div
-                    className="text-[13px] text-white/65 leading-relaxed prose-invert"
+                    className="text-[13px] text-black/60 leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: a.description }}
                   />
                 </div>
@@ -291,38 +291,38 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
 
               {/* Key details grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                  <p className="text-[9px] font-semibold uppercase tracking-widest text-white/30 mb-1">Credits</p>
-                  <p className="text-[22px] font-bold text-[#85CC17] leading-none tabular-nums">+{a.credits}</p>
-                  {a.recurringEnabled && <p className="text-[10px] text-[#85CC17]/55 mt-0.5">per check-in</p>}
+                <div className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-black/30 mb-1">Credits</p>
+                  <p className="text-[22px] font-bold text-[#5C9911] leading-none tabular-nums">+{a.credits}</p>
+                  {a.recurringEnabled && <p className="text-[10px] text-[#5C9911]/60 mt-0.5">per check-in</p>}
                 </div>
-                <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                  <p className="text-[9px] font-semibold uppercase tracking-widest text-white/30 mb-1">Min Role</p>
-                  <p className="text-[14px] font-semibold text-white/80">{a.minRole}</p>
+                <div className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-black/30 mb-1">Min Role</p>
+                  <p className="text-[14px] font-semibold text-black/75">{a.minRole}</p>
                 </div>
                 {a.estimatedHours > 0 && (
-                  <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-white/30 mb-1">Est. Time</p>
-                    <p className="text-[14px] font-semibold text-white/80">~{a.estimatedHours}h</p>
+                  <div className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-3">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-black/30 mb-1">Est. Time</p>
+                    <p className="text-[14px] font-semibold text-black/75">~{a.estimatedHours}h</p>
                   </div>
                 )}
                 {deadline && (
-                  <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-white/30 mb-1">Deadline</p>
-                    <p className={`text-[13px] font-semibold ${deadlineDays != null && deadlineDays <= 3 ? "text-orange-400" : "text-white/80"}`}>
+                  <div className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-3">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-black/30 mb-1">Deadline</p>
+                    <p className={`text-[13px] font-semibold ${deadlineDays != null && deadlineDays <= 3 ? "text-orange-600" : "text-black/75"}`}>
                       {new Date(deadline + (deadline.includes("T") ? "" : "T00:00:00")).toLocaleDateString([], { month: "short", day: "numeric" })}
                     </p>
                     {deadlineDays != null && (
-                      <p className={`text-[10px] mt-0.5 ${deadlineDays <= 0 ? "text-red-400" : deadlineDays <= 3 ? "text-orange-400/70" : "text-white/30"}`}>
+                      <p className={`text-[10px] mt-0.5 ${deadlineDays <= 0 ? "text-red-600" : deadlineDays <= 3 ? "text-orange-500/80" : "text-black/30"}`}>
                         {deadlineDays <= 0 ? `${Math.abs(deadlineDays)}d overdue` : `${deadlineDays}d left`}
                       </p>
                     )}
                   </div>
                 )}
                 {a.recurringEnabled && a.checkinIntervalDays && (
-                  <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-white/30 mb-1">Check-in</p>
-                    <p className="text-[14px] font-semibold text-amber-400">Every {a.checkinIntervalDays}d</p>
+                  <div className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-3">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-black/30 mb-1">Check-in</p>
+                    <p className="text-[14px] font-semibold text-amber-600">Every {a.checkinIntervalDays}d</p>
                   </div>
                 )}
               </div>
@@ -330,15 +330,15 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
               {/* Capacity */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30">Capacity</p>
-                  <p className={`text-[11px] font-medium ${isFull ? "text-white/40" : "text-white/55"}`}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-black/30">Capacity</p>
+                  <p className={`text-[11px] font-medium ${isFull ? "text-black/35" : "text-black/50"}`}>
                     {isUnlimited ? "Unlimited — open to all" : `${taken} / ${a.capacity} claimed`}
                   </p>
                 </div>
                 {!isUnlimited && (
-                  <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+                  <div className="h-2 rounded-full bg-black/8 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${isFull ? "bg-white/25" : "bg-[#85CC17]"}`}
+                      className={`h-full rounded-full transition-all ${isFull ? "bg-black/15" : "bg-[#85CC17]"}`}
                       style={{ width: `${Math.max(pct * 100, isFull ? 100 : 0)}%` }}
                     />
                   </div>
@@ -348,17 +348,17 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
               {/* Current claimants */}
               {activeClaims.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30 mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-black/30 mb-2">
                     Current Claimants · {activeClaims.length}
                   </p>
                   <div className="space-y-1.5">
                     {activeClaims.map((c) => (
-                      <div key={c.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/6 px-3 py-2">
-                        <span className="text-[12px] text-white/70 font-medium">{c.memberName}</span>
+                      <div key={c.id} className="flex items-center justify-between rounded-lg bg-black/[0.02] border border-black/6 px-3 py-2">
+                        <span className="text-[12px] text-black/65 font-medium">{c.memberName}</span>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                          c.status === "Submitted" ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-300" :
-                          c.status === "Approved"  ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" :
-                          "border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
+                          c.status === "Submitted" ? "border-amber-300 bg-amber-50 text-amber-700" :
+                          c.status === "Approved"  ? "border-emerald-300 bg-emerald-50 text-emerald-700" :
+                          "border-cyan-300 bg-cyan-50 text-cyan-700"
                         }`}>
                           {c.status === "claimed" ? "In Progress" : c.status}
                         </span>
@@ -371,16 +371,16 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
             </div>
 
             {/* CTA footer */}
-            <div className="px-6 py-5 border-t border-white/8 space-y-2">
+            <div className="px-6 py-5 border-t border-black/8 space-y-2">
               {alreadyClaimed ? (
                 <Link
                   href={`/members/work/${a.id}`}
-                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#85CC17]/15 border border-[#85CC17]/30 text-[#9BE22B] font-semibold py-3 text-sm hover:bg-[#85CC17]/25 transition-colors"
+                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#85CC17]/10 border border-[#85CC17]/30 text-[#5C9911] font-semibold py-3 text-sm hover:bg-[#85CC17]/20 transition-colors"
                 >
                   View My Submission →
                 </Link>
               ) : isFull ? (
-                <div className="flex items-center justify-center w-full rounded-xl bg-white/5 border border-white/10 text-white/30 font-semibold py-3 text-sm cursor-not-allowed">
+                <div className="flex items-center justify-center w-full rounded-xl bg-black/5 border border-black/10 text-black/30 font-semibold py-3 text-sm cursor-not-allowed">
                   Assignment Full
                 </div>
               ) : (
@@ -394,7 +394,7 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
               <button
                 type="button"
                 onClick={onClose}
-                className="flex items-center justify-center w-full text-[12px] text-white/30 hover:text-white/55 transition-colors py-1"
+                className="flex items-center justify-center w-full text-[12px] text-black/30 hover:text-black/55 transition-colors py-1"
               >
                 Close
               </button>
@@ -411,9 +411,9 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
 function GroupHeader({ label, sub, count }: { label: string; sub: string; count: number }) {
   return (
     <div className="flex items-baseline gap-3 mb-4">
-      <h2 className="text-[15px] font-bold text-white/85">{label}</h2>
-      {sub && <span className="text-[12px] text-white/35">{sub}</span>}
-      <span className="ml-auto text-[11px] text-white/30 font-medium tabular-nums">
+      <h2 className="text-[15px] font-bold text-black/80">{label}</h2>
+      {sub && <span className="text-[12px] text-black/40">{sub}</span>}
+      <span className="ml-auto text-[11px] text-black/30 font-medium tabular-nums">
         {count} assignment{count !== 1 ? "s" : ""}
       </span>
     </div>
@@ -630,11 +630,11 @@ export default function CatalogPage() {
   return (
     <MembersLayout>
       {/* ── Command Bar ─────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-[#0D0F14]/95 backdrop-blur-md border-b border-white/6">
+      <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-white/95 backdrop-blur-md border-b border-black/8">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-48">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" viewBox="0 0 16 16" fill="none">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30" viewBox="0 0 16 16" fill="none">
               <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
               <path d="M10 10l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
@@ -643,7 +643,7 @@ export default function CatalogPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search projects…"
-              className="w-full bg-white/[0.05] border border-white/8 rounded-lg pl-8 pr-3 py-2 text-[13px] text-white/85 placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40 focus:bg-white/[0.07]"
+              className="w-full bg-white border border-black/10 rounded-lg pl-8 pr-3 py-2 text-[13px] text-black/75 placeholder-black/25 focus:outline-none focus:border-[#85CC17]/50"
             />
           </div>
 
@@ -656,8 +656,8 @@ export default function CatalogPage() {
                 onClick={() => toggleTrack(t)}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                   trackFilters.has(t)
-                    ? `${TRACK_PILL_DARK[t]} border-opacity-60`
-                    : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/65 hover:border-white/20"
+                    ? `${TRACK_PILL[t]} border-opacity-60`
+                    : "border-black/10 bg-white text-black/35 hover:text-black/60 hover:border-black/20"
                 }`}
               >
                 <span className={`inline-block w-1.5 h-1.5 rounded-full ${TRACK_DOT[t]}`} />
@@ -675,8 +675,8 @@ export default function CatalogPage() {
                 onClick={() => toggleRole(r)}
                 className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                   roleFilters.has(r)
-                    ? "border-violet-400/40 bg-violet-400/10 text-violet-300"
-                    : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/65 hover:border-white/20"
+                    ? "border-violet-300 bg-violet-50 text-violet-700"
+                    : "border-black/10 bg-white text-black/35 hover:text-black/60 hover:border-black/20"
                 }`}
               >
                 {r}
@@ -687,13 +687,13 @@ export default function CatalogPage() {
 
         {/* Active filter summary */}
         {(trackFilters.size > 0 || roleFilters.size > 0 || search) && (
-          <div className="flex items-center gap-3 mt-2.5 text-[11px] text-white/35">
+          <div className="flex items-center gap-3 mt-2.5 text-[11px] text-black/40">
             <span>{totalCount} assignment{totalCount !== 1 ? "s" : ""} across {groups.length} project{groups.length !== 1 ? "s" : ""}</span>
             {(trackFilters.size > 0 || roleFilters.size > 0 || search) && (
               <button
                 type="button"
                 onClick={() => { setSearch(""); setTrackFilters(new Set()); setRoleFilters(new Set()); }}
-                className="text-white/30 hover:text-white/60 underline underline-offset-2 transition-colors"
+                className="text-black/30 hover:text-black/60 underline underline-offset-2 transition-colors"
               >
                 Clear filters
               </button>
@@ -706,7 +706,7 @@ export default function CatalogPage() {
       <div className="mt-6 space-y-10">
 
         {(isLeadership || isReserve) && (
-          <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm text-amber-300/80">
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
             {isLeadership
               ? "You're on leadership — assignments are read-only for you."
               : "Your account isn't active in the credit system — claiming is disabled."}
@@ -714,8 +714,8 @@ export default function CatalogPage() {
         )}
 
         {displayGroups.length === 0 ? (
-          <div className="rounded-2xl border border-white/8 bg-[#13161D] p-10 text-center">
-            <p className="text-sm text-white/35">
+          <div className="rounded-2xl border border-black/8 bg-white p-10 text-center">
+            <p className="text-sm text-black/35">
               {search ? `No projects match "${search}".` : "No assignments available right now."}
             </p>
           </div>
