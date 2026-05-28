@@ -373,6 +373,7 @@ export default function TeamPage() {
   const handleQuickRoleChange = async (member: TeamMember, nextRole: RoleOption) => {
     setOpenRolePopoverId(null);
     if (String(member.role ?? "").trim() === nextRole) return;
+    setTeam((prev) => prev.map((m) => m.id === member.id ? { ...m, role: nextRole } : m));
     await updateTeamMember(member.id, { role: nextRole });
   };
 
@@ -474,6 +475,7 @@ export default function TeamPage() {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     if (editingMember) {
+      setTeam((prev) => prev.map((m) => m.id === editingMember.id ? { ...m, ...(form as Partial<TeamMember>) } : m));
       await updateTeamMember(editingMember.id, { ...(form as Partial<TeamMember>), pod: "" });
     } else {
       await createTeamMember({ ...(form as Omit<TeamMember, "id" | "createdAt">), pod: "" });
@@ -1646,7 +1648,7 @@ export default function TeamPage() {
 
       {drawerMember && (
         <MemberDrawer
-          member={drawerMember}
+          member={team.find((m) => m.id === drawerMember.id) ?? drawerMember}
           reviewerLabel={user?.email || user?.id || "admin"}
           onClose={() => setDrawerMember(null)}
         />
