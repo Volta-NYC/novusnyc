@@ -579,10 +579,10 @@ export default function CatalogPage() {
 
       const projectKey = a.projectGroupId ?? (a.businessId ? `biz:${a.businessId}` : "volta-internal");
       const projectLabel = a.projectGroupId
-        ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta Internal")
+        ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta NYC")
         : a.businessId
-          ? (businessById.get(a.businessId)?.name ?? "Volta Internal")
-          : "Volta Internal";
+          ? (businessById.get(a.businessId)?.name ?? "Volta NYC")
+          : "Volta NYC";
 
       if (!map.has(projectKey)) {
         map.set(projectKey, { key: projectKey, label: projectLabel, sub: "", all: [], available: [], full: [] });

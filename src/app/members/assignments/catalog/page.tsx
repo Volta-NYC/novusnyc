@@ -194,7 +194,7 @@ export default function CatalogPage() {
       if (!grp) return null;
       return { name: grp.name, subtitle: grp.description };
     }
-    return { name: "Volta Internal", subtitle: "Internal assignments" };
+    return { name: "Volta NYC", subtitle: "Internal assignments" };
   }, [businessById, projectGroupById]);
 
   const sorted = useMemo(() => {
@@ -235,7 +235,7 @@ export default function CatalogPage() {
     const rows: TableRow[] = [];
     for (const [key, asns] of buckets) {
       const proj = resolveProjectLabel(asns[0]);
-      const projName = proj?.name ?? "Volta Internal";
+      const projName = proj?.name ?? "Volta NYC";
       const track = (asns[0].track ?? asns[0].primaryTrack ?? "General") as CycleTrack;
       if (asns.length >= 2) {
         rows.push({ type: "group", groupKey: key, track, title: projName, assignments: asns });
@@ -266,7 +266,7 @@ export default function CatalogPage() {
   );
 
   const projectOptions = useMemo<SearchSelectOption[]>(() => [
-    { value: "volta", label: "Volta", subtitle: "Internal" },
+    { value: "volta", label: "Volta NYC", subtitle: "Internal" },
     ...sortedBusinessOptions.map((b) => ({
       value: `biz:${b.id}`,
       label: b.name,

@@ -626,7 +626,7 @@ export default function TemplatesPage() {
                     value={fromTemplateForm.projectRef}
                     onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
                   >
-                    <option value="volta">Volta Internal</option>
+                    <option value="volta">Volta NYC</option>
                     {businessOptions.map((b) => (
                       <option key={b.id} value={`biz:${b.id}`}>
                         {[b.name, b.neighborhood].filter(Boolean).join(" · ")}
