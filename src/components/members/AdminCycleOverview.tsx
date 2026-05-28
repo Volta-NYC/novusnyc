@@ -1,9 +1,7 @@
 "use client";
 
-// Admin overview. One quarterly cycle drives the entire
-// credit/strike system. Active cycle pinned at top in expanded inline-edit mode;
-// older cycles collapse below. Targets, pacing, and strike thresholds are
-// fully editable post-creation.
+// Admin overview — active cycle only. Member credit progress + strike alerts.
+// Past cycles appear as a compact list at the bottom (activate / edit / delete).
 
 import { useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -11,13 +9,17 @@ import {
   PageHeader, Btn, Field, Input, Empty, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeCycles, createCycle, updateCycle, deleteCycle, activateCycleExclusive,
-  type Cycle,
+  subscribeCycles, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
+  subscribeMemberCreditAdjustments, subscribeMemberStrikes,
+  createCycle, updateCycle, deleteCycle, activateCycleExclusive,
+  type Cycle, type TeamMember, type Assignment, type AssignmentClaim,
+  type MemberCreditAdjustment, type MemberStrike,
 } from "@/lib/members/storage";
+import {
+  classifyMember, computeCreditLedger, computeStrikeCount, computeStrikePoints,
+  lookupCreditTarget, pickPrimaryTrack,
+} from "@/lib/members/cycleCompute";
 
-// Default starting point for a fresh cycle. Targets are placeholders; thresholds
-// follow the spec — 1st strike at 3 points (one severe / two majors / three minors),
-// 2nd at 6, 3rd at 9.
 const BLANK_CYCLE: Omit<Cycle, "id" | "createdAt" | "updatedAt"> = {
   name: "",
   startDate: "",
@@ -37,71 +39,138 @@ function todayISO(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function formatDateRange(start: string, end: string): string {
-  if (!start && !end) return "No dates set";
-  return `${start || "?"} → ${end || "?"}`;
-}
-
-function daysBetween(a: string, b: string): number | null {
-  const aMs = Date.parse(a);
-  const bMs = Date.parse(b);
-  if (!Number.isFinite(aMs) || !Number.isFinite(bMs)) return null;
-  return Math.round((bMs - aMs) / (1000 * 60 * 60 * 24));
-}
-
 export default function AdminCycleOverview() {
   const { ask, Dialog } = useConfirm();
 
   const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [editing, setEditing] = useState<Record<string, Cycle>>({});
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [claims, setClaims] = useState<AssignmentClaim[]>([]);
+  const [adjustments, setAdjustments] = useState<MemberCreditAdjustment[]>([]);
+  const [strikes, setStrikes] = useState<MemberStrike[]>([]);
+  const [editingCycle, setEditingCycle] = useState<Cycle | null>(null);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState<Omit<Cycle, "id" | "createdAt" | "updatedAt">>(BLANK_CYCLE);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => subscribeCycles(setCycles), []);
+  useEffect(() => {
+    const unsubs = [
+      subscribeCycles(setCycles),
+      subscribeTeam(setTeam),
+      subscribeAssignments(setAssignments),
+      subscribeAssignmentClaims(setClaims),
+      subscribeMemberCreditAdjustments(setAdjustments),
+      subscribeMemberStrikes(setStrikes),
+    ];
+    return () => unsubs.forEach((fn) => fn());
+  }, []);
 
-  const sortedCycles = useMemo(() => {
-    const active = cycles.filter((c) => c.active);
-    const inactive = cycles
-      .filter((c) => !c.active)
-      .sort((a, b) => (b.startDate || "").localeCompare(a.startDate || ""));
-    return [...active, ...inactive];
-  }, [cycles]);
+  const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
+  const inactiveCycles = useMemo(
+    () => cycles.filter((c) => !c.active).sort((a, b) => (b.startDate || "").localeCompare(a.startDate || "")),
+    [cycles],
+  );
 
-  const isEditing = (id: string) => Boolean(editing[id]);
-  const startEdit = (cycle: Cycle) => setEditing((prev) => ({ ...prev, [cycle.id]: { ...cycle } }));
-  const cancelEdit = (id: string) =>
-    setEditing((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-  const patchEdit = (id: string, patch: Partial<Cycle>) =>
-    setEditing((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], ...patch } } : prev));
+  const assignmentCredits = useMemo(() => new Map(assignments.map((a) => [a.id, a.credits])), [assignments]);
 
-  // Save edits — every cycle field stays editable post-creation (targets,
-  // thresholds, dates, pacing). Activation status is managed separately via the
-  // dedicated button so the "exactly one active" invariant stays atomic.
-  const saveEdit = async (id: string) => {
-    const draft = editing[id];
-    if (!draft) return;
-    await updateCycle(id, {
-      name: draft.name,
-      startDate: draft.startDate,
-      endDate: draft.endDate,
-      pacingPercentPerCheckin: draft.pacingPercentPerCheckin,
-      creditTargets: draft.creditTargets,
-      strikeThresholds: draft.strikeThresholds,
-    });
-    cancelEdit(id);
-  };
+  const memberProgress = useMemo(() => {
+    if (!activeCycle) return [];
+    return team
+      .filter((m) => classifyMember(m).status === "participant")
+      .map((m) => {
+        const cls = classifyMember(m);
+        const track = pickPrimaryTrack(m);
+        const target = cls.cycleRole ? lookupCreditTarget(activeCycle, track, cls.cycleRole) : 0;
+        const mClaims = claims.filter((c) => c.memberId === m.id && c.cycleId === activeCycle.id);
+        const mAdj = adjustments.filter((a) => a.memberId === m.id && a.cycleId === activeCycle.id);
+        const mStrikes = strikes.filter((s) => s.memberId === m.id && s.cycleId === activeCycle.id);
+        const ledger = computeCreditLedger({ claims: mClaims, adjustments: mAdj, assignmentCredits });
+        const sp = computeStrikePoints(mStrikes);
+        return {
+          member: m,
+          credits: ledger.total,
+          pending: ledger.pending,
+          target,
+          strikeCount: computeStrikeCount(sp, activeCycle),
+          strikePoints: sp,
+        };
+      })
+      .sort((a, b) => b.credits - a.credits);
+  }, [activeCycle, team, claims, adjustments, strikes, assignmentCredits]);
+
+  const progressBuckets = useMemo(() => {
+    if (!activeCycle || memberProgress.length === 0) return [];
+    const base = activeCycle.creditTargets.baseRequirement;
+    const t75 = Math.floor(base * 0.75);
+    const t50 = Math.floor(base * 0.5);
+    const t25 = Math.floor(base * 0.25);
+    return [
+      {
+        label: `${base}+ credits`,
+        sublabel: "Target met",
+        colorClass: "text-[#85CC17]",
+        bgClass: "bg-[#85CC17]/8 border-[#85CC17]/20",
+        members: memberProgress.filter((p) => p.credits >= base),
+      },
+      {
+        label: `${t75}–${base - 1}`,
+        sublabel: "75% of target",
+        colorClass: "text-blue-400",
+        bgClass: "bg-blue-500/8 border-blue-500/20",
+        members: memberProgress.filter((p) => p.credits >= t75 && p.credits < base),
+      },
+      {
+        label: `${t50}–${t75 - 1}`,
+        sublabel: "50% of target",
+        colorClass: "text-yellow-400",
+        bgClass: "bg-yellow-500/8 border-yellow-500/20",
+        members: memberProgress.filter((p) => p.credits >= t50 && p.credits < t75),
+      },
+      {
+        label: `${t25}–${t50 - 1}`,
+        sublabel: "25% of target",
+        colorClass: "text-orange-400",
+        bgClass: "bg-orange-500/8 border-orange-500/20",
+        members: memberProgress.filter((p) => p.credits >= t25 && p.credits < t50),
+      },
+      {
+        label: t25 > 0 ? `0–${t25 - 1}` : "0",
+        sublabel: "< 25%",
+        colorClass: "text-red-400",
+        bgClass: "bg-red-500/8 border-red-500/20",
+        members: memberProgress.filter((p) => p.credits < t25),
+      },
+    ];
+  }, [activeCycle, memberProgress]);
+
+  const strikeBuckets = useMemo(() => [
+    {
+      label: "Strike 3 — Reserve",
+      colorClass: "text-red-400",
+      members: memberProgress.filter((p) => p.strikeCount === 3),
+    },
+    {
+      label: "Strike 2 — Demotion risk",
+      colorClass: "text-orange-400",
+      members: memberProgress.filter((p) => p.strikeCount === 2),
+    },
+    {
+      label: "Strike 1 — Warning issued",
+      colorClass: "text-yellow-400",
+      members: memberProgress.filter((p) => p.strikeCount === 1),
+    },
+  ].filter((b) => b.members.length > 0), [memberProgress]);
+
+  const totalParticipants = memberProgress.length;
+  const metTarget = activeCycle
+    ? memberProgress.filter((p) => p.credits >= activeCycle.creditTargets.baseRequirement).length
+    : 0;
+  const avgCredits = totalParticipants > 0
+    ? Math.round(memberProgress.reduce((s, p) => s + p.credits, 0) / totalParticipants)
+    : 0;
 
   const handleActivate = async (cycle: Cycle) => {
-    const allIds = cycles.map((c) => c.id);
     await ask(
-      async () => {
-        await activateCycleExclusive(cycle.id, allIds);
-      },
+      async () => activateCycleExclusive(cycle.id, cycles.map((c) => c.id)),
       `Activate "${cycle.name || "untitled cycle"}"? This deactivates any other active cycle.`,
     );
   };
@@ -115,24 +184,29 @@ export default function AdminCycleOverview() {
   };
 
   const submitCreate = async () => {
-    const trimmedName = createForm.name.trim();
-    if (!trimmedName) return;
-    await createCycle({ ...createForm, name: trimmedName });
+    if (!createForm.name.trim()) return;
+    await createCycle({ ...createForm, name: createForm.name.trim() });
     setCreateForm(BLANK_CYCLE);
     setCreating(false);
   };
 
-  return (
-    <MembersLayout>
-      <Dialog />
+  const saveEdit = async () => {
+    if (!editingCycle) return;
+    await updateCycle(editingCycle.id, {
+      name: editingCycle.name,
+      startDate: editingCycle.startDate,
+      endDate: editingCycle.endDate,
+      pacingPercentPerCheckin: editingCycle.pacingPercentPerCheckin,
+      creditTargets: editingCycle.creditTargets,
+      strikeThresholds: editingCycle.strikeThresholds,
+    });
+    setEditingCycle(null);
+  };
 
-      <PageHeader
-        title="Overview"
-        subtitle="Quarterly periods that drive credit targets, pacing, and strike thresholds. Exactly one cycle is active at a time. Every field is editable after creation."
-        action={<Btn variant="primary" onClick={() => setCreating(true)}>+ New Cycle</Btn>}
-      />
-
-      {creating && (
+  if (creating) {
+    return (
+      <MembersLayout>
+        <Dialog />
         <CycleEditor
           title="New cycle"
           draft={createForm}
@@ -142,184 +216,202 @@ export default function AdminCycleOverview() {
           saveLabel="Create Cycle"
           activeBadge={false}
         />
+      </MembersLayout>
+    );
+  }
+
+  if (editingCycle) {
+    return (
+      <MembersLayout>
+        <Dialog />
+        <CycleEditor
+          title={`Editing · ${editingCycle.name || "untitled"}`}
+          draft={editingCycle}
+          onChange={(patch) => setEditingCycle((prev) => prev ? { ...prev, ...patch } : null)}
+          onCancel={() => setEditingCycle(null)}
+          onSave={saveEdit}
+          saveLabel="Save"
+          activeBadge={editingCycle.active}
+        />
+      </MembersLayout>
+    );
+  }
+
+  return (
+    <MembersLayout>
+      <Dialog />
+
+      <PageHeader
+        title="Overview"
+        subtitle={activeCycle ? `${activeCycle.name} · ${activeCycle.startDate} → ${activeCycle.endDate}` : "No active cycle"}
+        action={<Btn variant="primary" onClick={() => setCreating(true)}>+ New Cycle</Btn>}
+      />
+
+      {!activeCycle && (
+        <Empty
+          message="No active cycle. Create one to start running the credit system."
+          action={<Btn variant="primary" onClick={() => setCreating(true)}>+ New Cycle</Btn>}
+        />
       )}
 
-      <div className="space-y-4">
-        {sortedCycles.map((cycle) => {
-          const expanded = cycle.active || expandedIds.has(cycle.id) || isEditing(cycle.id);
-          if (isEditing(cycle.id)) {
-            const draft = editing[cycle.id];
-            return (
-              <CycleEditor
-                key={cycle.id}
-                title={`Editing · ${cycle.name || "untitled"}`}
-                draft={draft}
-                onChange={(patch) => patchEdit(cycle.id, patch)}
-                onCancel={() => cancelEdit(cycle.id)}
-                onSave={() => saveEdit(cycle.id)}
-                saveLabel="Save"
-                activeBadge={cycle.active}
-              />
-            );
-          }
-          return (
-            <CycleCard
-              key={cycle.id}
-              cycle={cycle}
-              expanded={expanded}
-              onToggle={() => {
-                if (cycle.active) return;
-                setExpandedIds((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(cycle.id)) next.delete(cycle.id);
-                  else next.add(cycle.id);
-                  return next;
-                });
-              }}
-              onEdit={() => startEdit(cycle)}
-              onActivate={() => handleActivate(cycle)}
-              onDelete={() => handleDelete(cycle)}
-            />
-          );
-        })}
+      {activeCycle && (
+        <div className="space-y-5">
+          {/* Active cycle header */}
+          <div className="rounded-2xl border border-[#85CC17]/30 bg-[#0F1A12] px-5 py-4 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="inline-flex items-center rounded-full border border-[#85CC17]/45 bg-[#85CC17]/12 px-2 py-0.5 text-[10px] font-semibold text-[#9BE22B]">
+                  Active
+                </span>
+                <h2 className="font-display font-bold text-white text-xl">{activeCycle.name}</h2>
+              </div>
+              <p className="text-white/50 text-sm">
+                {activeCycle.startDate} → {activeCycle.endDate}
+                <span className="mx-2 text-white/25">·</span>
+                <span className="text-white/35">Base requirement: {activeCycle.creditTargets.baseRequirement} credits</span>
+                <span className="mx-2 text-white/25">·</span>
+                <span className="text-white/35">{activeCycle.pacingPercentPerCheckin}% pacing per check-in</span>
+              </p>
+              <p className="text-white/30 text-xs mt-1.5">
+                Strikes: {activeCycle.strikeThresholds.warning} demerits = warning ·{" "}
+                {activeCycle.strikeThresholds.demotion} = demotion ·{" "}
+                {activeCycle.strikeThresholds.reserve} = reserve
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Btn size="sm" variant="secondary" onClick={() => setEditingCycle(activeCycle)}>Edit</Btn>
+              <Btn size="sm" variant="danger" onClick={() => handleDelete(activeCycle)}>Delete</Btn>
+            </div>
+          </div>
 
-        {sortedCycles.length === 0 && !creating && (
-          <Empty
-            message="No cycles yet. Create one to start running the credit system."
-            action={<Btn variant="primary" onClick={() => setCreating(true)}>+ New Cycle</Btn>}
-          />
-        )}
-      </div>
+          {/* Summary stats */}
+          {totalParticipants > 0 && (
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard value={totalParticipants} label="Participants" />
+              <StatCard value={metTarget} label="Met Target" accent />
+              <StatCard value={avgCredits} label="Avg Credits" />
+            </div>
+          )}
+
+          {/* Progress buckets */}
+          {progressBuckets.length > 0 && (
+            <div className="rounded-2xl border border-white/8 bg-[#13161D] overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-white/8">
+                <h3 className="font-display font-semibold text-white text-base">Credit progress</h3>
+                <p className="text-white/35 text-xs mt-0.5">All active participants grouped by earnings this cycle</p>
+              </div>
+              <div className="divide-y divide-white/5">
+                {progressBuckets.map((bucket) => (
+                  <div key={bucket.label} className="px-5 py-3.5">
+                    <div className="flex items-baseline gap-3 mb-2">
+                      <span className={`text-sm font-bold ${bucket.colorClass}`}>{bucket.label}</span>
+                      <span className="text-white/30 text-xs">{bucket.sublabel}</span>
+                      <span className="ml-auto text-white/45 text-xs tabular-nums">
+                        {bucket.members.length} {bucket.members.length === 1 ? "member" : "members"}
+                      </span>
+                    </div>
+                    {bucket.members.length === 0 ? (
+                      <span className="text-white/20 text-xs">—</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        {bucket.members.map((p) => (
+                          <span key={p.member.id} className="text-xs text-white/65">
+                            {p.member.name}
+                            <span className="text-white/30 ml-1">
+                              ({p.credits}{p.pending > 0 ? ` + ${p.pending} pending` : ""})
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No participants yet */}
+          {totalParticipants === 0 && (
+            <div className="rounded-2xl border border-white/8 bg-[#13161D] px-5 py-8 text-center">
+              <p className="text-white/35 text-sm">No active participants yet for this cycle.</p>
+              <p className="text-white/20 text-xs mt-1">Members show here once their role is set to Analyst, Senior Analyst, or Associate.</p>
+            </div>
+          )}
+
+          {/* Strike alerts */}
+          {strikeBuckets.length > 0 && (
+            <div className="rounded-2xl border border-white/8 bg-[#13161D] overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-white/8">
+                <h3 className="font-display font-semibold text-white text-base">Strike alerts</h3>
+                <p className="text-white/35 text-xs mt-0.5">Members who have accumulated strikes this cycle</p>
+              </div>
+              <div className="divide-y divide-white/5">
+                {strikeBuckets.map((bucket) => (
+                  <div key={bucket.label} className="px-5 py-3.5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className={`text-sm font-semibold ${bucket.colorClass}`}>{bucket.label}</span>
+                      <span className="ml-auto text-white/45 text-xs tabular-nums">{bucket.members.length}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {bucket.members.map((p) => (
+                        <span key={p.member.id} className="text-xs text-white/65">
+                          {p.member.name}
+                          <span className="text-white/30 ml-1">
+                            ({p.strikePoints} {p.strikePoints === 1 ? "demerit" : "demerits"})
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Past cycles — compact */}
+      {inactiveCycles.length > 0 && (
+        <div className="mt-8">
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-white/25 mb-3">Past cycles</p>
+          <div className="space-y-2">
+            {inactiveCycles.map((cycle) => (
+              <div
+                key={cycle.id}
+                className="rounded-xl border border-white/8 bg-[#13161D] px-4 py-3 flex items-center justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <p className="text-white/65 text-sm font-medium truncate">{cycle.name || "Untitled cycle"}</p>
+                  <p className="text-white/30 text-xs">{cycle.startDate} → {cycle.endDate}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Btn size="sm" variant="secondary" onClick={() => handleActivate(cycle)}>Activate</Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => setEditingCycle(cycle)}>Edit</Btn>
+                  <Btn size="sm" variant="danger" onClick={() => handleDelete(cycle)}>Delete</Btn>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </MembersLayout>
   );
 }
 
-// ── Card components ───────────────────────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-function CycleCard({
-  cycle,
-  expanded,
-  onToggle,
-  onEdit,
-  onActivate,
-  onDelete,
-}: {
-  cycle: Cycle;
-  expanded: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-  onActivate: () => void;
-  onDelete: () => void;
-}) {
-  const span = daysBetween(cycle.startDate, cycle.endDate);
+function StatCard({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
   return (
-    <div className={`rounded-2xl border ${cycle.active ? "border-[#85CC17]/45 bg-[#0F1A12]" : "border-white/10 bg-[#13161D]"}`}>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left"
-        disabled={cycle.active}
-        aria-expanded={expanded}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          {cycle.active && (
-            <span className="inline-flex items-center rounded-full border border-[#85CC17]/45 bg-[#85CC17]/12 px-2 py-0.5 text-[10px] font-semibold text-[#9BE22B] flex-shrink-0">
-              Active
-            </span>
-          )}
-          <h2 className="font-display font-bold text-white text-lg truncate">{cycle.name || "Untitled cycle"}</h2>
-          <span className="text-white/45 text-xs truncate">
-            {formatDateRange(cycle.startDate, cycle.endDate)}
-            {span !== null && span > 0 ? ` · ${span} days` : ""}
-          </span>
-        </div>
-        {!cycle.active && (
-          <span className="text-white/30 text-xs flex-shrink-0">{expanded ? "Collapse" : "Expand"}</span>
-        )}
-      </button>
-
-      {expanded && (
-        <div className="px-5 pb-5 border-t border-white/8">
-          <CycleSummary cycle={cycle} />
-          <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-white/8">
-            <Btn size="sm" variant="primary" onClick={onEdit}>Edit</Btn>
-            {!cycle.active && (
-              <Btn size="sm" variant="secondary" onClick={onActivate}>Activate</Btn>
-            )}
-            <Btn size="sm" variant="danger" onClick={onDelete}>Delete</Btn>
-          </div>
-        </div>
-      )}
+    <div className="rounded-xl border border-white/8 bg-[#13161D] p-4 text-center">
+      <p className={`text-3xl font-display font-bold tabular-nums ${accent ? "text-[#85CC17]" : "text-white"}`}>
+        {value}
+      </p>
+      <p className="text-[10px] uppercase tracking-wider text-white/35 mt-1">{label}</p>
     </div>
   );
 }
 
-function CycleSummary({ cycle }: { cycle: Cycle }) {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4 text-sm">
-      <SummaryBlock title="Pacing">
-        <p className="text-white/70">
-          Members should aim for{" "}
-          <span className="text-[#85CC17]">{cycle.pacingPercentPerCheckin}%</span> of their target every 2 weeks.
-        </p>
-        <p className="text-white/45 text-xs mt-1">
-          Bi-weekly check-in reminder emails fire automatically (template editable on the Email page).
-        </p>
-      </SummaryBlock>
-
-      <SummaryBlock title="Strike thresholds">
-        <p className="text-white/70 text-xs leading-relaxed">
-          1st strike at <span className="text-[#85CC17]">{cycle.strikeThresholds.warning}</span> demerits (warning) ·
-          2nd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.demotion}</span> demerits (auto-demote
-          for Analyst → Reserve, Sr Analyst → Analyst, Associate → Sr Analyst) ·
-          3rd at <span className="text-[#85CC17]"> {cycle.strikeThresholds.reserve}</span> demerits (Reserve)
-        </p>
-      </SummaryBlock>
-
-      <SummaryBlock title="Credit targets">
-        {(() => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const t = cycle.creditTargets as any;
-          const base = t?.baseRequirement as number | undefined;
-          const promo = t?.promotionTargets as { Analyst?: number; "Senior Analyst"?: number; Associate?: number } | undefined;
-          return base !== undefined ? (
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-white/55">Base requirement</span>
-                <span className="text-[#85CC17] font-semibold">{base} credits</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/55">Analyst → Senior Analyst</span>
-                <span className="text-violet-300 font-semibold">+{promo?.Analyst ?? 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/55">Sr Analyst → Associate</span>
-                <span className="text-violet-300 font-semibold">+{promo?.["Senior Analyst"] ?? 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/55">Associate → next tier</span>
-                <span className="text-violet-300 font-semibold">+{promo?.Associate ?? 0}</span>
-              </div>
-            </div>
-          ) : (
-            <p className="text-white/40 text-xs">Legacy format — edit to update.</p>
-          );
-        })()}
-      </SummaryBlock>
-    </div>
-  );
-}
-
-function SummaryBlock({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-xl border border-white/8 bg-[#0F1014] p-3.5 ${className}`}>
-      <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-1.5">{title}</p>
-      {children}
-    </div>
-  );
-}
-
-// ── Editor (used for both new + edit) ─────────────────────────────────────────
+// ── Cycle editor (new + edit) ─────────────────────────────────────────────────
 
 function CycleEditor({
   title,
@@ -338,32 +430,30 @@ function CycleEditor({
   saveLabel: string;
   activeBadge: boolean;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ct = draft.creditTargets as any;
-  const baseReq: number = ct?.baseRequirement ?? 40;
-  const promoTargets = (ct?.promotionTargets ?? { Analyst: 20, "Senior Analyst": 40, Associate: 60 }) as Record<string, number>;
+  const ct = draft.creditTargets;
+  const baseReq = ct.baseRequirement;
+  const promoTargets = ct.promotionTargets;
 
   const setBase = (raw: string) => {
     onChange({
       creditTargets: {
         baseRequirement: Math.max(0, Number(raw) || 0),
         promotionTargets: promoTargets,
-      } as Cycle["creditTargets"],
+      },
     });
   };
 
-  const setPromo = (role: string, raw: string) => {
+  const setPromo = (role: keyof typeof promoTargets, raw: string) => {
     onChange({
       creditTargets: {
         baseRequirement: baseReq,
         promotionTargets: { ...promoTargets, [role]: Math.max(0, Number(raw) || 0) },
-      } as Cycle["creditTargets"],
+      },
     });
   };
 
   const setThreshold = (key: keyof Cycle["strikeThresholds"], raw: string) => {
-    const value = Math.max(0, Number(raw) || 0);
-    onChange({ strikeThresholds: { ...draft.strikeThresholds, [key]: value } });
+    onChange({ strikeThresholds: { ...draft.strikeThresholds, [key]: Math.max(0, Number(raw) || 0) } });
   };
 
   return (
@@ -414,7 +504,7 @@ function CycleEditor({
               className="max-w-[120px]"
             />
             <span className="text-white/45 text-xs">
-              Default 20%. Drives the dashboard nudge and the activity dot color thresholds.
+              Default 20%. Drives the pacing dot color thresholds and check-in nudge emails.
             </span>
           </div>
         </Field>
@@ -422,7 +512,7 @@ function CycleEditor({
         <div>
           <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Credit targets</p>
           <p className="text-[11px] text-white/45 mb-3 leading-relaxed">
-            Every member must earn the base requirement each quarter. Extra credits beyond the base are counted toward promotion consideration — the thresholds apply regardless of track.
+            Every member must earn the base requirement each quarter. Extra credits beyond the base count toward promotion consideration.
           </p>
           <div className="rounded-xl border border-white/10 bg-[#0F1014] p-3 space-y-3">
             <Field label="Base requirement (credits to complete the cycle)">
@@ -440,7 +530,7 @@ function CycleEditor({
                 <Input
                   type="number"
                   min="0"
-                  value={String(promoTargets.Analyst ?? 20)}
+                  value={String(promoTargets.Analyst)}
                   onChange={(e) => setPromo("Analyst", e.target.value)}
                 />
               </Field>
@@ -448,7 +538,7 @@ function CycleEditor({
                 <Input
                   type="number"
                   min="0"
-                  value={String(promoTargets["Senior Analyst"] ?? 40)}
+                  value={String(promoTargets["Senior Analyst"])}
                   onChange={(e) => setPromo("Senior Analyst", e.target.value)}
                 />
               </Field>
@@ -456,7 +546,7 @@ function CycleEditor({
                 <Input
                   type="number"
                   min="0"
-                  value={String(promoTargets.Associate ?? 60)}
+                  value={String(promoTargets.Associate)}
                   onChange={(e) => setPromo("Associate", e.target.value)}
                 />
               </Field>
@@ -468,11 +558,11 @@ function CycleEditor({
           <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Strike thresholds (demerits)</p>
           <p className="text-[11px] text-white/55 mb-3 leading-relaxed">
             Members accumulate demerits from infractions. Each level triggers an action:
-            <br/>
+            <br />
             • <span className="text-yellow-300">1st strike</span> — warning email.
-            <br/>
+            <br />
             • <span className="text-orange-300">2nd strike</span> — auto-demotion (Associate → Sr Analyst, Sr Analyst → Analyst, Analyst → Reserve).
-            <br/>
+            <br />
             • <span className="text-red-300">3rd strike</span> — moved to Reserve regardless of role.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -513,3 +603,4 @@ function CycleEditor({
     </div>
   );
 }
+

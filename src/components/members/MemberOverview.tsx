@@ -278,59 +278,134 @@ export default function MemberOverviewPage() {
                 )}
               </p>
 
-              {/* Strike dots + view record */}
-              <div className="mt-4 pt-4 border-t border-black/6 flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-black/55">Strikes:</span>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3].map((i) => (
-                      <span
-                        key={i}
-                        className={`inline-block h-2.5 w-2.5 rounded-full ${
-                          i <= strikeCount
-                            ? i === 1 ? "bg-yellow-400" : i === 2 ? "bg-orange-400" : "bg-red-500"
-                            : "bg-black/15"
-                        }`}
-                      />
-                    ))}
+              {/* Conduct standing */}
+              <div className="mt-4 pt-4 border-t border-black/6">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-black/65">Conduct standing</span>
+                    {strikeCount > 0 && (
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                        strikeCount === 1 ? "bg-yellow-50 border-yellow-300 text-yellow-800"
+                        : strikeCount === 2 ? "bg-orange-50 border-orange-300 text-orange-800"
+                        : "bg-red-50 border-red-300 text-red-800"
+                      }`}>
+                        Strike {strikeCount}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-xs text-black/45 ml-1">
-                    ({strikePoints} demerits · {strikeCount} of 3)
+                  <span className="text-xs text-black/40 tabular-nums">
+                    {strikePoints} {strikePoints === 1 ? "demerit" : "demerits"}
                   </span>
                 </div>
+
+                {/* Demerit meter */}
+                {activeCycle.strikeThresholds.reserve > 0 && (
+                  <div className="mb-3">
+                    <div className="relative h-2 w-full rounded-full bg-black/8 overflow-hidden mb-1">
+                      {/* Threshold markers */}
+                      <div
+                        className="absolute top-0 bottom-0 w-px bg-yellow-400/70"
+                        style={{ left: `${Math.min(95, (activeCycle.strikeThresholds.warning / activeCycle.strikeThresholds.reserve) * 100)}%` }}
+                      />
+                      <div
+                        className="absolute top-0 bottom-0 w-px bg-orange-400/70"
+                        style={{ left: `${Math.min(95, (activeCycle.strikeThresholds.demotion / activeCycle.strikeThresholds.reserve) * 100)}%` }}
+                      />
+                      {/* Fill */}
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, (strikePoints / activeCycle.strikeThresholds.reserve) * 100)}%`,
+                          backgroundColor:
+                            strikeCount === 0 ? "#16A34A"
+                            : strikeCount === 1 ? "#EAB308"
+                            : strikeCount === 2 ? "#F97316"
+                            : "#DC2626",
+                        }}
+                      />
+                    </div>
+                    {/* Labels */}
+                    <div className="flex justify-between text-[9px] text-black/35 px-0.5">
+                      <span>0</span>
+                      <span className="text-yellow-700">
+                        {activeCycle.strikeThresholds.warning} warning
+                      </span>
+                      <span className="text-orange-700">
+                        {activeCycle.strikeThresholds.demotion} demotion
+                      </span>
+                      <span className="text-red-700">
+                        {activeCycle.strikeThresholds.reserve} reserve
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Strike thresholds legend */}
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-2 text-center">
+                    <p className="text-[10px] font-bold text-yellow-800">Strike 1</p>
+                    <p className="text-[10px] text-yellow-700">{activeCycle.strikeThresholds.warning} demerits</p>
+                    <p className="text-[9px] text-yellow-600 mt-0.5">Warning email</p>
+                  </div>
+                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-2 text-center">
+                    <p className="text-[10px] font-bold text-orange-800">Strike 2</p>
+                    <p className="text-[10px] text-orange-700">{activeCycle.strikeThresholds.demotion} demerits</p>
+                    <p className="text-[9px] text-orange-600 mt-0.5">Auto-demotion</p>
+                  </div>
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-center">
+                    <p className="text-[10px] font-bold text-red-800">Strike 3</p>
+                    <p className="text-[10px] text-red-700">{activeCycle.strikeThresholds.reserve} demerits</p>
+                    <p className="text-[9px] text-red-600 mt-0.5">Reserve status</p>
+                  </div>
+                </div>
+
+                {/* Status message */}
+                <div className={`rounded-lg px-3 py-2 text-xs mb-3 border ${
+                  strikeCount === 0 ? "bg-green-50 border-green-200 text-green-800"
+                  : strikeCount === 1 ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                  : strikeCount === 2 ? "bg-orange-50 border-orange-200 text-orange-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+                }`}>
+                  {strikeCount === 0 && "✓ Good standing — no strikes this cycle."}
+                  {strikeCount === 1 && `⚠ Strike 1: You've been warned. ${activeCycle.strikeThresholds.demotion - strikePoints} more demerit${activeCycle.strikeThresholds.demotion - strikePoints === 1 ? "" : "s"} triggers an automatic role demotion.`}
+                  {strikeCount === 2 && `⚠ Strike 2: Demotion risk. ${activeCycle.strikeThresholds.reserve - strikePoints} more demerit${activeCycle.strikeThresholds.reserve - strikePoints === 1 ? "" : "s"} moves you to Reserve status.`}
+                  {strikeCount === 3 && "✕ Strike 3: You've been moved to Reserve status."}
+                </div>
+
+                {/* Record toggle */}
                 <button
                   type="button"
                   onClick={() => setStrikeDrawerOpen((v) => !v)}
                   className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium"
                 >
-                  {strikeDrawerOpen ? "Hide my record" : "View my record"}
+                  {strikeDrawerOpen ? "Hide my record" : "View my demerit record →"}
                 </button>
-              </div>
 
-              {strikeDrawerOpen && (
-                <div className="mt-3 rounded-lg bg-black/3 p-3 text-sm text-black/75 space-y-2">
-                  {myStrikes.length === 0 ? (
-                    <p className="text-black/45">No strikes this cycle.</p>
-                  ) : (
-                    myStrikes
-                      .sort((a, b) => (b.issuedAt ?? "").localeCompare(a.issuedAt ?? ""))
-                      .map((s) => (
-                        <div key={s.id} className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="text-black/85 text-sm font-medium truncate">{s.infractionName}</p>
-                            <p className="text-black/45 text-xs">
-                              {new Date(s.issuedAt).toLocaleDateString()}
-                              {s.note ? ` · ${s.note}` : ""}
-                            </p>
+                {strikeDrawerOpen && (
+                  <div className="mt-3 rounded-lg bg-black/3 p-3 text-sm text-black/75 space-y-2">
+                    {myStrikes.length === 0 ? (
+                      <p className="text-black/45">No strikes this cycle.</p>
+                    ) : (
+                      myStrikes
+                        .sort((a, b) => (b.issuedAt ?? "").localeCompare(a.issuedAt ?? ""))
+                        .map((s) => (
+                          <div key={s.id} className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-black/85 text-sm font-medium truncate">{s.infractionName}</p>
+                              <p className="text-black/45 text-xs">
+                                {new Date(s.issuedAt).toLocaleDateString()}
+                                {s.note ? ` · ${s.note}` : ""}
+                              </p>
+                            </div>
+                            <span className="text-[#5C9911] font-mono text-sm flex-shrink-0">
+                              {s.points} {s.points === 1 ? "demerit" : "demerits"}
+                            </span>
                           </div>
-                          <span className="text-[#5C9911] font-mono text-sm flex-shrink-0">
-                            {s.points} {s.points === 1 ? "demerit" : "demerits"}
-                          </span>
-                        </div>
-                      ))
-                  )}
-                </div>
-              )}
+                        ))
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
 
