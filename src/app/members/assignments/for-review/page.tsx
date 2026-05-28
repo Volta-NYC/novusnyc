@@ -415,7 +415,7 @@ export default function ForReviewPage() {
                         onClick={() => openReject(c)}
                         className="px-3 py-1.5 rounded-lg border border-red-400/25 bg-red-400/[0.06] text-[11px] text-red-300/75 hover:border-red-400/40 hover:bg-red-400/[0.1] hover:text-red-300 transition-colors font-medium"
                       >
-                        Reject
+                        Send Back
                       </button>
                     </div>
                   </td>
@@ -564,7 +564,7 @@ export default function ForReviewPage() {
 
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-white/8">
           <Btn variant="ghost" onClick={() => setViewingClaim(null)}>Close</Btn>
-          <Btn variant="danger" onClick={() => { setViewingClaim(null); openReject(viewingClaim!.claim); }}>Reject</Btn>
+          <Btn variant="danger" onClick={() => { setViewingClaim(null); openReject(viewingClaim!.claim); }}>Send Back</Btn>
           <Btn variant="primary" onClick={() => { setViewingClaim(null); openApprove(viewingClaim!.claim); }}>Approve</Btn>
         </div>
       </Modal>
@@ -666,13 +666,13 @@ export default function ForReviewPage() {
       <Modal
         open={!!rejectingClaim}
         onClose={() => setRejectingClaim(null)}
-        title={`Reject · ${rejectingClaim?.assignment?.title ?? ""}`}
+        title={`Send Back · ${rejectingClaim?.assignment?.title ?? ""}`}
       >
         <div className="space-y-3">
           <p className="text-sm text-white/70">
             <span className="text-white/45">Member:</span> {rejectingClaim?.claim.memberName}
           </p>
-          <Field label="Reason for rejection" required>
+          <Field label="Feedback for member" required>
             <TextArea
               rows={4}
               value={rejectReason}
@@ -689,7 +689,7 @@ export default function ForReviewPage() {
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-white/8">
           <Btn variant="ghost" onClick={() => setRejectingClaim(null)} disabled={reviewBusy}>Cancel</Btn>
           <Btn variant="danger" onClick={() => void submitRejection()} disabled={!rejectReason.trim() || reviewBusy}>
-            {reviewBusy ? "Sending…" : "Send Rejection"}
+            {reviewBusy ? "Sending…" : "Send Back"}
           </Btn>
         </div>
       </Modal>
