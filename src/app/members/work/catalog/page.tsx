@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { useAuth } from "@/lib/members/authContext";
@@ -35,12 +36,8 @@ function TrackIcon({ track, className = "w-4 h-4" }: { track: CycleTrack; classN
       <path d="M17 16v-10" />
     </svg>
   );
-  // General — stylized Volta lightning bolt
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M11 2L5.5 10.5H9.5L7 18l8.5-9.5H11.5L14 2H11z" fill="currentColor"/>
-    </svg>
-  );
+  // General — actual Volta logo
+  return <Image src="/logo.png" alt="Volta" width={16} height={16} className="object-contain" />;
 }
 
 const TRACK_COLOR: Record<CycleTrack, string> = {
@@ -102,6 +99,9 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, pro
           </div>
           <div className="min-w-0">
             <p className={`text-[13px] font-bold leading-snug ${isFull ? "text-black/30" : "text-black/85 group-hover:text-black"} transition-colors`}>
+              {a.title}
+            </p>
+            <p className={`text-[11px] mt-0.5 truncate ${isFull ? "text-black/20" : "text-black/40"}`}>
               {projectName}
             </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -596,12 +596,23 @@ export default function CatalogPage() {
     }
 
     return [...map.values()]
-      .map(({ group, projNames }) => ({ ...group, sub: [...projNames].join(" · ") }))
+      .map(({ group, projNames }) => {
+        const sorted = [...projNames].sort((a, b) => {
+          if (a === "Volta NYC") return -1;
+          if (b === "Volta NYC") return 1;
+          return a.localeCompare(b);
+        });
+        return { ...group, sub: sorted.join(" · ") };
+      })
       .sort((a, b) => {
         const aPriority = a.all.some((x) => x.priority);
         const bPriority = b.all.some((x) => x.priority);
         if (aPriority && !bPriority) return -1;
         if (!aPriority && bPriority) return 1;
+        const aIsNYC = a.sub.startsWith("Volta NYC");
+        const bIsNYC = b.sub.startsWith("Volta NYC");
+        if (aIsNYC && !bIsNYC) return -1;
+        if (!aIsNYC && bIsNYC) return 1;
         return a.label.localeCompare(b.label);
       });
   }, [candidates, trackFilters, roleFilters, projectGroupById, businessById, claimsByAssignment]);
