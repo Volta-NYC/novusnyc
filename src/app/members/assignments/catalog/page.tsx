@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { ASSIGNMENTS_TABS } from "@/components/members/SectionTabs";
@@ -655,6 +656,14 @@ export default function CatalogPage() {
                                   <span>{claimList.length}</span>
                                 </button>
                               )}
+                              <Link
+                                href={`/members/work/${a.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
+                                title="View member-facing page"
+                              >
+                                View
+                              </Link>
                               <button
                                 onClick={(e) => { e.stopPropagation(); openEdit(a); }}
                                 className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
@@ -772,6 +781,13 @@ export default function CatalogPage() {
                       <span>{claimList.length}</span>
                     </button>
                   )}
+                  <Link
+                    href={`/members/work/${a.id}`}
+                    className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
+                    title="View member-facing page"
+                  >
+                    View
+                  </Link>
                   <button
                     onClick={() => openEdit(a)}
                     className="h-7 inline-flex items-center px-2.5 rounded-md border border-white/12 bg-white/[0.04] text-[10px] font-medium text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors"
