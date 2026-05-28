@@ -127,6 +127,7 @@ const SORT_OPTIONS = [
   { value: 2, label: "Name" },
   { value: 3, label: "School" },
   { value: 4, label: "Role" },
+  { value: 5, label: "Date Accepted" },
 ];
 
 const ADMIN_COLS = [
@@ -136,7 +137,7 @@ const ADMIN_COLS = [
   { key: "hsClass",        label: "HS Class",        width: 80,  sortCol: null },
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
-  { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: null },
+  { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: 5   as number | null },
   { key: "strikes",        label: "Strikes",         width: 72,  sortCol: null },
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
@@ -613,6 +614,14 @@ export default function TeamPage() {
       case 4: {
         const roleCmp = roleSortKey(a.role) - roleSortKey(b.role);
         return roleCmp !== 0 ? roleCmp : (a.name || "").localeCompare(b.name || "");
+      }
+      case 5: {
+        const da = a.acceptedDate || "";
+        const db = b.acceptedDate || "";
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return da.localeCompare(db);
       }
       default: return 0;
     }
