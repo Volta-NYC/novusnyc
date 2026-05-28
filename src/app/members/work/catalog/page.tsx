@@ -71,10 +71,11 @@ interface CardProps {
   taken: number;
   alreadyClaimed: boolean;
   claimStatus?: string;
+  projectName: string;
   onClick: () => void;
 }
 
-function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onClick }: CardProps) {
+function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, projectName, onClick }: CardProps) {
   const track      = (a.track ?? a.primaryTrack ?? "General") as CycleTrack;
   const isUnlimited = a.capacity === 0;
   const isFull      = !isUnlimited && taken >= a.capacity;
@@ -101,7 +102,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, onC
           </div>
           <div className="min-w-0">
             <p className={`text-[13px] font-bold leading-snug ${isFull ? "text-black/30" : "text-black/85 group-hover:text-black"} transition-colors`}>
-              {a.title}
+              {projectName}
             </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TRACK_PILL[track]}`}>
@@ -569,38 +570,40 @@ export default function CatalogPage() {
       .filter((a) => !myApprovedAssignmentIds.has(a.id) || a.allowMultipleCompletions === true);
   }, [assignments, activeCycle, myApprovedAssignmentIds]);
 
-  // Build all groups — one section per project (group or business), showing assignment titles inside cards
+  // Build all groups — one section per unique assignment title
   const allGroups = useMemo((): AssignmentGroup[] => {
-    const map = new Map<string, AssignmentGroup>();
+    const map = new Map<string, { group: AssignmentGroup; projNames: Set<string> }>();
 
     for (const a of candidates) {
       if (trackFilters.size > 0 && !trackFilters.has((a.track ?? a.primaryTrack ?? "General") as CycleTrack)) continue;
       if (roleFilters.size > 0 && !roleFilters.has(a.minRole)) continue;
 
-      const projectKey = a.projectGroupId ?? (a.businessId ? `biz:${a.businessId}` : "volta-internal");
-      const projectLabel = a.projectGroupId
+      const key = a.title;
+      if (!map.has(key)) {
+        map.set(key, { group: { key, label: a.title, sub: "", all: [], available: [], full: [] }, projNames: new Set() });
+      }
+      const entry = map.get(key)!;
+      const projName = a.projectGroupId
         ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta NYC")
         : a.businessId
           ? (businessById.get(a.businessId)?.name ?? "Volta NYC")
           : "Volta NYC";
-
-      if (!map.has(projectKey)) {
-        map.set(projectKey, { key: projectKey, label: projectLabel, sub: "", all: [], available: [], full: [] });
-      }
-      const group = map.get(projectKey)!;
-      group.all.push(a);
+      entry.projNames.add(projName);
+      entry.group.all.push(a);
       const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
       const isFull = a.capacity !== 0 && taken >= a.capacity;
-      if (isFull) group.full.push(a); else group.available.push(a);
+      if (isFull) entry.group.full.push(a); else entry.group.available.push(a);
     }
 
-    return [...map.values()].sort((a, b) => {
-      const aPriority = a.all.some((x) => x.priority);
-      const bPriority = b.all.some((x) => x.priority);
-      if (aPriority && !bPriority) return -1;
-      if (!aPriority && bPriority) return 1;
-      return a.label.localeCompare(b.label);
-    });
+    return [...map.values()]
+      .map(({ group, projNames }) => ({ ...group, sub: [...projNames].join(" · ") }))
+      .sort((a, b) => {
+        const aPriority = a.all.some((x) => x.priority);
+        const bPriority = b.all.some((x) => x.priority);
+        if (aPriority && !bPriority) return -1;
+        if (!aPriority && bPriority) return 1;
+        return a.label.localeCompare(b.label);
+      });
   }, [candidates, trackFilters, roleFilters, projectGroupById, businessById, claimsByAssignment]);
 
   // Search filters at GROUP level — shows all assignments in matching groups
@@ -714,8 +717,13 @@ export default function CatalogPage() {
               {group.available.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                   {group.available.map((a) => {
-                    const taken   = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
-                    const status  = myClaimedIds.get(a.id);
+                    const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
+                    const status = myClaimedIds.get(a.id);
+                    const projName = a.projectGroupId
+                      ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta NYC")
+                      : a.businessId
+                        ? (businessById.get(a.businessId)?.name ?? "Volta NYC")
+                        : "Volta NYC";
                     return (
                       <AssignmentCard
                         key={a.id}
@@ -723,6 +731,7 @@ export default function CatalogPage() {
                         taken={taken}
                         alreadyClaimed={myClaimedIds.has(a.id)}
                         claimStatus={status}
+                        projectName={projName}
                         onClick={() => setSelectedAssignment(a)}
                       />
                     );
@@ -735,12 +744,18 @@ export default function CatalogPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {group.full.map((a) => {
                     const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
+                    const projName = a.projectGroupId
+                      ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta NYC")
+                      : a.businessId
+                        ? (businessById.get(a.businessId)?.name ?? "Volta NYC")
+                        : "Volta NYC";
                     return (
                       <AssignmentCard
                         key={a.id}
                         assignment={a}
                         taken={taken}
                         alreadyClaimed={false}
+                        projectName={projName}
                         onClick={() => setSelectedAssignment(a)}
                       />
                     );

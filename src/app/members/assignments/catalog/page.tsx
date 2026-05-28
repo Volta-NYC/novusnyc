@@ -223,28 +223,21 @@ export default function CatalogPage() {
   const tableRows = useMemo((): TableRow[] => {
     const buckets = new Map<string, Assignment[]>();
     for (const a of sorted) {
-      const key = a.projectGroupId
-        ? `grp:${a.projectGroupId}`
-        : a.businessId
-          ? `biz:${a.businessId}`
-          : "volta-internal";
-      const list = buckets.get(key) ?? [];
+      const list = buckets.get(a.title) ?? [];
       list.push(a);
-      buckets.set(key, list);
+      buckets.set(a.title, list);
     }
     const rows: TableRow[] = [];
-    for (const [key, asns] of buckets) {
-      const proj = resolveProjectLabel(asns[0]);
-      const projName = proj?.name ?? "Volta NYC";
+    for (const asns of buckets.values()) {
       const track = (asns[0].track ?? asns[0].primaryTrack ?? "General") as CycleTrack;
       if (asns.length >= 2) {
-        rows.push({ type: "group", groupKey: key, track, title: projName, assignments: asns });
+        rows.push({ type: "group", groupKey: asns[0].title, track, title: asns[0].title, assignments: asns });
       } else {
         rows.push({ type: "single", assignment: asns[0] });
       }
     }
     return rows;
-  }, [sorted, resolveProjectLabel]);
+  }, [sorted]);
 
   const activeAssignments = assignments.filter((a) => a.status !== "Archived");
   const counts = {
@@ -622,7 +615,9 @@ export default function CatalogPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
-                                <span className="text-[12px] font-medium text-white/75 truncate">{a.title}</span>
+                                <span className="text-[12px] font-medium text-white/75 truncate">
+                                  {resolveProjectLabel(a)?.name ?? "Volta NYC"}
+                                </span>
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className={`members-chip text-[9px] font-semibold ${STATUS_STYLES[a.status]}`}>{a.status}</span>
