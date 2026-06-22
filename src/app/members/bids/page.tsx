@@ -9,7 +9,7 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeBIDs, createBID, updateBID, deleteBID,
-  type BID,
+  type BID, type BIDContact,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -45,10 +45,12 @@ function nextSortIndex(items: BID[]): number {
   return max + 1000;
 }
 
+const BLANK_CONTACT: BIDContact = { id: "", name: "", email: "", phone: "", role: "" };
+
 // Blank form values for creating a new BID record.
 const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
-  name: "", status: "Outreach", contactName: "", contactEmail: "", phone: "",
-  borough: "", address: "", zipCode: "", nextAction: "", notes: "", priority: "Medium",
+  name: "", status: "Outreach", contacts: [],
+  borough: "", address: "", zipCode: "", nextAction: "", priority: "Medium",
 };
 
 // ── COLUMN DEFINITIONS (compact view) ─────────────────────────────────────────
@@ -87,28 +89,41 @@ export default function BIDTrackerPage() {
     setForm(prev => ({ ...prev, [key]: value }));
 
   const openCreate = () => {
-    setForm(BLANK_FORM);
+    setForm({ ...BLANK_FORM, contacts: [{ ...BLANK_CONTACT, id: crypto.randomUUID() }] });
     setEditingBID(null);
     setModal("create");
   };
 
   const openEdit = (bid: BID) => {
+    // Prefer the contacts array; fall back to synthesising one from legacy fields.
+    const contacts: BIDContact[] =
+      bid.contacts && bid.contacts.length > 0
+        ? bid.contacts
+        : (bid.contactName || bid.contactEmail || bid.phone)
+          ? [{ id: crypto.randomUUID(), name: bid.contactName ?? "", email: bid.contactEmail ?? "", phone: bid.phone ?? "", role: "" }]
+          : [{ ...BLANK_CONTACT, id: crypto.randomUUID() }];
     setForm({
-      name:         bid.name,
-      status:       normalizeBidStatus(bid.status),
-      contactName:  bid.contactName,
-      contactEmail: bid.contactEmail,
-      phone:        bid.phone,
-      borough:      bid.borough,
-      address:      bid.address ?? "",
-      zipCode:      bid.zipCode ?? "",
-      nextAction:   bid.nextAction,
-      notes:        bid.notes,
-      priority:     bid.priority as BID["priority"],
+      name:       bid.name,
+      status:     normalizeBidStatus(bid.status),
+      contacts,
+      borough:    bid.borough,
+      address:    bid.address ?? "",
+      zipCode:    bid.zipCode ?? "",
+      nextAction: bid.nextAction,
+      priority:   bid.priority as BID["priority"],
     });
     setEditingBID(bid);
     setModal("edit");
   };
+
+  const addContact = () =>
+    setForm(prev => ({ ...prev, contacts: [...(prev.contacts ?? []), { ...BLANK_CONTACT, id: crypto.randomUUID() }] }));
+
+  const removeContact = (id: string) =>
+    setForm(prev => ({ ...prev, contacts: (prev.contacts ?? []).filter(c => c.id !== id) }));
+
+  const updateContact = (id: string, field: keyof BIDContact, value: string) =>
+    setForm(prev => ({ ...prev, contacts: (prev.contacts ?? []).map(c => c.id === id ? { ...c, [field]: value } : c) }));
 
   const geocodeBidLocation = async (input: {
     address: string;
@@ -157,11 +172,18 @@ export default function BIDTrackerPage() {
           : (locationChanged ? { lat: null as unknown as number, lng: null as unknown as number } : {}))
       : ({ lat: null as unknown as number, lng: null as unknown as number });
 
+    // Sync legacy single-contact fields from contacts[0] so existing display code still works.
+    const contacts = form.contacts ?? [];
+    const legacySync = contacts.length > 0
+      ? { contactName: contacts[0].name, contactEmail: contacts[0].email, phone: contacts[0].phone }
+      : { contactName: "", contactEmail: "", phone: "" };
+
     if (editingBID) {
-      await updateBID(editingBID.id, { ...(form as Partial<BID>), status: normalizeBidStatus(form.status), ...geocodePatch });
+      await updateBID(editingBID.id, { ...(form as Partial<BID>), ...legacySync, status: normalizeBidStatus(form.status), ...geocodePatch });
     } else {
       await createBID({
         ...form,
+        ...legacySync,
         status: normalizeBidStatus(form.status),
         ...geocodePatch,
         sortIndex: nextSortIndex(bids),
@@ -292,14 +314,17 @@ export default function BIDTrackerPage() {
                     <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
                       <span>{bid.borough || "No location"}</span>
                       <span>•</span>
-                      <span>{bid.contactName || "No contact"}</span>
-                      {bid.contactEmail && (
+                      <span>{(bid.contacts?.[0]?.name || bid.contactName) || "No contact"}</span>
+                      {(bid.contacts?.[0]?.email || bid.contactEmail) && (
                         <>
                           <span>•</span>
-                          <a href={`mailto:${bid.contactEmail}`} className="text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
-                            {bid.contactEmail}
+                          <a href={`mailto:${bid.contacts?.[0]?.email || bid.contactEmail}`} className="text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+                            {bid.contacts?.[0]?.email || bid.contactEmail}
                           </a>
                         </>
+                      )}
+                      {bid.contacts && bid.contacts.length > 1 && (
+                        <span className="text-white/30">+{bid.contacts.length - 1} more</span>
                       )}
                     </div>
                   ) : (
@@ -321,7 +346,7 @@ export default function BIDTrackerPage() {
               {!isMemberRestricted && (bid.nextAction || bid.notes) && (
                 <div className="mt-3 bg-white/4 border border-white/6 rounded-lg px-3 py-2">
                   <p className="text-[10px] uppercase tracking-wider text-white/35 mb-1">Notes / Next Action</p>
-                  <p className="text-sm text-white/70">{bid.nextAction || bid.notes}</p>
+                  <p className="text-sm text-white/70">{bid.nextAction}</p>
                 </div>
               )}
 
@@ -378,9 +403,15 @@ export default function BIDTrackerPage() {
                         );
                         case "contact": return (
                           <td key="contact" className="px-3 py-0 h-9 text-white/55 align-middle overflow-hidden">
-                            <span className="block truncate" title={[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}>
-                              {[bid.contactName || "", bid.contactEmail || "", bid.phone || ""].filter(Boolean).join(" · ") || "—"}
-                            </span>
+                            {(() => {
+                              const primary = bid.contacts?.[0];
+                              const name  = primary?.name  || bid.contactName || "";
+                              const email = primary?.email || bid.contactEmail || "";
+                              const phone = primary?.phone || bid.phone || "";
+                              const extra = bid.contacts && bid.contacts.length > 1 ? ` +${bid.contacts.length - 1}` : "";
+                              const text  = ([name, email, phone].filter(Boolean).join(" · ") + extra) || "—";
+                              return <span className="block truncate" title={text}>{text}</span>;
+                            })()}
                           </td>
                         );
                         case "nextAction": return (
@@ -425,15 +456,36 @@ export default function BIDTrackerPage() {
             <Field label="Status">
               <Select options={STATUSES} value={form.status} onChange={e => setField("status", e.target.value)} />
             </Field>
-            <Field label="Contact Name">
-              <Input value={form.contactName} onChange={e => setField("contactName", e.target.value)} />
-            </Field>
-            <Field label="Contact Email">
-              <Input type="email" value={form.contactEmail} onChange={e => setField("contactEmail", e.target.value)} />
-            </Field>
-            <Field label="Phone">
-              <Input value={form.phone} onChange={e => setField("phone", e.target.value)} />
-            </Field>
+            <div className="col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-white/40 font-semibold">Contacts</span>
+                <Btn size="sm" variant="secondary" onClick={addContact}>+ Add Contact</Btn>
+              </div>
+              {(form.contacts ?? []).map((contact, i) => (
+                <div key={contact.id} className="bg-[#0F1014] border border-white/8 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wide text-white/30">{i === 0 ? "Primary Contact" : `Contact ${i + 1}`}</span>
+                    {(form.contacts ?? []).length > 1 && (
+                      <button className="text-white/30 hover:text-red-400 text-xs transition-colors" onClick={() => removeContact(contact.id)}>Remove</button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Name">
+                      <Input value={contact.name} onChange={e => updateContact(contact.id, "name", e.target.value)} placeholder="Full name" />
+                    </Field>
+                    <Field label="Role">
+                      <Input value={contact.role ?? ""} onChange={e => updateContact(contact.id, "role", e.target.value)} placeholder="e.g. Executive Director" />
+                    </Field>
+                    <Field label="Email">
+                      <Input type="email" value={contact.email} onChange={e => updateContact(contact.id, "email", e.target.value)} placeholder="email@example.com" />
+                    </Field>
+                    <Field label="Phone">
+                      <Input value={contact.phone} onChange={e => updateContact(contact.id, "phone", e.target.value)} placeholder="(555) 000-0000" />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+            </div>
             <Field label="Borough / Region">
               <Select options={["", ...BOROUGHS]} value={form.borough} onChange={e => setField("borough", e.target.value)} />
             </Field>

@@ -9,20 +9,29 @@ import { normalizeTeamPod } from "@/lib/teamPod";
 
 // ── DATA TYPES ────────────────────────────────────────────────────────────────
 
+export interface BIDContact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role?: string;
+}
+
 export interface BID {
   id: string;
   name: string;
   status: "Active Partner" | "In Conversation" | "Outreach" | "Paused" | "Dead";
-  contactName: string;
-  contactEmail: string;
-  phone: string;
+  contacts?: BIDContact[];
+  contactName?: string;
+  contactEmail?: string;
+  phone?: string;
   borough: string;
   address?: string;
   zipCode?: string;
   lat?: number;
   lng?: number;
   nextAction: string;
-  notes: string;
+  notes?: string;
   priority: "High" | "Medium" | "Low";
   timeline?: Record<string, {
     date: string;

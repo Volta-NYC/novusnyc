@@ -49,6 +49,7 @@ export default function ContactForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [neighborhoodOptions, setNeighborhoodOptions] = useState<string[]>([]);
+  const [partnerOptions, setPartnerOptions] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/public/neighborhoods")
@@ -56,7 +57,13 @@ export default function ContactForm() {
       .then((data: { neighborhoods?: string[] }) => {
         if (Array.isArray(data.neighborhoods)) setNeighborhoodOptions(data.neighborhoods);
       })
-      .catch(() => { /* non-fatal — falls back to plain text input */ });
+      .catch(() => { /* non-fatal */ });
+    fetch("/api/public/org-partners")
+      .then((r) => r.json())
+      .then((data: { partners?: string[] }) => {
+        if (Array.isArray(data.partners)) setPartnerOptions(data.partners);
+      })
+      .catch(() => { /* non-fatal */ });
   }, []);
 
   const c = COPY[lang];
@@ -231,11 +238,19 @@ export default function ContactForm() {
         <div>
           <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.referredBy}</label>
           <input
+            list="org-partner-options"
             value={formData.referredBy}
             onChange={(e) => setFormData((p) => ({ ...p, referredBy: e.target.value }))}
             className="volta-input"
             placeholder={c.referredByPlaceholder}
           />
+          <datalist id="org-partner-options">
+            {partnerOptions.map((o) => <option key={o} value={o} />)}
+            <option value="Social media" />
+            <option value="Online search / Google" />
+            <option value="Flyer or printed material" />
+            <option value="Other" />
+          </datalist>
         </div>
         <div>
           <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.message}</label>
