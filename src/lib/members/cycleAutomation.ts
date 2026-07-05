@@ -1,9 +1,9 @@
 // Automation sweep for the credit/strike system. Runs whenever an admin loads
 // the team directory: walks every active member, computes their dot color,
-// fires the matching email template via the automation config, and (for red)
-// issues a one-shot auto-pace strike scoped to the cycle. Uses
-// lastWarningCycleId / lastAutoStrikeCycleId flags on the member record to
-// ensure at most one of each per cycle.
+// and sends the non-demerit cycle reminders. Automatic demerit warnings and
+// auto-pace strikes are additionally gated by AUTOMATIC_DEMERITS_ENABLED.
+// Uses lastWarningCycleId / lastAutoStrikeCycleId flags on the member record
+// to ensure at most one of each per cycle when that system is enabled.
 //
 // This is *client-side* automation: trusted because it only runs in an
 // authenticated admin's browser. A server-side cron is a future improvement.
@@ -17,6 +17,7 @@ import {
 import {
   classifyMember, computeCreditLedger, computeDot, lookupCreditTarget, pickPrimaryTrack,
 } from "@/lib/members/cycleCompute";
+import { AUTOMATIC_DEMERITS_ENABLED } from "@/lib/members/automaticDemerits";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
 
 export interface SweepInput {
@@ -62,7 +63,9 @@ export async function runCycleSweep(input: SweepInput): Promise<SweepReport> {
   const credits = new Map<string, number>();
   for (const a of input.assignments) credits.set(a.id, a.credits);
 
-  const autoPaceInfraction = findAutoPaceInfraction(input.infractions);
+  const autoPaceInfraction = AUTOMATIC_DEMERITS_ENABLED
+    ? findAutoPaceInfraction(input.infractions)
+    : null;
 
   for (const member of input.team) {
     const classification = classifyMember(member);
@@ -122,6 +125,8 @@ export async function runCycleSweep(input: SweepInput): Promise<SweepReport> {
         report.errors.push(`biweekly ${member.name}: ${result.error}`);
       }
     }
+
+    if (!AUTOMATIC_DEMERITS_ENABLED) continue;
 
     if (dot.color === "orange" && member.lastWarningCycleId !== cycle.id) {
       const result = await dispatchTemplatedEmail({

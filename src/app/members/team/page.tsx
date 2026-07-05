@@ -321,9 +321,8 @@ export default function TeamPage() {
   }, []);
 
   // One-shot automation sweep: when admin loads this page with full cycle data,
-  // walk every active member and fire warnings/auto-strikes if their dot just
-  // crossed the orange or red threshold. The sweep itself is idempotent per
-  // cycle via the lastWarningCycleId / lastAutoStrikeCycleId flags.
+  // walk every active member and run cycle reminders. Pace warnings/auto-strikes
+  // stay paused unless automatic demerits are enabled in code.
   useEffect(() => {
     if (sweepRanRef.current) return;
     if (!canEdit || !user) return;
