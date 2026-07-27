@@ -43,8 +43,21 @@ function applyPlaceholders(input: string, meta: Record<string, string>): string 
   });
 }
 
+function smtpErrorCode(err: unknown): string {
+  const error = err as { code?: unknown; responseCode?: unknown; message?: unknown };
+  const code = typeof error.code === "string" ? error.code : "";
+  const message = typeof error.message === "string" ? error.message : "";
+  const responseCode = typeof error.responseCode === "number" ? error.responseCode : 0;
+
+  if (message === "primary_smtp_not_configured" || message === "secondary_smtp_not_configured") return message;
+  if (code === "EAUTH" || responseCode === 535) return "smtp_auth_failed";
+  if (responseCode === 550 || responseCode === 553 || /sender|from/i.test(message)) return "smtp_sender_rejected";
+  if (responseCode >= 500 && /recipient|address/i.test(message)) return "smtp_recipient_rejected";
+  return "send_failed";
+}
+
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["owner"]);
+  const verified = await verifyCaller(req, ["owner", "admin"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const formData = await req.formData();
@@ -123,8 +136,8 @@ export async function POST(req: NextRequest) {
   let transporter: ReturnType<typeof createTransportForFrom>["transporter"];
   try {
     transporter = createTransportForFrom(selectedFrom).transporter;
-  } catch {
-    return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: smtpErrorCode(err) }, { status: 500 });
   }
 
   const from = resolveFromWithName(selectedFrom);
@@ -192,7 +205,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("Bulk email error:", err);
-    return NextResponse.json({ error: "send_failed" }, { status: 500 });
+    return NextResponse.json({ error: smtpErrorCode(err) }, { status: 500 });
   }
 
   return NextResponse.json({

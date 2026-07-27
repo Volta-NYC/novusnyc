@@ -262,9 +262,40 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+function teamEmailErrorMessage(error: string | undefined): string {
+  switch (error) {
+    case "unauthorized":
+      return "Your session expired. Please sign in again before sending.";
+    case "forbidden":
+      return "Your account does not have permission to send member emails.";
+    case "missing_fields":
+      return "Please add a subject and message.";
+    case "no_recipients":
+      return "No valid recipients were selected.";
+    case "too_many_recipients":
+      return "Too many recipients selected. Send to 400 or fewer people at a time.";
+    case "from_not_allowed":
+      return "That From address is not allowed for member email.";
+    case "smtp_not_configured":
+    case "primary_smtp_not_configured":
+    case "secondary_smtp_not_configured":
+      return "Email is not configured for that From address.";
+    case "smtp_auth_failed":
+      return "Email authentication failed. Check the SMTP username and app password.";
+    case "smtp_sender_rejected":
+      return "The mail provider rejected the From address.";
+    case "smtp_recipient_rejected":
+      return "The mail provider rejected one or more recipients.";
+    case "send_failed":
+      return "The mail provider could not send this email.";
+    default:
+      return "Could not send email.";
+  }
+}
+
 export default function MemberEmailPage() {
   const { authRole, user } = useAuth();
-  const canUseEmail = authRole === "owner";
+  const canUseEmail = authRole === "owner" || authRole === "admin";
 
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -703,7 +734,8 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
         body: formData,
       });
       if (!response.ok) {
-        setStatus("Could not send email.");
+        const payload = await response.json().catch(() => ({})) as { error?: string };
+        setStatus(teamEmailErrorMessage(payload.error));
         return;
       }
       const payload = await response.json() as {

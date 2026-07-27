@@ -24,7 +24,14 @@ function normalizeCallerRole(value: unknown): string {
   const raw = String(value ?? "").trim();
   if (raw === "owner") return "owner";
   if (raw === "admin") return "admin";
-  return raw;
+  if (raw === "member") return "member";
+  return "";
+}
+
+const CALLER_ROLE_TIER: Record<string, number> = { owner: 2, admin: 1, member: 0, "": -1 };
+
+function maxCallerRole(a: string, b: string): string {
+  return (CALLER_ROLE_TIER[a] ?? -1) >= (CALLER_ROLE_TIER[b] ?? -1) ? a : b;
 }
 
 function normalizeEmail(value: unknown): string {
@@ -70,36 +77,34 @@ export async function verifyCaller(
   }
 
   // Read auth_role from app_metadata — set server-side only, always in the JWT,
-  // no PostgREST schema-cache dependency. Migrated/confirmed accounts may not
-  // have that metadata yet, so fall back to the linked team row.
+  // no PostgREST schema-cache dependency. Also read the linked team row because
+  // existing sessions can hold stale app_metadata after a role change.
   const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
-  let role = normalizeCallerRole(appMeta.auth_role ?? "");
+  const metadataRole = normalizeCallerRole(appMeta.auth_role ?? "");
   const canInterview = appMeta.can_interview === true;
   let profileName = (user.user_metadata?.full_name as string | undefined) ?? "";
+  const email = normalizeEmail(user.email);
+  const byUid = await sb
+    .from("team")
+    .select("name, auth_role")
+    .eq("auth_uid", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
 
-  if (!role) {
-    const email = normalizeEmail(user.email);
-    const byUid = await sb
+  let teamRow = byUid.data as Record<string, unknown> | null;
+  if (!teamRow && email) {
+    const byEmail = await sb
       .from("team")
       .select("name, auth_role")
-      .eq("auth_uid", user.id)
+      .or(`email.eq.${email},alternate_email.eq.${email}`)
       .is("deleted_at", null)
-      .maybeSingle();
-
-    let teamRow = byUid.data as Record<string, unknown> | null;
-    if (!teamRow && email) {
-      const byEmail = await sb
-        .from("team")
-        .select("name, auth_role")
-        .or(`email.eq.${email},alternate_email.eq.${email}`)
-        .is("deleted_at", null)
-        .limit(1);
-      teamRow = (byEmail.data?.[0] as Record<string, unknown> | undefined) ?? null;
-    }
-
-    role = normalizeCallerRole(teamRow?.auth_role ?? "");
-    profileName = profileName || String(teamRow?.name ?? "");
+      .limit(1);
+    teamRow = (byEmail.data?.[0] as Record<string, unknown> | undefined) ?? null;
   }
+
+  const teamRole = normalizeCallerRole(teamRow?.auth_role ?? "");
+  const role = maxCallerRole(metadataRole, teamRole);
+  profileName = profileName || String(teamRow?.name ?? "");
 
   const roleAllowed = allowedRoles.includes(role);
   const interviewAllowed = opts?.allowIfCanInterview === true && canInterview;

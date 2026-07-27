@@ -73,7 +73,7 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/assignments/catalog"]);
+const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/assignments/catalog", "/members/email"]);
 const ADMIN_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS.filter((item) => ADMIN_NAV_HREFS.has(item.href));
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
@@ -141,6 +141,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
       "/members/overview",
       "/members/projects",
       "/members/assignments",
+      "/members/email",
     ];
   }
   return ["/members/work", "/members/me", "/members/handbook", "/members/work/catalog", "/members/settings"];
