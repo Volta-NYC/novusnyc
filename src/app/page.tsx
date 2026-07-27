@@ -87,6 +87,13 @@ const FLAGSHIP_PARTNER_ORDER = [
 
 const FLAGSHIP_PARTNER_NAMES = new Set<string>(FLAGSHIP_PARTNER_ORDER);
 
+function getPartnerLogoClass(partner: CommunityPartner, baseClass: string): string {
+  if (partner.name === "NYC Small Business Services") {
+    return `${baseClass} scale-[1.42]`;
+  }
+  return baseClass;
+}
+
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
@@ -325,14 +332,20 @@ async function LiveHomeStats() {
 
 function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
   return (
-    <div className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center shadow-[0_16px_42px_rgba(23,38,12,0.09)]">
+    <a
+      href={partner.website}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Visit ${partner.name} website`}
+      className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center shadow-[0_16px_42px_rgba(23,38,12,0.09)] no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
+    >
       <div className="relative w-full h-[78px] mb-4">
         <Image
           src={partner.logo}
           alt={`${partner.name} logo`}
           fill
           sizes="(max-width: 640px) 45vw, 180px"
-          className="object-contain p-1"
+          className={getPartnerLogoClass(partner, "object-contain p-1")}
         />
       </div>
       <p className="font-body text-[9px] uppercase tracking-widest text-v-green font-bold mb-1">
@@ -341,14 +354,27 @@ function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
       <h3 className="font-display font-bold text-v-ink text-sm leading-tight">
         {partner.name}
       </h3>
-    </div>
+    </a>
   );
 }
 
-function PartnerLogoCard({ partner, important }: { partner: CommunityPartner; important: boolean }) {
+function PartnerLogoCard({
+  partner,
+  important,
+  tabIndex,
+}: {
+  partner: CommunityPartner;
+  important: boolean;
+  tabIndex?: number;
+}) {
   return (
-    <div
-      className={`partner-logo-card shrink-0 bg-white border flex flex-col items-center justify-center text-center ${
+    <a
+      href={partner.website}
+      target="_blank"
+      rel="noreferrer"
+      tabIndex={tabIndex}
+      aria-label={`Visit ${partner.name} website`}
+      className={`partner-logo-card shrink-0 bg-white border flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2 ${
         important
           ? "w-[230px] h-[142px] rounded-xl border-v-green/35 shadow-[0_12px_34px_rgba(23,38,12,0.08)] px-4"
           : "w-[230px] h-[142px] rounded-lg border-v-border px-4"
@@ -360,7 +386,7 @@ function PartnerLogoCard({ partner, important }: { partner: CommunityPartner; im
           alt={`${partner.name} logo`}
           fill
           sizes="190px"
-          className="object-contain partner-logo-image p-1"
+          className={getPartnerLogoClass(partner, "object-contain partner-logo-image p-1")}
         />
       </div>
       <div className="mt-3 min-w-0 w-full">
@@ -373,7 +399,7 @@ function PartnerLogoCard({ partner, important }: { partner: CommunityPartner; im
           {partner.name}
         </p>
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -392,7 +418,12 @@ function PartnerMarquee({
         {[0, 1].map((copy) => (
           <div key={copy} className="flex gap-3 md:gap-4" aria-hidden={copy === 1}>
             {partners.map((partner) => (
-              <PartnerLogoCard key={`${copy}-${partner.name}`} partner={partner} important={important} />
+              <PartnerLogoCard
+                key={`${copy}-${partner.name}`}
+                partner={partner}
+                important={important}
+                tabIndex={copy === 1 ? -1 : undefined}
+              />
             ))}
           </div>
         ))}
