@@ -86,6 +86,7 @@ export interface Business {
   intakeSource?: "website_form" | "discovery";
   archived?: boolean;
   referredBy?: string;
+  servicesRequested?: string;
   // Public-site showcase configuration (optional, managed in Projects UI).
   showcaseEnabled?: boolean;
   showcaseFeaturedOnHome?: boolean;

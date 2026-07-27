@@ -324,6 +324,17 @@ function nextSortIndex(items: Business[]): number {
   return max + 1000;
 }
 
+function getServicesRequestedLabel(business: Pick<Business, "activeServices" | "notes" | "servicesRequested" | "showcaseServices">): string {
+  if (business.servicesRequested?.trim()) return business.servicesRequested.trim();
+  const notesLine = (business.notes ?? "")
+    .split(/\r?\n/)
+    .find((line) => /^Services requested:\s*/i.test(line.trim()));
+  if (notesLine) return notesLine.replace(/^Services requested:\s*/i, "").trim();
+  const activeServices = (business.activeServices ?? []).map((service) => service.trim()).filter(Boolean);
+  if (activeServices.length > 0) return activeServices.join(", ");
+  return (business.showcaseServices ?? []).map((service) => service.trim()).filter(Boolean).join(", ");
+}
+
 function normalizeKey(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -479,8 +490,10 @@ function BusinessesPageInner() {
         setBusinesses(
           items.map((item) => {
             const normalized = normalizeTrackProjectsFromBusiness(item);
+            const servicesRequested = getServicesRequestedLabel(item);
             return {
               ...item,
+              servicesRequested,
               projectTracks: normalized.projectTracks,
               trackProjects: normalized.trackProjects,
               projectStatus: deriveOverallStatus(normalized.trackProjects, normalized.projectTracks),
@@ -969,10 +982,12 @@ function BusinessesPageInner() {
     const trackAssignments = getTrackAssignments(project);
     const allTeamNames = trackAssignments.flatMap((assignment) => assignment.members);
     const neighborhood = (project.neighborhood ?? project.showcaseNeighborhood ?? "").trim();
+    const servicesRequested = getServicesRequestedLabel(project);
     return project.name.toLowerCase().includes(query)
       || project.ownerName.toLowerCase().includes(query)
       || neighborhood.toLowerCase().includes(query)
       || (project.referredBy ?? "").toLowerCase().includes(query)
+      || servicesRequested.toLowerCase().includes(query)
       || allTeamNames.some((name) => name.toLowerCase().includes(query));
   };
 
@@ -1419,6 +1434,7 @@ function BusinessesPageInner() {
   const renderTrackRow = (b: Business) => {
     const neighborhood = getNeighborhoodLabel(b);
     const derivedTracks = TRACK_ORDER.filter((t) => (b.projectTracks ?? []).includes(t));
+    const servicesRequested = getServicesRequestedLabel(b);
 
     return (
       <tr
@@ -1511,6 +1527,9 @@ function BusinessesPageInner() {
         <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
           <span className="block truncate" title={b.referredBy || ""}>{b.referredBy || <span className="text-white/25">—</span>}</span>
         </td>
+        <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
+          <span className="block truncate" title={servicesRequested}>{servicesRequested || <span className="text-white/25">—</span>}</span>
+        </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
             <div className="members-row-actions">
@@ -1537,6 +1556,7 @@ function BusinessesPageInner() {
   // opening the full edit modal.
   const renderDiscoveryRow = (b: Business) => {
     const neighborhood = getNeighborhoodLabel(b);
+    const servicesRequested = getServicesRequestedLabel(b);
     const fromWebsite = b.intakeSource === "website_form";
     const fromDiscovery = b.intakeSource === "discovery";
     return (
@@ -1630,6 +1650,9 @@ function BusinessesPageInner() {
         </td>
         <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
           <span className="block truncate" title={b.referredBy || ""}>{b.referredBy || <span className="text-white/25">—</span>}</span>
+        </td>
+        <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
+          <span className="block truncate" title={servicesRequested}>{servicesRequested || <span className="text-white/25">—</span>}</span>
         </td>
         <td className="px-3 py-0 h-9 align-middle">
           {canEdit && (
@@ -1933,6 +1956,7 @@ function BusinessesPageInner() {
                     { key: "phone", label: "Phone" },
                     { key: "neighborhood", label: "Neighborhood" },
                     { key: "referredBy", label: "Referred By" },
+                    { key: "servicesRequested", label: "Services Requested" },
                     { key: "projectStatus", label: "Status" },
                     { key: "teamLead", label: "Team Lead" },
                     { key: "firstContactDate", label: "First Contact" },
@@ -2284,7 +2308,7 @@ function BusinessesPageInner() {
         </>
       ) : activeTab === "discovery" ? (
         <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1100px"}}>
+          <table className="table-fixed text-left" style={{width: "100%", minWidth: "1360px"}}>
             <thead className="bg-[#0F1014]">
               <tr className="members-header-sep">
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Business Name</th>
@@ -2295,6 +2319,7 @@ function BusinessesPageInner() {
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[90px]">Source</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[100px]">Date</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Referred By</th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[170px]">Services Requested</th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[140px]">Actions</th>
               </tr>
             </thead>
@@ -2317,7 +2342,7 @@ function BusinessesPageInner() {
             <div className="mb-4">
               <h2 className="text-white/75 text-sm font-semibold uppercase tracking-wider mb-2">My Businesses</h2>
               <div className="rounded-xl border border-white/8 bg-[#13161D] overflow-x-auto">
-                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1551px"}}>
+                <table className="table-fixed text-left" style={{width: "100%", minWidth: "1721px"}}>
                   <thead className="bg-[#0F1014]">
                     <tr className="members-header-sep">
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2330,6 +2355,7 @@ function BusinessesPageInner() {
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance Status</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Referred By</th>
+                      <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[170px]">Services Requested</th>
                       <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                     </tr>
                   </thead>
@@ -2344,7 +2370,7 @@ function BusinessesPageInner() {
           )}
 
           <div className="rounded-xl border border-white/8 bg-[#13161D] mb-6 overflow-x-auto">
-            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1551px"}}>
+            <table className="table-fixed text-left" style={{width: "100%", minWidth: "1721px"}}>
               <thead className="bg-[#0F1014]">
                 <tr className="members-header-sep">
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[56px]">Track</th>
@@ -2357,6 +2383,7 @@ function BusinessesPageInner() {
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Marketing Status</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[130px]">Finance Status</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[120px]">Referred By</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[170px]">Services Requested</th>
                   <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 w-[190px]">Actions</th>
                 </tr>
               </thead>
