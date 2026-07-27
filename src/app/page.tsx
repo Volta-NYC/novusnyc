@@ -77,6 +77,29 @@ type HomeProject = {
 
 type CommunityPartner = (typeof communityPartners)[number];
 
+const FLAGSHIP_PARTNER_ORDER = [
+  "NYC Small Business Services",
+  "NYC Small Business Resource Network",
+  "Queens Chamber of Commerce",
+  "Brooklyn Chamber of Commerce",
+  "Manhattan Chamber of Commerce",
+] as const;
+
+const FLAGSHIP_PARTNER_NAMES = new Set<string>(FLAGSHIP_PARTNER_ORDER);
+
+const HOME_PROJECT_PRIORITIES = [
+  "nowthen",
+  "taqueria el bulchon",
+  "pappazio",
+  "spin bagel",
+  "masalabox",
+  "ddn productions",
+  "pho bar",
+  "safa sanctuary",
+  "https://www.higherlearningnyc.com/",
+  "https://pan-de-arwah.vercel.app/",
+];
+
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
@@ -91,13 +114,42 @@ function getServiceTagClass(service: string): string {
   return "bg-v-border text-v-muted border-v-border";
 }
 
+function normalizeProjectKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/https?:\/\/(www\.)?/, "")
+    .replace(/\/$/, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getPreferredHomeProjects(cards: HomeProject[]): HomeProject[] {
+  const matches = new Map<string, HomeProject>();
+  for (const card of cards) {
+    const keys = [card.name, card.url ?? ""]
+      .map(normalizeProjectKey)
+      .filter(Boolean);
+    for (const key of keys) {
+      if (!matches.has(key)) matches.set(key, card);
+    }
+  }
+
+  const preferred = HOME_PROJECT_PRIORITIES
+    .map((key) => matches.get(normalizeProjectKey(key)))
+    .filter((card): card is HomeProject => Boolean(card));
+
+  return preferred;
+}
+
 async function getHomeProjects(): Promise<HomeProject[]> {
   const publicShowcase = await getPublicShowcaseCards();
   const featuredHomeCards = publicShowcase
     .filter((card) => card.featuredOnHome);
 
-  const homeProjects = featuredHomeCards.length > 0
-    ? featuredHomeCards.map((card) => ({
+  const publicHomeCards = publicShowcase.map((card) => ({
       name: card.name,
       type: card.type,
       neighborhood: card.neighborhood,
@@ -108,7 +160,16 @@ async function getHomeProjects(): Promise<HomeProject[]> {
       imageUrl: card.imageUrl,
       desc: card.desc,
       quote: undefined as string | undefined,
-    }))
+    }));
+  const featuredHomeProjects = publicHomeCards.filter((card) =>
+    featuredHomeCards.some((featured) => featured.name === card.name),
+  );
+  const preferredHomeProjects = getPreferredHomeProjects(publicHomeCards);
+
+  const homeProjects = publicHomeCards.length > 0
+    ? (preferredHomeProjects.length > 0
+      ? preferredHomeProjects
+      : featuredHomeProjects)
     : (publicShowcase.length === 0
       ? fallbackCurrentProjects.slice(0, 6).map((project) => ({
       name: project.name,
@@ -300,25 +361,39 @@ async function CurrentProjectsSection() {
 }
 
 async function LiveHomeStats() {
-  const [liveStats, memberCount] = await Promise.all([
-    getPublicLiveStats(),
-    getTotalMemberCount(),
-  ]);
-
-  const studentPublicationsAndResearchProjects =
-    liveStats.caseStudies + liveStats.educationalReports;
-
   const liveHomeStats = [
-    { value: formatCounter(memberCount), label: "Student Members" },
-    { value: formatCounter(liveStats.totalBusinesses), label: "Businesses Supported" },
+    { value: "400+", label: "Student Members" },
+    { value: "150+", label: "Businesses Supported" },
     {
-      value: formatCounter(studentPublicationsAndResearchProjects),
+      value: "120+",
       label: "Student Publications and Research Projects",
     },
-    { value: formatCounter(liveStats.bidPartners, true), label: "Community Organizations" },
+    { value: "30", label: "Community Organizations" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;
+}
+
+function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
+  return (
+    <div className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center shadow-[0_16px_42px_rgba(23,38,12,0.09)]">
+      <div className="relative w-full h-[78px] mb-4">
+        <Image
+          src={partner.logo}
+          alt={`${partner.name} logo`}
+          fill
+          sizes="(max-width: 640px) 45vw, 180px"
+          className="object-contain p-1"
+        />
+      </div>
+      <p className="font-body text-[9px] uppercase tracking-widest text-v-green font-bold mb-1">
+        Flagship partner
+      </p>
+      <h3 className="font-display font-bold text-v-ink text-sm leading-tight">
+        {partner.name}
+      </h3>
+    </div>
+  );
 }
 
 function PartnerLogoCard({ partner, important }: { partner: CommunityPartner; important: boolean }) {
@@ -336,7 +411,7 @@ function PartnerLogoCard({ partner, important }: { partner: CommunityPartner; im
           alt={`${partner.name} logo`}
           fill
           sizes="190px"
-          className="object-contain partner-logo-image"
+          className="object-contain partner-logo-image p-1"
         />
       </div>
       <div className="mt-3 min-w-0 w-full">
@@ -378,8 +453,13 @@ function PartnerMarquee({
 }
 
 function CommunityPartnersSection() {
-  const importantPartners = communityPartners.filter((partner) => partner.important);
-  const neighborhoodPartners = communityPartners.filter((partner) => !partner.important);
+  const partnerByName = new Map(communityPartners.map((partner) => [partner.name, partner]));
+  const flagshipPartners = FLAGSHIP_PARTNER_ORDER
+    .map((name) => partnerByName.get(name))
+    .filter((partner): partner is CommunityPartner => Boolean(partner));
+  const scrollingPartners = communityPartners.filter((partner) => !FLAGSHIP_PARTNER_NAMES.has(partner.name));
+  const importantPartners = scrollingPartners.filter((partner) => partner.important);
+  const neighborhoodPartners = scrollingPartners.filter((partner) => !partner.important);
 
   return (
     <section className="py-16 md:py-20 bg-white overflow-hidden">
@@ -398,6 +478,11 @@ function CommunityPartnersSection() {
           </p>
         </AnimatedSection>
         <AnimatedSection>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8 md:mb-10">
+            {flagshipPartners.map((partner) => (
+              <FlagshipPartnerCard key={partner.name} partner={partner} />
+            ))}
+          </div>
           <div className="space-y-3 md:space-y-4">
             <PartnerMarquee partners={importantPartners} important />
             <PartnerMarquee partners={neighborhoodPartners} reverse />
