@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -29,9 +29,6 @@ type ShowcaseProject = {
   source?: "business" | "bid";
 };
 
-const BOROUGH_OPTIONS = ["All Boroughs", "Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island"];
-const SERVICE_OPTIONS = ["All Services", "Website", "SEO", "Social Media", "Graphic Design", "Grants"];
-
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
@@ -56,25 +53,6 @@ function boroughCardClass(borough: string) {
   return "bg-v-bg border-v-border text-v-ink";
 }
 
-function matchesService(projectServices: string[], filter: string): boolean {
-  if (filter === "All Services") return true;
-  const key = filter.toLowerCase();
-  return projectServices.some((s) => {
-    const lower = s.toLowerCase();
-    if (key === "website") return lower.includes("website") || lower.includes("web");
-    if (key === "seo") return lower.includes("seo") || lower.includes("google");
-    if (key === "social media") return lower.includes("social");
-    if (key === "graphic design") return lower.includes("graphic") || lower.includes("design");
-    if (key === "grants") return lower.includes("grant");
-    return false;
-  });
-}
-
-function matchesBorough(projectBorough: string, filter: string): boolean {
-  if (filter === "All Boroughs") return true;
-  return projectBorough.toLowerCase().includes(filter.toLowerCase());
-}
-
 export default function ShowcaseClient({
   projects,
   mapProjects,
@@ -92,46 +70,7 @@ export default function ShowcaseClient({
   totalBusinesses: number;
   orgPartners: number;
 }) {
-  const [boroughFilter, setBoroughFilter] = useState("All Boroughs");
-  const [serviceFilter, setServiceFilter] = useState("All Services");
   const mobileScrollRef = useRef<HTMLDivElement>(null);
-
-  // Initialise filters from URL params on mount. Values not in the allowlists
-  // are silently ignored — template syntax and arbitrary strings have no effect.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const b = params.get("borough");
-    const s = params.get("service");
-    if (b && BOROUGH_OPTIONS.includes(b)) setBoroughFilter(b);
-    if (s && SERVICE_OPTIONS.includes(s)) setServiceFilter(s);
-  }, []);
-
-  const filteredProjects = useMemo(() => {
-    return projects.filter((p) => {
-      const boroughMatch = matchesBorough(p.borough, boroughFilter);
-      const serviceMatch = matchesService(p.services, serviceFilter);
-      return boroughMatch && serviceMatch;
-    });
-  }, [projects, boroughFilter, serviceFilter]);
-
-  const filteredMapProjects = useMemo(() => {
-    return mapProjects.filter((p) => {
-      const boroughMatch = matchesBorough(p.borough || "", boroughFilter);
-      const serviceMatch = matchesService(p.services, serviceFilter);
-      return boroughMatch && serviceMatch;
-    });
-  }, [mapProjects, boroughFilter, serviceFilter]);
-
-  const filteredBidPartners = useMemo(() => {
-    return bidPartners.filter((bid) => matchesBorough(bid.borough, boroughFilter));
-  }, [bidPartners, boroughFilter]);
-
-  // Reset scroll position when filters change
-  useEffect(() => {
-    if (mobileScrollRef.current) mobileScrollRef.current.scrollLeft = 0;
-  }, [boroughFilter, serviceFilter]);
-
-  const activeFilterCount = (boroughFilter !== "All Boroughs" ? 1 : 0) + (serviceFilter !== "All Services" ? 1 : 0);
 
   return (
     <>
@@ -167,11 +106,11 @@ export default function ShowcaseClient({
 
         {/* ── MAP ───────────────────────────────────────────────── */}
         <div className="w-full h-[520px] md:h-[600px] relative z-0">
-          <NeighborhoodMap projects={filteredMapProjects} />
+          <NeighborhoodMap projects={mapProjects} />
         </div>
       </section>
 
-      {/* ── FILTERS + PROJECT CARDS ─────────────────────────── */}
+      {/* ── PROJECT CARDS ───────────────────────────────────── */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-6 flex items-end justify-between flex-wrap gap-3">
@@ -183,55 +122,9 @@ export default function ShowcaseClient({
             </Link>
           </AnimatedSection>
 
-          {/* Filter bar */}
-          <AnimatedSection className="mb-8">
-            <div className="flex flex-wrap gap-3 items-center">
-              <div className="flex flex-wrap gap-2">
-                <span className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest self-center mr-1">Borough:</span>
-                {BOROUGH_OPTIONS.map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setBoroughFilter(b)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${
-                      boroughFilter === b
-                        ? "bg-v-green text-v-ink"
-                        : "bg-white border border-v-border text-v-muted hover:border-v-ink"
-                    }`}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest self-center mr-1">Service:</span>
-                {SERVICE_OPTIONS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setServiceFilter(s)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${
-                      serviceFilter === s
-                        ? "bg-v-blue text-white"
-                        : "bg-white border border-v-border text-v-muted hover:border-v-ink"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={() => { setBoroughFilter("All Boroughs"); setServiceFilter("All Services"); }}
-                  className="font-body text-xs text-v-muted hover:text-v-ink underline"
-                >
-                  Clear filters ({activeFilterCount})
-                </button>
-              )}
-            </div>
-          </AnimatedSection>
-
-          {filteredProjects.length === 0 ? (
+          {projects.length === 0 ? (
             <div className="border border-v-border rounded-2xl bg-white px-6 py-8 text-center">
-              <p className="font-body text-sm text-v-muted">No projects match your current filters. Try adjusting your selection.</p>
+              <p className="font-body text-sm text-v-muted">No projects selected yet.</p>
             </div>
           ) : (
             <>
@@ -243,7 +136,7 @@ export default function ShowcaseClient({
                     style={{ scrollbarWidth: "none" }}
                   >
                     <div className="flex gap-4 pl-5 pr-8 items-start">
-                      {filteredProjects.map((p, i) => (
+                      {projects.map((p, i) => (
                         <AnimatedSection
                           key={`mobile-${p.name}`}
                           delay={i * 0.05}
@@ -323,11 +216,11 @@ export default function ShowcaseClient({
 
               <div className="hidden lg:block">
                 <MasonryGrid
-                  itemIds={filteredProjects.map((p) => p.name)}
+                  itemIds={projects.map((p) => p.name)}
                   itemWidth={290}
                   gap={24}
                 >
-                  {filteredProjects.map((p) => (
+                  {projects.map((p) => (
                     <div key={`desktop-${p.name}`} className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
@@ -404,9 +297,9 @@ export default function ShowcaseClient({
               Our Organization Partners
             </h3>
           </AnimatedSection>
-          {filteredBidPartners.length > 0 ? (
+          {bidPartners.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {filteredBidPartners.map((bid) => (
+              {bidPartners.map((bid) => (
                 <div key={bid.id} className={`px-3 py-2.5 border rounded-xl ${boroughCardClass(bid.borough)}`}>
                   <p className="font-display font-bold text-[11px] uppercase tracking-wide leading-tight">
                     {bid.name}
