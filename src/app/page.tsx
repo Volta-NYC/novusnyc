@@ -6,7 +6,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
 import { MapPinIcon } from "@/components/Icons";
-import { currentProjects as fallbackCurrentProjects } from "@/data";
+import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
@@ -74,6 +74,8 @@ type HomeProject = {
   desc?: string;
   quote?: string;
 };
+
+type CommunityPartner = (typeof communityPartners)[number];
 
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
@@ -319,6 +321,93 @@ async function LiveHomeStats() {
   return <HomeStats stats={liveHomeStats} />;
 }
 
+function PartnerLogoCard({ partner, important }: { partner: CommunityPartner; important: boolean }) {
+  return (
+    <div
+      className={`partner-logo-card shrink-0 bg-white border flex flex-col items-center justify-center text-center ${
+        important
+          ? "w-[230px] h-[142px] rounded-xl border-v-green/35 shadow-[0_12px_34px_rgba(23,38,12,0.08)] px-4"
+          : "w-[230px] h-[142px] rounded-lg border-v-border px-4"
+      }`}
+    >
+      <div className="relative w-full h-[72px] shrink-0">
+        <Image
+          src={partner.logo}
+          alt={`${partner.name} logo`}
+          fill
+          sizes="190px"
+          className="object-contain partner-logo-image"
+        />
+      </div>
+      <div className="mt-3 min-w-0 w-full">
+        {important && (
+          <p className="font-body text-[9px] uppercase tracking-widest text-v-green font-bold mb-1">
+            Key partner
+          </p>
+        )}
+        <p className="font-display font-bold text-v-ink leading-tight text-xs partner-logo-label">
+          {partner.name}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PartnerMarquee({
+  partners,
+  important = false,
+  reverse = false,
+}: {
+  partners: CommunityPartner[];
+  important?: boolean;
+  reverse?: boolean;
+}) {
+  return (
+    <div className="partner-marquee -mx-5 md:-mx-8 overflow-hidden py-2">
+      <div className={`partner-marquee-track flex gap-3 md:gap-4 ${reverse ? "partner-marquee-track-reverse" : ""}`}>
+        {[0, 1].map((copy) => (
+          <div key={copy} className="flex gap-3 md:gap-4" aria-hidden={copy === 1}>
+            {partners.map((partner) => (
+              <PartnerLogoCard key={`${copy}-${partner.name}`} partner={partner} important={important} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CommunityPartnersSection() {
+  const importantPartners = communityPartners.filter((partner) => partner.important);
+  const neighborhoodPartners = communityPartners.filter((partner) => !partner.important);
+
+  return (
+    <section className="py-16 md:py-20 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-5 md:px-8">
+        <AnimatedSection className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+          <div>
+            <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
+              Community partners
+            </p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-5xl max-w-3xl leading-tight">
+              Powered by the organizations trusted by NYC small businesses.
+            </h2>
+          </div>
+          <p className="font-body text-v-muted text-sm md:text-base max-w-md leading-relaxed">
+            Chambers, BIDs, local development corporations, and merchant groups connect Volta teams directly with the businesses that need support.
+          </p>
+        </AnimatedSection>
+        <AnimatedSection>
+          <div className="space-y-3 md:space-y-4">
+            <PartnerMarquee partners={importantPartners} important />
+            <PartnerMarquee partners={neighborhoodPartners} reverse />
+          </div>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
 
   return (
@@ -347,6 +436,12 @@ export default function Home() {
         </div>
       </section>
 
+      <CommunityPartnersSection />
+
+      <Suspense fallback={<CurrentProjectsFallback />}>
+        <CurrentProjectsSection />
+      </Suspense>
+
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
       <section className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
@@ -359,39 +454,6 @@ export default function Home() {
           <AnimatedSection>
             <TracksTabbed />
           </AnimatedSection>
-        </div>
-      </section>
-
-      <Suspense fallback={<CurrentProjectsFallback />}>
-        <CurrentProjectsSection />
-      </Suspense>
-
-      {/* ── NYC REACH ────────────────────────────────────────── */}
-      <section className="py-20 bg-v-dark">
-        <div className="max-w-4xl mx-auto px-5 md:px-8 text-center">
-          <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-              Across all five boroughs
-            </h2>
-            <p className="font-body text-white/70 text-lg max-w-xl mx-auto">
-              We operate through trusted neighborhood partners and place teams where businesses are ready to launch and improve quickly.
-            </p>
-          </AnimatedSection>
-          <div className="flex flex-wrap justify-center gap-3 mt-8">
-            {[
-              { name: "Brooklyn", href: "/showcase?borough=Brooklyn", cls: "border-lime-500/30 text-lime-400 bg-lime-500/10 hover:bg-lime-500/20" },
-              { name: "Queens", href: "/showcase?borough=Queens", cls: "border-blue-400/30 text-blue-300 bg-blue-400/10 hover:bg-blue-400/20" },
-              { name: "Manhattan", href: "/showcase?borough=Manhattan", cls: "border-amber-400/30 text-amber-400 bg-amber-400/10 hover:bg-amber-400/20" },
-              { name: "The Bronx", href: "/showcase?borough=Bronx", cls: "border-purple-400/30 text-purple-400 bg-purple-400/10 hover:bg-purple-400/20" },
-              { name: "Staten Island", href: "/showcase?borough=Staten Island", cls: "border-rose-400/30 text-rose-400 bg-rose-400/10 hover:bg-rose-400/20" },
-            ].map((b, i) => (
-              <AnimatedSection key={b.name} delay={i * 0.08}>
-                <Link href={b.href} className={`inline-block border rounded-full px-6 py-2.5 font-display font-bold text-base transition-colors ${b.cls}`}>
-                  {b.name}
-                </Link>
-              </AnimatedSection>
-            ))}
-          </div>
         </div>
       </section>
 

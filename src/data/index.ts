@@ -82,6 +82,34 @@ export const homeTracks = [
   },
 ];
 
+export const communityPartners = [
+  { name: "Manhattan Chamber of Commerce", logo: "/partners/logos/manhattan-chamber.png", important: true },
+  { name: "Brooklyn Chamber of Commerce", logo: "/partners/logos/brooklyn-chamber.png", important: true },
+  { name: "Bronx Chamber of Commerce", logo: "/partners/logos/bronx-chamber.png", important: true },
+  { name: "Staten Island Chamber of Commerce", logo: "/partners/logos/staten-island-chamber.png", important: true },
+  { name: "Queens Chamber of Commerce", logo: "/partners/logos/queens-chamber.png", important: true },
+  { name: "NYC Small Business Services", logo: "/partners/logos/nyc-sbs.png", important: true },
+  { name: "NYC Small Business Resource Network", logo: "/partners/logos/nyc-sbrn.png", important: true },
+  { name: "Cypress Hills Local Development Corporation", logo: "/partners/logos/cypress-hills-ldc.png", important: true },
+  { name: "Bayside Village BID", logo: "/partners/logos/bayside-village-bid.png", important: true },
+  { name: "Forest Avenue BID", logo: "/partners/logos/forest-avenue-bid.png", important: true },
+  { name: "Park Slope Fifth Avenue BID", logo: "/partners/logos/park-slope-fifth-avenue-bid.jpg", important: true },
+  { name: "Sunnyside Shines BID", logo: "/partners/logos/sunnyside-shines-bid.png", important: true },
+  { name: "Greater Jamaica Development Corporation", logo: "/partners/logos/greater-jamaica-development.png", important: false },
+  { name: "Bay Ridge 5th Avenue BID", logo: "/partners/logos/bay-ridge-5th-avenue-bid.png", important: false },
+  { name: "Lower East Side Partnership", logo: "/partners/logos/lower-east-side-partnership.png", important: false },
+  { name: "North Flatbush BID", logo: "/partners/logos/north-flatbush-bid.png", important: false },
+  { name: "Third Avenue BID", logo: "/partners/logos/third-avenue-bid.png", important: false },
+  { name: "West Brighton Community Local Development Corporation", logo: "/partners/logos/west-brighton-cldc.png", important: false },
+  { name: "Atlantic Avenue Local Development Corporation", logo: "/partners/logos/atlantic-avenue-ldc.png", important: false },
+  { name: "Long Island City Partnership", logo: "/partners/logos/long-island-city-partnership.png", important: false },
+  { name: "Asian American Federation", logo: "/partners/logos/asian-american-federation.png", important: false },
+  { name: "Castleton Avenue Merchants Organization", logo: "/partners/logos/castleton-avenue-merchants.png", important: false },
+  { name: "Queens Economic Development Corporation", logo: "/partners/logos/queens-economic-development.png", important: false },
+  { name: "SIBOC", logo: "/partners/logos/siboc.png", important: false },
+  { name: "East New York Merchants Association", logo: "/partners/logos/east-new-york-merchants.png", important: false },
+];
+
 export const marqueeSchools = [
   "Cornell University",
   "Stuyvesant High School",
@@ -234,8 +262,8 @@ export const aboutTimeline = [
 ];
 
 export const teamMembers = [
-  { name: "Ethan Zhang", role: "Executive Director & Founder", email: "ethan@voltanyc.org", initial: "E", desc: "", photo: "/team/ethan.jpeg" },
-  { name: "Andrew Chin", role: "Executive Director", email: "andrew@voltanyc.org", initial: "A", desc: "", photo: "/team/andrew.jpg" },
+  { name: "Ethan Zhang", role: "Co-Founder", email: "ethan@voltanyc.org", initial: "E", desc: "", photo: "/team/ethan.jpeg" },
+  { name: "Andrew Chin", role: "Co-Founder", email: "andrew@voltanyc.org", initial: "A", desc: "", photo: "/team/andrew.jpg" },
   { name: "Tahmid Islam", role: "Director of Tech", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
   { name: "Ellie Mak", role: "Director of Finance and Marketing", email: "", initial: "E", desc: "", photo: "/team/ellie.jpg" },
 ];
