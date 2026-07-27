@@ -28,6 +28,26 @@ interface NeighborhoodMapProps {
   projects: MapProject[];
 }
 
+const NYC_COORDINATE_BOUNDS = {
+  minLat: 40.45,
+  maxLat: 40.95,
+  minLng: -74.35,
+  maxLng: -73.65,
+};
+
+function isNycCoordinate(lat?: number, lng?: number): boolean {
+  return (
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= NYC_COORDINATE_BOUNDS.minLat &&
+    lat <= NYC_COORDINATE_BOUNDS.maxLat &&
+    lng >= NYC_COORDINATE_BOUNDS.minLng &&
+    lng <= NYC_COORDINATE_BOUNDS.maxLng
+  );
+}
+
 function FitMapToPoints({ points }: { points: [number, number][] }) {
   const map = useMap();
 
@@ -87,7 +107,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
   const markers = useMemo(
     () =>
       projects
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+        .filter((p) => isNycCoordinate(p.lat, p.lng))
         .map((p) => {
         const borough = normalizeBorough(p.borough ?? p.neighborhood);
         const isBid = p.source === "bid";

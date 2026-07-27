@@ -76,6 +76,12 @@ let businessesCache: {
   fetchedAt: number;
 } | null = null;
 const BUSINESSES_CACHE_TTL_MS = 60_000;
+const NYC_COORDINATE_BOUNDS = {
+  minLat: 40.45,
+  maxLat: 40.95,
+  minLng: -74.35,
+  maxLng: -73.65,
+};
 
 async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>>> {
   const now = Date.now();
@@ -268,6 +274,19 @@ function compareMapEntries(a: PublicMapEntry, b: PublicMapEntry): number {
   return a.name.localeCompare(b.name);
 }
 
+function isNycCoordinate(lat?: number, lng?: number): boolean {
+  return (
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= NYC_COORDINATE_BOUNDS.minLat &&
+    lat <= NYC_COORDINATE_BOUNDS.maxLat &&
+    lng >= NYC_COORDINATE_BOUNDS.minLng &&
+    lng <= NYC_COORDINATE_BOUNDS.maxLng
+  );
+}
+
 function mapBidStatusToShowcase(value: unknown): PublicShowcaseStatus {
   const key = asText(value);
   if (key === "Active Partner") return "Ongoing";
@@ -364,7 +383,7 @@ async function geocodeBusinessAddress(address: string, borough: string): Promise
     if (cached) return cached;
 
     const google = await geocodeWithGoogle(query);
-    if (google) {
+    if (google && isNycCoordinate(google.lat, google.lng)) {
       geocodeCache.set(cacheKey, google);
       return google;
     }
@@ -376,7 +395,7 @@ async function geocodeBusinessAddress(address: string, borough: string): Promise
     if (cached) return cached;
 
     const nominatim = await geocodeWithNominatim(query);
-    if (nominatim) {
+    if (nominatim && isNycCoordinate(nominatim.lat, nominatim.lng)) {
       geocodeCache.set(cacheKey, nominatim);
       return nominatim;
     }
@@ -597,6 +616,7 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
     const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(row.showcaseNeighborhood, row));
     const lat = asNumber(row.lat);
     const lng = asNumber(row.lng);
+    const hasNycCoords = isNycCoordinate(lat ?? undefined, lng ?? undefined);
 
     const entry: PublicMapEntry = {
       id: `business:${id}`,
@@ -604,8 +624,8 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
       type,
       neighborhood,
       borough: borough || undefined,
-      lat: lat ?? undefined,
-      lng: lng ?? undefined,
+      lat: hasNycCoords ? lat ?? undefined : undefined,
+      lng: hasNycCoords ? lng ?? undefined : undefined,
       services: mergedServices,
       status,
       color,
@@ -613,7 +633,7 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
       source: "business",
     };
 
-    if ((lat == null || lng == null) && address) {
+    if (!hasNycCoords && address) {
       businessesMissingCoords.push({ id, address, borough, entry });
     }
 
@@ -666,6 +686,7 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
     const locationLabel = [address, zipCode].filter(Boolean).join(" · ");
     const lat = asNumber(row.lat);
     const lng = asNumber(row.lng);
+    const hasNycCoords = isNycCoordinate(lat ?? undefined, lng ?? undefined);
     const status = mapBidStatusToShowcase(row.status);
     const services = asStringArray(row.services);
 
@@ -675,8 +696,8 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
       type: asText(row.type) || "BID",
       neighborhood: locationLabel || borough || "Location TBD",
       borough: borough || undefined,
-      lat: lat ?? undefined,
-      lng: lng ?? undefined,
+      lat: hasNycCoords ? lat ?? undefined : undefined,
+      lng: hasNycCoords ? lng ?? undefined : undefined,
       services: services.length > 0 ? services : ["BID"],
       status,
       color: "blue-mid",
