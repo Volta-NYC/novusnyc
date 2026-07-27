@@ -87,19 +87,6 @@ const FLAGSHIP_PARTNER_ORDER = [
 
 const FLAGSHIP_PARTNER_NAMES = new Set<string>(FLAGSHIP_PARTNER_ORDER);
 
-const HOME_PROJECT_PRIORITIES = [
-  "nowthen",
-  "taqueria el bulchon",
-  "pappazio",
-  "spin bagel",
-  "masalabox",
-  "ddn productions",
-  "pho bar",
-  "safa sanctuary",
-  "https://www.higherlearningnyc.com/",
-  "https://pan-de-arwah.vercel.app/",
-];
-
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
@@ -114,42 +101,13 @@ function getServiceTagClass(service: string): string {
   return "bg-v-border text-v-muted border-v-border";
 }
 
-function normalizeProjectKey(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/https?:\/\/(www\.)?/, "")
-    .replace(/\/$/, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function getPreferredHomeProjects(cards: HomeProject[]): HomeProject[] {
-  const matches = new Map<string, HomeProject>();
-  for (const card of cards) {
-    const keys = [card.name, card.url ?? ""]
-      .map(normalizeProjectKey)
-      .filter(Boolean);
-    for (const key of keys) {
-      if (!matches.has(key)) matches.set(key, card);
-    }
-  }
-
-  const preferred = HOME_PROJECT_PRIORITIES
-    .map((key) => matches.get(normalizeProjectKey(key)))
-    .filter((card): card is HomeProject => Boolean(card));
-
-  return preferred;
-}
-
 async function getHomeProjects(): Promise<HomeProject[]> {
   const publicShowcase = await getPublicShowcaseCards();
   const featuredHomeCards = publicShowcase
     .filter((card) => card.featuredOnHome);
 
-  const publicHomeCards = publicShowcase.map((card) => ({
+  const homeProjects = featuredHomeCards.length > 0
+    ? featuredHomeCards.map((card) => ({
       name: card.name,
       type: card.type,
       neighborhood: card.neighborhood,
@@ -160,16 +118,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
       imageUrl: card.imageUrl,
       desc: card.desc,
       quote: undefined as string | undefined,
-    }));
-  const featuredHomeProjects = publicHomeCards.filter((card) =>
-    featuredHomeCards.some((featured) => featured.name === card.name),
-  );
-  const preferredHomeProjects = getPreferredHomeProjects(publicHomeCards);
-
-  const homeProjects = publicHomeCards.length > 0
-    ? (preferredHomeProjects.length > 0
-      ? preferredHomeProjects
-      : featuredHomeProjects)
+    }))
     : (publicShowcase.length === 0
       ? fallbackCurrentProjects.slice(0, 6).map((project) => ({
       name: project.name,
