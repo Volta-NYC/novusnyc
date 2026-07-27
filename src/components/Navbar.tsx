@@ -28,6 +28,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const pathname = usePathname();
+  const browserPathname = typeof window !== "undefined" ? window.location.pathname : "";
+  const currentPathname = (pathname || browserPathname || "/").replace(/\/$/, "") || "/";
 
   useEffect(() => {
     const onScroll = () => {
@@ -37,7 +39,7 @@ export default function Navbar() {
         setScrolled(darkRegionBottom <= 0);
         return;
       }
-      if (pathname === "/") {
+      if (currentPathname === "/") {
         const fallbackSwitchY = Math.max(520, window.innerHeight * 1.05);
         setScrolled(window.scrollY > fallbackSwitchY);
         return;
@@ -58,26 +60,26 @@ export default function Navbar() {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timeout);
     };
-  }, [pathname]);
+  }, [currentPathname]);
 
   useEffect(() => {
     setOpen(false);
     setMoreOpen(false);
-  }, [pathname]);
+  }, [currentPathname]);
 
-  const darkHero = !scrolled && !open && darkHeroPages.includes(pathname);
+  const darkHero = !scrolled && !open && darkHeroPages.includes(currentPathname);
   const navTextClass = darkHero
     ? "text-white/80 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
     : "text-v-muted hover:text-v-ink";
-  const moreActive = moreLinks.some((l) => pathname === l.href) || pathname.startsWith("/members");
+  const moreActive = moreLinks.some((l) => currentPathname === l.href) || currentPathname.startsWith("/members");
 
   return (
     <>
       <header
         className={`fixed left-0 right-0 z-50 border-b transition-all duration-300 ${
-          scrolled || open
-            ? "bg-v-bg/95 backdrop-blur-md shadow-sm border-black/10"
-            : "bg-transparent border-transparent"
+          darkHero
+            ? "bg-transparent border-transparent"
+            : "bg-v-bg/95 backdrop-blur-md shadow-sm border-black/10"
         }`}
         style={{ top: "var(--banner-h, 0px)" }}
       >
@@ -101,7 +103,7 @@ export default function Navbar() {
                 key={l.href}
                 href={l.href}
                 className={`font-body text-sm font-semibold transition-colors ${
-                  pathname === l.href
+                  currentPathname === l.href
                     ? "text-v-green"
                     : navTextClass
                 }`}
@@ -152,7 +154,7 @@ export default function Navbar() {
                           key={l.href}
                           href={l.href}
                           className={`block px-4 py-2.5 font-body text-sm transition-colors hover:bg-v-bg ${
-                            l.href === "/members" || pathname === l.href
+                            l.href === "/members" || currentPathname === l.href
                               ? "text-v-green font-semibold"
                               : "text-v-ink"
                           }`}
@@ -204,7 +206,7 @@ export default function Navbar() {
                 key={l.href}
                 href={l.href}
                 className={`font-display font-bold text-2xl border-b border-v-border pb-4 ${
-                  pathname === l.href ? "text-v-green" : "text-v-ink"
+                  currentPathname === l.href ? "text-v-green" : "text-v-ink"
                 }`}
               >
                 {l.label}
