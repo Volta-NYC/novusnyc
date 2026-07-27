@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import PublicBanner from "@/components/PublicBanner";
 
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -11,7 +10,6 @@ export default function ConditionalLayout({ children }: { children: React.ReactN
 
   return (
     <>
-      {!isMembersPage && <PublicBanner />}
       {!isMembersPage && <Navbar />}
       <main id="main-content" className={!isMembersPage ? "bg-v-bg" : undefined}>{children}</main>
       {!isMembersPage && <Footer />}
