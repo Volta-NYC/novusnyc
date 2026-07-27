@@ -237,9 +237,7 @@ export const teamMembers = [
   { name: "Ethan Zhang", role: "Executive Director & Founder", email: "ethan@voltanyc.org", initial: "E", desc: "", photo: "/team/ethan.jpeg" },
   { name: "Andrew Chin", role: "Executive Director", email: "andrew@voltanyc.org", initial: "A", desc: "", photo: "/team/andrew.jpg" },
   { name: "Tahmid Islam", role: "Director of Tech", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
-  { name: "Joseph Long", role: "Co-Director of Outreach", email: "joseph.long.nyc@gmail.com", initial: "J", desc: "", photo: "/team/joseph.jpg" },
-  { name: "Jean-Pierre Proulx", role: "Co-Director of Marketing", email: "jppfinster@gmail.com", initial: "JP", desc: "", photo: "/team/jp.jpg" },
-  { name: "Amy Mitchneck", role: "Co-Director of Outreach", email: "31kaia.talathi@gmail.com", initial: "A", desc: "", photo: "/team/amy.jpg" },
+  { name: "Ellie Mak", role: "Director of Finance and Marketing", email: "", initial: "E", desc: "", photo: "/team/ellie.jpg" },
 ];
 
 export const branches = [

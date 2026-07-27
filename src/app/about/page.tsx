@@ -153,7 +153,7 @@ export default async function About() {
           </AnimatedSection>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
             {teamMembers.map((m, i) => (
-              <AnimatedSection key={m.email} delay={i * 0.08}>
+              <AnimatedSection key={m.name} delay={i * 0.08}>
                 <div className="bg-white border border-v-border rounded-xl overflow-hidden h-full flex flex-col">
                   <div className="aspect-[4/5] bg-v-border flex items-center justify-center overflow-hidden">
                     {m.photo ? (
