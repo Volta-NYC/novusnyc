@@ -9,6 +9,8 @@ import SchoolSelector from "@/components/SchoolSelector";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Online", "Referral", "Other"];
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS.filter((grade) => grade !== "Class of 2022");
+const RESUME_MAX_MB = 4;
+const RESUME_MAX_BYTES = RESUME_MAX_MB * 1024 * 1024;
 
 const EMPTY: ApplicationFormValues = {
   fullName: "", email: "", city: "", schoolName: "", grade: "", referral: "",
@@ -59,18 +61,29 @@ export default function ApplicationForm() {
       setStatus("idle");
       return;
     }
+    if (file && file.size > RESUME_MAX_BYTES) {
+      setErrors({ resumeUrl: `Resume must be under ${RESUME_MAX_MB}MB. Please compress it and try again.` });
+      setStatus("idle");
+      return;
+    }
     if (form.hasResume === true && file) {
       setUploadProgress("Uploading resume…");
       const fd = new FormData();
       fd.append("file", file);
       try {
         const res = await fetch("/api/upload-resume", { method: "POST", body: fd });
-        const json = await res.json();
+        const text = await res.text();
+        let json: Record<string, unknown> = {};
+        try {
+          json = JSON.parse(text) as Record<string, unknown>;
+        } catch {
+          throw new Error("Resume upload failed before reaching Google Drive. Please compress the file and try again.");
+        }
         if (!res.ok) {
           throw new Error(typeof json.error === "string" ? json.error : "Resume upload failed");
         }
-        resumeUrl = json.url ?? "";
-        if (!resumeUrl) throw new Error("upload_failed");
+        resumeUrl = typeof json.url === "string" ? json.url : "";
+        if (!resumeUrl) throw new Error("Resume upload did not return a Drive link");
       } catch (err) {
         setUploadProgress("");
         const message = err instanceof Error ? err.message : "Resume upload failed. Please try again.";
@@ -270,7 +283,7 @@ export default function ApplicationForm() {
               accept=".pdf,.doc,.docx"
               className="block w-full text-sm text-v-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-v-green file:text-v-ink hover:file:bg-v-green-dark cursor-pointer"
             />
-            <p className="text-xs text-v-muted/60 mt-1.5">PDF, DOC, or DOCX. Max 5MB.</p>
+            <p className="text-xs text-v-muted/60 mt-1.5">PDF, DOC, or DOCX. Max {RESUME_MAX_MB}MB.</p>
             {uploadProgress && (
               <p className="text-xs text-v-muted mt-2">{uploadProgress}</p>
             )}

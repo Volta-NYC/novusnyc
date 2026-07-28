@@ -68,10 +68,10 @@ export async function POST(req: Request) {
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
-  const maxMb = Number(process.env.RESUME_UPLOAD_MAX_MB ?? 8);
-  const maxBytes = (Number.isFinite(maxMb) && maxMb > 0 ? maxMb : 8) * 1024 * 1024;
+  const maxMb = Number(process.env.RESUME_UPLOAD_MAX_MB ?? 4);
+  const maxBytes = (Number.isFinite(maxMb) && maxMb > 0 ? maxMb : 4) * 1024 * 1024;
   if (!Number.isFinite(file.size) || file.size <= 0 || file.size > maxBytes) {
-    return NextResponse.json({ error: "File too large" }, { status: 413 });
+    return NextResponse.json({ error: `Resume must be under ${maxMb}MB` }, { status: 413 });
   }
   const allowedMimeTypes = new Set([
     "application/pdf",
