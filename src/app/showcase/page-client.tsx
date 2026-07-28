@@ -43,20 +43,9 @@ function getServiceTagClass(service: string): string {
   return "bg-slate-100 text-slate-600 border-slate-200";
 }
 
-function boroughCardClass(borough: string) {
-  const key = borough.trim().toLowerCase();
-  if (key.includes("brooklyn")) return "bg-lime-100/70 border-lime-300 text-lime-800";
-  if (key.includes("queens")) return "bg-blue-100/75 border-blue-300 text-blue-800";
-  if (key.includes("manhattan")) return "bg-amber-100/70 border-amber-300 text-amber-800";
-  if (key.includes("bronx")) return "bg-violet-100/75 border-violet-300 text-violet-800";
-  if (key.includes("staten")) return "bg-rose-100/75 border-rose-300 text-rose-800";
-  return "bg-v-bg border-v-border text-v-ink";
-}
-
 export default function ShowcaseClient({
   projects,
   mapProjects,
-  bidPartners,
   totalBusinesses,
   orgPartners,
 }: {
@@ -66,7 +55,6 @@ export default function ShowcaseClient({
     borough?: string; lat?: number; lng?: number; status: ProjectDisplayStatus;
     url?: string; colorClass: string; source?: "business" | "bid";
   }>;
-  bidPartners: Array<{ id: string; name: string; borough: string }>;
   totalBusinesses: number;
   orgPartners: number;
 }) {
@@ -289,31 +277,6 @@ export default function ShowcaseClient({
                 </MasonryGrid>
               </div>
             </>
-          )}
-
-          {/* ── BID PARTNERS ─────────────────────────────────── */}
-          <AnimatedSection className="mt-14 mb-6">
-            <h3 className="font-display font-bold text-v-ink text-xl md:text-2xl">
-              Our Organization Partners
-            </h3>
-          </AnimatedSection>
-          {bidPartners.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {bidPartners.map((bid) => (
-                <div key={bid.id} className={`px-3 py-2.5 border rounded-xl ${boroughCardClass(bid.borough)}`}>
-                  <p className="font-display font-bold text-[11px] uppercase tracking-wide leading-tight">
-                    {bid.name}
-                  </p>
-                  <p className="font-body text-[11px] mt-1 opacity-85">
-                    {bid.borough}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="border border-v-border rounded-xl px-3 py-3 bg-v-bg/55">
-              <p className="font-body text-sm text-v-muted">No partner records yet.</p>
-            </div>
           )}
         </div>
       </section>

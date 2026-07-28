@@ -139,20 +139,10 @@ export default async function Showcase() {
     };
   });
 
-  const bidPartners = publicMapEntries
-    .filter((entry) => entry.source === "bid")
-    .map((entry) => ({
-      id: entry.id,
-      name: entry.name,
-      borough: entry.borough || "",
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
   return (
     <ShowcaseClient
       projects={projects}
       mapProjects={mapProjects}
-      bidPartners={bidPartners}
       totalBusinesses={liveStats.totalBusinesses}
       orgPartners={liveStats.bidPartners}
     />
