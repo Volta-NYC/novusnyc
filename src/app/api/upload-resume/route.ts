@@ -7,24 +7,37 @@ import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
 // Apps Script responds with a 302 redirect to a googleusercontent.com URL
 // that serves the actual JSON response. We use redirect:"manual" to stop
 // at the 302 and read the Location header, then follow it manually.
+type UploadResult = {
+  url: string;
+  error?: string;
+};
+
 function getAppsScriptUrl(): string {
   return (process.env.APPS_SCRIPT_URL || process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "").trim();
 }
 
-async function readResumeUrl(response: Response): Promise<string> {
+async function readUploadResult(response: Response): Promise<UploadResult> {
   if (response.status === 301 || response.status === 302) {
     const location = response.headers.get("location");
-    if (!location) return "";
+    if (!location) return { url: "", error: "Apps Script redirect did not include a response URL" };
     const redirected = await fetch(location);
-    return readResumeUrl(redirected);
+    return readUploadResult(redirected);
   }
 
   const text = await response.text();
   try {
     const json = JSON.parse(text) as Record<string, unknown>;
-    return typeof json.url === "string" ? json.url : "";
+    if (typeof json.url === "string" && json.url) return { url: json.url };
+    const error = typeof json.error === "string" ? json.error : "Apps Script did not return a resume URL";
+    return { url: "", error };
   } catch {
-    return "";
+    const looksLikeGoogleHtml = text.includes("<html") || text.includes("ServiceLogin");
+    return {
+      url: "",
+      error: looksLikeGoogleHtml
+        ? "Apps Script web app is not public. Set access to Anyone and redeploy."
+        : "Apps Script response was not valid JSON",
+    };
   }
 }
 
@@ -87,11 +100,21 @@ export async function POST(req: Request) {
       redirect: "manual",
     });
 
-    const resumeUrl = await readResumeUrl(response);
-    if (resumeUrl) return NextResponse.json({ url: resumeUrl });
-  } catch {
-    // Network error or Apps Script unreachable.
-  }
+    if (!response.ok && response.status !== 301 && response.status !== 302) {
+      return NextResponse.json(
+        { error: `Apps Script returned HTTP ${response.status}` },
+        { status: 502 }
+      );
+    }
 
-  return NextResponse.json({ url: "" });
+    const upload = await readUploadResult(response);
+    if (upload.url) return NextResponse.json({ url: upload.url });
+    return NextResponse.json(
+      { error: upload.error ?? "Resume upload failed" },
+      { status: 502 }
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Apps Script unreachable";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 }

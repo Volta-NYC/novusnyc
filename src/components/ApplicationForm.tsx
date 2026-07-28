@@ -65,13 +65,16 @@ export default function ApplicationForm() {
       fd.append("file", file);
       try {
         const res = await fetch("/api/upload-resume", { method: "POST", body: fd });
-        if (!res.ok) throw new Error("upload_failed");
         const json = await res.json();
+        if (!res.ok) {
+          throw new Error(typeof json.error === "string" ? json.error : "Resume upload failed");
+        }
         resumeUrl = json.url ?? "";
         if (!resumeUrl) throw new Error("upload_failed");
-      } catch {
+      } catch (err) {
         setUploadProgress("");
-        setErrors({ resumeUrl: "Resume upload failed. Please try again." });
+        const message = err instanceof Error ? err.message : "Resume upload failed. Please try again.";
+        setErrors({ resumeUrl: message });
         setStatus("error");
         return;
       }
