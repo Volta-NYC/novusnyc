@@ -1,113 +1,166 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// VOLTA NYC — Google Apps Script (SheetsLogger)
+// VOLTA NYC - Google Apps Script (SheetsLogger)
 // Deploy as a Web App (Execute as: Me, Access: Anyone).
-// All form types route to one spreadsheet, each on its own named tab.
-//
-//   formType: "application" → "Applications" tab
-//   formType: "contact"     → "Business Inquiries" tab
-//   formType: "inquiry"     → "General Inquiries" tab
-//
-// Tabs are created automatically on first submission if they don't exist.
-// ─────────────────────────────────────────────────────────────────────────────
 
 var SHEET_ID = '1UGcUy6pP7ND0BXrnKnd9GNh_d2Q_xph71b_dRNp19w4';
+var RESUME_FOLDER_ID = '';
+var RESUME_FOLDER_NAME = 'Volta Resumes';
+var BOOKING_LINK = 'https://voltanyc.org/book';
+var SIGNUP_LINK = 'https://voltanyc.org/members/signup?code=VOLTA-8J3UMP';
+var FROM_EMAIL = 'ethan@voltanyc.org';
+var FROM_NAME = 'Ethan Zhang';
+var CC_EMAIL = 'andrewchin530@gmail.com';
+
+var APPLICATION_HEADERS = [
+  'Timestamp',
+  'Full Name',
+  'Email',
+  'School Name',
+  'Grade',
+  'City, State',
+  'How They Heard',
+  'Tracks',
+  'Has Resume',
+  'Resume URL',
+  'Tools/Software',
+  'Accomplishment',
+];
+
+var CONTACT_HEADERS = [
+  'Timestamp',
+  'Business Name',
+  'Owner Name',
+  'Email',
+  'Phone',
+  'Neighborhood',
+  'Services Requested',
+  'Referred By',
+  'Message',
+  'Language',
+];
 
 function doPost(e) {
   try {
-    var data = JSON.parse(e.postData.contents);
+    var data = JSON.parse((e.postData && e.postData.contents) || '{}');
     if (data.formType === 'application') return handleApplication(data);
     if (data.formType === 'contact')     return handleContact(data);
     if (data.formType === 'inquiry')     return handleInquiry(data);
     if (data.formType === 'upload')      return handleFileUpload(data);
-    return jsonResponse({ error: 'Unknown formType: ' + data.formType });
+    return jsonResponse({ ok: false, error: 'Unknown formType: ' + data.formType });
   } catch (err) {
     Logger.log('SheetsLogger error: ' + err.toString());
-    return jsonResponse({ error: err.toString() });
+    return jsonResponse({ ok: false, error: err.toString() });
   }
 }
-
-// ── Student Application ────────────────────────────────────────────────────────
 
 function handleApplication(data) {
   var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('Applications') || ss.insertSheet('Applications');
-  ensureHeaders(sheet, [
-    'Timestamp', 'Full Name', 'Email', 'School Name', 'City, State',
-    'How They Heard', 'Tracks', 'Has Resume', 'Resume URL', 'Tools/Software', 'Accomplishment',
-  ]);
-  sheet.appendRow([
-    new Date().toISOString(),
-    data['Full Name']       || '',
-    data['Email']           || '',
-    data['School Name']     || data['Education'] || '',
-    data['City, State']     || data['City'] || '',
-    data['How They Heard']  || '',
-    data['Tracks Selected'] || '',
-    data['Has Resume']      || '',
-    data['Resume URL']      || '',
-    data['Tools/Software']  || '',
-    data['Accomplishment']  || '',
-  ]);
-  return jsonResponse({ success: true });
+  ensureOrderedHeaders(sheet, APPLICATION_HEADERS);
+  appendByHeaders(sheet, APPLICATION_HEADERS, {
+    'Timestamp':       data.Timestamp || new Date().toISOString(),
+    'Full Name':       data['Full Name'] || '',
+    'Email':           data.Email || data['Email'] || '',
+    'School Name':     data['School Name'] || data.Education || '',
+    'Grade':           data.Grade || '',
+    'City, State':     data['City, State'] || data.City || '',
+    'How They Heard':  data['How They Heard'] || '',
+    'Tracks':          data['Tracks Selected'] || data.Tracks || '',
+    'Has Resume':      data['Has Resume'] || '',
+    'Resume URL':      data['Resume URL'] || '',
+    'Tools/Software':  data['Tools/Software'] || '',
+    'Accomplishment':  data.Accomplishment || '',
+  });
+  return jsonResponse({ ok: true, type: 'application' });
 }
-
-// ── Business Contact Form ─────────────────────────────────────────────────────
-// Services and language are always sent in English by the client.
 
 function handleContact(data) {
   var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('Business Inquiries') || ss.insertSheet('Business Inquiries');
-  ensureHeaders(sheet, [
-    'Timestamp', 'Business Name', 'Owner Name', 'Email',
-    'Neighborhood', 'Services Requested', 'Message', 'Language',
-  ]);
-  sheet.appendRow([
-    new Date().toISOString(),
-    data['businessName'] || '',
-    data['name']         || '',
-    data['email']        || '',
-    data['neighborhood'] || '',
-    data['services']     || '',
-    data['message']      || '',
-    data['language']     || 'English',
-  ]);
-  return jsonResponse({ success: true });
+  ensureOrderedHeaders(sheet, CONTACT_HEADERS);
+  appendByHeaders(sheet, CONTACT_HEADERS, {
+    'Timestamp':          data.Timestamp || new Date().toISOString(),
+    'Business Name':      data.businessName || '',
+    'Owner Name':         data.name || '',
+    'Email':              data.email || '',
+    'Phone':              data.phone || '',
+    'Neighborhood':       data.neighborhood || '',
+    'Services Requested': data.services || '',
+    'Referred By':        data.referredBy || '',
+    'Message':            data.message || '',
+    'Language':           data.language || 'English',
+  });
+  return jsonResponse({ ok: true, type: 'contact' });
 }
-
-// ── General Inquiry ───────────────────────────────────────────────────────────
 
 function handleInquiry(data) {
   var ss    = SpreadsheetApp.openById(SHEET_ID);
   var sheet = ss.getSheetByName('General Inquiries') || ss.insertSheet('General Inquiries');
-  ensureHeaders(sheet, ['Timestamp', 'Name', 'Email', 'Inquiry']);
-  sheet.appendRow([
-    new Date().toISOString(),
-    data['name']    || '',
-    data['email']   || '',
-    data['inquiry'] || '',
-  ]);
-  return jsonResponse({ success: true });
+  var headers = ['Timestamp', 'Name', 'Email', 'Inquiry'];
+  ensureOrderedHeaders(sheet, headers);
+  appendByHeaders(sheet, headers, {
+    'Timestamp': new Date().toISOString(),
+    'Name':      data.name || '',
+    'Email':     data.email || '',
+    'Inquiry':   data.inquiry || '',
+  });
+  return jsonResponse({ ok: true, type: 'inquiry' });
 }
-
-// ── Resume Upload to Google Drive ─────────────────────────────────────────────
 
 function handleFileUpload(data) {
-  var folders = DriveApp.getFoldersByName('Volta Resumes');
-  var folder  = folders.hasNext() ? folders.next() : DriveApp.createFolder('Volta Resumes');
-  var bytes   = Utilities.base64Decode(data.fileData);
-  var blob    = Utilities.newBlob(bytes, data.mimeType, data.fileName);
-  var file    = folder.createFile(blob);
+  if (!data.fileData || !data.fileName) throw new Error('Missing upload data');
+  var folder = getResumeFolder();
+  var bytes  = Utilities.base64Decode(data.fileData);
+  var blob   = Utilities.newBlob(bytes, data.mimeType || 'application/octet-stream', data.fileName);
+  var file   = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return jsonResponse({ url: file.getUrl() });
+  return jsonResponse({ ok: true, type: 'upload', url: file.getUrl() });
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+function getResumeFolder() {
+  if (RESUME_FOLDER_ID) return DriveApp.getFolderById(RESUME_FOLDER_ID);
+  var folders = DriveApp.getFoldersByName(RESUME_FOLDER_NAME);
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder(RESUME_FOLDER_NAME);
+}
 
-function ensureHeaders(sheet, headers) {
+function ensureOrderedHeaders(sheet, headers) {
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#C4F135');
+    styleHeaders(sheet, headers.length);
+    return;
   }
+
+  var existing = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(toHeader);
+
+  for (var i = 0; i < headers.length; i++) {
+    var desired = headers[i];
+    if (existing[i] === desired) continue;
+
+    var found = existing.indexOf(desired, i + 1);
+    if (found !== -1) {
+      sheet.moveColumns(sheet.getRange(1, found + 1, sheet.getMaxRows(), 1), i + 1);
+      existing.splice(i, 0, existing.splice(found, 1)[0]);
+    } else {
+      sheet.insertColumnBefore(i + 1);
+      existing.splice(i, 0, desired);
+    }
+  }
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  styleHeaders(sheet, headers.length);
+}
+
+function appendByHeaders(sheet, headers, valuesByHeader) {
+  sheet.appendRow(headers.map(function(header) {
+    return valuesByHeader[header] || '';
+  }));
+}
+
+function styleHeaders(sheet, width) {
+  sheet.getRange(1, 1, 1, width).setFontWeight('bold').setBackground('#C4F135');
+}
+
+function toHeader(value) {
+  return String(value || '').trim();
 }
 
 function jsonResponse(data) {
@@ -115,18 +168,112 @@ function jsonResponse(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Run once manually to verify the spreadsheet is accessible.
 function setup() {
-  Logger.log('Sheet: ' + SpreadsheetApp.openById(SHEET_ID).getName());
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  ensureOrderedHeaders(ss.getSheetByName('Applications') || ss.insertSheet('Applications'), APPLICATION_HEADERS);
+  ensureOrderedHeaders(ss.getSheetByName('Business Inquiries') || ss.insertSheet('Business Inquiries'), CONTACT_HEADERS);
+  Logger.log('Sheet: ' + ss.getName());
 }
 
-// ── ONE-TIME AUTHORIZATION ────────────────────────────────────────────────────
-// DriveApp requires explicit authorization that cannot be granted via a web
-// request — it must be triggered by running a function manually in the editor.
-// Run authorizeDrive() once from the editor (▶ Run button), approve the
-// permission prompt, then you can delete this function if you like.
 function authorizeDrive() {
-  var folders = DriveApp.getFoldersByName('Volta Resumes');
-  var folder  = folders.hasNext() ? folders.next() : DriveApp.createFolder('Volta Resumes');
+  var folder = getResumeFolder();
   Logger.log('Drive authorized. Folder: ' + folder.getName() + ' (' + folder.getId() + ')');
+}
+
+function onEdit(e) {
+  var sheet = e.source.getActiveSheet();
+  var range = e.range;
+  var col = range.getColumn();
+  var row = range.getRow();
+
+  if (sheet.getName() !== 'Application Tracker') return;
+  if (col < 9 || col > 14) return;
+  if (range.getValue() !== true) return;
+  if (row === 1) return;
+
+  var headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(toHeader);
+  var name = String(sheet.getRange(row, headerColumn(headers, ['Full Name', 'Name'], 2)).getValue() || '').trim();
+  var email = String(sheet.getRange(row, headerColumn(headers, ['Email'], 3)).getValue() || '').trim();
+  var tracks = String(sheet.getRange(row, headerColumn(headers, ['Tracks', 'Tracks Selected'], 7)).getValue() || '').trim();
+
+  if (!email) return;
+
+  var subject, body;
+
+  if (col === 9) {
+    subject = 'Next Steps: Volta Interview Invitation';
+    body = interviewInviteEmail(name);
+  } else if (col === 10) {
+    subject = 'Volta NYC - Analyst Acceptance';
+    body = analystEmail(name, tracks);
+  } else if (col === 11) {
+    subject = 'Volta NYC - Senior Analyst Acceptance';
+    body = seniorAnalystEmail(name, tracks);
+  } else if (col === 12) {
+    subject = 'Volta NYC - Associate Acceptance';
+    body = associateEmail(name, tracks);
+  } else if (col === 13) {
+    subject = 'Volta NYC - Senior Associate Acceptance';
+    body = seniorAssociateEmail(name, tracks);
+  } else if (col === 14) {
+    subject = 'Volta NYC - Project Lead Acceptance';
+    body = projectLeadEmail(name, tracks);
+  }
+
+  GmailApp.sendEmail(email, subject, '', {
+    from: FROM_EMAIL,
+    name: FROM_NAME,
+    cc: CC_EMAIL,
+    htmlBody: body
+  });
+
+  range.setValue(false);
+}
+
+function headerColumn(headers, names, fallback) {
+  for (var i = 0; i < names.length; i++) {
+    var found = headers.indexOf(names[i]);
+    if (found !== -1) return found + 1;
+  }
+  return fallback;
+}
+
+function wrapper(content) {
+  return "<div style=\"font-family: Garamond, 'EB Garamond', serif; font-size: 15px; line-height: 1.7; color: #111111; color-scheme: light;\">" + content + '</div>';
+}
+
+function formatTrack(track) {
+  return track.indexOf(',') !== -1 ? 'across <strong>' + track + '</strong>' : 'on <strong>' + track + '</strong>';
+}
+
+function bookingButton() {
+  return "<p><a href=\"" + BOOKING_LINK + "\" style=\"display:inline-block; background-color:#85CC17; color:#ffffff !important; -webkit-text-fill-color:#ffffff; padding:4px 12px; border-radius:3px; text-decoration:none; font-size:12px; font-family:Garamond,'EB Garamond',serif;\"><span style=\"color:#ffffff !important; -webkit-text-fill-color:#ffffff;\">Book Your Interview Slot</span></a></p>";
+}
+
+function signupButton() {
+  return "<p><a href=\"" + SIGNUP_LINK + "\" style=\"display:inline-block; background-color:#85CC17; color:#ffffff !important; -webkit-text-fill-color:#ffffff; padding:4px 12px; border-radius:3px; text-decoration:none; font-size:12px; font-family:Garamond,'EB Garamond',serif;\"><span style=\"color:#ffffff !important; -webkit-text-fill-color:#ffffff;\">Create Your Member Account</span></a></p>";
+}
+
+function interviewInviteEmail(name) {
+  return wrapper(`<p>Dear ${name},</p><p>Congratulations! You have been invited to the next stage of the selection process.</p><p>While we received many strong applications, your background and potential stood out to our team. We believe your skills are a strong fit for Volta and the work we're doing with our current business partners.</p><p><strong>Next Steps:</strong> We'd like to schedule a formal interview to discuss your placement within the team and your specific interests.</p><p>Your interview will take place <strong>next week</strong>. Please secure your time slot within the next 48 hours:</p>${bookingButton()}<p>We look forward to learning more about you.</p><p>Sincerely,<br>Ethan Zhang<br>Volta NYC</p>`);
+}
+
+function analystEmail(name, track) {
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as an <strong>Analyst</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. In the meantime, please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+}
+
+function seniorAnalystEmail(name, track) {
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as a <strong>Senior Analyst</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. In the meantime, please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+}
+
+function associateEmail(name, track) {
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as an <strong>Associate</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. Based on your application, you're on a clear path for early leadership consideration as projects progress. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+}
+
+function seniorAssociateEmail(name, track) {
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as a <strong>Senior Associate</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. We're bringing you in as a Senior Associate because we trust your ability to lead and see your potential to take on more responsibility as projects progress. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+}
+
+function projectLeadEmail(name, track) {
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! We're excited to offer you a <strong>Project Lead</strong> role at Volta NYC.</p><p>You'll be assigned to lead one of our upcoming projects within the next week. Project Leads are accountable for delivery, quality, and communication. If you have peers you'd like to bring on, feel free to let us know. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
 }

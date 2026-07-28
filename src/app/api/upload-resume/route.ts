@@ -7,8 +7,29 @@ import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
 // Apps Script responds with a 302 redirect to a googleusercontent.com URL
 // that serves the actual JSON response. We use redirect:"manual" to stop
 // at the 302 and read the Location header, then follow it manually.
+function getAppsScriptUrl(): string {
+  return (process.env.APPS_SCRIPT_URL || process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "").trim();
+}
+
+async function readResumeUrl(response: Response): Promise<string> {
+  if (response.status === 301 || response.status === 302) {
+    const location = response.headers.get("location");
+    if (!location) return "";
+    const redirected = await fetch(location);
+    return readResumeUrl(redirected);
+  }
+
+  const text = await response.text();
+  try {
+    const json = JSON.parse(text) as Record<string, unknown>;
+    return typeof json.url === "string" ? json.url : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(req: Request) {
-  const url = process.env.APPS_SCRIPT_URL;
+  const url = getAppsScriptUrl();
   if (!url) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
   }
@@ -66,21 +87,8 @@ export async function POST(req: Request) {
       redirect: "manual",
     });
 
-    // Apps Script returns 302 → googleusercontent.com URL that serves the JSON.
-    if (response.status === 301 || response.status === 302) {
-      const location = response.headers.get("location");
-
-      if (location) {
-        const redirected = await fetch(location);
-        const text = await redirected.text();
-        try {
-          const json = JSON.parse(text);
-          if (json.url) return NextResponse.json({ url: json.url });
-        } catch {
-          // Response at redirect URL wasn't JSON.
-        }
-      }
-    }
+    const resumeUrl = await readResumeUrl(response);
+    if (resumeUrl) return NextResponse.json({ url: resumeUrl });
   } catch {
     // Network error or Apps Script unreachable.
   }

@@ -72,7 +72,8 @@ SUPABASE_SERVICE_ROLE_KEY=         # Server-only. Never expose to the browser.
 
 # ── Public site ───────────────────────────────────────────────────────────────
 NEXT_PUBLIC_SITE_URL=              # e.g. https://voltanyc.org
-NEXT_PUBLIC_APPS_SCRIPT_URL=       # Google Apps Script URL for form logging
+APPS_SCRIPT_URL=                   # Google Apps Script URL for form logging and resume upload
+NEXT_PUBLIC_APPS_SCRIPT_URL=       # Legacy fallback; prefer APPS_SCRIPT_URL
 
 # ── Outgoing email (SMTP via Gmail) ──────────────────────────────────────────
 SMTP_HOST=

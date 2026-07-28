@@ -144,8 +144,12 @@ type AppsScriptForwardResult = {
   status?: number;
 };
 
+function getAppsScriptUrl(): string {
+  return (process.env.APPS_SCRIPT_URL || process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "").trim();
+}
+
 async function forwardToAppsScriptBackup(data: Record<string, unknown>): Promise<AppsScriptForwardResult> {
-  const url = process.env.APPS_SCRIPT_URL;
+  const url = getAppsScriptUrl();
   if (!url) return { configured: false, ok: false };
   try {
     const upstream = await fetch(url, {
@@ -154,9 +158,19 @@ async function forwardToAppsScriptBackup(data: Record<string, unknown>): Promise
       body: JSON.stringify(data),
       redirect: "follow",
     });
+    const text = await upstream.text();
     if (!upstream.ok) {
       console.error("apps_script_backup_failed", upstream.status);
       return { configured: true, ok: false, status: upstream.status };
+    }
+    try {
+      const payload = JSON.parse(text) as Record<string, unknown>;
+      if (payload.error || ("ok" in payload && payload.ok !== true)) {
+        console.error("apps_script_backup_rejected", payload);
+        return { configured: true, ok: false, status: upstream.status };
+      }
+    } catch {
+      // Older Apps Script deployments may not return JSON; HTTP 2xx is enough.
     }
     return { configured: true, ok: true, status: upstream.status };
   } catch (err) {
@@ -180,6 +194,11 @@ export async function POST(request: Request) {
   }
 
   if (formType === "application") {
+    const hasResume = asText(data["Has Resume"]).toLowerCase() === "yes"
+      ? true
+      : asText(data["Has Resume"]).toLowerCase() === "no"
+        ? false
+        : null;
     const validation = validateApplicationForm({
       fullName: asText(data["Full Name"]),
       email: asText(data.Email),
@@ -188,16 +207,18 @@ export async function POST(request: Request) {
       grade: asText(data.Grade),
       referral: asText(data["How They Heard"]),
       tracks: splitCsvToList(data["Tracks Selected"]),
-      hasResume: asText(data["Has Resume"]).toLowerCase() === "yes"
-        ? true
-        : asText(data["Has Resume"]).toLowerCase() === "no"
-          ? false
-          : null,
+      hasResume,
       tools: asText(data["Tools/Software"]),
       accomplishment: asText(data.Accomplishment),
     });
     if (!validation.success) {
       return NextResponse.json({ error: "invalid_form", fields: validation.errors }, { status: 400 });
+    }
+    if (hasResume && !asText(data["Resume URL"])) {
+      return NextResponse.json(
+        { error: "invalid_form", fields: { resumeUrl: "Resume upload is required" } },
+        { status: 400 }
+      );
     }
   }
 

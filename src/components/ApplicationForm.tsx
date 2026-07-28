@@ -54,16 +54,26 @@ export default function ApplicationForm() {
     // Upload resume to Google Drive via Apps Script if a file was selected.
     let resumeUrl = "";
     const file = fileRef.current?.files?.[0];
+    if (form.hasResume === true && !file) {
+      setErrors({ resumeUrl: "Attach your resume before submitting" });
+      setStatus("idle");
+      return;
+    }
     if (form.hasResume === true && file) {
       setUploadProgress("Uploading resume…");
       const fd = new FormData();
       fd.append("file", file);
       try {
         const res = await fetch("/api/upload-resume", { method: "POST", body: fd });
+        if (!res.ok) throw new Error("upload_failed");
         const json = await res.json();
         resumeUrl = json.url ?? "";
+        if (!resumeUrl) throw new Error("upload_failed");
       } catch {
-        // Non-fatal: submit without URL if upload fails.
+        setUploadProgress("");
+        setErrors({ resumeUrl: "Resume upload failed. Please try again." });
+        setStatus("error");
+        return;
       }
       setUploadProgress("");
     }
@@ -261,6 +271,7 @@ export default function ApplicationForm() {
             {uploadProgress && (
               <p className="text-xs text-v-muted mt-2">{uploadProgress}</p>
             )}
+            {errors.resumeUrl && <p className="text-red-500 text-xs mt-1 font-body">{errors.resumeUrl}</p>}
           </div>
         )}
 
