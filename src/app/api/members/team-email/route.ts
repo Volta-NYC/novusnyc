@@ -59,8 +59,14 @@ function smtpErrorCode(err: unknown): string {
 
   if (message === "primary_smtp_not_configured" || message === "secondary_smtp_not_configured") return message;
   if (code === "EAUTH" || responseCode === 535) return "smtp_auth_failed";
+  // Gmail reports an oversized recipient list as 452/550 5.5.3, an exhausted
+  // daily quota as 5.4.5, and a bad recipient as 5.1.x. These must be matched
+  // before the sender branch below, which claims every 550 and would otherwise
+  // report a recipient problem as a rejected From address.
+  if (/\b[45]\.5\.3\b/.test(message) || /too many recipients/i.test(message)) return "smtp_too_many_recipients";
+  if (/\b[45]\.4\.5\b/.test(message) || /daily .*(?:limit|quota) exceeded/i.test(message)) return "smtp_quota_exceeded";
+  if (/\b[45]\.1\.[1-6]\b/.test(message) || /recipient/i.test(message)) return "smtp_recipient_rejected";
   if (responseCode === 550 || responseCode === 553 || /sender|from/i.test(message)) return "smtp_sender_rejected";
-  if (responseCode >= 500 && /recipient|address/i.test(message)) return "smtp_recipient_rejected";
   return "send_failed";
 }
 

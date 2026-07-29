@@ -286,6 +286,10 @@ function teamEmailErrorMessage(error: string | undefined): string {
       return "The mail provider rejected the From address.";
     case "smtp_recipient_rejected":
       return "The mail provider rejected one or more recipients.";
+    case "smtp_too_many_recipients":
+      return "The mail provider rejected this message for having too many recipients.";
+    case "smtp_quota_exceeded":
+      return "The sending account has hit its daily send limit. Try again tomorrow or send from a different address.";
     case "send_failed":
       return "The mail provider could not send this email.";
     default:
