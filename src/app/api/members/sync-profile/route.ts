@@ -16,11 +16,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const bodyName = typeof body.name === "string" ? body.name.trim() : "";
-  const bodyEmail = typeof body.email === "string" ? norm(body.email) : "";
   const bodySchool = typeof body.school === "string" ? body.school.trim() : "";
   const bodyGrade = typeof body.grade === "string" ? body.grade.trim() : "";
 
-  const email = bodyEmail || norm(user.email ?? "");
+  // The row to sync is chosen by the verified token alone. Honouring an email
+  // from the body would let any signed-in member rewrite another member's row.
+  const email = norm(user.email ?? "");
   if (!email) return NextResponse.json({ error: "missing_email" }, { status: 400 });
 
   let targetId = "";
