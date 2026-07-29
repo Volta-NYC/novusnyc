@@ -4,6 +4,14 @@ import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
+// A full-roster send is several sequential SMTP round trips; the platform
+// default cuts the request off mid-send. 60s is the Vercel Hobby ceiling —
+// raising it past that fails the deploy rather than the request.
+export const maxDuration = 60;
+
+// Gmail refuses any SMTP message addressed to more than 100 recipients
+// (To + CC + BCC combined) on every plan tier, so larger sends must be split.
+const MAX_RECIPIENTS_PER_MESSAGE = 90;
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -170,15 +178,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  try {
-    if (hasPlaceholders && recipientMeta.size > 0) {
-      const allRecipients = Array.from(new Set([...dedupedTo, ...dedupedCc, ...dedupedBcc]));
-      for (const recipient of allRecipients) {
-        const meta = recipientMeta.get(recipient) ?? { email: recipient };
-        const renderedSubject = applyPlaceholders(subject, meta);
-        const renderedMessage = applyPlaceholders(message, meta);
-        const renderedText = contentMode === "html" ? stripHtml(renderedMessage) : renderedMessage;
-        const renderedHtml = contentMode === "html" ? normalizeHtmlBody(renderedMessage) : renderedMessage.replace(/\n/g, "<br/>");
+  const failed: string[] = [];
+  let firstError: unknown = null;
+  let sent = 0;
+  let counts = { to: dedupedTo.length, cc: dedupedCc.length, bcc: dedupedBcc.length };
+
+  if (hasPlaceholders && recipientMeta.size > 0) {
+    const allRecipients = Array.from(new Set([...dedupedTo, ...dedupedCc, ...dedupedBcc]));
+    for (const recipient of allRecipients) {
+      const meta = recipientMeta.get(recipient) ?? { email: recipient };
+      const renderedSubject = applyPlaceholders(subject, meta);
+      const renderedMessage = applyPlaceholders(message, meta);
+      const renderedText = contentMode === "html" ? stripHtml(renderedMessage) : renderedMessage;
+      const renderedHtml = contentMode === "html" ? normalizeHtmlBody(renderedMessage) : renderedMessage.replace(/\n/g, "<br/>");
+      try {
         // eslint-disable-next-line no-await-in-loop
         await transporter.sendMail({
           from,
@@ -189,34 +202,70 @@ export async function POST(req: NextRequest) {
           html: renderedHtml,
           attachments: attachments.length > 0 ? attachments : undefined,
         });
+        sent += 1;
+      } catch (err) {
+        console.error("Bulk email recipient failed:", recipient, err);
+        if (firstError === null) firstError = err;
+        failed.push(recipient);
       }
-    } else {
-    await transporter.sendMail({
-      from,
-      replyTo,
-      to: fallbackToAddress ?? dedupedTo,
-      cc: dedupedCc.length > 0 ? dedupedCc : undefined,
-      bcc: dedupedBcc.length > 0 ? dedupedBcc : undefined,
-      subject,
-      text: textBody,
-      html: htmlBody,
-      attachments: attachments.length > 0 ? attachments : undefined,
-    });
     }
-  } catch (err) {
-    console.error("Bulk email error:", err);
-    return NextResponse.json({ error: smtpErrorCode(err) }, { status: 500 });
+  } else if (totalRecipients <= MAX_RECIPIENTS_PER_MESSAGE) {
+    try {
+      await transporter.sendMail({
+        from,
+        replyTo,
+        to: fallbackToAddress ?? dedupedTo,
+        cc: dedupedCc.length > 0 ? dedupedCc : undefined,
+        bcc: dedupedBcc.length > 0 ? dedupedBcc : undefined,
+        subject,
+        text: textBody,
+        html: htmlBody,
+        attachments: attachments.length > 0 ? attachments : undefined,
+      });
+      sent = totalRecipients;
+    } catch (err) {
+      console.error("Bulk email error:", err);
+      firstError = err;
+      failed.push(...dedupedTo, ...dedupedCc, ...dedupedBcc);
+    }
+  } else {
+    // Past the per-message ceiling the To/CC/BCC split cannot be carried across
+    // batches, so every batch goes out BCC-only — which also stops a roster-wide
+    // send from disclosing every member's address to every other member.
+    const allRecipients = Array.from(new Set([...dedupedTo, ...dedupedCc, ...dedupedBcc]));
+    counts = { to: 0, cc: 0, bcc: allRecipients.length };
+    for (let start = 0; start < allRecipients.length; start += MAX_RECIPIENTS_PER_MESSAGE) {
+      const batch = allRecipients.slice(start, start + MAX_RECIPIENTS_PER_MESSAGE);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await transporter.sendMail({
+          from,
+          replyTo,
+          to: selectedFrom,
+          bcc: batch,
+          subject,
+          text: textBody,
+          html: htmlBody,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
+        sent += batch.length;
+      } catch (err) {
+        console.error("Bulk email batch failed:", err);
+        if (firstError === null) firstError = err;
+        failed.push(...batch);
+      }
+    }
+  }
+
+  if (sent === 0) {
+    return NextResponse.json({ error: smtpErrorCode(firstError) }, { status: 500 });
   }
 
   return NextResponse.json({
     success: true,
-    sent: totalRecipients,
-    counts: {
-      to: dedupedTo.length,
-      cc: dedupedCc.length,
-      bcc: dedupedBcc.length,
-    },
-    failed: [],
+    sent,
+    counts,
+    failed,
     from: selectedFrom,
   });
 }
