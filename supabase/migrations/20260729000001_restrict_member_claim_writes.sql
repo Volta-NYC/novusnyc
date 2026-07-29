@@ -133,8 +133,8 @@ BEGIN
 END;
 $$;
 
--- my_auth_role() is the authorisation input here, so the function must not be
--- callable as an RPC by the roles it is meant to constrain.
+-- Trigger-only entry point. It must not be reachable as an RPC by the roles it
+-- exists to constrain.
 REVOKE ALL ON FUNCTION enforce_member_claim_integrity() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS trg_enforce_member_claim_integrity ON assignment_claims;
