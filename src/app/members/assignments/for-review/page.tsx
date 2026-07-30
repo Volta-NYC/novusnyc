@@ -386,14 +386,14 @@ export default function ForReviewPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5 align-top text-right">
-                    <span className="text-[15px] font-semibold text-[#85CC17]">{a?.credits ?? 0}</span>
+                    <span className="text-[15px] font-semibold text-[#F6B78D]">{a?.credits ?? 0}</span>
                   </td>
                   <td className="px-4 py-3.5 align-top">
                     {hasSubmission ? (
                       <button
                         type="button"
                         onClick={() => setViewingClaim(buildReviewInput(c))}
-                        className="px-3 py-1.5 rounded-lg border border-[#85CC17]/25 bg-[#85CC17]/[0.06] text-[11px] text-[#9BE22B]/75 hover:border-[#85CC17]/40 hover:bg-[#85CC17]/[0.1] hover:text-[#9BE22B] transition-colors"
+                        className="px-3 py-1.5 rounded-lg border border-[#F6B78D]/25 bg-[#F6B78D]/[0.06] text-[11px] text-[#F3E28D]/75 hover:border-[#F6B78D]/40 hover:bg-[#F6B78D]/[0.1] hover:text-[#F3E28D] transition-colors"
                       >
                         View ↗
                       </button>
@@ -406,7 +406,7 @@ export default function ForReviewPage() {
                       <button
                         type="button"
                         onClick={() => openApprove(c)}
-                        className="px-3 py-1.5 rounded-lg border border-[#85CC17]/30 bg-[#85CC17]/[0.08] text-[11px] text-[#9BE22B]/80 hover:border-[#85CC17]/50 hover:bg-[#85CC17]/[0.14] hover:text-[#9BE22B] transition-colors font-medium"
+                        className="px-3 py-1.5 rounded-lg border border-[#F6B78D]/30 bg-[#F6B78D]/[0.08] text-[11px] text-[#F3E28D]/80 hover:border-[#F6B78D]/50 hover:bg-[#F6B78D]/[0.14] hover:text-[#F3E28D] transition-colors font-medium"
                       >
                         Approve
                       </button>
@@ -478,7 +478,7 @@ export default function ForReviewPage() {
                     </td>
                     <td className="px-4 py-3.5 align-top text-right">
                       {c.status === "Approved" ? (
-                        <span className="text-[13px] font-semibold text-[#85CC17]">{c.creditsAwarded ?? "—"}</span>
+                        <span className="text-[13px] font-semibold text-[#F6B78D]">{c.creditsAwarded ?? "—"}</span>
                       ) : (
                         <span className="text-[11px] text-white/25">{a?.credits ?? "—"}</span>
                       )}
@@ -519,13 +519,13 @@ export default function ForReviewPage() {
           </div>
 
           {viewingClaim?.claim.deliverableUrl ? (
-            <div className="rounded-lg border border-[#85CC17]/20 bg-[#85CC17]/5 p-3">
+            <div className="rounded-lg border border-[#F6B78D]/20 bg-[#F6B78D]/5 p-3">
               <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">Deliverable Link</p>
               <a
                 href={viewingClaim.claim.deliverableUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline break-all text-sm"
+                className="text-[#F6B78D] hover:text-[#F3E28D] underline-offset-2 hover:underline break-all text-sm"
               >
                 {viewingClaim.claim.deliverableUrl}
               </a>
@@ -601,7 +601,7 @@ export default function ForReviewPage() {
                 href={approvingClaim.claim.deliverableUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#85CC17] hover:text-[#9BE22B] underline-offset-2 hover:underline"
+                className="text-[#F6B78D] hover:text-[#F3E28D] underline-offset-2 hover:underline"
               >
                 {approvingClaim.claim.deliverableUrl}
               </a>
@@ -625,7 +625,7 @@ export default function ForReviewPage() {
                     onClick={() => setCreditsOverride(String(val))}
                     className={`flex-1 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
                       creditsOverride === String(val)
-                        ? "border-[#85CC17]/40 bg-[#85CC17]/10 text-[#9BE22B]"
+                        ? "border-[#F6B78D]/40 bg-[#F6B78D]/10 text-[#F3E28D]"
                         : "border-white/12 text-white/45 hover:border-white/25 hover:text-white/70"
                     }`}
                   >

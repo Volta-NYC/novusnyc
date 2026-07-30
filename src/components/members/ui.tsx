@@ -168,7 +168,7 @@ export function Input({ className = "", ...props }: InputProps) {
   return (
     <input
       {...props}
-      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
     />
   );
 }
@@ -183,7 +183,7 @@ export function PasswordInput({ className = "", ...props }: PasswordInputProps) 
       <input
         {...props}
         type={reveal ? "text" : "password"}
-        className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 pr-10 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+        className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 pr-10 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
       />
       <button
         type="button"
@@ -212,7 +212,7 @@ export function TextArea({ className = "", ...props }: TextAreaProps) {
   return (
     <textarea
       {...props}
-      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors resize-none ${className}`}
+      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors resize-none ${className}`}
     />
   );
 }
@@ -227,7 +227,7 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
     <div className="relative w-full">
       <select
         {...props}
-        className={`w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+        className={`w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
       >
         {children ?? (
           <>
@@ -311,7 +311,7 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
-        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-16 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-16 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
       />
       {local ? (
         <button
@@ -372,7 +372,7 @@ export function AutocompleteInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors ${className}`}
+        className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
       />
       <datalist id={listId}>
         {filteredOptions.map((option) => (
@@ -420,7 +420,7 @@ export function AutocompleteTagInput({
     <div>
       <div className="flex flex-wrap gap-1.5 mb-2">
         {safeValues.map((tag) => (
-          <span key={tag} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
+          <span key={tag} className="flex items-center gap-1 text-xs bg-[#F6B78D]/15 text-[#F6B78D] border border-[#F6B78D]/20 px-2 py-0.5 rounded-full">
             {tag}
             <button type="button" onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
           </span>
@@ -441,7 +441,7 @@ export function AutocompleteTagInput({
           if (commitOnBlur) addTag(inputText);
         }}
         placeholder={placeholder}
-        className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50"
+        className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50"
       />
 
       <datalist id={listId}>
@@ -546,7 +546,7 @@ export function SearchSelect({
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : openDropdown())}
-        className={`w-full flex items-center justify-between bg-[#0F1014] border rounded-lg px-3 py-2.5 text-sm text-left transition-colors ${open ? "border-[#85CC17]/50" : "border-white/10 hover:border-white/20"}`}
+        className={`w-full flex items-center justify-between bg-[#0F1014] border rounded-lg px-3 py-2.5 text-sm text-left transition-colors ${open ? "border-[#F6B78D]/50" : "border-white/10 hover:border-white/20"}`}
       >
         <span className={selected ? "text-white" : "text-white/30"}>
           {selected?.label ?? placeholder}
@@ -575,7 +575,7 @@ export function SearchSelect({
                 onChange={(e) => { setQuery(e.target.value); setFocusedIndex(-1); }}
                 onKeyDown={handleKeyDown}
                 placeholder="Type to filter…"
-                className="w-full bg-[#0F1014] border border-white/8 rounded-md pl-8 pr-3 py-1.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/40"
+                className="w-full bg-[#0F1014] border border-white/8 rounded-md pl-8 pr-3 py-1.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#F6B78D]/40"
               />
             </div>
           </div>
@@ -601,7 +601,7 @@ export function SearchSelect({
                     <button
                       type="button"
                       onClick={() => commit(opt.value)}
-                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${opt.value === value ? "text-[#85CC17] bg-[#85CC17]/8" : "text-white/85 hover:bg-white/5"} ${focusedIndex === fi ? "bg-white/8" : ""}`}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${opt.value === value ? "text-[#F6B78D] bg-[#F6B78D]/8" : "text-white/85 hover:bg-white/5"} ${focusedIndex === fi ? "bg-white/8" : ""}`}
                     >
                       <span className="block">{opt.label}</span>
                       {opt.subtitle && (
@@ -646,7 +646,7 @@ export function PageHeader({ title, subtitle, action }: {
 
 // ── STAT CARD ─────────────────────────────────────────────────────────────────
 
-export function StatCard({ label, value, color = "text-[#85CC17]" }: {
+export function StatCard({ label, value, color = "text-[#F6B78D]" }: {
   label: string;
   value: string | number;
   color?: string;
@@ -669,7 +669,7 @@ interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BTN_CLASSES: Record<BtnVariant, string> = {
-  primary:   "bg-[#85CC17] text-[#0D0D0D] font-bold hover:bg-[#72b314]",
+  primary:   "bg-[#F6B78D] text-[#0D0D0D] font-bold hover:bg-[#E9A77E]",
   secondary: "bg-white/8 text-white hover:bg-white/14 border border-white/10",
   danger:    "bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/20",
   ghost:     "text-white/50 hover:text-white hover:bg-white/8",
@@ -800,7 +800,7 @@ export function TagInput({
       {/* Current tags */}
       <div className="flex flex-wrap gap-1.5 mb-2">
         {safeValues.map((tag) => (
-          <span key={tag} className="flex items-center gap-1 text-xs bg-[#85CC17]/15 text-[#85CC17] border border-[#85CC17]/20 px-2 py-0.5 rounded-full">
+          <span key={tag} className="flex items-center gap-1 text-xs bg-[#F6B78D]/15 text-[#F6B78D] border border-[#F6B78D]/20 px-2 py-0.5 rounded-full">
             {tag}
             <button type="button" onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
           </span>
@@ -811,7 +811,7 @@ export function TagInput({
         <select
           value=""
           onChange={(e) => { if (e.target.value) addTag(e.target.value); }}
-          className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/50 flex-1"
+          className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#F6B78D]/50 flex-1"
         >
           <option value="">Add from list…</option>
           {options.filter((opt) => !safeValues.includes(opt)).map((opt) => <option key={opt}>{opt}</option>)}
@@ -829,13 +829,13 @@ export function TagInput({
             if (commitOnBlur) addTag(inputText);
           }}
           placeholder={customPlaceholder}
-          className="bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 flex-1"
+          className="bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 flex-1"
         />
         <button
           type="button"
           onClick={() => addTag(inputText)}
           disabled={!inputText.trim()}
-          className="px-3 py-2 rounded-lg text-sm bg-[#85CC17]/20 text-[#85CC17] border border-[#85CC17]/35 hover:bg-[#85CC17]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-2 rounded-lg text-sm bg-[#F6B78D]/20 text-[#F6B78D] border border-[#F6B78D]/35 hover:bg-[#F6B78D]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Add
         </button>
@@ -849,7 +849,7 @@ export function TagInput({
 export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const sz = size === "sm" ? "w-5 h-5" : size === "lg" ? "w-8 h-8" : "w-6 h-6";
   return (
-    <div className={`${sz} border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin`} />
+    <div className={`${sz} border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin`} />
   );
 }
 
@@ -902,7 +902,7 @@ export function CopyButton({ text, label }: { text: string; label?: string }) {
       className="inline-flex items-center justify-center w-5 h-5 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors"
     >
       {copied ? (
-        <svg className="w-3 h-3 text-[#85CC17]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-3 h-3 text-[#F6B78D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
       ) : (
@@ -926,7 +926,7 @@ export function Toggle({ checked, onChange, label }: {
     <label className={`flex items-center cursor-pointer select-none ${label ? "gap-3 group" : "w-fit"}`}>
       <div
         onClick={() => onChange(!checked)}
-        className={`relative h-[22px] w-10 rounded-full flex-shrink-0 cursor-pointer transition-colors ${checked ? "bg-[#85CC17]" : "bg-white/15"}`}
+        className={`relative h-[22px] w-10 rounded-full flex-shrink-0 cursor-pointer transition-colors ${checked ? "bg-[#F6B78D]" : "bg-white/15"}`}
       >
         <div
           className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}
@@ -966,14 +966,14 @@ export function SortPanel({
           <select
             value={rule.col}
             onChange={(e) => onChange(idx, "col", Number(e.target.value))}
-            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
           >
             {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <select
             value={rule.dir}
             onChange={(e) => onChange(idx, "dir", e.target.value)}
-            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[68px]"
+            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45 w-[68px]"
           >
             <option value="asc">A→Z</option>
             <option value="desc">Z→A</option>
@@ -989,7 +989,7 @@ export function SortPanel({
       ))}
       <div className="flex items-center justify-between pt-1">
         {rules.length < options.length ? (
-          <button type="button" onClick={onAdd} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+          <button type="button" onClick={onAdd} className="text-[10px] text-[#F6B78D]/75 hover:text-[#F6B78D] transition-colors">
             + Add level
           </button>
         ) : <span />}
@@ -1102,10 +1102,10 @@ export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
                   {col}
                   {sortable && (
                     <span className="inline-flex flex-col gap-px">
-                      <svg className={`w-2 h-2 ${isActive && sortDir === "asc" ? "text-[#85CC17]" : "text-white/20"}`} viewBox="0 0 8 5" fill="currentColor">
+                      <svg className={`w-2 h-2 ${isActive && sortDir === "asc" ? "text-[#F6B78D]" : "text-white/20"}`} viewBox="0 0 8 5" fill="currentColor">
                         <path d="M4 0L8 5H0L4 0Z"/>
                       </svg>
-                      <svg className={`w-2 h-2 ${isActive && sortDir === "desc" ? "text-[#85CC17]" : "text-white/20"}`} viewBox="0 0 8 5" fill="currentColor">
+                      <svg className={`w-2 h-2 ${isActive && sortDir === "desc" ? "text-[#F6B78D]" : "text-white/20"}`} viewBox="0 0 8 5" fill="currentColor">
                         <path d="M4 5L0 0H8L4 5Z"/>
                       </svg>
                     </span>

@@ -86,14 +86,14 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1.5 md:gap-2 group">
             <Image
-              src="/logo.png"
-              alt="Volta"
-              width={32}
-              height={32}
-              className="object-contain"
+              src="/novus.webp"
+              alt="Novus NYC logo"
+              width={28}
+              height={50}
+              className="h-10 w-auto object-contain"
             />
             <span className={`font-display font-bold text-xl tracking-tight text-v-green transition-colors ${darkHero ? "drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]" : ""}`}>
-              VOLTA
+              Novus
             </span>
           </Link>
 

@@ -286,13 +286,13 @@ export default function BIDTrackerPage() {
         <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
           <button
             onClick={() => setViewMode("cards")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "cards" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "cards" ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
           >
             Cards
           </button>
           <button
             onClick={() => setViewMode("compact")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "compact" ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "compact" ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
           >
             Compact
           </button>
@@ -318,7 +318,7 @@ export default function BIDTrackerPage() {
                       {(bid.contacts?.[0]?.email || bid.contactEmail) && (
                         <>
                           <span>•</span>
-                          <a href={`mailto:${bid.contacts?.[0]?.email || bid.contactEmail}`} className="text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+                          <a href={`mailto:${bid.contacts?.[0]?.email || bid.contactEmail}`} className="text-[#F6B78D]/75 hover:text-[#F6B78D] transition-colors">
                             {bid.contacts?.[0]?.email || bid.contactEmail}
                           </a>
                         </>

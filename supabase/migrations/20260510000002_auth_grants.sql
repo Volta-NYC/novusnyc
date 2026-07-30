@@ -11,7 +11,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT USAGE, SELECT ON SEQUENCES TO authenticated;
 
 -- Ensure Ethan's admin role is set (migration 20260510000001 had wrong email).
-UPDATE team SET auth_role = 'admin' WHERE lower(trim(email)) = 'ethan@voltanyc.org';
+UPDATE team SET auth_role = 'admin' WHERE lower(trim(email)) = 'ethan@novusnyc.org';
 
 -- Reload PostgREST schema cache so auth_uid and auth_role columns are visible.
 NOTIFY pgrst, 'reload schema';

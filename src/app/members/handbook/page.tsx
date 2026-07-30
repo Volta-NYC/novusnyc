@@ -37,7 +37,7 @@ function HandbookContent() {
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="font-display font-bold text-black/85 text-2xl">Member Handbook</h1>
-        <p className="text-black/45 text-sm mt-1">Policies and guidelines for Volta NYC members.</p>
+        <p className="text-black/45 text-sm mt-1">Policies and guidelines for Novus NYC members.</p>
       </div>
 
       <div className="bg-white border border-black/8 rounded-xl shadow-sm p-6 md:p-10">

@@ -55,7 +55,7 @@ function getSlotEndTimeMs(slot: InterviewSlot): number {
   return startMs + duration * 60_000;
 }
 
-const FALLBACK_BOOKING_URL = "https://voltanyc.org/book";
+const FALLBACK_BOOKING_URL = "https://novusnyc.org/book";
 
 function getMondayForDate(date: Date): Date {
   const d = new Date(date);
@@ -1733,7 +1733,7 @@ function InterviewsContent() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium font-body transition-colors ${
-              activeTab === tab.key ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/50 hover:text-white"
+              activeTab === tab.key ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"
             }`}
           >
             {tab.label}
@@ -1750,7 +1750,7 @@ function InterviewsContent() {
               <input
                 value={bookingLink}
                 readOnly
-                className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#85CC17] font-mono"
+                className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#F6B78D] font-mono"
               />
               <Btn variant="primary" size="sm" onClick={copyBookingLink}>
                 {copiedBookingLink ? "Copied!" : "Copy Link"}
@@ -1800,7 +1800,7 @@ function InterviewsContent() {
                   value={zoomLinkInput}
                   onChange={(e) => setZoomLinkInput(e.target.value)}
                   placeholder="https://zoom.us/j/..."
-                  className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#85CC17]/45"
+                  className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#F6B78D]/45"
                 />
                 <Btn variant="primary" size="sm" onClick={saveZoomSettings} disabled={savingZoom}>
                   {savingZoom ? "Saving..." : "Save"}
@@ -1875,7 +1875,7 @@ function InterviewsContent() {
                         <td className="px-2 py-1.5 text-white/50 whitespace-nowrap max-w-[180px] truncate" title={slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}>{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
                         <td className="px-2 py-1.5 text-center">
                           {evalCount > 0 ? (
-                            <div className="w-2.5 h-2.5 rounded-full bg-[#85CC17] inline-block shadow-[0_0_8px_rgba(133,204,23,0.4)]" title="Evaluation submitted" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#F6B78D] inline-block shadow-[0_0_8px_rgba(246,183,141,0.4)]" title="Evaluation submitted" />
                           ) : (
                             <span className="text-white/20">—</span>
                           )}
@@ -1886,7 +1886,7 @@ function InterviewsContent() {
                               href={resumeUrl} 
                               target="_blank" 
                               rel="noopener noreferrer" 
-                              className="text-[#C4F135] hover:underline text-[11px] whitespace-nowrap"
+                              className="text-[#F3E28D] hover:underline text-[11px] whitespace-nowrap"
                             >
                               Resume
                             </a>
@@ -1978,7 +1978,7 @@ function InterviewsContent() {
                         <td className="px-2 py-1.5 text-white/50 whitespace-nowrap max-w-[180px] truncate" title={slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}>{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
                         <td className="px-2 py-1.5 text-center">
                           {evalCount > 0 ? (
-                            <div className="w-2.5 h-2.5 rounded-full bg-[#85CC17] inline-block shadow-[0_0_8px_rgba(133,204,23,0.4)]" title="Evaluation submitted" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#F6B78D] inline-block shadow-[0_0_8px_rgba(246,183,141,0.4)]" title="Evaluation submitted" />
                           ) : (
                             <span className="text-white/20">—</span>
                           )}
@@ -1989,7 +1989,7 @@ function InterviewsContent() {
                               href={resumeUrl} 
                               target="_blank" 
                               rel="noopener noreferrer" 
-                              className="text-[#C4F135] hover:underline text-[11px] whitespace-nowrap"
+                              className="text-[#F3E28D] hover:underline text-[11px] whitespace-nowrap"
                             >
                               Resume
                             </a>
@@ -2170,7 +2170,7 @@ function InterviewsContent() {
                           isPastDay ? "opacity-30 cursor-default" : "hover:bg-white/5 cursor-pointer"
                         }`}
                       >
-                        <div className={`text-xs font-semibold ${isToday ? "text-[#85CC17]" : "text-white/60"}`}>
+                        <div className={`text-xs font-semibold ${isToday ? "text-[#F6B78D]" : "text-white/60"}`}>
                           {dayNames[day.getDay()]} {day.getMonth() + 1}/{day.getDate()}
                         </div>
                         <div className="text-[10px] text-white/30 mt-0.5">{visibleCount} visible</div>
@@ -2195,7 +2195,7 @@ function InterviewsContent() {
                                 const isSelectedInDrag = !!dragSelection[selectionKey];
 
                                 let cellClass = "bg-white/10 hover:bg-white/25";
-                                if (isVisible) cellClass = "bg-[#85CC17]/70 hover:bg-[#85CC17]/45";
+                                if (isVisible) cellClass = "bg-[#F6B78D]/70 hover:bg-[#F6B78D]/45";
                                 if (isBooked) cellClass = "bg-red-500/45";
 
                                 const title = (() => {
@@ -2225,7 +2225,7 @@ function InterviewsContent() {
                                       disabled
                                         ? `${cellClass} cursor-default ${isPastSlot ? "opacity-20" : "opacity-70"}`
                                         : `${cellClass} cursor-pointer`
-                                    } ${isSelectedInDrag ? "ring-2 ring-inset ring-[#85CC17]" : ""}`}
+                                    } ${isSelectedInDrag ? "ring-2 ring-inset ring-[#F6B78D]" : ""}`}
                                     style={{ touchAction: "none" }}
                                   />
                                 );
@@ -2243,7 +2243,7 @@ function InterviewsContent() {
 
           <div className="flex flex-wrap gap-4 text-xs text-white/40 font-body">
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-[#85CC17]/20 border border-[#85CC17]/40" />
+              <span className="w-3 h-3 rounded bg-[#F6B78D]/20 border border-[#F6B78D]/40" />
               Visible to applicants
             </span>
             <span className="flex items-center gap-1.5">
@@ -2284,7 +2284,7 @@ function InterviewsContent() {
                     })}`;
                     return (
                       <div key={key} className="bg-[#12141B] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#85CC17] flex-shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-[#F6B78D] flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-white/90 text-sm font-medium">{recurringLabel}</p>
                           <p className="text-white/45 text-xs mt-0.5">
@@ -2323,7 +2323,7 @@ function InterviewsContent() {
                           })();
                           return (
                             <div key={slot.id} className="bg-[#12141B] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-3">
-                              <div className="w-2 h-2 rounded-full bg-[#85CC17] flex-shrink-0" />
+                              <div className="w-2 h-2 rounded-full bg-[#F6B78D] flex-shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-white/90 text-sm font-medium">{formatDateTime(slot.datetime)}</p>
                                 <p className="text-white/45 text-xs mt-0.5">
@@ -2389,7 +2389,7 @@ function InterviewsContent() {
                     onClick={() => void toggleInterviewer(member)}
                     disabled={togglingId === member.id}
                     className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
-                      member.canInterview ? "bg-[#85CC17]" : "bg-white/15"
+                      member.canInterview ? "bg-[#F6B78D]" : "bg-white/15"
                     }`}
                   >
                     <span
@@ -2750,7 +2750,7 @@ function InterviewsContent() {
                         <div className="text-[10px] text-white/40">{ev.updatedAt ? formatDateTime(ev.updatedAt) : ""}</div>
                       </div>
                       <div className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                        ev.rating === "Extremely Qualified" ? "bg-[#85CC17]/20 text-[#C4F135]" :
+                        ev.rating === "Extremely Qualified" ? "bg-[#F6B78D]/20 text-[#F3E28D]" :
                         ev.rating === "Qualified" ? "bg-blue-500/20 text-blue-400" :
                         ev.rating === "Decent" ? "bg-yellow-500/20 text-yellow-400" :
                         "bg-red-500/20 text-red-400"

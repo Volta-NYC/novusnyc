@@ -193,7 +193,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                   <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
-                      style={{ width: `${earnedPct}%`, backgroundColor: earnedPct >= 100 ? "#85CC17" : earnedPct >= 60 ? "#EAB308" : "#DC2626" }}
+                      style={{ width: `${earnedPct}%`, backgroundColor: earnedPct >= 100 ? "#F6B78D" : earnedPct >= 60 ? "#EAB308" : "#DC2626" }}
                     />
                   </div>
                 </div>
@@ -207,7 +207,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                     <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${weeklyPct}%`, backgroundColor: weeklyPct >= 100 ? "#85CC17" : weeklyPct >= 60 ? "#EAB308" : "#DC2626" }}
+                        style={{ width: `${weeklyPct}%`, backgroundColor: weeklyPct >= 100 ? "#F6B78D" : weeklyPct >= 60 ? "#EAB308" : "#DC2626" }}
                       />
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                         {s.note && <p className="text-white/60 mt-0.5 italic">{s.note}</p>}
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span className="text-[#85CC17] font-mono text-[11px]">{s.points} {s.points === 1 ? "demerit" : "demerits"}</span>
+                        <span className="text-[#F6B78D] font-mono text-[11px]">{s.points} {s.points === 1 ? "demerit" : "demerits"}</span>
                         <button
                           type="button"
                           onClick={() => void handleRevokeStrike(s.id)}
@@ -290,7 +290,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
                     <select
                       value={issueInfractionId}
                       onChange={(e) => { setIssueInfractionId(e.target.value); setIssueStatus("idle"); }}
-                      className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+                      className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F6B78D]/45"
                     >
                       <option value="">— Select infraction —</option>
                       {sortedInfractions.map((i) => (

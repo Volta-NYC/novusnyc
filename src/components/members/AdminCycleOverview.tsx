@@ -107,8 +107,8 @@ export default function AdminCycleOverview() {
       {
         label: `${base}+ credits`,
         sublabel: "Target met",
-        colorClass: "text-[#85CC17]",
-        bgClass: "bg-[#85CC17]/8 border-[#85CC17]/20",
+        colorClass: "text-[#F6B78D]",
+        bgClass: "bg-[#F6B78D]/8 border-[#F6B78D]/20",
         members: memberProgress.filter((p) => p.credits >= base),
       },
       {
@@ -257,10 +257,10 @@ export default function AdminCycleOverview() {
       {activeCycle && (
         <div className="space-y-5">
           {/* Active cycle header */}
-          <div className="rounded-2xl border border-[#85CC17]/30 bg-[#0F1A12] px-5 py-4 flex items-start justify-between gap-4 flex-wrap">
+          <div className="rounded-2xl border border-[#F6B78D]/30 bg-[#0F1A12] px-5 py-4 flex items-start justify-between gap-4 flex-wrap">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="inline-flex items-center rounded-full border border-[#85CC17]/45 bg-[#85CC17]/12 px-2 py-0.5 text-[10px] font-semibold text-[#9BE22B]">
+                <span className="inline-flex items-center rounded-full border border-[#F6B78D]/45 bg-[#F6B78D]/12 px-2 py-0.5 text-[10px] font-semibold text-[#F3E28D]">
                   Active
                 </span>
                 <h2 className="font-display font-bold text-white text-xl">{activeCycle.name}</h2>
@@ -403,7 +403,7 @@ export default function AdminCycleOverview() {
 function StatCard({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
   return (
     <div className="rounded-xl border border-white/8 bg-[#13161D] p-4 text-center">
-      <p className={`text-3xl font-display font-bold tabular-nums ${accent ? "text-[#85CC17]" : "text-white"}`}>
+      <p className={`text-3xl font-display font-bold tabular-nums ${accent ? "text-[#F6B78D]" : "text-white"}`}>
         {value}
       </p>
       <p className="text-[10px] uppercase tracking-wider text-white/35 mt-1">{label}</p>
@@ -457,10 +457,10 @@ function CycleEditor({
   };
 
   return (
-    <div className={`rounded-2xl border ${activeBadge ? "border-[#85CC17]/45 bg-[#0F1A12]" : "border-white/15 bg-[#13161D]"} mb-4`}>
+    <div className={`rounded-2xl border ${activeBadge ? "border-[#F6B78D]/45 bg-[#0F1A12]" : "border-white/15 bg-[#13161D]"} mb-4`}>
       <div className="px-5 py-3 border-b border-white/8 flex items-center gap-3">
         {activeBadge && (
-          <span className="inline-flex items-center rounded-full border border-[#85CC17]/45 bg-[#85CC17]/12 px-2 py-0.5 text-[10px] font-semibold text-[#9BE22B]">
+          <span className="inline-flex items-center rounded-full border border-[#F6B78D]/45 bg-[#F6B78D]/12 px-2 py-0.5 text-[10px] font-semibold text-[#F3E28D]">
             Active
           </span>
         )}

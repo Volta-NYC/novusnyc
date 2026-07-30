@@ -1,12 +1,12 @@
-// VOLTA NYC - Google Apps Script (SheetsLogger)
+// NOVUS NYC - Google Apps Script (SheetsLogger)
 // Deploy as a Web App (Execute as: Me, Access: Anyone).
 
 var SHEET_ID = '1UGcUy6pP7ND0BXrnKnd9GNh_d2Q_xph71b_dRNp19w4';
 var RESUME_FOLDER_ID = '';
-var RESUME_FOLDER_NAME = 'Volta Resumes';
-var BOOKING_LINK = 'https://voltanyc.org/book';
-var SIGNUP_LINK = 'https://voltanyc.org/members/signup?code=VOLTA-8J3UMP';
-var FROM_EMAIL = 'ethan@voltanyc.org';
+var RESUME_FOLDER_NAME = 'Novus Resumes';
+var BOOKING_LINK = 'https://novusnyc.org/book';
+var SIGNUP_LINK = 'https://novusnyc.org/members/signup?code=NOVUS-8J3UMP';
+var FROM_EMAIL = 'ethan@novusnyc.org';
 var FROM_NAME = 'Ethan Zhang';
 var CC_EMAIL = 'andrewchin530@gmail.com';
 
@@ -156,7 +156,7 @@ function appendByHeaders(sheet, headers, valuesByHeader) {
 }
 
 function styleHeaders(sheet, width) {
-  sheet.getRange(1, 1, 1, width).setFontWeight('bold').setBackground('#C4F135');
+  sheet.getRange(1, 1, 1, width).setFontWeight('bold').setBackground('#F3E28D');
 }
 
 function toHeader(value) {
@@ -201,22 +201,22 @@ function onEdit(e) {
   var subject, body;
 
   if (col === 9) {
-    subject = 'Next Steps: Volta Interview Invitation';
+    subject = 'Next Steps: Novus Interview Invitation';
     body = interviewInviteEmail(name);
   } else if (col === 10) {
-    subject = 'Volta NYC - Analyst Acceptance';
+    subject = 'Novus NYC - Analyst Acceptance';
     body = analystEmail(name, tracks);
   } else if (col === 11) {
-    subject = 'Volta NYC - Senior Analyst Acceptance';
+    subject = 'Novus NYC - Senior Analyst Acceptance';
     body = seniorAnalystEmail(name, tracks);
   } else if (col === 12) {
-    subject = 'Volta NYC - Associate Acceptance';
+    subject = 'Novus NYC - Associate Acceptance';
     body = associateEmail(name, tracks);
   } else if (col === 13) {
-    subject = 'Volta NYC - Senior Associate Acceptance';
+    subject = 'Novus NYC - Senior Associate Acceptance';
     body = seniorAssociateEmail(name, tracks);
   } else if (col === 14) {
-    subject = 'Volta NYC - Project Lead Acceptance';
+    subject = 'Novus NYC - Project Lead Acceptance';
     body = projectLeadEmail(name, tracks);
   }
 
@@ -247,33 +247,33 @@ function formatTrack(track) {
 }
 
 function bookingButton() {
-  return "<p><a href=\"" + BOOKING_LINK + "\" style=\"display:inline-block; background-color:#85CC17; color:#ffffff !important; -webkit-text-fill-color:#ffffff; padding:4px 12px; border-radius:3px; text-decoration:none; font-size:12px; font-family:Garamond,'EB Garamond',serif;\"><span style=\"color:#ffffff !important; -webkit-text-fill-color:#ffffff;\">Book Your Interview Slot</span></a></p>";
+  return "<p><a href=\"" + BOOKING_LINK + "\" style=\"display:inline-block; background-color:#F6B78D; color:#231F24 !important; -webkit-text-fill-color:#231F24; padding:4px 12px; border-radius:3px; text-decoration:none; font-size:12px; font-family:Garamond,'EB Garamond',serif;\"><span style=\"color:#231F24 !important; -webkit-text-fill-color:#231F24;\">Book Your Interview Slot</span></a></p>";
 }
 
 function signupButton() {
-  return "<p><a href=\"" + SIGNUP_LINK + "\" style=\"display:inline-block; background-color:#85CC17; color:#ffffff !important; -webkit-text-fill-color:#ffffff; padding:4px 12px; border-radius:3px; text-decoration:none; font-size:12px; font-family:Garamond,'EB Garamond',serif;\"><span style=\"color:#ffffff !important; -webkit-text-fill-color:#ffffff;\">Create Your Member Account</span></a></p>";
+  return "<p><a href=\"" + SIGNUP_LINK + "\" style=\"display:inline-block; background-color:#F6B78D; color:#231F24 !important; -webkit-text-fill-color:#231F24; padding:4px 12px; border-radius:3px; text-decoration:none; font-size:12px; font-family:Garamond,'EB Garamond',serif;\"><span style=\"color:#231F24 !important; -webkit-text-fill-color:#231F24;\">Create Your Member Account</span></a></p>";
 }
 
 function interviewInviteEmail(name) {
-  return wrapper(`<p>Dear ${name},</p><p>Congratulations! You have been invited to the next stage of the selection process.</p><p>While we received many strong applications, your background and potential stood out to our team. We believe your skills are a strong fit for Volta and the work we're doing with our current business partners.</p><p><strong>Next Steps:</strong> We'd like to schedule a formal interview to discuss your placement within the team and your specific interests.</p><p>Your interview will take place <strong>next week</strong>. Please secure your time slot within the next 48 hours:</p>${bookingButton()}<p>We look forward to learning more about you.</p><p>Sincerely,<br>Ethan Zhang<br>Volta NYC</p>`);
+  return wrapper(`<p>Dear ${name},</p><p>Congratulations! You have been invited to the next stage of the selection process.</p><p>While we received many strong applications, your background and potential stood out to our team. We believe your skills are a strong fit for Novus and the work we're doing with our current business partners.</p><p><strong>Next Steps:</strong> We'd like to schedule a formal interview to discuss your placement within the team and your specific interests.</p><p>Your interview will take place <strong>next week</strong>. Please secure your time slot within the next 48 hours:</p>${bookingButton()}<p>We look forward to learning more about you.</p><p>Sincerely,<br>Ethan Zhang<br>Novus NYC</p>`);
 }
 
 function analystEmail(name, track) {
-  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as an <strong>Analyst</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. In the meantime, please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Novus NYC as an <strong>Analyst</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. In the meantime, please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`);
 }
 
 function seniorAnalystEmail(name, track) {
-  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as a <strong>Senior Analyst</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. In the meantime, please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Novus NYC as a <strong>Senior Analyst</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. In the meantime, please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`);
 }
 
 function associateEmail(name, track) {
-  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as an <strong>Associate</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. Based on your application, you're on a clear path for early leadership consideration as projects progress. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Novus NYC as an <strong>Associate</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. Based on your application, you're on a clear path for early leadership consideration as projects progress. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`);
 }
 
 function seniorAssociateEmail(name, track) {
-  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Volta NYC as a <strong>Senior Associate</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. We're bringing you in as a Senior Associate because we trust your ability to lead and see your potential to take on more responsibility as projects progress. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! You've been accepted to Novus NYC as a <strong>Senior Associate</strong> ${formatTrack(track)}.</p><p>You'll be assigned to a project within the next week. We're bringing you in as a Senior Associate because we trust your ability to lead and see your potential to take on more responsibility as projects progress. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`);
 }
 
 function projectLeadEmail(name, track) {
-  return wrapper(`<p>Hi ${name},</p><p>Congratulations! We're excited to offer you a <strong>Project Lead</strong> role at Volta NYC.</p><p>You'll be assigned to lead one of our upcoming projects within the next week. Project Leads are accountable for delivery, quality, and communication. If you have peers you'd like to bring on, feel free to let us know. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Volta NYC</p>`);
+  return wrapper(`<p>Hi ${name},</p><p>Congratulations! We're excited to offer you a <strong>Project Lead</strong> role at Novus NYC.</p><p>You'll be assigned to lead one of our upcoming projects within the next week. Project Leads are accountable for delivery, quality, and communication. If you have peers you'd like to bring on, feel free to let us know. Please create your member portal account as soon as possible: that's where your team, tasks, and project details will be organized.</p>${signupButton()}<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`);
 }

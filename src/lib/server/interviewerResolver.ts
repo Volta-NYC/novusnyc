@@ -91,7 +91,7 @@ export function pickIcsOrganizer(
 
   return {
     memberId: "",
-    name: "Volta NYC",
+    name: "Novus NYC",
     email: fallbackEmail,
   };
 }

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Volta NYC – Row Level Security implementation
+-- Novus NYC – Row Level Security implementation
 -- Roles: owner (Board) | admin (Senior Associate) | member
 --
 -- Enforcement model:

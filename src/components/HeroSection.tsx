@@ -25,18 +25,18 @@ export default function HeroSection() {
         >
           <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-2 sm:gap-2.5 md:gap-3.5">
             <Image
-              src="/logo.png"
-              alt="Volta"
-              width={200}
+              src="/novus.webp"
+              alt="Novus NYC logo"
+              width={112}
               height={200}
               className="object-contain flex-shrink-0"
               style={{
-                width: "clamp(7.6rem, 20vw, 16.8rem)",
-                height: "clamp(7.6rem, 20vw, 16.8rem)",
+                width: "clamp(4.1rem, 10vw, 8.1rem)",
+                height: "clamp(7.4rem, 18vw, 14.5rem)",
               }}
               priority
             />
-            <span className="text-v-green">VOLTA</span>
+            <span className="text-v-green">NOVUS</span>
           </span>
         </h1>
       </motion.div>

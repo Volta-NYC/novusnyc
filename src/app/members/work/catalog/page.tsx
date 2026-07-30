@@ -36,22 +36,22 @@ function TrackIcon({ track, className = "w-4 h-4" }: { track: CycleTrack; classN
       <path d="M17 16v-10" />
     </svg>
   );
-  // General — actual Volta logo
-  return <Image src="/logo.png" alt="Volta" width={16} height={16} className="object-contain" />;
+  // General — actual Novus logo
+  return <Image src="/novus.webp" alt="Novus NYC logo" width={9} height={16} className="h-4 w-auto object-contain" />;
 }
 
 const TRACK_COLOR: Record<CycleTrack, string> = {
   Tech:      "text-blue-600",
   Marketing: "text-lime-700",
   Finance:   "text-amber-600",
-  General:   "text-[#5C9911]",
+  General:   "text-[#8B5E48]",
 };
 
 const TRACK_ICON_BG: Record<CycleTrack, string> = {
   Tech:      "bg-blue-50 border-blue-200",
   Marketing: "bg-lime-50 border-lime-200",
   Finance:   "bg-amber-50 border-amber-200",
-  General:   "bg-[#85CC17]/8 border-[#85CC17]/25",
+  General:   "bg-[#F6B78D]/8 border-[#F6B78D]/25",
 };
 
 const TRACK_PILL: Record<CycleTrack, string> = {
@@ -87,7 +87,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, pro
           ? "opacity-40 border-black/5 cursor-default"
           : a.priority
             ? "border-l-4 border-l-amber-500 border-t-amber-200 border-r-amber-200 border-b-amber-200 hover:border-l-amber-500 hover:bg-amber-50/40 hover:shadow-md hover:shadow-black/8 hover:-translate-y-0.5"
-            : "border-black/8 hover:border-[#85CC17]/40 hover:bg-[#85CC17]/[0.02] hover:shadow-md hover:shadow-black/8 hover:-translate-y-0.5"
+            : "border-black/8 hover:border-[#F6B78D]/40 hover:bg-[#F6B78D]/[0.02] hover:shadow-md hover:shadow-black/8 hover:-translate-y-0.5"
         }`}
     >
       {/* Card header */}
@@ -124,8 +124,8 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, pro
 
         {/* Credits badge */}
         <div className={`flex-shrink-0 text-right ${isFull ? "opacity-40" : ""}`}>
-          <p className="text-[17px] font-bold text-[#5C9911] leading-none tabular-nums">+{a.credits}</p>
-          <p className="text-[9px] text-[#5C9911]/60 uppercase tracking-wider mt-0.5">
+          <p className="text-[17px] font-bold text-[#8B5E48] leading-none tabular-nums">+{a.credits}</p>
+          <p className="text-[9px] text-[#8B5E48]/60 uppercase tracking-wider mt-0.5">
             {a.recurringEnabled ? "/ check-in" : a.credits === 1 ? "credit" : "credits"}
           </p>
         </div>
@@ -153,7 +153,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, pro
                   : `${taken} / ${a.capacity} claimed`}
             </span>
             {alreadyClaimed && !isFull && (
-              <span className="text-[10px] font-semibold text-[#5C9911]">
+              <span className="text-[10px] font-semibold text-[#8B5E48]">
                 {claimStatus === "Submitted" ? "✓ Submitted" : claimStatus === "Approved" ? "✓ Done" : "✓ In Progress"}
               </span>
             )}
@@ -164,7 +164,7 @@ function AssignmentCard({ assignment: a, taken, alreadyClaimed, claimStatus, pro
           {!isUnlimited && (
             <div className="h-1 rounded-full bg-black/8 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-black/15" : "bg-[#85CC17]"}`}
+                className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-black/15" : "bg-[#F6B78D]"}`}
                 style={{ width: `${Math.max(pct * 100, isFull ? 100 : 0)}%` }}
               />
             </div>
@@ -299,8 +299,8 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-3">
                   <p className="text-[9px] font-semibold uppercase tracking-widest text-black/30 mb-1">Credits</p>
-                  <p className="text-[22px] font-bold text-[#5C9911] leading-none tabular-nums">+{a.credits}</p>
-                  {a.recurringEnabled && <p className="text-[10px] text-[#5C9911]/60 mt-0.5">per check-in</p>}
+                  <p className="text-[22px] font-bold text-[#8B5E48] leading-none tabular-nums">+{a.credits}</p>
+                  {a.recurringEnabled && <p className="text-[10px] text-[#8B5E48]/60 mt-0.5">per check-in</p>}
                 </div>
                 <div className="rounded-xl border border-black/8 bg-black/[0.02] px-4 py-3">
                   <p className="text-[9px] font-semibold uppercase tracking-widest text-black/30 mb-1">Min Role</p>
@@ -344,7 +344,7 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
                 {!isUnlimited && (
                   <div className="h-2 rounded-full bg-black/8 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${isFull ? "bg-black/15" : "bg-[#85CC17]"}`}
+                      className={`h-full rounded-full transition-all ${isFull ? "bg-black/15" : "bg-[#F6B78D]"}`}
                       style={{ width: `${Math.max(pct * 100, isFull ? 100 : 0)}%` }}
                     />
                   </div>
@@ -381,7 +381,7 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
               {alreadyClaimed ? (
                 <Link
                   href={`/members/work/${a.id}`}
-                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#85CC17]/10 border border-[#85CC17]/30 text-[#5C9911] font-semibold py-3 text-sm hover:bg-[#85CC17]/20 transition-colors"
+                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#F6B78D]/10 border border-[#F6B78D]/30 text-[#8B5E48] font-semibold py-3 text-sm hover:bg-[#F6B78D]/20 transition-colors"
                 >
                   View My Submission →
                 </Link>
@@ -392,7 +392,7 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
               ) : (
                 <Link
                   href={`/members/work/${a.id}`}
-                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#85CC17] text-[#0D0D0D] font-bold py-3 text-sm hover:bg-[#96D920] transition-colors"
+                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#F6B78D] text-[#0D0D0D] font-bold py-3 text-sm hover:bg-[#E9A77E] transition-colors"
                 >
                   Claim Assignment →
                 </Link>
@@ -584,10 +584,10 @@ export default function CatalogPage() {
       }
       const entry = map.get(key)!;
       const projName = a.projectGroupId
-        ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta NYC")
+        ? (projectGroupById.get(a.projectGroupId)?.name ?? "Novus NYC")
         : a.businessId
-          ? (businessById.get(a.businessId)?.name ?? "Volta NYC")
-          : "Volta NYC";
+          ? (businessById.get(a.businessId)?.name ?? "Novus NYC")
+          : "Novus NYC";
       entry.projNames.add(projName);
       entry.group.all.push(a);
       const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
@@ -598,8 +598,8 @@ export default function CatalogPage() {
     return [...map.values()]
       .map(({ group, projNames }) => {
         const sorted = [...projNames].sort((a, b) => {
-          if (a === "Volta NYC") return -1;
-          if (b === "Volta NYC") return 1;
+          if (a === "Novus NYC") return -1;
+          if (b === "Novus NYC") return 1;
           return a.localeCompare(b);
         });
         return { ...group, sub: sorted.join(" · ") };
@@ -609,8 +609,8 @@ export default function CatalogPage() {
         const bPriority = b.all.some((x) => x.priority);
         if (aPriority && !bPriority) return -1;
         if (!aPriority && bPriority) return 1;
-        const aIsNYC = a.sub.startsWith("Volta NYC");
-        const bIsNYC = b.sub.startsWith("Volta NYC");
+        const aIsNYC = a.sub.startsWith("Novus NYC");
+        const bIsNYC = b.sub.startsWith("Novus NYC");
         if (aIsNYC && !bIsNYC) return -1;
         if (!aIsNYC && bIsNYC) return 1;
         return a.label.localeCompare(b.label);
@@ -663,7 +663,7 @@ export default function CatalogPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search assignments…"
-              className="w-full bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2.5 text-[13px] text-black/75 placeholder-black/25 focus:outline-none focus:border-[#85CC17]/50"
+              className="w-full bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2.5 text-[13px] text-black/75 placeholder-black/25 focus:outline-none focus:border-[#F6B78D]/50"
             />
           </div>
 
@@ -731,10 +731,10 @@ export default function CatalogPage() {
                     const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
                     const status = myClaimedIds.get(a.id);
                     const projName = a.projectGroupId
-                      ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta NYC")
+                      ? (projectGroupById.get(a.projectGroupId)?.name ?? "Novus NYC")
                       : a.businessId
-                        ? (businessById.get(a.businessId)?.name ?? "Volta NYC")
-                        : "Volta NYC";
+                        ? (businessById.get(a.businessId)?.name ?? "Novus NYC")
+                        : "Novus NYC";
                     return (
                       <AssignmentCard
                         key={a.id}
@@ -756,10 +756,10 @@ export default function CatalogPage() {
                   {group.full.map((a) => {
                     const taken = (claimsByAssignment.get(a.id) ?? []).filter((c) => c.status !== "rejected").length;
                     const projName = a.projectGroupId
-                      ? (projectGroupById.get(a.projectGroupId)?.name ?? "Volta NYC")
+                      ? (projectGroupById.get(a.projectGroupId)?.name ?? "Novus NYC")
                       : a.businessId
-                        ? (businessById.get(a.businessId)?.name ?? "Volta NYC")
-                        : "Volta NYC";
+                        ? (businessById.get(a.businessId)?.name ?? "Novus NYC")
+                        : "Novus NYC";
                     return (
                       <AssignmentCard
                         key={a.id}

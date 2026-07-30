@@ -37,7 +37,7 @@ function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: 
 }
 
 const STATUS_STYLES: Record<AssignmentStatus, string> = {
-  Open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
+  Open: "border-[#F6B78D]/30 bg-[#F6B78D]/10 text-[#F3E28D]",
   Active: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
   "Under Review": "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   Completed: "border-violet-400/30 bg-violet-400/10 text-violet-300",
@@ -195,7 +195,7 @@ export default function CatalogPage() {
       if (!grp) return null;
       return { name: grp.name, subtitle: grp.description };
     }
-    return { name: "Volta NYC", subtitle: "Internal assignments" };
+    return { name: "Novus NYC", subtitle: "Internal assignments" };
   }, [businessById, projectGroupById]);
 
   const sorted = useMemo(() => {
@@ -260,7 +260,7 @@ export default function CatalogPage() {
   );
 
   const projectOptions = useMemo<SearchSelectOption[]>(() => [
-    { value: "volta", label: "Volta NYC", subtitle: "Internal" },
+    { value: "volta", label: "Novus NYC", subtitle: "Internal" },
     ...sortedBusinessOptions.map((b) => ({
       value: `biz:${b.id}`,
       label: b.name,
@@ -495,7 +495,7 @@ export default function CatalogPage() {
 
       {/* Summary counters */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-        <SummaryStat label="Open" value={counts.open} accent="text-[#85CC17]" />
+        <SummaryStat label="Open" value={counts.open} accent="text-[#F6B78D]" />
         <SummaryStat label="Claimed / In Progress" value={counts.claimed} accent="text-blue-300" />
         <SummaryStat label="Awaiting approval" value={counts.awaitingApproval} accent="text-yellow-300" />
         <SummaryStat label="Completed" value={counts.completed} accent="text-violet-300" />
@@ -596,7 +596,7 @@ export default function CatalogPage() {
                   </div>
                   {/* Group meta */}
                   <div className="border-t border-white/5 px-4 py-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/50">
-                    <span className="text-[#85CC17] font-bold">{row.assignments[0].credits} {row.assignments[0].credits === 1 ? "credit" : "credits"}</span>
+                    <span className="text-[#F6B78D] font-bold">{row.assignments[0].credits} {row.assignments[0].credits === 1 ? "credit" : "credits"}</span>
                     <span>{row.assignments[0].minRole}</span>
                     {totalCap === 0
                       ? <span className="text-white/30">Unlimited spots</span>
@@ -617,7 +617,7 @@ export default function CatalogPage() {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {a.priority && <span className="text-amber-400 text-[10px]">⚡</span>}
                                 <span className="text-[12px] font-medium text-white/75 truncate">
-                                  {resolveProjectLabel(a)?.name ?? "Volta NYC"}
+                                  {resolveProjectLabel(a)?.name ?? "Novus NYC"}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
@@ -635,7 +635,7 @@ export default function CatalogPage() {
                                 title={updateCount > 0 ? `${updateCount} update${updateCount !== 1 ? "s" : ""}` : "Updates"}
                                 className={`h-7 inline-flex items-center gap-1 px-2 rounded-md border text-[10px] font-medium transition-colors whitespace-nowrap ${
                                   updateCount > 0
-                                    ? "bg-[#85CC17]/[0.08] border-[#85CC17]/25 text-[#9BE22B]/80 hover:text-[#9BE22B] hover:bg-[#85CC17]/[0.13] hover:border-[#85CC17]/40"
+                                    ? "bg-[#F6B78D]/[0.08] border-[#F6B78D]/25 text-[#F3E28D]/80 hover:text-[#F3E28D] hover:bg-[#F6B78D]/[0.13] hover:border-[#F6B78D]/40"
                                     : "bg-white/[0.03] border-white/12 text-white/30 hover:text-white/55 hover:bg-white/[0.05] hover:border-white/20"
                                 }`}
                               >
@@ -731,7 +731,7 @@ export default function CatalogPage() {
 
                 {/* Meta row */}
                 <div className="border-t border-white/5 px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
-                  <span className="text-[#85CC17] font-bold">
+                  <span className="text-[#F6B78D] font-bold">
                     {a.credits} {a.recurringEnabled ? "credits/check-in" : a.credits === 1 ? "credit" : "credits"}
                   </span>
                   <span>{a.minRole}</span>
@@ -760,7 +760,7 @@ export default function CatalogPage() {
                     title={updateCount > 0 ? `${updateCount} update${updateCount !== 1 ? "s" : ""}` : "Updates"}
                     className={`h-7 inline-flex items-center gap-1 px-2 rounded-md border text-[10px] font-medium transition-colors whitespace-nowrap ${
                       updateCount > 0
-                        ? "bg-[#85CC17]/[0.08] border-[#85CC17]/25 text-[#9BE22B]/80 hover:text-[#9BE22B] hover:bg-[#85CC17]/[0.13] hover:border-[#85CC17]/40"
+                        ? "bg-[#F6B78D]/[0.08] border-[#F6B78D]/25 text-[#F3E28D]/80 hover:text-[#F3E28D] hover:bg-[#F6B78D]/[0.13] hover:border-[#F6B78D]/40"
                         : "bg-white/[0.03] border-white/12 text-white/30 hover:text-white/55 hover:bg-white/[0.05] hover:border-white/20"
                     }`}
                   >
@@ -882,14 +882,14 @@ export default function CatalogPage() {
                     onClick={() => setForm((p) => ({ ...p, deadlineType: t }))}
                     className={`flex-1 px-3 py-2 rounded-lg text-left border transition-colors ${
                       form.deadlineType === t
-                        ? "border-[#85CC17]/40 bg-[#85CC17]/10"
+                        ? "border-[#F6B78D]/40 bg-[#F6B78D]/10"
                         : "border-white/12 hover:border-white/25"
                     }`}
                   >
-                    <p className={`text-xs font-semibold ${form.deadlineType === t ? "text-[#9BE22B]" : "text-white/55"}`}>
+                    <p className={`text-xs font-semibold ${form.deadlineType === t ? "text-[#F3E28D]" : "text-white/55"}`}>
                       {t === "hard" ? "Fixed date" : "Days after claiming"}
                     </p>
-                    <p className={`text-[10px] mt-0.5 ${form.deadlineType === t ? "text-[#9BE22B]/70" : "text-white/30"}`}>
+                    <p className={`text-[10px] mt-0.5 ${form.deadlineType === t ? "text-[#F3E28D]/70" : "text-white/30"}`}>
                       {t === "hard" ? "Same date for everyone" : "Countdown starts when member signs up"}
                     </p>
                   </button>
@@ -915,14 +915,14 @@ export default function CatalogPage() {
               <button
                 type="button"
                 onClick={() => setForm((p) => ({ ...p, limitClaims: false }))}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${!form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${!form.limitClaims ? "bg-[#F6B78D]/15 border-[#F6B78D]/40 text-[#F6B78D]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
               >
                 For everyone
               </button>
               <button
                 type="button"
                 onClick={() => setForm((p) => ({ ...p, limitClaims: true }))}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${form.limitClaims ? "bg-[#F6B78D]/15 border-[#F6B78D]/40 text-[#F6B78D]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
               >
                 Limited spots
               </button>
@@ -1035,7 +1035,7 @@ export default function CatalogPage() {
                   </div>
                   {c.dueDate && <p className="text-white/40">Due {c.dueDate}</p>}
                   {c.deliverableUrl && (
-                    <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline underline-offset-2 block truncate">
+                    <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-[#F6B78D]/80 hover:text-[#F6B78D] underline underline-offset-2 block truncate">
                       {c.deliverableUrl}
                     </a>
                   )}
@@ -1088,7 +1088,7 @@ export default function CatalogPage() {
                   <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">Update history</p>
                   <div className="space-y-2 max-h-[28vh] overflow-y-auto pr-1">
                     {updateHistory.map((u) => (
-                      <div key={u.id} className="rounded-lg border border-[#85CC17]/15 bg-[#85CC17]/5 px-3 py-2.5 text-xs">
+                      <div key={u.id} className="rounded-lg border border-[#F6B78D]/15 bg-[#F6B78D]/5 px-3 py-2.5 text-xs">
                         {editingUpdateId === u.id ? (
                           <div className="flex flex-col gap-2">
                             <TextArea
@@ -1111,7 +1111,7 @@ export default function CatalogPage() {
                                 type="button"
                                 onClick={() => void handleSaveUpdateEdit(u.id)}
                                 disabled={updateActionBusy || !editingUpdateText.trim()}
-                                className="text-[11px] text-[#85CC17] hover:text-[#9BE22B] disabled:opacity-40"
+                                className="text-[11px] text-[#F6B78D] hover:text-[#F3E28D] disabled:opacity-40"
                               >
                                 {updateActionBusy ? "Saving…" : "Save"}
                               </button>
@@ -1166,7 +1166,7 @@ export default function CatalogPage() {
               </div>
 
               {updateSendSuccess && (
-                <p className="text-xs text-[#85CC17] bg-[#85CC17]/10 border border-[#85CC17]/20 rounded-lg px-3 py-2">
+                <p className="text-xs text-[#F6B78D] bg-[#F6B78D]/10 border border-[#F6B78D]/20 rounded-lg px-3 py-2">
                   ✓ Update sent — {activeClaimers.length} member{activeClaimers.length !== 1 ? "s" : ""} notified by email.
                 </p>
               )}

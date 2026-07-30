@@ -164,8 +164,8 @@ export default function SignupPage() {
   function SendLinkCard({ heading, subheading }: { heading: string; subheading: string }) {
     if (sendDone) {
       return (
-        <div className="bg-[#85CC17]/10 border border-[#85CC17]/25 rounded-xl p-5 text-center">
-          <p className="text-[#85CC17] font-semibold font-display mb-1">Check your email</p>
+        <div className="bg-[#F6B78D]/10 border border-[#F6B78D]/25 rounded-xl p-5 text-center">
+          <p className="text-[#F6B78D] font-semibold font-display mb-1">Check your email</p>
           <p className="text-white/50 text-sm font-body">
             A setup link has been sent to{" "}
             <span className="text-white/80">{confirmedEmail}</span>.
@@ -178,7 +178,7 @@ export default function SignupPage() {
     return (
       <>
         <div className="flex flex-col items-center mb-8">
-          <Image src="/logo.png" alt="Volta" width={48} height={48} className="object-contain mb-4" />
+          <Image src="/novus.webp" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
           <h1 className="font-display font-bold text-white text-2xl">{heading}</h1>
           <p className="text-white/40 text-sm mt-1 text-center">{subheading}</p>
         </div>
@@ -217,7 +217,7 @@ export default function SignupPage() {
                   required
                   value={manualEmail}
                   onChange={(e) => setManualEmail(e.target.value)}
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
                   placeholder="you@email.com"
                   autoFocus
                   autoComplete="email"
@@ -275,12 +275,12 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
-          <Image src="/logo.png" alt="Volta" width={48} height={48} className="object-contain mb-6 mx-auto" />
+          <Image src="/novus.webp" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-6 mx-auto" />
           <h1 className="font-display font-bold text-white text-2xl mb-3">Invalid Link</h1>
           <p className="text-white/50 text-sm mb-6">
             This link is invalid. Use the invite link from your email, or contact an admin.
           </p>
-          <Link href="/members/login" className="text-[#85CC17]/70 hover:text-[#85CC17] text-sm transition-colors">
+          <Link href="/members/login" className="text-[#F6B78D]/70 hover:text-[#F6B78D] text-sm transition-colors">
             Already have an account? Sign in
           </Link>
         </div>
@@ -293,7 +293,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <Image src="/logo.png" alt="Volta" width={48} height={48} className="object-contain mb-4" />
+          <Image src="/novus.webp" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
           <h1 className="font-display font-bold text-white text-2xl">Set Up Your Account</h1>
           <p className="text-white/40 text-sm mt-1">Choose a password to complete your account.</p>
         </div>

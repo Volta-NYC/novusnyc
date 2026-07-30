@@ -14,21 +14,21 @@ function downloadICS(slot: InterviewSlot, zoomLink: string) {
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Volta NYC//Interview//EN",
+    "PRODID:-//Novus NYC//Interview//EN",
     "BEGIN:VEVENT",
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
-    "SUMMARY:Interview - Volta NYC",
+    "SUMMARY:Interview - Novus NYC",
   ];
   const descParts: string[] = [];
   if (zoomLink) descParts.push(`Join Zoom: ${zoomLink}`);
-  descParts.push("Organized by Volta NYC");
+  descParts.push("Organized by Novus NYC");
   lines.push(`DESCRIPTION:${descParts.join("\\n")}`);
   if (slot.location) lines.push(`LOCATION:${slot.location}`);
   if (zoomLink) lines.push(`URL:${zoomLink}`);
   lines.push(
     `DTSTAMP:${fmt(new Date())}`,
-    `UID:volta-${slot.id}@voltanyc.org`,
+    `UID:novus-${slot.id}@novusnyc.org`,
     "END:VEVENT",
     "END:VCALENDAR",
   );
@@ -36,7 +36,7 @@ function downloadICS(slot: InterviewSlot, zoomLink: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "volta-nyc-interview.ics";
+  a.download = "novus-nyc-interview.ics";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -233,15 +233,15 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
-            <Image src="/logo.png" alt="Volta" width={32} height={32} className="object-contain" />
-            <span className="text-white font-bold text-lg tracking-tight group-hover:text-white/80 transition-colors">VOLTA NYC</span>
+            <Image src="/novus.webp" alt="Novus NYC logo" width={18} height={32} className="h-8 w-auto object-contain" />
+            <span className="text-white font-bold text-lg tracking-tight group-hover:text-white/80 transition-colors">NOVUS NYC</span>
           </Link>
           <p className="text-white/40 text-sm font-body">Interview Scheduling</p>
         </div>
 
         {state === "loading" && (
           <div className={`${cardClass} p-8 text-center`}>
-            <div className="w-8 h-8 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin mx-auto mb-4" />
+            <div className="w-8 h-8 border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin mx-auto mb-4" />
             <p className="text-white/40 text-sm font-body">Loading your invitation...</p>
           </div>
         )}
@@ -254,14 +254,14 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
               </svg>
             </div>
             <h2 className="text-white font-bold text-lg">Invitation expired</h2>
-            <p className="text-white/45 text-sm font-body">This interview invitation has expired or been cancelled. Please contact Volta NYC to request a new one.</p>
+            <p className="text-white/45 text-sm font-body">This interview invitation has expired or been cancelled. Please contact Novus NYC to request a new one.</p>
           </div>
         )}
 
         {state === "already_booked" && (
           <div className={`${cardClass} p-8 text-center space-y-3`}>
-            <div className="w-12 h-12 rounded-full bg-[#85CC17]/15 flex items-center justify-center mx-auto">
-              <svg className="w-6 h-6 text-[#85CC17]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="w-12 h-12 rounded-full bg-[#F6B78D]/15 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6 text-[#F6B78D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -278,7 +278,7 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
               </svg>
             </div>
             <h2 className="text-white font-bold text-lg">Something went wrong</h2>
-            <p className="text-white/40 text-sm font-body">Please refresh and try again, or contact Volta NYC.</p>
+            <p className="text-white/40 text-sm font-body">Please refresh and try again, or contact Novus NYC.</p>
           </div>
         )}
 
@@ -296,7 +296,7 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
                   value={bookerName}
                   onChange={(e) => setBookerName(e.target.value)}
                   placeholder="Jane Smith"
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
                 />
               </div>
               <div>
@@ -307,16 +307,16 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
                   value={bookerEmail}
                   onChange={(e) => setBookerEmail(e.target.value)}
                   placeholder="jane@example.com"
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors"
+                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
                 />
                 {invite?.applicantEmail && bookerEmail === invite.applicantEmail && (
-                  <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from your invitation</p>
+                  <p className="text-[11px] text-[#F6B78D]/55 mt-1">Pre-filled from your invitation</p>
                 )}
               </div>
               {infoError && <p className="text-red-400 text-xs">{infoError}</p>}
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#85CC17] text-[#0D0D0D] font-display font-bold text-sm hover:bg-[#72b314] transition-colors"
+                className="w-full py-3 rounded-xl bg-[#F6B78D] text-[#0D0D0D] font-display font-bold text-sm hover:bg-[#E9A77E] transition-colors"
               >
                 See Available Times →
               </button>
@@ -335,7 +335,7 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
             {slots.length === 0 ? (
               <div className="text-center py-10 px-6 space-y-2">
                 <p className="text-white/40 text-sm font-body">No available times right now.</p>
-                <p className="text-white/25 text-xs font-body">Please contact Volta NYC to arrange a time.</p>
+                <p className="text-white/25 text-xs font-body">Please contact Novus NYC to arrange a time.</p>
               </div>
             ) : (
               <div className="px-6 py-5 space-y-5">
@@ -353,7 +353,7 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
                           }}
                           className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg border text-left transition-colors ${
                             selectedDate === date
-                              ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-white"
+                              ? "bg-[#F6B78D]/15 border-[#F6B78D]/40 text-white"
                               : "bg-white/3 border-white/8 text-white/65 hover:bg-white/7 hover:text-white"
                           }`}
                         >
@@ -380,7 +380,7 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
                             onClick={() => setSelectedTime(slot.datetime)}
                             className={`px-3 py-2 rounded-lg border text-sm font-body transition-colors ${
                               active
-                                ? "bg-[#85CC17] border-[#85CC17] text-[#0D0D0D] font-semibold"
+                                ? "bg-[#F6B78D] border-[#F6B78D] text-[#0D0D0D] font-semibold"
                                 : "bg-white/5 border-white/10 text-white/75 hover:bg-white/10 hover:text-white"
                             }`}
                           >
@@ -397,7 +397,7 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
                   disabled={!selectedSlot || submitting}
                   className={`w-full py-3 rounded-xl font-display font-bold text-sm transition-all ${
                     selectedSlot && !submitting
-                      ? "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+                      ? "bg-[#F6B78D] text-[#0D0D0D] hover:bg-[#E9A77E]"
                       : "bg-white/8 text-white/25 cursor-not-allowed"
                   }`}
                 >
@@ -415,8 +415,8 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
         {state === "confirmed" && confirmedSlot && (
           <div className={cardClass}>
             <div className="px-6 pt-8 pb-5 text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-[#85CC17]/15 flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-[#85CC17]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="w-16 h-16 rounded-full bg-[#F6B78D]/15 flex items-center justify-center mx-auto">
+                <svg className="w-8 h-8 text-[#F6B78D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>

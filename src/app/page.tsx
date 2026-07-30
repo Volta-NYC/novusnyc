@@ -22,12 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
     getTotalMemberCount(),
   ]);
   return {
-    title: "Volta NYC — Free Consulting for NYC Small Businesses",
+    title: "Novus NYC — Free Consulting for NYC Small Businesses",
     description:
-      `Volta NYC places student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, and SEO. Free of charge. ${formatCounter(memberCount)} students, ${formatCounter(liveStats.totalBusinesses)} businesses served.`,
+      `Digital equity is economic equity. Novus connects student teams with New York City small businesses to provide free support in technology, marketing, finance, operations, websites, SEO, social media, and grant development. ${formatCounter(memberCount)} students, ${formatCounter(liveStats.totalBusinesses)} businesses served.`,
     openGraph: {
-      title: "Volta NYC",
-      description: "Student consultants. Real deliverables. Free for NYC small businesses.",
+      title: "Novus NYC",
+      description: "Digital equity is economic equity. Student teams providing free consulting support for New York City small businesses.",
       images: ["/api/og"],
     },
   };
@@ -337,7 +337,7 @@ function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
       target="_blank"
       rel="noreferrer"
       aria-label={`Visit ${partner.name} website`}
-      className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center shadow-[0_16px_42px_rgba(23,38,12,0.09)] no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
+      className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center shadow-[0_16px_42px_rgba(35,31,36,0.09)] no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
     >
       <div className="relative w-full h-[78px] mb-4">
         <Image
@@ -376,7 +376,7 @@ function PartnerLogoCard({
       aria-label={`Visit ${partner.name} website`}
       className={`partner-logo-card shrink-0 bg-white border flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2 ${
         important
-          ? "w-[230px] h-[142px] rounded-xl border-v-green/35 shadow-[0_12px_34px_rgba(23,38,12,0.08)] px-4"
+          ? "w-[230px] h-[142px] rounded-xl border-v-green/35 shadow-[0_12px_34px_rgba(35,31,36,0.08)] px-4"
           : "w-[230px] h-[142px] rounded-lg border-v-border px-4"
       }`}
     >
@@ -454,7 +454,7 @@ function CommunityPartnersSection() {
             </h2>
           </div>
           <p className="font-body text-v-muted text-sm md:text-base max-w-md leading-relaxed">
-            Chambers, BIDs, local development corporations, and merchant groups connect Volta teams directly with the businesses that need support.
+            Chambers, BIDs, local development corporations, and merchant groups connect Novus teams directly with the businesses that need support.
           </p>
         </AnimatedSection>
         <AnimatedSection>

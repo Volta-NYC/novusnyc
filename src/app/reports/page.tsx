@@ -3,13 +3,13 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 
 export const metadata: Metadata = {
-  title: "Reports & Case Studies | Volta NYC",
+  title: "Reports & Case Studies | Novus NYC",
   description:
-    "Field research reports and business case studies written by Volta student teams across the country, grounded in direct owner interviews and in-person fieldwork.",
+    "Field research reports and business case studies written by Novus student teams across the country, grounded in direct owner interviews and in-person fieldwork.",
   openGraph: {
-    title: "Reports & Case Studies | Volta NYC",
+    title: "Reports & Case Studies | Novus NYC",
     description:
-      "A publication library of field research reports and business case studies from Volta student teams across the country.",
+      "A publication library of field research reports and business case studies from Novus student teams across the country.",
     images: ["/api/og"],
   },
 };
@@ -27,7 +27,7 @@ export default function ReportsPage() {
               Field research on small business realities.
             </h1>
             <p className="font-body text-v-muted text-lg max-w-3xl">
-              This is Volta&apos;s publication library of local-market reports and business case studies.
+              This is Novus&apos;s publication library of local-market reports and business case studies.
               Each report is written by high school and college students doing direct interviews,
               in-person fieldwork, and firsthand observation in neighborhoods across the country.
             </p>
@@ -94,7 +94,7 @@ export default function ReportsPage() {
               <p className="font-body text-v-muted">
                 For students, this is not simulated work. It is published research with real readers:
                 interview design, synthesis, writing, and analysis that can be used in applications, interviews,
-                and professional portfolios. It is one part of Volta&apos;s broader mission to advance digital and
+                and professional portfolios. It is one part of Novus&apos;s broader mission to advance digital and
                 financial equity for small businesses.
               </p>
               <p className="font-body text-v-muted mt-4">
@@ -121,7 +121,7 @@ export default function ReportsPage() {
                 href="/apply"
                 className="inline-flex items-center rounded-full bg-v-green px-5 py-2.5 font-display font-bold text-sm text-v-ink hover:bg-v-green-dark transition-colors"
               >
-                Apply at voltanyc.org/apply
+                Apply at novusnyc.org/apply
               </Link>
             </aside>
           </AnimatedSection>

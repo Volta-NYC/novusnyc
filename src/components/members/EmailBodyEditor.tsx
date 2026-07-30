@@ -112,7 +112,7 @@ const EmailBodyEditor = forwardRef<EmailBodyEditorHandle, Props>(function EmailB
             rows={18}
             spellCheck={false}
             placeholder={"<!DOCTYPE html><html>…</html>\n\nOr plain text — use {{firstName}}, {{name}}, {{link}}"}
-            className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#85CC17]/50 resize-y leading-relaxed"
+            className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#F6B78D]/50 resize-y leading-relaxed"
           />
           <span className="absolute bottom-2 right-3 text-[10px] text-white/20 font-mono pointer-events-none select-none">
             {"{{firstName}}  {{name}}  {{link}}"}

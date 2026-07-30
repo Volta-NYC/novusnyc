@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
   const teamRole = (body.teamRole ?? "").trim() || "Member";
   const sendEmail = !!body.sendAcceptanceEmail;
   const notes = (body.notes ?? "").trim();
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://novusnyc.org").trim();
 
   const [slotsData, applicationsData] = await Promise.all([
     dbRead("interviewSlots"),

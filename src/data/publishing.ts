@@ -66,15 +66,15 @@ export const progressUpdates: UpdateEntry[] = [
     id: "linkedin-7464042184758030336",
     title: "Two-Month Progress Update",
     date: "2026-05-23",
-    summary: "LinkedIn update from the Volta NYC team.",
+    summary: "LinkedIn update from the Novus NYC team.",
     highlights: [],
     linkedinUrn: "urn:li:activity:7464042184758030336",
   },
   {
     id: "linkedin-7441949940219564033",
-    title: "Apply to Volta NYC",
+    title: "Apply to Novus NYC",
     date: "2026-03-23",
-    summary: "LinkedIn update from the Volta NYC team.",
+    summary: "LinkedIn update from the Novus NYC team.",
     highlights: [],
     linkedinUrn: "urn:li:activity:7441949940219564033",
   },
@@ -83,7 +83,7 @@ export const progressUpdates: UpdateEntry[] = [
     title: "Instagram Project Update",
     date: "2026-02-21",
     summary:
-      "Instagram update from the Volta NYC feed.",
+      "Instagram update from the Novus NYC feed.",
     highlights: [
       "Instagram publication",
       "Public progress update",
@@ -93,10 +93,10 @@ export const progressUpdates: UpdateEntry[] = [
   },
   {
     id: "linkedin-7439282826857873408",
-    title: "Apply to Volta NYC",
+    title: "Apply to Novus NYC",
     date: "2026-03-16",
     summary:
-      "LinkedIn update from the Volta NYC team.",
+      "LinkedIn update from the Novus NYC team.",
     highlights: [
       "Application announcement",
       "LinkedIn publication",

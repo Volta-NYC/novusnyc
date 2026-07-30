@@ -46,7 +46,7 @@ function applyPlaceholders(input: string, meta: Record<string, string>): string 
     if (key === "firstName") {
       return (meta.firstName || meta.fullName || meta.memberName || "").split(/\s+/)[0] ?? "";
     }
-    if (key === "portalLink") return "https://voltanyc.org/members";
+    if (key === "portalLink") return "https://novusnyc.org/members";
     return meta[key] ?? "";
   });
 }
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
   const allowedFrom = Array.from(
     new Set(
-      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? "info@voltanyc.org,ethan@voltanyc.org")
+      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? "info@novusnyc.org,ethan@novusnyc.org")
         .split(",")
         .map((value) => normalizeEmail(value))
         .filter((value) => value && isValidEmail(value))
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
   // Pre-generate Supabase magic links per-recipient if {{magicLink}} is used.
   if (hasPlaceholders && /\{\{\s*magicLink\s*\}\}/.test(subject + message) && recipientMeta.size > 0) {
     const sb = getSupabaseAdmin();
-    const portalUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://voltanyc.org").trim() + "/members";
+    const portalUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://novusnyc.org").trim() + "/members";
     for (const [recipientEmail, meta] of recipientMeta) {
       try {
         const { data } = await sb.auth.admin.generateLink({

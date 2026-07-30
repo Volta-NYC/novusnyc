@@ -2,71 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ═══════════════════════════════════════════════════════════════════
-   VOLTA NYC — Design Token System
-   ───────────────────────────────────────────────────────────────────
-   All brand colors are stored as bare RGB channels (R G B) so that
-   Tailwind's opacity modifier syntax works: bg-v-green/50 resolves to
-   rgb(133 204 23 / 0.5). To update a color site-wide, change the
-   channel values here — everything that uses Tailwind v-* utilities
-   or the CSS custom properties below will update automatically.
-
-   WCAG AA contrast notes (4.5:1 required for normal text, 3:1 large):
-   • v-green (#85CC17) on white  → 2.0:1  DECORATIVE / FILL only
-   • v-green (#85CC17) on v-dark → 8.8:1  ✓ AAA
-   • v-green (#85CC17) on v-ink  → 9.4:1  ✓ AAA
-   • v-blue  (#3B74ED) on white  → 4.3:1  large text AA only
-   • v-blue  (#3B74ED) on v-dark → 7.5:1  ✓ AAA
-   • v-ink   (#0D0D0D) on white  → 19.6:1 ✓ AAA
-   • v-muted (#6B7280) on white  → 4.6:1  ✓ AA
-   • v-muted (#6B7280) on v-bg   → 4.3:1  borderline — use sparingly
-     for large/bold text; fine at 14px+ bold or 18px+ normal
-═══════════════════════════════════════════════════════════════════ */
+/* NOVUS NYC design tokens. Brand colors are bare RGB channels so Tailwind
+   opacity modifiers work: bg-v-green/50 resolves to rgb(var(--color-green) / 0.5). */
 :root {
-  /* ─── Brand: Primary Green (#85CC17) ────────────────────────────
-     Use as: button fill (with v-ink text), decorative accents,
-     active-state indicators, icon fills on dark backgrounds.
-     Do NOT use as small text on white — fails WCAG AA.           */
-  --color-green:            133 204 23;
+  --brand-peach: #F6B78D;
+  --brand-yellow: #F3E28D;
+  --brand-lavender: #BEA2BA;
+  --brand-peach-hover: #E9A77E;
+  --brand-yellow-hover: #E4D27C;
+  --brand-lavender-hover: #AB8FA7;
+  --brand-peach-soft: #FCE2D1;
+  --brand-yellow-soft: #FBF3C9;
+  --brand-lavender-soft: #E7DAE5;
+  --brand-dark: #231F24;
+  --brand-text: #2D282E;
+  --brand-muted: #6F6670;
+  --brand-background: #FFFDF9;
+  --brand-surface: #FFFFFF;
+  --brand-border: #E8DEE6;
 
-  /* Pressed / hover state for green fills */
-  --color-green-dark:       106 170 16;
+  --color-green:            246 183 141;
+  --color-green-dark:       233 167 126;
 
-  /* ─── Brand: Accent Blue (#3B74ED) ──────────────────────────────
-     Use as: link color (large/bold), CTA accents, "For Students"
-     track tinting. As normal body text on white it is borderline;
-     prefer for 16px+ bold or inside blue-tinted surfaces.        */
-  --color-blue:             59 116 237;
-
-  /* Pressed / hover state for blue fills */
-  --color-blue-dark:        43 98 217;
+  --color-blue:             190 162 186;
+  --color-blue-dark:        171 143 167;
 
   /* ─── Surfaces ───────────────────────────────────────────────── */
   /* Page / section background — warm off-white */
-  --color-bg:               247 247 242;
+  --color-bg:               255 253 249;
 
   /* Card / raised surface — pure white */
   --color-surface:          255 255 255;
 
   /* Dark section backgrounds (hero overlays, footer, CTA panels) */
-  --color-dark:             26 30 36;
+  --color-dark:             35 31 36;
 
   /* ─── Typography ─────────────────────────────────────────────── */
   /* Primary body text — near-black (19.6:1 on white, AAA)        */
-  --color-ink:              13 13 13;
+  --color-ink:              45 40 46;
 
   /* Secondary / supporting text (4.6:1 on white, AA)             */
-  --color-muted:            107 114 128;
+  --color-muted:            111 102 112;
 
   /* ─── Structural ─────────────────────────────────────────────── */
   /* Borders, dividers, subtle separators */
-  --color-border:           229 229 223;
+  --color-border:           232 222 230;
 
   /* Decorative dot-grid pattern */
-  --color-dot:              200 200 192;
+  --color-dot:              216 202 213;
 
   /* Scrollbar thumb */
-  --color-scrollbar:        209 209 204;
+  --color-scrollbar:        216 202 213;
 
   /* ─── Member Portal (Dark UI) ────────────────────────────────────
      These dark shades are only used inside .members-portal and the
@@ -149,24 +135,24 @@ main {
 /* Home hero background: watercolor wash + abstract neighborhood map lines */
 .hero-wash {
   background:
-    radial-gradient(120% 90% at 12% 16%, rgba(218, 240, 178, 0.38) 0%, rgba(218, 240, 178, 0) 55%),
-    radial-gradient(90% 80% at 84% 22%, rgba(171, 214, 114, 0.2) 0%, rgba(171, 214, 114, 0) 60%),
-    radial-gradient(75% 75% at 32% 86%, rgba(245, 247, 234, 0.9) 0%, rgba(245, 247, 234, 0) 62%),
-    linear-gradient(160deg, #f7f7f2 0%, #f2f6e6 45%, #eef5df 100%);
+    radial-gradient(120% 90% at 12% 16%, rgba(252, 226, 209, 0.58) 0%, rgba(252, 226, 209, 0) 55%),
+    radial-gradient(90% 80% at 84% 22%, rgba(231, 218, 229, 0.48) 0%, rgba(231, 218, 229, 0) 60%),
+    radial-gradient(75% 75% at 32% 86%, rgba(251, 243, 201, 0.62) 0%, rgba(251, 243, 201, 0) 62%),
+    linear-gradient(160deg, #fffdf9 0%, #fff5e8 45%, #f5edf3 100%);
 }
 
 .hero-map-lines {
   background-image:
-    linear-gradient(16deg, rgba(104, 137, 62, 0.2) 1px, transparent 1px),
-    linear-gradient(-21deg, rgba(104, 137, 62, 0.16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(104, 137, 62, 0.14) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(104, 137, 62, 0.1) 1px, transparent 1px);
+    linear-gradient(16deg, rgba(190, 162, 186, 0.24) 1px, transparent 1px),
+    linear-gradient(-21deg, rgba(246, 183, 141, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(190, 162, 186, 0.16) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(243, 226, 141, 0.18) 1px, transparent 1px);
   background-size: 120px 120px, 88px 88px, 170px 170px, 210px 210px;
   background-position: 0 0, 26px 14px, -34px 30px, 18px -22px;
   mix-blend-mode: multiply;
 }
 
-/* Home hero: skyline image + green wash + grid */
+/* Home hero: skyline image + brand wash + grid */
 .hero-photo {
   background-image: url("/hero-nyc-skyline.jpg");
   background-size: cover;
@@ -187,20 +173,20 @@ main {
 
 .hero-photo-wash {
   background:
-    linear-gradient(145deg, rgba(15, 48, 16, 0.5) 0%, rgba(22, 71, 26, 0.35) 38%, rgba(12, 38, 14, 0.55) 100%),
-    radial-gradient(120% 95% at 20% -10%, rgba(151, 201, 89, 0.34) 0%, rgba(151, 201, 89, 0) 62%);
+    linear-gradient(145deg, rgba(35, 31, 36, 0.58) 0%, rgba(72, 50, 55, 0.42) 38%, rgba(35, 31, 36, 0.6) 100%),
+    radial-gradient(120% 95% at 20% -10%, rgba(246, 183, 141, 0.28) 0%, rgba(246, 183, 141, 0) 62%);
 }
 
 .stats-photo-wash {
   background:
-    linear-gradient(145deg, rgba(5, 14, 8, 0.65) 0%, rgba(8, 20, 11, 0.52) 40%, rgba(8, 16, 10, 0.6) 100%),
-    radial-gradient(120% 100% at 24% -8%, rgba(133, 204, 23, 0.24) 0%, rgba(133, 204, 23, 0) 66%);
+    linear-gradient(145deg, rgba(35, 31, 36, 0.68) 0%, rgba(49, 39, 48, 0.55) 40%, rgba(35, 31, 36, 0.62) 100%),
+    radial-gradient(120% 100% at 24% -8%, rgba(243, 226, 141, 0.22) 0%, rgba(243, 226, 141, 0) 66%);
 }
 
 .home-shared-wash {
   background:
-    linear-gradient(145deg, rgba(10, 26, 15, 0.58) 0%, rgba(14, 40, 20, 0.42) 38%, rgba(8, 24, 12, 0.52) 100%),
-    radial-gradient(120% 100% at 24% -8%, rgba(133, 204, 23, 0.22) 0%, rgba(133, 204, 23, 0) 66%);
+    linear-gradient(145deg, rgba(35, 31, 36, 0.62) 0%, rgba(66, 45, 52, 0.46) 38%, rgba(35, 31, 36, 0.56) 100%),
+    radial-gradient(120% 100% at 24% -8%, rgba(246, 183, 141, 0.22) 0%, rgba(246, 183, 141, 0) 66%);
 }
 
 .hero-vignette {
@@ -233,8 +219,8 @@ main {
 
 .partner-logo-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(133, 204, 23, 0.5);
-  box-shadow: 0 14px 34px rgba(23, 38, 12, 0.1);
+  border-color: rgba(246, 183, 141, 0.5);
+  box-shadow: 0 14px 34px rgba(35, 31, 36, 0.1);
 }
 
 .partner-logo-image {
@@ -372,7 +358,7 @@ main {
 }
 
 .members-checkbox:focus-visible {
-  outline: 2px solid rgba(133, 204, 23, 0.55);
+  outline: 2px solid rgba(246, 183, 141, 0.55);
   outline-offset: 1px;
 }
 
@@ -394,7 +380,7 @@ main {
 }
 
 .members-copy-btn:hover {
-  color: rgba(133, 204, 23, 0.95);
+  color: rgba(246, 183, 141, 0.95);
 }
 
 /* Members portal UI standardization */
@@ -720,7 +706,7 @@ main {
 }
 
 /* Form inputs */
-.volta-input {
+.novus-input {
   width: 100%;
   background: white;
   border: 1.5px solid rgb(var(--color-border));
@@ -732,10 +718,10 @@ main {
   outline: none;
   transition: border-color 0.15s;
 }
-.volta-input:focus {
+.novus-input:focus {
   border-color: rgb(var(--color-green));
 }
-.volta-input::placeholder {
+.novus-input::placeholder {
   color: #9CA3AF;
 }
 
@@ -783,7 +769,7 @@ details[open] > .accordion-body {
   z-index: 9999;
   padding: 0.75rem 1.25rem;
   background: #0D0F14;
-  color: #85CC17;
+  color: #F6B78D;
   font-weight: 700;
   border-radius: 0 0 0.5rem 0.5rem;
   text-decoration: none;
@@ -792,7 +778,7 @@ details[open] > .accordion-body {
 }
 .skip-to-content:focus-visible {
   top: 0;
-  outline: 2px solid #85CC17;
+  outline: 2px solid #F6B78D;
   outline-offset: 2px;
 }
 
@@ -807,7 +793,7 @@ summary:focus-visible {
 }
 
 /* Keep form element focus rings consistent */
-.volta-input:focus-visible {
+.novus-input:focus-visible {
   outline: 2px solid rgb(var(--color-green));
   outline-offset: 0;
   border-color: rgb(var(--color-green));
@@ -937,12 +923,12 @@ summary:focus-visible {
 .prose em     { font-style: italic; }
 
 .prose a {
-  color: #5C9911;
+  color: #8B5E48;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.prose a:hover { color: #85CC17; }
+.prose a:hover { color: #F6B78D; }
 
 .prose blockquote {
   border-left: 3px solid rgba(0, 0, 0, 0.15);

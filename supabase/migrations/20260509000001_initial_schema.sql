@@ -1,5 +1,5 @@
 -- =============================================================================
--- Volta NYC – initial Supabase schema
+-- Novus NYC – initial Supabase schema
 -- Migrated from Firebase Realtime Database.
 -- Firebase push-generated IDs are preserved as text primary keys.
 -- Nested / variable-shape structures are kept as JSONB.

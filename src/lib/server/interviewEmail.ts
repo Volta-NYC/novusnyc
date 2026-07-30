@@ -49,33 +49,33 @@ function buildIcs(input: BookingEmailInput): string {
   const end = new Date(start.getTime() + input.durationMinutes * 60_000);
   const descParts: string[] = [];
   if (input.zoomLink) descParts.push(`Join Zoom: ${input.zoomLink}`);
-  const organizerName = (input.organizerName || "Volta NYC").trim();
+  const organizerName = (input.organizerName || "Novus NYC").trim();
   const organizerEmail = sanitizeEmailAddress(input.organizerEmail || getDefaultFromAddress() || "");
   descParts.push(`Interviewer: ${organizerName}`);
-  descParts.push("Organized by Volta NYC");
+  descParts.push("Organized by Novus NYC");
 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Volta NYC//Interview Booking//EN",
+    "PRODID:-//Novus NYC//Interview Booking//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:REQUEST",
     "BEGIN:VEVENT",
-    `UID:volta-${input.slotId}@voltanyc.org`,
+    `UID:novus-${input.slotId}@novusnyc.org`,
     `DTSTAMP:${utcStamp(new Date())}`,
     `DTSTART:${utcStamp(start)}`,
     `DTEND:${utcStamp(end)}`,
-    `SUMMARY:${escapeIcs("Volta interview")}`,
+    `SUMMARY:${escapeIcs("Novus interview")}`,
     `DESCRIPTION:${escapeIcs(descParts.join("\n"))}`,
     organizerEmail
       ? `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:${escapeIcs(organizerEmail)}`
-      : `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:ethan@voltanyc.org`,
+      : `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:ethan@novusnyc.org`,
     input.location ? `LOCATION:${escapeIcs(input.location)}` : "",
     input.zoomLink ? `URL:${escapeIcs(input.zoomLink)}` : "",
     "BEGIN:VALARM",
     "TRIGGER:-PT30M",
     "ACTION:DISPLAY",
-    `DESCRIPTION:${escapeIcs("Volta interview starts in 30 minutes.")}`,
+    `DESCRIPTION:${escapeIcs("Novus interview starts in 30 minutes.")}`,
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
@@ -89,11 +89,11 @@ function buildGoogleCalendarUrl(input: BookingEmailInput): string {
   const end = new Date(start.getTime() + input.durationMinutes * 60_000);
   const dates = `${utcStamp(start)}/${utcStamp(end)}`;
   const details = input.zoomLink
-    ? `Join Zoom: ${input.zoomLink}\n\nOrganized by Volta NYC`
-    : "Organized by Volta NYC";
+    ? `Join Zoom: ${input.zoomLink}\n\nOrganized by Novus NYC`
+    : "Organized by Novus NYC";
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: "Volta interview",
+    text: "Novus interview",
     dates,
     details,
     location: input.location ?? "",
@@ -158,10 +158,10 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
     googleCalendarUrl,
   });
 
-  const subject = rendered?.subject ?? "Volta interview Confirmation";
+  const subject = rendered?.subject ?? "Novus interview Confirmation";
   const html    = rendered?.html    ?? `
       <p>Hi ${input.bookerName || "there"},</p>
-      <p>Your Volta interview is confirmed.</p>
+      <p>Your Novus interview is confirmed.</p>
       <p>
         <strong>Time:</strong> ${timeText}<br/>
         <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
@@ -170,7 +170,7 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
         <a href="${googleCalendarUrl}">Add to Google Calendar</a><br/>
         A calendar invite (<code>.ics</code>) is attached to this email.
       </p>
-      <p>If you need to reschedule, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
+      <p>If you need to reschedule, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
       <p>Best,<br/>Ethan Zhang</p>
     `;
 
@@ -180,14 +180,14 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
     text: [
       `Hi ${input.bookerName || "there"},`,
       "",
-      "Your Volta interview is confirmed.",
+      "Your Novus interview is confirmed.",
       `Time: ${timeText}`,
       input.zoomLink ? `Zoom: ${input.zoomLink}` : "Zoom: (will be provided separately)",
       "",
       `Add to Google Calendar: ${googleCalendarUrl}`,
       "A calendar invite (.ics) is attached to this email.",
       "",
-      "If you need to reschedule, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.",
+      "If you need to reschedule, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.",
       "",
       "We look forward to speaking with you.",
       "",
@@ -196,7 +196,7 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
     ].join("\n"),
     html,
     ics: {
-      filename: "volta-nyc-interview.ics",
+      filename: "novus-nyc-interview.ics",
       content: ics,
     },
   });
@@ -218,10 +218,10 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
     googleCalendarUrl,
   });
 
-  const subject = rendered?.subject ?? "Volta interview Rescheduled";
+  const subject = rendered?.subject ?? "Novus interview Rescheduled";
   const html    = rendered?.html    ?? `
       <p>Hi ${input.bookerName || "there"},</p>
-      <p>Your <strong>Volta interview</strong> has been rescheduled.</p>
+      <p>Your <strong>Novus interview</strong> has been rescheduled.</p>
       <p>
         <strong>Previous time:</strong> ${oldTimeText}<br/>
         <strong>New time:</strong> ${newTimeText}<br/>
@@ -231,7 +231,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
         <a href="${googleCalendarUrl}">Open in Google Calendar</a><br/>
         A fresh calendar invite (<code>.ics</code>) is attached.
       </p>
-      <p>If you need to reschedule again, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
+      <p>If you need to reschedule again, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
       <p>Best,<br/>Ethan Zhang</p>
     `;
 
@@ -241,7 +241,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
     text: [
       `Hi ${input.bookerName || "there"},`,
       "",
-      "Your Volta interview has been rescheduled.",
+      "Your Novus interview has been rescheduled.",
       `Previous time: ${oldTimeText}`,
       `New time: ${newTimeText}`,
       input.zoomLink ? `Zoom: ${input.zoomLink}` : "Zoom: (will be provided separately)",
@@ -249,7 +249,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
       `Google Calendar: ${googleCalendarUrl}`,
       "A fresh calendar invite (.ics) is attached.",
       "",
-      "If you need to reschedule again, please do so through the booking portal at voltanyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.",
+      "If you need to reschedule again, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.",
       "",
       "We look forward to speaking with you.",
       "",
@@ -258,7 +258,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
     ].join("\n"),
     html,
     ics: {
-      filename: "volta-nyc-interview-rescheduled.ics",
+      filename: "novus-nyc-interview-rescheduled.ics",
       content: ics,
     },
   });
@@ -296,7 +296,7 @@ export async function sendInterviewerBookingNotificationEmail(input: {
     zoomLink:        input.zoomLink || "will be provided separately",
   });
 
-  const subject = rendered?.subject ?? "New Volta interview Scheduled";
+  const subject = rendered?.subject ?? "New Novus interview Scheduled";
   const html    = rendered?.html    ?? `
       <p>Hi ${input.interviewerName || "Interviewer"},</p>
       <p>A new interview has been scheduled for one of your available slots.</p>
@@ -353,7 +353,7 @@ export async function sendInterviewerRescheduledNotificationEmail(input: {
     zoomLink:        input.zoomLink || "will be provided separately",
   });
 
-  const subject = rendered?.subject ?? "Volta interview Rescheduled to Your Slot";
+  const subject = rendered?.subject ?? "Novus interview Rescheduled to Your Slot";
   const html    = rendered?.html    ?? `
       <p>Hi ${input.interviewerName || "Interviewer"},</p>
       <p>An interview has been rescheduled to one of your available slots.</p>
@@ -432,10 +432,10 @@ export async function sendInterviewInviteReminderEmail(input: {
     bookingLink:   link,
   });
 
-  const subject = rendered?.subject ?? "Reminder: book your Volta interview";
+  const subject = rendered?.subject ?? "Reminder: book your Novus interview";
   const html    = rendered?.html    ?? `
       <p>Hi ${input.applicantName || "there"},</p>
-      <p>Quick reminder to book your Volta interview slot:</p>
+      <p>Quick reminder to book your Novus interview slot:</p>
       <p><a href="${link}">${link}</a></p>
       <p>Please use the same name and email you used in your application.</p>
       <p>Best,<br/>Ethan Zhang</p>
@@ -447,7 +447,7 @@ export async function sendInterviewInviteReminderEmail(input: {
     text: [
       `Hi ${input.applicantName || "there"},`,
       "",
-      "Quick reminder to book your Volta interview slot:",
+      "Quick reminder to book your Novus interview slot:",
       link,
       "",
       "Please use the same name and email you used in your application.",

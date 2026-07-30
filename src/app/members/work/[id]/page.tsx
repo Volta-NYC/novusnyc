@@ -111,7 +111,7 @@ export default function AssignmentDetailPage() {
       <MembersLayout>
         <div className="max-w-3xl mx-auto py-12 text-center">
           <p className="text-sm text-black/55">Assignment not found.</p>
-          <Link href="/members/work/catalog" className="text-xs text-[#5C9911] hover:text-[#85CC17] mt-3 inline-block">
+          <Link href="/members/work/catalog" className="text-xs text-[#8B5E48] hover:text-[#F6B78D] mt-3 inline-block">
             ← Back to catalog
           </Link>
         </div>
@@ -278,7 +278,7 @@ export default function AssignmentDetailPage() {
       <div className="max-w-3xl mx-auto space-y-5">
 
         {/* Back link */}
-        <Link href="/members/work/catalog" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+        <Link href="/members/work/catalog" className="text-xs text-[#8B5E48] hover:text-[#F6B78D] font-medium">
           ← Back to available work
         </Link>
 
@@ -303,14 +303,14 @@ export default function AssignmentDetailPage() {
               {business ? (
                 <span>{business.name}</span>
               ) : (
-                <span>Volta</span>
+                <span>Novus</span>
               )}
               {business?.neighborhood && <span className="text-black/40"> · {business.neighborhood}</span>}
             </p>
             <div className="flex flex-col items-end gap-0.5">
               <div className="flex items-baseline gap-1">
-                <span className="font-body font-bold text-xl text-[#5C9911] tabular-nums leading-none">{assignment.credits}</span>
-                <span className="text-sm text-[#5C9911]/80 font-medium">{isRecurring ? "credits/check-in" : assignment.credits === 1 ? "credit" : "credits"}</span>
+                <span className="font-body font-bold text-xl text-[#8B5E48] tabular-nums leading-none">{assignment.credits}</span>
+                <span className="text-sm text-[#8B5E48]/80 font-medium">{isRecurring ? "credits/check-in" : assignment.credits === 1 ? "credit" : "credits"}</span>
               </div>
               {isRecurring && (
                 <span className="text-[10px] text-amber-700 font-medium">↻ Recurring · every {assignment.checkinIntervalDays ?? 7} days</span>
@@ -351,7 +351,7 @@ export default function AssignmentDetailPage() {
         {assignment.applicationRequired && !myClaim && (
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
             <p className="font-semibold mb-1">Pre-approval required</p>
-            <p>This assignment requires you to discuss it with a senior associate before signing up. Please email <a href="mailto:info@voltanyc.org" className="underline font-medium">info@voltanyc.org</a> first, then claim it once you&apos;ve been approved.</p>
+            <p>This assignment requires you to discuss it with a senior associate before signing up. Please email <a href="mailto:info@novusnyc.org" className="underline font-medium">info@novusnyc.org</a> first, then claim it once you&apos;ve been approved.</p>
           </div>
         )}
 
@@ -370,8 +370,8 @@ export default function AssignmentDetailPage() {
 
         {/* Admin updates */}
         {assignmentUpdates.length > 0 && (
-          <section className="rounded-2xl border border-[#85CC17]/20 bg-[#85CC17]/3 shadow-sm p-5">
-            <h2 className="text-[10px] uppercase tracking-wider text-[#5C9911]/70 font-semibold mb-3">Updates from your team</h2>
+          <section className="rounded-2xl border border-[#F6B78D]/20 bg-[#F6B78D]/3 shadow-sm p-5">
+            <h2 className="text-[10px] uppercase tracking-wider text-[#8B5E48]/70 font-semibold mb-3">Updates from your team</h2>
             <div className="space-y-3">
               {assignmentUpdates.map((u) => (
                 <div key={u.id} className="rounded-xl border border-black/8 bg-white px-4 py-3">
@@ -470,7 +470,7 @@ export default function AssignmentDetailPage() {
               <ul className="space-y-1.5">
                 {activeClaims.map((c) => (
                   <li key={c.id} className="flex items-center justify-between text-sm">
-                    <span className={`${c.memberId === me?.id ? "text-[#5C9911] font-semibold" : "text-black/85"}`}>
+                    <span className={`${c.memberId === me?.id ? "text-[#8B5E48] font-semibold" : "text-black/85"}`}>
                       {c.memberName}{c.memberId === me?.id && " (you)"}
                     </span>
                     <span className="text-[10px] uppercase tracking-wider text-black/45">{c.status.replace("_", " ")}</span>
@@ -483,7 +483,7 @@ export default function AssignmentDetailPage() {
 
         {/* My claim card */}
         {myClaim && (
-          <section className="rounded-2xl border border-[#85CC17]/30 bg-[#85CC17]/5 shadow-sm p-5">
+          <section className="rounded-2xl border border-[#F6B78D]/30 bg-[#F6B78D]/5 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <h2 className="font-display font-bold text-black text-base">Your assignment</h2>
               <span className="inline-flex rounded-full border border-black/12 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-black/65">
@@ -502,7 +502,7 @@ export default function AssignmentDetailPage() {
                   href={myClaim.deliverableUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#5C9911] hover:text-[#85CC17] underline-offset-2 hover:underline break-all"
+                  className="text-[#8B5E48] hover:text-[#F6B78D] underline-offset-2 hover:underline break-all"
                 >
                   {myClaim.deliverableUrl}
                 </a>
@@ -518,10 +518,10 @@ export default function AssignmentDetailPage() {
               </div>
             )}
             {isRecurring && (myClaim.checkinsApproved ?? 0) > 0 && (
-              <div className="rounded-lg border border-[#85CC17]/25 bg-[#85CC17]/5 p-3 text-sm text-[#3A6B07] mb-3">
+              <div className="rounded-lg border border-[#F6B78D]/25 bg-[#F6B78D]/5 p-3 text-sm text-[#3A6B07] mb-3">
                 <div className="flex items-center justify-between">
                   <span><strong>{myClaim.checkinsApproved ?? 0}</strong> check-in{(myClaim.checkinsApproved ?? 0) !== 1 ? "s" : ""} approved</span>
-                  <span className="font-bold text-[#5C9911]">+{myClaim.totalCreditsEarned ?? 0} credits earned</span>
+                  <span className="font-bold text-[#8B5E48]">+{myClaim.totalCreditsEarned ?? 0} credits earned</span>
                 </div>
               </div>
             )}
@@ -650,12 +650,12 @@ export default function AssignmentDetailPage() {
                     urlEntered && !urlValid
                       ? "border-red-300 focus:border-red-400"
                       : urlEntered && urlValid
-                        ? "border-[#85CC17]/55 focus:border-[#85CC17]/80"
-                        : "border-black/15 focus:border-[#85CC17]/55"
+                        ? "border-[#F6B78D]/55 focus:border-[#F6B78D]/80"
+                        : "border-black/15 focus:border-[#F6B78D]/55"
                   }`}
                 />
                 {urlEntered && urlValid && (
-                  <p className="text-[11px] text-[#5C9911] mt-1 flex items-center gap-1">
+                  <p className="text-[11px] text-[#8B5E48] mt-1 flex items-center gap-1">
                     <span>↗</span>
                     <a href={deliverableUrl.trim()} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 truncate max-w-[360px] inline-block align-bottom">
                       {deliverableUrl.trim()}
@@ -685,7 +685,7 @@ export default function AssignmentDetailPage() {
                       ? "Anything you'd like to note about what you did."
                       : "Context for the reviewer — what you built, any caveats, or questions."
                   }
-                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#85CC17]/55 resize-none"
+                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#F6B78D]/55 resize-none"
                 />
               </div>
 

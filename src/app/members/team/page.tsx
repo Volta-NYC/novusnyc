@@ -55,7 +55,7 @@ function getTrackAvatarClasses(track: TrackKey): { bgClass: string; textClass: s
     case "Marketing": return { bgClass: "bg-lime-100",         textClass: "text-lime-800" };
     case "Finance":   return { bgClass: "bg-amber-100",       textClass: "text-amber-800" };
     case "Other":     return { bgClass: "bg-gray-100",        textClass: "text-gray-700" };
-    default:          return { bgClass: "bg-[#85CC17]/15",    textClass: "text-[#85CC17]" };
+    default:          return { bgClass: "bg-[#F6B78D]/15",    textClass: "text-[#F6B78D]" };
   }
 }
 
@@ -171,7 +171,7 @@ function roleSortKey(value: unknown): number {
 // accepted with. Compared loosely against name + email so casing/spacing in
 // stored data doesn't cause a miss.
 const BOARD_MEMBERS: Array<{ name: string; emails: string[] }> = [
-  { name: "Ethan Zhang", emails: ["ethan@voltanyc.org"] },
+  { name: "Ethan Zhang", emails: ["ethan@novusnyc.org"] },
   { name: "Andrew Chin", emails: [] },
   { name: "Tahmid Islam", emails: [] },
   { name: "Ellie Mak", emails: [] },
@@ -1250,7 +1250,7 @@ export default function TeamPage() {
                                       setOpenRolePopoverId(member.id);
                                     }
                                   }}
-                                  className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#85CC17]/45 hover:bg-[#85CC17]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
+                                  className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#F6B78D]/45 hover:bg-[#F6B78D]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
                                   title="Click to change role"
                                 >
                                   {displayRoleValue(member.role)}
@@ -1267,7 +1267,7 @@ export default function TeamPage() {
                                 const altEmailKey = normalizeKey(member.alternateEmail ?? "");
                                 const resumeUrl = resumeUrlByEmail.get(emailKey) ?? resumeUrlByEmail.get(altEmailKey);
                                 return resumeUrl ? (
-                                  <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline whitespace-nowrap">Resume</a>
+                                  <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="text-[#F6B78D]/80 hover:text-[#F6B78D] underline whitespace-nowrap">Resume</a>
                                 ) : (
                                   <span className="text-white/30">—</span>
                                 );
@@ -1494,14 +1494,14 @@ export default function TeamPage() {
                       value={adjPoints}
                       onChange={(e) => setAdjPoints(e.target.value)}
                       placeholder="±pts"
-                      className="w-20 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                      className="w-20 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
                     />
                     <input
                       type="text"
                       value={adjReason}
                       onChange={(e) => setAdjReason(e.target.value)}
                       placeholder="Reason…"
-                      className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                      className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
                     />
                     <Btn
                       size="sm"
@@ -1680,9 +1680,9 @@ export default function TeamPage() {
                   key={roleOption}
                   type="button"
                   onClick={() => void handleQuickRoleChange(member, roleOption)}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#F6B78D]" : "text-white/70"}`}
                 >
-                  <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
+                  <span className="w-3 flex-shrink-0 text-[#F6B78D]">{isActive ? "✓" : ""}</span>
                   {roleOption}
                 </button>
               );

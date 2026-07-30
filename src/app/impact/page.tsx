@@ -10,11 +10,11 @@ import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 
 export const metadata: Metadata = {
-  title: "Impact | Volta NYC",
+  title: "Impact | Novus NYC",
   description:
-    "Volta NYC impact report: businesses served across NYC, student contributors from high schools and colleges nationwide. Outcomes in digital access, financial access, and marketing reach.",
+    "Novus NYC impact report: businesses served across NYC, student contributors from high schools and colleges nationwide. Outcomes in digital access, financial access, and marketing reach.",
   openGraph: {
-    title: "Impact | Volta NYC",
+    title: "Impact | Novus NYC",
     description: "Measurable outcomes. Real communities.",
     images: ["/api/og"],
   },
@@ -146,7 +146,7 @@ export default async function Impact() {
               <span className="text-v-green">Real communities.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed">
-              Volta NYC is not just a student organization — it&apos;s a proof of concept that students can
+              Novus NYC is not just a student organization — it&apos;s a proof of concept that students can
               deliver professional-grade work to under-resourced businesses at scale. This page documents that work.
             </p>
           </AnimatedSection>
@@ -158,7 +158,7 @@ export default async function Impact() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">By the numbers</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Volta NYC — Spring 2026</h2>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Novus NYC — Spring 2026</h2>
           </AnimatedSection>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {outcomes.map((o, i) => (

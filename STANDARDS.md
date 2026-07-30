@@ -1,4 +1,4 @@
-# Volta NYC — Codebase Standards
+# Novus NYC — Codebase Standards
 
 Permanent source of truth for design, component, backend, auth, and workflow patterns. Read before writing code. Supersedes ad-hoc comments and one-off decisions.
 
@@ -14,8 +14,8 @@ All colors live as CSS custom properties in `src/app/globals.css` using bare RGB
 
 | Token | Hex | Tailwind class | Use |
 |---|---|---|---|
-| `--color-green` | `#85CC17` | `v-green` | Primary brand; fills, accents, active states |
-| `--color-green-dark` | `#72b314` | `v-green-dark` | Green hover/pressed state |
+| `--color-green` | `#F6B78D` | `v-green` | Primary brand; fills, accents, active states |
+| `--color-green-dark` | `#E9A77E` | `v-green-dark` | Green hover/pressed state |
 | `--color-blue` | `#3B74ED` | `v-blue` | Accent blue, links |
 | `--color-blue-dark` | `#2B62D9` | `v-blue-dark` | Blue hover |
 | `--color-bg` | `#F7F7F2` | `v-bg` | Page background (warm off-white) |
@@ -39,7 +39,7 @@ Page background is `bg-[#0F1014]`. The `members-portal-light` class (for `authRo
 
 #### Portal Green
 
-Use `#85CC17` (via `bg-[#85CC17]` / `text-[#85CC17]`) for: primary buttons, focus rings, active nav indicators, accent icons. Text on green backgrounds: `text-[#0D0D0D]`.
+Use `#F6B78D` (via `bg-[#F6B78D]` / `text-[#F6B78D]`) for: primary buttons, focus rings, active nav indicators, accent icons. Text on green backgrounds: `text-[#0D0D0D]`.
 
 ### Typography
 
@@ -93,7 +93,7 @@ Always import from this file for portal UI. Never create raw HTML elements in pa
 - Never use raw `<button>` in portal pages — always use `Btn`.
 - Never use raw `<input type="text/email/number">` — use `Input`.
 - Never use raw `<select>` — use `Select`.
-- `Btn variant="primary"` replaces any button that was: `bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]`.
+- `Btn variant="primary"` replaces any button that was: `bg-[#F6B78D] text-[#0D0D0D] hover:bg-[#E9A77E]`.
 - Never define a local `Loading` / spinner component in a page — import `Spinner` from `ui.tsx`.
 - Never define a local `Toggle` — import from `ui.tsx`.
 
@@ -243,7 +243,7 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 ### Two UIs, One Repo
 
 - **Public site** (`/`, `/showcase`, `/apply`, etc.): light theme, `v-*` Tailwind tokens, `font-display` / `font-body`.
-- **Members portal** (`/members/*`): dark theme (`#0F1014` bg), `#85CC17` as primary action, `font-display` / `font-body`.
+- **Members portal** (`/members/*`): dark theme (`#0F1014` bg), `#F6B78D` as primary action, `font-display` / `font-body`.
 - `members-portal` CSS class on the root element triggers portal-specific global styles (`.members-portal *` selectors in `globals.css`).
 
 ### State Management
@@ -281,7 +281,7 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 ### Deployment
 
 - **Platform:** Vercel — auto-deploys from `main`
-- **Domain:** `voltanyc.org`
+- **Domain:** `novusnyc.org`
 - **Image CDN:** Supabase Storage → Next.js `<Image>` (AVIF/WebP)
 - **Cache busting:** `POST /api/members/admin/revalidate` after DB changes that affect public pages
 - **Env secrets:** `SUPABASE_SERVICE_ROLE_KEY` is server-only — never expose to client

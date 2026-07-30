@@ -58,8 +58,8 @@ export default function SectionTabs({
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
                 active
                   ? lightTheme
-                    ? "bg-[#85CC17]/15 text-[#5C9911] border border-[#85CC17]/30"
-                    : "bg-[#85CC17]/15 text-[#9BE22B] border border-[#85CC17]/30"
+                    ? "bg-[#F6B78D]/15 text-[#8B5E48] border border-[#F6B78D]/30"
+                    : "bg-[#F6B78D]/15 text-[#F3E28D] border border-[#F6B78D]/30"
                   : lightTheme
                     ? "text-black/55 hover:text-black/85 hover:bg-black/5 border border-transparent"
                     : "text-white/55 hover:text-white/85 hover:bg-white/5 border border-transparent"

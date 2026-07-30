@@ -16,7 +16,7 @@ export default function MembersRootLayout({ children }: { children: ReactNode })
       */}
       <script
         dangerouslySetInnerHTML={{
-          __html: `(function(){try{var t=localStorage.getItem('volta-portal-theme');document.body.style.backgroundColor=t==='light'?'#F5F6F8':'#0D0F14';}catch(e){}})();`,
+          __html: `(function(){try{var t=localStorage.getItem('novus-portal-theme');document.body.style.backgroundColor=t==='light'?'#F5F6F8':'#0D0F14';}catch(e){}})();`,
         }}
       />
       {children}

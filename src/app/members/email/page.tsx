@@ -34,8 +34,8 @@ import { useAuth } from "@/lib/members/authContext";
 import { gradeToClassOf } from "@/lib/grades";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
-  { value: "info@voltanyc.org", label: "info@voltanyc.org" },
-  { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
+  { value: "info@novusnyc.org", label: "info@novusnyc.org" },
+  { value: "ethan@novusnyc.org", label: "ethan@novusnyc.org" },
 ];
 
 // System email templates seeded on first admin visit. Keys here match the
@@ -118,7 +118,7 @@ const SYSTEM_TEMPLATE_SEEDS: Array<{
     label: "Assignment update",
     description: "Sent to active claimants when an admin posts an update on an assignment.",
     subject: "Update on {{assignmentTitle}}",
-    body: "<p>Hi {{memberName}},</p><p>Your team posted an update on the assignment <strong>{{assignmentTitle}}</strong>{{businessNamePart}}.</p><div style=\"margin:16px 0;padding:14px 18px;border-left:3px solid #85CC17;background:#f9fdf5;color:#1a1a1a;border-radius:0 6px 6px 0;font-size:14px;line-height:1.6;\">{{messageFmt}}</div><p><a href=\"{{portalLink}}\" style=\"color:#5c9911;font-weight:600;\">View in portal →</a></p>",
+    body: "<p>Hi {{memberName}},</p><p>Your team posted an update on the assignment <strong>{{assignmentTitle}}</strong>{{businessNamePart}}.</p><div style=\"margin:16px 0;padding:14px 18px;border-left:3px solid #F6B78D;background:#f9fdf5;color:#1a1a1a;border-radius:0 6px 6px 0;font-size:14px;line-height:1.6;\">{{messageFmt}}</div><p><a href=\"{{portalLink}}\" style=\"color:#5c9911;font-weight:600;\">View in portal →</a></p>",
     variables: ["memberName", "assignmentTitle", "message", "messageFmt", "businessName", "businessNamePart", "portalLink"],
   },
   {
@@ -216,7 +216,7 @@ function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
     case "Other":
       return { bg: "#F3F4F6", text: "#374151" };
     default:
-      return { bg: "rgba(133,204,23,0.15)", text: "#85CC17" };
+      return { bg: "rgba(246,183,141,0.15)", text: "#F6B78D" };
   }
 }
 
@@ -309,7 +309,7 @@ export default function MemberEmailPage() {
   const [creditClaims, setCreditClaims] = useState<AssignmentClaim[]>([]);
   const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
-  const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
+  const [fromAddress, setFromAddress] = useState<string>("info@novusnyc.org");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [lastClickedRecipientId, setLastClickedRecipientId] = useState<string | null>(null);
   const [deliveryModeById, setDeliveryModeById] = useState<Record<string, DeliveryMode>>({});
@@ -829,7 +829,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                     const indicator = getMemberIndicator(member);
                     const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
                     return (
-                      <tr key={`selected-${member.id}`} className="hover:bg-white/5 bg-[#85CC17]/6">
+                      <tr key={`selected-${member.id}`} className="hover:bg-white/5 bg-[#F6B78D]/6">
                         <td className="px-3 py-2">
                           <input
                             type="checkbox"
@@ -862,7 +862,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                                 key={m}
                                 type="button"
                                 onClick={() => setRecipientMode(member.id, m)}
-                                className={`px-2 py-1 uppercase transition-colors ${mode === m ? "bg-[#85CC17]/20 text-[#9BE22B]" : "text-white/40 hover:text-white/70 hover:bg-white/5"}`}
+                                className={`px-2 py-1 uppercase transition-colors ${mode === m ? "bg-[#F6B78D]/20 text-[#F3E28D]" : "text-white/40 hover:text-white/70 hover:bg-white/5"}`}
                               >
                                 {m}
                               </button>
@@ -890,7 +890,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder="Search members by name, school, or track…"
-                className="w-full h-12 rounded-lg border border-white/10 bg-[#0F1014] pl-11 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#85CC17]/45"
+                className="w-full h-12 rounded-lg border border-white/10 bg-[#0F1014] pl-11 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#F6B78D]/45"
               />
             </div>
 
@@ -904,7 +904,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                 <select
                   value={defaultNewRecipientMode}
                   onChange={(e) => setDefaultNewRecipientMode((e.target.value as DeliveryMode) || "to")}
-                  className="h-8 rounded-lg border border-white/10 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                  className="h-8 rounded-lg border border-white/10 bg-[#0F1014] px-2.5 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
                 >
                   <option value="to">To</option>
                   <option value="cc">CC</option>
@@ -932,7 +932,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                           <select
                             value={rule.col}
                             onChange={(e) => updateSortRule(idx, "col", Number(e.target.value))}
-                            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45"
+                            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
                           >
                             {EMAIL_SORT_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>{option.label}</option>
@@ -941,7 +941,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                           <select
                             value={rule.dir}
                             onChange={(e) => updateSortRule(idx, "dir", e.target.value)}
-                            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#85CC17]/45 w-[72px]"
+                            className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45 w-[72px]"
                           >
                             <option value="asc">A→Z</option>
                             <option value="desc">Z→A</option>
@@ -960,7 +960,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                       ))}
                       <div className="mt-2 flex items-center justify-between">
                         {sortRules.length < EMAIL_SORT_OPTIONS.length ? (
-                          <button onClick={addSortRule} className="text-[10px] text-[#85CC17]/75 hover:text-[#85CC17] transition-colors">
+                          <button onClick={addSortRule} className="text-[10px] text-[#F6B78D]/75 hover:text-[#F6B78D] transition-colors">
                             + Add sort level
                           </button>
                         ) : <span />}
@@ -997,7 +997,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                     const track = getMemberTrack(member);
                     const avatar = getTrackAvatarStyles(track);
                     return (
-                      <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#85CC17]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
+                      <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#F6B78D]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
                         <td className="px-3 py-2">
                           <input
                             type="checkbox"
@@ -1081,7 +1081,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                     onClick={() => loadTemplate(t)}
                     className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                       selected
-                        ? "border-[#85CC17]/55 bg-[#85CC17]/10 text-[#9BE22B]"
+                        ? "border-[#F6B78D]/55 bg-[#F6B78D]/10 text-[#F3E28D]"
                         : "border-white/15 bg-[#11141A] text-white/75 hover:border-white/35"
                     }`}
                     title={t.description || (isSystem ? "System template" : "Custom template")}
@@ -1118,7 +1118,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                 key={placeholder}
                 type="button"
                 onClick={() => insertPlaceholder(placeholder)}
-                className="rounded-full border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-white/65 hover:border-[#85CC17]/35 hover:text-white transition-colors"
+                className="rounded-full border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-white/65 hover:border-[#F6B78D]/35 hover:text-white transition-colors"
               >
                 {placeholder}
               </button>

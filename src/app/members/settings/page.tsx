@@ -79,7 +79,7 @@ export default function SettingsPage() {
             <div>
               <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Display Name</label>
               <input
-                className="w-full bg-white border border-black/12 rounded-lg px-3 py-2.5 text-sm text-black/85 placeholder-black/30 focus:outline-none focus:border-[#85CC17]/60 transition-colors"
+                className="w-full bg-white border border-black/12 rounded-lg px-3 py-2.5 text-sm text-black/85 placeholder-black/30 focus:outline-none focus:border-[#F6B78D]/60 transition-colors"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Your full name"
@@ -131,7 +131,7 @@ export default function SettingsPage() {
             )}
 
             {saved && (
-              <p className="text-sm text-[#5C9911] bg-[#85CC17]/8 border border-[#85CC17]/25 rounded-xl px-4 py-2.5">
+              <p className="text-sm text-[#8B5E48] bg-[#F6B78D]/8 border border-[#F6B78D]/25 rounded-xl px-4 py-2.5">
                 Saved successfully.
               </p>
             )}

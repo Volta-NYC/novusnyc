@@ -3,11 +3,11 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { businessGuides } from "@/data/publishing";
 
 export const metadata: Metadata = {
-  title: "Guides for Businesses | Volta NYC",
+  title: "Guides for Businesses | Novus NYC",
   description:
     "Practical guides for business owners on website costs, vendor pricing, digital tools, and execution decisions.",
   openGraph: {
-    title: "Guides for Businesses | Volta NYC",
+    title: "Guides for Businesses | Novus NYC",
     description:
       "Practical guides for business owners on website costs, vendor pricing, digital tools, and execution decisions.",
     images: ["/api/og"],

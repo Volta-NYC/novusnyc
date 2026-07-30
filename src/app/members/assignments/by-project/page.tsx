@@ -41,7 +41,7 @@ const TRACK_DOT: Record<CycleTrack, string> = {
 };
 
 const ASSIGNMENT_STATUS_STYLES: Record<AssignmentStatus, string> = {
-  Open: "border-[#85CC17]/30 bg-[#85CC17]/10 text-[#9BE22B]",
+  Open: "border-[#F6B78D]/30 bg-[#F6B78D]/10 text-[#F3E28D]",
   Active: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
   "Under Review": "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   Completed: "border-violet-400/30 bg-violet-400/10 text-violet-300",
@@ -55,7 +55,7 @@ const BIZ_STATUS_LABEL: Record<ProjectStatusValue, { text: string; cls: string }
 };
 
 const GROUP_COLOR_BORDER: Record<ProjectGroup["color"], string> = {
-  green:  "border-l-[#85CC17]/60",
+  green:  "border-l-[#F6B78D]/60",
   blue:   "border-l-blue-500/60",
   amber:  "border-l-amber-500/60",
   purple: "border-l-purple-500/60",
@@ -63,7 +63,7 @@ const GROUP_COLOR_BORDER: Record<ProjectGroup["color"], string> = {
 };
 
 const BIZ_STATUS_BORDER: Record<ProjectStatusValue, string> = {
-  Ongoing:   "border-l-[#85CC17]/40",
+  Ongoing:   "border-l-[#F6B78D]/40",
   Upcoming:  "border-l-blue-500/40",
   Completed: "border-l-white/15",
 };
@@ -85,7 +85,7 @@ interface ProjectCard {
   assignments: Assignment[];
   bizId?: string;
   grpId?: string;
-  isVolta?: boolean;
+  isNovus?: boolean;
 }
 
 interface AssignmentFormState {
@@ -283,16 +283,16 @@ export default function ByProjectPage() {
       });
     }
 
-    const voltaAssignments = activeAssignments.filter((a) => !a.businessId && !a.projectGroupId);
-    if (voltaAssignments.length) {
+    const novusAssignments = activeAssignments.filter((a) => !a.businessId && !a.projectGroupId);
+    if (novusAssignments.length) {
       result.unshift({
         key: "volta",
-        label: "Volta",
+        label: "Novus",
         subtitle: "Internal assignments",
         status: "Ongoing",
-        borderCls: "border-l-[#85CC17]/60",
-        assignments: voltaAssignments,
-        isVolta: true,
+        borderCls: "border-l-[#F6B78D]/60",
+        assignments: novusAssignments,
+        isNovus: true,
       });
     }
 
@@ -348,7 +348,7 @@ export default function ByProjectPage() {
       const grp = projectGroups.find((g) => g.id === ref.slice(4));
       return grp ? grp.name : "";
     }
-    return "Volta";
+    return "Novus";
   };
 
   const openCreateAssignment = (prefillRef = "") => {
@@ -668,7 +668,7 @@ export default function ByProjectPage() {
                     )}
                     <button
                       onClick={() => openCreateAssignment(card.key)}
-                      className="px-3 py-1.5 rounded-lg border border-[#85CC17]/30 bg-[#85CC17]/[0.08] text-[11px] text-[#9BE22B]/80 hover:text-[#9BE22B] hover:border-[#85CC17]/50 hover:bg-[#85CC17]/[0.13] transition-colors font-medium"
+                      className="px-3 py-1.5 rounded-lg border border-[#F6B78D]/30 bg-[#F6B78D]/[0.08] text-[11px] text-[#F3E28D]/80 hover:text-[#F3E28D] hover:border-[#F6B78D]/50 hover:bg-[#F6B78D]/[0.13] transition-colors font-medium"
                     >
                       + Add Assignment
                     </button>
@@ -726,8 +726,8 @@ export default function ByProjectPage() {
                               </td>
                               {/* Credits */}
                               <td className="px-4 py-3.5 w-24 text-right">
-                                <span className="text-[14px] font-semibold text-[#85CC17]">{a.credits}</span>
-                                {a.recurringEnabled && <span className="text-[10px] text-[#85CC17]/55 ml-1">/check-in</span>}
+                                <span className="text-[14px] font-semibold text-[#F6B78D]">{a.credits}</span>
+                                {a.recurringEnabled && <span className="text-[10px] text-[#F6B78D]/55 ml-1">/check-in</span>}
                               </td>
                               {/* Capacity */}
                               <td className="px-4 py-3.5 w-28 text-[12px]">
@@ -800,7 +800,7 @@ export default function ByProjectPage() {
                                       )}
                                       <div>
                                         <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-0.5">Approval</p>
-                                        <p className={`text-[13px] ${a.requiresApproval ? "text-white/55" : "text-[#9BE22B]/70"}`}>
+                                        <p className={`text-[13px] ${a.requiresApproval ? "text-white/55" : "text-[#F3E28D]/70"}`}>
                                           {a.requiresApproval ? "Manual review" : "Auto-approved"}
                                         </p>
                                       </div>
@@ -840,7 +840,7 @@ export default function ByProjectPage() {
                     onFocus={() => setTemplateDropdownOpen(true)}
                     onBlur={() => setTimeout(() => setTemplateDropdownOpen(false), 150)}
                     placeholder="Search templates…"
-                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#85CC17]/50"
+                    className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#F6B78D]/50"
                   />
                   {templateDropdownOpen && (
                     <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-[#13161D] border border-white/12 rounded-xl overflow-hidden shadow-xl max-h-52 overflow-y-auto">
@@ -888,7 +888,7 @@ export default function ByProjectPage() {
                   setBizSearch(val ? (refToLabel(val) ?? "") : "");
                 }}
               >
-                <option value="volta">Volta</option>
+                <option value="volta">Novus</option>
                 {sortedBusinessOptions.length > 0 && (
                   <optgroup label="Businesses">
                     {sortedBusinessOptions.map((b) => (
@@ -1021,14 +1021,14 @@ export default function ByProjectPage() {
                       onClick={() => setAssignmentForm((p) => ({ ...p, deadlineType: t }))}
                       className={`flex-1 px-3 py-2 rounded-lg text-left border transition-colors ${
                         assignmentForm.deadlineType === t
-                          ? "border-[#85CC17]/40 bg-[#85CC17]/10"
+                          ? "border-[#F6B78D]/40 bg-[#F6B78D]/10"
                           : "border-white/12 hover:border-white/25"
                       }`}
                     >
-                      <p className={`text-xs font-semibold ${assignmentForm.deadlineType === t ? "text-[#9BE22B]" : "text-white/55"}`}>
+                      <p className={`text-xs font-semibold ${assignmentForm.deadlineType === t ? "text-[#F3E28D]" : "text-white/55"}`}>
                         {t === "hard" ? "Fixed date" : "Days after claiming"}
                       </p>
-                      <p className={`text-[10px] mt-0.5 ${assignmentForm.deadlineType === t ? "text-[#9BE22B]/70" : "text-white/30"}`}>
+                      <p className={`text-[10px] mt-0.5 ${assignmentForm.deadlineType === t ? "text-[#F3E28D]/70" : "text-white/30"}`}>
                         {t === "hard" ? "Same date for everyone" : "Countdown starts when member signs up"}
                       </p>
                     </button>
@@ -1210,7 +1210,7 @@ export default function ByProjectPage() {
                           </div>
                           {c.dueDate && <p className="text-white/40">Due {c.dueDate}</p>}
                           {c.deliverableUrl && (
-                            <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-[#85CC17]/80 hover:text-[#85CC17] underline underline-offset-2 block truncate">
+                            <a href={c.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-[#F6B78D]/80 hover:text-[#F6B78D] underline underline-offset-2 block truncate">
                               {c.deliverableUrl}
                             </a>
                           )}

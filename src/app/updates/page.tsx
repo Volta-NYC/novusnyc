@@ -3,12 +3,12 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { progressUpdates } from "@/data/publishing";
 
 export const metadata: Metadata = {
-  title: "Progress Updates | Volta NYC",
+  title: "Progress Updates | Novus NYC",
   description:
-    "Timestamped Volta progress updates covering projects, systems, and team growth.",
+    "Timestamped Novus progress updates covering projects, systems, and team growth.",
   openGraph: {
-    title: "Progress Updates | Volta NYC",
-    description: "Timestamped Volta progress updates covering projects, systems, and team growth.",
+    title: "Progress Updates | Novus NYC",
+    description: "Timestamped Novus progress updates covering projects, systems, and team growth.",
     images: ["/api/og"],
   },
 };
