@@ -163,6 +163,20 @@ const PARTNER_FAQ_CATEGORIES = [
   { title: "Support and referrals", items: PARTNER_FAQS.slice(10) },
 ];
 
+const PARTNER_EXAMPLES = currentProjects.map((project) => {
+  if (project.name !== "Anatolico") return project;
+
+  return {
+    ...project,
+    name: "Spin Bagel",
+    type: "Bagel Shop",
+    neighborhood: "Bayside, Queens",
+    services: ["Website", "Social Media"],
+    color: "bg-orange-400",
+    desc: "Digital support project for Spin Bagel, a neighborhood bagel shop in Bayside.",
+  };
+});
+
 export default async function Partners() {
   const faqSchema = {
     "@context": "https://schema.org",
@@ -369,7 +383,7 @@ export default async function Partners() {
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-4">
-            {currentProjects.map((project, index) => (
+            {PARTNER_EXAMPLES.map((project, index) => (
               <AnimatedSection key={project.name} delay={index * 0.08}>
                 <article className="h-full border border-v-border rounded-xl bg-white p-5">
                   <div className="flex items-start justify-between gap-3 mb-4">
