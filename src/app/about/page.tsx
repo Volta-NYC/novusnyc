@@ -133,7 +133,7 @@ export default async function About() {
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Our history</p>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Building Novus, one chapter at a time</h2>
             <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed">
-              A placeholder timeline for the moments, partnerships, and people that shaped our work.
+              A timeline for the moments, partnerships, and people that shaped our work.
             </p>
           </AnimatedSection>
           <div className="relative ml-3 border-l-2 border-v-green/25 pl-8 md:ml-8 md:pl-12">
