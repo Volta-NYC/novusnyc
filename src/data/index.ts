@@ -370,10 +370,10 @@ export const joinTracks = [
   {
     icon: BarChartIcon,
     name: "Finance & Operations",
-    color: "border-amber-300 bg-amber-50",
-    tagColor: "bg-amber-100 text-amber-800",
-    iconColor: "text-amber-500",
-    iconBg: "bg-amber-100",
+    color: "border-v-yellow bg-v-yellow/15",
+    tagColor: "bg-v-yellow/50 text-v-ink",
+    iconColor: "text-amber-600",
+    iconBg: "bg-v-yellow/40",
     skills: [
       "Comfort reading financial documents and working in spreadsheets",
       "Some background in structured analysis or research",
@@ -391,10 +391,10 @@ export const joinTracks = [
   {
     icon: CodeIcon,
     name: "Digital & Tech",
-    color: "border-blue-300 bg-blue-50",
-    tagColor: "bg-blue-100 text-blue-800",
-    iconColor: "text-v-blue",
-    iconBg: "bg-blue-100",
+    color: "border-v-blue/40 bg-v-blue/10",
+    tagColor: "bg-v-blue/25 text-v-ink",
+    iconColor: "text-v-blue-dark",
+    iconBg: "bg-v-blue/25",
     skills: [
       "React.js or TypeScript, with some backend or API experience",
       "Comfortable with GitHub and basic deployment workflows",
@@ -411,10 +411,10 @@ export const joinTracks = [
   {
     icon: MegaphoneIcon,
     name: "Marketing",
-    color: "border-lime-300 bg-lime-50",
-    tagColor: "bg-lime-100 text-lime-800",
-    iconColor: "text-v-green",
-    iconBg: "bg-lime-100",
+    color: "border-v-green/40 bg-v-green/10",
+    tagColor: "bg-v-green/25 text-v-ink",
+    iconColor: "text-v-green-dark",
+    iconBg: "bg-v-green/25",
     description: "Marketing is organized into four subdepartments. Members can focus on one area or contribute across all four.",
     subdepartments: [
       {

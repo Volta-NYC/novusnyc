@@ -102,7 +102,7 @@ export default function TracksTabbed() {
                   <li key={item} className="flex items-start gap-3 font-body text-sm text-v-ink/75 leading-relaxed">
                     <span
                       aria-hidden="true"
-                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[0.4rem] ${track.iconColor.replace("text-", "bg-")}`}
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[0.4rem] ${track.name === "Digital & Tech" ? "bg-v-blue-dark" : track.name === "Marketing" ? "bg-v-green-dark" : "bg-amber-600"}`}
                     />
                     {item}
                   </li>
