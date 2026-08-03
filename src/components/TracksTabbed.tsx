@@ -148,7 +148,7 @@ export default function TracksTabbed() {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(index)}
               onKeyDown={(event) => handleKeyDown(event, index)}
-              className={`relative overflow-hidden border rounded-lg px-4 py-4 text-left transition-colors ${
+              className={`relative overflow-hidden border rounded-lg px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)] ${
                 selected ? `${item.color} ${itemPreview.border}` : "border-v-border bg-white text-v-muted hover:border-v-ink/30"
               }`}
             >

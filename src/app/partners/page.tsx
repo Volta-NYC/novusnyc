@@ -296,7 +296,7 @@ export default async function Partners() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SERVICES.map((service, i) => (
               <AnimatedSection key={service.title} delay={i * 0.06}>
-                <details className="group bg-v-bg border border-v-border rounded-2xl px-5 py-5 h-full">
+                <details className="group h-full rounded-2xl border border-v-border bg-v-bg px-5 py-5 transition duration-200 hover:-translate-y-0.5 hover:border-v-green/60 hover:shadow-[0_8px_20px_rgba(31,36,42,0.08)]">
                   <summary className="list-none cursor-pointer">
                     <div className="flex items-start gap-3">
                       <span className={`w-10 h-10 rounded-xl ${service.bg} flex items-center justify-center shrink-0`}>
@@ -341,7 +341,7 @@ export default async function Partners() {
           <div className="grid md:grid-cols-3 gap-4">
             {PARTNER_EXAMPLES.map((project, index) => (
               <AnimatedSection key={project.name} delay={index * 0.08}>
-                <article className="h-full border border-v-border rounded-xl bg-white p-5">
+                <article className="h-full border border-v-border rounded-xl bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-v-green/60 hover:shadow-[0_8px_20px_rgba(31,36,42,0.08)]">
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
                       <p className="font-display font-bold text-v-ink text-xl">{project.name}</p>
@@ -383,7 +383,7 @@ export default async function Partners() {
                   href={partner.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex min-h-32 flex-col items-center justify-center border border-v-border bg-v-bg px-3 py-4 rounded-lg transition-colors hover:border-v-green/60 hover:bg-white"
+                  className="group flex min-h-32 flex-col items-center justify-center border border-v-border bg-v-bg px-3 py-4 rounded-lg transition duration-200 hover:-translate-y-0.5 hover:border-v-green/60 hover:bg-white hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)]"
                   aria-label={`Visit ${partner.name}`}
                 >
                   <Image
@@ -391,7 +391,7 @@ export default async function Partners() {
                     alt={partner.name}
                     width={180}
                     height={90}
-                    className="max-h-12 w-full object-contain"
+                    className="max-h-12 w-full object-contain transition duration-200 group-hover:brightness-110"
                   />
                   <span className="mt-3 text-center font-body text-[11px] font-semibold leading-snug text-v-ink">
                     {partner.name}
