@@ -221,7 +221,7 @@ export default async function Partners() {
               </a>
               <Link
                 href="/showcase"
-                className="border border-white/20 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:border-white/50 transition-colors"
+                className="bg-v-blue text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-blue-dark transition-colors"
               >
                 See our work
               </Link>
@@ -367,7 +367,7 @@ export default async function Partners() {
               </a>
               <Link
                 href="/showcase"
-                className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-3.5 font-display text-base font-bold text-white transition-colors hover:border-white/50"
+                className="inline-flex items-center justify-center rounded-full bg-v-blue px-8 py-3.5 font-display text-base font-bold text-v-ink transition-colors hover:bg-v-blue-dark"
               >
                 See our work
               </Link>

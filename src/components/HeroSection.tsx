@@ -67,7 +67,7 @@ export default function HeroSection() {
             </Link>
             <Link
               href="/partners"
-              className="border-2 border-white/70 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-white/12 transition-all backdrop-blur-sm"
+              className="bg-v-yellow text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-yellow-dark transition-all shadow-xl shadow-black/25"
             >
               Get Free Business Support
             </Link>
