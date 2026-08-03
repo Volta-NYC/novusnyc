@@ -97,13 +97,13 @@ function getPartnerLogoClass(partner: CommunityPartner, baseClass: string): stri
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
-    return "bg-blue-100 text-blue-700 border-blue-200";
+    return "bg-v-blue/20 text-v-ink border-v-blue/40";
   }
   if (key.includes("social")) {
-    return "bg-lime-100 text-lime-700 border-lime-200";
+    return "bg-v-green/20 text-v-ink border-v-green/40";
   }
   if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
-    return "bg-amber-100 text-amber-700 border-amber-200";
+    return "bg-v-yellow/40 text-v-ink border-v-yellow";
   }
   return "bg-v-border text-v-muted border-v-border";
 }
@@ -214,7 +214,7 @@ async function CurrentProjectsSection() {
                               <span key={`mobile-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
                             ))}
                           </div>
-                          <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-lime-100 text-lime-700" : p.status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
+                          <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-v-green/25 text-v-ink" : p.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
                             {p.status}
                           </span>
                         </div>
@@ -276,7 +276,7 @@ async function CurrentProjectsSection() {
                             <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
                           ))}
                         </div>
-                        <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-lime-100 text-lime-700" : p.status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
+                        <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-v-green/25 text-v-ink" : p.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
                           {p.status}
                         </span>
                       </div>

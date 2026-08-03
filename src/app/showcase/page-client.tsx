@@ -32,13 +32,13 @@ type ShowcaseProject = {
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
-    return "bg-blue-100 text-blue-700 border-blue-200";
+    return "bg-v-blue/20 text-v-ink border-v-blue/40";
   }
   if (key.includes("social")) {
-    return "bg-lime-100 text-lime-700 border-lime-200";
+    return "bg-v-green/20 text-v-ink border-v-green/40";
   }
   if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
-    return "bg-amber-100 text-amber-700 border-amber-200";
+    return "bg-v-yellow/40 text-v-ink border-v-yellow";
   }
   return "bg-slate-100 text-slate-600 border-slate-200";
 }
@@ -159,10 +159,10 @@ export default function ShowcaseClient({
                             <span
                               className={`tag text-xs flex-shrink-0 ${
                                 p.status === "Completed"
-                                  ? "bg-lime-100 text-lime-700"
+                                  ? "bg-v-green/25 text-v-ink"
                                   : p.status === "Ongoing"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-slate-100 text-slate-600"
+                                  ? "bg-v-blue/25 text-v-ink"
+                                  : "bg-v-yellow/35 text-v-ink"
                               }`}
                             >
                               {p.status}
@@ -238,10 +238,10 @@ export default function ShowcaseClient({
                           <span
                             className={`tag text-xs flex-shrink-0 ${
                               p.status === "Completed"
-                                ? "bg-lime-100 text-lime-700"
+                                ? "bg-v-green/25 text-v-ink"
                                 : p.status === "Ongoing"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-slate-100 text-slate-600"
+                                ? "bg-v-blue/25 text-v-ink"
+                                : "bg-v-yellow/35 text-v-ink"
                             }`}
                           >
                             {p.status}
