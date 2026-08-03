@@ -68,16 +68,16 @@ export const homeTracks = [
   },
   {
     icon: MegaphoneIcon,
-    name: "Marketing & Strategy",
+    name: "Marketing",
     color: "bg-lime-50 border-lime-100",
     accent: "bg-v-green",
     iconColor: "text-v-green",
     iconBg: "bg-lime-100",
     items: [
-      "Social media management",
-      "Founder storytelling & video",
-      "Content creation & strategy",
-      "Audience growth analytics",
+      "Volta Social Media & Branding",
+      "Grants & Funding",
+      "Volta Ambassadors",
+      "Small Business Outreach",
     ],
   },
 ];
@@ -344,13 +344,13 @@ export const trackHighlights = [
     ],
   },
   {
-    name: "Marketing & Strategy",
+    name: "Marketing",
     tagColor: "bg-lime-100 text-lime-800",
     outputs: [
-      "Managed live Instagram accounts for active client businesses",
-      "Produced original Founder Stories video content series",
-      "Built content calendars and audience growth strategies",
-      "Ran analytics and iterated campaigns based on real engagement data",
+      "Created and managed social media, branding, and promotional materials for Volta and local businesses",
+      "Researched grant and funding opportunities, built templates, and supported grant writing",
+      "Built relationships with schools, student organizations, pipeline programs, and community partners",
+      "Connected new small businesses with Volta's marketing and web services through outreach",
     ],
   },
   {
@@ -410,22 +410,39 @@ export const joinTracks = [
   },
   {
     icon: MegaphoneIcon,
-    name: "Marketing & Strategy",
+    name: "Marketing",
     color: "border-lime-300 bg-lime-50",
     tagColor: "bg-lime-100 text-lime-800",
     iconColor: "text-v-green",
     iconBg: "bg-lime-100",
+    description: "Marketing is organized into four subdepartments. Members can focus on one area or contribute across all four.",
+    subdepartments: [
+      {
+        title: "Volta Social Media & Branding",
+        desc: "Design social posts, manage Volta's public-facing platforms, and create promotional materials for partnering small businesses.",
+      },
+      {
+        title: "Grants & Funding",
+        desc: "Research funding opportunities, create grant templates, support grant writing, track impact, and help develop financial plans for growth.",
+      },
+      {
+        title: "Volta Ambassadors",
+        desc: "Build relationships with schools, student organizations, pipeline programs, and community partners to recruit future Volta members.",
+      },
+      {
+        title: "Small Business Outreach",
+        desc: "Find and connect with small businesses that could benefit from Volta's marketing and web services.",
+      },
+    ],
     skills: [
       "Experience with social media or content creation",
       "Design skills in Canva, Adobe, or Figma",
-      "Strong writing and clear communication",
+      "Strong writing, research, or relationship-building skills",
     ],
     doWhat: [
-      "Manage Instagram accounts for active client businesses",
-      "Build content strategies and weekly posting calendars",
-      "Film and edit founder interview videos",
-      "Track performance and run audience growth campaigns",
-      "Design print and digital materials: menus, business cards, flyers, and branded templates",
+      "Choose one Marketing subdepartment or contribute across all four",
+      "Build visible work for Volta, community partners, and local businesses",
+      "Collaborate with a team on creative, research, outreach, and growth projects",
     ],
   },
 ];
@@ -457,7 +474,11 @@ export const joinFaqs = [
   },
   {
     q: "What kinds of projects can I work on?",
-    a: "Projects can include website development, marketing strategy, content creation, financial analysis, grant research, and neighborhood outreach. Your track and interests help guide your assignment.",
+    a: "Projects can include website development, social media and branding, grant and funding research, ambassador work, small business outreach, financial analysis, and neighborhood work. Your track and interests help guide your assignment.",
+  },
+  {
+    q: "How do Marketing subdepartments work?",
+    a: "Marketing has four focus areas: Volta Social Media & Branding, Grants & Funding, Volta Ambassadors, and Small Business Outreach. Members can focus on one area or contribute across all four, depending on their interests and team needs.",
   },
   {
     q: "Can I choose my track?",

@@ -64,8 +64,29 @@ export default function TracksTabbed() {
             <div className={`w-10 h-10 rounded-xl ${track.iconBg} flex items-center justify-center flex-shrink-0`}>
               <track.icon className={`w-5 h-5 ${track.iconColor}`} aria-hidden="true" />
             </div>
-            <h3 className="font-display font-bold text-v-ink text-xl md:text-2xl">{track.name}</h3>
+            <div>
+              <h3 className="font-display font-bold text-v-ink text-xl md:text-2xl">{track.name}</h3>
+              {"description" in track && track.description ? (
+                <p className="font-body mt-1 text-sm leading-relaxed text-v-muted">{track.description}</p>
+              ) : null}
+            </div>
           </div>
+
+          {"subdepartments" in track && track.subdepartments ? (
+            <div className="mb-8 border-y border-v-green/20 py-6">
+              <p className="font-body text-xs font-semibold uppercase tracking-widest text-v-green mb-4">
+                Marketing subdepartments
+              </p>
+              <div className="grid gap-x-8 gap-y-5 md:grid-cols-2">
+                {track.subdepartments.map((department) => (
+                  <div key={department.title}>
+                    <h4 className="font-display font-bold text-v-ink text-base">{department.title}</h4>
+                    <p className="font-body mt-1 text-sm leading-relaxed text-v-muted">{department.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12">
             <div>

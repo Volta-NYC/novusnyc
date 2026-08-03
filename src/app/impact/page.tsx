@@ -43,7 +43,7 @@ const impactAreas = [
   },
   {
     title: "Marketing Reach",
-    desc: "We create social media content strategies, produce founder video content, and grow audiences for businesses that don't have the time or resources to manage digital marketing themselves.",
+    desc: "Our Marketing team supports social media and branding, grant and funding research, ambassador partnerships, and small business outreach alongside hands-on work for local businesses.",
     metrics: ["Average follower growth per account managed", "Avg. posts per week across active accounts", "Video content produced per semester"],
     color: "border-v-green",
     accentBg: "bg-lime-50",

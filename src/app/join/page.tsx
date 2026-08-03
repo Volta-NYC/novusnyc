@@ -109,7 +109,7 @@ export default async function Join() {
               <span className="text-v-blue">real projects with real impact.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-4">
-              Novus NYC places you on consulting teams to deliver tech and marketing strategy for local businesses. Ship full-stack web projects, drive marketing initiatives, and build a resume backed by direct client-facing experience.
+              Novus NYC places you on consulting teams to deliver tech and marketing work for local businesses. In Marketing, you can focus on social media and branding, grants and funding, ambassador work, small business outreach, or contribute across all four.
             </p>
             <p className="font-body text-white/65 text-sm mb-8">
               Join {formatCounter(memberCount)} students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.
