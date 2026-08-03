@@ -7,6 +7,10 @@ export default function TracksTabbed() {
   const [active, setActive] = useState(0);
   const uid = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const orderedTracks = [...joinTracks].sort((a, b) => {
+    const order: Record<string, number> = { "Digital & Tech": 0, Marketing: 1, "Finance & Operations": 2 };
+    return order[a.name] - order[b.name];
+  });
 
   const tabId = (i: number) => `${uid}-tab-${i}`;
   const panelId = (i: number) => `${uid}-panel-${i}`;
@@ -14,9 +18,9 @@ export default function TracksTabbed() {
   const handleKeyDown = (e: React.KeyboardEvent, i: number) => {
     let next = i;
     if (e.key === "ArrowRight") next = (i + 1) % joinTracks.length;
-    else if (e.key === "ArrowLeft") next = (i - 1 + joinTracks.length) % joinTracks.length;
+    else if (e.key === "ArrowLeft") next = (i - 1 + orderedTracks.length) % orderedTracks.length;
     else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = joinTracks.length - 1;
+    else if (e.key === "End") next = orderedTracks.length - 1;
     else return;
     e.preventDefault();
     setActive(next);
@@ -27,7 +31,7 @@ export default function TracksTabbed() {
     <div>
       {/* Tab buttons */}
       <div role="tablist" aria-label="Service tracks" className="flex gap-2 mb-6 flex-wrap">
-        {joinTracks.map((track, i) => (
+        {orderedTracks.map((track, i) => (
           <button
             key={track.name}
             ref={(el) => { tabRefs.current[i] = el; }}
@@ -50,7 +54,7 @@ export default function TracksTabbed() {
       </div>
 
       {/* Active track panel */}
-      {joinTracks.map((track, i) => (
+      {orderedTracks.map((track, i) => (
         <div
           key={track.name}
           role="tabpanel"

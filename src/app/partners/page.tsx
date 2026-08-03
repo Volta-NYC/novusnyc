@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
+import FaqAccordion from "@/components/FaqAccordion";
 import {
   GlobeIcon,
   SmartphoneIcon,
@@ -153,6 +154,12 @@ const PARTNER_FAQS = [
     q: "What if I need help that is not listed here?",
     a: "Reach out anyway. We will listen to what you need and let you know whether a Novus student team can help, or whether another local resource may be a better fit.",
   },
+];
+
+const PARTNER_FAQ_CATEGORIES = [
+  { title: "Working with Novus", items: PARTNER_FAQS.slice(0, 6) },
+  { title: "Your project", items: PARTNER_FAQS.slice(6, 10) },
+  { title: "Support and referrals", items: PARTNER_FAQS.slice(10) },
 ];
 
 export default async function Partners() {
@@ -335,21 +342,9 @@ export default async function Partners() {
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
           </AnimatedSection>
-          <div className="space-y-2">
-            {PARTNER_FAQS.map((f, i) => (
-              <AnimatedSection key={f.q} delay={i * 0.04}>
-                <details className="group bg-white border border-v-border rounded-xl px-5 py-4">
-                  <summary className="list-none cursor-pointer font-display font-bold text-v-ink text-sm flex items-center justify-between gap-3">
-                    {f.q}
-                    <svg className="w-4 h-4 text-v-muted shrink-0 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </summary>
-                  <p className="font-body text-sm text-v-muted leading-relaxed mt-3">{f.a}</p>
-                </details>
-              </AnimatedSection>
-            ))}
-          </div>
+          <AnimatedSection>
+            <FaqAccordion categories={PARTNER_FAQ_CATEGORIES} />
+          </AnimatedSection>
         </div>
       </section>
 

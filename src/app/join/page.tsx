@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
+import FaqAccordion from "@/components/FaqAccordion";
 import TracksTabbed from "@/components/TracksTabbed";
 import { joinFaqs, joinGains, marqueeSchools } from "@/data";
 import { getMemberEducationSnapshot, getTotalMemberCount } from "@/lib/server/memberEducation";
@@ -58,6 +59,12 @@ const otherRoles = [
 ];
 
 export const revalidate = 3600;
+
+const JOIN_FAQ_CATEGORIES = [
+  { title: "Getting started", items: joinFaqs.slice(0, 6) },
+  { title: "Tracks and projects", items: joinFaqs.slice(6, 11) },
+  { title: "Experience and growth", items: joinFaqs.slice(11) },
+];
 
 export default async function Join() {
   const [education, memberCount] = await Promise.all([getMemberEducationSnapshot(), getTotalMemberCount()]);
@@ -235,16 +242,9 @@ export default async function Join() {
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl">Frequently Asked Questions</h2>
           </AnimatedSection>
-          <div className="space-y-4">
-            {joinFaqs.map((f, i) => (
-              <AnimatedSection key={f.q} delay={i * 0.06}>
-                <div className="bg-white border border-v-border rounded-xl p-6">
-                  <h3 className="font-display font-bold text-v-ink mb-2">{f.q}</h3>
-                  <p className="font-body text-sm text-v-muted leading-relaxed">{f.a}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+          <AnimatedSection>
+            <FaqAccordion categories={JOIN_FAQ_CATEGORIES} />
+          </AnimatedSection>
         </div>
       </section>
     </>
