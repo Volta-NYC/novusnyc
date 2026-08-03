@@ -12,7 +12,7 @@ import {
   TrendingUpIcon,
   PencilIcon,
 } from "@/components/Icons";
-import skylinePhoto from "../../../public/hero-nyc-skyline.jpg";
+import petiteDumplingStorefront from "../../../public/petite-dumpling-storefront.jpg";
 
 export const metadata: Metadata = {
   title: "Free Help for NYC Small Businesses | Novus NYC",
@@ -185,8 +185,8 @@ export default async function Partners() {
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24" data-home-dark-end="true">
         <Image
-          src={skylinePhoto}
-          alt="New York City skyline"
+              src={petiteDumplingStorefront}
+              alt="Petite Dumpling storefront in Park Slope, Brooklyn"
           fill
           priority
           fetchPriority="high"
