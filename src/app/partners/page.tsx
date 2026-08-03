@@ -4,7 +4,7 @@ import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
-import { currentProjects } from "@/data";
+import { communityPartners, currentProjects } from "@/data";
 import {
   GlobeIcon,
   SmartphoneIcon,
@@ -176,6 +176,20 @@ const PARTNER_EXAMPLES = currentProjects.map((project) => {
     desc: "Digital support project for Spin Bagel, a neighborhood bagel shop in Bayside.",
   };
 });
+
+const TRUSTED_PARTNER_NAMES = new Set([
+  "NYC Small Business Services",
+  "NYC Small Business Resource Network",
+  "Manhattan Chamber of Commerce",
+  "Brooklyn Chamber of Commerce",
+  "Bronx Chamber of Commerce",
+  "Queens Chamber of Commerce",
+  "Staten Island Chamber of Commerce",
+]);
+
+const TRUSTED_PARTNERS = communityPartners.filter((partner) =>
+  TRUSTED_PARTNER_NAMES.has(partner.name),
+);
 
 export default async function Partners() {
   const faqSchema = {
@@ -415,8 +429,44 @@ export default async function Partners() {
         </div>
       </section>
 
-      {/* ── FAQ ACCORDION ──────────────────────────────────── */}
+      {/* ── TRUST SIGNALS ──────────────────────────────────── */}
       <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-8 md:mb-10 text-center">
+            <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
+              Community connections
+            </p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+              Connected to the organizations that serve NYC businesses.
+            </h2>
+          </AnimatedSection>
+          <AnimatedSection>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
+              {TRUSTED_PARTNERS.map((partner) => (
+                <a
+                  key={partner.name}
+                  href={partner.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex h-24 md:h-28 items-center justify-center border border-v-border bg-v-bg px-4 rounded-lg transition-colors hover:border-v-green/60 hover:bg-white"
+                  aria-label={`Visit ${partner.name}`}
+                >
+                  <Image
+                    src={partner.logo}
+                    alt={partner.name}
+                    width={180}
+                    height={90}
+                    className="max-h-14 w-full object-contain"
+                  />
+                </a>
+              ))}
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── FAQ ACCORDION ──────────────────────────────────── */}
+      <section className="py-16 bg-v-bg">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
