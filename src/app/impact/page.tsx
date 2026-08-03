@@ -31,14 +31,16 @@ const impactAreas = [
     desc: "We build and deploy professional websites for small businesses that could not otherwise afford web development. Our work directly expands each business's reach and legitimacy online.",
     metrics: ["Avg. Google Maps impressions +340% post-SEO", "100% of websites are mobile-optimized and ADA compliant", "Median time to launch: 3 weeks"],
     color: "border-v-blue",
-    accentBg: "bg-blue-50",
+    accentBg: "bg-v-blue/10",
+    dot: "bg-v-blue-dark",
   },
   {
     title: "Financial Access",
     desc: "Many NYC small business owners are unaware of the grants and public programs they qualify for. Our finance track conducts research, prepares applications, and navigates the process on their behalf.",
     metrics: ["Grant applications submitted (cumulative)", "Average grant amount identified per business", "% of applicants receiving at least 1 award"],
-    color: "border-amber-400",
-    accentBg: "bg-amber-50",
+    color: "border-v-yellow",
+    accentBg: "bg-v-yellow/15",
+    dot: "bg-amber-600",
     placeholder: true,
   },
   {
@@ -46,7 +48,8 @@ const impactAreas = [
     desc: "Our Marketing team supports social media and branding, grant and funding research, ambassador partnerships, and small business outreach alongside hands-on work for local businesses.",
     metrics: ["Average follower growth per account managed", "Avg. posts per week across active accounts", "Video content produced per semester"],
     color: "border-v-green",
-    accentBg: "bg-lime-50",
+    accentBg: "bg-v-green/10",
+    dot: "bg-v-green-dark",
     placeholder: true,
   },
 ];
@@ -104,28 +107,28 @@ export default async function Impact() {
       suffix: "+",
       label: "Website Projects",
       sub: "Built and deployed",
-      color: "text-amber-500",
+      color: "text-v-blue-dark",
     },
     {
       value: boosted(liveStats.marketingProjects),
       suffix: "+",
       label: "Marketing Projects",
       sub: "Social, content, SEO",
-      color: "text-purple-500",
+      color: "text-v-green-dark",
     },
     {
       value: boosted(liveStats.caseStudies + liveStats.educationalReports),
       suffix: "+",
       label: "Student Publications",
       sub: "Case studies & guides",
-      color: "text-v-green",
+      color: "text-amber-600",
     },
     {
       value: boosted(liveStats.bidPartners),
       suffix: "+",
       label: "Community Partners",
       sub: "BIDs and nonprofits",
-      color: "text-v-blue",
+      color: "text-v-ink",
     },
   ];
 
@@ -192,7 +195,7 @@ export default async function Impact() {
                   <div className="space-y-2.5">
                     {area.metrics.map((m) => (
                       <div key={m} className="flex items-center gap-2.5 font-body text-sm text-v-ink">
-                        <span className="w-1.5 h-1.5 rounded-full bg-v-green flex-shrink-0" />
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${area.dot}`} />
                         {area.placeholder ? (
                           <span className="text-v-muted/60 italic">{m} — data pending</span>
                         ) : (
