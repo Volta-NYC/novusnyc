@@ -1,4 +1,4 @@
-// Supabase Postgres storage for the Volta NYC members portal.
+// Supabase Postgres storage for the Novus NYC members portal.
 // All exported function signatures are unchanged — callers require no edits.
 //
 // Subscribe functions perform an initial fetch then open a Supabase realtime
@@ -600,7 +600,7 @@ export interface CalendarEvent {
   end: string;          // ISO datetime string
   iCalUID?: string;
   description?: string;
-  color?: string;       // hex color, e.g. "#85CC17"
+  color?: string;       // hex color, e.g. "#F6B78D"
   allDay?: boolean;
   createdBy: string;    // uid
   createdAt: number;    // Unix ms timestamp
@@ -1793,7 +1793,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   publicBannerText:      "#ffffff",
   portalBannerEnabled:   false,
   portalBannerMessage:   "",
-  portalBannerBg:        "#85CC17",
+  portalBannerBg:        "#F6B78D",
   portalBannerText:      "#0D0D0D",
   permissions:           DEFAULT_PERMISSIONS,
   handbookAckRequiredAt: null,

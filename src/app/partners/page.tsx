@@ -14,11 +14,11 @@ import {
 import storefrontPhoto from "../../../public/petite-dumpling-storefront.jpg";
 
 export const metadata: Metadata = {
-  title: "Free Help for NYC Small Businesses | Volta NYC",
+  title: "Free Help for NYC Small Businesses | Novus NYC",
   description:
-    "NYC small businesses: get a free website, social media, grant writing, or SEO from a dedicated student team. No cost, no catch. Volta NYC is a registered 501(c)(3) nonprofit.",
+    "NYC small businesses: get a free website, social media, grant writing, or SEO from a dedicated student team. No cost, no catch. Novus NYC is a registered 501(c)(3) nonprofit.",
   openGraph: {
-    title: "Free Help for NYC Small Businesses | Volta NYC",
+    title: "Free Help for NYC Small Businesses | Novus NYC",
     description:
       "Student teams build websites, grow social media, write grants, and optimize SEO for NYC small businesses — at no cost. Reach out to get started.",
     images: ["/api/og"],
@@ -103,7 +103,7 @@ const SERVICES = [
 const PARTNER_FAQS = [
   {
     q: "Is this really free?",
-    a: "Yes. Volta NYC is a registered 501(c)(3) nonprofit. There are no fees, no contracts, and no catch. Our student teams do everything at no cost to your business.",
+    a: "Yes. Novus NYC is a registered 501(c)(3) nonprofit. There are no fees, no contracts, and no catch. Our student teams do everything at no cost to your business.",
   },
   {
     q: "How long does a project take?",
@@ -171,7 +171,7 @@ export default async function Partners() {
               <span className="text-v-green">local businesses and entrepreneurs.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              Volta NYC partners with small businesses to provide critical digital and strategic infrastructure, from web design to marketing and outreach. Our teams provide clear project planning, consistent communication, and concrete results, entirely free of charge.
+              Novus NYC partners with small businesses to provide critical digital and strategic infrastructure, from web design to marketing and outreach. Our teams provide clear project planning, consistent communication, and concrete results, entirely free of charge.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a

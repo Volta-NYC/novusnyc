@@ -15,7 +15,7 @@ import {
   TrendingUpIcon,
   CreditCardIcon,
 } from "@/components/Icons";
-import { VOLTA_STATS, formatStat } from "./stats";
+import { NOVUS_STATS, formatStat } from "./stats";
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
 
@@ -30,10 +30,10 @@ export type TrackName = (typeof TRACK_NAMES)[number];
 // ─── Homepage ─────────────────────────────────────────────────────────────────
 
 export const homeStats = [
-  { value: VOLTA_STATS.businessesServed.value, suffix: VOLTA_STATS.businessesServed.suffix, label: "Businesses Supported" },
-  { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
-  { value: VOLTA_STATS.studentMembers.value, suffix: VOLTA_STATS.studentMembers.suffix, label: "Student Members" },
-  { value: VOLTA_STATS.bidPartners.value, suffix: VOLTA_STATS.bidPartners.suffix, label: "BID Partners" },
+  { value: NOVUS_STATS.businessesServed.value, suffix: NOVUS_STATS.businessesServed.suffix, label: "Businesses Supported" },
+  { value: NOVUS_STATS.nycNeighborhoods.value, suffix: NOVUS_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
+  { value: NOVUS_STATS.studentMembers.value, suffix: NOVUS_STATS.studentMembers.suffix, label: "Student Members" },
+  { value: NOVUS_STATS.bidPartners.value, suffix: NOVUS_STATS.bidPartners.suffix, label: "BID Partners" },
 ];
 
 export const homeTracks = [
@@ -207,9 +207,9 @@ export const currentProjects = projects
 // ─── Showcase ─────────────────────────────────────────────────────────────────
 
 export const showcaseStats = [
-  { value: VOLTA_STATS.businessesServed.value, suffix: VOLTA_STATS.businessesServed.suffix, label: "Businesses helped" },
-  { value: VOLTA_STATS.nycNeighborhoods.value, suffix: VOLTA_STATS.nycNeighborhoods.suffix, label: "NYC neighborhoods" },
-  { value: VOLTA_STATS.studentMembers.value, suffix: VOLTA_STATS.studentMembers.suffix, label: "Student contributors" },
+  { value: NOVUS_STATS.businessesServed.value, suffix: NOVUS_STATS.businessesServed.suffix, label: "Businesses helped" },
+  { value: NOVUS_STATS.nycNeighborhoods.value, suffix: NOVUS_STATS.nycNeighborhoods.suffix, label: "NYC neighborhoods" },
+  { value: NOVUS_STATS.studentMembers.value, suffix: NOVUS_STATS.studentMembers.suffix, label: "Student contributors" },
 ];
 
 // ─── About ────────────────────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ export const aboutTimeline = [
     month: "Nov",
     year: "2025",
     label: "NYC branch launched",
-    desc: "Volta NYC is founded, with outreach to business improvement districts across Brooklyn and Queens.",
+    desc: "Novus NYC is founded, with outreach to business improvement districts across Brooklyn and Queens.",
   },
   {
     month: "Jan",
@@ -250,20 +250,20 @@ export const aboutTimeline = [
     month: "Spring",
     year: "2026",
     label: "Spring Cohort — NYC",
-    desc: `Cohort expands to ${formatStat(VOLTA_STATS.studentMembers)} students across ${formatStat(VOLTA_STATS.nycNeighborhoods)} NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City.`,
+    desc: `Cohort expands to ${formatStat(NOVUS_STATS.studentMembers)} students across ${formatStat(NOVUS_STATS.nycNeighborhoods)} NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City.`,
   },
   {
     month: "Summer",
     year: "2026",
     label: "Deeper engagements",
-    desc: "Volta moves into longer-term client engagements, adds structured in-person neighborhood tours, and launches paid internship tracks for returning members.",
+    desc: "Novus moves into longer-term client engagements, adds structured in-person neighborhood tours, and launches paid internship tracks for returning members.",
     tentative: true,
   },
 ];
 
 export const teamMembers = [
-  { name: "Ethan Zhang", role: "Co-Founder", email: "ethan@voltanyc.org", initial: "E", desc: "", photo: "/team/ethan.jpeg" },
-  { name: "Andrew Chin", role: "Co-Founder", email: "andrew@voltanyc.org", initial: "A", desc: "", photo: "/team/andrew.jpg" },
+  { name: "Ethan Zhang", role: "Co-Founder", email: "ethan@novusnyc.org", initial: "E", desc: "", photo: "/team/ethan.jpeg" },
+  { name: "Andrew Chin", role: "Co-Founder", email: "andrew@novusnyc.org", initial: "A", desc: "", photo: "/team/andrew.jpg" },
   { name: "Tahmid Islam", role: "Director of Tech", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
   { name: "Ellie Mak", role: "Director of Finance and Marketing", email: "", initial: "E", desc: "", photo: "/team/ellie.jpg" },
 ];
@@ -426,7 +426,7 @@ export const joinTracks = [
 export const joinFaqs = [
   {
     q: "Is this paid?",
-    a: "No. Volta is a nonprofit and all roles are volunteer. You get real project experience, portfolio work, references, and the opportunity to move into a leadership role.",
+    a: "No. Novus is a nonprofit and all roles are volunteer. You get real project experience, portfolio work, references, and the opportunity to move into a leadership role.",
   },
   {
     q: "Do I need prior experience?",

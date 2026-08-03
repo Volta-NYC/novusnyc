@@ -358,7 +358,7 @@ async function geocodeWithNominatim(query: string): Promise<{ lat: number; lng: 
   const res = await fetch(url, {
     cache: "no-store",
     headers: {
-      "User-Agent": "VoltaNYC/1.0 (info@voltanyc.org)",
+      "User-Agent": "NovusNYC/1.0 (info@novusnyc.org)",
       Accept: "application/json",
     },
   });

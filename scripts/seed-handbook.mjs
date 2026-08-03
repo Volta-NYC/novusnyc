@@ -12,9 +12,9 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const TITLE = "Member Handbook";
 
 const CONTENT = `
-<h2>Welcome to Volta NYC</h2>
+<h2>Welcome to Novus NYC</h2>
 <p>
-  This handbook covers everything you need to know as a Volta member: how credits work,
+  This handbook covers everything you need to know as a Novus member: how credits work,
   what infractions are, and how to navigate the Members Portal. Read it carefully —
   you'll be asked to acknowledge it before accessing the portal, and its policies apply
   to all active members.
@@ -22,7 +22,7 @@ const CONTENT = `
 
 <h2>The Credit System</h2>
 <p>
-  Credits are Volta's measure of active contribution. Every assignment you complete
+  Credits are Novus's measure of active contribution. Every assignment you complete
   earns credits, and your credit total determines your standing in the organization.
   Credits are not an abstract score — they represent real work delivered to real businesses.
 </p>
@@ -43,7 +43,7 @@ const CONTENT = `
 
 <h3>Credit Requirements Per Cycle</h3>
 <p>
-  Each semester, Volta runs a <strong>cycle</strong>. Every standard member is expected
+  Each semester, Novus runs a <strong>cycle</strong>. Every standard member is expected
   to earn a minimum number of credits during the cycle to remain in good standing.
   The minimum requirement is communicated at the start of each cycle. Members who fall
   below the minimum without an approved exemption are subject to review at cycle end.
@@ -127,7 +127,7 @@ const CONTENT = `
       certain high-visibility assignments and may affect business assignments.</li>
   <li><strong>8 points — Review for Demotion or Removal.</strong> Leadership convenes
       a review. Depending on context, the outcome may be demotion to reserve status,
-      removal from the current cycle, or permanent removal from Volta.</li>
+      removal from the current cycle, or permanent removal from Novus.</li>
 </ul>
 <p>
   Points do not automatically reset between cycles. Carry-over policy is set each
@@ -151,14 +151,14 @@ const CONTENT = `
 
 <h2>Using the Members Portal</h2>
 <p>
-  The Members Portal lives at <strong>voltanyc.org/members</strong>. Sign in with the
+  The Members Portal lives at <strong>novusnyc.org/members</strong>. Sign in with the
   email address on file for your account.
 </p>
 
 <h3>Sidebar Navigation</h3>
 <p>
   The left sidebar contains all the sections available to your role. You can collapse
-  it by clicking the arrow icon in the header, or expand it by clicking the Volta logo
+  it by clicking the arrow icon in the header, or expand it by clicking the Novus logo
   when collapsed. On mobile, the sidebar is accessed via the hamburger menu at the top
   of the screen.
 </p>
@@ -202,7 +202,7 @@ const CONTENT = `
   infractions.
 </p>
 <p>
-  All work delivered to client businesses represents Volta. It must be professional,
+  All work delivered to client businesses represents Novus. It must be professional,
   on-brand, and delivered on time. Quality issues reflected in client feedback will
   be reviewed and may result in infractions.
 </p>

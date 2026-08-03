@@ -18,7 +18,7 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-const DEFAULT_ACCEPTED_SUBJECT = "Congratulations — You've been accepted to Volta NYC";
+const DEFAULT_ACCEPTED_SUBJECT = "Congratulations — You've been accepted to Novus NYC";
 
 // {{link}} resolves to a permanent /members/signup?email=... URL — it never expires.
 // The member visits that page and clicks "Send me a setup link" to receive a fresh
@@ -28,15 +28,15 @@ const DEFAULT_ACCEPTED_HTML = `<!DOCTYPE html>
 <head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;margin:0;padding:0;">
   <div style="font-family:Garamond,'EB Garamond',serif;font-size:15px;line-height:1.7;color:#111111;max-width:520px;margin:0 auto;padding:32px 24px;">
-    <img src="https://voltanyc.org/logo.png" alt="Volta NYC" width="36" style="display:block;margin-bottom:28px;">
+    <img src="https://novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="display:block;margin-bottom:28px;">
     <p style="margin:0 0 16px;">Hi {{firstName}},</p>
-    <p style="margin:0 0 16px;">Congratulations! You've been accepted to Volta NYC.</p>
+    <p style="margin:0 0 16px;">Congratulations! You've been accepted to Novus NYC.</p>
     <p style="margin:0 0 24px;">Click below to set up your member portal account:</p>
     <p style="margin:0 0 24px;">
-      <a href="{{link}}" style="display:inline-block;background-color:#85CC17;color:#0d0d0d;font-weight:700;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;">Set Up Your Account</a>
+      <a href="{{link}}" style="display:inline-block;background-color:#F6B78D;color:#0d0d0d;font-weight:700;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;">Set Up Your Account</a>
     </p>
     <p style="margin:0 0 8px;font-size:13px;color:#666666;">You'll be taken to a page where you can request a secure setup link. The link can be re-requested at any time, so this email doesn't expire.</p>
-    <p style="margin:24px 0 0;">Best,<br>Ethan Zhang<br>Volta NYC</p>
+    <p style="margin:24px 0 0;">Best,<br>Ethan Zhang<br>Novus NYC</p>
   </div>
 </body>
 </html>`;
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   }
 
   const sb = getSupabaseAdmin();
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://voltanyc.org").trim();
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://novusnyc.org").trim();
   const signupUrl = `${baseUrl}/members/signup?email=${encodeURIComponent(applicantEmail)}`;
 
   const from = getDefaultFromAddress();
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     const text = [
       `Hi ${firstName},`,
       "",
-      "Congratulations! You've been accepted to Volta NYC.",
+      "Congratulations! You've been accepted to Novus NYC.",
       "",
       "Click the link below to set up your member portal account:",
       signupUrl,
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
       "",
       "Best,",
       "Ethan Zhang",
-      "Volta NYC",
+      "Novus NYC",
     ].join("\n");
 
     await transporter.sendMail({

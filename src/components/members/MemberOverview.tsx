@@ -200,11 +200,11 @@ export default function MemberOverviewPage() {
       <MembersLayout>
         <div className="max-w-lg mx-auto mt-16 text-center text-black/75">
           <div className="text-5xl mb-4">👋</div>
-          <h1 className="font-display font-bold text-2xl mb-3 text-black">Welcome to Volta</h1>
+          <h1 className="font-display font-bold text-2xl mb-3 text-black">Welcome to Novus</h1>
           <p className="text-black/55 text-sm leading-relaxed">
             Your portal account is set up, but your email isn&apos;t linked to a team profile yet.
             Ask an admin to add{" "}
-            <span className="text-[#5C9911] font-mono">{userProfile?.email ?? user.email}</span>{" "}
+            <span className="text-[#8B5E48] font-mono">{userProfile?.email ?? user.email}</span>{" "}
             to your team record so your overview can populate.
           </p>
         </div>
@@ -266,7 +266,7 @@ export default function MemberOverviewPage() {
                   className="h-full rounded-full transition-all"
                   style={{
                     width: `${targetReached}%`,
-                    backgroundColor: dot ? DOT_COLOR_HEX[dot.color] : "#85CC17",
+                    backgroundColor: dot ? DOT_COLOR_HEX[dot.color] : "#F6B78D",
                   }}
                 />
               </div>
@@ -376,7 +376,7 @@ export default function MemberOverviewPage() {
                 <button
                   type="button"
                   onClick={() => setStrikeDrawerOpen((v) => !v)}
-                  className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium"
+                  className="text-xs text-[#8B5E48] hover:text-[#F6B78D] font-medium"
                 >
                   {strikeDrawerOpen ? "Hide my record" : "View my demerit record →"}
                 </button>
@@ -397,7 +397,7 @@ export default function MemberOverviewPage() {
                                 {s.note ? ` · ${s.note}` : ""}
                               </p>
                             </div>
-                            <span className="text-[#5C9911] font-mono text-sm flex-shrink-0">
+                            <span className="text-[#8B5E48] font-mono text-sm flex-shrink-0">
                               {s.points} {s.points === 1 ? "demerit" : "demerits"}
                             </span>
                           </div>
@@ -473,7 +473,7 @@ export default function MemberOverviewPage() {
           <section className="rounded-2xl border border-black/8 bg-white shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-black text-lg">Available work</h2>
-              <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+              <Link href="/members/work" className="text-xs text-[#8B5E48] hover:text-[#F6B78D] font-medium">
                 Browse all →
               </Link>
             </div>
@@ -569,12 +569,12 @@ function RecommendedCard({ assignment, business }: { assignment: Assignment; bus
   return (
     <Link
       href={`/members/work/${assignment.id}`}
-      className="block rounded-xl border border-black/8 bg-white p-3.5 hover:border-[#85CC17]/55 hover:shadow-md transition-all"
+      className="block rounded-xl border border-black/8 bg-white p-3.5 hover:border-[#F6B78D]/55 hover:shadow-md transition-all"
     >
       <div className="flex items-center gap-2 mb-1.5">
         <span className={`inline-block h-1.5 w-1.5 rounded-full ${TRACK_DOT[assignment.primaryTrack ?? "Tech"]}`} />
         <p className="text-[10px] uppercase tracking-wider text-black/45 font-semibold">{assignment.primaryTrack}</p>
-        <span className="ml-auto text-sm text-[#5C9911] font-mono font-semibold">{assignment.credits} credits</span>
+        <span className="ml-auto text-sm text-[#8B5E48] font-mono font-semibold">{assignment.credits} credits</span>
       </div>
       <p className="text-sm font-medium text-black/90 mb-1 line-clamp-2">{assignment.title}</p>
       {business && (

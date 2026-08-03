@@ -372,9 +372,9 @@ export default function TemplatesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 align-top text-right">
-                      <span className="text-[15px] font-semibold text-[#85CC17]">{t.credits}</span>
+                      <span className="text-[15px] font-semibold text-[#F6B78D]">{t.credits}</span>
                       {t.recurringEnabled && (
-                        <span className="text-[10px] text-[#85CC17]/55 font-normal ml-1">/check-in</span>
+                        <span className="text-[10px] text-[#F6B78D]/55 font-normal ml-1">/check-in</span>
                       )}
                     </td>
                     <td className="px-4 py-3.5 align-top">
@@ -397,7 +397,7 @@ export default function TemplatesPage() {
                         <button
                           type="button"
                           onClick={() => openFromTemplate(t)}
-                          className="px-3 py-1.5 rounded-lg border border-[#85CC17]/30 bg-[#85CC17]/[0.08] text-[11px] text-[#9BE22B]/80 hover:border-[#85CC17]/50 hover:bg-[#85CC17]/[0.14] hover:text-[#9BE22B] transition-colors font-medium whitespace-nowrap"
+                          className="px-3 py-1.5 rounded-lg border border-[#F6B78D]/30 bg-[#F6B78D]/[0.08] text-[11px] text-[#F3E28D]/80 hover:border-[#F6B78D]/50 hover:bg-[#F6B78D]/[0.14] hover:text-[#F3E28D] transition-colors font-medium whitespace-nowrap"
                         >
                           Use Template
                         </button>
@@ -521,14 +521,14 @@ export default function TemplatesPage() {
                 <button
                   type="button"
                   onClick={() => set("limitClaims", false)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${!form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${!form.limitClaims ? "bg-[#F6B78D]/15 border-[#F6B78D]/40 text-[#F6B78D]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
                 >
                   For everyone
                 </button>
                 <button
                   type="button"
                   onClick={() => set("limitClaims", true)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${form.limitClaims ? "bg-[#85CC17]/15 border-[#85CC17]/40 text-[#85CC17]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${form.limitClaims ? "bg-[#F6B78D]/15 border-[#F6B78D]/40 text-[#F6B78D]" : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"}`}
                 >
                   Limited spots
                 </button>
@@ -626,7 +626,7 @@ export default function TemplatesPage() {
                     value={fromTemplateForm.projectRef}
                     onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
                   >
-                    <option value="volta">Volta NYC</option>
+                    <option value="volta">Novus NYC</option>
                     {businessOptions.map((b) => (
                       <option key={b.id} value={`biz:${b.id}`}>
                         {[b.name, b.neighborhood].filter(Boolean).join(" · ")}

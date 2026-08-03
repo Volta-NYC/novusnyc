@@ -146,7 +146,7 @@ export default function ApplicationForm() {
         <input
           value={form.fullName}
           onChange={(e) => { set("fullName", e.target.value); clearError("fullName"); }}
-          className={`volta-input ${errors.fullName ? "border-red-400" : ""}`}
+          className={`novus-input ${errors.fullName ? "border-red-400" : ""}`}
           placeholder="Your full name"
         />
         {errors.fullName && <p className="text-red-500 text-xs mt-1 font-body">{errors.fullName}</p>}
@@ -161,7 +161,7 @@ export default function ApplicationForm() {
           type="email"
           value={form.email}
           onChange={(e) => { set("email", e.target.value); clearError("email"); }}
-          className={`volta-input ${errors.email ? "border-red-400" : ""}`}
+          className={`novus-input ${errors.email ? "border-red-400" : ""}`}
           placeholder="you@email.com"
         />
         {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
@@ -188,7 +188,7 @@ export default function ApplicationForm() {
         <select
           value={form.grade}
           onChange={(e) => { set("grade", e.target.value); clearError("grade"); }}
-          className={`volta-input ${errors.grade ? "border-red-400" : ""}`}
+          className={`novus-input ${errors.grade ? "border-red-400" : ""}`}
         >
           <option value="">Select your graduation year</option>
           {GRADE_OPTIONS.map((grade) => <option key={grade} value={grade}>{grade}</option>)}
@@ -201,18 +201,18 @@ export default function ApplicationForm() {
         <input
           value={form.city}
           onChange={(e) => { set("city", e.target.value); clearError("city"); }}
-          className={`volta-input ${errors.city ? "border-red-400" : ""}`}
+          className={`novus-input ${errors.city ? "border-red-400" : ""}`}
           placeholder="e.g. New York, New York"
         />
         {errors.city && <p className="text-red-500 text-xs mt-1 font-body">{errors.city}</p>}
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">How did you hear about Volta? *</label>
+        <label className="block font-body text-sm font-semibold text-v-ink mb-2">How did you hear about Novus? *</label>
         <select
           value={form.referral}
           onChange={(e) => { set("referral", e.target.value); clearError("referral"); }}
-          className={`volta-input ${errors.referral ? "border-red-400" : ""}`}
+          className={`novus-input ${errors.referral ? "border-red-400" : ""}`}
         >
           <option value="">Select one</option>
           {REFERRAL_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -300,7 +300,7 @@ export default function ApplicationForm() {
               <textarea
                 value={form.tools}
                 onChange={(e) => { set("tools", e.target.value); clearError("tools"); }}
-                className={`volta-input resize-none ${errors.tools ? "border-red-400" : ""}`}
+                className={`novus-input resize-none ${errors.tools ? "border-red-400" : ""}`}
                 rows={3}
                 placeholder="e.g. Figma, React, Excel, Canva, Python, Google Ads…"
               />
@@ -313,7 +313,7 @@ export default function ApplicationForm() {
               <textarea
                 value={form.accomplishment}
                 onChange={(e) => { set("accomplishment", e.target.value); clearError("accomplishment"); }}
-                className={`volta-input resize-none ${errors.accomplishment ? "border-red-400" : ""}`}
+                className={`novus-input resize-none ${errors.accomplishment ? "border-red-400" : ""}`}
                 rows={5}
                 placeholder="Tell us something you're proud of or working toward."
               />
@@ -335,7 +335,7 @@ export default function ApplicationForm() {
 
       {status === "error" && (
         <p className="text-red-500 text-sm text-center font-body">
-          Something went wrong. Email us at info@voltanyc.org
+          Something went wrong. Email us at info@novusnyc.org
         </p>
       )}
       <p className="text-xs text-v-muted text-center font-body">

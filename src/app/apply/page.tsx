@@ -4,11 +4,11 @@ import ApplicationForm from "@/components/ApplicationForm";
 import { getApplicationsStatus } from "@/lib/server/publicShowcase";
 
 export const metadata: Metadata = {
-  title: "Apply | Volta NYC",
+  title: "Apply | Novus NYC",
   description:
-    "Apply to join Volta NYC — a student-led consulting nonprofit placing teams on real projects for NYC small businesses. Takes 5 minutes.",
+    "Apply to join Novus NYC — a student-led consulting nonprofit placing teams on real projects for NYC small businesses. Takes 5 minutes.",
   openGraph: {
-    title: "Apply to Volta NYC",
+    title: "Apply to Novus NYC",
     description: "Real projects. Real clients. Takes 5 minutes to apply.",
     images: ["/api/og"],
   },
@@ -32,7 +32,7 @@ export default async function Apply() {
                   className="font-display font-bold text-v-ink leading-tight mb-5"
                   style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}
                 >
-                  Join Volta NYC
+                  Join Novus NYC
                 </h1>
                 <p className="font-body text-v-muted text-base leading-relaxed mb-3">
                   High school and college students. Real projects for real businesses.

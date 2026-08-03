@@ -29,8 +29,8 @@ export default function SchoolSelector({
 
   const inputClass =
     theme === "light"
-      ? "volta-input disabled:cursor-not-allowed disabled:opacity-50"
-      : "w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+      ? "novus-input disabled:cursor-not-allowed disabled:opacity-50"
+      : "w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <>

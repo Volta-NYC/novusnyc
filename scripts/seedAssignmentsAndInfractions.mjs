@@ -71,11 +71,11 @@ function makeAssignment({ title, credits, creditsMax, creditsNote, minRole, desc
 
 // General track
 const generalAssignments = [
-  { title: 'Refer a New Member to Volta',      credits: 2, creditsMax: null, creditsNote: '+1 credit for Senior Analyst, +3 credit for Associate', minRole: 'Analyst' },
+  { title: 'Refer a New Member to Novus',      credits: 2, creditsMax: null, creditsNote: '+1 credit for Senior Analyst, +3 credit for Associate', minRole: 'Analyst' },
   { title: 'Refer a Member from a Target City', credits: 4, creditsMax: null, creditsNote: 'Applies if referral is from Boston, Philadelphia, Washington D.C., or Chicago', minRole: 'Analyst' },
-  { title: 'Refer a Business to Volta',         credits: 3, creditsMax: null, creditsNote: '', minRole: 'Analyst' },
-  { title: 'Follow Volta on Instagram',          credits: 1, creditsMax: null, creditsNote: '', minRole: 'Analyst' },
-  { title: 'Follow Volta on LinkedIn',           credits: 1, creditsMax: null, creditsNote: '', minRole: 'Analyst' },
+  { title: 'Refer a Business to Novus',         credits: 3, creditsMax: null, creditsNote: '', minRole: 'Analyst' },
+  { title: 'Follow Novus on Instagram',          credits: 1, creditsMax: null, creditsNote: '', minRole: 'Analyst' },
+  { title: 'Follow Novus on LinkedIn',           credits: 1, creditsMax: null, creditsNote: '', minRole: 'Analyst' },
 ].map(a => makeAssignment({ ...a, primaryTrack: 'General' }));
 
 // Tech track

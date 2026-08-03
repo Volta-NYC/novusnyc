@@ -9,11 +9,11 @@ import { formatCounter } from "@/lib/formatCounter";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
-  title: "Get Involved | Volta NYC",
+  title: "Get Involved | Novus NYC",
   description:
-    "Join Volta NYC to work on real projects for real businesses. All experience levels welcome. 5-minute application and rolling admissions.",
+    "Join Novus NYC to work on real projects for real businesses. All experience levels welcome. 5-minute application and rolling admissions.",
   openGraph: {
-    title: "Get Involved | Volta NYC",
+    title: "Get Involved | Novus NYC",
     description: "Real projects. Real clients. All experience levels welcome.",
     images: ["/api/og"],
   },
@@ -49,11 +49,11 @@ const otherRoles = [
   },
   {
     role: "School Ambassador",
-    desc: "Represent Volta at your school. You recruit new members, run info sessions, and serve as the main point of contact between your campus and Volta leadership.",
+    desc: "Represent Novus at your school. You recruit new members, run info sessions, and serve as the main point of contact between your campus and Novus leadership.",
   },
   {
     role: "Head of City Expansion",
-    desc: "Launch Volta in a new city. You build local partnerships and establish the first student teams and operating structure from scratch.",
+    desc: "Launch Novus in a new city. You build local partnerships and establish the first student teams and operating structure from scratch.",
   },
 ];
 
@@ -109,7 +109,7 @@ export default async function Join() {
               <span className="text-v-blue">real projects with real impact.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-4">
-              Volta NYC places you on consulting teams to deliver tech and marketing strategy for local businesses. Ship full-stack web projects, drive marketing initiatives, and build a resume backed by direct client-facing experience.
+              Novus NYC places you on consulting teams to deliver tech and marketing strategy for local businesses. Ship full-stack web projects, drive marketing initiatives, and build a resume backed by direct client-facing experience.
             </p>
             <p className="font-body text-white/65 text-sm mb-8">
               Join {formatCounter(memberCount)} students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.
@@ -149,13 +149,13 @@ export default async function Join() {
         </div>
       </section>
 
-      {/* ── WHY VOLTA / RESUME VALUE ───────────────────────── */}
+      {/* ── WHY NOVUS / RESUME VALUE ───────────────────────── */}
       <section className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Built for your resume — and beyond</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
-              Volta is built around outcomes that matter in interviews and on applications.
+              Novus is built around outcomes that matter in interviews and on applications.
             </p>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 gap-x-12 gap-y-6">

@@ -103,8 +103,8 @@ const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; 
 ];
 const SHOWCASE_COLOR_VALUES = SHOWCASE_COLOR_OPTIONS.map((option) => option.value);
 const TEAM_EMAIL_FROM_OPTIONS = [
-  { value: "info@voltanyc.org", label: "info@voltanyc.org" },
-  { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
+  { value: "info@novusnyc.org", label: "info@novusnyc.org" },
+  { value: "ethan@novusnyc.org", label: "ethan@novusnyc.org" },
 ];
 
 const TECH_STATUS_SORT: Record<string, number> = {
@@ -431,7 +431,7 @@ function BusinessesPageInner() {
   const [projectTeamPickerProject, setProjectTeamPickerProject] = useState<Business | null>(null);
   const [projectEmailSubject, setProjectEmailSubject] = useState("");
   const [projectEmailMessage, setProjectEmailMessage] = useState("");
-  const [projectEmailFrom, setProjectEmailFrom] = useState("info@voltanyc.org");
+  const [projectEmailFrom, setProjectEmailFrom] = useState("info@novusnyc.org");
   const [projectEmailSending, setProjectEmailSending] = useState(false);
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
@@ -1240,7 +1240,7 @@ function BusinessesPageInner() {
       setProjectEmailRecipientLabel(null);
       setProjectEmailStatus(null);
     }
-    setProjectEmailFrom("info@voltanyc.org");
+    setProjectEmailFrom("info@novusnyc.org");
     setProjectEmailSubject(`${project.name} — Project Update`);
     setProjectEmailMessage("");
     setProjectEmailAttachments([]);
@@ -1476,7 +1476,7 @@ function BusinessesPageInner() {
             <div className="inline-flex items-center gap-1 min-w-0 max-w-full">
               <a
                 href={`mailto:${b.ownerEmail}`}
-                className="text-[#85CC17]/80 hover:text-[#85CC17] truncate block underline-offset-2 hover:underline"
+                className="text-[#F6B78D]/80 hover:text-[#F6B78D] truncate block underline-offset-2 hover:underline"
                 title={b.ownerEmail}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1585,7 +1585,7 @@ function BusinessesPageInner() {
             <div className="inline-flex items-center gap-1 min-w-0 max-w-full">
               <a
                 href={`mailto:${b.ownerEmail}`}
-                className="text-[#85CC17]/80 hover:text-[#85CC17] truncate block underline-offset-2 hover:underline"
+                className="text-[#F6B78D]/80 hover:text-[#F6B78D] truncate block underline-offset-2 hover:underline"
                 title={b.ownerEmail}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1642,7 +1642,7 @@ function BusinessesPageInner() {
               key={b.id}
               defaultValue={b.firstContactDate ?? ""}
               onBlur={(e) => { if (canEdit) void updateBusiness(b.id, { firstContactDate: e.target.value }); }}
-              className="bg-transparent border border-white/15 rounded px-1.5 py-0.5 text-[11px] text-white/70 w-full focus:outline-none focus:border-[#85CC17]/50"
+              className="bg-transparent border border-white/15 rounded px-1.5 py-0.5 text-[11px] text-white/70 w-full focus:outline-none focus:border-[#F6B78D]/50"
               style={{ colorScheme: "dark" }}
               disabled={!canEdit}
             />
@@ -1889,7 +1889,7 @@ function BusinessesPageInner() {
             return (
               <div
                 key={track}
-                className={`rounded-xl border p-3 transition-colors ${checked ? "border-[#85CC17]/30 bg-[#85CC17]/5" : "border-white/8 bg-[#0F1014]"}`}
+                className={`rounded-xl border p-3 transition-colors ${checked ? "border-[#F6B78D]/30 bg-[#F6B78D]/5" : "border-white/8 bg-[#0F1014]"}`}
               >
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
@@ -2092,7 +2092,7 @@ function BusinessesPageInner() {
               value={scAddQuery}
               onChange={(e) => { setScAddQuery(e.target.value); setScAddPickerId(""); }}
               placeholder="Search businesses…"
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#85CC17]/45 mb-2"
+              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#F6B78D]/45 mb-2"
             />
             {(() => {
               const q = scAddQuery.trim().toLowerCase();
@@ -2112,7 +2112,7 @@ function BusinessesPageInner() {
                       key={b.id}
                       type="button"
                       onClick={() => setScAddPickerId(b.id)}
-                      className={`w-full text-left px-3 py-2.5 text-sm transition-colors ${scAddPickerId === b.id ? "bg-[#85CC17]/15 text-white" : "text-white/75 hover:bg-white/5"}`}
+                      className={`w-full text-left px-3 py-2.5 text-sm transition-colors ${scAddPickerId === b.id ? "bg-[#F6B78D]/15 text-white" : "text-white/75 hover:bg-white/5"}`}
                     >
                       <span className="font-medium">{b.name}</span>
                       {b.neighborhood && <span className="text-white/40 text-xs ml-2">{b.neighborhood}</span>}
@@ -2416,7 +2416,7 @@ function BusinessesPageInner() {
               <button
                 key={`team-picker-${option.track}`}
                 type="button"
-                className="w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 text-left hover:border-[#85CC17]/45 transition-colors disabled:opacity-50"
+                className="w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 text-left hover:border-[#F6B78D]/45 transition-colors disabled:opacity-50"
                 disabled={option.recipients.emails.length === 0}
                 onClick={() => {
                   if (!projectTeamPickerProject) return;
@@ -2609,7 +2609,7 @@ function BusinessesPageInner() {
                 showOnEmpty
               />
               {!editingBusiness && presetNeighborhood !== null && presetNeighborhood !== "" && (
-                <p className="text-[11px] text-[#85CC17]/55 mt-1">Pre-filled from &ldquo;{presetNeighborhood}&rdquo; group</p>
+                <p className="text-[11px] text-[#F6B78D]/55 mt-1">Pre-filled from &ldquo;{presetNeighborhood}&rdquo; group</p>
               )}
             </Field>
           </div>
@@ -2634,7 +2634,7 @@ function BusinessesPageInner() {
                           <select
                             value={currentStatus}
                             onChange={(e) => setTrackField(track, "projectStatus", e.target.value)}
-                            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-[#85CC17]/45"
+                            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-[#F6B78D]/45"
                           >
                             {statuses.map(({ value }) => <option key={value} value={value}>{value}</option>)}
                           </select>
@@ -2688,7 +2688,7 @@ function BusinessesPageInner() {
             <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0F1014] px-4 py-3 cursor-pointer mb-3">
               <div>
                 <p className="text-sm text-white/85 font-medium">Include in public showcase</p>
-                <p className="text-[11px] text-white/40 mt-0.5">Appears on voltanyc.org/showcase and optionally the home page.</p>
+                <p className="text-[11px] text-white/40 mt-0.5">Appears on novusnyc.org/showcase and optionally the home page.</p>
               </div>
               <input
                 type="checkbox"
@@ -2849,9 +2849,9 @@ function BusinessesPageInner() {
                   key={value}
                   type="button"
                   onClick={() => void handleQuickStatusChange(b, track, value)}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2.5 ${isActive ? "text-[#85CC17]" : "text-white/70"}`}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2.5 ${isActive ? "text-[#F6B78D]" : "text-white/70"}`}
                 >
-                  <span className="w-3 flex-shrink-0 text-[#85CC17]">{isActive ? "✓" : ""}</span>
+                  <span className="w-3 flex-shrink-0 text-[#F6B78D]">{isActive ? "✓" : ""}</span>
                   <Badge label={value} />
                 </button>
               );

@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 const DEFAULT_SUBJECT = "Update on {{assignmentTitle}}";
 const DEFAULT_BODY = `<p>Hi {{memberName}},</p>
 <p>Your team posted an update on the assignment <strong>{{assignmentTitle}}</strong>{{businessNamePart}}.</p>
-<div style="margin:16px 0;padding:14px 18px;border-left:3px solid #85CC17;background:#f9fdf5;color:#1a1a1a;border-radius:0 6px 6px 0;font-size:14px;line-height:1.6;">{{messageFmt}}</div>
+<div style="margin:16px 0;padding:14px 18px;border-left:3px solid #F6B78D;background:#f9fdf5;color:#1a1a1a;border-radius:0 6px 6px 0;font-size:14px;line-height:1.6;">{{messageFmt}}</div>
 <p><a href="{{portalLink}}" style="color:#5c9911;font-weight:600;">View in portal →</a></p>`;
 
 function normalizeHtmlBody(input: string): string {
@@ -136,10 +136,10 @@ export async function POST(req: NextRequest) {
   let emailsSkipped = 0;
 
   try {
-    const { transporter } = createTransportForFrom("info@voltanyc.org");
-    const from = resolveFromWithName("info@voltanyc.org");
-    const replyTo = getDefaultReplyToAddress("info@voltanyc.org");
-    const portalLink = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://voltanyc.org"}/members/work/${assignmentId}`;
+    const { transporter } = createTransportForFrom("info@novusnyc.org");
+    const from = resolveFromWithName("info@novusnyc.org");
+    const replyTo = getDefaultReplyToAddress("info@novusnyc.org");
+    const portalLink = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://novusnyc.org"}/members/work/${assignmentId}`;
     const messageTrimmed = message.trim();
     const messageFmt = messageTrimmed.replace(/\n/g, "<br>");
 

@@ -50,7 +50,7 @@ function TemplatePreview({
               <input
                 value={sampleData[v] ?? ""}
                 onChange={(e) => onSampleChange(v, e.target.value)}
-                className="mt-0.5 w-full bg-[#13161D] border border-white/10 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-[#85CC17]/40"
+                className="mt-0.5 w-full bg-[#13161D] border border-white/10 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-[#F6B78D]/40"
               />
             </label>
           ))}
@@ -98,9 +98,9 @@ function sampleValue(variable: string): string {
     case "issuedBy": return "Ethan Zhang";
     case "note": return "Please reply to client emails by EOD.";
     case "openAssignmentCount": return "12";
-    case "link":       return "https://voltanyc.org/members";
-    case "portalLink": return "https://voltanyc.org/members";
-    case "magicLink":  return "https://voltanyc.org/members";
+    case "link":       return "https://novusnyc.org/members";
+    case "portalLink": return "https://novusnyc.org/members";
+    case "magicLink":  return "https://novusnyc.org/members";
     default: return variable;
   }
 }
@@ -156,7 +156,7 @@ const VARIABLE_DESCRIPTIONS: Record<string, string> = {
 const LINK_VARIABLES = [
   {
     variable: "{{portalLink}}",
-    description: "Direct link to voltanyc.org/members — static, always works for any recipient",
+    description: "Direct link to novusnyc.org/members — static, always works for any recipient",
   },
   {
     variable: "{{magicLink}}",
@@ -311,7 +311,7 @@ export default function EmailTemplatesPage() {
                       <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${
                         isSystem
                           ? "border-white/15 bg-[#11141A] text-white/45"
-                          : "border-[#85CC17]/25 bg-[#85CC17]/8 text-[#85CC17]/70"
+                          : "border-[#F6B78D]/25 bg-[#F6B78D]/8 text-[#F6B78D]/70"
                       }`}>
                         {isSystem ? "system" : "custom"}
                       </span>
@@ -383,7 +383,7 @@ export default function EmailTemplatesPage() {
                         <button
                           type="button"
                           onClick={() => editorRef.current?.insertAtCursor(`{{${v}}}`)}
-                          className="shrink-0 inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#85CC17]/45 hover:text-white transition-colors"
+                          className="shrink-0 inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#F6B78D]/45 hover:text-white transition-colors"
                         >
                           {`{{${v}}}`}
                         </button>
@@ -414,7 +414,7 @@ export default function EmailTemplatesPage() {
                   <button
                     type="button"
                     onClick={() => editorRef.current?.insertAtCursor(lv.variable)}
-                    className="shrink-0 inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#85CC17]/45 hover:text-white transition-colors"
+                    className="shrink-0 inline-flex items-center rounded-full border border-white/15 bg-[#11141A] px-2 py-1 text-[11px] font-mono text-white/75 hover:border-[#F6B78D]/45 hover:text-white transition-colors"
                   >
                     {lv.variable}
                   </button>

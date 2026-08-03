@@ -20,28 +20,36 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Novus NYC",
   title: {
-    default: "Volta NYC — Student-Led Digital & Financial Services for Small Businesses",
-    template: "%s | Volta NYC",
+    default: "Novus NYC — Free Consulting for NYC Small Businesses",
+    template: "%s | Novus NYC",
   },
   description:
-    "Volta NYC is a registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects for NYC small businesses — websites, social media, grant writing, SEO, and more. Free of charge.",
+    "Digital equity is economic equity. Novus connects student teams with New York City small businesses to provide free support in technology, marketing, finance, operations, websites, SEO, social media, and grant development.",
   metadataBase: new URL(SITE_URL),
   openGraph: {
-    title: "Volta NYC",
+    title: "Novus NYC",
     description:
-      "Student consultants. Real deliverables. Free for NYC small businesses.",
+      "Digital equity is economic equity. Student teams providing free consulting support for New York City small businesses.",
     url: SITE_URL,
-    siteName: "Volta NYC",
+    siteName: "Novus NYC",
     images: ["/api/og"],
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Volta NYC",
-    description: "Student consultants. Real deliverables. Free for NYC small businesses.",
+    title: "Novus NYC",
+    description: "Digital equity is economic equity. Student teams providing free consulting support for New York City small businesses.",
     images: ["/api/og"],
+  },
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
+  appleWebApp: {
+    title: "Novus NYC",
   },
 };
 
@@ -57,7 +65,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: "Volta NYC",
+              name: "Novus NYC",
               url: SITE_URL,
             }),
           }}
@@ -68,13 +76,13 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "NGO",
-              name: "Volta NYC",
-              alternateName: "Volta New York City",
+              name: "Novus NYC",
+              alternateName: "Novus New York City",
               url: SITE_URL,
-              logo: `${SITE_URL}/logo.png`,
+              logo: `${SITE_URL}/novus.webp`,
               description:
                 "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
-              email: "info@voltanyc.org",
+              email: "info@novusnyc.org",
               foundingDate: "2025",
               areaServed: {
                 "@type": "City",
@@ -94,7 +102,7 @@ export default function RootLayout({
               ],
               contactPoint: {
                 "@type": "ContactPoint",
-                email: "info@voltanyc.org",
+                email: "info@novusnyc.org",
                 contactType: "customer service",
                 areaServed: "US",
                 availableLanguage: ["English", "Spanish", "Chinese", "Bengali", "Korean", "Arabic"],

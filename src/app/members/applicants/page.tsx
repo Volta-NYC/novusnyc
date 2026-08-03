@@ -39,7 +39,7 @@ const VALID_NEXT_STATUSES: Record<ApplicationStatus, ApplicationStatus[]> = {
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   "New": "bg-white/10 text-white/75 border border-white/20",
-  "Invited for Interview": "bg-[#85CC17]/20 text-[#C4F135] border border-[#85CC17]/35",
+  "Invited for Interview": "bg-[#F6B78D]/20 text-[#F3E28D] border border-[#F6B78D]/35",
   "Interview Scheduled": "bg-blue-500/20 text-blue-200 border border-blue-400/35",
   "Interview Completed": "bg-purple-500/20 text-purple-200 border border-purple-400/35",
   "Accepted": "bg-emerald-500/20 text-emerald-200 border border-emerald-400/35",
@@ -842,7 +842,7 @@ export default function ApplicantsPage() {
                                 href={app.resumeUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[#85CC17]/80 hover:text-[#85CC17] underline whitespace-nowrap"
+                                className="text-[#F6B78D]/80 hover:text-[#F6B78D] underline whitespace-nowrap"
                               >
                                 Resume
                               </a>
@@ -860,7 +860,7 @@ export default function ApplicantsPage() {
                             {hasEval ? (
                               <button
                                 onClick={() => setViewingEvaluationsApp(app)}
-                                className="w-2.5 h-2.5 rounded-full bg-[#85CC17] inline-block shadow-[0_0_8px_rgba(133,204,23,0.4)] hover:shadow-[0_0_12px_rgba(133,204,23,0.6)] transition-shadow"
+                                className="w-2.5 h-2.5 rounded-full bg-[#F6B78D] inline-block shadow-[0_0_8px_rgba(246,183,141,0.4)] hover:shadow-[0_0_12px_rgba(246,183,141,0.6)] transition-shadow"
                                 title="Click to view evaluation"
                               />
                             ) : (
@@ -989,7 +989,7 @@ export default function ApplicantsPage() {
               <select
                 value={bulkTargetStatus}
                 onChange={(e) => setBulkTargetStatus(e.target.value as ApplicationStatus)}
-                className="h-7 rounded-lg border border-white/15 bg-[#0F1014] px-2 text-[11px] text-white focus:outline-none focus:border-[#85CC17]/45"
+                className="h-7 rounded-lg border border-white/15 bg-[#0F1014] px-2 text-[11px] text-white focus:outline-none focus:border-[#F6B78D]/45"
               >
                 {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -1028,7 +1028,7 @@ export default function ApplicantsPage() {
                         <div className="text-[10px] text-white/40">{ev?.updatedAt ? new Date(ev.updatedAt).toLocaleString() : ""}</div>
                       </div>
                       <div className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                        ev?.rating === "Extremely Qualified" ? "bg-[#85CC17]/20 text-[#C4F135]" :
+                        ev?.rating === "Extremely Qualified" ? "bg-[#F6B78D]/20 text-[#F3E28D]" :
                         ev?.rating === "Qualified" ? "bg-blue-500/20 text-blue-400" :
                         ev?.rating === "Decent" ? "bg-yellow-500/20 text-yellow-400" :
                         "bg-red-500/20 text-red-400"

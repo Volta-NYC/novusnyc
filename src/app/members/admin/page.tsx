@@ -82,8 +82,8 @@ function StatusMsg({ msg }: { msg: string }) {
 }
 
 const BANNER_PRESET_COLORS = [
-  { bg: "#0D0D0D", text: "#85CC17", label: "Black + green" },
-  { bg: "#85CC17", text: "#0D0D0D", label: "Volta green" },
+  { bg: "#0D0D0D", text: "#F6B78D", label: "Black + green" },
+  { bg: "#F6B78D", text: "#0D0D0D", label: "Novus green" },
   { bg: "#1e40af", text: "#ffffff", label: "Blue" },
   { bg: "#7f1d1d", text: "#fee2e2", label: "Red" },
 ];
@@ -138,7 +138,7 @@ function DataTab() {
       const link = document.createElement("a");
       link.href = url;
       const date = new Date().toISOString().split("T")[0];
-      link.download = `volta-data-${date}${sections && sections.length > 0 ? `-${sections.join("-")}` : "-full"}.json`;
+      link.download = `novus-data-${date}${sections && sections.length > 0 ? `-${sections.join("-")}` : "-full"}.json`;
       link.click();
       URL.revokeObjectURL(url);
       setStatusMessage(sections && sections.length > 0
@@ -166,7 +166,7 @@ function DataTab() {
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] uppercase tracking-wide text-white/45">Select Sections</p>
             <div className="flex gap-3 text-[11px]">
-              <button type="button" className="text-[#85CC17]/80 hover:text-[#85CC17] transition-colors"
+              <button type="button" className="text-[#F6B78D]/80 hover:text-[#F6B78D] transition-colors"
                 onClick={() => setSelectedSections(EXPORT_OPTIONS.map((o) => o.key))}>Select all</button>
               <button type="button" className="text-red-300/80 hover:text-red-300 transition-colors"
                 onClick={() => setSelectedSections([])}>Clear</button>
@@ -335,7 +335,7 @@ function ServicesTab() {
                   type="text"
                   value={svc}
                   onChange={(e) => renameService(i, e.target.value)}
-                  className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+                  className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#F6B78D]/50"
                 />
                 <span className="text-[10px] text-white/35 w-16 text-right shrink-0">
                   {count > 0 ? `${count} biz` : "unused"}
@@ -361,7 +361,7 @@ function ServicesTab() {
             onChange={(e) => setNewService(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addService(); } }}
             placeholder="New service name…"
-            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#F6B78D]/50"
           />
           <button
             type="button"
@@ -513,7 +513,7 @@ function BannersTab() {
     <div className="max-w-lg space-y-4">
       <BannerEditor
         title="Public Site Banner"
-        subtitle="Appears above the navbar on the public-facing website (voltanyc.org)."
+        subtitle="Appears above the navbar on the public-facing website (novusnyc.org)."
         enabled={settings.publicBannerEnabled}
         onToggle={(v) => setSettings((s) => s ? { ...s, publicBannerEnabled: v } : s)}
         message={settings.publicBannerMessage}
@@ -580,7 +580,7 @@ function HandbookAckResetSection() {
         <p className="text-xs text-white/40 font-body mt-0.5">
           Members will see the acknowledgment prompt on their next portal visit. Has no effect on admins or owners.
         </p>
-        {status === "done" && <p className="text-xs text-[#85CC17] mt-1.5">Done — all members will be prompted on next login.</p>}
+        {status === "done" && <p className="text-xs text-[#F6B78D] mt-1.5">Done — all members will be prompted on next login.</p>}
         {status === "error" && <p className="text-xs text-red-400 mt-1.5">Something went wrong. Try again.</p>}
       </div>
       <Btn variant="secondary" onClick={() => void handleReset()} disabled={busy}>
@@ -807,7 +807,7 @@ function HandbookTab() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#85CC17]/50"
+                className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#F6B78D]/50"
                 placeholder="Credit & Infraction Policy"
               />
             </div>
@@ -873,7 +873,7 @@ function AuditLogTab() {
   }, [entries, search, actionFilter]);
 
   const actionBadgeClass = (action: string) => {
-    if (action === "create") return "bg-[#85CC17]/15 text-[#85CC17] border-[#85CC17]/30";
+    if (action === "create") return "bg-[#F6B78D]/15 text-[#F6B78D] border-[#F6B78D]/30";
     if (action === "update") return "bg-blue-500/15 text-blue-300 border-blue-500/30";
     if (action === "delete") return "bg-red-500/15 text-red-300 border-red-500/30";
     return "bg-white/10 text-white/60 border-white/20";
@@ -890,7 +890,7 @@ function AuditLogTab() {
                 key={opt}
                 onClick={() => setActionFilter(opt)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  actionFilter === opt ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/50 hover:text-white"
+                  actionFilter === opt ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"
                 }`}
               >
                 {opt[0].toUpperCase() + opt.slice(1)}
@@ -1048,7 +1048,7 @@ function AdminContent() {
             key={tab.key}
             onClick={() => router.push(ADMIN_TAB_HREFS[tab.key])}
             className={`px-4 py-2 rounded-lg text-sm font-medium font-body transition-colors ${
-              activeTab === tab.key ? "bg-[#85CC17] text-[#0D0D0D]" : "text-white/50 hover:text-white"
+              activeTab === tab.key ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"
             }`}
           >
             {tab.label}

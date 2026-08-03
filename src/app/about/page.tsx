@@ -9,11 +9,11 @@ import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
 
 
 export const metadata: Metadata = {
-  title: "About Us | Volta NYC",
+  title: "About Us | Novus NYC",
   description:
-    "Volta NYC is a registered 501(c)(3) nonprofit run by students from Stuyvesant High School, Baruch College, Cornell University, Stony Brook University, and other schools. Learn about our history, values, and the team behind the work.",
+    "Novus NYC is a registered 501(c)(3) nonprofit run by students from Stuyvesant High School, Baruch College, Cornell University, Stony Brook University, and other schools. Learn about our history, values, and the team behind the work.",
   openGraph: {
-    title: "About Volta NYC",
+    title: "About Novus NYC",
     description: "A student-run nonprofit built on the belief that digital equity is economic equity.",
     images: ["/api/og"],
   },
@@ -43,7 +43,7 @@ export default async function About() {
         <div className="relative max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
           <div className="flex-1">
             <AnimatedSection>
-              <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">About Volta</p>
+              <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">About Novus</p>
               <h1 className="font-display font-bold text-white leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
                 Students building<br /><span className="text-v-blue">real skills</span><br />through <span className="text-v-green">real work.</span>
               </h1>
@@ -51,7 +51,7 @@ export default async function About() {
           </div>
           <AnimatedSection direction="right" className="flex-1 pt-4 md:pt-16">
             <p className="font-body text-white/70 text-lg leading-relaxed mb-5">
-              Volta is a nonprofit run entirely by high school and college students.
+              Novus is a nonprofit run entirely by high school and college students.
               We believe digital access and economic opportunity are inseparable, and that the family-owned
               restaurants, flower shops, and community businesses that make up NYC&apos;s neighborhoods
               deserve the same tools and resources as larger ones.

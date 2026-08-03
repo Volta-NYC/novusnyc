@@ -170,7 +170,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   // Load collapse preference from localStorage after mount (avoids hydration mismatch).
   useEffect(() => {
-    const stored = localStorage.getItem("volta-sidebar-collapsed");
+    const stored = localStorage.getItem("novus-sidebar-collapsed");
     if (stored === "true") setSidebarCollapsed(true);
   }, []);
 
@@ -181,7 +181,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     if (loading) return;
     const isLight = authRole === "member";
     document.body.style.backgroundColor = isLight ? "#F5F6F8" : "#0D0F14";
-    localStorage.setItem("volta-portal-theme", isLight ? "light" : "dark");
+    localStorage.setItem("novus-portal-theme", isLight ? "light" : "dark");
     return () => { document.body.style.backgroundColor = ""; };
   }, [authRole, loading]);
 
@@ -194,7 +194,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const toggleCollapsed = () => {
     setSidebarCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem("volta-sidebar-collapsed", String(next));
+      localStorage.setItem("novus-sidebar-collapsed", String(next));
       return next;
     });
   };
@@ -290,7 +290,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#85CC17]/30 border-t-[#85CC17] rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin" />
       </div>
     );
   }
@@ -307,13 +307,13 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     ? {
         page: "bg-[#F5F6F8]",
         sidebar: "bg-white border-r border-black/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
-        sidebarLogoText: "text-[#5C9911]",
+        sidebarLogoText: "text-[#8B5E48]",
         sidebarSubtle: "text-black/55",
         sidebarBorder: "border-black/8",
         navInactive: "text-black/55 hover:text-black/85 hover:bg-black/5",
-        navActive: "bg-[#85CC17]/15 text-[#5C9911]",
+        navActive: "bg-[#F6B78D]/15 text-[#8B5E48]",
         navIconInactive: "text-black/35",
-        navIconActive: "text-[#5C9911]",
+        navIconActive: "text-[#8B5E48]",
         userName: "text-black/75",
         userRole: "text-black/35",
         footerLink: "text-black/45 hover:text-black/70 hover:bg-black/5",
@@ -327,13 +327,13 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     : {
         page: "bg-[#0F1014]",
         sidebar: "bg-[#13151A] border-r border-white/6",
-        sidebarLogoText: "text-[#85CC17]",
+        sidebarLogoText: "text-[#F6B78D]",
         sidebarSubtle: "text-white",
         sidebarBorder: "border-white/6",
         navInactive: "text-white/45 hover:text-white/80 hover:bg-white/4",
-        navActive: "bg-[#85CC17]/12 text-[#85CC17]",
+        navActive: "bg-[#F6B78D]/12 text-[#F6B78D]",
         navIconInactive: "text-white/25",
-        navIconActive: "text-[#85CC17]",
+        navIconActive: "text-[#F6B78D]",
         userName: "text-white/60",
         userRole: "text-white/25",
         footerLink: "text-white/30 hover:text-white/60 hover:bg-white/4",
@@ -358,11 +358,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 md:p-8">
             <h2 className="font-display font-bold text-black/85 text-xl mb-2">Before you continue</h2>
             <p className="text-black/60 text-sm font-body mb-4 leading-relaxed">
-              By continuing, you acknowledge that you have read and understand the Volta NYC credit and infraction system as described in the Member Handbook.
+              By continuing, you acknowledge that you have read and understand the Novus NYC credit and infraction system as described in the Member Handbook.
             </p>
             <a
               href="/members/handbook"
-              className="inline-flex items-center gap-1 text-sm text-[#5C9911] hover:text-[#85CC17] font-body font-medium mb-5 transition-colors"
+              className="inline-flex items-center gap-1 text-sm text-[#8B5E48] hover:text-[#F6B78D] font-body font-medium mb-5 transition-colors"
             >
               Read the Handbook →
             </a>
@@ -371,7 +371,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 type="checkbox"
                 checked={ackChecked}
                 onChange={(e) => setAckChecked(e.target.checked)}
-                className="mt-0.5 w-4 h-4 accent-[#85CC17] cursor-pointer flex-shrink-0"
+                className="mt-0.5 w-4 h-4 accent-[#F6B78D] cursor-pointer flex-shrink-0"
               />
               <span className="text-sm text-black/70 font-body">
                 I have read and understand the credit and infraction policy.
@@ -382,7 +382,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
               disabled={!ackChecked || ackLoading}
               className={`w-full py-2.5 rounded-xl font-display font-bold text-sm transition-colors ${
                 ackChecked && !ackLoading
-                  ? "bg-[#85CC17] text-[#0D0D0D] hover:bg-[#72b314]"
+                  ? "bg-[#F6B78D] text-[#0D0D0D] hover:bg-[#E9A77E]"
                   : "bg-black/10 text-black/35 cursor-not-allowed"
               }`}
             >
@@ -418,11 +418,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Logo + collapse toggle — fixed height keeps the border-b from shifting */}
         <div className={`h-[52px] border-b ${tone.sidebarBorder} flex items-center shrink-0 ${sidebarCollapsed ? "justify-center" : "px-3 gap-2"}`}>
-          <Image src="/logo.png" alt="Volta" width={26} height={26} className={`object-contain shrink-0 ${sidebarCollapsed ? "cursor-pointer" : ""}`} onClick={sidebarCollapsed ? toggleCollapsed : undefined} />
+          <Image src="/novus.webp" alt="Novus NYC logo" width={18} height={32} className={`h-8 w-auto object-contain shrink-0 ${sidebarCollapsed ? "cursor-pointer" : ""}`} onClick={sidebarCollapsed ? toggleCollapsed : undefined} />
           {!sidebarCollapsed && (
             <>
               <div className="min-w-0 flex-1">
-                <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>VOLTA</p>
+                <p className={`font-display font-bold ${tone.sidebarLogoText} text-sm leading-none`}>Novus</p>
                 <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
               </div>
               <button
@@ -483,8 +483,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
               <span
                 className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 tracking-tight"
                 style={lightTheme
-                  ? { backgroundColor: "rgba(133,204,23,0.18)", color: "#5C9911" }
-                  : { backgroundColor: "rgba(133,204,23,0.15)", color: "#85CC17" }}
+                  ? { backgroundColor: "rgba(246,183,141,0.18)", color: "#8B5E48" }
+                  : { backgroundColor: "rgba(246,183,141,0.15)", color: "#F6B78D" }}
               >
                 {initials}
               </span>

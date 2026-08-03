@@ -55,13 +55,13 @@ export default function MembersLogin() {
     <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <Image src="/logo.png" alt="Volta" width={48} height={48} className="object-contain mb-4" />
+          <Image src="/novus.webp" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
           <h1 className="font-display font-bold text-white text-2xl">Members Portal</h1>
-          <p className="text-white/40 text-sm mt-1">Sign in with your Volta account</p>
+          <p className="text-white/40 text-sm mt-1">Sign in with your Novus account</p>
         </div>
 
         {passwordReset && (
-          <div className="bg-[#85CC17]/10 border border-[#85CC17]/25 rounded-xl px-4 py-3 text-[#85CC17] text-sm mb-4">
+          <div className="bg-[#F6B78D]/10 border border-[#F6B78D]/25 rounded-xl px-4 py-3 text-[#F6B78D] text-sm mb-4">
             Password updated. Sign in with your new password.
           </div>
         )}

@@ -8,15 +8,16 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const origin = new URL(req.url).origin;
   const bgSrc = `${origin}/hero-nyc-skyline.jpg`;
-  const logoSrc = `${origin}/logo.png`;
+  const logoSrc = `${origin}/novus.webp`;
   const fontSrc = `${origin}/fonts/SpaceGrotesk-Latin.woff2`;
   const displayFont = await fetch(fontSrc).then((res) => res.arrayBuffer());
 
   // Exact desktop hero clamp math at 1200px OG width:
   // font-size: clamp(4.8rem, 13.6vw, 9.2rem) => 147.2px
-  // logo size: clamp(7.6rem, 20vw, 16.8rem) => 240px
+  // logo size mirrors the cropped Novus mark in the home hero.
   const heroFontSize = 147.2;
-  const heroLogoSize = 240;
+  const heroLogoWidth = 130;
+  const heroLogoHeight = 232;
   const heroGap = 14; // md:gap-3.5
 
   return new ImageResponse(
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
             inset: 0,
             // Matches .home-shared-wash from globals.css
             background:
-              "linear-gradient(145deg,rgba(10,26,15,.58),rgba(14,40,20,.42) 38%,rgba(8,24,12,.52)),radial-gradient(120% 100% at 24% -8%,rgba(133,204,23,.22) 0,rgba(133,204,23,0) 66%)",
+              "linear-gradient(145deg,rgba(35,31,36,.62),rgba(66,45,52,.46) 38%,rgba(35,31,36,.56)),radial-gradient(120% 100% at 24% -8%,rgba(246,183,141,.22) 0,rgba(246,183,141,0) 66%)",
           }}
         />
         <div
@@ -95,14 +96,14 @@ export async function GET(req: NextRequest) {
             >
               <img
                 src={logoSrc}
-                alt="Volta logo"
-                width={heroLogoSize}
-                height={heroLogoSize}
+                alt="Novus NYC logo"
+                width={heroLogoWidth}
+                height={heroLogoHeight}
                 style={{ objectFit: "contain" }}
               />
               <div
                 style={{
-                  color: "#85CC17",
+                  color: "#F6B78D",
                   fontSize: `${heroFontSize}px`,
                   fontWeight: 700,
                   letterSpacing: "-0.025em", // tracking-tight
@@ -110,7 +111,7 @@ export async function GET(req: NextRequest) {
                   fontFamily: "Space Grotesk",
                 }}
               >
-                VOLTA
+                NOVUS
               </div>
             </div>
           </div>

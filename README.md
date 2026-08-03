@@ -1,8 +1,8 @@
-# Volta NYC — Members Portal
+# Novus NYC — Members Portal
 
-Volta NYC is a student-led, pro-bono consulting organization providing free digital services to small businesses across New York City. This repository contains two tightly coupled products:
+Novus NYC is a student-led, pro-bono consulting organization providing free digital services to small businesses across New York City. This repository contains two tightly coupled products:
 
-- **Public website** — marketing site, project showcase, partner inquiry, student application, and interview booking at [voltanyc.org](https://voltanyc.org)
+- **Public website** — marketing site, project showcase, partner inquiry, student application, and interview booking at [novusnyc.org](https://novusnyc.org)
 - **Members portal** — private dark-themed dashboard at `/members/*` for managing assignments, clients, applicants, team operations, and internal email
 
 ---
@@ -18,7 +18,7 @@ Volta NYC is a student-led, pro-bono consulting organization providing free digi
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Volta-NYC/voltanyc.git
+git clone https://github.com/Novus-NYC/voltanyc.git
 cd voltanyc
 npm install
 ```
@@ -71,7 +71,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=         # Server-only. Never expose to the browser.
 
 # ── Public site ───────────────────────────────────────────────────────────────
-NEXT_PUBLIC_SITE_URL=              # e.g. https://voltanyc.org
+NEXT_PUBLIC_SITE_URL=              # e.g. https://novusnyc.org
 APPS_SCRIPT_URL=                   # Google Apps Script URL for form logging and resume upload
 NEXT_PUBLIC_APPS_SCRIPT_URL=       # Legacy fallback; prefer APPS_SCRIPT_URL
 
@@ -270,7 +270,7 @@ The portal uses a separate dark palette (`#0D0F14` → `#13161D` → `#111418`) 
 
 ## Deployment
 
-The app deploys automatically to **[voltanyc.org](https://voltanyc.org)** via Vercel on every push to `main`. `next.config.ts` handles 301 redirects from `www.voltanyc.org` and legacy domains.
+The app deploys automatically to **[novusnyc.org](https://novusnyc.org)** via Vercel on every push to `main`. `next.config.ts` handles 301 redirects from `www.novusnyc.org` and legacy domains.
 
 To apply database schema changes after deployment, run migrations against the linked Supabase project:
 

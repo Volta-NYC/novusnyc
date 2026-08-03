@@ -45,7 +45,7 @@ const FONT_SIZES = [
 const TEXT_COLORS = [
   "#FFFFFF", "#E5E7EB", "#9CA3AF", "#6B7280",
   "#EF4444", "#F97316", "#EAB308", "#22C55E",
-  "#3B82F6", "#8B5CF6", "#EC4899", "#85CC17",
+  "#3B82F6", "#8B5CF6", "#EC4899", "#F6B78D",
   "#000000", "#1F2937", "#374151", "#4B5563",
 ];
 
@@ -216,7 +216,7 @@ function TextColorIcon({ color }: { color?: string }) {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
       <text x="3" y="17" fontSize="16" fontWeight="bold" fill="currentColor">A</text>
-      <rect x="3" y="19" width="18" height="3" fill={color || "#85CC17"} rx="1" />
+      <rect x="3" y="19" width="18" height="3" fill={color || "#F6B78D"} rx="1" />
     </svg>
   );
 }
@@ -273,7 +273,7 @@ function ToolbarBtn({
       className={[
         "h-7 w-7 rounded flex items-center justify-center transition-colors",
         active
-          ? "text-[#85CC17] bg-[#85CC17]/10"
+          ? "text-[#F6B78D] bg-[#F6B78D]/10"
           : "text-white/60 hover:text-white hover:bg-white/8",
         disabled ? "opacity-30 cursor-not-allowed" : "",
       ].join(" ")}
@@ -401,13 +401,13 @@ function LinkPopup({
           if (e.key === "Escape") onClose();
         }}
         placeholder="https://..."
-        className="w-full bg-[#0F1014] border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[#85CC17]/45 mb-2"
+        className="w-full bg-[#0F1014] border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/45 mb-2"
       />
       <div className="flex gap-2">
         <button
           type="button"
           onMouseDown={(e) => { e.preventDefault(); onSet(url); onClose(); }}
-          className="flex-1 h-7 rounded bg-[#85CC17]/15 text-[#85CC17] text-xs font-medium hover:bg-[#85CC17]/25 transition-colors"
+          className="flex-1 h-7 rounded bg-[#F6B78D]/15 text-[#F6B78D] text-xs font-medium hover:bg-[#F6B78D]/25 transition-colors"
         >
           Set link
         </button>
@@ -588,7 +588,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           value={currentFontFamily}
           onChange={(e) => handleFontFamily(e.target.value)}
           title="Font family"
-          className="h-7 rounded bg-transparent border border-white/10 px-1.5 text-xs text-white/70 focus:outline-none focus:border-[#85CC17]/45 mr-0.5"
+          className="h-7 rounded bg-transparent border border-white/10 px-1.5 text-xs text-white/70 focus:outline-none focus:border-[#F6B78D]/45 mr-0.5"
           style={{ minWidth: 90 }}
         >
           {FONT_FAMILIES.map((f) => (
@@ -602,7 +602,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           value={currentFontSize}
           onChange={(e) => handleFontSize(e.target.value)}
           title="Font size"
-          className="h-7 rounded bg-transparent border border-white/10 px-1.5 text-xs text-white/70 focus:outline-none focus:border-[#85CC17]/45"
+          className="h-7 rounded bg-transparent border border-white/10 px-1.5 text-xs text-white/70 focus:outline-none focus:border-[#F6B78D]/45"
           style={{ minWidth: 64 }}
         >
           <option value="" style={{ background: "#1C1F26" }}>Size</option>
@@ -805,7 +805,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           .prose-rte u { text-decoration: underline; }
           .prose-rte s { text-decoration: line-through; }
           .prose-rte blockquote {
-            border-left: 3px solid #85CC17;
+            border-left: 3px solid #F6B78D;
             margin: 0.5em 0;
             padding-left: 0.75em;
             color: rgba(255,255,255,0.55);
@@ -819,11 +819,11 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             margin: 0.75em 0;
           }
           .rte-link {
-            color: #85CC17;
+            color: #F6B78D;
             text-decoration: underline;
             cursor: pointer;
           }
-          .prose-rte .ProseMirror-selectednode { outline: 2px solid #85CC17; }
+          .prose-rte .ProseMirror-selectednode { outline: 2px solid #F6B78D; }
           .prose-rte.ProseMirror-focused { outline: none; }
           /* Placeholder */
           .prose-rte p.is-editor-empty:first-child::before {

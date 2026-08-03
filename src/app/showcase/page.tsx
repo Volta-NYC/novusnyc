@@ -8,11 +8,11 @@ import ShowcaseClient from "./page-client";
 export async function generateMetadata(): Promise<Metadata> {
   const liveStats = await getPublicLiveStats();
   return {
-    title: "Our Work | Volta NYC",
+    title: "Our Work | Novus NYC",
     description:
-      `Interactive map and project portfolio showing Volta NYC's active work across New York City — websites, social media, SEO, and grant writing for ${formatCounter(liveStats.totalBusinesses)} small businesses.`,
+      `Interactive map and project portfolio showing Novus NYC's active work across New York City — websites, social media, SEO, and grant writing for ${formatCounter(liveStats.totalBusinesses)} small businesses.`,
     openGraph: {
-      title: "Our Work | Volta NYC",
+      title: "Our Work | Novus NYC",
       description: `${formatCounter(liveStats.totalBusinesses)} businesses across New York City. See every project.`,
       images: ["/api/og"],
     },

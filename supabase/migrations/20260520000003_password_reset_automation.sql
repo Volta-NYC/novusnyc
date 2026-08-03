@@ -8,21 +8,21 @@ VALUES (
   'password-reset',
   'Password reset',
   'Sent when a member requests a password reset link.',
-  'Reset your Volta NYC password',
+  'Reset your Novus NYC password',
   $BODY$<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;margin:0;padding:0;">
   <div style="font-family:Garamond,'EB Garamond',serif;font-size:15px;line-height:1.7;color:#111111;background-color:#ffffff;max-width:520px;margin:0 auto;padding:32px 24px;">
 
-    <img src="https://voltanyc.org/logo.png" alt="Volta NYC" width="36" style="display:block;margin-bottom:28px;">
+    <img src="https://novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="display:block;margin-bottom:28px;">
 
     <p style="margin:0 0 20px;">Hi {{firstName}},</p>
 
-    <p style="margin:0 0 16px;">We received a request to reset the password for your Volta NYC member portal account. Click the button below to choose a new password.</p>
+    <p style="margin:0 0 16px;">We received a request to reset the password for your Novus NYC member portal account. Click the button below to choose a new password.</p>
 
     <p style="margin:0 0 28px;">
-      <a href="{{link}}" style="display:inline-block;background-color:#85CC17;color:#0d0d0d;font-weight:700;padding:7px 18px;border-radius:5px;text-decoration:none;font-size:13px;">Reset Password</a>
+      <a href="{{link}}" style="display:inline-block;background-color:#F6B78D;color:#0d0d0d;font-weight:700;padding:7px 18px;border-radius:5px;text-decoration:none;font-size:13px;">Reset Password</a>
     </p>
 
     <p style="margin:0 0 16px;font-size:13px;color:#555555;"><em>Note: This link expires in 1 hour and can only be used once. If you did not request a password reset, you can safely ignore this email.</em></p>

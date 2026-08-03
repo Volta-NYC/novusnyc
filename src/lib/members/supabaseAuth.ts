@@ -1,4 +1,4 @@
-// Supabase Auth wrappers for the Volta NYC members portal.
+// Supabase Auth wrappers for the Novus NYC members portal.
 
 import { supabase } from "@/lib/supabaseClient";
 

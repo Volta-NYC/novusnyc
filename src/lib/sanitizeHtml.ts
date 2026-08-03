@@ -47,7 +47,7 @@ function linkifyNode(node: Node): void {
       a.target = "_blank";
       a.rel = "noopener noreferrer";
       a.textContent = match[0];
-      a.className = "text-[#5C9911] hover:text-[#85CC17] underline-offset-2 hover:underline break-all";
+      a.className = "text-[#8B5E48] hover:text-[#F6B78D] underline-offset-2 hover:underline break-all";
       fragments.push(a);
       lastIndex = match.index + match[0].length;
     }

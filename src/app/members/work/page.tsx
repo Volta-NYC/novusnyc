@@ -90,7 +90,7 @@ function ClaimCard({
             {track}
           </span>
           <span className="text-black/40">
-            {business ? business.name : "Volta"}
+            {business ? business.name : "Novus"}
             {business?.neighborhood && <span className="text-black/30"> · {business.neighborhood}</span>}
           </span>
         </div>
@@ -107,7 +107,7 @@ function ClaimCard({
             ) : (
               <span className="text-black/40">No deadline set</span>
             )}
-            <span className="text-[#5C9911] font-medium">
+            <span className="text-[#8B5E48] font-medium">
               Submit to earn {creditsDisplay} credit{creditsDisplay !== 1 ? "s" : ""} →
             </span>
           </div>
@@ -137,7 +137,7 @@ function ClaimCard({
         {claim.status === "rejected" && (
           <div className="text-xs text-red-700">
             Rejected{claim.rejectReason ? `: ${claim.rejectReason}` : ""}
-            <span className="ml-2 text-[#5C9911] font-medium">Resubmit →</span>
+            <span className="ml-2 text-[#8B5E48] font-medium">Resubmit →</span>
           </div>
         )}
       </div>
@@ -145,7 +145,7 @@ function ClaimCard({
       {/* Credits */}
       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
         {claim.status === "Approved" ? (
-          <span className="text-base font-bold text-[#5C9911]">+{creditsDisplay} credit{creditsDisplay !== 1 ? "s" : ""}</span>
+          <span className="text-base font-bold text-[#8B5E48]">+{creditsDisplay} credit{creditsDisplay !== 1 ? "s" : ""}</span>
         ) : (
           <span className="text-xs text-black/35 font-medium">{assignment.credits} credit{assignment.credits !== 1 ? "s" : ""}</span>
         )}
@@ -245,9 +245,9 @@ export default function MyWorkPage() {
             </p>
           </div>
           {totalCreditsEarned > 0 && (
-            <div className="flex-shrink-0 rounded-xl border border-[#85CC17]/30 bg-[#85CC17]/8 px-4 py-2.5 text-center">
-              <p className="text-2xl font-bold text-[#5C9911] font-display">{totalCreditsEarned}</p>
-              <p className="text-[10px] uppercase tracking-wider text-[#5C9911]/70 font-semibold">Credits Earned</p>
+            <div className="flex-shrink-0 rounded-xl border border-[#F6B78D]/30 bg-[#F6B78D]/8 px-4 py-2.5 text-center">
+              <p className="text-2xl font-bold text-[#8B5E48] font-display">{totalCreditsEarned}</p>
+              <p className="text-[10px] uppercase tracking-wider text-[#8B5E48]/70 font-semibold">Credits Earned</p>
             </div>
           )}
         </header>
@@ -272,7 +272,7 @@ export default function MyWorkPage() {
               <p className="text-xs text-black/35 mb-5">Browse the catalog to find something that matches your skills.</p>
               <Link
                 href="/members/work/catalog"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#85CC17]/40 bg-[#85CC17]/8 px-4 py-2 text-sm font-medium text-[#5C9911] hover:bg-[#85CC17]/15 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#F6B78D]/40 bg-[#F6B78D]/8 px-4 py-2 text-sm font-medium text-[#8B5E48] hover:bg-[#F6B78D]/15 transition-colors"
               >
                 Browse Assignment Catalog →
               </Link>

@@ -76,6 +76,7 @@ const nextConfig = {
     const OLD_HOSTS = [
       "nyc.voltanpo.org",
       "www.voltanyc.org",
+      "www.novusnyc.org",
       "volta-nyc.vercel.app",
     ];
     return [
@@ -87,7 +88,7 @@ const nextConfig = {
       ...OLD_HOSTS.map((host) => ({
         source: "/:path*",
         has: [{ type: "host", value: host }],
-        destination: `https://voltanyc.org/:path*`,
+        destination: `https://novusnyc.org/:path*`,
         permanent: true,
       })),
     ];

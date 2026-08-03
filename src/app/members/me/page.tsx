@@ -33,7 +33,7 @@ function seededRand(seed: number): number {
   const x = Math.sin(seed + 1) * 10000;
   return x - Math.floor(x);
 }
-const CONFETTI_COLORS = ["#85CC17", "#F59E0B", "#3B82F6", "#EC4899", "#8B5CF6", "#F97316", "#06B6D4"];
+const CONFETTI_COLORS = ["#F6B78D", "#F59E0B", "#3B82F6", "#EC4899", "#8B5CF6", "#F97316", "#06B6D4"];
 const CONFETTI_PIECES = Array.from({ length: 30 }, (_, i) => ({
   left:     seededRand(i * 7 + 0) * 100,
   size:     Math.floor(seededRand(i * 7 + 1) * 7) + 5,
@@ -63,7 +63,7 @@ function ClaimRow({ c, a, biz }: { c: AssignmentClaim; a: Assignment | undefined
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-black/90 truncate">{a?.title ?? "Assignment removed"}</p>
           <p className="text-xs text-black/45 mt-0.5">
-            {biz?.name ?? "Volta"}
+            {biz?.name ?? "Novus"}
             {c.status === "Submitted" && c.submittedAt && (
               <span className="text-black/30"> · Submitted {formatDate(c.submittedAt)}</span>
             )}
@@ -80,7 +80,7 @@ function ClaimRow({ c, a, biz }: { c: AssignmentClaim; a: Assignment | undefined
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
           {c.status === "Approved" ? (
-            <span className="text-xs font-bold text-[#5C9911]">
+            <span className="text-xs font-bold text-[#8B5E48]">
               +{totalEarned != null ? totalEarned : credits} credits
             </span>
           ) : (
@@ -243,7 +243,7 @@ export default function MyRecordPage() {
               <p className="text-base text-black/55 font-medium mt-1">{me.role}</p>
             )}
           </div>
-          <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+          <Link href="/members/work" className="text-xs text-[#8B5E48] hover:text-[#F6B78D] font-medium">
             Browse work →
           </Link>
         </header>
@@ -291,7 +291,7 @@ export default function MyRecordPage() {
               <>
                 <div className="flex items-center justify-between text-xs mb-2">
                   <span className="font-semibold text-black/75">
-                    <span className="text-[#5C9911]">{ledger.total}</span>
+                    <span className="text-[#8B5E48]">{ledger.total}</span>
                     <span className="text-black/35"> / {targetCredits} credits</span>
                   </span>
                   {ledger.pending > 0 && (
@@ -301,7 +301,7 @@ export default function MyRecordPage() {
                 <div className="h-5 rounded-full bg-black/8 overflow-hidden flex relative border border-black/12">
                   <div
                     className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${earnedPct}%`, background: "linear-gradient(90deg, #5C9911, #85CC17)" }}
+                    style={{ width: `${earnedPct}%`, background: "linear-gradient(90deg, #8B5E48, #F6B78D)" }}
                   />
                   {pendingPct > 0 && (
                     <div
@@ -344,7 +344,7 @@ export default function MyRecordPage() {
               <>
                 <div className="flex items-center justify-between text-xs mb-2">
                   <span className="font-semibold text-black/75">
-                    <span className="text-[#5C9911]">{ledger.total}</span>
+                    <span className="text-[#8B5E48]">{ledger.total}</span>
                     <span className="text-black/35"> credits earned</span>
                   </span>
                   {ledger.pending > 0 && (
@@ -354,7 +354,7 @@ export default function MyRecordPage() {
                 <div className="h-5 rounded-full bg-black/8 overflow-hidden flex border border-black/12">
                   <div
                     className="h-full rounded-full"
-                    style={{ width: ledger.total > 0 ? "100%" : "0%", background: "linear-gradient(90deg, #5C9911, #85CC17)" }}
+                    style={{ width: ledger.total > 0 ? "100%" : "0%", background: "linear-gradient(90deg, #8B5E48, #F6B78D)" }}
                   />
                 </div>
                 <p className="text-[10px] text-black/30 mt-1.5">Leadership roles are not subject to cycle credit targets.</p>
@@ -370,7 +370,7 @@ export default function MyRecordPage() {
           <section className="rounded-2xl border border-black/8 bg-white shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-black/6">
               <h2 className="font-display font-bold text-black text-base">Assignments this cycle</h2>
-              <Link href="/members/work" className="text-xs text-[#5C9911] hover:text-[#85CC17] font-medium">
+              <Link href="/members/work" className="text-xs text-[#8B5E48] hover:text-[#F6B78D] font-medium">
                 View all →
               </Link>
             </div>
@@ -380,7 +380,7 @@ export default function MyRecordPage() {
                 <p className="text-sm text-black/45 mb-3">No assignments claimed yet this cycle.</p>
                 <Link
                   href="/members/work"
-                  className="inline-flex items-center gap-1 rounded-lg border border-[#85CC17]/40 bg-[#85CC17]/8 px-3 py-1.5 text-sm font-medium text-[#5C9911] hover:bg-[#85CC17]/15 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#F6B78D]/40 bg-[#F6B78D]/8 px-3 py-1.5 text-sm font-medium text-[#8B5E48] hover:bg-[#F6B78D]/15 transition-colors"
                 >
                   Browse available work →
                 </Link>
@@ -473,7 +473,7 @@ export default function MyRecordPage() {
                       </p>
                       {s.note && <p className="text-xs text-black/65 mt-1">{s.note}</p>}
                     </div>
-                    <span className="text-[#5C9911] font-mono text-sm flex-shrink-0">{s.points} {s.points === 1 ? "demerit" : "demerits"}</span>
+                    <span className="text-[#8B5E48] font-mono text-sm flex-shrink-0">{s.points} {s.points === 1 ? "demerit" : "demerits"}</span>
                   </li>
                 ))}
             </ul>
@@ -495,7 +495,7 @@ export default function MyRecordPage() {
                         {new Date(a.createdAt).toLocaleDateString()} · by {a.createdBy}
                       </p>
                     </div>
-                    <span className={`font-mono text-sm flex-shrink-0 ${a.points >= 0 ? "text-[#5C9911]" : "text-red-700"}`}>
+                    <span className={`font-mono text-sm flex-shrink-0 ${a.points >= 0 ? "text-[#8B5E48]" : "text-red-700"}`}>
                       {a.points >= 0 ? "+" : ""}{a.points}
                     </span>
                   </li>
@@ -546,7 +546,7 @@ export default function MyRecordPage() {
                                     {c.status === "claimed" ? "Claimed" : c.status}
                                   </span>
                                   {c.status === "Approved" && (
-                                    <span className="text-xs text-[#5C9911] font-mono">+{c.creditsAwarded ?? a?.credits ?? 0} credits</span>
+                                    <span className="text-xs text-[#8B5E48] font-mono">+{c.creditsAwarded ?? a?.credits ?? 0} credits</span>
                                   )}
                                 </div>
                               </div>
