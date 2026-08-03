@@ -73,11 +73,11 @@ export default async function About() {
             <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-v-border border border-v-border rounded-2xl overflow-hidden">
               {[
                 { value: formatCounter(liveStats.totalBusinesses), label: "Total\nbusinesses", color: "text-v-green" },
-                { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects", color: "text-blue-500" },
-                { value: formatCounter(liveStats.marketingProjects), label: "Marketing\nprojects", color: "text-lime-600" },
-                { value: formatCounter(liveStats.caseStudies), label: "Case studies\nby students", color: "text-pink-500" },
-                { value: formatCounter(liveStats.educationalReports), label: "Educational guides\nfor merchants", color: "text-amber-500" },
-                { value: formatCounter(liveStats.bidPartners, true), label: "Community\norganizations", color: "text-purple-500" },
+                { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects", color: "text-v-blue" },
+                { value: formatCounter(liveStats.marketingProjects), label: "Marketing\nprojects", color: "text-v-green-dark" },
+                { value: formatCounter(liveStats.caseStudies), label: "Case studies\nby students", color: "text-v-blue-dark" },
+                { value: formatCounter(liveStats.educationalReports), label: "Educational guides\nfor merchants", color: "text-amber-600" },
+                { value: formatCounter(liveStats.bidPartners, true), label: "Community\norganizations", color: "text-v-ink" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06}>
                   <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
@@ -140,7 +140,7 @@ export default async function About() {
             {aboutTimeline.map((milestone, i) => (
               <AnimatedSection key={`${milestone.year}-${milestone.label}`} delay={i * 0.08}>
                 <article className="relative pb-10 last:pb-0">
-                  <span className="absolute -left-[2.56rem] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-white bg-v-green md:-left-[3.56rem]" aria-hidden="true" />
+                  <span className={`absolute -left-[2.56rem] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-white md:-left-[3.56rem] ${["bg-v-green", "bg-v-blue", "bg-v-yellow", "bg-v-green-dark", "bg-v-blue-dark"][i] ?? "bg-v-green"}`} aria-hidden="true" />
                   <div className="grid gap-2 md:grid-cols-[7rem_1fr] md:gap-8">
                     <p className="font-body text-xs font-semibold uppercase tracking-widest text-v-green">
                       {milestone.month} {milestone.year}
@@ -215,7 +215,7 @@ export default async function About() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
             {aboutValues.map((v, i) => {
-              const numColor = ["text-v-green", "text-blue-500", "text-lime-600", "text-pink-500"][i] ?? "text-v-green";
+              const numColor = ["text-v-green", "text-v-blue", "text-amber-600", "text-v-green-dark"][i] ?? "text-v-green";
               return (
                 <AnimatedSection key={v.title} delay={i * 0.1}>
                   <div className="flex flex-col gap-4 bg-white rounded-2xl border border-v-border p-7 hover:shadow-md transition-shadow duration-200 h-full">
