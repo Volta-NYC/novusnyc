@@ -76,7 +76,6 @@ const nextConfig = {
     const OLD_HOSTS = [
       "nyc.voltanpo.org",
       "www.voltanyc.org",
-      "www.novusnyc.org",
       "volta-nyc.vercel.app",
     ];
     return [
