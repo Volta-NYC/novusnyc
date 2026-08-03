@@ -330,7 +330,7 @@ export default async function Partners() {
       </section>
 
       {/* ── PARTNER EXAMPLES ───────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-[#fcf3e9]">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Partners we&apos;re supporting</h2>
@@ -365,7 +365,7 @@ export default async function Partners() {
       </section>
 
       {/* ── TRUST SIGNALS ──────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-[#fcf3e9]">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8 md:mb-10 text-center">
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
@@ -404,7 +404,7 @@ export default async function Partners() {
       </section>
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-[#f4eff5]">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
