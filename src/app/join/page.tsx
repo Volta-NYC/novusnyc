@@ -89,7 +89,7 @@ export default async function Join() {
       />
 
       {/* ── HERO + MARQUEE ─────────────────────────────────── */}
-      <section className="relative pt-32 overflow-hidden" data-home-dark-end="true">
+      <section className="relative flex min-h-[100svh] flex-col overflow-hidden pt-32" data-home-dark-end="true">
         <Image
           src={cornellPhoto}
           alt="Cornell University campus"
@@ -103,7 +103,7 @@ export default async function Join() {
         />
         <div className="absolute inset-0 bg-[#1a1e24]/75" />
         <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8 pb-16">
+        <div className="relative flex flex-1 items-center max-w-7xl mx-auto w-full px-5 md:px-8 pb-16">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
               For Students

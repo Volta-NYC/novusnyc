@@ -26,7 +26,7 @@ export default async function About() {
   return (
     <>
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-20 overflow-hidden" data-home-dark-end="true">
+      <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-20" data-home-dark-end="true">
         <Image
           src={brooklynBridgePhoto}
           alt="Brooklyn Bridge"
@@ -40,7 +40,7 @@ export default async function About() {
         />
         <div className="absolute inset-0 bg-[#1a1e24]/75" />
         <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
+        <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
           <div className="flex-1">
             <AnimatedSection>
               <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">About Novus</p>

@@ -183,7 +183,7 @@ export default async function Partners() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-24 overflow-hidden">
+      <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24" data-home-dark-end="true">
         <Image
           src={storefrontPhoto}
           alt="Petite Dumpling restaurant storefront in Park Slope, Brooklyn"
@@ -197,7 +197,7 @@ export default async function Partners() {
         />
         <div className="absolute inset-0 bg-[#1a1e24]/75" />
         <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+        <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
               For NYC Small Businesses

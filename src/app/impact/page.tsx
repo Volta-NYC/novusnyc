@@ -135,10 +135,10 @@ export default async function Impact() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-v-dark pt-32 pb-20 relative overflow-hidden">
+      <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-v-dark pt-32 pb-20" data-home-dark-end="true">
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
         <div className="absolute top-0 right-0 w-96 h-96 bg-v-green/10 rounded-full blur-3xl" />
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+        <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Impact Report</p>
             <h1
