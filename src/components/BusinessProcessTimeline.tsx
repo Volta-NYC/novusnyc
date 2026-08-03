@@ -49,46 +49,59 @@ export default function BusinessProcessTimeline() {
           </p>
         </div>
 
-        <div className="relative">
-          <motion.div
-            aria-hidden="true"
-            className="hidden md:block absolute top-5 left-[12.5%] right-[12.5%] h-px bg-v-border origin-left"
-            initial={reducedMotion ? false : { scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          />
-          <ol className="grid gap-8 md:grid-cols-4 md:gap-5">
-            {stages.map((stage, index) => (
-              <motion.li
-                key={stage.title}
-                className="relative grid grid-cols-[2.75rem_1fr] gap-4 md:block"
-                initial={reducedMotion ? false : { opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.45 }}
-                transition={{ duration: 0.45, delay: reducedMotion ? 0 : index * 0.13, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="relative flex justify-center md:mb-5">
-                  {index < stages.length - 1 ? (
-                    <span aria-hidden="true" className="md:hidden absolute top-10 bottom-[-2rem] w-px bg-v-border" />
-                  ) : null}
-                  <motion.span
-                    className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full ${stage.accent} ring-8 ${stage.ring} font-display font-bold text-sm text-v-ink`}
-                    initial={reducedMotion ? false : { scale: 0.75 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true, amount: 0.45 }}
-                    transition={{ duration: 0.35, delay: reducedMotion ? 0 : index * 0.13 + 0.08, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    {index + 1}
-                  </motion.span>
-                </div>
-                <div className="pb-1 md:text-center">
-                  <h3 className="font-display font-bold text-v-ink text-lg leading-tight">{stage.title}</h3>
-                  <p className="font-body text-sm text-v-muted leading-relaxed mt-2">{stage.detail}</p>
-                </div>
-              </motion.li>
-            ))}
-          </ol>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-stretch">
+          <div className="relative border border-v-border bg-v-bg rounded-lg p-5 md:p-7">
+            <motion.div
+              aria-hidden="true"
+              className="hidden md:block absolute top-12 left-[12.5%] right-[12.5%] h-px bg-v-border origin-left"
+              initial={reducedMotion ? false : { scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <ol className="grid gap-8 md:grid-cols-4 md:gap-5">
+              {stages.map((stage, index) => (
+                <motion.li
+                  key={stage.title}
+                  className="relative grid grid-cols-[2.75rem_1fr] gap-4 md:block"
+                  initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.45 }}
+                  transition={{ duration: 0.45, delay: reducedMotion ? 0 : index * 0.13, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className="relative flex justify-center md:mb-5">
+                    {index < stages.length - 1 ? (
+                      <span aria-hidden="true" className="md:hidden absolute top-10 bottom-[-2rem] w-px bg-v-border" />
+                    ) : null}
+                    <motion.span
+                      className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full ${stage.accent} ring-8 ${stage.ring} font-display font-bold text-sm text-v-ink`}
+                      initial={reducedMotion ? false : { scale: 0.75 }}
+                      whileInView={{ scale: 1 }}
+                      viewport={{ once: true, amount: 0.45 }}
+                      transition={{ duration: 0.35, delay: reducedMotion ? 0 : index * 0.13 + 0.08, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      {index + 1}
+                    </motion.span>
+                  </div>
+                  <div className="pb-1 md:text-center">
+                    <h3 className="font-display font-bold text-v-ink text-lg leading-tight">{stage.title}</h3>
+                    <p className="font-body text-sm text-v-muted leading-relaxed mt-2">{stage.detail}</p>
+                  </div>
+                </motion.li>
+              ))}
+            </ol>
+          </div>
+
+          <aside className="flex flex-col justify-between rounded-lg bg-v-dark px-6 py-7 text-white">
+            <div>
+              <p className="font-body text-xs font-semibold uppercase tracking-[0.18em] text-v-green mb-3">What stays simple</p>
+              <h3 className="font-display font-bold text-2xl leading-tight">No cost. No contract. No technical guesswork.</h3>
+            </div>
+            <div className="mt-8 border-t border-white/15 pt-5 space-y-4">
+              <p className="font-body text-sm leading-relaxed text-white/70">You&apos;ll have a clear point of contact and regular updates from the team working with you.</p>
+              <p className="font-body text-sm font-semibold text-v-green">Built with your business, not just for it.</p>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
