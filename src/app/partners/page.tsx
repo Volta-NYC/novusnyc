@@ -4,6 +4,7 @@ import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
+import { currentProjects } from "@/data";
 import {
   GlobeIcon,
   SmartphoneIcon,
@@ -230,53 +231,6 @@ export default async function Partners() {
         </div>
       </section>
 
-      {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
-              Six ways we can help
-            </h2>
-            <p className="font-body text-v-muted mt-3 max-w-xl">
-              Every project is led by students, scoped with you, and delivered with clear timelines and regular updates. Pick what your business needs most.
-            </p>
-          </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {SERVICES.map((service, i) => (
-              <AnimatedSection key={service.title} delay={i * 0.06}>
-                <details className="group bg-v-bg border border-v-border rounded-2xl px-5 py-5 h-full">
-                  <summary className="list-none cursor-pointer">
-                    <div className="flex items-start gap-3">
-                      <span className={`w-10 h-10 rounded-xl ${service.bg} flex items-center justify-center shrink-0`}>
-                        <service.icon className={`w-4 h-4 ${service.color}`} />
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <span className="block font-display font-bold text-v-ink text-base leading-tight">
-                          {service.title}
-                        </span>
-                        <span className="block font-body text-sm text-v-muted mt-1 leading-relaxed">
-                          {service.summary}
-                        </span>
-                      </div>
-                      <svg className="w-4 h-4 text-v-muted mt-1.5 shrink-0 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </summary>
-                  <div className="accordion-body mt-4 pl-[3.25rem]">
-                    <ul className="list-disc pl-5 space-y-1.5 font-body text-sm text-v-muted">
-                      {service.details.map((detail) => (
-                        <li key={detail}>{detail}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </details>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
       <section className="py-16 bg-v-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
@@ -285,9 +239,9 @@ export default async function Partners() {
               Work with us
             </h2>
             <p className="font-body text-v-muted max-w-xl">
-              Tell us about your business and what you need. Switch the form to your
-              preferred language using the toggle below. If you were referred by a BID,
-              mention that in your message. We&apos;re also open to a quick Zoom chat.
+              Tell us about your business and what you need. It&apos;s free, with no contract
+              or obligation. Switch the form to your preferred language using the toggle
+              below. If you were referred by a BID, mention that in your message.
             </p>
           </AnimatedSection>
           <AnimatedSection>
@@ -333,11 +287,115 @@ export default async function Partners() {
               </div>
             </AnimatedSection>
           </div>
+          <AnimatedSection className="mt-10">
+            <div className="border border-v-border bg-v-bg rounded-xl p-5 md:p-6">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">
+                <h3 className="font-display font-bold text-v-ink text-xl">Estimated project timeline</h3>
+                <span className="font-body text-xs font-semibold uppercase tracking-widest text-v-muted">Placeholder</span>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4 font-body text-sm">
+                <div>
+                  <p className="font-display font-bold text-v-ink">Initial reply</p>
+                  <p className="text-v-muted mt-1">Timeline placeholder</p>
+                </div>
+                <div>
+                  <p className="font-display font-bold text-v-ink">Project scoping</p>
+                  <p className="text-v-muted mt-1">Timeline placeholder</p>
+                </div>
+                <div>
+                  <p className="font-display font-bold text-v-ink">Project delivery</p>
+                  <p className="text-v-muted mt-1">Timeline placeholder</p>
+                </div>
+              </div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10">
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+              What your business receives
+            </h2>
+            <p className="font-body text-v-muted mt-3 max-w-xl">
+              Your student team scopes the work with you, shares regular updates, and hands over clear, usable deliverables at the end of the project.
+            </p>
+          </AnimatedSection>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {SERVICES.map((service, i) => (
+              <AnimatedSection key={service.title} delay={i * 0.06}>
+                <details className="group bg-v-bg border border-v-border rounded-2xl px-5 py-5 h-full">
+                  <summary className="list-none cursor-pointer">
+                    <div className="flex items-start gap-3">
+                      <span className={`w-10 h-10 rounded-xl ${service.bg} flex items-center justify-center shrink-0`}>
+                        <service.icon className={`w-4 h-4 ${service.color}`} />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="block font-display font-bold text-v-ink text-base leading-tight">
+                          {service.title}
+                        </span>
+                        <span className="block font-body text-sm text-v-muted mt-1 leading-relaxed">
+                          {service.summary}
+                        </span>
+                      </div>
+                      <svg className="w-4 h-4 text-v-muted mt-1.5 shrink-0 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </summary>
+                  <div className="accordion-body mt-4 pl-[3.25rem]">
+                    <ul className="list-disc pl-5 space-y-1.5 font-body text-sm text-v-muted">
+                      {service.details.map((detail) => (
+                        <li key={detail}>{detail}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </details>
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PARTNER EXAMPLES ───────────────────────────────── */}
+      <section className="py-16 bg-v-bg">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10">
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Partners we&apos;re supporting</h2>
+            <p className="font-body text-v-muted mt-3 max-w-2xl">
+              A few examples of the neighborhood businesses currently working with Novus.
+            </p>
+          </AnimatedSection>
+          <div className="grid md:grid-cols-3 gap-4">
+            {currentProjects.map((project, index) => (
+              <AnimatedSection key={project.name} delay={index * 0.08}>
+                <article className="h-full border border-v-border rounded-xl bg-white p-5">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <p className="font-display font-bold text-v-ink text-xl">{project.name}</p>
+                      <p className="font-body text-sm text-v-muted mt-1">{project.type} · {project.neighborhood}</p>
+                    </div>
+                    <span className={`w-3 h-3 rounded-full ${project.color} shrink-0 mt-1.5`} aria-hidden="true" />
+                  </div>
+                  <p className="font-body text-sm text-v-muted leading-relaxed mb-4">{project.desc}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.services.map((service) => (
+                      <span key={service} className="font-body text-xs font-semibold text-v-ink bg-v-bg border border-v-border px-2.5 py-1 rounded-full">
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              </AnimatedSection>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section className="py-16 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
