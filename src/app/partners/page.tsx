@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
+import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
 import { communityPartners, currentProjects } from "@/data";
@@ -109,7 +110,7 @@ const PARTNER_FAQS = [
   },
   {
     q: "How long does a project take?",
-    a: "Most projects take 4 to 8 weeks from scoping to delivery. Websites tend to take longer than social media or SEO work. We give you a timeline before we start.",
+    a: "Most projects take around 2 to 4 months from the first conversation to launch, depending on the business and project scope. Simpler projects can move much faster. We give you a timeline before we start.",
   },
   {
     q: "What do I need to provide?",
@@ -279,73 +280,7 @@ export default async function Partners() {
       </section>
 
       {/* ── PROCESS ─────────────────────────────────────────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-8">
-            <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
-              Three simple steps
-            </h2>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-4">
-            <AnimatedSection>
-              <div className="border border-v-border rounded-xl p-5 h-full bg-v-bg">
-                <div className="w-8 h-8 rounded-full bg-v-green/15 text-v-green font-display font-bold text-sm flex items-center justify-center mb-3">1</div>
-                <p className="font-display font-bold text-v-ink text-lg mb-2">Apply</p>
-                <p className="font-body text-sm text-v-muted leading-relaxed">
-                  Fill out the form above and we will follow up by text or email within a few days.
-                </p>
-              </div>
-            </AnimatedSection>
-            <AnimatedSection delay={0.06}>
-              <div className="border border-v-border rounded-xl p-5 h-full bg-v-bg">
-                <div className="w-8 h-8 rounded-full bg-v-blue/15 text-v-blue font-display font-bold text-sm flex items-center justify-center mb-3">2</div>
-                <p className="font-display font-bold text-v-ink text-lg mb-2">Meet</p>
-                <p className="font-body text-sm text-v-muted leading-relaxed">
-                  We schedule an in-person visit or call to understand your business, priorities, and goals.
-                </p>
-              </div>
-            </AnimatedSection>
-            <AnimatedSection delay={0.12}>
-              <div className="border border-v-border rounded-xl p-5 h-full bg-v-bg">
-                <div className="w-8 h-8 rounded-full bg-amber-500/15 text-amber-600 font-display font-bold text-sm flex items-center justify-center mb-3">3</div>
-                <p className="font-display font-bold text-v-ink text-lg mb-2">Build</p>
-                <p className="font-body text-sm text-v-muted leading-relaxed">
-                  A student team is assigned and gets to work. You will have a clear timeline and regular updates throughout.
-                </p>
-              </div>
-            </AnimatedSection>
-          </div>
-          <AnimatedSection className="mt-10">
-            <div className="border border-v-border bg-v-bg rounded-xl p-5 md:p-6">
-              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">
-                <h3 className="font-display font-bold text-v-ink text-xl">Estimated project timeline</h3>
-                <span className="font-body text-sm font-semibold text-v-green">Typically 2–4 months</span>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 font-body text-sm">
-                <div>
-                  <p className="font-display font-bold text-v-ink">Initial reply</p>
-                  <p className="text-v-muted mt-1">Within a few days of your inquiry.</p>
-                </div>
-                <div>
-                  <p className="font-display font-bold text-v-ink">First draft</p>
-                  <p className="text-v-muted mt-1">Usually within 2–3 weeks, often sooner.</p>
-                </div>
-                <div>
-                  <p className="font-display font-bold text-v-ink">Review and feedback</p>
-                  <p className="text-v-muted mt-1">We refine the work with you through feedback rounds.</p>
-                </div>
-                <div>
-                  <p className="font-display font-bold text-v-ink">Launch and hosting</p>
-                  <p className="text-v-muted mt-1">We prepare the final version, set up hosting as needed, and hand it over.</p>
-                </div>
-              </div>
-              <p className="font-body text-sm text-v-muted mt-5 pt-5 border-t border-v-border">
-                Most projects take around 2–4 months depending on your business and project scope. Simpler projects can move much faster.
-              </p>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
+      <BusinessProcessTimeline />
 
       {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
       <section className="py-16 bg-white">
