@@ -418,7 +418,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Logo + collapse toggle — fixed height keeps the border-b from shifting */}
         <div className={`h-[52px] border-b ${tone.sidebarBorder} flex items-center shrink-0 ${sidebarCollapsed ? "justify-center" : "px-3 gap-2"}`}>
-          <Image src="/novus.webp" alt="Novus NYC logo" width={18} height={32} className={`h-8 w-auto object-contain shrink-0 ${sidebarCollapsed ? "cursor-pointer" : ""}`} onClick={sidebarCollapsed ? toggleCollapsed : undefined} />
+          <Image src="/logo.png" alt="Novus NYC logo" width={18} height={32} className={`h-8 w-auto object-contain shrink-0 ${sidebarCollapsed ? "cursor-pointer" : ""}`} onClick={sidebarCollapsed ? toggleCollapsed : undefined} />
           {!sidebarCollapsed && (
             <>
               <div className="min-w-0 flex-1">

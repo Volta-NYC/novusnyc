@@ -79,7 +79,7 @@ export default function RootLayout({
               name: "Novus NYC",
               alternateName: "Novus New York City",
               url: SITE_URL,
-              logo: `${SITE_URL}/novus.webp`,
+              logo: `${SITE_URL}/logo.png`,
               description:
                 "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
               email: "info@novusnyc.org",

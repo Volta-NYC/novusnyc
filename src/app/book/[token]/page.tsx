@@ -233,7 +233,7 @@ export default function BookTokenPage({ params }: { params: Promise<{ token: str
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
-            <Image src="/novus.webp" alt="Novus NYC logo" width={18} height={32} className="h-8 w-auto object-contain" />
+            <Image src="/logo.png" alt="Novus NYC logo" width={18} height={32} className="h-8 w-auto object-contain" />
             <span className="text-white font-bold text-lg tracking-tight group-hover:text-white/80 transition-colors">NOVUS NYC</span>
           </Link>
           <p className="text-white/40 text-sm font-body">Interview Scheduling</p>

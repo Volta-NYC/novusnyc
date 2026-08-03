@@ -10,7 +10,7 @@ export default function Footer() {
 
           <div className="flex flex-col items-start">
             <Link href="/" className="flex items-center gap-3 mb-4">
-              <Image src="/novus.webp" alt="Novus NYC logo" width={34} height={60} className="h-14 w-auto object-contain" />
+              <Image src="/logo.png" alt="Novus NYC logo" width={34} height={60} className="h-14 w-auto object-contain" />
               <span className="font-display font-bold text-3xl tracking-tight text-v-green">Novus</span>
             </Link>
             <p className="font-body text-sm leading-relaxed text-white/50">

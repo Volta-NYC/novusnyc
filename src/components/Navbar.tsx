@@ -86,7 +86,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1.5 md:gap-2 group">
             <Image
-              src="/novus.webp"
+              src="/logo.png"
               alt="Novus NYC logo"
               width={28}
               height={50}

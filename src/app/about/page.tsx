@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
-import { aboutValues, teamMembers } from "@/data";
+import { aboutTimeline, aboutValues, teamMembers } from "@/data";
 import { formatCounter } from "@/lib/formatCounter";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
@@ -123,6 +123,37 @@ export default async function About() {
               </div>
             </div>
           </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── HISTORY ─────────────────────────────────────────── */}
+      <section className="py-16 bg-white">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <AnimatedSection className="mb-10">
+            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Our history</p>
+            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Building Novus, one chapter at a time</h2>
+            <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed">
+              A placeholder timeline for the moments, partnerships, and people that shaped our work.
+            </p>
+          </AnimatedSection>
+          <div className="relative ml-3 border-l-2 border-v-green/25 pl-8 md:ml-8 md:pl-12">
+            {aboutTimeline.map((milestone, i) => (
+              <AnimatedSection key={`${milestone.year}-${milestone.label}`} delay={i * 0.08}>
+                <article className="relative pb-10 last:pb-0">
+                  <span className="absolute -left-[2.56rem] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-white bg-v-green md:-left-[3.56rem]" aria-hidden="true" />
+                  <div className="grid gap-2 md:grid-cols-[7rem_1fr] md:gap-8">
+                    <p className="font-body text-xs font-semibold uppercase tracking-widest text-v-green">
+                      {milestone.month} {milestone.year}
+                    </p>
+                    <div>
+                      <h3 className="font-display text-xl font-bold text-v-ink">{milestone.label}</h3>
+                      <p className="font-body mt-2 leading-relaxed text-v-muted">{milestone.desc}</p>
+                    </div>
+                  </div>
+                </article>
+              </AnimatedSection>
+            ))}
+          </div>
         </div>
       </section>
 

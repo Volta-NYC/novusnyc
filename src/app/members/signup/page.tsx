@@ -178,7 +178,7 @@ export default function SignupPage() {
     return (
       <>
         <div className="flex flex-col items-center mb-8">
-          <Image src="/novus.webp" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
+          <Image src="/logo.png" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
           <h1 className="font-display font-bold text-white text-2xl">{heading}</h1>
           <p className="text-white/40 text-sm mt-1 text-center">{subheading}</p>
         </div>
@@ -275,7 +275,7 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
-          <Image src="/novus.webp" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-6 mx-auto" />
+          <Image src="/logo.png" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-6 mx-auto" />
           <h1 className="font-display font-bold text-white text-2xl mb-3">Invalid Link</h1>
           <p className="text-white/50 text-sm mb-6">
             This link is invalid. Use the invite link from your email, or contact an admin.
@@ -293,7 +293,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <Image src="/novus.webp" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
+          <Image src="/logo.png" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
           <h1 className="font-display font-bold text-white text-2xl">Set Up Your Account</h1>
           <p className="text-white/40 text-sm mt-1">Choose a password to complete your account.</p>
         </div>

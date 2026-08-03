@@ -25,7 +25,7 @@ export default function HeroSection() {
         >
           <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-2 sm:gap-2.5 md:gap-3.5">
             <Image
-              src="/novus.webp"
+              src="/logo.png"
               alt="Novus NYC logo"
               width={112}
               height={200}

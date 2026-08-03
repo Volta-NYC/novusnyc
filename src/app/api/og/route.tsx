@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const origin = new URL(req.url).origin;
   const bgSrc = `${origin}/hero-nyc-skyline.jpg`;
-  const logoSrc = `${origin}/novus.webp`;
+  const logoSrc = `${origin}/logo.png`;
   const fontSrc = `${origin}/fonts/SpaceGrotesk-Latin.woff2`;
   const displayFont = await fetch(fontSrc).then((res) => res.arrayBuffer());
 

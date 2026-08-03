@@ -15,7 +15,7 @@ import {
   TrendingUpIcon,
   CreditCardIcon,
 } from "@/components/Icons";
-import { NOVUS_STATS, formatStat } from "./stats";
+import { NOVUS_STATS } from "./stats";
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
 
@@ -235,28 +235,35 @@ export const aboutValues = [
 
 export const aboutTimeline = [
   {
-    month: "Nov",
+    month: "Fall",
     year: "2025",
-    label: "NYC branch launched",
-    desc: "Novus NYC is founded, with outreach to business improvement districts across Brooklyn and Queens.",
+    label: "The idea takes shape",
+    desc: "Placeholder: add the founding story, the people who started Novus, and the first problem the team set out to solve.",
   },
   {
-    month: "Jan",
+    month: "Winter",
     year: "2026",
-    label: "First NYC projects",
-    desc: "First projects launch: Petite Dumpling, Higher Learning, and Anatolico.",
+    label: "First community connections",
+    desc: "Placeholder: add the first neighborhood partners, early outreach, and the conversations that shaped the program.",
   },
   {
     month: "Spring",
     year: "2026",
-    label: "Spring Cohort — NYC",
-    desc: `Cohort expands to ${formatStat(NOVUS_STATS.studentMembers)} students across ${formatStat(NOVUS_STATS.nycNeighborhoods)} NYC neighborhoods, with active projects in Park Slope, Sunnyside, Chinatown, and Long Island City.`,
+    label: "First student cohort",
+    desc: "Placeholder: add the first student team, the kinds of projects they worked on, and what they learned together.",
   },
   {
     month: "Summer",
     year: "2026",
-    label: "Deeper engagements",
-    desc: "Novus moves into longer-term client engagements, adds structured in-person neighborhood tours, and launches paid internship tracks for returning members.",
+    label: "Growing the work",
+    desc: "Placeholder: add an important project, partnership, or milestone that marked the next chapter for Novus NYC.",
+    tentative: true,
+  },
+  {
+    month: "Next",
+    year: "2027",
+    label: "What comes next",
+    desc: "Placeholder: add the next chapter in our history as we continue building with students and neighborhood businesses.",
     tentative: true,
   },
 ];
@@ -447,6 +454,38 @@ export const joinFaqs = [
   {
     q: "Can college students apply?",
     a: "Yes. We recruit from CUNY schools and colleges across the country. College students often move into team lead roles.",
+  },
+  {
+    q: "What kinds of projects can I work on?",
+    a: "Projects can include website development, marketing strategy, content creation, financial analysis, grant research, and neighborhood outreach. Your track and interests help guide your assignment.",
+  },
+  {
+    q: "Can I choose my track?",
+    a: "Yes. You can tell us which track interests you most when you apply. We will match you based on your interests, background, and the projects currently underway.",
+  },
+  {
+    q: "What happens after I apply?",
+    a: "We review applications on a rolling basis, then invite selected students to a short conversation. We use that time to learn about your goals and answer questions about the current cohort.",
+  },
+  {
+    q: "Will I work directly with business owners?",
+    a: "Many members do. Project teams share updates with clients and some NYC members can join optional in-person visits. You will always have support from a project lead.",
+  },
+  {
+    q: "Can I use my work in a portfolio?",
+    a: "Yes, once a project is public and the client has approved it. We want members to leave with concrete work they can confidently show to future employers, schools, and collaborators.",
+  },
+  {
+    q: "Can I stay involved after a project ends?",
+    a: "Absolutely. Members can take on another project, mentor newer students, help with recruiting, or pursue leadership roles as they gain experience.",
+  },
+  {
+    q: "Do you accept students outside New York City?",
+    a: "Yes. Our work is primarily remote, so students from outside NYC can contribute. In-person opportunities are optional and currently centered in New York City.",
+  },
+  {
+    q: "What should I include in my application?",
+    a: "Tell us about your interests, relevant coursework or experience, and what you hope to learn. We care more about curiosity, follow-through, and care for community businesses than a perfect resume.",
   },
 ];
 

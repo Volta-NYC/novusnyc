@@ -121,6 +121,38 @@ const PARTNER_FAQS = [
     q: "Do I need to be tech-savvy?",
     a: "Not at all. We handle the technical work and walk you through how to use and maintain what we build.",
   },
+  {
+    q: "What types of businesses do you work with?",
+    a: "We support small, independently owned businesses across NYC, including restaurants, retailers, professional services, and neighborhood organizations. Tell us about your needs and we will let you know whether we are a fit.",
+  },
+  {
+    q: "Can you help if I already have a website?",
+    a: "Yes. We can review and improve an existing site, help update its content, or recommend a focused next step such as search visibility, mobile usability, or clearer customer information.",
+  },
+  {
+    q: "Will I own the work after the project ends?",
+    a: "Yes. We build projects for your business and make sure you have the access and information you need to continue using them after handoff.",
+  },
+  {
+    q: "How often will I hear from my team?",
+    a: "Your team will agree on a communication schedule at the start of the project. You can expect regular progress updates and a clear point of contact for questions.",
+  },
+  {
+    q: "Can you work in languages other than English?",
+    a: "We will do our best to match your needs and can discuss language preferences during the initial conversation. Let us know what would make communication most comfortable for you.",
+  },
+  {
+    q: "What happens when the project is complete?",
+    a: "We walk you through the finished work, share any needed access, and provide simple next-step guidance. Some projects may also be eligible for continued support, depending on team capacity.",
+  },
+  {
+    q: "Can a BID or community organization refer a business?",
+    a: "Yes. We welcome referrals from BIDs, community groups, schools, and local partners. Include the business name and a little context in the contact form so we can follow up.",
+  },
+  {
+    q: "What if I need help that is not listed here?",
+    a: "Reach out anyway. We will listen to what you need and let you know whether a Novus student team can help, or whether another local resource may be a better fit.",
+  },
 ];
 
 export default async function Partners() {
