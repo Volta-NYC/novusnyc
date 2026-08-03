@@ -58,7 +58,7 @@ export default function Footer() {
               >
                 <LinkedInIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">LinkedIn:</span>
-                <span className="text-v-green">Novus NYC</span>
+                <span className="text-v-blue">Novus NYC</span>
               </a>
               <a
                 href="https://www.instagram.com/voltanyc/"
@@ -68,7 +68,7 @@ export default function Footer() {
               >
                 <InstagramIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">Instagram:</span>
-                <span className="text-v-green">Novus NYC</span>
+                <span className="text-v-yellow">Novus NYC</span>
               </a>
             </div>
           </div>
