@@ -31,6 +31,8 @@ const config: Config = {
         "v-green-dark": "rgb(var(--color-green-dark) / <alpha-value>)",
         "v-blue":       "rgb(var(--color-blue) / <alpha-value>)",
         "v-blue-dark":  "rgb(var(--color-blue-dark) / <alpha-value>)",
+        "v-yellow":     "rgb(var(--color-yellow) / <alpha-value>)",
+        "v-yellow-dark": "rgb(var(--color-yellow-dark) / <alpha-value>)",
         "v-bg":         "rgb(var(--color-bg) / <alpha-value>)",
         "v-ink":        "rgb(var(--color-ink) / <alpha-value>)",
         "v-muted":      "rgb(var(--color-muted) / <alpha-value>)",
