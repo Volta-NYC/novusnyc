@@ -185,8 +185,8 @@ export default async function Partners() {
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24" data-home-dark-end="true">
         <Image
-              src={petiteDumplingStorefront}
-              alt="Petite Dumpling storefront in Park Slope, Brooklyn"
+          src={petiteDumplingStorefront}
+          alt="Petite Dumpling storefront in Park Slope, Brooklyn"
           fill
           priority
           fetchPriority="high"
