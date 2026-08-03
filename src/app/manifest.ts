@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#F6B78D",
     icons: [
       {
-        src: "/icon.png",
+        src: "/icon.png?v=bridge-logo-20260803",
         sizes: "1024x1024",
         type: "image/png",
         purpose: "maskable",

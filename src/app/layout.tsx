@@ -45,8 +45,8 @@ export const metadata: Metadata = {
     images: ["/api/og"],
   },
   icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
+    icon: "/icon.png?v=bridge-logo-20260803",
+    apple: "/icon.png?v=bridge-logo-20260803",
   },
   appleWebApp: {
     title: "Novus NYC",
