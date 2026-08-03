@@ -305,22 +305,29 @@ export default async function Partners() {
             <div className="border border-v-border bg-v-bg rounded-xl p-5 md:p-6">
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">
                 <h3 className="font-display font-bold text-v-ink text-xl">Estimated project timeline</h3>
-                <span className="font-body text-xs font-semibold uppercase tracking-widest text-v-muted">Placeholder</span>
+                <span className="font-body text-sm font-semibold text-v-green">Typically 2–4 months</span>
               </div>
-              <div className="grid sm:grid-cols-3 gap-4 font-body text-sm">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 font-body text-sm">
                 <div>
                   <p className="font-display font-bold text-v-ink">Initial reply</p>
-                  <p className="text-v-muted mt-1">Timeline placeholder</p>
+                  <p className="text-v-muted mt-1">Within a few days of your inquiry.</p>
                 </div>
                 <div>
-                  <p className="font-display font-bold text-v-ink">Project scoping</p>
-                  <p className="text-v-muted mt-1">Timeline placeholder</p>
+                  <p className="font-display font-bold text-v-ink">First draft</p>
+                  <p className="text-v-muted mt-1">Usually within 2–3 weeks, often sooner.</p>
                 </div>
                 <div>
-                  <p className="font-display font-bold text-v-ink">Project delivery</p>
-                  <p className="text-v-muted mt-1">Timeline placeholder</p>
+                  <p className="font-display font-bold text-v-ink">Review and feedback</p>
+                  <p className="text-v-muted mt-1">We refine the work with you through feedback rounds.</p>
+                </div>
+                <div>
+                  <p className="font-display font-bold text-v-ink">Launch and hosting</p>
+                  <p className="text-v-muted mt-1">We prepare the final version, set up hosting as needed, and hand it over.</p>
                 </div>
               </div>
+              <p className="font-body text-sm text-v-muted mt-5 pt-5 border-t border-v-border">
+                Most projects take around 2–4 months depending on your business and project scope. Simpler projects can move much faster.
+              </p>
             </div>
           </AnimatedSection>
         </div>
