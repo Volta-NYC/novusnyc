@@ -102,10 +102,10 @@ export default function Navbar() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`font-body text-sm font-semibold transition-colors ${
+                className={`relative flex h-16 items-center font-body text-sm font-semibold transition-colors after:absolute after:bottom-1 after:left-0 after:h-0.5 after:w-full after:origin-left after:bg-v-green after:transition-transform after:duration-200 ${
                   currentPathname === l.href
-                    ? "text-v-green"
-                    : navTextClass
+                    ? "text-v-green after:scale-x-100"
+                    : `${navTextClass} after:scale-x-0 hover:after:scale-x-100`
                 }`}
               >
                 {l.label}
@@ -122,10 +122,10 @@ export default function Navbar() {
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
                 aria-haspopup="true"
-                className={`font-body text-sm font-semibold transition-colors flex items-center gap-1 ${
+                className={`relative flex h-16 items-center gap-1 font-body text-sm font-semibold transition-colors after:absolute after:bottom-1 after:left-0 after:h-0.5 after:w-full after:origin-left after:bg-v-green after:transition-transform after:duration-200 ${
                   moreActive
-                    ? "text-v-green"
-                    : navTextClass
+                    ? "text-v-green after:scale-x-100"
+                    : `${navTextClass} after:scale-x-0 hover:after:scale-x-100`
                 }`}
               >
                 More
@@ -205,8 +205,8 @@ export default function Navbar() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`font-display font-bold text-2xl border-b border-v-border pb-4 ${
-                  currentPathname === l.href ? "text-v-green" : "text-v-ink"
+                className={`font-display font-bold text-2xl border-b border-v-border pb-4 pl-3 border-l-2 ${
+                  currentPathname === l.href ? "text-v-green border-l-v-green" : "text-v-ink border-l-transparent"
                 }`}
               >
                 {l.label}
