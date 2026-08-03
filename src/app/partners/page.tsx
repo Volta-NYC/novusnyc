@@ -383,7 +383,7 @@ export default async function Partners() {
                   href={partner.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-24 md:h-28 items-center justify-center border border-v-border bg-v-bg px-4 rounded-lg transition-colors hover:border-v-green/60 hover:bg-white"
+                  className="flex min-h-32 flex-col items-center justify-center border border-v-border bg-v-bg px-3 py-4 rounded-lg transition-colors hover:border-v-green/60 hover:bg-white"
                   aria-label={`Visit ${partner.name}`}
                 >
                   <Image
@@ -391,8 +391,11 @@ export default async function Partners() {
                     alt={partner.name}
                     width={180}
                     height={90}
-                    className="max-h-14 w-full object-contain"
+                    className="max-h-12 w-full object-contain"
                   />
+                  <span className="mt-3 text-center font-body text-[11px] font-semibold leading-snug text-v-ink">
+                    {partner.name}
+                  </span>
                 </a>
               ))}
             </div>
