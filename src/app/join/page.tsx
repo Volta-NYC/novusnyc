@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import FaqAccordion from "@/components/FaqAccordion";
+import SectionBridge from "@/components/SectionBridge";
 import TracksTabbed from "@/components/TracksTabbed";
 import { joinFaqs, joinGains, marqueeSchools } from "@/data";
 import { getMemberEducationSnapshot, getTotalMemberCount } from "@/lib/server/memberEducation";
@@ -181,6 +182,8 @@ export default async function Join() {
         </div>
       </section>
 
+      <SectionBridge tone="lavender" align="right" />
+
       {/* ── TRACKS ─────────────────────────────────────────── */}
       <section id="tracks" className="py-14 bg-[#f4eff5]">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
@@ -235,6 +238,8 @@ export default async function Join() {
           </AnimatedSection>
         </div>
       </section>
+
+      <SectionBridge tone="yellow" />
 
       {/* ── FAQ ────────────────────────────────────────────── */}
       <section className="py-14 bg-[#fff8df]">

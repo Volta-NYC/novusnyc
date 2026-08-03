@@ -5,6 +5,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
+import SectionBridge from "@/components/SectionBridge";
 import { communityPartners, currentProjects } from "@/data";
 import {
   GlobeIcon,
@@ -329,6 +330,8 @@ export default async function Partners() {
         </div>
       </section>
 
+      <SectionBridge tone="peach" align="right" />
+
       {/* ── PARTNER EXAMPLES ───────────────────────────────── */}
       <section className="py-16 bg-[#fcf3e9]">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
@@ -402,6 +405,8 @@ export default async function Partners() {
           </AnimatedSection>
         </div>
       </section>
+
+      <SectionBridge tone="lavender" />
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
       <section className="py-16 bg-[#f4eff5]">
