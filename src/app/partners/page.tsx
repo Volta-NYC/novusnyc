@@ -382,7 +382,7 @@ export default async function Partners() {
             </h2>
           </AnimatedSection>
           <AnimatedSection>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
+            <div className="mobile-logo-row grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
               {TRUSTED_PARTNERS.map((partner) => (
                 <a
                   key={partner.name}

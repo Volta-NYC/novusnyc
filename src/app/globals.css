@@ -183,6 +183,51 @@ body {
     padding-top: 3rem;
     padding-bottom: 2rem;
   }
+
+  .mobile-scroll-row {
+    width: max-content;
+    max-width: none;
+    margin-right: calc(var(--mobile-gutter) * -1);
+    padding-right: var(--mobile-gutter);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    scrollbar-width: none;
+  }
+
+  .mobile-scroll-row::-webkit-scrollbar,
+  .mobile-logo-row::-webkit-scrollbar,
+  .mobile-stat-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-scroll-row > * {
+    scroll-snap-align: start;
+  }
+
+  .mobile-logo-row,
+  .mobile-stat-row {
+    display: flex;
+    width: calc(100% + var(--mobile-gutter));
+    margin-right: calc(var(--mobile-gutter) * -1);
+    padding-right: var(--mobile-gutter);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+  }
+
+  .mobile-logo-row > a {
+    width: min(72vw, 17rem);
+    min-width: min(72vw, 17rem);
+    min-height: 10rem;
+    scroll-snap-align: start;
+  }
+
+  .mobile-stat-row > * {
+    width: min(54vw, 12rem);
+    min-width: min(54vw, 12rem);
+    scroll-snap-align: start;
+  }
 }
 
 main {
