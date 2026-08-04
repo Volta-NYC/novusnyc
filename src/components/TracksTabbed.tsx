@@ -138,7 +138,7 @@ export default function TracksTabbed() {
           const selected = active === index;
 
           return (
-            <div key={item.name} className={`scroll-reveal track-scroll-reveal scroll-reveal-${index}`}>
+            <div key={item.name}>
               <button
                 ref={(element) => { tabRefs.current[index] = element; }}
                 role="tab"
