@@ -546,7 +546,7 @@ export default function Home() {
         eyebrow="FROM CONNECTION TO DELIVERY"
         title="The work gets specific, fast."
         detail="Each partnership becomes a focused project—built alongside owners, shaped by their goals, and designed for daily use."
-        imageSrc="/soho-boutique-storefront.jpg"
+        imageSrc="/vesuvio-bakery-storefront.jpg"
       />
 
       <Suspense fallback={<CurrentProjectsFallback />}>
