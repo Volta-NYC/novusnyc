@@ -489,6 +489,11 @@ body:has(.home-scroll-story) footer::before {
   to { transform: translate3d(0, -4rem, 0); opacity: 0.75; }
 }
 
+@keyframes home-bridge-image-reveal {
+  from { background-size: 118% auto; }
+  to { background-size: 100% auto; }
+}
+
 @keyframes home-scroll-rail-progress {
   from { transform: scaleY(0); }
   to { transform: scaleY(1); }
@@ -530,6 +535,13 @@ body:has(.home-scroll-story) footer::before {
 
   .home-scroll-bridge-copy {
     animation: home-bridge-copy-drift linear both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 100%;
+  }
+
+  .home-scroll-bridge-1,
+  .home-scroll-bridge-2 {
+    animation: home-bridge-image-reveal linear both;
     animation-timeline: view();
     animation-range: entry 0% exit 100%;
   }
