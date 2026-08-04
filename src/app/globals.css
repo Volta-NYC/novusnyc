@@ -216,6 +216,10 @@ main {
   animation-play-state: paused;
 }
 
+.partner-marquee-fade {
+  background: linear-gradient(180deg, rgba(35, 31, 36, 0.035) 0%, rgba(35, 31, 36, 0) 100%);
+}
+
 .partner-logo-card {
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }

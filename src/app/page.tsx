@@ -377,7 +377,7 @@ function PartnerLogoCard({
       className={`partner-logo-card shrink-0 bg-white border flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2 ${
         important
           ? "w-[230px] h-[142px] rounded-xl border-v-green/35 shadow-[0_12px_34px_rgba(35,31,36,0.08)] px-4"
-          : "w-[230px] h-[142px] rounded-lg border-v-border px-4"
+          : "w-[230px] h-[142px] rounded-lg border-v-border shadow-[0_10px_28px_rgba(35,31,36,0.035)] px-4"
       }`}
     >
       <div className="relative w-full h-[72px] shrink-0">
@@ -413,7 +413,7 @@ function PartnerMarquee({
   reverse?: boolean;
 }) {
   return (
-    <div className="partner-marquee -mx-5 md:-mx-8 overflow-hidden py-2">
+    <div className={`partner-marquee -mx-5 md:-mx-8 overflow-hidden py-2 ${reverse ? "partner-marquee-fade" : ""}`}>
       <div className={`partner-marquee-track flex gap-3 md:gap-4 ${reverse ? "partner-marquee-track-reverse" : ""}`}>
         {[0, 1].map((copy) => (
           <div key={copy} className="flex gap-3 md:gap-4" aria-hidden={copy === 1}>
