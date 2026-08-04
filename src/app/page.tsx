@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
 import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
-import ParallaxProjectCard from "@/components/ParallaxProjectCard";
 import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
@@ -249,9 +248,8 @@ async function CurrentProjectsSection() {
                 itemWidth={290}
                 gap={20}
               >
-                {homeProjects.map((p, i) => (
-                  <ParallaxProjectCard key={`desktop-${p.name}`} index={i}>
-                    <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+                {homeProjects.map((p) => (
+                  <div key={`desktop-${p.name}`} className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
                         <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
@@ -300,8 +298,7 @@ async function CurrentProjectsSection() {
                           )}
                         </div>
                       </div>
-                    </div>
-                  </ParallaxProjectCard>
+                  </div>
                 ))}
               </MasonryGrid>
             </div>
