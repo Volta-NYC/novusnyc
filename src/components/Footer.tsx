@@ -4,7 +4,7 @@ import { MailIcon, LinkedInIcon, InstagramIcon } from "@/components/Icons";
 
 export default function Footer() {
   return (
-    <footer className="bg-v-dark text-white/70 pt-16 pb-10">
+    <footer className="site-footer bg-v-dark text-white/70 pt-16 pb-10">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="grid md:grid-cols-3 gap-10 mb-12 items-start">
 

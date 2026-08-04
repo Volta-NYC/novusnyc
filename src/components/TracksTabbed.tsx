@@ -44,7 +44,7 @@ function ProjectPreview({ trackName }: { trackName: keyof typeof TRACK_PREVIEWS 
   const preview = TRACK_PREVIEWS[trackName];
 
   return (
-    <div className={`border ${preview.border} bg-white/70 rounded-lg p-5 md:p-6 h-full`}>
+    <div className={`border ${preview.border} bg-white/85 rounded-lg p-5 md:p-6 h-full`}>
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <p className={`font-body text-xs font-semibold uppercase tracking-widest ${preview.text}`}>{preview.label}</p>
@@ -53,7 +53,7 @@ function ProjectPreview({ trackName }: { trackName: keyof typeof TRACK_PREVIEWS 
         <span aria-hidden="true" className={`h-3 w-3 rounded-full ${preview.accent} shadow-[0_0_0_6px_rgba(255,255,255,0.7)]`} />
       </div>
 
-      <p className="font-body text-sm text-v-muted leading-relaxed mb-6">{preview.detail}</p>
+      <p className="font-body text-sm text-v-ink/75 leading-relaxed mb-6">{preview.detail}</p>
 
       {trackName === "Digital & Tech" ? (
         <div className="border border-v-blue/20 bg-v-blue/5 rounded-lg overflow-hidden">
@@ -138,31 +138,32 @@ export default function TracksTabbed() {
           const selected = active === index;
 
           return (
-            <button
-              key={item.name}
-              ref={(element) => { tabRefs.current[index] = element; }}
-              role="tab"
-              id={tabId(index)}
-              aria-selected={selected}
-              aria-controls={panelId}
-              tabIndex={selected ? 0 : -1}
-              onClick={() => setActive(index)}
-              onKeyDown={(event) => handleKeyDown(event, index)}
-              className={`relative overflow-hidden border rounded-lg px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)] ${
-                selected ? `${item.color} ${itemPreview.border}` : "border-v-border bg-white text-v-muted hover:border-v-ink/30"
-              }`}
-            >
-              {selected ? <motion.span layoutId={`${uid}-active-track`} className={`absolute inset-x-0 top-0 h-1 ${itemPreview.accent}`} /> : null}
-              <span className="flex items-center gap-3">
-                <span className={`flex h-9 w-9 items-center justify-center rounded-md ${item.iconBg}`}>
-                  <item.icon className={`h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
+            <div key={item.name}>
+              <button
+                ref={(element) => { tabRefs.current[index] = element; }}
+                role="tab"
+                id={tabId(index)}
+                aria-selected={selected}
+                aria-controls={panelId}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setActive(index)}
+                onKeyDown={(event) => handleKeyDown(event, index)}
+                className={`relative w-full overflow-hidden border rounded-lg px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)] ${
+                  selected ? `${item.color} ${itemPreview.border}` : "border-v-border bg-white text-v-ink/70 hover:border-v-ink/30"
+                }`}
+              >
+                {selected ? <motion.span layoutId={`${uid}-active-track`} className={`absolute inset-x-0 top-0 h-1 ${itemPreview.accent}`} /> : null}
+                <span className="flex items-center gap-3">
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-md ${item.iconBg}`}>
+                    <item.icon className={`h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block font-display font-bold text-v-ink text-sm leading-tight">{item.name}</span>
+                    <span className="block font-body text-xs text-v-ink/65 mt-1">Explore the work</span>
+                  </span>
                 </span>
-                <span>
-                  <span className="block font-display font-bold text-v-ink text-sm leading-tight">{item.name}</span>
-                  <span className="block font-body text-xs text-v-muted mt-1">Explore the work</span>
-                </span>
-              </span>
-            </button>
+              </button>
+            </div>
           );
         })}
       </div>
@@ -193,7 +194,7 @@ export default function TracksTabbed() {
                     <p className={`font-body text-xs font-semibold uppercase tracking-widest ${preview.text}`}>Your track</p>
                     <h3 className="font-display font-bold text-v-ink text-2xl mt-1">{track.name}</h3>
                     {"description" in track && track.description ? (
-                      <p className="font-body mt-2 text-sm leading-relaxed text-v-muted">{track.description}</p>
+                      <p className="font-body mt-2 text-sm leading-relaxed text-v-ink/75">{track.description}</p>
                     ) : null}
                   </div>
                 </div>
@@ -207,7 +208,7 @@ export default function TracksTabbed() {
                       {track.subdepartments.map((department) => (
                         <div key={department.title}>
                           <h4 className="font-display font-bold text-v-ink text-sm">{department.title}</h4>
-                          <p className="font-body mt-1 text-sm leading-relaxed text-v-muted">{department.desc}</p>
+                          <p className="font-body mt-1 text-sm leading-relaxed text-v-ink/75">{department.desc}</p>
                         </div>
                       ))}
                     </div>
@@ -216,7 +217,7 @@ export default function TracksTabbed() {
 
                 <div className="grid gap-7 sm:grid-cols-2">
                   <div>
-                    <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3">Responsibilities</p>
+                    <p className="font-body text-xs font-semibold text-v-ink/70 uppercase tracking-widest mb-3">Responsibilities</p>
                     <ul className="space-y-2.5">
                       {track.doWhat.map((item) => (
                         <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-ink/75 leading-relaxed">
@@ -227,11 +228,11 @@ export default function TracksTabbed() {
                     </ul>
                   </div>
                   <div>
-                    <p className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-3">Who fits in</p>
+                    <p className="font-body text-xs font-semibold text-v-ink/70 uppercase tracking-widest mb-3">Who fits in</p>
                     <ul className="space-y-2.5">
                       {track.skills.map((item) => (
-                        <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-muted leading-relaxed">
-                          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-v-muted/40 flex-shrink-0 mt-[0.4rem]" />
+                        <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-ink/70 leading-relaxed">
+                          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-v-ink/35 flex-shrink-0 mt-[0.4rem]" />
                           {item}
                         </li>
                       ))}

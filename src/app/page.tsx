@@ -145,7 +145,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
 
 function CurrentProjectsFallback() {
   return (
-    <section className="py-20 bg-v-bg">
+    <section className="home-depth-section home-showcase-depth py-20 bg-v-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -170,11 +170,49 @@ function CurrentProjectsFallback() {
   );
 }
 
+function HomeScrollProgress() {
+  return (
+    <div aria-hidden="true" className="home-scroll-rail">
+      <span className="home-scroll-rail-label">NYC / IN MOTION</span>
+      <span className="home-scroll-rail-track">
+        <span className="home-scroll-rail-fill" />
+      </span>
+    </div>
+  );
+}
+
+function HomeScrollBridge({
+  eyebrow,
+  title,
+  detail,
+  imageSrc,
+  index,
+}: {
+  eyebrow: string;
+  title: string;
+  detail: string;
+  imageSrc: string;
+  index: number;
+}) {
+  return (
+    <section
+      className={`home-scroll-bridge home-scroll-bridge-${index}`}
+      style={{ backgroundImage: `url(${imageSrc})` }}
+    >
+      <div className="home-scroll-bridge-copy">
+        <p className="home-scroll-bridge-eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+        <p>{detail}</p>
+      </div>
+    </section>
+  );
+}
+
 async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
   return (
-    <section className="py-20 bg-v-bg">
+    <section className="home-depth-section home-showcase-depth py-20 bg-v-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -192,7 +230,7 @@ async function CurrentProjectsSection() {
                   <AnimatedSection
                     key={`mobile-${p.name}`}
                     delay={i * 0.05}
-                    className="shrink-0 w-[82vw] max-w-[360px]"
+                    className={`scroll-reveal scroll-reveal-card scroll-reveal-${i % 3} shrink-0 w-[82vw] max-w-[360px]`}
                   >
                     <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
@@ -255,11 +293,12 @@ async function CurrentProjectsSection() {
                 itemWidth={290}
                 gap={20}
               >
-                {homeProjects.map((p) => (
-                  <div key={`desktop-${p.name}`} className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+                {homeProjects.map((p, i) => (
+                  <div key={`desktop-${p.name}`} className={`scroll-reveal scroll-reveal-card scroll-reveal-${i % 3}`}>
+                    <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
-                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
+                        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
                           <Image
                             src={p.imageUrl}
                             alt={`${p.name} project`}
@@ -271,11 +310,11 @@ async function CurrentProjectsSection() {
                           />
                         </div>
                       ) : (
-                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
+                        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
                           <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
                         </div>
                       )}
-                      <div className="p-7 flex flex-col">
+                      <div className="showcase-card-content p-7 flex flex-col">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex gap-2 flex-wrap">
                             {p.services.map((service) => (
@@ -305,6 +344,7 @@ async function CurrentProjectsSection() {
                           )}
                         </div>
                       </div>
+                    </div>
                   </div>
                 ))}
               </MasonryGrid>
@@ -448,7 +488,7 @@ function CommunityPartnersSection() {
   const neighborhoodPartners = scrollingPartners.filter((partner) => !partner.important);
 
   return (
-    <section className="py-16 md:py-20 bg-white overflow-hidden">
+    <section className="home-depth-section home-partners-depth py-16 md:py-20 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
           <div>
@@ -488,7 +528,9 @@ function CommunityPartnersSection() {
 export default function Home() {
 
   return (
-    <>
+    <div className="home-scroll-story">
+      <div aria-hidden="true" className="home-scroll-backdrop" />
+      <HomeScrollProgress />
       <HeroSection>
         {/* ── STATS ─────────────────────────────────────────────── */}
         <section data-home-dark-end="true" className="relative py-14">
@@ -496,14 +538,38 @@ export default function Home() {
         </section>
       </HeroSection>
 
+      <HomeScrollBridge
+        index={0}
+        eyebrow="FROM STUDENTS TO STREETS"
+        title="A citywide network starts with one introduction."
+        detail="Novus works through trusted neighborhood organizations to find the small businesses where support can have a real, practical impact."
+        imageSrc="/brooklyn-bridge.jpg"
+      />
+
       <CommunityPartnersSection />
+
+      <HomeScrollBridge
+        index={1}
+        eyebrow="FROM CONNECTION TO DELIVERY"
+        title="One small business stronger. One city moving forward."
+        detail="We turn a business owner's goals into practical projects that make a difference every day."
+        imageSrc="/soho-streetscape.png"
+      />
 
       <Suspense fallback={<CurrentProjectsFallback />}>
         <CurrentProjectsSection />
       </Suspense>
 
+      <HomeScrollBridge
+        index={2}
+        eyebrow="FROM PROJECT TO PRACTICE"
+        title="Not one path. Three ways to make an impact."
+        detail="Choose digital, marketing, or finance and operations—then bring what you do best to neighborhood businesses."
+        imageSrc="/student-collaboration-wide.jpg"
+      />
+
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section className="home-depth-section home-tracks-depth py-16 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
@@ -517,6 +583,6 @@ export default function Home() {
         </div>
       </section>
 
-    </>
+    </div>
   );
 }

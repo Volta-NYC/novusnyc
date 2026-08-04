@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useRef, type ReactNode } from "react";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 import { useParallax } from "@/hooks/useParallax";
@@ -17,15 +17,23 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
     offset: ["start start", "end start"],
   });
   const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
-    range: [120, -80],
+    range: [90, -120],
     offset: ["start start", "end start"],
   });
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const titleY = useTransform(scrollYProgress, [0, 1], [0, -230]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, -150]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 1, 0.1]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.78, 1], [1, 1, 0]);
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden">
+    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a]">
       <motion.div
         aria-hidden="true"
-        className="absolute -inset-y-40 inset-x-0"
+        className="absolute -inset-y-[34vh] inset-x-0"
         style={{ y: backgroundY, willChange: parallaxEnabled ? "transform" : "auto" }}
       >
         <Image
@@ -43,10 +51,15 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       <div className="absolute inset-0 home-shared-wash" />
       <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
 
-      <div className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center pt-16">
+      <div className="relative min-h-screen md:min-h-[108vh] flex flex-col items-center justify-center pt-20 pb-20">
         {/* Logo + Title */}
         <motion.div
           className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
+          style={{
+            y: parallaxEnabled ? titleY : 0,
+            opacity: parallaxEnabled ? titleOpacity : 1,
+            willChange: parallaxEnabled ? "transform, opacity" : "auto",
+          }}
           initial={reducedMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: EASE }}
@@ -79,6 +92,11 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
         {/* Subtitle + CTAs — centered under the title */}
         <motion.div
           className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center"
+          style={{
+            y: parallaxEnabled ? contentY : 0,
+            opacity: parallaxEnabled ? contentOpacity : 1,
+            willChange: parallaxEnabled ? "transform, opacity" : "auto",
+          }}
           initial={reducedMotion ? false : { opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.12, ease: EASE }}

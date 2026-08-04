@@ -78,7 +78,7 @@ export default function Navbar() {
       <header
         className={`fixed left-0 right-0 z-50 border-b transition-all duration-300 ${
           darkHero
-            ? "bg-transparent border-transparent"
+            ? "bg-[#17151a]/88 backdrop-blur-md border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.2)]"
             : "bg-v-bg/95 backdrop-blur-md shadow-sm border-black/10"
         }`}
         style={{ top: "var(--banner-h, 0px)" }}
