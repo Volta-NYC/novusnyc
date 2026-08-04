@@ -33,14 +33,14 @@ export default function BusinessProcessTimeline() {
   const reducedMotion = useReducedMotion();
 
   return (
-    <section className="py-16 bg-white" aria-labelledby="business-process-heading">
+    <section id="process" className="py-16 bg-white" aria-labelledby="business-process-heading">
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-10">
           <div>
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
               A clear path forward
             </p>
-            <h2 id="business-process-heading" className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+            <h2 id="business-process-heading" className="page-section-heading text-v-ink">
               From first conversation to launch.
             </h2>
           </div>

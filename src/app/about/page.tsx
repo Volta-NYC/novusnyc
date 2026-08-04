@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import HistoryTimeline from "@/components/HistoryTimeline";
+import SectionProgressNav from "@/components/SectionProgressNav";
 import { aboutTimeline, aboutValues, teamMembers } from "@/data";
 import { formatCounter } from "@/lib/formatCounter";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
@@ -26,6 +27,13 @@ export default async function About() {
 
   return (
     <>
+      <SectionProgressNav sections={[
+        { id: "impact", label: "Impact" },
+        { id: "mission", label: "Mission" },
+        { id: "history", label: "History" },
+        { id: "leadership", label: "Leadership" },
+        { id: "values", label: "How we operate" },
+      ]} />
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-20" data-home-dark-end="true">
         <Image
@@ -67,11 +75,11 @@ export default async function About() {
       </section>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
-      <section className="py-14 bg-white">
+      <section id="impact" className="py-14 bg-white overflow-x-auto">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-10">Our impact</h2>
-            <div className="mobile-scroll-row flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-v-border border border-v-border rounded-2xl md:overflow-hidden">
+            <h2 className="page-section-heading text-v-ink mb-10">Our impact</h2>
+            <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-v-border border border-v-border rounded-2xl overflow-hidden">
               {[
                 { value: "150+", label: "Total\nbusinesses", color: "text-v-green" },
                 { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects", color: "text-v-blue" },
@@ -93,7 +101,7 @@ export default async function About() {
       </section>
 
       {/* ── MISSION ─────────────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section id="mission" className="py-16 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
@@ -128,11 +136,11 @@ export default async function About() {
       </section>
 
       {/* ── HISTORY ─────────────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section id="history" className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Our history</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Building Novus, one chapter at a time</h2>
+            <h2 className="page-section-heading text-v-ink">Building Novus, one chapter at a time</h2>
             <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed">
               A timeline for the moments, partnerships, and people that shaped our work.
             </p>
@@ -142,12 +150,12 @@ export default async function About() {
       </section>
 
       {/* ── TEAM ────────────────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section id="leadership" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Our Leadership</h2>
+                <h2 className="page-section-heading text-v-ink">Our Leadership</h2>
                 <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed [text-wrap:balance]">
                   A team of students from high schools and colleges across NYC and across the country.
                 </p>
@@ -191,10 +199,10 @@ export default async function About() {
       </section>
 
       {/* ── HOW WE OPERATE ─────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section id="values" className="py-16 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>
+            <h2 className="page-section-heading text-v-ink">How we operate</h2>
           </AnimatedSection>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">

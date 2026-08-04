@@ -111,8 +111,10 @@ export default function ShowcaseClient({
           </AnimatedSection>
 
           {projects.length === 0 ? (
-            <div className="border border-v-border rounded-2xl bg-white px-6 py-8 text-center">
-              <p className="font-body text-sm text-v-muted">No projects selected yet.</p>
+            <div className="border border-v-border rounded-xl bg-v-bg px-6 py-10 text-center">
+              <p className="font-display text-xl font-bold text-v-ink">Project stories are being prepared.</p>
+              <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-v-muted">Novus teams are actively building with businesses across the city. Check back soon for the next published case studies.</p>
+              <Link href="/partners#contact" className="mt-5 inline-flex font-body text-sm font-semibold text-v-blue hover:underline">Get free business support →</Link>
             </div>
           ) : (
             <>

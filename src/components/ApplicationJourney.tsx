@@ -1,62 +1,169 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useId, useRef, useState } from "react";
 import { AwardIcon, BuildingIcon, CheckIcon, PencilIcon, UsersIcon } from "@/components/Icons";
 
 const steps = [
-  { label: "Apply", detail: "Tell us where you want to contribute.", icon: PencilIcon, accent: "bg-v-blue", ring: "ring-v-blue/20" },
-  { label: "Interview", detail: "Meet the team and talk through your interests.", icon: UsersIcon, accent: "bg-v-green", ring: "ring-v-green/20" },
-  { label: "Join a track", detail: "Find your place in Tech, Marketing, or Finance.", icon: CheckIcon, accent: "bg-v-yellow", ring: "ring-v-yellow/35" },
-  { label: "Work with a business", detail: "Build work that reaches a real client.", icon: BuildingIcon, accent: "bg-v-green-dark", ring: "ring-v-green/20" },
-  { label: "Build a portfolio", detail: "Leave with outcomes you can stand behind.", icon: AwardIcon, accent: "bg-v-blue-dark", ring: "ring-v-blue/20" },
-];
+  {
+    label: "Apply",
+    eyebrow: "Start here",
+    title: "Share your interests and availability.",
+    detail: "Start with a short application covering your school, relevant experience, preferred track, and the kind of client work you want to take on. You do not need a perfect resume to apply.",
+    note: "The application is a starting point, not a skills test.",
+    icon: PencilIcon,
+    accent: "bg-v-blue",
+    soft: "bg-v-blue/10",
+    text: "text-v-blue-dark",
+  },
+  {
+    label: "Interview",
+    eyebrow: "Meet the team",
+    title: "Meet a Novus lead for a conversation.",
+    detail: "We talk through your interests, examples of work you are proud of, and how you like to collaborate. It helps us place you on a team where you can contribute and grow.",
+    note: "Expect a conversation about fit, not a formal interrogation.",
+    icon: UsersIcon,
+    accent: "bg-v-green",
+    soft: "bg-v-green/10",
+    text: "text-v-green-dark",
+  },
+  {
+    label: "Join a track",
+    eyebrow: "Find your fit",
+    title: "Start in the track that fits you best.",
+    detail: "Choose Digital & Tech, Marketing, or Finance & Operations. Marketing members can focus on social media and branding, grants and funding, ambassadors, small business outreach, or work across all four.",
+    note: "You can build depth in one focus while collaborating across teams.",
+    icon: CheckIcon,
+    accent: "bg-v-yellow",
+    soft: "bg-v-yellow/20",
+    text: "text-amber-700",
+  },
+  {
+    label: "Work with a business",
+    eyebrow: "Make it real",
+    title: "Join a team serving a real business.",
+    detail: "Work through a live project with clear deliverables: a website, outreach plan, social content, grant research, or an owner-facing recommendation. You will respond to real feedback and project deadlines.",
+    note: "The work is practical, collaborative, and client-facing.",
+    icon: BuildingIcon,
+    accent: "bg-v-green-dark",
+    soft: "bg-v-green/10",
+    text: "text-v-green-dark",
+  },
+  {
+    label: "Build a portfolio",
+    eyebrow: "Carry it forward",
+    title: "Document work that is genuinely yours.",
+    detail: "Leave with shipped deliverables, clear examples of your contribution, and project stories you can use in college applications, interviews, and future opportunities.",
+    note: "Experience that gives interviews and applications real substance.",
+    icon: AwardIcon,
+    accent: "bg-v-blue-dark",
+    soft: "bg-v-blue/10",
+    text: "text-v-blue-dark",
+  },
+] as const;
 
 export default function ApplicationJourney() {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const id = useId();
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const reducedMotion = useReducedMotion();
+  const step = steps[active];
+
+  useEffect(() => {
+    if (paused || reducedMotion) return;
+    const interval = window.setInterval(() => {
+      setActive((current) => (current + 1) % steps.length);
+    }, 5500);
+    return () => window.clearInterval(interval);
+  }, [paused, reducedMotion]);
+
+  const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
+    let next = index;
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") next = (index + 1) % steps.length;
+    else if (event.key === "ArrowUp" || event.key === "ArrowLeft") next = (index - 1 + steps.length) % steps.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = steps.length - 1;
+    else return;
+
+    event.preventDefault();
+    setActive(next);
+    tabRefs.current[next]?.focus();
+  };
 
   return (
-    <section className="relative overflow-hidden bg-[#fffbea] py-14" aria-labelledby="application-journey-heading">
+    <section id="journey" className="relative overflow-hidden bg-[#fffbea] py-14" aria-labelledby="application-journey-heading">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="mb-9 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="font-body mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-700">Your Novus journey</p>
-            <h2 id="application-journey-heading" className="font-display text-3xl font-bold text-v-ink md:text-4xl">From application to work you can show.</h2>
+            <h2 id="application-journey-heading" className="page-section-heading text-v-ink">From application to work you can show.</h2>
           </div>
-          <p className="max-w-md font-body text-sm leading-relaxed text-v-muted">Each step builds toward client-facing experience and a body of work that is unmistakably yours.</p>
+          <p className="max-w-md font-body text-sm leading-relaxed text-v-muted">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
         </div>
 
-        <div className="relative border border-v-yellow/55 bg-white/70 px-5 py-7 md:px-7 md:py-8 rounded-lg">
-          <motion.div
-            aria-hidden="true"
-            className="absolute left-[10%] right-[10%] top-12 hidden h-px origin-left bg-v-yellow-dark/55 md:block"
-            initial={reducedMotion ? false : { scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true, amount: 0.45 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          />
-          <ol className="grid gap-7 md:grid-cols-5 md:gap-4">
-            {steps.map((step, index) => (
-              <motion.li
-                key={step.label}
-                className="relative grid grid-cols-[2.8rem_1fr] gap-4 md:block"
-                initial={reducedMotion ? false : { opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.45 }}
-                transition={{ duration: 0.4, delay: reducedMotion ? 0 : index * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="relative flex justify-center md:mb-5">
-                  {index < steps.length - 1 ? <span aria-hidden="true" className="absolute bottom-[-1.75rem] top-10 w-px bg-v-yellow/45 md:hidden" /> : null}
-                  <span className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full ${step.accent} ${step.ring} ring-8`}>
-                    <step.icon className="h-4 w-4 text-v-ink" />
+        <div
+          className="grid overflow-hidden rounded-lg border border-v-yellow/55 bg-white/70 md:grid-cols-[15rem_minmax(0,1fr)]"
+          onPointerEnter={() => setPaused(true)}
+          onPointerLeave={() => setPaused(false)}
+          onFocusCapture={() => setPaused(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
+          }}
+        >
+          <div role="tablist" aria-label="Novus student journey" className="grid border-b border-v-yellow/40 bg-white/45 sm:grid-cols-5 md:block md:border-b-0 md:border-r">
+            {steps.map((item, index) => {
+              const selected = active === index;
+              return (
+                <button
+                  key={item.label}
+                  ref={(element) => { tabRefs.current[index] = element; }}
+                  role="tab"
+                  id={`${id}-tab-${index}`}
+                  aria-selected={selected}
+                  aria-controls={`${id}-panel`}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActive(index)}
+                  onKeyDown={(event) => handleKeyDown(event, index)}
+                  className={`relative flex min-h-20 items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v-blue md:min-h-0 md:px-5 md:py-4 ${selected ? "bg-white text-v-ink" : "text-v-muted hover:bg-white/70"}`}
+                >
+                  {selected ? <motion.span layoutId={`${id}-active-step`} className={`absolute inset-y-0 left-0 w-1 ${item.accent}`} /> : null}
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${selected ? item.soft : "bg-v-bg"}`}>
+                    <item.icon className={`h-4 w-4 ${selected ? item.text : "text-v-muted"}`} aria-hidden="true" />
                   </span>
+                  <span className="min-w-0">
+                    <span className="block font-body text-[10px] font-semibold uppercase tracking-[0.14em] text-v-muted">0{index + 1}</span>
+                    <span className="mt-0.5 block font-display text-sm font-bold leading-tight">{item.label}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-tab-${active}`} tabIndex={0} className="min-h-[250px] p-6 md:p-9">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={step.label}
+                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="flex h-full flex-col justify-between"
+              >
+                <div>
+                  <div className="mb-7 flex items-center gap-4">
+                    <span className={`flex h-12 w-12 items-center justify-center rounded-lg ${step.soft}`}>
+                      <step.icon className={`h-6 w-6 ${step.text}`} aria-hidden="true" />
+                    </span>
+                    <p className={`font-body text-xs font-bold uppercase tracking-[0.18em] ${step.text}`}>{step.eyebrow}</p>
+                  </div>
+                  <h3 className="max-w-xl font-display text-2xl font-bold leading-tight text-v-ink md:text-3xl">{step.title}</h3>
+                  <p className="mt-4 max-w-2xl font-body text-base leading-relaxed text-v-muted">{step.detail}</p>
                 </div>
-                <div className="pb-1 md:text-center">
-                  <h3 className="font-display text-base font-bold text-v-ink">{step.label}</h3>
-                  <p className="mt-1.5 font-body text-sm leading-relaxed text-v-muted">{step.detail}</p>
-                </div>
-              </motion.li>
-            ))}
-          </ol>
+                <p className="mt-8 border-t border-v-border pt-4 font-body text-sm font-semibold text-v-ink">{step.note}</p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </section>

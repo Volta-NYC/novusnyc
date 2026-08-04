@@ -5,7 +5,27 @@ import { useEffect, useMemo } from "react";
 import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
+function MapLoadingState() {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-v-bg" role="status" aria-label="Loading project map">
+      <div className="w-full max-w-xl px-8">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="h-3 w-3 rounded-full bg-v-green animate-pulse" />
+          <span className="h-2.5 w-32 rounded-full bg-v-border animate-pulse" />
+        </div>
+        <div className="relative h-56 overflow-hidden rounded-xl border border-v-border bg-white">
+          <span className="absolute -left-8 top-16 h-px w-[120%] rotate-[13deg] bg-v-blue/20" />
+          <span className="absolute -left-8 top-32 h-px w-[120%] -rotate-[9deg] bg-v-green/20" />
+          <span className="absolute left-[28%] top-[38%] h-4 w-4 rounded-full bg-v-green/40 ring-8 ring-v-green/10" />
+          <span className="absolute left-[63%] top-[62%] h-3 w-3 rounded-full bg-v-blue/45 ring-8 ring-v-blue/10" />
+          <span className="absolute left-[78%] top-[25%] h-3 w-3 rounded-full bg-v-yellow/55 ring-8 ring-v-yellow/20" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false, loading: MapLoadingState });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
 const CircleMarker = dynamic(() => import("react-leaflet").then((mod) => mod.CircleMarker), { ssr: false });
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
