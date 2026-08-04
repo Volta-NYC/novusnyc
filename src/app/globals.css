@@ -266,13 +266,13 @@ main {
     repeating-linear-gradient(0deg, rgba(45, 40, 46, 0.035) 0 1px, transparent 1px 104px);
 }
 
-.site-footer {
+body:has(.home-scroll-story) footer {
   position: relative;
   isolation: isolate;
   overflow: clip;
 }
 
-body:has(.home-scroll-story) .site-footer::before {
+body:has(.home-scroll-story) footer::before {
   position: absolute;
   z-index: -1;
   inset: -25% 0 0;
@@ -343,7 +343,7 @@ body:has(.home-scroll-story) .site-footer::before {
     transform-origin: center;
   }
 
-  body:has(.home-scroll-story) .site-footer {
+  body:has(.home-scroll-story) footer {
     animation: home-footer-settle linear both;
     animation-timeline: view();
     animation-range: entry 12% cover 42%;
@@ -445,7 +445,7 @@ body:has(.home-scroll-story) .site-footer::before {
   .home-depth-section::before,
   .scroll-reveal,
   .showcase-card-media,
-  body:has(.home-scroll-story) .site-footer {
+  body:has(.home-scroll-story) footer {
     animation: none !important;
     transform: none !important;
   }
