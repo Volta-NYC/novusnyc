@@ -163,6 +163,48 @@ function CurrentProjectsFallback() {
   );
 }
 
+function HomeScrollProgress() {
+  return (
+    <div aria-hidden="true" className="home-scroll-rail">
+      <span className="home-scroll-rail-label">NYC / IN MOTION</span>
+      <span className="home-scroll-rail-track">
+        <span className="home-scroll-rail-fill" />
+      </span>
+    </div>
+  );
+}
+
+function HomeScrollBridge({
+  eyebrow,
+  title,
+  detail,
+  index,
+}: {
+  eyebrow: string;
+  title: string;
+  detail: string;
+  index: number;
+}) {
+  return (
+    <section className={`home-scroll-bridge home-scroll-bridge-${index}`}>
+      <div aria-hidden="true" className="home-scroll-bridge-map">
+        <svg viewBox="0 0 1440 640" preserveAspectRatio="none" className="h-full w-full">
+          <path d="M-80 492C172 384 291 526 489 372S802 516 1001 300s355 22 559-178" />
+          <path d="M-80 186c232 102 326-94 560 92s288-99 492 50 267-61 548 40" />
+          <path d="M116 684c86-200 198-286 363-478S792 49 981-92" />
+          <path d="M796 708c38-186 144-278 269-429s161-255 312-357" />
+        </svg>
+      </div>
+      <div aria-hidden="true" className="home-scroll-bridge-grid" />
+      <div className="home-scroll-bridge-copy">
+        <p className="home-scroll-bridge-eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+        <p>{detail}</p>
+      </div>
+    </section>
+  );
+}
+
 async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
@@ -485,6 +527,7 @@ export default function Home() {
   return (
     <div className="home-scroll-story">
       <div aria-hidden="true" className="home-scroll-backdrop" />
+      <HomeScrollProgress />
       <HeroSection>
         {/* ── STATS ─────────────────────────────────────────────── */}
         <section data-home-dark-end="true" className="relative py-14">
@@ -492,11 +535,32 @@ export default function Home() {
         </section>
       </HeroSection>
 
+      <HomeScrollBridge
+        index={0}
+        eyebrow="FROM STUDENTS TO STREETS"
+        title="A citywide network starts with one introduction."
+        detail="Novus works through trusted neighborhood organizations to find the small businesses where support can have a real, practical impact."
+      />
+
       <CommunityPartnersSection />
+
+      <HomeScrollBridge
+        index={1}
+        eyebrow="FROM CONNECTION TO DELIVERY"
+        title="The work gets specific, fast."
+        detail="Each partnership becomes a focused project—built alongside owners, shaped by their goals, and designed for daily use."
+      />
 
       <Suspense fallback={<CurrentProjectsFallback />}>
         <CurrentProjectsSection />
       </Suspense>
+
+      <HomeScrollBridge
+        index={2}
+        eyebrow="FROM PROJECT TO PRACTICE"
+        title="Different skills. One accountable team."
+        detail="Every delivery draws on the digital, marketing, and operational work that keeps a neighborhood business moving forward."
+      />
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
       <section className="home-depth-section home-tracks-depth py-16 bg-white">
