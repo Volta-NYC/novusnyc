@@ -22,7 +22,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   });
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden">
+    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden">
       <motion.div
         aria-hidden="true"
         className="absolute -inset-y-40 inset-x-0"
