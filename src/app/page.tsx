@@ -544,8 +544,8 @@ export default function Home() {
       <HomeScrollBridge
         index={1}
         eyebrow="FROM CONNECTION TO DELIVERY"
-        title="The work gets specific, fast."
-        detail="Each partnership becomes a focused project—built alongside owners, shaped by their goals, and designed for daily use."
+        title="Big ideas. Block by block."
+        detail="We turn a business owner's goals into practical projects that make a difference every day."
         imageSrc="/soho-streetscape.png"
       />
 
@@ -556,8 +556,8 @@ export default function Home() {
       <HomeScrollBridge
         index={2}
         eyebrow="FROM PROJECT TO PRACTICE"
-        title="Different skills. One accountable team."
-        detail="Every delivery draws on the digital, marketing, and operational work that keeps a neighborhood business moving forward."
+        title="Real work. Real team. Real impact."
+        detail="Students across digital, marketing, and finance bring their strengths together to help neighborhood businesses move forward."
         imageSrc="/student-collaboration-wide.jpg"
       />
 
