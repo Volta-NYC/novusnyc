@@ -556,8 +556,8 @@ export default function Home() {
       <HomeScrollBridge
         index={2}
         eyebrow="FROM PROJECT TO PRACTICE"
-        title="Learn it. Build it. Make it matter."
-        detail="Students across digital, marketing, and finance bring their strengths together to help neighborhood businesses move forward."
+        title="Not one path. Three ways to make an impact."
+        detail="Choose digital, marketing, or finance and operations—then bring what you do best to neighborhood businesses."
         imageSrc="/student-collaboration-wide.jpg"
       />
 
