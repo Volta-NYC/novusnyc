@@ -138,31 +138,32 @@ export default function TracksTabbed() {
           const selected = active === index;
 
           return (
-            <button
-              key={item.name}
-              ref={(element) => { tabRefs.current[index] = element; }}
-              role="tab"
-              id={tabId(index)}
-              aria-selected={selected}
-              aria-controls={panelId}
-              tabIndex={selected ? 0 : -1}
-              onClick={() => setActive(index)}
-              onKeyDown={(event) => handleKeyDown(event, index)}
-              className={`relative overflow-hidden border rounded-lg px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)] ${
-                selected ? `${item.color} ${itemPreview.border}` : "border-v-border bg-white text-v-muted hover:border-v-ink/30"
-              }`}
-            >
-              {selected ? <motion.span layoutId={`${uid}-active-track`} className={`absolute inset-x-0 top-0 h-1 ${itemPreview.accent}`} /> : null}
-              <span className="flex items-center gap-3">
-                <span className={`flex h-9 w-9 items-center justify-center rounded-md ${item.iconBg}`}>
-                  <item.icon className={`h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
+            <div key={item.name} className={`scroll-reveal track-scroll-reveal scroll-reveal-${index}`}>
+              <button
+                ref={(element) => { tabRefs.current[index] = element; }}
+                role="tab"
+                id={tabId(index)}
+                aria-selected={selected}
+                aria-controls={panelId}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setActive(index)}
+                onKeyDown={(event) => handleKeyDown(event, index)}
+                className={`relative w-full overflow-hidden border rounded-lg px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)] ${
+                  selected ? `${item.color} ${itemPreview.border}` : "border-v-border bg-white text-v-muted hover:border-v-ink/30"
+                }`}
+              >
+                {selected ? <motion.span layoutId={`${uid}-active-track`} className={`absolute inset-x-0 top-0 h-1 ${itemPreview.accent}`} /> : null}
+                <span className="flex items-center gap-3">
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-md ${item.iconBg}`}>
+                    <item.icon className={`h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block font-display font-bold text-v-ink text-sm leading-tight">{item.name}</span>
+                    <span className="block font-body text-xs text-v-muted mt-1">Explore the work</span>
+                  </span>
                 </span>
-                <span>
-                  <span className="block font-display font-bold text-v-ink text-sm leading-tight">{item.name}</span>
-                  <span className="block font-body text-xs text-v-muted mt-1">Explore the work</span>
-                </span>
-              </span>
-            </button>
+              </button>
+            </div>
           );
         })}
       </div>
