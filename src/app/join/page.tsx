@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
+import ApplicationJourney from "@/components/ApplicationJourney";
+import BrandTexture from "@/components/BrandTexture";
 import FaqAccordion from "@/components/FaqAccordion";
 import SectionBridge from "@/components/SectionBridge";
 import TracksTabbed from "@/components/TracksTabbed";
@@ -185,8 +187,9 @@ export default async function Join() {
       <SectionBridge tone="lavender" align="right" />
 
       {/* ── TRACKS ─────────────────────────────────────────── */}
-      <section id="tracks" className="py-14 bg-[#f9f5f8]">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
+      <section id="tracks" className="relative isolate overflow-hidden py-14 bg-[#f9f5f8]">
+        <BrandTexture tone="lavender" />
+        <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
@@ -200,8 +203,9 @@ export default async function Join() {
       </section>
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
-      <section className="py-14 bg-[#f9f5f8]">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
+      <section className="relative isolate overflow-hidden py-14 bg-[#f9f5f8]">
+        <BrandTexture tone="lavender" />
+        <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
@@ -241,9 +245,12 @@ export default async function Join() {
 
       <SectionBridge tone="yellow" />
 
+      <ApplicationJourney />
+
       {/* ── FAQ ────────────────────────────────────────────── */}
-      <section className="py-14 bg-[#fffbea]">
-        <div className="max-w-3xl mx-auto px-5 md:px-8">
+      <section className="relative isolate overflow-hidden py-14 bg-[#fffbea]">
+        <BrandTexture tone="yellow" />
+        <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl">Frequently Asked Questions</h2>
           </AnimatedSection>

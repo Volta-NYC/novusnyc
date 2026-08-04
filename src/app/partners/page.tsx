@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
+import BrandTexture from "@/components/BrandTexture";
 import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
@@ -333,8 +334,9 @@ export default async function Partners() {
       <SectionBridge tone="peach" align="right" />
 
       {/* ── PARTNER EXAMPLES ───────────────────────────────── */}
-      <section className="py-16 bg-[#fef6f0]">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
+      <section className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
+        <BrandTexture tone="peach" />
+        <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Partners we&apos;re supporting</h2>
             <p className="font-body text-v-muted mt-3 max-w-2xl">
@@ -368,8 +370,9 @@ export default async function Partners() {
       </section>
 
       {/* ── TRUST SIGNALS ──────────────────────────────────── */}
-      <section className="py-16 bg-[#fef6f0]">
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
+      <section className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
+        <BrandTexture tone="peach" />
+        <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8 md:mb-10 text-center">
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
               Community connections
@@ -409,8 +412,9 @@ export default async function Partners() {
       <SectionBridge tone="lavender" />
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
-      <section className="py-16 bg-[#f9f5f8]">
-        <div className="max-w-3xl mx-auto px-5 md:px-8">
+      <section className="relative isolate overflow-hidden py-16 bg-[#f9f5f8]">
+        <BrandTexture tone="lavender" />
+        <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
           </AnimatedSection>

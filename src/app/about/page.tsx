@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
+import HistoryTimeline from "@/components/HistoryTimeline";
 import { aboutTimeline, aboutValues, teamMembers } from "@/data";
 import { formatCounter } from "@/lib/formatCounter";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
@@ -136,24 +137,7 @@ export default async function About() {
               A timeline for the moments, partnerships, and people that shaped our work.
             </p>
           </AnimatedSection>
-          <div className="relative ml-3 border-l-2 border-v-green/25 pl-8 md:ml-8 md:pl-12">
-            {aboutTimeline.map((milestone, i) => (
-              <AnimatedSection key={`${milestone.year}-${milestone.label}`} delay={i * 0.08}>
-                <article className="relative pb-12 last:pb-0 md:pb-14">
-                  <span className={`absolute -left-[2.38rem] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-[3px] border-white md:-left-[3.38rem] ${["bg-v-green", "bg-v-blue", "bg-v-yellow", "bg-v-green-dark", "bg-v-blue-dark"][i] ?? "bg-v-green"}`} aria-hidden="true" />
-                  <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-7">
-                    <p className="font-body whitespace-nowrap pt-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-v-green">
-                      {milestone.month} {milestone.year}
-                    </p>
-                    <div className={i < aboutTimeline.length - 1 ? "border-b border-v-border/70 pb-10" : ""}>
-                      <h3 className="font-display text-xl font-bold text-v-ink">{milestone.label}</h3>
-                      <p className="font-body mt-2 max-w-3xl leading-relaxed text-v-muted">{milestone.desc}</p>
-                    </div>
-                  </div>
-                </article>
-              </AnimatedSection>
-            ))}
-          </div>
+          <HistoryTimeline milestones={aboutTimeline} />
         </div>
       </section>
 
