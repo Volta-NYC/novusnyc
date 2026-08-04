@@ -544,7 +544,7 @@ export default function Home() {
       <HomeScrollBridge
         index={1}
         eyebrow="FROM CONNECTION TO DELIVERY"
-        title="Big ideas. Block by block."
+        title="One small business stronger. One city moving forward."
         detail="We turn a business owner's goals into practical projects that make a difference every day."
         imageSrc="/soho-streetscape.png"
       />
@@ -556,7 +556,7 @@ export default function Home() {
       <HomeScrollBridge
         index={2}
         eyebrow="FROM PROJECT TO PRACTICE"
-        title="Real work. Real team. Real impact."
+        title="Learn it. Build it. Make it matter."
         detail="Students across digital, marketing, and finance bring their strengths together to help neighborhood businesses move forward."
         imageSrc="/student-collaboration-wide.jpg"
       />
