@@ -368,8 +368,8 @@ body:has(.home-scroll-story) footer::before {
 .home-scroll-bridge::before {
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(35, 31, 36, 0.96) 0%, rgba(35, 31, 36, 0.62) 46%, rgba(35, 31, 36, 0.88) 100%),
-    radial-gradient(68% 100% at 12% 15%, rgba(246, 183, 141, 0.4), transparent 74%);
+    linear-gradient(90deg, rgba(20, 18, 22, 0.86) 0%, rgba(20, 18, 22, 0.42) 50%, rgba(20, 18, 22, 0.8) 100%),
+    linear-gradient(0deg, rgba(20, 18, 22, 0.48), transparent 64%);
 }
 
 .home-scroll-bridge::after {
@@ -377,31 +377,27 @@ body:has(.home-scroll-story) footer::before {
   border: 1px solid rgba(255, 253, 249, 0.18);
 }
 
-.home-scroll-bridge-map {
+.home-scroll-bridge-image-wrap {
   position: absolute;
   z-index: -1;
-  inset: -12rem -7vw;
-  opacity: 0.9;
+  inset: -16%;
 }
 
-.home-scroll-bridge-map svg {
-  fill: none;
-  stroke: rgba(255, 253, 249, 0.53);
-  stroke-width: 2.25;
-  vector-effect: non-scaling-stroke;
+.home-scroll-bridge-image {
+  filter: saturate(0.78) contrast(1.06) brightness(0.8);
 }
 
-.home-scroll-bridge-grid {
-  position: absolute;
-  z-index: -1;
-  inset: -20%;
-  pointer-events: none;
-  opacity: 0.28;
-  background-image:
-    linear-gradient(rgba(255, 253, 249, 0.23) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 253, 249, 0.23) 1px, transparent 1px);
-  background-size: 5.5rem 5.5rem;
-  transform: rotate(-8deg) scale(1.16);
+.home-scroll-bridge-0 .home-scroll-bridge-image {
+  object-position: center 52%;
+}
+
+.home-scroll-bridge-1 .home-scroll-bridge-image {
+  object-position: center 42%;
+}
+
+.home-scroll-bridge-2 .home-scroll-bridge-image {
+  object-position: center 50%;
+  filter: grayscale(1) contrast(1.12) brightness(0.66);
 }
 
 .home-scroll-bridge-copy {
@@ -444,17 +440,13 @@ body:has(.home-scroll-story) footer::before {
 }
 
 .home-scroll-bridge-1 {
-  background: #382c35;
+  background: #172a32;
 }
 
 .home-scroll-bridge-1::before {
   background:
-    linear-gradient(90deg, rgba(56, 44, 53, 0.94) 0%, rgba(56, 44, 53, 0.56) 50%, rgba(56, 44, 53, 0.91) 100%),
-    radial-gradient(62% 100% at 82% 18%, rgba(190, 162, 186, 0.48), transparent 72%);
-}
-
-.home-scroll-bridge-1 .home-scroll-bridge-map svg {
-  stroke: rgba(246, 183, 141, 0.64);
+    linear-gradient(90deg, rgba(11, 27, 34, 0.88) 0%, rgba(11, 27, 34, 0.4) 52%, rgba(11, 27, 34, 0.84) 100%),
+    linear-gradient(0deg, rgba(11, 27, 34, 0.52), transparent 64%);
 }
 
 .home-scroll-bridge-2 {
@@ -463,12 +455,8 @@ body:has(.home-scroll-story) footer::before {
 
 .home-scroll-bridge-2::before {
   background:
-    linear-gradient(90deg, rgba(39, 55, 51, 0.94) 0%, rgba(39, 55, 51, 0.56) 50%, rgba(39, 55, 51, 0.92) 100%),
-    radial-gradient(64% 95% at 10% 84%, rgba(243, 226, 141, 0.38), transparent 74%);
-}
-
-.home-scroll-bridge-2 .home-scroll-bridge-map svg {
-  stroke: rgba(243, 226, 141, 0.57);
+    linear-gradient(90deg, rgba(25, 32, 31, 0.9) 0%, rgba(25, 32, 31, 0.44) 50%, rgba(25, 32, 31, 0.86) 100%),
+    linear-gradient(0deg, rgba(25, 32, 31, 0.5), transparent 64%);
 }
 
 @keyframes home-backdrop-drift {
@@ -502,9 +490,9 @@ body:has(.home-scroll-story) footer::before {
   to { transform: translate3d(0, 0, 0); opacity: 1; }
 }
 
-@keyframes home-bridge-map-drift {
-  from { transform: translate3d(0, -9rem, 0) scale(1.04); }
-  to { transform: translate3d(0, 9rem, 0) scale(1.04); }
+@keyframes home-bridge-photo-drift {
+  from { transform: translate3d(0, -8%, 0) scale(1.04); }
+  to { transform: translate3d(0, 8%, 0) scale(1.04); }
 }
 
 @keyframes home-bridge-copy-drift {
@@ -552,8 +540,8 @@ body:has(.home-scroll-story) footer::before {
     animation-range: entry 12% cover 42%;
   }
 
-  .home-scroll-bridge-map {
-    animation: home-bridge-map-drift linear both;
+  .home-scroll-bridge-image-wrap {
+    animation: home-bridge-photo-drift linear both;
     animation-timeline: view();
     animation-range: entry 0% exit 100%;
   }
@@ -672,15 +660,10 @@ body:has(.home-scroll-story) footer::before {
     inset: 0.7rem;
   }
 
-  .home-scroll-bridge-map {
-    inset: -7rem -14rem;
-    opacity: 0.58;
+  .home-scroll-bridge-image-wrap {
+    inset: -10%;
     transform: none !important;
     animation: none !important;
-  }
-
-  .home-scroll-bridge-grid {
-    background-size: 4rem 4rem;
   }
 
   .home-scroll-bridge-copy {
@@ -695,7 +678,7 @@ body:has(.home-scroll-story) footer::before {
   .home-depth-section::before,
   .scroll-reveal,
   .showcase-card-media,
-  .home-scroll-bridge-map,
+  .home-scroll-bridge-image-wrap,
   .home-scroll-bridge-copy,
   .home-scroll-rail-fill,
   body:has(.home-scroll-story) footer {

@@ -178,24 +178,27 @@ function HomeScrollBridge({
   eyebrow,
   title,
   detail,
+  imageSrc,
   index,
 }: {
   eyebrow: string;
   title: string;
   detail: string;
+  imageSrc: string;
   index: number;
 }) {
   return (
     <section className={`home-scroll-bridge home-scroll-bridge-${index}`}>
-      <div aria-hidden="true" className="home-scroll-bridge-map">
-        <svg viewBox="0 0 1440 640" preserveAspectRatio="none" className="h-full w-full">
-          <path d="M-80 492C172 384 291 526 489 372S802 516 1001 300s355 22 559-178" />
-          <path d="M-80 186c232 102 326-94 560 92s288-99 492 50 267-61 548 40" />
-          <path d="M116 684c86-200 198-286 363-478S792 49 981-92" />
-          <path d="M796 708c38-186 144-278 269-429s161-255 312-357" />
-        </svg>
+      <div aria-hidden="true" className="home-scroll-bridge-image-wrap">
+        <Image
+          src={imageSrc}
+          alt=""
+          fill
+          sizes="100vw"
+          quality={82}
+          className="home-scroll-bridge-image object-cover"
+        />
       </div>
-      <div aria-hidden="true" className="home-scroll-bridge-grid" />
       <div className="home-scroll-bridge-copy">
         <p className="home-scroll-bridge-eyebrow">{eyebrow}</p>
         <h2>{title}</h2>
@@ -540,6 +543,7 @@ export default function Home() {
         eyebrow="FROM STUDENTS TO STREETS"
         title="A citywide network starts with one introduction."
         detail="Novus works through trusted neighborhood organizations to find the small businesses where support can have a real, practical impact."
+        imageSrc="/brooklyn-bridge.jpg"
       />
 
       <CommunityPartnersSection />
@@ -549,6 +553,7 @@ export default function Home() {
         eyebrow="FROM CONNECTION TO DELIVERY"
         title="The work gets specific, fast."
         detail="Each partnership becomes a focused project—built alongside owners, shaped by their goals, and designed for daily use."
+        imageSrc="/petite-dumpling-storefront.jpg"
       />
 
       <Suspense fallback={<CurrentProjectsFallback />}>
@@ -560,6 +565,7 @@ export default function Home() {
         eyebrow="FROM PROJECT TO PRACTICE"
         title="Different skills. One accountable team."
         detail="Every delivery draws on the digital, marketing, and operational work that keeps a neighborhood business moving forward."
+        imageSrc="/stats-bg.jpg"
       />
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
