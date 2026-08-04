@@ -337,7 +337,7 @@ function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
       target="_blank"
       rel="noreferrer"
       aria-label={`Visit ${partner.name} website`}
-      className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center shadow-[0_16px_42px_rgba(35,31,36,0.09)] no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
+      className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
     >
       <div className="relative w-full h-[78px] mb-4">
         <Image
@@ -376,8 +376,8 @@ function PartnerLogoCard({
       aria-label={`Visit ${partner.name} website`}
       className={`partner-logo-card shrink-0 bg-white border flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2 ${
         important
-          ? "w-[230px] h-[142px] rounded-xl border-v-green/35 shadow-[0_12px_34px_rgba(35,31,36,0.08)] px-4"
-          : "w-[230px] h-[142px] rounded-lg border-v-border shadow-[0_10px_28px_rgba(35,31,36,0.035)] px-4"
+          ? "w-[230px] h-[142px] rounded-xl border-v-green/35 px-4"
+          : "w-[230px] h-[142px] rounded-lg border-v-border px-4"
       }`}
     >
       <div className="relative w-full h-[72px] shrink-0">
@@ -458,14 +458,20 @@ function CommunityPartnersSection() {
           </p>
         </AnimatedSection>
         <AnimatedSection>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8 md:mb-10">
-            {flagshipPartners.map((partner) => (
-              <FlagshipPartnerCard key={partner.name} partner={partner} />
-            ))}
-          </div>
-          <div className="space-y-3 md:space-y-4">
-            <PartnerMarquee partners={importantPartners} important />
-            <PartnerMarquee partners={neighborhoodPartners} reverse />
+          <div className="relative isolate">
+            <div
+              aria-hidden="true"
+              className="absolute -inset-x-8 top-8 bottom-8 z-0 rounded-[2rem] bg-white shadow-[0_24px_56px_rgba(35,31,36,0.12)]"
+            />
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8 md:mb-10">
+              {flagshipPartners.map((partner) => (
+                <FlagshipPartnerCard key={partner.name} partner={partner} />
+              ))}
+            </div>
+            <div className="relative z-10 space-y-3 md:space-y-4">
+              <PartnerMarquee partners={importantPartners} important />
+              <PartnerMarquee partners={neighborhoodPartners} reverse />
+            </div>
           </div>
         </AnimatedSection>
       </div>
