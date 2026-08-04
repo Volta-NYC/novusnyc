@@ -13,7 +13,6 @@ import MasonryGrid from "@/components/MasonryGrid";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
-import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -251,54 +250,54 @@ async function CurrentProjectsSection() {
               >
                 {homeProjects.map((p) => (
                   <div key={`desktop-${p.name}`} className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
-                    <div className={`${p.colorClass} h-2`} />
-                    {p.imageUrl ? (
-                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
-                        <Image
-                          src={p.imageUrl}
-                          alt={`${p.name} project`}
-                          width={1600}
-                          height={1000}
-                          unoptimized
-                          className="block w-full h-auto"
-                          loading="lazy"
-                        />
-                      </div>
-                    ) : (
-                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
-                        <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
-                      </div>
-                    )}
-                    <div className="p-7 flex flex-col">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex gap-2 flex-wrap">
-                          {p.services.map((service) => (
-                            <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-                          ))}
+                      <div className={`${p.colorClass} h-2`} />
+                      {p.imageUrl ? (
+                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
+                          <Image
+                            src={p.imageUrl}
+                            alt={`${p.name} project`}
+                            width={1600}
+                            height={1000}
+                            unoptimized
+                            className="block w-full h-auto"
+                            loading="lazy"
+                          />
                         </div>
-                        <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-v-green/25 text-v-ink" : p.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
-                          {p.status}
-                        </span>
-                      </div>
-                      <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                      <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
-                      {p.desc && <ExpandableDescription desc={p.desc} />}
-                      {p.quote && (
-                        <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
-                          &ldquo;{p.quote}&rdquo;
-                        </blockquote>
+                      ) : (
+                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
+                          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                        </div>
                       )}
-                      <div className="flex items-center justify-between mt-4">
-                        <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
-                          <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                        </p>
-                        {p.url && (
-                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
-                            View live site →
-                          </a>
+                      <div className="p-7 flex flex-col">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex gap-2 flex-wrap">
+                            {p.services.map((service) => (
+                              <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+                            ))}
+                          </div>
+                          <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-v-green/25 text-v-ink" : p.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
+                            {p.status}
+                          </span>
+                        </div>
+                        <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
+                        <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
+                        {p.desc && <ExpandableDescription desc={p.desc} />}
+                        {p.quote && (
+                          <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+                            &ldquo;{p.quote}&rdquo;
+                          </blockquote>
                         )}
+                        <div className="flex items-center justify-between mt-4">
+                          <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+                            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
+                          </p>
+                          {p.url && (
+                            <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
+                              View live site →
+                            </a>
+                          )}
+                        </div>
                       </div>
-                    </div>
                   </div>
                 ))}
               </MasonryGrid>
@@ -483,29 +482,12 @@ export default function Home() {
 
   return (
     <>
-      <section className="relative overflow-hidden">
-        <Image
-          src={heroSkyline}
-          alt=""
-          fill
-          priority
-          fetchPriority="high"
-          placeholder="blur"
-          quality={72}
-          sizes="(max-width: 768px) 1200px, (max-width: 1280px) 1800px, 2400px"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 home-shared-wash" />
-        <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
-        <div className="relative">
-          <HeroSection />
-
-          {/* ── STATS ─────────────────────────────────────────────── */}
-          <section data-home-dark-end="true" className="relative py-14">
-            <LiveHomeStats />
-          </section>
-        </div>
-      </section>
+      <HeroSection>
+        {/* ── STATS ─────────────────────────────────────────────── */}
+        <section data-home-dark-end="true" className="relative py-14">
+          <LiveHomeStats />
+        </section>
+      </HeroSection>
 
       <CommunityPartnersSection />
 
