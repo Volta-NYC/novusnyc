@@ -355,6 +355,10 @@ body:has(.home-scroll-story) footer::before {
   padding: clamp(3.5rem, 7vw, 7rem) 1.25rem;
   color: #fffdf9;
   background: #231f24;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .home-scroll-bridge::before,
@@ -375,29 +379,6 @@ body:has(.home-scroll-story) footer::before {
 .home-scroll-bridge::after {
   inset: 1.1rem;
   border: 1px solid rgba(255, 253, 249, 0.18);
-}
-
-.home-scroll-bridge-image-wrap {
-  position: absolute;
-  z-index: -1;
-  inset: -16%;
-}
-
-.home-scroll-bridge-image {
-  filter: saturate(0.78) contrast(1.06) brightness(0.8);
-}
-
-.home-scroll-bridge-0 .home-scroll-bridge-image {
-  object-position: center 52%;
-}
-
-.home-scroll-bridge-1 .home-scroll-bridge-image {
-  object-position: center 42%;
-}
-
-.home-scroll-bridge-2 .home-scroll-bridge-image {
-  object-position: center 50%;
-  filter: grayscale(1) contrast(1.12) brightness(0.66);
 }
 
 .home-scroll-bridge-copy {
@@ -441,6 +422,7 @@ body:has(.home-scroll-story) footer::before {
 
 .home-scroll-bridge-1 {
   background: #172a32;
+  background-position: center 42%;
 }
 
 .home-scroll-bridge-1::before {
@@ -451,6 +433,7 @@ body:has(.home-scroll-story) footer::before {
 
 .home-scroll-bridge-2 {
   background: #273733;
+  background-position: center 50%;
 }
 
 .home-scroll-bridge-2::before {
@@ -488,11 +471,6 @@ body:has(.home-scroll-story) footer::before {
 @keyframes home-footer-settle {
   from { transform: translate3d(0, 44px, 0); opacity: 0.7; }
   to { transform: translate3d(0, 0, 0); opacity: 1; }
-}
-
-@keyframes home-bridge-photo-drift {
-  from { transform: translate3d(0, -8%, 0) scale(1.04); }
-  to { transform: translate3d(0, 8%, 0) scale(1.04); }
 }
 
 @keyframes home-bridge-copy-drift {
@@ -538,12 +516,6 @@ body:has(.home-scroll-story) footer::before {
     animation: home-footer-settle linear both;
     animation-timeline: view();
     animation-range: entry 12% cover 42%;
-  }
-
-  .home-scroll-bridge-image-wrap {
-    animation: home-bridge-photo-drift linear both;
-    animation-timeline: view();
-    animation-range: entry 0% exit 100%;
   }
 
   .home-scroll-bridge-copy {
@@ -660,16 +632,16 @@ body:has(.home-scroll-story) footer::before {
     inset: 0.7rem;
   }
 
-  .home-scroll-bridge-image-wrap {
-    inset: -10%;
-    transform: none !important;
-    animation: none !important;
-  }
-
   .home-scroll-bridge-copy {
     padding: 1.75rem 1.35rem;
     transform: none !important;
     animation: none !important;
+  }
+}
+
+@media only screen and (max-device-width: 1024px), (max-width: 1024px), (pointer: coarse) {
+  .home-scroll-bridge {
+    background-attachment: scroll;
   }
 }
 
@@ -678,7 +650,6 @@ body:has(.home-scroll-story) footer::before {
   .home-depth-section::before,
   .scroll-reveal,
   .showcase-card-media,
-  .home-scroll-bridge-image-wrap,
   .home-scroll-bridge-copy,
   .home-scroll-rail-fill,
   body:has(.home-scroll-story) footer {

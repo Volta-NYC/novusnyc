@@ -188,17 +188,10 @@ function HomeScrollBridge({
   index: number;
 }) {
   return (
-    <section className={`home-scroll-bridge home-scroll-bridge-${index}`}>
-      <div aria-hidden="true" className="home-scroll-bridge-image-wrap">
-        <Image
-          src={imageSrc}
-          alt=""
-          fill
-          sizes="100vw"
-          quality={82}
-          className="home-scroll-bridge-image object-cover"
-        />
-      </div>
+    <section
+      className={`home-scroll-bridge home-scroll-bridge-${index}`}
+      style={{ backgroundImage: `url(${imageSrc})` }}
+    >
       <div className="home-scroll-bridge-copy">
         <p className="home-scroll-bridge-eyebrow">{eyebrow}</p>
         <h2>{title}</h2>
