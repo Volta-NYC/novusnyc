@@ -40,7 +40,7 @@ export default function BusinessProcessTimeline() {
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
               A clear path forward
             </p>
-            <h2 id="business-process-heading" className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+            <h2 id="business-process-heading" className="page-section-heading text-v-ink">
               From first conversation to launch.
             </h2>
           </div>

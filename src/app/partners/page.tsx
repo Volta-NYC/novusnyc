@@ -275,7 +275,7 @@ export default async function Partners() {
       <section className="py-16 bg-v-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-4">
+            <h2 className="page-section-heading text-v-ink mb-4">
               Work with us
             </h2>
             <p className="font-body text-v-muted max-w-xl">
@@ -297,7 +297,7 @@ export default async function Partners() {
       <section id="services" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+            <h2 className="page-section-heading text-v-ink">
               What your business receives
             </h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
@@ -347,7 +347,7 @@ export default async function Partners() {
         <BrandTexture tone="peach" />
         <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Partners we&apos;re supporting</h2>
+            <h2 className="page-section-heading text-v-ink">Partners we&apos;re supporting</h2>
             <p className="font-body text-v-muted mt-3 max-w-2xl">
               A few examples of the neighborhood businesses currently working with Novus.
             </p>
@@ -386,7 +386,7 @@ export default async function Partners() {
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
               Community connections
             </p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
+            <h2 className="page-section-heading text-v-ink">
               Connected to the organizations that serve NYC businesses.
             </h2>
           </AnimatedSection>
@@ -425,7 +425,7 @@ export default async function Partners() {
         <BrandTexture tone="lavender" />
         <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
+            <h2 className="page-section-heading text-v-ink">Frequently asked questions</h2>
           </AnimatedSection>
           <AnimatedSection>
             <FaqAccordion categories={PARTNER_FAQ_CATEGORIES} />
@@ -437,7 +437,7 @@ export default async function Partners() {
       <section className="py-16 bg-v-dark text-center">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
+            <h2 className="page-section-heading text-white mb-4">
               Your business could be next.
             </h2>
             <p className="font-body text-white/65 text-base md:text-lg mb-8 max-w-lg mx-auto">

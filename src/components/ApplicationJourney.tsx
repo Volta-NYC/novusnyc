@@ -97,7 +97,7 @@ export default function ApplicationJourney() {
         <div className="mb-9 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="font-body mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-700">Your Novus journey</p>
-            <h2 id="application-journey-heading" className="font-display text-3xl font-bold text-v-ink md:text-4xl">From application to work you can show.</h2>
+            <h2 id="application-journey-heading" className="page-section-heading text-v-ink">From application to work you can show.</h2>
           </div>
           <p className="max-w-md font-body text-sm leading-relaxed text-v-muted">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
         </div>

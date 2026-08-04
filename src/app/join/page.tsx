@@ -171,7 +171,7 @@ export default async function Join() {
       <section id="benefits" className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Built for your resume — and beyond</h2>
+            <h2 className="page-section-heading text-v-ink">Built for your resume — and beyond</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
               Novus is built around outcomes that matter in interviews and on applications.
             </p>
@@ -199,7 +199,7 @@ export default async function Join() {
         <BrandTexture tone="lavender" />
         <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
+            <h2 className="page-section-heading text-v-ink">The three tracks</h2>
             <p className="font-body text-v-muted mt-3 max-w-xl">
               Every project is staffed by students across our three tracks. Pick the one that fits your skills and interests.
             </p>
@@ -215,7 +215,7 @@ export default async function Join() {
         <BrandTexture tone="lavender" />
         <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
+            <h2 className="page-section-heading text-v-ink">The leadership track</h2>
             <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
               We promote based on the work you do, not how long you have been here. Strong contributors move up quickly.
             </p>
@@ -260,7 +260,7 @@ export default async function Join() {
         <BrandTexture tone="yellow" />
         <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="font-display font-bold text-v-ink text-3xl">Frequently Asked Questions</h2>
+            <h2 className="page-section-heading text-v-ink">Frequently Asked Questions</h2>
           </AnimatedSection>
           <AnimatedSection>
             <FaqAccordion categories={JOIN_FAQ_CATEGORIES} />

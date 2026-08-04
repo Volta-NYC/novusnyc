@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .page-section-heading {
+    font-family: var(--font-space-grotesk), sans-serif;
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.06;
+  }
+}
+
 /* NOVUS NYC design tokens. Brand colors are bare RGB channels so Tailwind
    opacity modifiers work: bg-v-green/50 resolves to rgb(var(--color-green) / 0.5). */
 :root {
