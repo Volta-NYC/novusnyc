@@ -155,8 +155,15 @@ function CurrentProjectsFallback() {
             See all work →
           </Link>
         </AnimatedSection>
-        <div className="border border-v-border rounded-2xl bg-v-bg px-5 py-6 animate-pulse">
-          <p className="font-body text-sm text-v-muted">Loading featured projects…</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading featured projects">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="overflow-hidden rounded-xl border border-v-border bg-white p-5">
+              <div className="mb-5 h-32 animate-pulse rounded-lg bg-v-green/10" />
+              <div className="mb-3 h-3 w-20 animate-pulse rounded-full bg-v-border" />
+              <div className="mb-2 h-5 w-3/4 animate-pulse rounded-full bg-v-border" />
+              <div className="h-3 w-1/2 animate-pulse rounded-full bg-v-border" />
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -304,10 +311,10 @@ async function CurrentProjectsSection() {
             </div>
           </>
         ) : (
-          <div className="border border-v-border rounded-2xl bg-v-bg px-5 py-6">
-            <p className="font-body text-sm text-v-muted">
-              No home projects selected yet. Enable “show on home” for up to 6 projects in the Projects popup.
-            </p>
+          <div className="border border-v-border rounded-xl bg-white px-6 py-8 text-center">
+            <p className="font-display text-lg font-bold text-v-ink">New work is on the way.</p>
+            <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-v-muted">Our teams are preparing the next set of project stories. Explore the full body of work while we update this selection.</p>
+            <Link href="/showcase" className="mt-4 inline-flex font-body text-sm font-semibold text-v-blue hover:underline">Explore our work →</Link>
           </div>
         )}
       </div>

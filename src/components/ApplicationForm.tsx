@@ -180,6 +180,12 @@ export default function ApplicationForm() {
           isDisabled={status === "loading"}
           theme="light"
         />
+        {loadingSchools && (
+          <p className="mt-2 flex items-center gap-2 font-body text-xs text-v-muted" aria-live="polite">
+            <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-v-green" />
+            Loading school suggestions
+          </p>
+        )}
         {errors.schoolName && <p className="text-red-500 text-xs mt-1 font-body">{errors.schoolName}</p>}
       </div>
 
