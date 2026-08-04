@@ -681,6 +681,21 @@ body:has(.home-scroll-story) footer::before {
   to { transform: scaleY(1); }
 }
 
+@keyframes home-mobile-bridge-parallax-0 {
+  from { background-position: center 42%; }
+  to { background-position: center 62%; }
+}
+
+@keyframes home-mobile-bridge-parallax-1 {
+  from { background-position: center 48%; }
+  to { background-position: center 66%; }
+}
+
+@keyframes home-mobile-bridge-parallax-2 {
+  from { background-position: center 34%; }
+  to { background-position: center 54%; }
+}
+
 @supports (animation-timeline: view()) {
   .home-depth-section::before {
     animation: home-section-drift linear both;
@@ -834,6 +849,30 @@ body:has(.home-scroll-story) footer::before {
   .home-scroll-bridge-2 .home-scroll-bridge-copy {
     justify-self: center;
     margin-inline: 0;
+  }
+
+  @supports (animation-timeline: view()) {
+    .home-scroll-bridge {
+      background-attachment: scroll;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+      will-change: background-position;
+    }
+
+    .home-scroll-bridge-0 {
+      animation-name: home-mobile-bridge-parallax-0;
+    }
+
+    .home-scroll-bridge-1 {
+      animation-name: home-mobile-bridge-parallax-1;
+    }
+
+    .home-scroll-bridge-2 {
+      animation-name: home-mobile-bridge-parallax-2;
+    }
   }
 }
 
