@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import HistoryTimeline from "@/components/HistoryTimeline";
+import SectionProgressNav from "@/components/SectionProgressNav";
 import { aboutTimeline, aboutValues, teamMembers } from "@/data";
 import { formatCounter } from "@/lib/formatCounter";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
@@ -26,6 +27,13 @@ export default async function About() {
 
   return (
     <>
+      <SectionProgressNav sections={[
+        { id: "impact", label: "Impact" },
+        { id: "mission", label: "Mission" },
+        { id: "history", label: "History" },
+        { id: "leadership", label: "Leadership" },
+        { id: "values", label: "How we operate" },
+      ]} />
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-20" data-home-dark-end="true">
         <Image
@@ -67,7 +75,7 @@ export default async function About() {
       </section>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
-      <section className="py-14 bg-white overflow-x-auto">
+      <section id="impact" className="py-14 bg-white overflow-x-auto">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-10">Our impact</h2>
@@ -93,7 +101,7 @@ export default async function About() {
       </section>
 
       {/* ── MISSION ─────────────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section id="mission" className="py-16 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
@@ -128,7 +136,7 @@ export default async function About() {
       </section>
 
       {/* ── HISTORY ─────────────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section id="history" className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Our history</p>
@@ -142,7 +150,7 @@ export default async function About() {
       </section>
 
       {/* ── TEAM ────────────────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section id="leadership" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -191,7 +199,7 @@ export default async function About() {
       </section>
 
       {/* ── HOW WE OPERATE ─────────────────────────────────── */}
-      <section className="py-16 bg-v-bg">
+      <section id="values" className="py-16 bg-v-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">How we operate</h2>

@@ -33,7 +33,7 @@ export default function BusinessProcessTimeline() {
   const reducedMotion = useReducedMotion();
 
   return (
-    <section className="py-16 bg-white" aria-labelledby="business-process-heading">
+    <section id="process" className="py-16 bg-white" aria-labelledby="business-process-heading">
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-10">
           <div>

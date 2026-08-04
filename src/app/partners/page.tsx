@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import BrandTexture from "@/components/BrandTexture";
+import SectionProgressNav from "@/components/SectionProgressNav";
 import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
@@ -210,6 +211,14 @@ export default async function Partners() {
 
   return (
     <>
+      <SectionProgressNav sections={[
+        { id: "contact", label: "Get support" },
+        { id: "process", label: "Our process" },
+        { id: "services", label: "Services" },
+        { id: "examples", label: "Our work" },
+        { id: "community", label: "Partners" },
+        { id: "faq", label: "FAQ" },
+      ]} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -285,7 +294,7 @@ export default async function Partners() {
       <BusinessProcessTimeline />
 
       {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section id="services" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">
@@ -334,7 +343,7 @@ export default async function Partners() {
       <SectionBridge tone="peach" align="right" />
 
       {/* ── PARTNER EXAMPLES ───────────────────────────────── */}
-      <section className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
+      <section id="examples" className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
         <BrandTexture tone="peach" />
         <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
@@ -370,7 +379,7 @@ export default async function Partners() {
       </section>
 
       {/* ── TRUST SIGNALS ──────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
+      <section id="community" className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
         <BrandTexture tone="peach" />
         <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8 md:mb-10 text-center">
@@ -412,7 +421,7 @@ export default async function Partners() {
       <SectionBridge tone="lavender" />
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden py-16 bg-[#f9f5f8]">
+      <section id="faq" className="relative isolate overflow-hidden py-16 bg-[#f9f5f8]">
         <BrandTexture tone="lavender" />
         <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">

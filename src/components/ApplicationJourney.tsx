@@ -92,7 +92,7 @@ export default function ApplicationJourney() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#fffbea] py-14" aria-labelledby="application-journey-heading">
+    <section id="journey" className="relative overflow-hidden bg-[#fffbea] py-14" aria-labelledby="application-journey-heading">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="mb-9 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
