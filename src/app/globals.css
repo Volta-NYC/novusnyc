@@ -147,6 +147,42 @@ body {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
+
+  .public-site > section:not(.home-scroll-bridge) {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .public-site > section[data-home-dark-end="true"] {
+    padding-top: 6.25rem;
+    padding-bottom: 3.75rem;
+  }
+
+  .home-hero-depth > .min-h-screen {
+    min-height: 100svh;
+    padding-top: 5.75rem;
+    padding-bottom: 3.25rem;
+  }
+
+  .home-scroll-bridge {
+    min-height: 31rem;
+    padding: 3.5rem 1rem;
+  }
+
+  .home-scroll-bridge-copy {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .home-scroll-bridge-1 .home-scroll-bridge-copy,
+  .home-scroll-bridge-2 .home-scroll-bridge-copy {
+    justify-self: center;
+    margin-right: 0;
+  }
+
+  .site-footer {
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+  }
 }
 
 main {
