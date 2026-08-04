@@ -205,9 +205,25 @@ main {
   overflow: clip;
 }
 
-.home-scroll-story > :not(.home-scroll-backdrop) {
+.home-scroll-story > :not(.home-scroll-backdrop):not(.home-scroll-rail) {
   position: relative;
   z-index: 1;
+}
+
+body:has(.home-scroll-story) header {
+  background: rgba(23, 21, 26, 0.9) !important;
+  border-color: rgba(255, 253, 249, 0.12) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(14px);
+}
+
+body:has(.home-scroll-story) header nav > a:not(.bg-v-green):not(.text-v-green),
+body:has(.home-scroll-story) header nav > div > button:not(.text-v-green) {
+  color: rgba(255, 253, 249, 0.84) !important;
+}
+
+body:has(.home-scroll-story) header .md\:hidden span {
+  background-color: rgba(255, 253, 249, 0.92) !important;
 }
 
 .home-scroll-backdrop {
