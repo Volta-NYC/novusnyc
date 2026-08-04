@@ -224,14 +224,16 @@ async function CurrentProjectsSection() {
         </AnimatedSection>
         {homeProjects.length > 0 ? (
           <>
-            <div className="sm:hidden -mx-5 px-5 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
-              <div className="flex gap-4 w-max min-w-full items-start">
-                {homeProjects.map((p, i) => (
-                  <AnimatedSection
-                    key={`mobile-${p.name}`}
-                    delay={i * 0.05}
-                    className={`scroll-reveal scroll-reveal-card scroll-reveal-${i % 3} shrink-0 w-[82vw] max-w-[360px]`}
-                  >
+            <div className="home-project-mobile-marquee sm:hidden -mx-5 overflow-hidden pb-2">
+              <div className="home-project-mobile-track flex w-max items-start">
+                {[0, 1].map((copy) => (
+                  <div key={copy} className="flex gap-4 pr-4" aria-hidden={copy === 1}>
+                    {homeProjects.map((p, i) => (
+                      <AnimatedSection
+                        key={`mobile-${copy}-${p.name}`}
+                        delay={i * 0.05}
+                        className={`scroll-reveal scroll-reveal-card scroll-reveal-${i % 3} shrink-0 w-[82vw] max-w-[360px]`}
+                      >
                     <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
@@ -274,7 +276,7 @@ async function CurrentProjectsSection() {
                           <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
                             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
                           </p>
-                          {p.url && (
+                          {p.url && copy === 0 && (
                             <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
                               View live site →
                             </a>
@@ -282,7 +284,9 @@ async function CurrentProjectsSection() {
                         </div>
                       </div>
                     </div>
-                  </AnimatedSection>
+                      </AnimatedSection>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>

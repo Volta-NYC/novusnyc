@@ -132,6 +132,200 @@ body {
   overscroll-behavior-y: auto;
 }
 
+/* Phone baseline for the public site. Individual mobile refinements live
+   below this scope so the member portal and desktop layouts stay unchanged. */
+@media (max-width: 767px) {
+  .public-site {
+    --mobile-gutter: 1.25rem;
+    min-width: 0;
+  }
+
+  .public-site,
+  .public-site * {
+    min-width: 0;
+  }
+
+  .public-site img,
+  .public-site svg,
+  .public-site iframe {
+    max-width: 100%;
+  }
+
+  .public-site a,
+  .public-site button,
+  .public-site summary {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .public-site > section:not(.home-scroll-bridge) {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .public-site > section[data-home-dark-end="true"] {
+    padding-top: 6.25rem;
+    padding-bottom: 3.75rem;
+  }
+
+  .home-hero-depth > .min-h-screen {
+    min-height: 100svh;
+    padding-top: 5.75rem;
+    padding-bottom: 3.25rem;
+  }
+
+  .home-scroll-bridge {
+    min-height: 31rem;
+    padding: 3.5rem 1rem;
+  }
+
+  .home-scroll-bridge-copy {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .home-scroll-bridge-1 .home-scroll-bridge-copy,
+  .home-scroll-bridge-2 .home-scroll-bridge-copy {
+    justify-self: center;
+    margin-right: 0;
+  }
+
+  .home-scroll-bridge-0 {
+    background-position: 58% center;
+  }
+
+  .home-scroll-bridge-1 {
+    background-position: 52% center;
+  }
+
+  .home-scroll-bridge-2 {
+    background-position: 60% center;
+  }
+
+  .hero-photo,
+  .home-shared-bg {
+    background-position: 58% center;
+  }
+
+  .public-site > section:not(.home-hero-depth) h1 {
+    font-size: clamp(2.35rem, 10.5vw, 3.4rem) !important;
+    letter-spacing: 0 !important;
+    line-height: 0.98;
+    overflow-wrap: anywhere;
+  }
+
+  .public-site h2,
+  .public-site h3,
+  .public-site p,
+  .public-site li {
+    overflow-wrap: break-word;
+  }
+
+  .public-site > section:not(.home-hero-depth) .text-lg {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .public-site .font-body.text-sm {
+    line-height: 1.55;
+  }
+
+  .public-site a[class*="rounded-full"],
+  .public-site button[class*="rounded-full"] {
+    max-width: 100%;
+    min-height: 2.75rem;
+    text-align: center;
+  }
+
+  .home-scroll-bridge-copy h2 {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+    letter-spacing: 0;
+  }
+
+  .home-scroll-bridge-copy > p:last-child {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .site-footer {
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+  }
+
+  .mobile-scroll-row {
+    width: max-content;
+    max-width: none;
+    margin-right: calc(var(--mobile-gutter) * -1);
+    padding-right: var(--mobile-gutter);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    scrollbar-width: none;
+  }
+
+  .mobile-scroll-row::-webkit-scrollbar,
+  .mobile-logo-row::-webkit-scrollbar,
+  .mobile-stat-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-scroll-row > * {
+    scroll-snap-align: start;
+  }
+
+  .mobile-logo-row,
+  .mobile-stat-row {
+    display: flex;
+    width: calc(100% + var(--mobile-gutter));
+    margin-right: calc(var(--mobile-gutter) * -1);
+    padding-right: var(--mobile-gutter);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+  }
+
+  .mobile-logo-row > a {
+    width: min(72vw, 17rem);
+    min-width: min(72vw, 17rem);
+    min-height: 10rem;
+    scroll-snap-align: start;
+  }
+
+  .mobile-stat-row > * {
+    width: min(54vw, 12rem);
+    min-width: min(54vw, 12rem);
+    scroll-snap-align: start;
+  }
+
+  .home-scroll-rail {
+    display: none;
+  }
+
+  .home-scroll-backdrop {
+    opacity: 0.38;
+  }
+
+  .home-depth-section::before {
+    opacity: 0.3;
+  }
+
+  .brand-texture {
+    opacity: 0.35 !important;
+  }
+
+  .section-bridge {
+    height: 2.25rem;
+  }
+
+  .section-bridge img {
+    height: 1.5rem;
+  }
+
+  .home-scroll-bridge::after {
+    inset: 0.75rem;
+    opacity: 0.55;
+  }
+}
+
 main {
   width: 100%;
   max-width: 100%;
@@ -296,18 +490,11 @@ body:has(.home-scroll-story) footer {
   position: relative;
   isolation: isolate;
   overflow: clip;
+  background-color: rgb(var(--color-dark)) !important;
 }
 
 body:has(.home-scroll-story) footer::before {
-  position: absolute;
-  z-index: -1;
-  inset: -25% 0 0;
-  content: "";
-  pointer-events: none;
-  opacity: 0.75;
-  background:
-    radial-gradient(68% 62% at 50% 0%, rgba(190, 162, 186, 0.22), transparent 70%),
-    linear-gradient(180deg, rgba(35, 31, 36, 0.1), rgba(35, 31, 36, 0.72));
+  display: none;
 }
 
 .home-scroll-rail {
@@ -504,6 +691,21 @@ body:has(.home-scroll-story) footer::before {
   to { transform: scaleY(1); }
 }
 
+@keyframes home-mobile-bridge-parallax-0 {
+  from { background-position: center 42%; }
+  to { background-position: center 62%; }
+}
+
+@keyframes home-mobile-bridge-parallax-1 {
+  from { background-position: center 48%; }
+  to { background-position: center 66%; }
+}
+
+@keyframes home-mobile-bridge-parallax-2 {
+  from { background-position: center 34%; }
+  to { background-position: center 54%; }
+}
+
 @supports (animation-timeline: view()) {
   .home-depth-section::before {
     animation: home-section-drift linear both;
@@ -530,12 +732,6 @@ body:has(.home-scroll-story) footer::before {
     animation-timeline: view();
     animation-range: entry 0% exit 100%;
     transform-origin: center;
-  }
-
-  body:has(.home-scroll-story) footer {
-    animation: home-footer-settle linear both;
-    animation-timeline: view();
-    animation-range: entry 12% cover 42%;
   }
 
   .home-scroll-bridge-copy {
@@ -616,6 +812,28 @@ body:has(.home-scroll-story) footer::before {
   }
 }
 
+@keyframes home-project-mobile-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 639px) {
+  .home-project-mobile-track {
+    animation: home-project-mobile-marquee 48s linear infinite;
+    will-change: transform;
+  }
+
+  .home-project-mobile-marquee:hover .home-project-mobile-track,
+  .home-project-mobile-marquee:focus-within .home-project-mobile-track,
+  .home-project-mobile-marquee:active .home-project-mobile-track {
+    animation-play-state: paused;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-photo {
     background-position: 62% center;
@@ -663,6 +881,30 @@ body:has(.home-scroll-story) footer::before {
   .home-scroll-bridge-2 .home-scroll-bridge-copy {
     justify-self: center;
     margin-inline: 0;
+  }
+
+  @supports (animation-timeline: view()) {
+    .home-scroll-bridge {
+      background-attachment: scroll;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+      will-change: background-position;
+    }
+
+    .home-scroll-bridge-0 {
+      animation-name: home-mobile-bridge-parallax-0;
+    }
+
+    .home-scroll-bridge-1 {
+      animation-name: home-mobile-bridge-parallax-1;
+    }
+
+    .home-scroll-bridge-2 {
+      animation-name: home-mobile-bridge-parallax-2;
+    }
   }
 }
 

@@ -17,7 +17,7 @@ export default function SectionBridge({ tone, align = "left" }: SectionBridgePro
   const colors = toneClasses[tone];
 
   return (
-    <div aria-hidden="true" className={`h-11 ${colors.background}`}>
+    <div aria-hidden="true" className={`section-bridge h-11 ${colors.background}`}>
       <div className={`mx-auto flex h-full max-w-7xl items-center gap-3 px-5 md:px-8 ${align === "right" ? "flex-row-reverse" : ""}`}>
         <span className={`h-px flex-1 ${colors.line}`} />
         <Image

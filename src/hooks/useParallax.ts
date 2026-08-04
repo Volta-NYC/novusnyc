@@ -20,21 +20,21 @@ export function useParallax<T extends HTMLElement>(
   { range, offset = ["start end", "end start"] }: UseParallaxOptions,
 ): ParallaxValue {
   const reducedMotion = useReducedMotion();
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [canAnimate, setCanAnimate] = useState(false);
   const { scrollYProgress } = useScroll({ target, offset });
   const parallaxY = useTransform(scrollYProgress, [0, 1], range);
   const staticY = useTransform(scrollYProgress, [0, 1], [0, 0]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 768px)");
-    const updateViewport = () => setIsDesktop(mediaQuery.matches);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: no-preference)");
+    const updateMotionPreference = () => setCanAnimate(mediaQuery.matches);
 
-    updateViewport();
-    mediaQuery.addEventListener("change", updateViewport);
-    return () => mediaQuery.removeEventListener("change", updateViewport);
+    updateMotionPreference();
+    mediaQuery.addEventListener("change", updateMotionPreference);
+    return () => mediaQuery.removeEventListener("change", updateMotionPreference);
   }, []);
 
-  const enabled = isDesktop && !reducedMotion;
+  const enabled = canAnimate && !reducedMotion;
 
   return { y: enabled ? parallaxY : staticY, enabled };
 }

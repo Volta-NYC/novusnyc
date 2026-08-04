@@ -14,7 +14,7 @@ export default function HomeStats({ stats }: { stats: Stat[] }) {
 
   return (
     <div className="max-w-6xl mx-auto px-5 md:px-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="mobile-stat-row grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {stats.map((s, i) => (
           <motion.div
             key={s.label}
