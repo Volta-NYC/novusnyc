@@ -413,7 +413,7 @@ function PartnerMarquee({
   reverse?: boolean;
 }) {
   return (
-    <div className={`partner-marquee -mx-5 md:-mx-8 overflow-hidden py-2 ${reverse ? "partner-marquee-fade" : ""}`}>
+    <div className="partner-marquee -mx-5 md:-mx-8 overflow-hidden py-2">
       <div className={`partner-marquee-track flex gap-3 md:gap-4 ${reverse ? "partner-marquee-track-reverse" : ""}`}>
         {[0, 1].map((copy) => (
           <div key={copy} className="flex gap-3 md:gap-4" aria-hidden={copy === 1}>
@@ -463,7 +463,7 @@ function CommunityPartnersSection() {
               <FlagshipPartnerCard key={partner.name} partner={partner} />
             ))}
           </div>
-          <div className="space-y-3 md:space-y-4">
+          <div className="partner-marquee-stack space-y-3 md:space-y-4">
             <PartnerMarquee partners={importantPartners} important />
             <PartnerMarquee partners={neighborhoodPartners} reverse />
           </div>

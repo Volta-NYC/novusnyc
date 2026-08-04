@@ -216,7 +216,7 @@ main {
   animation-play-state: paused;
 }
 
-.partner-marquee-fade {
+.partner-marquee-stack {
   background: linear-gradient(180deg, rgba(35, 31, 36, 0.035) 0%, rgba(35, 31, 36, 0) 100%);
 }
 
