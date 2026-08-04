@@ -515,12 +515,6 @@ body:has(.home-scroll-story) footer::before {
     transform-origin: center;
   }
 
-  body:has(.home-scroll-story) footer {
-    animation: home-footer-settle linear both;
-    animation-timeline: view();
-    animation-range: entry 12% cover 42%;
-  }
-
   .home-scroll-bridge-copy {
     animation: home-bridge-copy-drift linear both;
     animation-timeline: view();
