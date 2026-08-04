@@ -463,7 +463,7 @@ function CommunityPartnersSection() {
               <FlagshipPartnerCard key={partner.name} partner={partner} />
             ))}
           </div>
-          <div className="partner-marquee-stack space-y-3 md:space-y-4">
+          <div className="space-y-3 md:space-y-4">
             <PartnerMarquee partners={importantPartners} important />
             <PartnerMarquee partners={neighborhoodPartners} reverse />
           </div>
