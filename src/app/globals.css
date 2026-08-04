@@ -196,6 +196,46 @@ body {
     background-position: 58% center;
   }
 
+  .public-site > section:not(.home-hero-depth) h1 {
+    font-size: clamp(2.35rem, 10.5vw, 3.4rem) !important;
+    letter-spacing: 0 !important;
+    line-height: 0.98;
+    overflow-wrap: anywhere;
+  }
+
+  .public-site h2,
+  .public-site h3,
+  .public-site p,
+  .public-site li {
+    overflow-wrap: break-word;
+  }
+
+  .public-site > section:not(.home-hero-depth) .text-lg {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .public-site .font-body.text-sm {
+    line-height: 1.55;
+  }
+
+  .public-site a[class*="rounded-full"],
+  .public-site button[class*="rounded-full"] {
+    max-width: 100%;
+    min-height: 2.75rem;
+    text-align: center;
+  }
+
+  .home-scroll-bridge-copy h2 {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+    letter-spacing: 0;
+  }
+
+  .home-scroll-bridge-copy > p:last-child {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
   .site-footer {
     padding-top: 3rem;
     padding-bottom: 2rem;
