@@ -225,7 +225,7 @@ export default async function Partners() {
           placeholder="blur"
           quality={75}
           sizes="(max-width: 768px) 100vw, 1920px"
-          className="object-cover"
+          className="object-cover object-[60%_center] md:object-center"
         />
         <div className="absolute inset-0 bg-[#1a1e24]/75" />
         <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />

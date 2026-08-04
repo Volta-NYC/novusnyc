@@ -179,6 +179,23 @@ body {
     margin-right: 0;
   }
 
+  .home-scroll-bridge-0 {
+    background-position: 58% center;
+  }
+
+  .home-scroll-bridge-1 {
+    background-position: 52% center;
+  }
+
+  .home-scroll-bridge-2 {
+    background-position: 60% center;
+  }
+
+  .hero-photo,
+  .home-shared-bg {
+    background-position: 58% center;
+  }
+
   .site-footer {
     padding-top: 3rem;
     padding-bottom: 2rem;
