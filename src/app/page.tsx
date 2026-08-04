@@ -13,7 +13,6 @@ import MasonryGrid from "@/components/MasonryGrid";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
-import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -483,28 +482,13 @@ export default function Home() {
 
   return (
     <>
-      <section className="relative overflow-hidden">
-        <Image
-          src={heroSkyline}
-          alt=""
-          fill
-          priority
-          fetchPriority="high"
-          placeholder="blur"
-          quality={72}
-          sizes="(max-width: 768px) 1200px, (max-width: 1280px) 1800px, 2400px"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 home-shared-wash" />
-        <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
-        <div className="relative">
-          <HeroSection />
+      <section className="relative overflow-hidden bg-v-ink">
+        <HeroSection />
 
-          {/* ── STATS ─────────────────────────────────────────────── */}
-          <section data-home-dark-end="true" className="relative py-14">
-            <LiveHomeStats />
-          </section>
-        </div>
+        {/* ── STATS ─────────────────────────────────────────────── */}
+        <section data-home-dark-end="true" className="relative py-14">
+          <LiveHomeStats />
+        </section>
       </section>
 
       <CommunityPartnersSection />

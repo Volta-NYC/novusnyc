@@ -2,17 +2,47 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { useRef } from "react";
+import heroSkyline from "../../public/hero-nyc-skyline.jpg";
+import { useParallax } from "@/hooks/useParallax";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function HeroSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const reducedMotion = useReducedMotion();
+  const { y: backgroundY, enabled: parallaxEnabled } = useParallax(sectionRef, {
+    range: [-18, 22],
+    offset: ["start start", "end start"],
+  });
+
   return (
-    <section className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center overflow-hidden pt-16">
+    <section ref={sectionRef} className="relative min-h-screen md:min-h-[104vh] flex flex-col items-center justify-center overflow-hidden pt-16">
+      <motion.div
+        aria-hidden="true"
+        className="absolute -inset-y-8 inset-x-0"
+        style={{ y: backgroundY, willChange: parallaxEnabled ? "transform" : "auto" }}
+      >
+        <Image
+          src={heroSkyline}
+          alt=""
+          fill
+          priority
+          fetchPriority="high"
+          placeholder="blur"
+          quality={72}
+          sizes="(max-width: 768px) 1200px, (max-width: 1280px) 1800px, 2400px"
+          className="object-cover"
+        />
+      </motion.div>
+      <div className="absolute inset-0 home-shared-wash" />
+      <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
+
       {/* Logo + Title */}
       <motion.div
         className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
-        initial={{ opacity: 0, y: 20 }}
+        initial={reducedMotion ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.65, ease: EASE }}
       >
@@ -44,7 +74,7 @@ export default function HeroSection() {
       {/* Subtitle + CTAs — centered under the title */}
       <motion.div
         className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center"
-        initial={{ opacity: 0, y: 28 }}
+        initial={reducedMotion ? false : { opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.65, delay: 0.12, ease: EASE }}
       >
