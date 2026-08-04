@@ -422,7 +422,12 @@ body:has(.home-scroll-story) footer::before {
 
 .home-scroll-bridge-1 {
   background: #172a32;
-  background-position: center 42%;
+  background-position: center 56%;
+}
+
+.home-scroll-bridge-1 .home-scroll-bridge-copy {
+  justify-self: end;
+  margin-right: clamp(1.5rem, 7vw, 8rem);
 }
 
 .home-scroll-bridge-1::before {
@@ -433,7 +438,12 @@ body:has(.home-scroll-story) footer::before {
 
 .home-scroll-bridge-2 {
   background: #273733;
-  background-position: center 50%;
+  background-position: center 42%;
+}
+
+.home-scroll-bridge-2 .home-scroll-bridge-copy {
+  justify-self: start;
+  margin-left: clamp(1.5rem, 7vw, 8rem);
 }
 
 .home-scroll-bridge-2::before {
@@ -636,6 +646,12 @@ body:has(.home-scroll-story) footer::before {
     padding: 1.75rem 1.35rem;
     transform: none !important;
     animation: none !important;
+  }
+
+  .home-scroll-bridge-1 .home-scroll-bridge-copy,
+  .home-scroll-bridge-2 .home-scroll-bridge-copy {
+    justify-self: center;
+    margin-inline: 0;
   }
 }
 

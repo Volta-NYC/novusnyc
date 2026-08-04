@@ -546,7 +546,7 @@ export default function Home() {
         eyebrow="FROM CONNECTION TO DELIVERY"
         title="The work gets specific, fast."
         detail="Each partnership becomes a focused project—built alongside owners, shaped by their goals, and designed for daily use."
-        imageSrc="/greenwich-village-storefront.jpg"
+        imageSrc="/tangra-masala-storefront.jpg"
       />
 
       <Suspense fallback={<CurrentProjectsFallback />}>
@@ -558,7 +558,7 @@ export default function Home() {
         eyebrow="FROM PROJECT TO PRACTICE"
         title="Different skills. One accountable team."
         detail="Every delivery draws on the digital, marketing, and operational work that keeps a neighborhood business moving forward."
-        imageSrc="/student-collaboration.jpg"
+        imageSrc="/student-work-session.jpg"
       />
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
