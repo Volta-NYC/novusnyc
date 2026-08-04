@@ -336,7 +336,7 @@ function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
       target="_blank"
       rel="noreferrer"
       aria-label={`Visit ${partner.name} website`}
-      className="bg-white border border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
+      className="bg-white border-2 border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
     >
       <div className="relative w-full h-[78px] mb-4">
         <Image
@@ -373,7 +373,7 @@ function PartnerLogoCard({
       rel="noreferrer"
       tabIndex={tabIndex}
       aria-label={`Visit ${partner.name} website`}
-      className={`partner-logo-card shrink-0 bg-white border flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2 ${
+      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2 ${
         important
           ? "w-[230px] h-[142px] rounded-xl border-v-green/35 px-4"
           : "w-[230px] h-[142px] rounded-lg border-v-border px-4"
