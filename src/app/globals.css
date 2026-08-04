@@ -211,10 +211,10 @@ main {
 }
 
 body:has(.home-scroll-story) header {
-  background: rgba(23, 21, 26, 0.9) !important;
+  background: rgba(23, 21, 26, 0.72) !important;
   border-color: rgba(255, 253, 249, 0.12) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(18px);
 }
 
 body:has(.home-scroll-story) header nav > a:not(.bg-v-green):not(.text-v-green),
