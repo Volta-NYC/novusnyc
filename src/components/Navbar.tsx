@@ -176,17 +176,25 @@ export default function Navbar() {
             </Link>
           </nav>
 
-          <button
-            onClick={() => setOpen(!open)}
-            className="md:hidden flex flex-col gap-1.5 p-2"
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            aria-controls="mobile-nav-menu"
-          >
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "opacity-0" : ""}`} />
-            <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "-rotate-45 -translate-y-2" : ""}`} />
-          </button>
+          <div className="flex items-center gap-1 md:hidden">
+            <Link
+              href="/apply"
+              className="rounded-full bg-v-green px-3.5 py-2 font-display text-sm font-bold text-v-ink transition-colors hover:bg-v-green-dark"
+            >
+              Apply
+            </Link>
+            <button
+              onClick={() => setOpen(!open)}
+              className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-full"
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              aria-controls="mobile-nav-menu"
+            >
+              <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
+              <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "opacity-0" : ""}`} />
+              <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-v-ink"} ${open ? "-rotate-45 -translate-y-2" : ""}`} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -199,13 +207,14 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 top-16 z-40 bg-v-bg flex flex-col px-6 pt-8 gap-6 md:hidden overflow-y-auto"
+            className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-4 overflow-y-auto bg-v-bg px-5 pb-8 pt-6 md:hidden"
+            style={{ top: "calc(var(--banner-h, 0px) + 4rem)" }}
           >
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`font-display font-bold text-2xl border-b border-v-border pb-4 pl-3 border-l-2 ${
+                className={`font-display font-bold text-xl border-b border-v-border py-3 pl-3 border-l-2 ${
                   currentPathname === l.href ? "text-v-green border-l-v-green" : "text-v-ink border-l-transparent"
                 }`}
               >
@@ -214,8 +223,8 @@ export default function Navbar() {
             ))}
 
             {/* More section in mobile */}
-            <div className="border-b border-v-border pb-4">
-              <p className="font-display font-bold text-2xl text-v-ink mb-3">More</p>
+            <div className="border-b border-v-border py-3">
+              <p className="font-display font-bold text-xl text-v-ink mb-3">More</p>
               <div className="flex flex-col gap-2 pl-2">
                 {moreLinks.map((l) => (
                   <Link
