@@ -72,7 +72,7 @@ export default async function About() {
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl mb-10">Our impact</h2>
             <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-v-border border border-v-border rounded-2xl overflow-hidden">
               {[
-                { value: formatCounter(liveStats.totalBusinesses), label: "Total\nbusinesses", color: "text-v-green" },
+                { value: "150+", label: "Total\nbusinesses", color: "text-v-green" },
                 { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects", color: "text-v-blue" },
                 { value: formatCounter(liveStats.marketingProjects), label: "Marketing\nprojects", color: "text-v-green-dark" },
                 { value: formatCounter(liveStats.caseStudies), label: "Case studies\nby students", color: "text-v-blue-dark" },
