@@ -1,16 +1,16 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AwardIcon, BuildingIcon, CheckIcon, PencilIcon, UsersIcon } from "@/components/Icons";
 
 const steps = [
   {
     label: "Apply",
     eyebrow: "Start here",
-    title: "Tell us how you want to contribute.",
-    detail: "Share a little about yourself, your interests, and the kind of work you want to explore. The application is designed to be quick and straightforward.",
-    note: "A short application, not a test.",
+    title: "Share your interests and availability.",
+    detail: "Start with a short application covering your school, relevant experience, preferred track, and the kind of client work you want to take on. You do not need a perfect resume to apply.",
+    note: "The application is a starting point, not a skills test.",
     icon: PencilIcon,
     accent: "bg-v-blue",
     soft: "bg-v-blue/10",
@@ -19,9 +19,9 @@ const steps = [
   {
     label: "Interview",
     eyebrow: "Meet the team",
-    title: "Talk through your goals and interests.",
-    detail: "We get to know what you enjoy, what you want to learn, and how Novus can be a useful place for you to grow.",
-    note: "A real conversation, not a formal interrogation.",
+    title: "Meet a Novus lead for a conversation.",
+    detail: "We talk through your interests, examples of work you are proud of, and how you like to collaborate. It helps us place you on a team where you can contribute and grow.",
+    note: "Expect a conversation about fit, not a formal interrogation.",
     icon: UsersIcon,
     accent: "bg-v-green",
     soft: "bg-v-green/10",
@@ -30,9 +30,9 @@ const steps = [
   {
     label: "Join a track",
     eyebrow: "Find your fit",
-    title: "Choose the work that fits your strengths.",
-    detail: "Join Digital & Tech, Marketing, or Finance & Operations, then collaborate with students who bring different skills to the same project.",
-    note: "You can build depth and still work across teams.",
+    title: "Start in the track that fits you best.",
+    detail: "Choose Digital & Tech, Marketing, or Finance & Operations. Marketing members can focus on social media and branding, grants and funding, ambassadors, small business outreach, or work across all four.",
+    note: "You can build depth in one focus while collaborating across teams.",
     icon: CheckIcon,
     accent: "bg-v-yellow",
     soft: "bg-v-yellow/20",
@@ -41,8 +41,8 @@ const steps = [
   {
     label: "Work with a business",
     eyebrow: "Make it real",
-    title: "Deliver work for a real client.",
-    detail: "Your team will work through real needs, feedback, and decisions with a neighborhood business or community partner.",
+    title: "Join a team serving a real business.",
+    detail: "Work through a live project with clear deliverables: a website, outreach plan, social content, grant research, or an owner-facing recommendation. You will respond to real feedback and project deadlines.",
     note: "The work is practical, collaborative, and client-facing.",
     icon: BuildingIcon,
     accent: "bg-v-green-dark",
@@ -52,8 +52,8 @@ const steps = [
   {
     label: "Build a portfolio",
     eyebrow: "Carry it forward",
-    title: "Leave with outcomes you can show.",
-    detail: "Document the work you helped create, the decisions you made, and the results your team delivered for the people you served.",
+    title: "Document work that is genuinely yours.",
+    detail: "Leave with shipped deliverables, clear examples of your contribution, and project stories you can use in college applications, interviews, and future opportunities.",
     note: "Experience that gives interviews and applications real substance.",
     icon: AwardIcon,
     accent: "bg-v-blue-dark",
@@ -64,10 +64,19 @@ const steps = [
 
 export default function ApplicationJourney() {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
   const id = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const reducedMotion = useReducedMotion();
   const step = steps[active];
+
+  useEffect(() => {
+    if (paused || reducedMotion) return;
+    const interval = window.setInterval(() => {
+      setActive((current) => (current + 1) % steps.length);
+    }, 5500);
+    return () => window.clearInterval(interval);
+  }, [paused, reducedMotion]);
 
   const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
     let next = index;
@@ -93,7 +102,15 @@ export default function ApplicationJourney() {
           <p className="max-w-md font-body text-sm leading-relaxed text-v-muted">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
         </div>
 
-        <div className="grid overflow-hidden rounded-lg border border-v-yellow/55 bg-white/70 md:grid-cols-[15rem_minmax(0,1fr)]">
+        <div
+          className="grid overflow-hidden rounded-lg border border-v-yellow/55 bg-white/70 md:grid-cols-[15rem_minmax(0,1fr)]"
+          onPointerEnter={() => setPaused(true)}
+          onPointerLeave={() => setPaused(false)}
+          onFocusCapture={() => setPaused(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
+          }}
+        >
           <div role="tablist" aria-label="Novus student journey" className="grid border-b border-v-yellow/40 bg-white/45 sm:grid-cols-5 md:block md:border-b-0 md:border-r">
             {steps.map((item, index) => {
               const selected = active === index;
