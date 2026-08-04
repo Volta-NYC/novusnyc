@@ -421,7 +421,7 @@ body:has(.home-scroll-story) footer::before {
 }
 
 .home-scroll-bridge-1 {
-  background: #172a32;
+  background-color: #172a32;
   background-position: center 56%;
 }
 
@@ -437,7 +437,7 @@ body:has(.home-scroll-story) footer::before {
 }
 
 .home-scroll-bridge-2 {
-  background: #273733;
+  background-color: #273733;
   background-position: center 42%;
 }
 
