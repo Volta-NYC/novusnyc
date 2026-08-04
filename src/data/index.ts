@@ -387,7 +387,7 @@ export const joinTracks = [
   {
     icon: BarChartIcon,
     name: "Finance & Operations",
-    color: "border-v-yellow bg-v-yellow/15",
+    color: "border-v-yellow/65 bg-v-yellow/8",
     tagColor: "bg-v-yellow/50 text-v-ink",
     iconColor: "text-amber-600",
     iconBg: "bg-v-yellow/40",
@@ -408,7 +408,7 @@ export const joinTracks = [
   {
     icon: CodeIcon,
     name: "Digital & Tech",
-    color: "border-v-blue/40 bg-v-blue/10",
+    color: "border-v-blue/35 bg-v-blue/6",
     tagColor: "bg-v-blue/25 text-v-ink",
     iconColor: "text-v-blue-dark",
     iconBg: "bg-v-blue/25",
@@ -428,7 +428,7 @@ export const joinTracks = [
   {
     icon: MegaphoneIcon,
     name: "Marketing",
-    color: "border-v-green/40 bg-v-green/10",
+    color: "border-v-green/35 bg-v-green/6",
     tagColor: "bg-v-green/25 text-v-ink",
     iconColor: "text-v-green-dark",
     iconBg: "bg-v-green/25",

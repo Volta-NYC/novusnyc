@@ -185,7 +185,7 @@ export default async function Join() {
       <SectionBridge tone="lavender" align="right" />
 
       {/* ── TRACKS ─────────────────────────────────────────── */}
-      <section id="tracks" className="py-14 bg-[#f4eff5]">
+      <section id="tracks" className="py-14 bg-[#f9f5f8]">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
@@ -200,7 +200,7 @@ export default async function Join() {
       </section>
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
-      <section className="py-14 bg-[#f4eff5]">
+      <section className="py-14 bg-[#f9f5f8]">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The leadership track</h2>
@@ -242,7 +242,7 @@ export default async function Join() {
       <SectionBridge tone="yellow" />
 
       {/* ── FAQ ────────────────────────────────────────────── */}
-      <section className="py-14 bg-[#fff8df]">
+      <section className="py-14 bg-[#fffbea]">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl">Frequently Asked Questions</h2>

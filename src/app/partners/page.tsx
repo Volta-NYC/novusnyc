@@ -333,7 +333,7 @@ export default async function Partners() {
       <SectionBridge tone="peach" align="right" />
 
       {/* ── PARTNER EXAMPLES ───────────────────────────────── */}
-      <section className="py-16 bg-[#fcf3e9]">
+      <section className="py-16 bg-[#fef6f0]">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Partners we&apos;re supporting</h2>
@@ -368,7 +368,7 @@ export default async function Partners() {
       </section>
 
       {/* ── TRUST SIGNALS ──────────────────────────────────── */}
-      <section className="py-16 bg-[#fcf3e9]">
+      <section className="py-16 bg-[#fef6f0]">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8 md:mb-10 text-center">
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
@@ -409,7 +409,7 @@ export default async function Partners() {
       <SectionBridge tone="lavender" />
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
-      <section className="py-16 bg-[#f4eff5]">
+      <section className="py-16 bg-[#f9f5f8]">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="font-display font-bold text-v-ink text-2xl">Frequently asked questions</h2>
