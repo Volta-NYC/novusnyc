@@ -482,14 +482,12 @@ export default function Home() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-v-ink">
-        <HeroSection />
-
+      <HeroSection>
         {/* ── STATS ─────────────────────────────────────────────── */}
         <section data-home-dark-end="true" className="relative py-14">
           <LiveHomeStats />
         </section>
-      </section>
+      </HeroSection>
 
       <CommunityPartnersSection />
 
