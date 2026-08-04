@@ -187,20 +187,11 @@ function HomeScrollBridge({
   imageSrc: string;
   index: number;
 }) {
-  const usesScrollMedia = index > 0;
-
   return (
     <section
       className={`home-scroll-bridge home-scroll-bridge-${index}`}
-      style={usesScrollMedia ? undefined : { backgroundImage: `url(${imageSrc})` }}
+      style={{ backgroundImage: `url(${imageSrc})` }}
     >
-      {usesScrollMedia && (
-        <div
-          aria-hidden="true"
-          className="home-scroll-bridge-media"
-          style={{ backgroundImage: `url(${imageSrc})` }}
-        />
-      )}
       <div className="home-scroll-bridge-copy">
         <p className="home-scroll-bridge-eyebrow">{eyebrow}</p>
         <h2>{title}</h2>
@@ -555,7 +546,7 @@ export default function Home() {
         eyebrow="FROM CONNECTION TO DELIVERY"
         title="The work gets specific, fast."
         detail="Each partnership becomes a focused project—built alongside owners, shaped by their goals, and designed for daily use."
-        imageSrc="/fanelli-cafe-soho.jpg"
+        imageSrc="/brandy-melville-storefront.jpg"
       />
 
       <Suspense fallback={<CurrentProjectsFallback />}>
