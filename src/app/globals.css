@@ -286,6 +286,7 @@ body:has(.home-scroll-story) footer {
   position: relative;
   isolation: isolate;
   overflow: clip;
+  background-color: #17151a !important;
 }
 
 body:has(.home-scroll-story) footer::before {
@@ -294,7 +295,7 @@ body:has(.home-scroll-story) footer::before {
   inset: -25% 0 0;
   content: "";
   pointer-events: none;
-  opacity: 0.75;
+  opacity: 0.45;
   background:
     radial-gradient(68% 62% at 50% 0%, rgba(190, 162, 186, 0.22), transparent 70%),
     linear-gradient(180deg, rgba(35, 31, 36, 0.1), rgba(35, 31, 36, 0.72));
