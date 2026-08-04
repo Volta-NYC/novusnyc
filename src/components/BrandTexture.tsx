@@ -38,7 +38,7 @@ export default function BrandTexture({ tone }: { tone: keyof typeof tones }) {
     <div
       ref={textureRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 opacity-90 transition-[background-position] duration-500 ease-out"
+      className="brand-texture pointer-events-none absolute inset-0 opacity-90 transition-[background-position] duration-500 ease-out"
       style={{
         background: `radial-gradient(30rem circle at var(--texture-x, 50%) var(--texture-y, 50%), ${tones[tone]} 0%, transparent 68%)`,
       }}

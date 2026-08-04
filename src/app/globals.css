@@ -285,6 +285,35 @@ body {
     min-width: min(54vw, 12rem);
     scroll-snap-align: start;
   }
+
+  .home-scroll-rail {
+    display: none;
+  }
+
+  .home-scroll-backdrop {
+    opacity: 0.38;
+  }
+
+  .home-depth-section::before {
+    opacity: 0.3;
+  }
+
+  .brand-texture {
+    opacity: 0.35 !important;
+  }
+
+  .section-bridge {
+    height: 2.25rem;
+  }
+
+  .section-bridge img {
+    height: 1.5rem;
+  }
+
+  .home-scroll-bridge::after {
+    inset: 0.75rem;
+    opacity: 0.55;
+  }
 }
 
 main {
