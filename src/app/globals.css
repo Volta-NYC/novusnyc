@@ -802,6 +802,28 @@ body:has(.home-scroll-story) footer::before {
   }
 }
 
+@keyframes home-project-mobile-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 639px) {
+  .home-project-mobile-track {
+    animation: home-project-mobile-marquee 48s linear infinite;
+    will-change: transform;
+  }
+
+  .home-project-mobile-marquee:hover .home-project-mobile-track,
+  .home-project-mobile-marquee:focus-within .home-project-mobile-track,
+  .home-project-mobile-marquee:active .home-project-mobile-track {
+    animation-play-state: paused;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-photo {
     background-position: 62% center;
