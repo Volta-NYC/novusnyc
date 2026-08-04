@@ -122,6 +122,33 @@ body {
   overscroll-behavior-y: auto;
 }
 
+/* Phone baseline for the public site. Individual mobile refinements live
+   below this scope so the member portal and desktop layouts stay unchanged. */
+@media (max-width: 767px) {
+  .public-site {
+    --mobile-gutter: 1.25rem;
+    min-width: 0;
+  }
+
+  .public-site,
+  .public-site * {
+    min-width: 0;
+  }
+
+  .public-site img,
+  .public-site svg,
+  .public-site iframe {
+    max-width: 100%;
+  }
+
+  .public-site a,
+  .public-site button,
+  .public-site summary {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
 main {
   width: 100%;
   max-width: 100%;
