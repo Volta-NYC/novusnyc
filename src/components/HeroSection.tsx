@@ -13,7 +13,11 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const { y: backgroundY, enabled: parallaxEnabled } = useParallax(sectionRef, {
-    range: [-18, 22],
+    range: [-120, 170],
+    offset: ["start start", "end start"],
+  });
+  const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
+    range: [120, -80],
     offset: ["start start", "end start"],
   });
 
@@ -21,7 +25,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
     <section ref={sectionRef} className="relative overflow-hidden">
       <motion.div
         aria-hidden="true"
-        className="absolute -inset-y-8 inset-x-0"
+        className="absolute -inset-y-40 inset-x-0"
         style={{ y: backgroundY, willChange: parallaxEnabled ? "transform" : "auto" }}
       >
         <Image
@@ -107,7 +111,12 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
         </motion.div>
       </div>
 
-      {children}
+      <motion.div
+        className="relative z-10"
+        style={{ y: statsY, willChange: statsParallaxEnabled ? "transform" : "auto" }}
+      >
+        {children}
+      </motion.div>
     </section>
   );
 }
