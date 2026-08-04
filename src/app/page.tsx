@@ -461,7 +461,7 @@ function CommunityPartnersSection() {
           <div className="relative isolate">
             <div
               aria-hidden="true"
-              className="absolute -inset-x-8 top-8 bottom-8 z-0 rounded-[2rem] bg-white shadow-[0_24px_56px_rgba(35,31,36,0.12)]"
+              className="absolute -inset-x-8 top-8 bottom-8 z-0 rounded-[2rem] shadow-[0_22px_52px_rgba(35,31,36,0.08)]"
             />
             <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8 md:mb-10">
               {flagshipPartners.map((partner) => (
