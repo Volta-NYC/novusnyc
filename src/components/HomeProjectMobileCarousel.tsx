@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef } from "react";
+import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import { MapPinIcon } from "@/components/Icons";
@@ -104,11 +104,12 @@ function ProjectCard({ project, copy, index }: { project: HomeProject; copy: num
 
 export default function HomeProjectMobileCarousel({ projects }: { projects: HomeProject[] }) {
   const carouselRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef<HTMLSpanElement>(null);
+  const progressRef = useRef<HTMLInputElement>(null);
   const animationFrameRef = useRef<number>();
   const lastFrameRef = useRef<number>();
   const interactionRef = useRef(false);
   const pointerDownRef = useRef(false);
+  const dragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number }>();
   const documentHiddenRef = useRef(false);
   const reducedMotionRef = useRef(false);
   const mobileViewportRef = useRef(false);
@@ -126,8 +127,9 @@ export default function HomeProjectMobileCarousel({ projects }: { projects: Home
       ? (carousel.scrollLeft % loopWidth) / loopWidth
       : 0;
 
+    const percentage = Math.round(Math.max(0, progressValue) * 100);
     progress.style.setProperty("--carousel-progress", `${Math.max(0, progressValue)}`);
-    progress.setAttribute("aria-valuenow", `${Math.round(Math.max(0, progressValue) * 100)}`);
+    progress.value = `${percentage}`;
   }, []);
 
   const resumeAutoScroll = useCallback(() => {
@@ -141,6 +143,50 @@ export default function HomeProjectMobileCarousel({ projects }: { projects: Home
     interactionRef.current = true;
     window.clearTimeout(resumeTimerRef.current);
   }, []);
+
+  const startDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    pointerDownRef.current = true;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: event.currentTarget.scrollLeft,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pauseAutoScroll();
+  }, [pauseAutoScroll]);
+
+  const dragCarousel = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    const carousel = carouselRef.current;
+    if (!drag || !carousel || drag.pointerId !== event.pointerId) return;
+
+    carousel.scrollLeft = drag.scrollLeft + drag.startX - event.clientX;
+    autoScrollPositionRef.current = carousel.scrollLeft;
+    updateProgress();
+  }, [updateProgress]);
+
+  const stopDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+
+    dragRef.current = undefined;
+    pointerDownRef.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    resumeAutoScroll();
+  }, [resumeAutoScroll]);
+
+  const setProgress = useCallback((percentage: number) => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    const loopWidth = carousel.scrollWidth / 2;
+    carousel.scrollLeft = loopWidth * (percentage / 100);
+    autoScrollPositionRef.current = carousel.scrollLeft;
+    updateProgress();
+  }, [updateProgress]);
 
   useEffect(() => {
     const updateMotionPreference = (event: MediaQueryListEvent | MediaQueryList) => {
@@ -202,27 +248,29 @@ export default function HomeProjectMobileCarousel({ projects }: { projects: Home
 
   return (
     <div className="home-project-mobile-carousel sm:hidden">
-      <div className="home-project-mobile-progress" aria-label="Featured project carousel progress">
-        <span className="home-project-mobile-progress-label">Swipe to explore</span>
-        <span className="home-project-mobile-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={0} ref={progressRef}>
-          <span className="home-project-mobile-progress-thumb" />
-        </span>
+      <div className="home-project-mobile-progress">
+        <span id="featured-project-carousel-label" className="home-project-mobile-progress-label">Swipe to explore</span>
+        <input
+          ref={progressRef}
+          aria-labelledby="featured-project-carousel-label"
+          className="home-project-mobile-progress-track"
+          type="range"
+          min="0"
+          max="100"
+          defaultValue="0"
+          onPointerDown={pauseAutoScroll}
+          onPointerUp={resumeAutoScroll}
+          onPointerCancel={resumeAutoScroll}
+          onInput={(event) => setProgress(Number(event.currentTarget.value))}
+        />
       </div>
       <div
         ref={carouselRef}
         className="home-project-mobile-marquee -mx-5 overflow-x-auto overscroll-x-contain pb-2"
-        onPointerDown={() => {
-          pointerDownRef.current = true;
-          pauseAutoScroll();
-        }}
-        onPointerUp={() => {
-          pointerDownRef.current = false;
-          resumeAutoScroll();
-        }}
-        onPointerCancel={() => {
-          pointerDownRef.current = false;
-          resumeAutoScroll();
-        }}
+        onPointerDown={startDrag}
+        onPointerMove={dragCarousel}
+        onPointerUp={stopDrag}
+        onPointerCancel={stopDrag}
         onScroll={() => {
           updateProgress();
           if (performance.now() - lastAutoScrollRef.current > 80) {

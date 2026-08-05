@@ -804,7 +804,7 @@ body:has(.home-scroll-story) footer::before {
 @media (max-width: 639px) {
   .home-project-mobile-marquee {
     scrollbar-width: none;
-    touch-action: pan-x;
+    touch-action: pan-y;
   }
 
   .home-project-mobile-marquee::-webkit-scrollbar {
@@ -829,23 +829,64 @@ body:has(.home-scroll-story) footer::before {
   }
 
   .home-project-mobile-progress-track {
-    position: relative;
-    display: block;
+    --carousel-progress: 0;
     flex: 1;
+    width: 100%;
+    height: 1.25rem;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: grab;
+    background: transparent;
+  }
+
+  .home-project-mobile-progress-track:active {
+    cursor: grabbing;
+  }
+
+  .home-project-mobile-progress-track::-webkit-slider-runnable-track {
     height: 0.25rem;
-    overflow: hidden;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      rgb(var(--color-green)) 0 calc(var(--carousel-progress) * 100%),
+      rgba(35, 31, 36, 0.14) calc(var(--carousel-progress) * 100%) 100%
+    );
+  }
+
+  .home-project-mobile-progress-track::-webkit-slider-thumb {
+    width: 1rem;
+    height: 1rem;
+    margin-top: -0.375rem;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 2px solid rgb(var(--color-green));
+    border-radius: 999px;
+    background: rgb(var(--color-bg));
+  }
+
+  .home-project-mobile-progress-track::-moz-range-track {
+    height: 0.25rem;
     border-radius: 999px;
     background: rgba(35, 31, 36, 0.14);
   }
 
-  .home-project-mobile-progress-thumb {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 22%;
-    border-radius: inherit;
+  .home-project-mobile-progress-track::-moz-range-progress {
+    height: 0.25rem;
+    border-radius: 999px;
     background: rgb(var(--color-green));
-    transform: translate3d(calc(var(--carousel-progress, 0) * 354.55%), 0, 0);
-    will-change: transform;
+  }
+
+  .home-project-mobile-progress-track::-moz-range-thumb {
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 2px solid rgb(var(--color-green));
+    border-radius: 999px;
+    background: rgb(var(--color-bg));
+  }
+
+  .home-project-mobile-progress-track:focus-visible {
+    outline: 2px solid rgb(var(--color-green));
+    outline-offset: 0.25rem;
   }
 
   .home-project-mobile-description {
@@ -857,7 +898,7 @@ body:has(.home-scroll-story) footer::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-project-mobile-progress-thumb {
+  .home-project-mobile-progress-track {
     will-change: auto;
   }
 }
