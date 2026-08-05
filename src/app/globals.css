@@ -662,7 +662,11 @@ body:has(.home-scroll-story) footer::before {
 }
 
 .timeline-parallax .timeline-date {
-  display: inline-block;
+  align-self: start;
+  justify-self: start;
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
   border: 1px solid rgba(255, 253, 249, 0.4);
   border-radius: 999px;
   background: rgba(255, 253, 249, 0.32);
