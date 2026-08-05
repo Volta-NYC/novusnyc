@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
 import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
+import HomeScrollBridge from "@/components/HomeScrollBridge";
 import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
@@ -178,33 +179,6 @@ function HomeScrollProgress() {
         <span className="home-scroll-rail-fill" />
       </span>
     </div>
-  );
-}
-
-function HomeScrollBridge({
-  eyebrow,
-  title,
-  detail,
-  imageSrc,
-  index,
-}: {
-  eyebrow: string;
-  title: string;
-  detail: string;
-  imageSrc: string;
-  index: number;
-}) {
-  return (
-    <section
-      className={`home-scroll-bridge home-scroll-bridge-${index}`}
-      style={{ backgroundImage: `url(${imageSrc})` }}
-    >
-      <div className="home-scroll-bridge-copy">
-        <p className="home-scroll-bridge-eyebrow">{eyebrow}</p>
-        <h2>{title}</h2>
-        <p>{detail}</p>
-      </div>
-    </section>
   );
 }
 
