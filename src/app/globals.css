@@ -639,24 +639,41 @@ body:has(.home-scroll-story) footer::before {
 
 .timeline-parallax .timeline-entry-content {
   border-radius: 0.5rem;
-  border: 1px solid rgba(255, 253, 249, 0.5);
-  background: rgba(255, 253, 249, 0.66);
+  border: 1px solid rgba(255, 253, 249, 0.42);
+  background: rgba(255, 253, 249, 0.5);
   box-shadow: 0 12px 32px rgba(15, 23, 26, 0.18);
-  backdrop-filter: blur(13px);
+  backdrop-filter: blur(17px);
   padding: 1rem 1.15rem;
 }
 
 .timeline-parallax .timeline-heading {
-  border: 1px solid rgba(255, 253, 249, 0.5);
+  border: 1px solid rgba(255, 253, 249, 0.42);
   border-radius: 0.5rem;
-  background: rgba(255, 253, 249, 0.68);
+  background: rgba(255, 253, 249, 0.52);
   box-shadow: 0 12px 32px rgba(15, 23, 26, 0.18);
-  backdrop-filter: blur(13px);
+  backdrop-filter: blur(17px);
   padding: 1.25rem;
 }
 
 .timeline-parallax .timeline-date {
+  display: inline-block;
+  border: 1px solid rgba(255, 253, 249, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.32);
+  backdrop-filter: blur(8px);
+  padding: 0.3rem 0.55rem;
   text-shadow: 0 1px 10px rgba(255, 253, 249, 0.95);
+}
+
+.timeline-parallax .timeline-heading h2,
+.timeline-parallax .timeline-entry-content h3 {
+  color: #211e23;
+}
+
+.timeline-parallax .timeline-heading p:not(:first-child),
+.timeline-parallax .timeline-entry-content p {
+  color: #423d45;
+  font-weight: 500;
 }
 
 @media (min-width: 768px) {
