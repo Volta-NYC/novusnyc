@@ -132,7 +132,7 @@ export default async function About() {
       {/* ── HISTORY ─────────────────────────────────────────── */}
       <section id="history" className="timeline-parallax relative isolate overflow-hidden py-16">
         <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
+          <AnimatedSection className="timeline-heading mb-10">
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Our history</p>
             <h2 className="page-section-heading text-v-ink">Building Novus, one chapter at a time</h2>
             <p className="font-body text-v-muted mt-3 max-w-2xl leading-relaxed">
