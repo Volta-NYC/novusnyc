@@ -619,6 +619,17 @@ body:has(.home-scroll-story) footer::before {
   background-color: #fff !important;
 }
 
+.timeline-parallax {
+  background-color: #fffdf9;
+  background-image:
+    linear-gradient(rgba(255, 253, 249, 0.8), rgba(255, 253, 249, 0.86)),
+    url("/timelineparallax.jpg");
+  background-attachment: fixed, fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .home-scroll-bridge-copy {
   width: min(100%, 43rem);
   padding: clamp(1.8rem, 4vw, 3.25rem);
