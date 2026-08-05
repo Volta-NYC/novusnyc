@@ -52,15 +52,14 @@ const nextConfig = {
         source: "/:path*",
         headers: SECURITY_HEADERS,
       },
-      // Long-lived immutable cache for hashed Next.js static chunks.
-      // Vercel sets this automatically but being explicit ensures it applies
-      // even when headers() runs after Vercel's built-in layer.
-      {
-        source: "/_next/static/:path*",
-        headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-        ],
-      },
+      ...(isProduction
+        ? [{
+          source: "/_next/static/:path*",
+          headers: [
+            { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          ],
+        }]
+        : []),
       // Cache showcase images served through the local API route.
       {
         source: "/api/showcase-image/:path*",

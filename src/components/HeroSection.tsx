@@ -2,16 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 import { useParallax } from "@/hooks/useParallax";
 
-const EASE = [0.22, 1, 0.36, 1] as const;
-
 export default function HeroSection({ children }: { children?: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
-  const reducedMotion = useReducedMotion();
   const [isDesktop, setIsDesktop] = useState(false);
   const { y: backgroundY, enabled: parallaxEnabled } = useParallax(sectionRef, {
     range: [-120, 170],
@@ -70,9 +67,6 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
             opacity: parallaxEnabled ? titleOpacity : 1,
             willChange: parallaxEnabled ? "transform, opacity" : "auto",
           }}
-          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease: EASE }}
         >
           <h1
             className="font-display font-bold leading-none tracking-tight"
@@ -107,9 +101,6 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
             opacity: parallaxEnabled ? contentOpacity : 1,
             willChange: parallaxEnabled ? "transform, opacity" : "auto",
           }}
-          initial={reducedMotion ? false : { opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.12, ease: EASE }}
         >
           <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-black/35 backdrop-blur-[2px] px-6 py-6 md:px-8 md:py-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             <p className="font-body text-lg md:text-xl text-white/95 max-w-2xl mx-auto leading-relaxed mb-3">

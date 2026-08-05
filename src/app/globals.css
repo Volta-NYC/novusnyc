@@ -926,19 +926,11 @@ body:has(.home-scroll-story) footer::before {
   }
 
   .home-scroll-backdrop {
-    position: absolute;
     opacity: 0.45;
   }
 
   .home-depth-section::before {
     opacity: 0.42;
-    transform: none;
-    animation: none;
-  }
-
-  .showcase-card-media {
-    transform: none;
-    animation: none;
   }
 
   .home-scroll-rail {
