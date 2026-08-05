@@ -193,8 +193,6 @@ export default async function Join() {
         </div>
       </section>
 
-      <SectionBridge tone="lavender" align="right" />
-
       {/* ── TRACKS ─────────────────────────────────────────── */}
       <TracksParallax>
           <AnimatedSection className="mb-8">
@@ -207,6 +205,8 @@ export default async function Join() {
             <TracksTabbed />
           </AnimatedSection>
       </TracksParallax>
+
+      <SectionBridge tone="lavender" align="right" />
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
       <section id="leadership" className="relative isolate overflow-hidden py-14 bg-[#f9f5f8]">
