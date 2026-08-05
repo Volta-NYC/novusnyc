@@ -8,6 +8,7 @@ import FaqAccordion from "@/components/FaqAccordion";
 import SectionBridge from "@/components/SectionBridge";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import TracksTabbed from "@/components/TracksTabbed";
+import TracksParallax from "@/components/TracksParallax";
 import { joinFaqs, joinGains, marqueeSchools } from "@/data";
 import { getMemberEducationSnapshot, getTotalMemberCount } from "@/lib/server/memberEducation";
 import { formatCounter } from "@/lib/formatCounter";
@@ -192,23 +193,20 @@ export default async function Join() {
         </div>
       </section>
 
-      <SectionBridge tone="lavender" align="right" />
-
       {/* ── TRACKS ─────────────────────────────────────────── */}
-      <section id="tracks" className="relative isolate overflow-hidden py-14 bg-[#f9f5f8]">
-        <BrandTexture tone="lavender" />
-        <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
+      <TracksParallax>
           <AnimatedSection className="mb-8">
-            <h2 className="page-section-heading text-v-ink">The three tracks</h2>
-            <p className="font-body text-v-muted mt-3 max-w-xl">
+            <h2 className="page-section-heading text-white">The three tracks</h2>
+            <p className="font-body text-white/80 mt-3 max-w-xl">
               Every project is staffed by students across our three tracks. Pick the one that fits your skills and interests.
             </p>
           </AnimatedSection>
           <AnimatedSection>
             <TracksTabbed />
           </AnimatedSection>
-        </div>
-      </section>
+      </TracksParallax>
+
+      <SectionBridge tone="lavender" align="right" />
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
       <section id="leadership" className="relative isolate overflow-hidden py-14 bg-[#f9f5f8]">
