@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import BrandTexture from "@/components/BrandTexture";
+import ParallaxHero from "@/components/ParallaxHero";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
@@ -224,20 +225,12 @@ export default async function Partners() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24" data-home-dark-end="true">
-        <Image
-          src={petiteDumplingStorefront}
-          alt="Petite Dumpling storefront in Park Slope, Brooklyn"
-          fill
-          priority
-          fetchPriority="high"
-          placeholder="blur"
-          quality={75}
-          sizes="(max-width: 768px) 100vw, 1920px"
-          className="object-cover object-[60%_center] md:object-center"
-        />
-        <div className="absolute inset-0 bg-[#1a1e24]/75" />
-        <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
+      <ParallaxHero
+        image={petiteDumplingStorefront}
+        alt="Petite Dumpling storefront in Park Slope, Brooklyn"
+        className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24"
+        imageClassName="object-cover object-[60%_center] md:object-center"
+      >
         <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
@@ -269,7 +262,7 @@ export default async function Partners() {
             </div>
           </AnimatedSection>
         </div>
-      </section>
+      </ParallaxHero>
 
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
       <section className="py-16 bg-v-bg" id="contact">

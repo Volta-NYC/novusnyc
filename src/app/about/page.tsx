@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import HistoryTimeline from "@/components/HistoryTimeline";
+import ParallaxHero from "@/components/ParallaxHero";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import { aboutTimeline, aboutValues, teamMembers } from "@/data";
 import { formatCounter } from "@/lib/formatCounter";
@@ -35,20 +36,12 @@ export default async function About() {
         { id: "values", label: "How we operate" },
       ]} />
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-20" data-home-dark-end="true">
-        <Image
-          src={brooklynBridgePhoto}
-          alt="Brooklyn Bridge"
-          fill
-          priority
-          fetchPriority="high"
-          placeholder="blur"
-          quality={75}
-          sizes="(max-width: 768px) 100vw, 1920px"
-          className="object-cover object-[58%_center] md:object-center"
-        />
-        <div className="absolute inset-0 bg-[#1a1e24]/75" />
-        <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
+      <ParallaxHero
+        image={brooklynBridgePhoto}
+        alt="Brooklyn Bridge"
+        className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-20"
+        imageClassName="object-cover object-[58%_center] md:object-center"
+      >
         <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
           <div className="flex-1">
             <AnimatedSection>
@@ -72,7 +65,7 @@ export default async function About() {
             </p>
           </AnimatedSection>
         </div>
-      </section>
+      </ParallaxHero>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
       <section id="impact" className="py-14 bg-white overflow-x-auto">
