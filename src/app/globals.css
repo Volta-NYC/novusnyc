@@ -802,23 +802,27 @@ body:has(.home-scroll-story) footer::before {
 }
 
 @media (max-width: 639px) {
-  .home-project-mobile-marquee {
+  .home-project-mobile-marquee,
+  .showcase-project-mobile-carousel {
     scrollbar-width: none;
     touch-action: pan-y;
   }
 
-  .home-project-mobile-marquee::-webkit-scrollbar {
+  .home-project-mobile-marquee::-webkit-scrollbar,
+  .showcase-project-mobile-carousel::-webkit-scrollbar {
     display: none;
   }
 
-  .home-project-mobile-progress {
+  .home-project-mobile-progress,
+  .showcase-project-mobile-progress {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 0.75rem;
   }
 
-  .home-project-mobile-progress-label {
+  .home-project-mobile-progress-label,
+  .showcase-project-mobile-progress-label {
     flex: none;
     color: rgba(35, 31, 36, 0.55);
     font-family: var(--font-dm-sans), sans-serif;
@@ -828,7 +832,8 @@ body:has(.home-scroll-story) footer::before {
     text-transform: uppercase;
   }
 
-  .home-project-mobile-progress-track {
+  .home-project-mobile-progress-track,
+  .showcase-project-mobile-progress-track {
     --carousel-progress: 0;
     flex: 1;
     width: 100%;
@@ -839,11 +844,13 @@ body:has(.home-scroll-story) footer::before {
     background: transparent;
   }
 
-  .home-project-mobile-progress-track:active {
+  .home-project-mobile-progress-track:active,
+  .showcase-project-mobile-progress-track:active {
     cursor: grabbing;
   }
 
-  .home-project-mobile-progress-track::-webkit-slider-runnable-track {
+  .home-project-mobile-progress-track::-webkit-slider-runnable-track,
+  .showcase-project-mobile-progress-track::-webkit-slider-runnable-track {
     height: 0.25rem;
     border-radius: 999px;
     background: linear-gradient(
@@ -853,7 +860,8 @@ body:has(.home-scroll-story) footer::before {
     );
   }
 
-  .home-project-mobile-progress-track::-webkit-slider-thumb {
+  .home-project-mobile-progress-track::-webkit-slider-thumb,
+  .showcase-project-mobile-progress-track::-webkit-slider-thumb {
     width: 1rem;
     height: 1rem;
     margin-top: -0.375rem;
@@ -864,19 +872,22 @@ body:has(.home-scroll-story) footer::before {
     background: rgb(var(--color-bg));
   }
 
-  .home-project-mobile-progress-track::-moz-range-track {
+  .home-project-mobile-progress-track::-moz-range-track,
+  .showcase-project-mobile-progress-track::-moz-range-track {
     height: 0.25rem;
     border-radius: 999px;
     background: rgba(35, 31, 36, 0.14);
   }
 
-  .home-project-mobile-progress-track::-moz-range-progress {
+  .home-project-mobile-progress-track::-moz-range-progress,
+  .showcase-project-mobile-progress-track::-moz-range-progress {
     height: 0.25rem;
     border-radius: 999px;
     background: rgb(var(--color-green));
   }
 
-  .home-project-mobile-progress-track::-moz-range-thumb {
+  .home-project-mobile-progress-track::-moz-range-thumb,
+  .showcase-project-mobile-progress-track::-moz-range-thumb {
     width: 0.75rem;
     height: 0.75rem;
     border: 2px solid rgb(var(--color-green));
@@ -884,12 +895,14 @@ body:has(.home-scroll-story) footer::before {
     background: rgb(var(--color-bg));
   }
 
-  .home-project-mobile-progress-track:focus-visible {
+  .home-project-mobile-progress-track:focus-visible,
+  .showcase-project-mobile-progress-track:focus-visible {
     outline: 2px solid rgb(var(--color-green));
     outline-offset: 0.25rem;
   }
 
-  .home-project-mobile-description {
+  .home-project-mobile-description,
+  .showcase-project-mobile-description {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -898,7 +911,8 @@ body:has(.home-scroll-story) footer::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-project-mobile-progress-track {
+  .home-project-mobile-progress-track,
+  .showcase-project-mobile-progress-track {
     will-change: auto;
   }
 }
