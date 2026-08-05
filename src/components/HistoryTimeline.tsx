@@ -26,7 +26,7 @@ export default function HistoryTimeline({ milestones }: { milestones: Milestone[
       <span aria-hidden="true" className="absolute bottom-0 left-0 top-0 w-0.5 bg-v-green/20" />
       <motion.span
         aria-hidden="true"
-        className="absolute bottom-0 left-0 top-0 w-0.5 origin-top bg-v-green"
+        className="absolute bottom-0 left-0 top-0 w-0.5 origin-top bg-v-green/90"
         style={{ scaleY: reducedMotion ? 1 : progress }}
       />
       {milestones.map((milestone, index) => (
@@ -40,7 +40,7 @@ export default function HistoryTimeline({ milestones }: { milestones: Milestone[
         >
           <motion.span
             aria-hidden="true"
-            className={`absolute -left-[2.38rem] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-[3px] border-white md:-left-[3.38rem] ${milestoneColors[index] ?? "bg-v-green"}`}
+            className={`absolute -left-[2.38rem] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-[3px] border-white/80 md:-left-[3.38rem] ${milestoneColors[index] ?? "bg-v-green"}`}
             initial={reducedMotion ? false : { scale: 0.5 }}
             whileInView={{ scale: 1 }}
             viewport={{ once: true, amount: 0.42 }}
