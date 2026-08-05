@@ -106,6 +106,7 @@ export default async function Join() {
         alt="Cornell University campus"
         className="relative flex min-h-[100svh] flex-col overflow-hidden pt-32"
         imageClassName="object-cover object-[54%_center] md:object-center"
+        parallaxRange={[0, 290]}
       >
         <div className="relative flex flex-1 items-center max-w-7xl mx-auto w-full px-5 md:px-8 pb-16">
           <AnimatedSection>

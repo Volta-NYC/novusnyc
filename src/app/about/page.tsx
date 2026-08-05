@@ -41,6 +41,7 @@ export default async function About() {
         alt="Brooklyn Bridge"
         className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-20"
         imageClassName="object-cover object-[58%_center] md:object-center"
+        parallaxRange={[0, 290]}
       >
         <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
           <div className="flex-1">

@@ -230,6 +230,8 @@ export default async function Partners() {
         alt="Petite Dumpling storefront in Park Slope, Brooklyn"
         className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24"
         imageClassName="object-cover object-[60%_center] md:object-center"
+        mediaClassName="absolute -inset-y-[16vh] inset-x-0"
+        parallaxRange={[160, -40]}
       >
         <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>

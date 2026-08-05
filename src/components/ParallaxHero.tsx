@@ -11,6 +11,8 @@ interface ParallaxHeroProps {
   children: ReactNode;
   className: string;
   imageClassName?: string;
+  mediaClassName?: string;
+  parallaxRange?: [number, number];
 }
 
 /** Reuses the homepage hero's scroll-linked image treatment. */
@@ -20,10 +22,12 @@ export default function ParallaxHero({
   children,
   className,
   imageClassName = "object-cover",
+  mediaClassName = "absolute -inset-y-[34vh] inset-x-0",
+  parallaxRange = [-120, 170],
 }: ParallaxHeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const { y: backgroundY, enabled: parallaxEnabled } = useParallax(sectionRef, {
-    range: [-120, 170],
+    range: parallaxRange,
     offset: ["start start", "end start"],
   });
 
@@ -31,7 +35,7 @@ export default function ParallaxHero({
     <section ref={sectionRef} className={className} data-home-dark-end="true">
       <motion.div
         aria-hidden="true"
-        className="absolute -inset-y-[34vh] inset-x-0"
+        className={mediaClassName}
         style={{ y: backgroundY, willChange: parallaxEnabled ? "transform" : "auto" }}
       >
         <Image
