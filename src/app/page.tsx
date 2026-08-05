@@ -11,7 +11,6 @@ import { communityPartners, currentProjects as fallbackCurrentProjects } from "@
 import TracksTabbed from "@/components/TracksTabbed";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
-import MasonryGrid from "@/components/MasonryGrid";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
@@ -240,6 +239,55 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
   );
 }
 
+const HOME_TABLET_STACK = [[0, 3, 5], [1, 2, 4]];
+const HOME_DESKTOP_STACK = [[0, 5], [1, 3], [2, 4]];
+
+function getHomeProjectColumns(projects: HomeProject[], arrangement: number[][]) {
+  const assigned = new Set<number>();
+  const columns = arrangement.map((column) => column.flatMap((index) => {
+    const project = projects[index];
+    if (!project) return [];
+    assigned.add(index);
+    return [{ project, index }];
+  }));
+
+  projects.forEach((project, index) => {
+    if (!assigned.has(index)) {
+      columns[index % columns.length]?.push({ project, index });
+    }
+  });
+
+  return columns.filter((column) => column.length > 0);
+}
+
+function HomeProjectStack({ projects }: { projects: HomeProject[] }) {
+  const tabletColumns = getHomeProjectColumns(projects, HOME_TABLET_STACK);
+  const desktopColumns = getHomeProjectColumns(projects, HOME_DESKTOP_STACK);
+
+  return (
+    <>
+      <div className="hidden sm:grid lg:hidden grid-cols-2 gap-5">
+        {tabletColumns.map((column, columnIndex) => (
+          <div key={`tablet-column-${columnIndex}`} className="flex flex-col gap-5">
+            {column.map(({ project, index }) => (
+              <HomeProjectDesktopCard key={`tablet-${project.name}`} project={project} index={index} />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="hidden lg:grid grid-cols-3 gap-5">
+        {desktopColumns.map((column, columnIndex) => (
+          <div key={`desktop-column-${columnIndex}`} className="flex flex-col gap-5">
+            {column.map(({ project, index }) => (
+              <HomeProjectDesktopCard key={`desktop-${project.name}`} project={project} index={index} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
@@ -258,17 +306,7 @@ async function CurrentProjectsSection() {
           <>
             <HomeProjectMobileCarousel projects={homeProjects} />
 
-            <div className="hidden sm:block">
-              <MasonryGrid
-                itemIds={homeProjects.map((p) => p.name)}
-                itemWidth={290}
-                gap={20}
-              >
-                {homeProjects.map((p, i) => (
-                  <HomeProjectDesktopCard key={`desktop-${p.name}`} project={p} index={i} />
-                ))}
-              </MasonryGrid>
-            </div>
+            <HomeProjectStack projects={homeProjects} />
           </>
         ) : (
           <div className="border border-v-border rounded-xl bg-white px-6 py-8 text-center">
