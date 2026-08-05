@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === "production";
+const shouldUpgradeInsecureRequests = isProduction && process.env.VERCEL_ENV === "production";
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -13,7 +14,7 @@ const CONTENT_SECURITY_POLICY = [
   "connect-src 'self' https: wss:",
   "frame-src 'self' https:",
   "object-src 'none'",
-  ...(isProduction ? ["upgrade-insecure-requests"] : []),
+  ...(shouldUpgradeInsecureRequests ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const SECURITY_HEADERS = [
