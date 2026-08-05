@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationJourney from "@/components/ApplicationJourney";
 import BrandTexture from "@/components/BrandTexture";
 import FaqAccordion from "@/components/FaqAccordion";
+import ParallaxHero from "@/components/ParallaxHero";
 import SectionBridge from "@/components/SectionBridge";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import TracksTabbed from "@/components/TracksTabbed";
@@ -101,20 +101,13 @@ export default async function Join() {
       />
 
       {/* ── HERO + MARQUEE ─────────────────────────────────── */}
-      <section className="relative flex min-h-[100svh] flex-col overflow-hidden pt-32" data-home-dark-end="true">
-        <Image
-          src={cornellPhoto}
-          alt="Cornell University campus"
-          fill
-          priority
-          fetchPriority="high"
-          placeholder="blur"
-          quality={75}
-          sizes="(max-width: 768px) 100vw, 1920px"
-          className="object-cover object-[54%_center] md:object-center"
-        />
-        <div className="absolute inset-0 bg-[#1a1e24]/75" />
-        <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
+      <ParallaxHero
+        image={cornellPhoto}
+        alt="Cornell University campus"
+        className="relative flex min-h-[100svh] flex-col overflow-hidden pt-32"
+        imageClassName="object-cover object-[54%_center] md:object-center"
+        parallaxRange={[0, 290]}
+      >
         <div className="relative flex flex-1 items-center max-w-7xl mx-auto w-full px-5 md:px-8 pb-16">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
@@ -166,7 +159,7 @@ export default async function Join() {
             ))}
           </div>
         </div>
-      </section>
+      </ParallaxHero>
 
       {/* ── WHY NOVUS / RESUME VALUE ───────────────────────── */}
       <section id="benefits" className="py-14 bg-white">

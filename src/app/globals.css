@@ -619,6 +619,93 @@ body:has(.home-scroll-story) footer::before {
   background-color: #fff !important;
 }
 
+.timeline-parallax {
+  background-color: #10171a;
+  background-image: url("/timelineparallax.jpg");
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.timeline-parallax::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 15, 23, 0.5), rgba(7, 15, 23, 0.68));
+  content: "";
+  pointer-events: none;
+}
+
+.timeline-parallax::after {
+  position: absolute;
+  z-index: 1;
+  inset: 1.1rem;
+  border: 1px solid rgba(255, 253, 249, 0.58);
+  content: "";
+  pointer-events: none;
+}
+
+.timeline-parallax .timeline-entry-content {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 253, 249, 0.36);
+  background: rgba(13, 21, 30, 0.64);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 1rem 1.15rem;
+}
+
+.timeline-parallax .timeline-heading {
+  border: 1px solid rgba(255, 253, 249, 0.36);
+  border-radius: 0.5rem;
+  background: rgba(13, 21, 30, 0.7);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 1.25rem;
+}
+
+.timeline-parallax .timeline-date {
+  align-self: start;
+  justify-self: start;
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  border: 1px solid rgba(255, 253, 249, 0.46);
+  border-radius: 999px;
+  background: rgba(13, 21, 30, 0.54);
+  backdrop-filter: blur(8px);
+  padding: 0.3rem 0.55rem;
+  color: #fffdf9 !important;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.65);
+}
+
+.timeline-parallax .timeline-heading h2,
+.timeline-parallax .timeline-entry-content h3 {
+  color: #fffdf9;
+}
+
+.timeline-parallax .timeline-heading p:not(:first-child),
+.timeline-parallax .timeline-entry-content p {
+  color: rgba(255, 253, 249, 0.9);
+  font-weight: 500;
+}
+
+@media (min-width: 768px) {
+  .timeline-parallax .timeline-entry-content {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .timeline-parallax .timeline-heading {
+    padding: 1.5rem;
+  }
+}
+
 .home-scroll-bridge-copy {
   width: min(100%, 43rem);
   padding: clamp(1.8rem, 4vw, 3.25rem);
@@ -1013,6 +1100,10 @@ body:has(.home-scroll-story) footer::before {
   }
 
   .tracks-parallax::after {
+    inset: 0.7rem;
+  }
+
+  .timeline-parallax::after {
     inset: 0.7rem;
   }
 
