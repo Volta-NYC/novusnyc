@@ -47,7 +47,7 @@ export default function HistoryTimeline({ milestones }: { milestones: Milestone[
             transition={{ type: "spring", stiffness: 360, damping: 20 }}
           />
           <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-7">
-            <p className="font-body whitespace-nowrap pt-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-v-green">
+            <p className="timeline-date font-body whitespace-nowrap pt-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-v-green">
               {milestone.month} {milestone.year}
             </p>
             <div className={`timeline-entry-content ${index < milestones.length - 1 ? "border-b border-v-border/70 pb-10" : ""}`}>

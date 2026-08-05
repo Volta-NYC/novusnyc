@@ -622,7 +622,7 @@ body:has(.home-scroll-story) footer::before {
 .timeline-parallax {
   background-color: #fffdf9;
   background-image:
-    linear-gradient(rgba(255, 253, 249, 0.62), rgba(255, 253, 249, 0.7)),
+    linear-gradient(rgba(255, 253, 249, 0.42), rgba(255, 253, 249, 0.5)),
     url("/timelineparallax.jpg");
   background-attachment: fixed, fixed;
   background-position: center;
@@ -630,11 +630,26 @@ body:has(.home-scroll-story) footer::before {
   background-size: cover;
 }
 
+.timeline-parallax::after {
+  position: absolute;
+  z-index: 0;
+  inset: 1.1rem;
+  border: 1px solid rgba(255, 253, 249, 0.58);
+  content: "";
+  pointer-events: none;
+}
+
 .timeline-parallax .timeline-entry-content {
   border-radius: 0.5rem;
-  background: rgba(255, 253, 249, 0.62);
-  box-shadow: 0 10px 30px rgba(39, 31, 39, 0.08);
-  backdrop-filter: blur(7px);
+  border: 1px solid rgba(255, 253, 249, 0.72);
+  background: rgba(255, 253, 249, 0.84);
+  box-shadow: 0 12px 32px rgba(39, 31, 39, 0.12);
+  backdrop-filter: blur(9px);
+  padding: 1rem 1.15rem;
+}
+
+.timeline-parallax .timeline-date {
+  text-shadow: 0 1px 10px rgba(255, 253, 249, 0.95);
 }
 
 @media (min-width: 768px) {
@@ -1037,6 +1052,10 @@ body:has(.home-scroll-story) footer::before {
   }
 
   .tracks-parallax::after {
+    inset: 0.7rem;
+  }
+
+  .timeline-parallax::after {
     inset: 0.7rem;
   }
 
