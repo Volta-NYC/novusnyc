@@ -601,8 +601,8 @@ body:has(.home-scroll-story) footer::before {
 .tracks-parallax::before {
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(20, 18, 22, 0.82) 0%, rgba(20, 18, 22, 0.58) 50%, rgba(20, 18, 22, 0.8) 100%),
-    linear-gradient(0deg, rgba(20, 18, 22, 0.62), rgba(20, 18, 22, 0.22) 66%);
+    linear-gradient(90deg, rgba(20, 18, 22, 0.6) 0%, rgba(20, 18, 22, 0.38) 50%, rgba(20, 18, 22, 0.56) 100%),
+    linear-gradient(0deg, rgba(20, 18, 22, 0.4), rgba(20, 18, 22, 0.1) 66%);
 }
 
 .tracks-parallax::after {
@@ -611,6 +611,11 @@ body:has(.home-scroll-story) footer::before {
 }
 
 .tracks-parallax .tracks-tabbed-panel {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(8px);
+}
+
+.tracks-parallax [role="tab"][aria-selected="true"] {
   background-color: #fff !important;
 }
 
