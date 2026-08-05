@@ -448,7 +448,7 @@ function CommunityPartnersSection() {
   return (
     <section className="home-depth-section home-partners-depth py-16 md:py-20 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <AnimatedSection className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+        <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
           <div>
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
               Community partners
@@ -460,8 +460,8 @@ function CommunityPartnersSection() {
           <p className="font-body text-v-muted text-sm md:text-base max-w-md leading-relaxed">
             Chambers, BIDs, local development corporations, and merchant groups connect Novus teams directly with the businesses that need support.
           </p>
-        </AnimatedSection>
-        <AnimatedSection>
+        </div>
+        <div>
           <div className="relative isolate">
             <div
               aria-hidden="true"
@@ -477,7 +477,7 @@ function CommunityPartnersSection() {
               <PartnerMarquee partners={neighborhoodPartners} reverse />
             </div>
           </div>
-        </AnimatedSection>
+        </div>
       </div>
     </section>
   );
