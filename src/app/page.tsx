@@ -11,7 +11,6 @@ import { communityPartners, currentProjects as fallbackCurrentProjects } from "@
 import TracksTabbed from "@/components/TracksTabbed";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
-import MasonryGrid from "@/components/MasonryGrid";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
@@ -183,6 +182,112 @@ function HomeScrollProgress() {
   );
 }
 
+function HomeProjectDesktopCard({ project, index }: { project: HomeProject; index: number }) {
+  return (
+    <div className={`scroll-reveal scroll-reveal-card scroll-reveal-${index % 3}`}>
+      <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+        <div className={`${project.colorClass} h-2`} />
+        {project.imageUrl ? (
+          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
+            <Image
+              src={project.imageUrl}
+              alt={`${project.name} project`}
+              width={1600}
+              height={1000}
+              unoptimized
+              className="block w-full h-auto"
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
+            <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+          </div>
+        )}
+        <div className="showcase-card-content p-7 flex flex-col">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex gap-2 flex-wrap">
+              {project.services.map((service) => (
+                <span key={`desktop-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+              ))}
+            </div>
+            <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-v-green/25 text-v-ink" : project.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
+              {project.status}
+            </span>
+          </div>
+          <h3 className="font-display font-bold text-v-ink text-xl mb-1">{project.name}</h3>
+          <p className="font-body text-sm text-v-muted mb-3">{project.type}</p>
+          {project.desc && <ExpandableDescription desc={project.desc} />}
+          {project.quote && (
+            <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+              &ldquo;{project.quote}&rdquo;
+            </blockquote>
+          )}
+          <div className="flex items-center justify-between mt-4">
+            <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+              <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
+            </p>
+            {project.url && (
+              <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
+                View live site →
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const HOME_TABLET_STACK = [[0, 3, 5], [1, 2, 4]];
+const HOME_DESKTOP_STACK = [[0, 5], [1, 3], [2, 4]];
+
+function getHomeProjectColumns(projects: HomeProject[], arrangement: number[][]) {
+  const assigned = new Set<number>();
+  const columns = arrangement.map((column) => column.flatMap((index) => {
+    const project = projects[index];
+    if (!project) return [];
+    assigned.add(index);
+    return [{ project, index }];
+  }));
+
+  projects.forEach((project, index) => {
+    if (!assigned.has(index)) {
+      columns[index % columns.length]?.push({ project, index });
+    }
+  });
+
+  return columns.filter((column) => column.length > 0);
+}
+
+function HomeProjectStack({ projects }: { projects: HomeProject[] }) {
+  const tabletColumns = getHomeProjectColumns(projects, HOME_TABLET_STACK);
+  const desktopColumns = getHomeProjectColumns(projects, HOME_DESKTOP_STACK);
+
+  return (
+    <>
+      <div className="hidden sm:grid lg:hidden grid-cols-2 gap-5">
+        {tabletColumns.map((column, columnIndex) => (
+          <div key={`tablet-column-${columnIndex}`} className="flex flex-col gap-5">
+            {column.map(({ project, index }) => (
+              <HomeProjectDesktopCard key={`tablet-${project.name}`} project={project} index={index} />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="hidden lg:grid grid-cols-3 gap-5">
+        {desktopColumns.map((column, columnIndex) => (
+          <div key={`desktop-column-${columnIndex}`} className="flex flex-col gap-5">
+            {column.map(({ project, index }) => (
+              <HomeProjectDesktopCard key={`desktop-${project.name}`} project={project} index={index} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
@@ -201,68 +306,7 @@ async function CurrentProjectsSection() {
           <>
             <HomeProjectMobileCarousel projects={homeProjects} />
 
-            <div className="hidden sm:block">
-              <MasonryGrid
-                itemIds={homeProjects.map((p) => p.name)}
-                itemWidth={290}
-                gap={20}
-              >
-                {homeProjects.map((p, i) => (
-                  <div key={`desktop-${p.name}`} className={`scroll-reveal scroll-reveal-card scroll-reveal-${i % 3}`}>
-                    <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
-                      <div className={`${p.colorClass} h-2`} />
-                      {p.imageUrl ? (
-                        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
-                          <Image
-                            src={p.imageUrl}
-                            alt={`${p.name} project`}
-                            width={1600}
-                            height={1000}
-                            unoptimized
-                            className="block w-full h-auto"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
-                          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
-                        </div>
-                      )}
-                      <div className="showcase-card-content p-7 flex flex-col">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex gap-2 flex-wrap">
-                            {p.services.map((service) => (
-                              <span key={`desktop-${p.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-                            ))}
-                          </div>
-                          <span className={`tag text-xs flex-shrink-0 ${p.status === "Completed" ? "bg-v-green/25 text-v-ink" : p.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
-                            {p.status}
-                          </span>
-                        </div>
-                        <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                        <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
-                        {p.desc && <ExpandableDescription desc={p.desc} />}
-                        {p.quote && (
-                          <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
-                            &ldquo;{p.quote}&rdquo;
-                          </blockquote>
-                        )}
-                        <div className="flex items-center justify-between mt-4">
-                          <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
-                            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {p.neighborhood}
-                          </p>
-                          {p.url && (
-                            <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
-                              View live site →
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </MasonryGrid>
-            </div>
+            <HomeProjectStack projects={homeProjects} />
           </>
         ) : (
           <div className="border border-v-border rounded-xl bg-white px-6 py-8 text-center">
@@ -404,7 +448,7 @@ function CommunityPartnersSection() {
   return (
     <section className="home-depth-section home-partners-depth py-16 md:py-20 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <AnimatedSection className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+        <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
           <div>
             <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
               Community partners
@@ -416,8 +460,8 @@ function CommunityPartnersSection() {
           <p className="font-body text-v-muted text-sm md:text-base max-w-md leading-relaxed">
             Chambers, BIDs, local development corporations, and merchant groups connect Novus teams directly with the businesses that need support.
           </p>
-        </AnimatedSection>
-        <AnimatedSection>
+        </div>
+        <div>
           <div className="relative isolate">
             <div
               aria-hidden="true"
@@ -433,7 +477,7 @@ function CommunityPartnersSection() {
               <PartnerMarquee partners={neighborhoodPartners} reverse />
             </div>
           </div>
-        </AnimatedSection>
+        </div>
       </div>
     </section>
   );
