@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useParallax } from "@/hooks/useParallax";
 
@@ -15,21 +15,15 @@ interface HomeScrollBridgeProps {
 const MOBILE_MOTION = [
   {
     imageY: [-72, 72] as [number, number],
-    imageX: [0, 0] as [number, number],
-    imageScale: [1.08, 1, 1.08] as [number, number, number],
     copyY: [56, -56] as [number, number],
   },
   {
-    imageY: [-168, 168] as [number, number],
-    imageX: [42, -42] as [number, number],
-    imageScale: [1.3, 1.12, 1.3] as [number, number, number],
-    copyY: [78, -78] as [number, number],
+    imageY: [-224, 224] as [number, number],
+    copyY: [56, -56] as [number, number],
   },
   {
-    imageY: [-188, 188] as [number, number],
-    imageX: [-48, 48] as [number, number],
-    imageScale: [1.34, 1.14, 1.34] as [number, number, number],
-    copyY: [86, -86] as [number, number],
+    imageY: [-248, 248] as [number, number],
+    copyY: [64, -64] as [number, number],
   },
 ] as const;
 
@@ -49,12 +43,6 @@ export default function HomeScrollBridge({
   const { y: copyY, enabled: copyParallaxEnabled } = useParallax(sectionRef, {
     range: motionProfile.copyY,
   });
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-  const imageX = useTransform(scrollYProgress, [0, 1], motionProfile.imageX);
-  const imageScale = useTransform(scrollYProgress, [0, 0.5, 1], motionProfile.imageScale);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -77,9 +65,7 @@ export default function HomeScrollBridge({
         style={isMobile
           ? {
             backgroundImage: `url(${imageSrc})`,
-            x: imageParallaxEnabled ? imageX : 0,
             y: imageY,
-            scale: imageParallaxEnabled ? imageScale : 1,
             willChange: imageParallaxEnabled ? "transform" : "auto",
           }
           : { backgroundImage: `url(${imageSrc})` }}
