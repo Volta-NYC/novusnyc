@@ -173,7 +173,7 @@ export default function TracksTabbed() {
         id={panelId}
         aria-labelledby={tabId(active)}
         tabIndex={0}
-        className={`border ${preview.border} ${track.color} rounded-lg overflow-hidden`}
+        className={`tracks-tabbed-panel border ${preview.border} ${track.color} rounded-lg overflow-hidden`}
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div

@@ -610,6 +610,10 @@ body:has(.home-scroll-story) footer::before {
   border: 1px solid rgba(255, 253, 249, 0.18);
 }
 
+.tracks-parallax .tracks-tabbed-panel {
+  background-color: #fff !important;
+}
+
 .home-scroll-bridge-copy {
   width: min(100%, 43rem);
   padding: clamp(1.8rem, 4vw, 3.25rem);
