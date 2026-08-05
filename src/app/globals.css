@@ -578,6 +578,38 @@ body:has(.home-scroll-story) footer::before {
   border: 1px solid rgba(255, 253, 249, 0.18);
 }
 
+/* Tracks use the same fixed-image parallax treatment as homepage scenes. */
+.tracks-parallax {
+  min-height: clamp(38rem, 72vh, 52rem);
+  color: #fffdf9;
+  background-color: #231f24;
+  background-image: url("/trackbackground.jpg");
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.tracks-parallax::before,
+.tracks-parallax::after {
+  position: absolute;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+}
+
+.tracks-parallax::before {
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(20, 18, 22, 0.82) 0%, rgba(20, 18, 22, 0.58) 50%, rgba(20, 18, 22, 0.8) 100%),
+    linear-gradient(0deg, rgba(20, 18, 22, 0.62), rgba(20, 18, 22, 0.22) 66%);
+}
+
+.tracks-parallax::after {
+  inset: 1.1rem;
+  border: 1px solid rgba(255, 253, 249, 0.18);
+}
+
 .home-scroll-bridge-copy {
   width: min(100%, 43rem);
   padding: clamp(1.8rem, 4vw, 3.25rem);
@@ -952,7 +984,26 @@ body:has(.home-scroll-story) footer::before {
     background-size: cover;
   }
 
+  .tracks-parallax {
+    min-height: max(46rem, 100svh);
+    padding-block: 5.5rem;
+  }
+
+  .tracks-parallax-mobile-media {
+    position: absolute;
+    z-index: -2;
+    inset: -32% 0;
+    display: block;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
   .home-scroll-bridge::after {
+    inset: 0.7rem;
+  }
+
+  .tracks-parallax::after {
     inset: 0.7rem;
   }
 
