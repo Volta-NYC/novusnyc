@@ -93,7 +93,7 @@ export default function Navbar() {
               className="h-10 w-auto object-contain"
             />
             <span className={`font-display font-bold text-xl tracking-tight text-v-green transition-colors ${darkHero ? "drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]" : ""}`}>
-              Novus
+              NOVUS
             </span>
           </Link>
 

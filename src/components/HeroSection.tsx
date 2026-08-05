@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 import { useParallax } from "@/hooks/useParallax";
 
@@ -12,6 +12,7 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 export default function HeroSection({ children }: { children?: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
+  const [isDesktop, setIsDesktop] = useState(false);
   const { y: backgroundY, enabled: parallaxEnabled } = useParallax(sectionRef, {
     range: [-120, 170],
     offset: ["start start", "end start"],
@@ -24,10 +25,19 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
     target: sectionRef,
     offset: ["start start", "end start"],
   });
-  const titleY = useTransform(scrollYProgress, [0, 1], [0, -230]);
-  const contentY = useTransform(scrollYProgress, [0, 1], [0, -150]);
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 1, 0.1]);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.78, 1], [1, 1, 0]);
+  const titleY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -230] : [0, -32]);
+  const contentY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -150] : [0, -20]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.72, 1], isDesktop ? [1, 1, 0.1] : [1, 1, 0.88]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.78, 1], isDesktop ? [1, 1, 0] : [1, 1, 0.82]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const updateViewport = () => setIsDesktop(mediaQuery.matches);
+
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
 
   return (
     <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a]">
