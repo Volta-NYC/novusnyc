@@ -622,12 +622,25 @@ body:has(.home-scroll-story) footer::before {
 .timeline-parallax {
   background-color: #fffdf9;
   background-image:
-    linear-gradient(rgba(255, 253, 249, 0.8), rgba(255, 253, 249, 0.86)),
+    linear-gradient(rgba(255, 253, 249, 0.62), rgba(255, 253, 249, 0.7)),
     url("/timelineparallax.jpg");
   background-attachment: fixed, fixed;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+}
+
+.timeline-parallax .timeline-entry-content {
+  border-radius: 0.5rem;
+  background: rgba(255, 253, 249, 0.62);
+  box-shadow: 0 10px 30px rgba(39, 31, 39, 0.08);
+  backdrop-filter: blur(7px);
+}
+
+@media (min-width: 768px) {
+  .timeline-parallax .timeline-entry-content {
+    padding: 1.25rem 1.5rem;
+  }
 }
 
 .home-scroll-bridge-copy {

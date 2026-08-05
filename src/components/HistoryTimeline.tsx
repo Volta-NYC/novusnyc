@@ -50,7 +50,7 @@ export default function HistoryTimeline({ milestones }: { milestones: Milestone[
             <p className="font-body whitespace-nowrap pt-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-v-green">
               {milestone.month} {milestone.year}
             </p>
-            <div className={index < milestones.length - 1 ? "border-b border-v-border/70 pb-10" : ""}>
+            <div className={`timeline-entry-content ${index < milestones.length - 1 ? "border-b border-v-border/70 pb-10" : ""}`}>
               <h3 className="font-display text-xl font-bold text-v-ink">{milestone.label}</h3>
               <p className="font-body mt-2 max-w-3xl leading-relaxed text-v-muted">{milestone.desc}</p>
             </div>
