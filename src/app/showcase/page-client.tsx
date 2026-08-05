@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -43,7 +43,7 @@ function getServiceTagClass(service: string): string {
   return "bg-slate-100 text-slate-600 border-slate-200";
 }
 
-function ShowcaseMobileCard({ project }: { project: ShowcaseProject }) {
+function ShowcaseMobileCard({ project, isDuplicate = false }: { project: ShowcaseProject; isDuplicate?: boolean }) {
   return (
     <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
       <div className={`${project.colorClass} h-2`} />
@@ -51,7 +51,7 @@ function ShowcaseMobileCard({ project }: { project: ShowcaseProject }) {
         <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
           <Image
             src={project.imageUrl}
-            alt={`${project.name} project`}
+            alt={isDuplicate ? "" : `${project.name} project`}
             width={1600}
             height={1000}
             sizes="(max-width: 1024px) 78vw, 290px"
@@ -85,7 +85,11 @@ function ShowcaseMobileCard({ project }: { project: ShowcaseProject }) {
         </div>
         <h3 className="font-display font-bold text-v-ink text-lg mb-1">{project.name}</h3>
         <p className="font-body text-sm text-v-muted mb-3">{project.type}</p>
-        <ExpandableDescription desc={project.desc} className="flex-1" />
+        {isDuplicate ? (
+          <p className="showcase-project-mobile-description flex-1 font-body text-sm text-v-ink/70 leading-relaxed">{project.desc}</p>
+        ) : (
+          <ExpandableDescription desc={project.desc} className="flex-1" />
+        )}
         {project.quote && (
           <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
             &ldquo;{project.quote}&rdquo;
@@ -96,7 +100,7 @@ function ShowcaseMobileCard({ project }: { project: ShowcaseProject }) {
             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
             {project.neighborhood}
           </p>
-          {project.url && (
+          {project.url && !isDuplicate && (
             <a
               href={project.url}
               target="_blank"
@@ -106,6 +110,208 @@ function ShowcaseMobileCard({ project }: { project: ShowcaseProject }) {
               View live site →
             </a>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const AUTO_SCROLL_SPEED = 24;
+const RESUME_DELAY_MS = 180;
+
+function ShowcaseMobileCarousel({ projects }: { projects: ShowcaseProject[] }) {
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLInputElement>(null);
+  const animationFrameRef = useRef<number>();
+  const lastFrameRef = useRef<number>();
+  const interactionRef = useRef(false);
+  const pointerDownRef = useRef(false);
+  const dragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number }>();
+  const documentHiddenRef = useRef(false);
+  const reducedMotionRef = useRef(false);
+  const mobileViewportRef = useRef(false);
+  const lastAutoScrollRef = useRef(0);
+  const autoScrollPositionRef = useRef(0);
+  const resumeTimerRef = useRef<number>();
+
+  const updateProgress = useCallback(() => {
+    const carousel = carouselRef.current;
+    const progress = progressRef.current;
+    if (!carousel || !progress) return;
+
+    const loopWidth = carousel.scrollWidth / 2;
+    const progressValue = loopWidth > carousel.clientWidth
+      ? (carousel.scrollLeft % loopWidth) / loopWidth
+      : 0;
+    const percentage = Math.round(Math.max(0, progressValue) * 100);
+
+    progress.style.setProperty("--carousel-progress", `${Math.max(0, progressValue)}`);
+    progress.value = `${percentage}`;
+  }, []);
+
+  const resumeAutoScroll = useCallback(() => {
+    window.clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = window.setTimeout(() => {
+      interactionRef.current = false;
+    }, RESUME_DELAY_MS);
+  }, []);
+
+  const pauseAutoScroll = useCallback(() => {
+    interactionRef.current = true;
+    window.clearTimeout(resumeTimerRef.current);
+  }, []);
+
+  const startDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    pointerDownRef.current = true;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: event.currentTarget.scrollLeft,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pauseAutoScroll();
+  }, [pauseAutoScroll]);
+
+  const dragCarousel = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    const carousel = carouselRef.current;
+    if (!drag || !carousel || drag.pointerId !== event.pointerId) return;
+
+    carousel.scrollLeft = drag.scrollLeft + drag.startX - event.clientX;
+    autoScrollPositionRef.current = carousel.scrollLeft;
+    updateProgress();
+  }, [updateProgress]);
+
+  const stopDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+
+    dragRef.current = undefined;
+    pointerDownRef.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    resumeAutoScroll();
+  }, [resumeAutoScroll]);
+
+  const setProgress = useCallback((percentage: number) => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    const loopWidth = carousel.scrollWidth / 2;
+    carousel.scrollLeft = loopWidth * (percentage / 100);
+    autoScrollPositionRef.current = carousel.scrollLeft;
+    updateProgress();
+  }, [updateProgress]);
+
+  useEffect(() => {
+    const motionMediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mobileMediaQuery = window.matchMedia("(max-width: 639px)");
+    const updateMotionPreference = (event: MediaQueryListEvent | MediaQueryList) => {
+      reducedMotionRef.current = event.matches;
+    };
+    const updateMobileViewport = (event: MediaQueryListEvent | MediaQueryList) => {
+      mobileViewportRef.current = event.matches;
+    };
+    const handleVisibilityChange = () => {
+      documentHiddenRef.current = document.hidden;
+      lastFrameRef.current = undefined;
+    };
+
+    updateMotionPreference(motionMediaQuery);
+    updateMobileViewport(mobileMediaQuery);
+    motionMediaQuery.addEventListener("change", updateMotionPreference);
+    mobileMediaQuery.addEventListener("change", updateMobileViewport);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const animate = (timestamp: number) => {
+      const carousel = carouselRef.current;
+      const previousTimestamp = lastFrameRef.current ?? timestamp;
+      lastFrameRef.current = timestamp;
+
+      if (carousel && mobileViewportRef.current && !interactionRef.current && !documentHiddenRef.current && !reducedMotionRef.current) {
+        const loopWidth = carousel.scrollWidth / 2;
+        if (loopWidth > carousel.clientWidth) {
+          const elapsedSeconds = Math.min((timestamp - previousTimestamp) / 1000, 0.05);
+          let nextScrollLeft = autoScrollPositionRef.current + AUTO_SCROLL_SPEED * elapsedSeconds;
+          if (nextScrollLeft >= loopWidth) nextScrollLeft -= loopWidth;
+          autoScrollPositionRef.current = nextScrollLeft;
+          lastAutoScrollRef.current = performance.now();
+          carousel.scrollLeft = nextScrollLeft;
+          updateProgress();
+        }
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = window.requestAnimationFrame(animate);
+    window.addEventListener("resize", updateProgress);
+    updateProgress();
+
+    return () => {
+      if (animationFrameRef.current !== undefined) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+      window.clearTimeout(resumeTimerRef.current);
+      window.removeEventListener("resize", updateProgress);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      motionMediaQuery.removeEventListener("change", updateMotionPreference);
+      mobileMediaQuery.removeEventListener("change", updateMobileViewport);
+    };
+  }, [updateProgress]);
+
+  return (
+    <div className="sm:hidden">
+      <div className="showcase-project-mobile-progress">
+        <span id="showcase-project-carousel-label" className="showcase-project-mobile-progress-label">Swipe to explore</span>
+        <input
+          ref={progressRef}
+          aria-labelledby="showcase-project-carousel-label"
+          className="showcase-project-mobile-progress-track"
+          type="range"
+          min="0"
+          max="100"
+          defaultValue="0"
+          onPointerDown={pauseAutoScroll}
+          onPointerUp={resumeAutoScroll}
+          onPointerCancel={resumeAutoScroll}
+          onInput={(event) => setProgress(Number(event.currentTarget.value))}
+        />
+      </div>
+      <div
+        ref={carouselRef}
+        className="showcase-project-mobile-carousel -mx-5 overflow-x-auto overscroll-x-contain pb-2"
+        onPointerDown={startDrag}
+        onPointerMove={dragCarousel}
+        onPointerUp={stopDrag}
+        onPointerCancel={stopDrag}
+        onScroll={() => {
+          updateProgress();
+          if (performance.now() - lastAutoScrollRef.current > 80) {
+            autoScrollPositionRef.current = carouselRef.current?.scrollLeft ?? 0;
+            pauseAutoScroll();
+            if (!pointerDownRef.current) resumeAutoScroll();
+          }
+        }}
+        onFocus={pauseAutoScroll}
+        onBlur={resumeAutoScroll}
+      >
+        <div className="flex w-max items-start">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex gap-4 pr-4" aria-hidden={copy === 1}>
+              {projects.map((project, index) => (
+                <AnimatedSection
+                  key={`${copy}-${project.name}`}
+                  delay={index * 0.05}
+                  className="shrink-0 w-[78vw] max-w-[340px]"
+                >
+                  <ShowcaseMobileCard project={project} isDuplicate={copy === 1} />
+                </AnimatedSection>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -187,7 +393,9 @@ export default function ShowcaseClient({
             </div>
           ) : (
             <>
-              <div className="lg:hidden">
+              <ShowcaseMobileCarousel projects={projects} />
+
+              <div className="hidden sm:block lg:hidden">
                 <div className="relative">
                   <div
                     ref={mobileScrollRef}
