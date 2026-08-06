@@ -120,7 +120,7 @@ const BLANK_ASSIGNMENT: AssignmentFormState = {
   description: "",
   track: "Tech",
   type: "",
-  projectRef: "volta",
+  projectRef: "novus",
   credits: 1,
   estimatedHours: 1,
   minRole: "Analyst",
@@ -156,7 +156,7 @@ const BLANK_GROUP: GroupFormState = { name: "", description: "", color: "gray", 
 function encodeProjectRef(bizId?: string, grpId?: string): string {
   if (bizId) return `biz:${bizId}`;
   if (grpId) return `grp:${grpId}`;
-  return "volta";
+  return "novus";
 }
 
 function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: string } {
@@ -286,7 +286,7 @@ export default function ByProjectPage() {
     const novusAssignments = activeAssignments.filter((a) => !a.businessId && !a.projectGroupId);
     if (novusAssignments.length) {
       result.unshift({
-        key: "volta",
+        key: "novus",
         label: "Novus",
         subtitle: "Internal assignments",
         status: "Ongoing",
@@ -888,7 +888,7 @@ export default function ByProjectPage() {
                   setBizSearch(val ? (refToLabel(val) ?? "") : "");
                 }}
               >
-                <option value="volta">Novus</option>
+                <option value="novus">Novus</option>
                 {sortedBusinessOptions.length > 0 && (
                   <optgroup label="Businesses">
                     {sortedBusinessOptions.map((b) => (

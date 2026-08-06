@@ -129,7 +129,7 @@ export default function TemplatesPage() {
 
   const [fromTemplate, setFromTemplate] = useState<AssignmentTemplate | null>(null);
   const [fromTemplateForm, setFromTemplateForm] = useState<FromTemplateForm>({
-    projectRef: "volta", title: "", description: "", priority: false,
+    projectRef: "novus", title: "", description: "", priority: false,
     requiresApproval: true, applicationRequired: false, allowMultipleCompletions: false,
   });
   const [fromTemplateCreating, setFromTemplateCreating] = useState(false);
@@ -155,7 +155,7 @@ export default function TemplatesPage() {
   const openFromTemplate = (t: AssignmentTemplate) => {
     setFromTemplate(t);
     setFromTemplateForm({
-      projectRef: "volta",
+      projectRef: "novus",
       title: t.title,
       description: t.description ?? "",
       priority: false,
@@ -626,7 +626,7 @@ export default function TemplatesPage() {
                     value={fromTemplateForm.projectRef}
                     onChange={(e) => setFromTemplateForm((p) => ({ ...p, projectRef: e.target.value }))}
                   >
-                    <option value="volta">Novus NYC</option>
+                    <option value="novus">Novus NYC</option>
                     {businessOptions.map((b) => (
                       <option key={b.id} value={`biz:${b.id}`}>
                         {[b.name, b.neighborhood].filter(Boolean).join(" · ")}

@@ -27,7 +27,7 @@ const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "Active", "Under Review", "C
 function encodeProjectRef(bizId?: string, grpId?: string): string {
   if (bizId) return `biz:${bizId}`;
   if (grpId) return `grp:${grpId}`;
-  return "volta";
+  return "novus";
 }
 
 function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: string } {
@@ -92,7 +92,7 @@ const BLANK_FORM: FormState = {
   track: "Tech",
   credits: 1,
   minRole: "Analyst",
-  projectRef: "volta",
+  projectRef: "novus",
   limitClaims: true,
   maxClaims: "1",
   deadlineType: "hard",
@@ -260,7 +260,7 @@ export default function CatalogPage() {
   );
 
   const projectOptions = useMemo<SearchSelectOption[]>(() => [
-    { value: "volta", label: "Novus NYC", subtitle: "Internal" },
+    { value: "novus", label: "Novus NYC", subtitle: "Internal" },
     ...sortedBusinessOptions.map((b) => ({
       value: `biz:${b.id}`,
       label: b.name,

@@ -1,4 +1,4 @@
-# AGENTS.md — Volta NYC Codebase Guide
+# AGENTS.md — Novus Codebase Guide
 
 System instructions for Codex sessions. Read this before touching any file.
 
@@ -17,7 +17,7 @@ System instructions for Codex sessions. Read this before touching any file.
 | Animations | Framer Motion |
 | Email | Nodemailer (SMTP via Gmail) |
 | Analytics | Vercel Analytics |
-| Deployment | Vercel → voltanyc.org |
+| Deployment | Vercel → www.novusnyc.org |
 
 TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 
@@ -29,7 +29,7 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 
 **Public site** (`/`, `/showcase`, `/about`, `/partners`, `/apply`, `/impact`, `/book`, `/updates`, `/reports`) — light theme, `v-*` Tailwind color tokens, fonts: `font-display` (Space Grotesk) / `font-body` (DM Sans).
 
-**Members portal** (`/members/*`) — dark theme (`#0D0F14` bg, `#13161D` panels), `[#85CC17]` volta green as primary action color.
+**Members portal** (`/members/*`) — dark theme (`#0D0F14` bg, `#13161D` panels), `n-yellow` (`#F3E28D`) as primary action color.
 
 ### Critical files
 
@@ -120,7 +120,7 @@ npm start          # serve the production build locally
 
 ### UI — Members portal (dark theme)
 - Background layers: page `#0D0F14` → panel `#13161D` → card `#111418` → input `#0F1014`.
-- Primary action color: `#85CC17` (volta green) / Tailwind `[#85CC17]`. Text on green: `#0D0D0D`.
+- Primary action color: `n-yellow` (`#F3E28D`). Text on yellow: `n-ink` (`#2D282E`) — 11.05:1, AAA.
 - Use `Btn`, `Modal`, `Field`, `Input`, `Select` from `ui.tsx` — never raw `<button>` / `<input>` in portal pages.
 - `Btn` variants: `primary` (green fill), `secondary` (white/8 glass), `ghost` (text only), `danger` (red tint).
 - Row heights in tables: `h-9`. Text sizes: header labels `text-[10px] uppercase tracking-wide`, cell content `text-[11px]`.
@@ -128,7 +128,15 @@ npm start          # serve the production build locally
 - Empty cells (no data): `<span className="text-white/25">—</span>`.
 
 ### UI — Public site (light theme)
-- Use `v-*` Tailwind color tokens (`v-green`, `v-blue`, `v-ink`, `v-muted`, `v-border`, `v-bg`, `v-dark`).
+- Use `n-*` Tailwind color tokens. The Novus palette is pastel **yellow / orange / purple**:
+  - Brand hues: `n-orange` (peach `#F6B78D`), `n-yellow` (`#F3E28D`), `n-purple` (lavender `#BEA2BA`), each with a `-dark` hover variant.
+  - Neutrals: `n-ink`, `n-muted`, `n-border`, `n-bg`, `n-card`, `n-dark`.
+- Token names describe the **actual hue**. Do not reintroduce inherited names
+  (`v-green`, `v-blue`) — they drifted from their values and actively misled.
+- Values live once in `src/app/globals.css` `:root`. Change them there, never inline.
+- Pastels are light: they work as fills with `text-n-ink` on top, and as text only
+  on dark surfaces (`bg-n-dark`, photo heroes). For accent text on light
+  backgrounds use a saturated Tailwind shade (e.g. `text-violet-700`), not a pastel.
 - Fonts: `font-display` for headings (Space Grotesk), `font-body` for all body copy (DM Sans).
 - Wrap scroll containers in `overflow-x-auto` without `snap-x` — free scrolling, no forced card snapping.
 
@@ -159,8 +167,9 @@ Don't add error handling, fallbacks, or helper functions for scenarios that can'
 ## Deployment
 
 - **Platform:** Vercel
-- **Production domain:** `voltanyc.org`
-- **Redirects (configured in `next.config.mjs`):** `www.voltanyc.org`, `nyc.voltanpo.org`, `volta-nyc.vercel.app` → `voltanyc.org`
+- **Production domain:** `www.novusnyc.org` (www is canonical — the apex 301s to www)
+- **Redirects (`next.config.mjs`):** `voltanyc.org`, `www.voltanyc.org`, `nyc.voltanpo.org`, `volta-nyc.vercel.app`, `novus-nyc.vercel.app` → `https://www.novusnyc.org`
+- **Never** add `www.novusnyc.org` to that list — Vercel already 301s the apex to www, so redirecting www back to the apex creates an infinite loop.
 - **Images:** served from Supabase Storage (`thzvuxuqvjkifpxlmoqc.supabase.co`), optimized as AVIF/WebP by Next.js Image.
 - **Cache-busting:** run `npx next build` and deploy; Vercel invalidates CDN on deploy automatically.
 - **Revalidate static pages after DB changes:** `POST /api/members/admin/revalidate` (admin-only).
