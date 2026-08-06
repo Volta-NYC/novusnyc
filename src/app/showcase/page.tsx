@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { projects as fallbackProjects } from "@/data";
 import { getPublicMapEntries, getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { formatCounter } from "@/lib/formatCounter";
-import { getShowcasePastelColorClass, SHOWCASE_PASTEL_COLOR_OPTIONS } from "@/lib/showcaseColors";
 import ShowcaseClient from "./page-client";
 
 
@@ -19,6 +18,35 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   };
 }
+
+const SHOWCASE_COLOR_CLASS: Record<string, string> = {
+  "blue-soft": "bg-blue-300",
+  "blue-mid": "bg-blue-500",
+  "blue-deep": "bg-blue-700",
+  "lime-soft": "bg-lime-300",
+  "lime-mid": "bg-lime-500",
+  "lime-deep": "bg-lime-700",
+  "amber-soft": "bg-amber-300",
+  "amber-mid": "bg-amber-500",
+  "amber-deep": "bg-amber-700",
+  "pink-soft": "bg-pink-300",
+  "pink-mid": "bg-pink-500",
+  "pink-deep": "bg-pink-700",
+  "purple-mid": "bg-purple-500",
+  "red-soft": "bg-red-300",
+  "red-mid": "bg-red-500",
+  "red-deep": "bg-red-700",
+  // Safety mapping for older entries.
+  green: "bg-lime-500",
+  blue: "bg-blue-500",
+  orange: "bg-red-500",
+  amber: "bg-amber-500",
+  pink: "bg-pink-500",
+  purple: "bg-purple-500",
+  "green-soft": "bg-lime-300",
+  "green-mid": "bg-lime-500",
+  "green-deep": "bg-lime-700",
+};
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
 
@@ -55,7 +83,7 @@ export default async function Showcase() {
       borough: extractBoroughFromNeighborhood(card.neighborhood),
       services: card.services,
       status: normalizeProjectDisplayStatus(card.status),
-      colorClass: getShowcasePastelColorClass(card.color),
+      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
       desc: card.desc,
       url: card.url,
       imageUrl: card.imageUrl,
@@ -68,7 +96,7 @@ export default async function Showcase() {
       borough: extractBoroughFromNeighborhood(project.neighborhood),
       services: project.services,
       status: normalizeProjectDisplayStatus(project.status),
-      colorClass: getShowcasePastelColorClass(project.color),
+      colorClass: project.color,
       desc: project.desc,
       url: project.url,
       imageUrl: undefined as string | undefined,
@@ -76,7 +104,7 @@ export default async function Showcase() {
     }));
 
   const showcasedBusinessIds = new Set(publicShowcase.map((card) => `business:${card.id}`));
-  const colorOptions = SHOWCASE_PASTEL_COLOR_OPTIONS;
+  const colorOptions = Object.values(SHOWCASE_COLOR_CLASS);
   const pickPseudoRandomColor = (seed: string): string => {
     let hash = 0;
     for (let i = 0; i < seed.length; i += 1) {
@@ -84,7 +112,7 @@ export default async function Showcase() {
       hash |= 0;
     }
     const idx = Math.abs(hash) % colorOptions.length;
-    return colorOptions[idx] ?? "bg-sky-200";
+    return colorOptions[idx] ?? "bg-blue-500";
   };
 
   const mapProjects = publicMapEntries.map((entry) => {
@@ -94,7 +122,7 @@ export default async function Showcase() {
       !showcasedBusinessIds.has(entry.id);
     const colorClass = isBusinessWithoutCard
       ? pickPseudoRandomColor(entry.id || entry.name)
-      : getShowcasePastelColorClass(entry.color);
+      : (SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-blue-500");
 
     return {
       name: entry.name,
