@@ -47,12 +47,12 @@ export default function Footer() {
                   records, so @novusnyc.org addresses bounce. Do not rebrand
                   these until Google Workspace is live on the new domain. */}
               <a
-                href="mailto:info@voltanyc.org"
+                href="mailto:nyc.novus@gmail.com"
                 className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"
               >
                 <MailIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">Email:</span>
-                <span className="text-n-orange">info@voltanyc.org</span>
+                <span className="text-n-orange">nyc.novus@gmail.com</span>
               </a>
               <a
                 href="https://www.linkedin.com/company/volta-nyc/"
