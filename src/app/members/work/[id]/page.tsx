@@ -351,7 +351,7 @@ export default function AssignmentDetailPage() {
         {assignment.applicationRequired && !myClaim && (
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
             <p className="font-semibold mb-1">Pre-approval required</p>
-            <p>This assignment requires you to discuss it with a senior associate before signing up. Please email <a href="mailto:info@novusnyc.org" className="underline font-medium">info@novusnyc.org</a> first, then claim it once you&apos;ve been approved.</p>
+            <p>This assignment requires you to discuss it with a senior associate before signing up. Please email <a href="mailto:info@voltanyc.org" className="underline font-medium">info@voltanyc.org</a> first, then claim it once you&apos;ve been approved.</p>
           </div>
         )}
 

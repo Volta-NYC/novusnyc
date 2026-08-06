@@ -164,6 +164,26 @@ Don't add error handling, fallbacks, or helper functions for scenarios that can'
 
 ---
 
+## Mail domain (do not "fix" this)
+
+Every mailbox is still `@voltanyc.org`. `novusnyc.org` has **no MX records** —
+mail sent there bounces. Rebranding these addresses breaks the public contact
+link in the footer and every transactional reply-to. Change them only once
+Google Workspace is live on the new domain; verify first with:
+
+```bash
+dig +short MX novusnyc.org
+```
+
+The `UID:...@novusnyc.org` values in calendar invites are opaque identifiers,
+not mailboxes, and are correct as-is.
+
+Social handles are likewise unmigrated: `linkedin.com/company/volta-nyc` and
+`instagram.com/voltanyc` are the live accounts. Renaming them in code before
+the accounts are claimed produces dead links.
+
+---
+
 ## Deployment
 
 - **Platform:** Vercel

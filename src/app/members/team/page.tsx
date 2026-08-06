@@ -171,7 +171,7 @@ function roleSortKey(value: unknown): number {
 // accepted with. Compared loosely against name + email so casing/spacing in
 // stored data doesn't cause a miss.
 const BOARD_MEMBERS: Array<{ name: string; emails: string[] }> = [
-  { name: "Ethan Zhang", emails: ["ethan@novusnyc.org"] },
+  { name: "Ethan Zhang", emails: ["ethan@voltanyc.org"] },
   { name: "Andrew Chin", emails: [] },
   { name: "Tahmid Islam", emails: [] },
   { name: "Ellie Mak", emails: [] },

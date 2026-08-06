@@ -44,7 +44,7 @@ export async function dispatchTemplatedEmail(input: DispatchEmailInput): Promise
   const body    = substituteEmailTokens(template.body,    input.variables);
 
   const fd = new FormData();
-  fd.append("fromAddress", input.fromAddress ?? "info@novusnyc.org");
+  fd.append("fromAddress", input.fromAddress ?? "info@voltanyc.org");
   fd.append("subject", subject);
   fd.append("message", body);
   fd.append("contentMode", "html");

@@ -42,13 +42,16 @@ export default function Footer() {
           <div>
             <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Connect</p>
             <div className="flex flex-col gap-3">
+              {/* Mail still runs on voltanyc.org — novusnyc.org has no MX
+                  records, so @novusnyc.org addresses bounce. Do not rebrand
+                  these until Google Workspace is live on the new domain. */}
               <a
-                href="mailto:info@novusnyc.org"
+                href="mailto:info@voltanyc.org"
                 className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"
               >
                 <MailIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">Email:</span>
-                <span className="text-n-orange">info@novusnyc.org</span>
+                <span className="text-n-orange">info@voltanyc.org</span>
               </a>
               <a
                 href="https://www.linkedin.com/company/volta-nyc/"

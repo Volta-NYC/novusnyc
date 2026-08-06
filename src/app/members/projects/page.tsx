@@ -106,8 +106,8 @@ const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; 
 ];
 const SHOWCASE_COLOR_VALUES = SHOWCASE_COLOR_OPTIONS.map((option) => option.value);
 const TEAM_EMAIL_FROM_OPTIONS = [
-  { value: "info@novusnyc.org", label: "info@novusnyc.org" },
-  { value: "ethan@novusnyc.org", label: "ethan@novusnyc.org" },
+  { value: "info@voltanyc.org", label: "info@voltanyc.org" },
+  { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
 ];
 
 const TECH_STATUS_SORT: Record<string, number> = {
@@ -434,7 +434,7 @@ function BusinessesPageInner() {
   const [projectTeamPickerProject, setProjectTeamPickerProject] = useState<Business | null>(null);
   const [projectEmailSubject, setProjectEmailSubject] = useState("");
   const [projectEmailMessage, setProjectEmailMessage] = useState("");
-  const [projectEmailFrom, setProjectEmailFrom] = useState("info@novusnyc.org");
+  const [projectEmailFrom, setProjectEmailFrom] = useState("info@voltanyc.org");
   const [projectEmailSending, setProjectEmailSending] = useState(false);
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
@@ -1243,7 +1243,7 @@ function BusinessesPageInner() {
       setProjectEmailRecipientLabel(null);
       setProjectEmailStatus(null);
     }
-    setProjectEmailFrom("info@novusnyc.org");
+    setProjectEmailFrom("info@voltanyc.org");
     setProjectEmailSubject(`${project.name} — Project Update`);
     setProjectEmailMessage("");
     setProjectEmailAttachments([]);

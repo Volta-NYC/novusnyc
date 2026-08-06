@@ -82,7 +82,7 @@ export default function RootLayout({
               logo: `${SITE_URL}/logo.png`,
               description:
                 "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
-              email: "info@novusnyc.org",
+              email: "info@voltanyc.org",
               foundingDate: "2025",
               areaServed: {
                 "@type": "City",
@@ -102,7 +102,7 @@ export default function RootLayout({
               ],
               contactPoint: {
                 "@type": "ContactPoint",
-                email: "info@novusnyc.org",
+                email: "info@voltanyc.org",
                 contactType: "customer service",
                 areaServed: "US",
                 availableLanguage: ["English", "Spanish", "Chinese", "Bengali", "Korean", "Arabic"],

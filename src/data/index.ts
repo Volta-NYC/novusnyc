@@ -286,8 +286,8 @@ export const aboutTimeline = [
 ];
 
 export const teamMembers = [
-  { name: "Ethan Zhang", role: "Co-Founder", email: "ethan@novusnyc.org", initial: "E", desc: "", photo: "/team/ethan.jpeg" },
-  { name: "Andrew Chin", role: "Co-Founder", email: "andrew@novusnyc.org", initial: "A", desc: "", photo: "/team/andrew.jpg" },
+  { name: "Ethan Zhang", role: "Co-Founder", email: "ethan@voltanyc.org", initial: "E", desc: "", photo: "/team/ethan.jpeg" },
+  { name: "Andrew Chin", role: "Co-Founder", email: "andrew@voltanyc.org", initial: "A", desc: "", photo: "/team/andrew.jpg" },
   { name: "Tahmid Islam", role: "Director of Tech", email: "islamtahmidd@gmail.com", initial: "T", desc: "", photo: "/team/tahmid.png" },
   { name: "Ellie Mak", role: "Director of Finance and Marketing", email: "", initial: "E", desc: "", photo: "/team/ellie.jpg" },
 ];

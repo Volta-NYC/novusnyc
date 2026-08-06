@@ -29,7 +29,7 @@ export function getDefaultFromAddress(): string {
     pickFirst(
       process.env.EMAIL_FROM,
       process.env.INTERVIEW_FROM_EMAIL,
-      "info@novusnyc.org",
+      "info@voltanyc.org",
     ),
   );
 }
@@ -165,7 +165,7 @@ export function createTransportForFrom(fromAddress?: string) {
  *
  * Looks up the env var EMAIL_FROM_NAMES which should be a comma-separated
  * list of "email=Display Name" pairs, e.g.:
- *   info@novusnyc.org=Novus,ethan@novusnyc.org=Ethan Zhang
+ *   info@voltanyc.org=Novus,ethan@voltanyc.org=Ethan Zhang
  *
  * Falls back to TEAM_EMAIL_FROM_NAME (legacy) or "Novus NYC".
  */
@@ -192,8 +192,8 @@ export function resolveFromWithName(rawFrom: string): string {
   if (legacyName) return `${legacyName} <${email}>`;
 
   // Practical defaults for Novus sender aliases.
-  if (email === "info@novusnyc.org") return `Novus NYC <${email}>`;
-  if (email === "ethan@novusnyc.org") return `Ethan Zhang <${email}>`;
+  if (email === "info@voltanyc.org") return `Novus NYC <${email}>`;
+  if (email === "ethan@voltanyc.org") return `Ethan Zhang <${email}>`;
 
   return email;
 }

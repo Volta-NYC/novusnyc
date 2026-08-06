@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
   const allowedFrom = Array.from(
     new Set(
-      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? "info@novusnyc.org,ethan@novusnyc.org")
+      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? "info@voltanyc.org,ethan@voltanyc.org")
         .split(",")
         .map((value) => normalizeEmail(value))
         .filter((value) => value && isValidEmail(value))

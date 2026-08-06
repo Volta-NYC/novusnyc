@@ -69,7 +69,7 @@ function buildIcs(input: BookingEmailInput): string {
     `DESCRIPTION:${escapeIcs(descParts.join("\n"))}`,
     organizerEmail
       ? `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:${escapeIcs(organizerEmail)}`
-      : `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:ethan@novusnyc.org`,
+      : `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:ethan@voltanyc.org`,
     input.location ? `LOCATION:${escapeIcs(input.location)}` : "",
     input.zoomLink ? `URL:${escapeIcs(input.zoomLink)}` : "",
     "BEGIN:VALARM",
