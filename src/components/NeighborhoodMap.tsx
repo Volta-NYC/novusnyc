@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { useMap } from "react-leaflet";
+import { getShowcasePastelHex } from "@/lib/showcaseColors";
 import "leaflet/dist/leaflet.css";
 
 function MapLoadingState() {
@@ -83,27 +84,6 @@ function FitMapToPoints({ points }: { points: [number, number][] }) {
   return null;
 }
 
-// Derive precise map hex colors from Tailwind classes
-const getColorHex = (colorClass: string): string => {
-  if (colorClass.includes("blue-300")) return "#93C5FD";
-  if (colorClass.includes("blue-500")) return "#3B82F6";
-  if (colorClass.includes("blue-700")) return "#1D4ED8";
-  if (colorClass.includes("lime-300")) return "#BEF264";
-  if (colorClass.includes("lime-500")) return "#84CC16";
-  if (colorClass.includes("lime-700")) return "#3F6212";
-  if (colorClass.includes("amber-300")) return "#FCD34D";
-  if (colorClass.includes("amber-500")) return "#F59E0B";
-  if (colorClass.includes("amber-700")) return "#B45309";
-  if (colorClass.includes("pink-300")) return "#F9A8D4";
-  if (colorClass.includes("pink-500")) return "#EC4899";
-  if (colorClass.includes("pink-700")) return "#9D174D";
-  if (colorClass.includes("purple-500")) return "#8B5CF6";
-  if (colorClass.includes("red-300")) return "#FCA5A5";
-  if (colorClass.includes("red-500")) return "#EF4444";
-  if (colorClass.includes("red-700")) return "#991B1B";
-  return "#3B82F6"; // fallback
-};
-
 function normalizeBorough(value?: string): "Brooklyn" | "Queens" | "Manhattan" | "Bronx" | "Staten Island" | "" {
   const raw = String(value ?? "").trim().toLowerCase();
   if (!raw) return "";
@@ -133,7 +113,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
         const isBid = p.source === "bid";
         const hex = isBid
           ? (BOROUGH_HEX[borough] ?? "#94A3B8")
-          : getColorHex(p.colorClass);
+          : getShowcasePastelHex(p.colorClass);
         return {
           ...p,
           borough,

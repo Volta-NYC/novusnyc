@@ -238,7 +238,7 @@ export const aboutTimeline = [
     month: "Fall",
     year: "2025",
     label: "The idea takes shape",
-    desc: "Started initially as a local branch under Volta in Jacksonville. Established under the executive direction of Andrew and Ethan to provide technical services, digital infrastructure, and operational aid to local clients and small businesses.",
+    desc: "Started in New York. Established under Andrew, Ethan, and Tahmid to provide technical services, digital infrastructure, and operational aid to local clients and small businesses.",
   },
   {
     month: "Winter",
