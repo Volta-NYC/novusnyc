@@ -14,10 +14,12 @@ export async function GET(req: NextRequest) {
 
   // Exact desktop hero clamp math at 1200px OG width:
   // font-size: clamp(4.8rem, 13.6vw, 9.2rem) => 147.2px
-  // logo size mirrors the cropped Novus mark in the home hero.
+  // logo height: clamp(6.6rem, 19vw, 13.1rem) => 209.6px
+  // Width follows the mark's true 1.115:1 aspect — a mismatched box would
+  // letterbox it and render the mark smaller than the wordmark expects.
   const heroFontSize = 147.2;
-  const heroLogoWidth = 130;
-  const heroLogoHeight = 232;
+  const heroLogoHeight = 209.6;
+  const heroLogoWidth = Math.round(heroLogoHeight * 1.115);
   const heroGap = 14; // md:gap-3.5
 
   return new ImageResponse(

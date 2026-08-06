@@ -83,7 +83,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
-          <Image src="/logo.png" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-6 mx-auto" />
+          <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-6 mx-auto" />
           <h1 className="font-display font-bold text-white text-2xl mb-3">Link Expired</h1>
           <p className="text-white/50 text-sm mb-6">
             This password reset link is invalid or has already been used.
@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <Image src="/logo.png" alt="Novus NYC logo" width={38} height={68} className="h-16 w-auto object-contain mb-4" />
+          <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-4" />
           <h1 className="font-display font-bold text-white text-2xl">Set New Password</h1>
           <p className="text-white/40 text-sm mt-1">Choose a strong password for your account.</p>
         </div>

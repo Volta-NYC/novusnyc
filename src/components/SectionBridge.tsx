@@ -23,8 +23,8 @@ export default function SectionBridge({ tone, align = "left" }: SectionBridgePro
         <Image
           src="/logo.png"
           alt=""
-          width={32}
-          height={42}
+          width={223}
+          height={200}
           className="h-8 w-auto object-contain opacity-80"
         />
         <span className={`h-px w-12 md:w-20 ${colors.line}`} />

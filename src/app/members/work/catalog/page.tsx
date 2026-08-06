@@ -37,7 +37,7 @@ function TrackIcon({ track, className = "w-4 h-4" }: { track: CycleTrack; classN
     </svg>
   );
   // General — actual Novus logo
-  return <Image src="/logo.png" alt="Novus NYC logo" width={9} height={16} className="h-4 w-auto object-contain" />;
+  return <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-4 w-auto object-contain" />;
 }
 
 const TRACK_COLOR: Record<CycleTrack, string> = {

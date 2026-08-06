@@ -88,9 +88,9 @@ export default function Navbar() {
             <Image
               src="/logo.png"
               alt="Novus NYC logo"
-              width={28}
-              height={50}
-              className="h-10 w-auto object-contain"
+              width={223}
+              height={200}
+              className="h-9 w-auto object-contain"
             />
             <span className={`font-display font-bold text-xl tracking-tight text-n-orange transition-colors ${darkHero ? "drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]" : ""}`}>
               NOVUS

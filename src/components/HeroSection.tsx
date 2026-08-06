@@ -79,12 +79,13 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
               <Image
                 src="/logo.png"
                 alt="Novus NYC logo"
-                width={112}
+                width={223}
                 height={200}
-                className="object-contain flex-shrink-0"
+                className="object-contain flex-shrink-0 w-auto"
                 style={{
-                  width: "clamp(4.1rem, 10vw, 8.1rem)",
-                  height: "clamp(7.4rem, 18vw, 14.5rem)",
+                  // Height only — width follows the mark's 1.115:1 aspect.
+                  // Tracks the wordmark's clamp so the lockup scales together.
+                  height: "clamp(6.6rem, 19vw, 13.1rem)",
                 }}
                 priority
               />
