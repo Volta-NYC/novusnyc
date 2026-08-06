@@ -4,14 +4,14 @@ import { MailIcon, LinkedInIcon, InstagramIcon } from "@/components/Icons";
 
 export default function Footer() {
   return (
-    <footer className="site-footer bg-v-dark text-white/70 pt-16 pb-10">
+    <footer className="site-footer bg-n-dark text-white/70 pt-16 pb-10">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="grid md:grid-cols-3 gap-10 mb-12 items-start">
 
           <div className="flex flex-col items-start">
             <Link href="/" className="flex items-center gap-3 mb-4">
               <Image src="/logo.png" alt="Novus NYC logo" width={34} height={60} className="h-14 w-auto object-contain" />
-              <span className="font-display font-bold text-3xl tracking-tight text-v-green">Novus</span>
+              <span className="font-display font-bold text-3xl tracking-tight text-n-orange">Novus</span>
             </Link>
             <p className="font-body text-sm leading-relaxed text-white/50">
               A registered nonprofit connecting student teams with NYC small businesses.
@@ -48,7 +48,7 @@ export default function Footer() {
               >
                 <MailIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">Email:</span>
-                <span className="text-v-green">info@novusnyc.org</span>
+                <span className="text-n-orange">info@novusnyc.org</span>
               </a>
               <a
                 href="https://www.linkedin.com/company/volta-nyc/"
@@ -58,7 +58,7 @@ export default function Footer() {
               >
                 <LinkedInIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">LinkedIn:</span>
-                <span className="text-v-blue">Novus NYC</span>
+                <span className="text-n-purple">Novus NYC</span>
               </a>
               <a
                 href="https://www.instagram.com/voltanyc/"
@@ -68,7 +68,7 @@ export default function Footer() {
               >
                 <InstagramIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">Instagram:</span>
-                <span className="text-v-yellow">Novus NYC</span>
+                <span className="text-n-yellow">Novus NYC</span>
               </a>
             </div>
           </div>

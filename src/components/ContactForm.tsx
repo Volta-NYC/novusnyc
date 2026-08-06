@@ -125,12 +125,12 @@ export default function ContactForm() {
 
   if (status === "success") {
     return (
-      <div role="status" aria-live="polite" className="bg-white border border-v-border rounded-2xl p-10 text-center" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
-        <div className="w-14 h-14 rounded-full bg-v-green/20 flex items-center justify-center mx-auto mb-4">
-          <CheckIcon className="w-7 h-7 text-v-green" />
+      <div role="status" aria-live="polite" className="bg-white border border-n-border rounded-2xl p-10 text-center" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
+        <div className="w-14 h-14 rounded-full bg-n-orange/20 flex items-center justify-center mx-auto mb-4">
+          <CheckIcon className="w-7 h-7 text-n-orange" />
         </div>
-        <h3 className="font-display font-bold text-2xl text-v-ink mb-3">{c.successTitle}</h3>
-        <p className="font-body text-v-muted">{c.successBody}</p>
+        <h3 className="font-display font-bold text-2xl text-n-ink mb-3">{c.successTitle}</h3>
+        <p className="font-body text-n-muted">{c.successBody}</p>
       </div>
     );
   }
@@ -158,17 +158,17 @@ export default function ContactForm() {
               setLang(l);
               setErrors({});
             }}
-            className={`px-4 py-1.5 rounded-full border font-body text-sm font-medium transition-all ${lang === l ? "bg-v-ink text-white border-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+            className={`px-4 py-1.5 rounded-full border font-body text-sm font-medium transition-all ${lang === l ? "bg-n-ink text-white border-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
           >
             {LANG_LABELS[l]}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="bg-white border border-v-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
+      <form onSubmit={handleSubmit} noValidate className="bg-white border border-n-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
         <div className="grid md:grid-cols-2 gap-5">
           <div>
-            <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.businessName}</label>
+            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.businessName}</label>
             <input
               value={formData.businessName}
               onChange={(e) => { setFormData((p) => ({ ...p, businessName: e.target.value })); clearError("businessName"); }}
@@ -177,7 +177,7 @@ export default function ContactForm() {
             {errors.businessName && <p className="text-red-500 text-xs mt-1 font-body">{errors.businessName}</p>}
           </div>
           <div>
-            <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.ownerName}</label>
+            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.ownerName}</label>
             <input
               value={formData.name}
               onChange={(e) => { setFormData((p) => ({ ...p, name: e.target.value })); clearError("name"); }}
@@ -188,7 +188,7 @@ export default function ContactForm() {
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           <div>
-            <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.email}</label>
+            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.email}</label>
             <input
               type="email"
               value={formData.email}
@@ -198,7 +198,7 @@ export default function ContactForm() {
             {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
           </div>
           <div>
-            <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.phone}</label>
+            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.phone}</label>
             <input
               value={formData.phone}
               onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
@@ -206,7 +206,7 @@ export default function ContactForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.neighborhood}</label>
+            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.neighborhood}</label>
             <input
               list="neighborhood-options"
               value={formData.neighborhood}
@@ -221,14 +221,14 @@ export default function ContactForm() {
           </div>
         </div>
         <div>
-          <label className="block font-body text-sm font-semibold text-v-ink mb-3">{c.services}</label>
+          <label className="block font-body text-sm font-semibold text-n-ink mb-3">{c.services}</label>
           <div className="flex flex-wrap gap-2">
             {serviceList.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => toggleService(s)}
-                className={`text-sm font-body font-medium px-4 py-2 rounded-full border transition-all ${formData.services.includes(s) ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+                className={`text-sm font-body font-medium px-4 py-2 rounded-full border transition-all ${formData.services.includes(s) ? "bg-n-orange border-n-orange text-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
               >
                 {s}
               </button>
@@ -236,7 +236,7 @@ export default function ContactForm() {
           </div>
         </div>
         <div>
-          <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.referredBy}</label>
+          <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.referredBy}</label>
           <input
             list="org-partner-options"
             value={formData.referredBy}
@@ -253,7 +253,7 @@ export default function ContactForm() {
           </datalist>
         </div>
         <div>
-          <label className="block font-body text-sm font-semibold text-v-ink mb-2">{c.message}</label>
+          <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.message}</label>
           <textarea
             value={formData.message}
             onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
@@ -265,12 +265,12 @@ export default function ContactForm() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="w-full bg-v-green text-v-ink font-display font-bold text-base py-4 rounded-xl hover:bg-v-green-dark transition-colors disabled:opacity-60"
+          className="w-full bg-n-orange text-n-ink font-display font-bold text-base py-4 rounded-xl hover:bg-n-orange-dark transition-colors disabled:opacity-60"
         >
           {status === "loading" ? c.submitting : c.submit}
         </button>
         {status === "error" && <p className="text-red-500 text-sm text-center font-body">{c.errorMsg}</p>}
-        <p className="text-xs text-v-muted text-center font-body">{c.footerNote}</p>
+        <p className="text-xs text-n-muted text-center font-body">{c.footerNote}</p>
       </form>
     </div>
   );

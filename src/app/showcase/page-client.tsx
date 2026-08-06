@@ -32,23 +32,23 @@ type ShowcaseProject = {
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
-    return "bg-v-blue/20 text-v-ink border-v-blue/40";
+    return "bg-n-purple/20 text-n-ink border-n-purple/40";
   }
   if (key.includes("social")) {
-    return "bg-v-green/20 text-v-ink border-v-green/40";
+    return "bg-n-orange/20 text-n-ink border-n-orange/40";
   }
   if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
-    return "bg-v-yellow/40 text-v-ink border-v-yellow";
+    return "bg-n-yellow/40 text-n-ink border-n-yellow";
   }
   return "bg-slate-100 text-slate-600 border-slate-200";
 }
 
 function ShowcaseMobileCard({ project, isDuplicate = false }: { project: ShowcaseProject; isDuplicate?: boolean }) {
   return (
-    <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+    <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
       <div className={`${project.colorClass} h-2`} />
       {project.imageUrl ? (
-        <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
+        <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white overflow-hidden">
           <Image
             src={project.imageUrl}
             alt={isDuplicate ? "" : `${project.name} project`}
@@ -60,8 +60,8 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
           />
         </div>
       ) : (
-        <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white h-36 flex items-center justify-center">
-          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+        <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white h-36 flex items-center justify-center">
+          <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
         </div>
       )}
       <div className="p-5 flex-1 flex flex-col">
@@ -74,29 +74,29 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
           <span
             className={`tag text-xs flex-shrink-0 ${
               project.status === "Completed"
-                ? "bg-v-green/25 text-v-ink"
+                ? "bg-n-orange/25 text-n-ink"
                 : project.status === "Ongoing"
-                ? "bg-v-blue/25 text-v-ink"
-                : "bg-v-yellow/35 text-v-ink"
+                ? "bg-n-purple/25 text-n-ink"
+                : "bg-n-yellow/35 text-n-ink"
             }`}
           >
             {project.status}
           </span>
         </div>
-        <h3 className="font-display font-bold text-v-ink text-lg mb-1">{project.name}</h3>
-        <p className="font-body text-sm text-v-muted mb-3">{project.type}</p>
+        <h3 className="font-display font-bold text-n-ink text-lg mb-1">{project.name}</h3>
+        <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
         {isDuplicate ? (
-          <p className="showcase-project-mobile-description flex-1 font-body text-sm text-v-ink/70 leading-relaxed">{project.desc}</p>
+          <p className="showcase-project-mobile-description flex-1 font-body text-sm text-n-ink/70 leading-relaxed">{project.desc}</p>
         ) : (
           <ExpandableDescription desc={project.desc} className="flex-1" />
         )}
         {project.quote && (
-          <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+          <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
             &ldquo;{project.quote}&rdquo;
           </blockquote>
         )}
         <div className="flex items-center justify-between mt-4">
-          <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
             {project.neighborhood}
           </p>
@@ -105,7 +105,7 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
               href={project.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-body text-xs font-semibold text-v-blue hover:underline"
+              className="font-body text-xs font-semibold text-n-purple hover:underline"
             >
               View live site →
             </a>
@@ -338,10 +338,10 @@ export default function ShowcaseClient({
   return (
     <>
       {/* ── INTRO ─────────────────────────────────────────────── */}
-      <section className="bg-v-dark pt-32 pb-0 relative overflow-hidden">
+      <section className="bg-n-dark pt-32 pb-0 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
+            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">
               Our Work
             </p>
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -350,7 +350,7 @@ export default function ShowcaseClient({
                 style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
               >
                 Projects across<br />
-                <span className="text-v-green">New York City</span>
+                <span className="text-n-orange">New York City</span>
               </h1>
               <div className="flex gap-8 md:pb-2">
                 {[
@@ -358,7 +358,7 @@ export default function ShowcaseClient({
                   { value: formatCounter(orgPartners, true), label: "Community organizations" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
-                    <p className="font-display font-bold text-v-green text-3xl leading-none">{s.value}</p>
+                    <p className="font-display font-bold text-n-orange text-3xl leading-none">{s.value}</p>
                     <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-1">{s.label}</p>
                   </div>
                 ))}
@@ -377,19 +377,19 @@ export default function ShowcaseClient({
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-6 flex items-end justify-between flex-wrap gap-3">
-            <h2 className="font-display font-bold text-v-ink text-2xl md:text-3xl">
+            <h2 className="font-display font-bold text-n-ink text-2xl md:text-3xl">
               Selected Projects
             </h2>
-            <Link href="/updates" className="font-body text-sm font-semibold text-v-blue hover:underline">
+            <Link href="/updates" className="font-body text-sm font-semibold text-n-purple hover:underline">
               See progress updates →
             </Link>
           </AnimatedSection>
 
           {projects.length === 0 ? (
-            <div className="border border-v-border rounded-xl bg-v-bg px-6 py-10 text-center">
-              <p className="font-display text-xl font-bold text-v-ink">Project stories are being prepared.</p>
-              <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-v-muted">Novus teams are actively building with businesses across the city. Check back soon for the next published case studies.</p>
-              <Link href="/partners#contact" className="mt-5 inline-flex font-body text-sm font-semibold text-v-blue hover:underline">Get free business support →</Link>
+            <div className="border border-n-border rounded-xl bg-n-bg px-6 py-10 text-center">
+              <p className="font-display text-xl font-bold text-n-ink">Project stories are being prepared.</p>
+              <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-n-muted">Novus teams are actively building with businesses across the city. Check back soon for the next published case studies.</p>
+              <Link href="/partners#contact" className="mt-5 inline-flex font-body text-sm font-semibold text-n-purple hover:underline">Get free business support →</Link>
             </div>
           ) : (
             <>
@@ -425,10 +425,10 @@ export default function ShowcaseClient({
                   gap={24}
                 >
                   {projects.map((p) => (
-                    <div key={`desktop-${p.name}`} className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+                    <div key={`desktop-${p.name}`} className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
-                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
+                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
                           <Image
                             src={p.imageUrl}
                             alt={`${p.name} project`}
@@ -440,8 +440,8 @@ export default function ShowcaseClient({
                           />
                         </div>
                       ) : (
-                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
-                          <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+                        <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white h-40 flex items-center justify-center">
+                          <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
                         </div>
                       )}
                       <div className="p-7 flex flex-col">
@@ -454,25 +454,25 @@ export default function ShowcaseClient({
                           <span
                             className={`tag text-xs flex-shrink-0 ${
                               p.status === "Completed"
-                                ? "bg-v-green/25 text-v-ink"
+                                ? "bg-n-orange/25 text-n-ink"
                                 : p.status === "Ongoing"
-                                ? "bg-v-blue/25 text-v-ink"
-                                : "bg-v-yellow/35 text-v-ink"
+                                ? "bg-n-purple/25 text-n-ink"
+                                : "bg-n-yellow/35 text-n-ink"
                             }`}
                           >
                             {p.status}
                           </span>
                         </div>
-                        <h3 className="font-display font-bold text-v-ink text-xl mb-1">{p.name}</h3>
-                        <p className="font-body text-sm text-v-muted mb-3">{p.type}</p>
+                        <h3 className="font-display font-bold text-n-ink text-xl mb-1">{p.name}</h3>
+                        <p className="font-body text-sm text-n-muted mb-3">{p.type}</p>
                         <ExpandableDescription desc={p.desc} />
                         {p.quote && (
-                          <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+                          <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
                             &ldquo;{p.quote}&rdquo;
                           </blockquote>
                         )}
                         <div className="flex items-center justify-between mt-4">
-                          <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+                          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
                             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
                             {p.neighborhood}
                           </p>
@@ -481,7 +481,7 @@ export default function ShowcaseClient({
                               href={p.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-body text-xs font-semibold text-v-blue hover:underline"
+                              className="font-body text-xs font-semibold text-n-purple hover:underline"
                             >
                               View live site →
                             </a>
@@ -498,7 +498,7 @@ export default function ShowcaseClient({
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────── */}
-      <section className="py-20 bg-v-dark text-center">
+      <section className="py-20 bg-n-dark text-center">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
@@ -509,7 +509,7 @@ export default function ShowcaseClient({
             </p>
             <Link
               href="/partners#contact"
-              className="inline-flex items-center justify-center rounded-full bg-v-green px-8 py-3.5 font-display text-base font-bold text-v-ink transition-colors hover:bg-v-green-dark"
+              className="inline-flex items-center justify-center rounded-full bg-n-orange px-8 py-3.5 font-display text-base font-bold text-n-ink transition-colors hover:bg-n-orange-dark"
             >
               Work with us
             </Link>

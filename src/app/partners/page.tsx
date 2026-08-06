@@ -21,7 +21,7 @@ import {
 import petiteDumplingStorefront from "../../../public/petite-dumpling-storefront.jpg";
 
 export const metadata: Metadata = {
-  title: "Free Help for NYC Small Businesses | Novus NYC",
+  title: "Free Help for NYC Small Businesses",
   description:
     "NYC small businesses: get a free website, social media, grant writing, or SEO from a dedicated student team. No cost, no catch. Novus NYC is a registered 501(c)(3) nonprofit.",
   openGraph: {
@@ -37,7 +37,7 @@ const SERVICES = [
     icon: GlobeIcon,
     title: "Website Design & Development",
     summary: "We build your website from scratch, or fix the one you have.",
-    color: "text-v-blue",
+    color: "text-n-purple",
     bg: "bg-blue-50",
     details: [
       "Custom website built or redesigned from scratch",
@@ -49,7 +49,7 @@ const SERVICES = [
     icon: SearchIcon,
     title: "SEO & Online Visibility",
     summary: "Show up when customers search for you on Google and Maps.",
-    color: "text-v-blue",
+    color: "text-n-purple",
     bg: "bg-blue-50",
     details: [
       "Google Business Profile setup and optimization",
@@ -61,8 +61,8 @@ const SERVICES = [
     icon: SmartphoneIcon,
     title: "Social Media & Content",
     summary: "A posting plan and real content — not a strategy deck you'll never use.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
+    color: "text-n-orange",
+    bg: "bg-orange-50",
     details: [
       "Weekly posting plan based on your goals",
       "Original short videos and graphics using your story",
@@ -73,8 +73,8 @@ const SERVICES = [
     icon: PencilIcon,
     title: "Graphic Design",
     summary: "Print and digital materials your customers actually take home.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
+    color: "text-n-orange",
+    bg: "bg-orange-50",
     details: [
       "Menu design and layout for restaurants and cafés",
       "Flyers, signage, and promotional materials",
@@ -235,7 +235,7 @@ export default async function Partners() {
       >
         <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">
+            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">
               For NYC Small Businesses
             </p>
             <h1
@@ -243,7 +243,7 @@ export default async function Partners() {
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
               Free, dedicated support for<br />
-              <span className="text-v-green">local businesses and entrepreneurs.</span>
+              <span className="text-n-orange">local businesses and entrepreneurs.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
               Novus NYC partners with small businesses to provide critical digital and strategic infrastructure, from web design to marketing and outreach. Our teams provide clear project planning, consistent communication, and concrete results, entirely free of charge.
@@ -251,13 +251,13 @@ export default async function Partners() {
             <div className="flex gap-4 flex-wrap">
               <a
                 href="#contact"
-                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-colors"
+                className="bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-colors"
               >
                 Get started →
               </a>
               <Link
                 href="/showcase"
-                className="bg-v-blue text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-blue-dark transition-colors"
+                className="bg-n-purple text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-purple-dark transition-colors"
               >
                 See our work
               </Link>
@@ -267,13 +267,13 @@ export default async function Partners() {
       </ParallaxHero>
 
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
-      <section className="py-16 bg-v-bg" id="contact">
+      <section className="py-16 bg-n-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <h2 className="page-section-heading text-v-ink mb-4">
+            <h2 className="page-section-heading text-n-ink mb-4">
               Work with us
             </h2>
-            <p className="font-body text-v-muted max-w-xl">
+            <p className="font-body text-n-muted max-w-xl">
               Tell us about your business and what you need. It&apos;s free, with no contract
               or obligation. Switch the form to your preferred language using the toggle
               below. If you were referred by a BID, mention that in your message.
@@ -292,37 +292,37 @@ export default async function Partners() {
       <section id="services" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-v-ink">
+            <h2 className="page-section-heading text-n-ink">
               What your business receives
             </h2>
-            <p className="font-body text-v-muted mt-3 max-w-xl">
+            <p className="font-body text-n-muted mt-3 max-w-xl">
               Your student team scopes the work with you, shares regular updates, and hands over clear, usable deliverables at the end of the project.
             </p>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SERVICES.map((service, i) => (
               <AnimatedSection key={service.title} delay={i * 0.06}>
-                <details className="group h-full rounded-2xl border border-v-border bg-v-bg px-5 py-5 transition duration-200 hover:-translate-y-0.5 hover:border-v-green/60 hover:shadow-[0_8px_20px_rgba(31,36,42,0.08)]">
+                <details className="group h-full rounded-2xl border border-n-border bg-n-bg px-5 py-5 transition duration-200 hover:-translate-y-0.5 hover:border-n-orange/60 hover:shadow-[0_8px_20px_rgba(31,36,42,0.08)]">
                   <summary className="list-none cursor-pointer">
                     <div className="flex items-start gap-3">
                       <span className={`w-10 h-10 rounded-xl ${service.bg} flex items-center justify-center shrink-0`}>
                         <service.icon className={`w-4 h-4 ${service.color}`} />
                       </span>
                       <div className="flex-1 min-w-0">
-                        <span className="block font-display font-bold text-v-ink text-base leading-tight">
+                        <span className="block font-display font-bold text-n-ink text-base leading-tight">
                           {service.title}
                         </span>
-                        <span className="block font-body text-sm text-v-muted mt-1 leading-relaxed">
+                        <span className="block font-body text-sm text-n-muted mt-1 leading-relaxed">
                           {service.summary}
                         </span>
                       </div>
-                      <svg className="w-4 h-4 text-v-muted mt-1.5 shrink-0 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-n-muted mt-1.5 shrink-0 group-open:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </summary>
                   <div className="accordion-body mt-4 pl-[3.25rem]">
-                    <ul className="list-disc pl-5 space-y-1.5 font-body text-sm text-v-muted">
+                    <ul className="list-disc pl-5 space-y-1.5 font-body text-sm text-n-muted">
                       {service.details.map((detail) => (
                         <li key={detail}>{detail}</li>
                       ))}
@@ -342,26 +342,26 @@ export default async function Partners() {
         <BrandTexture tone="peach" />
         <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-v-ink">Partners we&apos;re supporting</h2>
-            <p className="font-body text-v-muted mt-3 max-w-2xl">
+            <h2 className="page-section-heading text-n-ink">Partners we&apos;re supporting</h2>
+            <p className="font-body text-n-muted mt-3 max-w-2xl">
               A few examples of the neighborhood businesses currently working with Novus.
             </p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-4">
             {PARTNER_EXAMPLES.map((project, index) => (
               <AnimatedSection key={project.name} delay={index * 0.08}>
-                <article className="h-full border border-v-border rounded-xl bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-v-green/60 hover:shadow-[0_8px_20px_rgba(31,36,42,0.08)]">
+                <article className="h-full border border-n-border rounded-xl bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-n-orange/60 hover:shadow-[0_8px_20px_rgba(31,36,42,0.08)]">
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
-                      <p className="font-display font-bold text-v-ink text-xl">{project.name}</p>
-                      <p className="font-body text-sm text-v-muted mt-1">{project.type} · {project.neighborhood}</p>
+                      <p className="font-display font-bold text-n-ink text-xl">{project.name}</p>
+                      <p className="font-body text-sm text-n-muted mt-1">{project.type} · {project.neighborhood}</p>
                     </div>
                     <span className={`w-3 h-3 rounded-full ${project.color} shrink-0 mt-1.5`} aria-hidden="true" />
                   </div>
-                  <p className="font-body text-sm text-v-muted leading-relaxed mb-4">{project.desc}</p>
+                  <p className="font-body text-sm text-n-muted leading-relaxed mb-4">{project.desc}</p>
                   <div className="flex flex-wrap gap-2">
                     {project.services.map((service) => (
-                      <span key={service} className="font-body text-xs font-semibold text-v-ink bg-v-bg border border-v-border px-2.5 py-1 rounded-full">
+                      <span key={service} className="font-body text-xs font-semibold text-n-ink bg-n-bg border border-n-border px-2.5 py-1 rounded-full">
                         {service}
                       </span>
                     ))}
@@ -378,10 +378,10 @@ export default async function Partners() {
         <BrandTexture tone="peach" />
         <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8 md:mb-10 text-center">
-            <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
+            <p className="font-body text-xs uppercase tracking-[0.22em] text-n-orange font-bold mb-3">
               Community connections
             </p>
-            <h2 className="page-section-heading text-v-ink">
+            <h2 className="page-section-heading text-n-ink">
               Connected to the organizations that serve NYC businesses.
             </h2>
           </AnimatedSection>
@@ -393,7 +393,7 @@ export default async function Partners() {
                   href={partner.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex min-h-32 flex-col items-center justify-center border border-v-border bg-v-bg px-3 py-4 rounded-lg transition duration-200 hover:-translate-y-0.5 hover:border-v-green/60 hover:bg-white hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)]"
+                  className="group flex min-h-32 flex-col items-center justify-center border border-n-border bg-n-bg px-3 py-4 rounded-lg transition duration-200 hover:-translate-y-0.5 hover:border-n-orange/60 hover:bg-white hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)]"
                   aria-label={`Visit ${partner.name}`}
                 >
                   <Image
@@ -403,7 +403,7 @@ export default async function Partners() {
                     height={90}
                     className="max-h-12 w-full object-contain transition duration-200 group-hover:brightness-110"
                   />
-                  <span className="mt-3 text-center font-body text-[11px] font-semibold leading-snug text-v-ink">
+                  <span className="mt-3 text-center font-body text-[11px] font-semibold leading-snug text-n-ink">
                     {partner.name}
                   </span>
                 </a>
@@ -420,7 +420,7 @@ export default async function Partners() {
         <BrandTexture tone="lavender" />
         <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <h2 className="page-section-heading text-v-ink">Frequently asked questions</h2>
+            <h2 className="page-section-heading text-n-ink">Frequently asked questions</h2>
           </AnimatedSection>
           <AnimatedSection>
             <FaqAccordion categories={PARTNER_FAQ_CATEGORIES} />
@@ -429,7 +429,7 @@ export default async function Partners() {
       </section>
 
       {/* ── BOTTOM CTA ─────────────────────────────────────── */}
-      <section className="py-16 bg-v-dark text-center">
+      <section className="py-16 bg-n-dark text-center">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="page-section-heading text-white mb-4">
@@ -441,13 +441,13 @@ export default async function Partners() {
             <div className="flex gap-4 justify-center flex-wrap">
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center rounded-full bg-v-green px-8 py-3.5 font-display text-base font-bold text-v-ink transition-colors hover:bg-v-green-dark"
+                className="inline-flex items-center justify-center rounded-full bg-n-orange px-8 py-3.5 font-display text-base font-bold text-n-ink transition-colors hover:bg-n-orange-dark"
               >
                 Request support →
               </a>
               <Link
                 href="/showcase"
-                className="inline-flex items-center justify-center rounded-full bg-v-blue px-8 py-3.5 font-display text-base font-bold text-v-ink transition-colors hover:bg-v-blue-dark"
+                className="inline-flex items-center justify-center rounded-full bg-n-purple px-8 py-3.5 font-display text-base font-bold text-n-ink transition-colors hover:bg-n-purple-dark"
               >
                 See our work
               </Link>

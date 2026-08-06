@@ -98,9 +98,9 @@ function sampleValue(variable: string): string {
     case "issuedBy": return "Ethan Zhang";
     case "note": return "Please reply to client emails by EOD.";
     case "openAssignmentCount": return "12";
-    case "link":       return "https://novusnyc.org/members";
-    case "portalLink": return "https://novusnyc.org/members";
-    case "magicLink":  return "https://novusnyc.org/members";
+    case "link":       return "https://www.novusnyc.org/members";
+    case "portalLink": return "https://www.novusnyc.org/members";
+    case "magicLink":  return "https://www.novusnyc.org/members";
     default: return variable;
   }
 }

@@ -45,8 +45,8 @@ const STATUS_STYLES: Record<AssignmentStatus, string> = {
 };
 
 const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-blue-500",
-  Marketing: "bg-lime-500",
+  Tech: "bg-violet-500",
+  Marketing: "bg-orange-500",
   Finance: "bg-amber-500",
   General: "bg-gray-400",
 };
@@ -54,8 +54,8 @@ const TRACK_DOT: Record<CycleTrack, string> = {
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 
 const TRACK_BORDER: Record<CycleTrack, string> = {
-  Tech: "border-l-blue-500/50",
-  Marketing: "border-l-lime-500/50",
+  Tech: "border-l-violet-500/50",
+  Marketing: "border-l-orange-500/50",
   Finance: "border-l-amber-500/50",
   General: "border-l-gray-400/50",
 };

@@ -17,7 +17,7 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 <head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;margin:0;padding:0;">
   <div style="font-family:Garamond,'EB Garamond',serif;font-size:15px;line-height:1.7;color:#111111;max-width:520px;margin:0 auto;padding:32px 24px;">
-    <img src="https://novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="display:block;margin-bottom:28px;">
+    <img src="https://www.novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="display:block;margin-bottom:28px;">
     <p style="margin:0 0 20px;">Hi {{firstName}},</p>
     <p style="margin:0 0 16px;">We received a request to reset the password for your Novus NYC member portal account. Click the button below to choose a new password.</p>
     <p style="margin:0 0 28px;">
@@ -30,7 +30,7 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 </html>`;
 
 function siteOrigin(req: NextRequest): string {
-  const host = req.headers.get("host") ?? "novusnyc.org";
+  const host = req.headers.get("host") ?? "www.novusnyc.org";
   const proto = req.headers.get("x-forwarded-proto") ?? "https";
   return `${proto}://${host}`;
 }

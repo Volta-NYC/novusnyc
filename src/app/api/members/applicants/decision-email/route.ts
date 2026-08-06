@@ -28,7 +28,7 @@ const DEFAULT_ACCEPTED_HTML = `<!DOCTYPE html>
 <head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;margin:0;padding:0;">
   <div style="font-family:Garamond,'EB Garamond',serif;font-size:15px;line-height:1.7;color:#111111;max-width:520px;margin:0 auto;padding:32px 24px;">
-    <img src="https://novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="display:block;margin-bottom:28px;">
+    <img src="https://www.novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="display:block;margin-bottom:28px;">
     <p style="margin:0 0 16px;">Hi {{firstName}},</p>
     <p style="margin:0 0 16px;">Congratulations! You've been accepted to Novus NYC.</p>
     <p style="margin:0 0 24px;">Click below to set up your member portal account:</p>
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   }
 
   const sb = getSupabaseAdmin();
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://novusnyc.org").trim();
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? req.nextUrl.origin ?? "https://www.novusnyc.org").trim();
   const signupUrl = `${baseUrl}/members/signup?email=${encodeURIComponent(applicantEmail)}`;
 
   const from = getDefaultFromAddress();

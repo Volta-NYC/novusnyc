@@ -37,7 +37,7 @@ export default function ExpandableDescription({ desc, className = "" }: Props) {
       {/* Collapsed view — always clamped, hidden when expanded */}
       <p
         ref={measureRef}
-        className="font-body text-sm text-v-ink/70 leading-relaxed"
+        className="font-body text-sm text-n-ink/70 leading-relaxed"
         style={
           expanded
             ? { display: "none" }
@@ -54,7 +54,7 @@ export default function ExpandableDescription({ desc, className = "" }: Props) {
 
       {/* Expanded view — completely unstyled, no clamping at all */}
       {expanded && (
-        <p className="font-body text-sm text-v-ink/70 leading-relaxed">
+        <p className="font-body text-sm text-n-ink/70 leading-relaxed">
           {desc}
         </p>
       )}
@@ -62,7 +62,7 @@ export default function ExpandableDescription({ desc, className = "" }: Props) {
       {(isClamped || expanded) && (
         <button
           onClick={() => setExpanded((e) => !e)}
-          className="mt-1.5 font-body text-xs font-semibold text-v-green hover:underline focus:outline-none"
+          className="mt-1.5 font-body text-xs font-semibold text-n-orange hover:underline focus:outline-none"
         >
           {expanded ? "Less" : "More"}
         </button>

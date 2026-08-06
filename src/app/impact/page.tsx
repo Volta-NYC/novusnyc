@@ -10,7 +10,7 @@ import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 
 export const metadata: Metadata = {
-  title: "Impact | Novus NYC",
+  title: "Impact",
   description:
     "Novus NYC impact report: businesses served across NYC, student contributors from high schools and colleges nationwide. Outcomes in digital access, financial access, and marketing reach.",
   openGraph: {
@@ -30,16 +30,16 @@ const impactAreas = [
     title: "Digital Access",
     desc: "We build and deploy professional websites for small businesses that could not otherwise afford web development. Our work directly expands each business's reach and legitimacy online.",
     metrics: ["Avg. Google Maps impressions +340% post-SEO", "100% of websites are mobile-optimized and ADA compliant", "Median time to launch: 3 weeks"],
-    color: "border-v-blue",
-    accentBg: "bg-v-blue/10",
-    dot: "bg-v-blue-dark",
+    color: "border-n-purple",
+    accentBg: "bg-n-purple/10",
+    dot: "bg-n-purple-dark",
   },
   {
     title: "Financial Access",
     desc: "Many NYC small business owners are unaware of the grants and public programs they qualify for. Our finance track conducts research, prepares applications, and navigates the process on their behalf.",
     metrics: ["Grant applications submitted (cumulative)", "Average grant amount identified per business", "% of applicants receiving at least 1 award"],
-    color: "border-v-yellow",
-    accentBg: "bg-v-yellow/15",
+    color: "border-n-yellow",
+    accentBg: "bg-n-yellow/15",
     dot: "bg-amber-600",
     placeholder: true,
   },
@@ -47,9 +47,9 @@ const impactAreas = [
     title: "Marketing Reach",
     desc: "Our Marketing team supports social media and branding, grant and funding research, ambassador partnerships, and small business outreach alongside hands-on work for local businesses.",
     metrics: ["Average follower growth per account managed", "Avg. posts per week across active accounts", "Video content produced per semester"],
-    color: "border-v-green",
-    accentBg: "bg-v-green/10",
-    dot: "bg-v-green-dark",
+    color: "border-n-orange",
+    accentBg: "bg-n-orange/10",
+    dot: "bg-n-orange-dark",
     placeholder: true,
   },
 ];
@@ -93,28 +93,28 @@ export default async function Impact() {
       suffix: "+",
       label: "Businesses Served",
       sub: "Across NYC and beyond",
-      color: "text-v-green",
+      color: "text-n-orange",
     },
     {
       value: boosted(memberCount),
       suffix: "+",
       label: "Student Members",
       sub: "High school & college",
-      color: "text-v-blue",
+      color: "text-n-purple",
     },
     {
       value: boosted(liveStats.websiteProjects),
       suffix: "+",
       label: "Website Projects",
       sub: "Built and deployed",
-      color: "text-v-blue-dark",
+      color: "text-n-purple-dark",
     },
     {
       value: boosted(liveStats.marketingProjects),
       suffix: "+",
       label: "Marketing Projects",
       sub: "Social, content, SEO",
-      color: "text-v-green-dark",
+      color: "text-n-orange-dark",
     },
     {
       value: boosted(liveStats.caseStudies + liveStats.educationalReports),
@@ -128,25 +128,25 @@ export default async function Impact() {
       suffix: "+",
       label: "Community Partners",
       sub: "BIDs and nonprofits",
-      color: "text-v-ink",
+      color: "text-n-ink",
     },
   ];
 
   return (
     <>
       {/* Hero */}
-      <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-v-dark pt-32 pb-20" data-home-dark-end="true">
+      <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-n-dark pt-32 pb-20" data-home-dark-end="true">
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-v-green/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-n-orange/10 rounded-full blur-3xl" />
         <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Impact Report</p>
+            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">Impact Report</p>
             <h1
               className="font-display font-bold text-white leading-none tracking-tight mb-6"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
               Measurable outcomes.<br />
-              <span className="text-v-green">Real communities.</span>
+              <span className="text-n-orange">Real communities.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed">
               Novus NYC is not just a student organization — it&apos;s a proof of concept that students can
@@ -157,11 +157,11 @@ export default async function Impact() {
       </section>
 
       {/* Key Stats */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-20 bg-n-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">By the numbers</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Novus NYC — Spring 2026</h2>
+            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">By the numbers</p>
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-4xl">Novus NYC — Spring 2026</h2>
           </AnimatedSection>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {outcomes.map((o, i) => (
@@ -170,8 +170,8 @@ export default async function Impact() {
                   <div className={`font-display font-bold text-5xl mb-2 ${o.color}`}>
                     <CountUp end={o.value} suffix={o.suffix} />
                   </div>
-                  <p className="font-body text-sm font-semibold text-v-ink">{o.label}</p>
-                  <p className="font-body text-xs text-v-muted mt-1 leading-relaxed">{o.sub}</p>
+                  <p className="font-body text-sm font-semibold text-n-ink">{o.label}</p>
+                  <p className="font-body text-xs text-n-muted mt-1 leading-relaxed">{o.sub}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -183,21 +183,21 @@ export default async function Impact() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Three tracks of impact</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Where change happens</h2>
+            <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">Three tracks of impact</p>
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-4xl">Where change happens</h2>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
             {impactAreas.map((area, i) => (
               <AnimatedSection key={area.title} delay={i * 0.1}>
                 <div className={`border-l-4 ${area.color} ${area.accentBg} rounded-r-2xl p-8 h-full`}>
-                  <h3 className="font-display font-bold text-v-ink text-2xl mb-3">{area.title}</h3>
-                  <p className="font-body text-v-muted text-sm leading-relaxed mb-6">{area.desc}</p>
+                  <h3 className="font-display font-bold text-n-ink text-2xl mb-3">{area.title}</h3>
+                  <p className="font-body text-n-muted text-sm leading-relaxed mb-6">{area.desc}</p>
                   <div className="space-y-2.5">
                     {area.metrics.map((m) => (
-                      <div key={m} className="flex items-center gap-2.5 font-body text-sm text-v-ink">
+                      <div key={m} className="flex items-center gap-2.5 font-body text-sm text-n-ink">
                         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${area.dot}`} />
                         {area.placeholder ? (
-                          <span className="text-v-muted/60 italic">{m} — data pending</span>
+                          <span className="text-n-muted/60 italic">{m} — data pending</span>
                         ) : (
                           m
                         )}
@@ -212,25 +212,25 @@ export default async function Impact() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-20 bg-n-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">From our partners</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Business owner voices</h2>
+            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">From our partners</p>
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-4xl">Business owner voices</h2>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
               <AnimatedSection key={t.business} delay={i * 0.1}>
-                <div className="bg-white border border-v-border rounded-2xl p-8 project-card h-full flex flex-col">
-                  <div className="text-v-green text-4xl font-display leading-none mb-5">&ldquo;</div>
-                  <p className="font-body text-v-ink text-base leading-relaxed flex-1 italic">{t.quote}</p>
-                  <div className="flex items-center gap-3 mt-6 pt-6 border-t border-v-border">
-                    <div className="w-10 h-10 rounded-full bg-v-green/20 flex items-center justify-center flex-shrink-0">
-                      <span className="font-display font-bold text-v-green">{t.initials}</span>
+                <div className="bg-white border border-n-border rounded-2xl p-8 project-card h-full flex flex-col">
+                  <div className="text-n-orange text-4xl font-display leading-none mb-5">&ldquo;</div>
+                  <p className="font-body text-n-ink text-base leading-relaxed flex-1 italic">{t.quote}</p>
+                  <div className="flex items-center gap-3 mt-6 pt-6 border-t border-n-border">
+                    <div className="w-10 h-10 rounded-full bg-n-orange/20 flex items-center justify-center flex-shrink-0">
+                      <span className="font-display font-bold text-n-orange">{t.initials}</span>
                     </div>
                     <div>
-                      <p className="font-body text-sm font-semibold text-v-ink">{t.name}</p>
-                      <p className="font-body text-xs text-v-muted">{t.business}</p>
+                      <p className="font-body text-sm font-semibold text-n-ink">{t.name}</p>
+                      <p className="font-body text-xs text-n-muted">{t.business}</p>
                     </div>
                   </div>
                 </div>
@@ -241,12 +241,12 @@ export default async function Impact() {
       </section>
 
       {/* Geographic reach — links to the interactive map on /showcase */}
-      <section className="py-20 bg-v-dark">
+      <section className="py-20 bg-n-dark">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-10 items-center">
               <div>
-                <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-3">
+                <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">
                   Geographic reach
                 </p>
                 <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
@@ -259,7 +259,7 @@ export default async function Impact() {
                 </p>
                 <Link
                   href="/showcase"
-                  className="inline-block border border-white/20 text-white font-display font-bold text-sm px-6 py-3 rounded-full hover:border-v-green hover:text-v-green transition-colors"
+                  className="inline-block border border-white/20 text-white font-display font-bold text-sm px-6 py-3 rounded-full hover:border-n-orange hover:text-n-orange transition-colors"
                 >
                   View interactive map →
                 </Link>
@@ -284,24 +284,24 @@ export default async function Impact() {
       </section>
 
       {/* Recognition */}
-      <section className="py-20 bg-v-bg">
+      <section className="py-20 bg-n-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">Recognition</p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Institutional credibility</h2>
+            <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">Recognition</p>
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-4xl">Institutional credibility</h2>
           </AnimatedSection>
           <div className="space-y-4">
             {recognition.map((r, i) => (
               <AnimatedSection key={r.org} delay={i * 0.1}>
-                <div className={`bg-white border border-v-border rounded-2xl p-7 flex items-start gap-5 ${r.placeholder ? "opacity-60" : ""}`}>
-                  <div className="w-10 h-10 rounded-full bg-v-green/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-v-green text-lg">★</span>
+                <div className={`bg-white border border-n-border rounded-2xl p-7 flex items-start gap-5 ${r.placeholder ? "opacity-60" : ""}`}>
+                  <div className="w-10 h-10 rounded-full bg-n-orange/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-n-orange text-lg">★</span>
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-v-ink text-lg">{r.org}</h3>
-                    <p className="font-body text-sm text-v-muted mt-1">
+                    <h3 className="font-display font-bold text-n-ink text-lg">{r.org}</h3>
+                    <p className="font-body text-sm text-n-muted mt-1">
                       {r.desc}
-                      {r.placeholder && <span className="italic text-v-muted/50"> — details to be added</span>}
+                      {r.placeholder && <span className="italic text-n-muted/50"> — details to be added</span>}
                     </p>
                   </div>
                 </div>
@@ -312,10 +312,10 @@ export default async function Impact() {
       </section>
 
       {/* Future / transparency */}
-      <section className="py-14 bg-v-dark text-center">
+      <section className="py-14 bg-n-dark text-center">
         <div className="max-w-2xl mx-auto px-5">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-green uppercase tracking-widest mb-4">Transparency</p>
+            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">Transparency</p>
             <h2 className="font-display font-bold text-white text-2xl mb-4">
               This page is updated each semester.
             </h2>

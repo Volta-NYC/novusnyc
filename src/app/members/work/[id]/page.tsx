@@ -20,15 +20,15 @@ import {
 import { classifyMember } from "@/lib/members/cycleCompute";
 
 const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-blue-500",
-  Marketing: "bg-lime-500",
+  Tech: "bg-violet-500",
+  Marketing: "bg-orange-500",
   Finance: "bg-amber-500",
   General: "bg-gray-400",
 };
 
 const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech: "bg-blue-100 text-blue-800 border-blue-200",
-  Marketing: "bg-lime-100 text-lime-900 border-lime-200",
+  Tech: "bg-violet-100 text-violet-800 border-violet-200",
+  Marketing: "bg-orange-100 text-orange-900 border-orange-200",
   Finance: "bg-amber-100 text-amber-900 border-amber-200",
   General: "bg-gray-100 text-gray-700 border-gray-200",
 };

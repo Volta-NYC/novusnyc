@@ -15,7 +15,7 @@ import { formatCounter } from "@/lib/formatCounter";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
-  title: "Get Involved | Novus NYC",
+  title: "Get Involved",
   description:
     "Join Novus NYC to work on real projects for real businesses. All experience levels welcome. 5-minute application and rolling admissions.",
   openGraph: {
@@ -110,7 +110,7 @@ export default async function Join() {
       >
         <div className="relative flex flex-1 items-center max-w-7xl mx-auto w-full px-5 md:px-8 pb-16">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-4">
+            <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-4">
               For Students
             </p>
             <h1
@@ -118,7 +118,7 @@ export default async function Join() {
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
               Gain hands-on experience with<br />
-              <span className="text-v-blue">real projects with real impact.</span>
+              <span className="text-n-purple">real projects with real impact.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-4">
               Novus NYC places you on consulting teams to deliver tech and marketing work for local businesses. In Marketing, you can focus on social media and branding, grants and funding, ambassador work, small business outreach, or contribute across all four.
@@ -129,7 +129,7 @@ export default async function Join() {
             <div className="flex gap-4 flex-wrap mb-3">
               <Link
                 href="/apply"
-                className="bg-v-blue text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-blue-dark transition-colors"
+                className="bg-n-purple text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-purple-dark transition-colors"
               >
                 Apply Now →
               </Link>
@@ -154,7 +154,7 @@ export default async function Join() {
                 className="inline-flex items-center gap-4 font-body text-xs text-white/75 whitespace-nowrap px-2 select-none"
               >
                 {school}
-                <span className="w-1.5 h-1.5 rounded-full bg-v-blue opacity-80 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-n-purple opacity-80 flex-shrink-0" />
               </span>
             ))}
           </div>
@@ -165,8 +165,8 @@ export default async function Join() {
       <section id="benefits" className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-v-ink">Built for your resume — and beyond</h2>
-            <p className="font-body text-v-muted mt-3 max-w-xl">
+            <h2 className="page-section-heading text-n-ink">Built for your resume — and beyond</h2>
+            <p className="font-body text-n-muted mt-3 max-w-xl">
               Novus is built around outcomes that matter in interviews and on applications.
             </p>
           </AnimatedSection>
@@ -176,8 +176,8 @@ export default async function Join() {
                 <div className="flex gap-3 items-start">
                   <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[0.4rem] ${g.color.replace("text-", "bg-")}`} />
                   <div>
-                    <p className="font-display font-bold text-v-ink text-sm">{g.title}</p>
-                    <p className="font-body text-sm text-v-muted mt-0.5 leading-relaxed">{g.desc}</p>
+                    <p className="font-display font-bold text-n-ink text-sm">{g.title}</p>
+                    <p className="font-body text-sm text-n-muted mt-0.5 leading-relaxed">{g.desc}</p>
                   </div>
                 </div>
               </AnimatedSection>
@@ -206,35 +206,35 @@ export default async function Join() {
         <BrandTexture tone="lavender" />
         <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-v-ink">The leadership track</h2>
-            <p className="font-body text-v-muted text-lg mt-3 max-w-xl">
+            <h2 className="page-section-heading text-n-ink">The leadership track</h2>
+            <p className="font-body text-n-muted text-lg mt-3 max-w-xl">
               We promote based on the work you do, not how long you have been here. Strong contributors move up quickly.
             </p>
           </AnimatedSection>
           <div className="relative">
             {/* Single connecting line behind all circles */}
-            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-0.5 bg-v-blue/30 z-0" />
+            <div className="hidden md:block absolute top-5 left-[10%] right-[10%] h-0.5 bg-n-purple/30 z-0" />
             <div className="grid md:grid-cols-5 gap-6">
               {leadershipSteps.map((step, i) => (
                 <AnimatedSection key={step.role} delay={i * 0.1}>
                   <div className="relative flex flex-col items-start md:items-center">
-                    <div className="w-10 h-10 rounded-full bg-v-blue flex items-center justify-center mb-4 z-10 flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-n-purple flex items-center justify-center mb-4 z-10 flex-shrink-0">
                       <span className="font-display font-bold text-white text-sm">{i + 1}</span>
                     </div>
-                    <h3 className="font-display font-bold text-v-ink text-base mb-2 md:text-center">{step.role}</h3>
-                    <p className="font-body text-sm text-v-muted leading-relaxed md:text-center">{step.desc}</p>
+                    <h3 className="font-display font-bold text-n-ink text-base mb-2 md:text-center">{step.role}</h3>
+                    <p className="font-body text-sm text-n-muted leading-relaxed md:text-center">{step.desc}</p>
                   </div>
                 </AnimatedSection>
               ))}
             </div>
           </div>
           <AnimatedSection className="mt-10">
-            <h3 className="font-body text-xs font-semibold text-v-muted uppercase tracking-widest mb-4">Other roles</h3>
+            <h3 className="font-body text-xs font-semibold text-n-muted uppercase tracking-widest mb-4">Other roles</h3>
             <div className="grid md:grid-cols-3 gap-4">
               {otherRoles.map((role) => (
-                <div key={role.role} className="bg-v-bg border border-v-border rounded-2xl p-5">
-                  <h4 className="font-display font-bold text-v-ink text-base mb-2">{role.role}</h4>
-                  <p className="font-body text-sm text-v-muted leading-relaxed">{role.desc}</p>
+                <div key={role.role} className="bg-n-bg border border-n-border rounded-2xl p-5">
+                  <h4 className="font-display font-bold text-n-ink text-base mb-2">{role.role}</h4>
+                  <p className="font-body text-sm text-n-muted leading-relaxed">{role.desc}</p>
                 </div>
               ))}
             </div>
@@ -251,7 +251,7 @@ export default async function Join() {
         <BrandTexture tone="yellow" />
         <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-v-ink">Frequently Asked Questions</h2>
+            <h2 className="page-section-heading text-n-ink">Frequently Asked Questions</h2>
           </AnimatedSection>
           <AnimatedSection>
             <FaqAccordion categories={JOIN_FAQ_CATEGORIES} />

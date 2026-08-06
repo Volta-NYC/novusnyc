@@ -15,19 +15,19 @@ const TRACK_PREVIEWS = {
     label: "Sample project",
     title: "Launch a neighborhood business site",
     detail: "Turn a local business story into a fast, clear, customer-ready web experience.",
-    accent: "bg-v-blue",
-    mutedAccent: "bg-v-blue/15",
-    border: "border-v-blue/30",
-    text: "text-v-blue-dark",
+    accent: "bg-n-purple",
+    mutedAccent: "bg-n-purple/15",
+    border: "border-n-purple/30",
+    text: "text-n-purple-dark",
   },
   Marketing: {
     label: "Sample project",
     title: "Build a campaign people notice",
     detail: "Shape the story, content, and outreach that help a neighborhood business reach more people.",
-    accent: "bg-v-green",
-    mutedAccent: "bg-v-green/15",
-    border: "border-v-green/30",
-    text: "text-v-green-dark",
+    accent: "bg-n-orange",
+    mutedAccent: "bg-n-orange/15",
+    border: "border-n-orange/30",
+    text: "text-n-orange-dark",
   },
   "Finance & Operations": {
     label: "Sample project",
@@ -48,26 +48,26 @@ function ProjectPreview({ trackName }: { trackName: keyof typeof TRACK_PREVIEWS 
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <p className={`font-body text-xs font-semibold uppercase tracking-widest ${preview.text}`}>{preview.label}</p>
-          <h4 className="font-display font-bold text-v-ink text-lg mt-2 leading-tight">{preview.title}</h4>
+          <h4 className="font-display font-bold text-n-ink text-lg mt-2 leading-tight">{preview.title}</h4>
         </div>
         <span aria-hidden="true" className={`h-3 w-3 rounded-full ${preview.accent} shadow-[0_0_0_6px_rgba(255,255,255,0.7)]`} />
       </div>
 
-      <p className="font-body text-sm text-v-ink/75 leading-relaxed mb-6">{preview.detail}</p>
+      <p className="font-body text-sm text-n-ink/75 leading-relaxed mb-6">{preview.detail}</p>
 
       {trackName === "Digital & Tech" ? (
-        <div className="border border-v-blue/20 bg-v-blue/5 rounded-lg overflow-hidden">
-          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-v-blue/15">
-            <span className="h-1.5 w-1.5 rounded-full bg-v-blue/50" />
-            <span className="h-1.5 w-1.5 rounded-full bg-v-blue/35" />
-            <span className="h-1.5 w-1.5 rounded-full bg-v-blue/20" />
+        <div className="border border-n-purple/20 bg-n-purple/5 rounded-lg overflow-hidden">
+          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-n-purple/15">
+            <span className="h-1.5 w-1.5 rounded-full bg-n-purple/50" />
+            <span className="h-1.5 w-1.5 rounded-full bg-n-purple/35" />
+            <span className="h-1.5 w-1.5 rounded-full bg-n-purple/20" />
           </div>
           <div className="p-4">
-            <div className="h-2.5 w-20 bg-v-blue/60 rounded-full mb-4" />
-            <div className="h-5 w-4/5 bg-v-blue/25 rounded-md mb-2" />
-            <div className="h-2.5 w-3/5 bg-v-blue/15 rounded-full mb-5" />
+            <div className="h-2.5 w-20 bg-n-purple/60 rounded-full mb-4" />
+            <div className="h-5 w-4/5 bg-n-purple/25 rounded-md mb-2" />
+            <div className="h-2.5 w-3/5 bg-n-purple/15 rounded-full mb-5" />
             <div className="grid grid-cols-3 gap-2">
-              {[0, 1, 2].map((item) => <span key={item} className="h-12 rounded-md bg-v-blue/15" />)}
+              {[0, 1, 2].map((item) => <span key={item} className="h-12 rounded-md bg-n-purple/15" />)}
             </div>
           </div>
         </div>
@@ -75,16 +75,16 @@ function ProjectPreview({ trackName }: { trackName: keyof typeof TRACK_PREVIEWS 
 
       {trackName === "Marketing" ? (
         <div className="grid grid-cols-[1.15fr_0.85fr] gap-3">
-          <div className="border border-v-green/20 bg-v-green/5 rounded-lg p-3">
-            <div className="h-16 bg-v-green/25 rounded-md mb-3" />
-            <div className="h-2 w-4/5 bg-v-green/45 rounded-full mb-2" />
-            <div className="h-2 w-3/5 bg-v-green/20 rounded-full" />
+          <div className="border border-n-orange/20 bg-n-orange/5 rounded-lg p-3">
+            <div className="h-16 bg-n-orange/25 rounded-md mb-3" />
+            <div className="h-2 w-4/5 bg-n-orange/45 rounded-full mb-2" />
+            <div className="h-2 w-3/5 bg-n-orange/20 rounded-full" />
           </div>
           <div className="space-y-3">
             {["Content", "Outreach", "Review"].map((label, item) => (
-              <div key={label} className="flex items-center gap-2 border border-v-green/20 bg-white rounded-md px-2.5 py-2">
-                <span className={`h-2 w-2 rounded-full ${item === 0 ? "bg-v-green" : "bg-v-green/35"}`} />
-                <span className="font-body text-[10px] font-semibold text-v-ink">{label}</span>
+              <div key={label} className="flex items-center gap-2 border border-n-orange/20 bg-white rounded-md px-2.5 py-2">
+                <span className={`h-2 w-2 rounded-full ${item === 0 ? "bg-n-orange" : "bg-n-orange/35"}`} />
+                <span className="font-body text-[10px] font-semibold text-n-ink">{label}</span>
               </div>
             ))}
           </div>
@@ -95,7 +95,7 @@ function ProjectPreview({ trackName }: { trackName: keyof typeof TRACK_PREVIEWS 
         <div className="border border-amber-300 bg-amber-50 rounded-lg overflow-hidden">
           <div className="grid grid-cols-[1.2fr_0.8fr] gap-px bg-amber-200/70">
             {[["Grant research", "Ready"], ["Budget plan", "Review"], ["Owner report", "Draft"]].flatMap(([label, status]) => [
-              <div key={label} className="bg-white px-3 py-2.5 font-body text-xs text-v-ink">{label}</div>,
+              <div key={label} className="bg-white px-3 py-2.5 font-body text-xs text-n-ink">{label}</div>,
               <div key={status} className="bg-amber-50 px-3 py-2.5 font-body text-xs font-semibold text-amber-700">{status}</div>,
             ])}
           </div>
@@ -149,7 +149,7 @@ export default function TracksTabbed() {
                 onClick={() => setActive(index)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
                 className={`relative w-full overflow-hidden border rounded-lg px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)] ${
-                  selected ? `${item.color} ${itemPreview.border}` : "border-v-border bg-white text-v-ink/70 hover:border-v-ink/30"
+                  selected ? `${item.color} ${itemPreview.border}` : "border-n-border bg-white text-n-ink/70 hover:border-n-ink/30"
                 }`}
               >
                 {selected ? <motion.span layoutId={`${uid}-active-track`} className={`absolute inset-x-0 top-0 h-1 ${itemPreview.accent}`} /> : null}
@@ -158,8 +158,8 @@ export default function TracksTabbed() {
                     <item.icon className={`h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
                   </span>
                   <span>
-                    <span className="block font-display font-bold text-v-ink text-sm leading-tight">{item.name}</span>
-                    <span className="block font-body text-xs text-v-ink/65 mt-1">Explore the work</span>
+                    <span className="block font-display font-bold text-n-ink text-sm leading-tight">{item.name}</span>
+                    <span className="block font-body text-xs text-n-ink/65 mt-1">Explore the work</span>
                   </span>
                 </span>
               </button>
@@ -192,9 +192,9 @@ export default function TracksTabbed() {
                   </span>
                   <div>
                     <p className={`font-body text-xs font-semibold uppercase tracking-widest ${preview.text}`}>Your track</p>
-                    <h3 className="font-display font-bold text-v-ink text-2xl mt-1">{track.name}</h3>
+                    <h3 className="font-display font-bold text-n-ink text-2xl mt-1">{track.name}</h3>
                     {"description" in track && track.description ? (
-                      <p className="font-body mt-2 text-sm leading-relaxed text-v-ink/75">{track.description}</p>
+                      <p className="font-body mt-2 text-sm leading-relaxed text-n-ink/75">{track.description}</p>
                     ) : null}
                   </div>
                 </div>
@@ -207,8 +207,8 @@ export default function TracksTabbed() {
                     <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                       {track.subdepartments.map((department) => (
                         <div key={department.title}>
-                          <h4 className="font-display font-bold text-v-ink text-sm">{department.title}</h4>
-                          <p className="font-body mt-1 text-sm leading-relaxed text-v-ink/75">{department.desc}</p>
+                          <h4 className="font-display font-bold text-n-ink text-sm">{department.title}</h4>
+                          <p className="font-body mt-1 text-sm leading-relaxed text-n-ink/75">{department.desc}</p>
                         </div>
                       ))}
                     </div>
@@ -217,10 +217,10 @@ export default function TracksTabbed() {
 
                 <div className="grid gap-7 sm:grid-cols-2">
                   <div>
-                    <p className="font-body text-xs font-semibold text-v-ink/70 uppercase tracking-widest mb-3">Responsibilities</p>
+                    <p className="font-body text-xs font-semibold text-n-ink/70 uppercase tracking-widest mb-3">Responsibilities</p>
                     <ul className="space-y-2.5">
                       {track.doWhat.map((item) => (
-                        <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-ink/75 leading-relaxed">
+                        <li key={item} className="flex items-start gap-2.5 font-body text-sm text-n-ink/75 leading-relaxed">
                           <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[0.4rem] ${preview.accent}`} />
                           {item}
                         </li>
@@ -228,11 +228,11 @@ export default function TracksTabbed() {
                     </ul>
                   </div>
                   <div>
-                    <p className="font-body text-xs font-semibold text-v-ink/70 uppercase tracking-widest mb-3">Who fits in</p>
+                    <p className="font-body text-xs font-semibold text-n-ink/70 uppercase tracking-widest mb-3">Who fits in</p>
                     <ul className="space-y-2.5">
                       {track.skills.map((item) => (
-                        <li key={item} className="flex items-start gap-2.5 font-body text-sm text-v-ink/70 leading-relaxed">
-                          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-v-ink/35 flex-shrink-0 mt-[0.4rem]" />
+                        <li key={item} className="flex items-start gap-2.5 font-body text-sm text-n-ink/70 leading-relaxed">
+                          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-n-ink/35 flex-shrink-0 mt-[0.4rem]" />
                           {item}
                         </li>
                       ))}

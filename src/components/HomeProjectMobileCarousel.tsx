@@ -25,15 +25,15 @@ type HomeProject = {
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
-    return "bg-v-blue/20 text-v-ink border-v-blue/40";
+    return "bg-n-purple/20 text-n-ink border-n-purple/40";
   }
   if (key.includes("social")) {
-    return "bg-v-green/20 text-v-ink border-v-green/40";
+    return "bg-n-orange/20 text-n-ink border-n-orange/40";
   }
   if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
-    return "bg-v-yellow/40 text-v-ink border-v-yellow";
+    return "bg-n-yellow/40 text-n-ink border-n-yellow";
   }
-  return "bg-v-border text-v-muted border-v-border";
+  return "bg-n-border text-n-muted border-n-border";
 }
 
 function ProjectCard({ project, copy, index }: { project: HomeProject; copy: number; index: number }) {
@@ -44,10 +44,10 @@ function ProjectCard({ project, copy, index }: { project: HomeProject; copy: num
       delay={index * 0.05}
       className={`scroll-reveal scroll-reveal-card scroll-reveal-${index % 3} shrink-0 w-[82vw] max-w-[360px]`}
     >
-      <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+      <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
         <div className={`${project.colorClass} h-2`} />
         {project.imageUrl ? (
-          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white overflow-hidden">
+          <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white overflow-hidden">
             <Image
               src={project.imageUrl}
               alt={isDuplicate ? "" : `${project.name} project`}
@@ -59,8 +59,8 @@ function ProjectCard({ project, copy, index }: { project: HomeProject; copy: num
             />
           </div>
         ) : (
-          <div className="mx-4 mt-5 rounded-xl border border-v-border bg-white h-36 flex items-center justify-center">
-            <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+          <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white h-36 flex items-center justify-center">
+            <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
           </div>
         )}
         <div className="p-5 flex-1 flex flex-col">
@@ -70,28 +70,28 @@ function ProjectCard({ project, copy, index }: { project: HomeProject; copy: num
                 <span key={`${copy}-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
               ))}
             </div>
-            <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-v-green/25 text-v-ink" : project.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
+            <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
               {project.status}
             </span>
           </div>
-          <h3 className="font-display font-bold text-v-ink text-lg mb-1">{project.name}</h3>
-          <p className="font-body text-sm text-v-muted mb-3">{project.type}</p>
+          <h3 className="font-display font-bold text-n-ink text-lg mb-1">{project.name}</h3>
+          <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
           {project.desc && (isDuplicate ? (
-            <p className="home-project-mobile-description flex-1 font-body text-sm text-v-ink/70 leading-relaxed">{project.desc}</p>
+            <p className="home-project-mobile-description flex-1 font-body text-sm text-n-ink/70 leading-relaxed">{project.desc}</p>
           ) : (
             <ExpandableDescription desc={project.desc} className="flex-1" />
           ))}
           {project.quote && (
-            <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+            <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
               &ldquo;{project.quote}&rdquo;
             </blockquote>
           )}
           <div className="flex items-center justify-between mt-4">
-            <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+            <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
               <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
             </p>
             {project.url && !isDuplicate && (
-              <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
+              <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-n-purple hover:underline">
                 View live site →
               </a>
             )}

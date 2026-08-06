@@ -32,8 +32,8 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
 
   return (
     <nav aria-label="Page sections" className="fixed right-5 top-1/2 z-30 hidden -translate-y-1/2 2xl:block">
-      <div className="border-l border-v-border/80 pl-3">
-        <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-[0.16em] text-v-muted">On this page</p>
+      <div className="border-l border-n-border/80 pl-3">
+        <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-[0.16em] text-n-muted">On this page</p>
         <ol className="space-y-1.5">
           {sections.map((section) => {
             const active = activeId === section.id;
@@ -42,9 +42,9 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
                 <a
                   href={`#${section.id}`}
                   aria-current={active ? "location" : undefined}
-                  className={`group flex items-center gap-2 font-body text-xs transition-colors ${active ? "font-semibold text-v-ink" : "text-v-muted hover:text-v-ink"}`}
+                  className={`group flex items-center gap-2 font-body text-xs transition-colors ${active ? "font-semibold text-n-ink" : "text-n-muted hover:text-n-ink"}`}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full transition-transform duration-200 ${active ? "scale-125 bg-v-green" : "bg-v-border group-hover:bg-v-green/70"}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full transition-transform duration-200 ${active ? "scale-125 bg-n-orange" : "bg-n-border group-hover:bg-n-orange/70"}`} />
                   {section.label}
                 </a>
               </li>

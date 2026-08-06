@@ -34,11 +34,19 @@ const SECURITY_HEADERS = [
 const nextConfig = {
   poweredByHeader: false,
   images: {
+    // businesses.showcase_image_url may point at a partner's own domain. Any
+    // host used there MUST be listed, or next/image throws and the whole
+    // /showcase route 500s. Prefer uploading partner logos to Supabase Storage
+    // so this list does not have to grow with every new partner.
     remotePatterns: [
       {
         protocol: "https",
         hostname: "thzvuxuqvjkifpxlmoqc.supabase.co",
         pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "readyset1600.org",
       },
     ],
     // Serve WebP/AVIF where supported and cache optimized images on Vercel CDN.
@@ -77,10 +85,16 @@ const nextConfig = {
     ];
   },
   async redirects() {
+    // Pre-rebrand hosts. Each 301s path-for-path so deep links survive.
+    //
+    // www.novusnyc.org is the canonical host — Vercel already 301s the apex to
+    // www, so listing www here would redirect it back to the apex and loop.
     const OLD_HOSTS = [
-      "nyc.voltanpo.org",
+      "voltanyc.org",
       "www.voltanyc.org",
+      "nyc.voltanpo.org",
       "volta-nyc.vercel.app",
+      "novus-nyc.vercel.app",
     ];
     return [
       {
@@ -91,7 +105,7 @@ const nextConfig = {
       ...OLD_HOSTS.map((host) => ({
         source: "/:path*",
         has: [{ type: "host", value: host }],
-        destination: `https://novusnyc.org/:path*`,
+        destination: `https://www.novusnyc.org/:path*`,
         permanent: true,
       })),
     ];

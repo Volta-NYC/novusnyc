@@ -24,8 +24,8 @@ import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
 
 const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-blue-500",
-  Marketing: "bg-lime-500",
+  Tech: "bg-violet-500",
+  Marketing: "bg-orange-500",
   Finance: "bg-amber-500",
   General: "bg-gray-400",
 };

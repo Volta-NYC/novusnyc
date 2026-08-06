@@ -83,23 +83,26 @@ type ShowcaseColorValue =
   | "red-soft"
   | "red-mid"
   | "red-deep";
+// `value` is the token persisted in businesses.showcase_color and must not
+// change — the labels and swatches describe what actually renders, which is now
+// the Novus pastel palette (see SHOWCASE_COLOR_CLASS in app/page.tsx).
 const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; swatch: string }> = [
-  { value: "blue-soft", label: "Blue · Soft", swatch: "#93C5FD" },
-  { value: "blue-mid", label: "Blue · Mid", swatch: "#3B82F6" },
-  { value: "blue-deep", label: "Blue · Deep", swatch: "#1D4ED8" },
-  { value: "lime-soft", label: "Lime · Soft", swatch: "#BEF264" },
-  { value: "lime-mid", label: "Lime · Mid", swatch: "#84CC16" },
-  { value: "lime-deep", label: "Lime · Deep", swatch: "#3F6212" },
-  { value: "amber-soft", label: "Amber · Soft", swatch: "#FCD34D" },
-  { value: "amber-mid", label: "Amber · Mid", swatch: "#F59E0B" },
-  { value: "amber-deep", label: "Amber · Deep", swatch: "#B45309" },
-  { value: "pink-soft", label: "Pink · Soft", swatch: "#F9A8D4" },
-  { value: "pink-mid", label: "Pink · Mid", swatch: "#EC4899" },
-  { value: "pink-deep", label: "Pink · Deep", swatch: "#9D174D" },
-  { value: "purple-mid", label: "Purple · Mid", swatch: "#8B5CF6" },
-  { value: "red-soft", label: "Red · Soft", swatch: "#FCA5A5" },
-  { value: "red-mid", label: "Red · Mid", swatch: "#EF4444" },
-  { value: "red-deep", label: "Red · Deep", swatch: "#991B1B" },
+  { value: "blue-soft", label: "Violet · Soft", swatch: "#DDD6FE" },
+  { value: "blue-mid", label: "Violet · Mid", swatch: "#C4B5FD" },
+  { value: "blue-deep", label: "Violet · Deep", swatch: "#A78BFA" },
+  { value: "lime-soft", label: "Peach · Soft", swatch: "#FED7AA" },
+  { value: "lime-mid", label: "Peach · Mid", swatch: "#FDBA74" },
+  { value: "lime-deep", label: "Peach · Deep", swatch: "#FB923C" },
+  { value: "amber-soft", label: "Amber · Soft", swatch: "#FDE68A" },
+  { value: "amber-mid", label: "Amber · Mid", swatch: "#FCD34D" },
+  { value: "amber-deep", label: "Amber · Deep", swatch: "#FBBF24" },
+  { value: "pink-soft", label: "Fuchsia · Soft", swatch: "#F5D0FE" },
+  { value: "pink-mid", label: "Fuchsia · Mid", swatch: "#F0ABFC" },
+  { value: "pink-deep", label: "Fuchsia · Deep", swatch: "#E879F9" },
+  { value: "purple-mid", label: "Purple · Mid", swatch: "#D8B4FE" },
+  { value: "red-soft", label: "Rose · Soft", swatch: "#FECDD3" },
+  { value: "red-mid", label: "Rose · Mid", swatch: "#FDA4AF" },
+  { value: "red-deep", label: "Rose · Deep", swatch: "#FB7185" },
 ];
 const SHOWCASE_COLOR_VALUES = SHOWCASE_COLOR_OPTIONS.map((option) => option.value);
 const TEAM_EMAIL_FROM_OPTIONS = [
@@ -2249,7 +2252,7 @@ function BusinessesPageInner() {
                               <span key={s} className="tag border" style={{ background: "#EFF6FF", borderColor: "#BFDBFE", color: "#1D4ED8" }}>{s}</span>
                             ))}
                           </div>
-                          <span className={`tag text-xs flex-shrink-0 ml-2 ${status === "Completed" ? "bg-lime-100 text-lime-700" : status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
+                          <span className={`tag text-xs flex-shrink-0 ml-2 ${status === "Completed" ? "bg-orange-100 text-orange-700" : status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
                             {status}
                           </span>
                         </div>
@@ -2277,7 +2280,7 @@ function BusinessesPageInner() {
                           type="button"
                           title={b.showcaseFeaturedOnHome ? "Remove from home page" : "Feature on home page"}
                           onClick={(e) => { e.stopPropagation(); void handleScToggleHome(b); }}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors ${b.showcaseFeaturedOnHome ? "bg-lime-100 border-lime-300 text-lime-700" : "bg-white/80 border-[#E4E2DC] text-[#9B9B95]"}`}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors ${b.showcaseFeaturedOnHome ? "bg-orange-100 border-orange-300 text-orange-700" : "bg-white/80 border-[#E4E2DC] text-[#9B9B95]"}`}
                           draggable={false}
                         >
                           {b.showcaseFeaturedOnHome ? "★ Home" : "☆ Home"}

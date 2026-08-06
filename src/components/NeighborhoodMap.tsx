@@ -7,18 +7,18 @@ import "leaflet/dist/leaflet.css";
 
 function MapLoadingState() {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-v-bg" role="status" aria-label="Loading project map">
+    <div className="flex h-full w-full items-center justify-center bg-n-bg" role="status" aria-label="Loading project map">
       <div className="w-full max-w-xl px-8">
         <div className="mb-5 flex items-center gap-3">
-          <span className="h-3 w-3 rounded-full bg-v-green animate-pulse" />
-          <span className="h-2.5 w-32 rounded-full bg-v-border animate-pulse" />
+          <span className="h-3 w-3 rounded-full bg-n-orange animate-pulse" />
+          <span className="h-2.5 w-32 rounded-full bg-n-border animate-pulse" />
         </div>
-        <div className="relative h-56 overflow-hidden rounded-xl border border-v-border bg-white">
-          <span className="absolute -left-8 top-16 h-px w-[120%] rotate-[13deg] bg-v-blue/20" />
-          <span className="absolute -left-8 top-32 h-px w-[120%] -rotate-[9deg] bg-v-green/20" />
-          <span className="absolute left-[28%] top-[38%] h-4 w-4 rounded-full bg-v-green/40 ring-8 ring-v-green/10" />
-          <span className="absolute left-[63%] top-[62%] h-3 w-3 rounded-full bg-v-blue/45 ring-8 ring-v-blue/10" />
-          <span className="absolute left-[78%] top-[25%] h-3 w-3 rounded-full bg-v-yellow/55 ring-8 ring-v-yellow/20" />
+        <div className="relative h-56 overflow-hidden rounded-xl border border-n-border bg-white">
+          <span className="absolute -left-8 top-16 h-px w-[120%] rotate-[13deg] bg-n-purple/20" />
+          <span className="absolute -left-8 top-32 h-px w-[120%] -rotate-[9deg] bg-n-orange/20" />
+          <span className="absolute left-[28%] top-[38%] h-4 w-4 rounded-full bg-n-orange/40 ring-8 ring-n-orange/10" />
+          <span className="absolute left-[63%] top-[62%] h-3 w-3 rounded-full bg-n-purple/45 ring-8 ring-n-purple/10" />
+          <span className="absolute left-[78%] top-[25%] h-3 w-3 rounded-full bg-n-yellow/55 ring-8 ring-n-yellow/20" />
         </div>
       </div>
     </div>
@@ -83,26 +83,34 @@ function FitMapToPoints({ points }: { points: [number, number][] }) {
   return null;
 }
 
-// Derive precise map hex colors from Tailwind classes
-const getColorHex = (colorClass: string): string => {
-  if (colorClass.includes("blue-300")) return "#93C5FD";
-  if (colorClass.includes("blue-500")) return "#3B82F6";
-  if (colorClass.includes("blue-700")) return "#1D4ED8";
-  if (colorClass.includes("lime-300")) return "#BEF264";
-  if (colorClass.includes("lime-500")) return "#84CC16";
-  if (colorClass.includes("lime-700")) return "#3F6212";
-  if (colorClass.includes("amber-300")) return "#FCD34D";
-  if (colorClass.includes("amber-500")) return "#F59E0B";
-  if (colorClass.includes("amber-700")) return "#B45309";
-  if (colorClass.includes("pink-300")) return "#F9A8D4";
-  if (colorClass.includes("pink-500")) return "#EC4899";
-  if (colorClass.includes("pink-700")) return "#9D174D";
-  if (colorClass.includes("purple-500")) return "#8B5CF6";
-  if (colorClass.includes("red-300")) return "#FCA5A5";
-  if (colorClass.includes("red-500")) return "#EF4444";
-  if (colorClass.includes("red-700")) return "#991B1B";
-  return "#3B82F6"; // fallback
-};
+// Map hexes derived from the Tailwind class on each showcase card, so a dot
+// always matches its card. Each entry carries two values because the colour is
+// used for two different jobs: `fill` paints the dot (pastel, per the Novus
+// palette) and `text` is used for the popup label and link, which sit at 11px
+// on white and would be illegible in the pastel tone.
+const MARKER_HEX: Array<{ match: string; fill: string; text: string }> = [
+  { match: "violet-200",  fill: "#DDD6FE", text: "#6D28D9" },
+  { match: "violet-300",  fill: "#C4B5FD", text: "#6D28D9" },
+  { match: "violet-400",  fill: "#A78BFA", text: "#5B21B6" },
+  { match: "orange-200",  fill: "#FED7AA", text: "#C2410C" },
+  { match: "orange-300",  fill: "#FDBA74", text: "#C2410C" },
+  { match: "orange-400",  fill: "#FB923C", text: "#9A3412" },
+  { match: "amber-200",   fill: "#FDE68A", text: "#B45309" },
+  { match: "amber-300",   fill: "#FCD34D", text: "#B45309" },
+  { match: "amber-400",   fill: "#FBBF24", text: "#92400E" },
+  { match: "fuchsia-200", fill: "#F5D0FE", text: "#A21CAF" },
+  { match: "fuchsia-300", fill: "#F0ABFC", text: "#A21CAF" },
+  { match: "fuchsia-400", fill: "#E879F9", text: "#86198F" },
+  { match: "purple-300",  fill: "#D8B4FE", text: "#7E22CE" },
+  { match: "rose-200",    fill: "#FECDD3", text: "#BE123C" },
+  { match: "rose-300",    fill: "#FDA4AF", text: "#BE123C" },
+  { match: "rose-400",    fill: "#FB7185", text: "#9F1239" },
+];
+
+const FALLBACK_MARKER = { fill: "#C4B5FD", text: "#6D28D9" };
+
+const getMarkerColors = (colorClass: string): { fill: string; text: string } =>
+  MARKER_HEX.find((c) => colorClass.includes(c.match)) ?? FALLBACK_MARKER;
 
 function normalizeBorough(value?: string): "Brooklyn" | "Queens" | "Manhattan" | "Bronx" | "Staten Island" | "" {
   const raw = String(value ?? "").trim().toLowerCase();
@@ -115,13 +123,16 @@ function normalizeBorough(value?: string): "Brooklyn" | "Queens" | "Manhattan" |
   return "";
 }
 
-const BOROUGH_HEX: Record<string, string> = {
-  Brooklyn: "#65A30D", // lime-600
-  Queens: "#3B82F6", // blue-500
-  Manhattan: "#D97706", // amber-600
-  Bronx: "#8B5CF6", // violet-500
-  "Staten Island": "#E11D48", // rose-600
+// Same fill/text split as MARKER_HEX: pastel dot, readable popup label.
+const BOROUGH_HEX: Record<string, { fill: string; text: string }> = {
+  Brooklyn:        { fill: "#FDBA74", text: "#C2410C" }, // orange
+  Queens:          { fill: "#C4B5FD", text: "#6D28D9" }, // violet
+  Manhattan:       { fill: "#FCD34D", text: "#B45309" }, // amber
+  Bronx:           { fill: "#D8B4FE", text: "#7E22CE" }, // purple
+  "Staten Island": { fill: "#FDA4AF", text: "#BE123C" }, // rose
 };
+
+const BOROUGH_FALLBACK = { fill: "#CBD5E1", text: "#475569" };
 
 export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
   const markers = useMemo(
@@ -131,16 +142,17 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
         .map((p) => {
         const borough = normalizeBorough(p.borough ?? p.neighborhood);
         const isBid = p.source === "bid";
-        const hex = isBid
-          ? (BOROUGH_HEX[borough] ?? "#94A3B8")
-          : getColorHex(p.colorClass);
+        const marker = isBid
+          ? (BOROUGH_HEX[borough] ?? BOROUGH_FALLBACK)
+          : getMarkerColors(p.colorClass);
         return {
           ...p,
           borough,
           isBid,
           lat: Number(p.lat),
           lng: Number(p.lng),
-          hex,
+          hex: marker.fill,
+          textHex: marker.text,
         };
       }),
     [projects],
@@ -175,7 +187,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
             radius={8}
             fillColor={b.hex}
             fillOpacity={0.14}
-            color={b.hex}
+            color={b.textHex}
             opacity={0.45}
             weight={2}
           >
@@ -185,7 +197,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
                 <span style={{ color: "#6B7280", fontSize: 11 }}>{b.type}</span><br />
                 <span style={{ color: "#6B7280", fontSize: 11 }}>{b.neighborhood}</span><br />
                 <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: b.hex }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: b.textHex }}>
                     {b.status}
                   </span>
                   <span style={{ fontSize: 11, color: "#374151" }}>·</span>
@@ -196,7 +208,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
                     href={b.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: b.hex, textDecoration: "none" }}
+                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: b.textHex, textDecoration: "none" }}
                   >
                     View →
                   </a>
@@ -214,7 +226,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
             radius={3.5}
             fillColor={b.hex}
             fillOpacity={0.95}
-            color={b.hex}
+            color={b.textHex}
             weight={1.25}
           >
             <Popup>
@@ -223,7 +235,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
                 <span style={{ color: "#6B7280", fontSize: 11 }}>{b.type}</span><br />
                 <span style={{ color: "#6B7280", fontSize: 11 }}>{b.neighborhood}</span><br />
                 <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: b.hex }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: b.textHex }}>
                     {b.status}
                   </span>
                   <span style={{ fontSize: 11, color: "#374151" }}>·</span>
@@ -234,7 +246,7 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
                     href={b.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: b.hex, textDecoration: "none" }}
+                    style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, color: b.textHex, textDecoration: "none" }}
                   >
                     View →
                   </a>

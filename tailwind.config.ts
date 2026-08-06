@@ -10,13 +10,16 @@ const config: Config = {
   // Classes here are constructed dynamically via a color-name→class lookup map in
   // src/app/page.tsx (COLOR_CLASS_MAP). Tailwind can't see them at scan time.
   safelist: [
-    // soft/mid/deep shades used by public home page showcase cards (COLOR_CLASS_MAP)
-    "border-blue-300", // TRACK_META.Tech.chipClass applied dynamically in projects/page.tsx
-    "bg-blue-300",  "bg-blue-500",  "bg-blue-700",
-    "bg-lime-300",  "bg-lime-500",  "bg-lime-700",
-    "bg-amber-300", "bg-amber-500", "bg-amber-700",
-    "bg-pink-300",  "bg-pink-500",  "bg-pink-700",
-    "bg-red-300",   "bg-red-500",   "bg-red-700",
+    // Pastel soft/mid/deep shades resolved through SHOWCASE_COLOR_CLASS in
+    // app/page.tsx and showcase/page.tsx (DB-driven card colours)
+    "bg-violet-200",  "bg-violet-300",  "bg-violet-400",
+    "bg-orange-200",  "bg-orange-300",  "bg-orange-400",
+    "bg-amber-200",   "bg-amber-300",   "bg-amber-400",
+    "bg-fuchsia-200", "bg-fuchsia-300", "bg-fuchsia-400",
+    "bg-rose-200",    "bg-rose-300",    "bg-rose-400",
+    "bg-purple-300",
+    // TRACK_META.Tech.chipClass applied dynamically in members/projects/page.tsx
+    "border-violet-300",
   ],
   theme: {
     extend: {
@@ -24,21 +27,26 @@ const config: Config = {
         "3xl": "1920px",
       },
       colors: {
-        // All v-* colors reference CSS custom properties so the full palette
-        // can be updated in one place (globals.css :root). The <alpha-value>
-        // placeholder enables Tailwind opacity modifiers: bg-v-green/50, etc.
-        "v-green":      "rgb(var(--color-green) / <alpha-value>)",
-        "v-green-dark": "rgb(var(--color-green-dark) / <alpha-value>)",
-        "v-blue":       "rgb(var(--color-blue) / <alpha-value>)",
-        "v-blue-dark":  "rgb(var(--color-blue-dark) / <alpha-value>)",
-        "v-yellow":     "rgb(var(--color-yellow) / <alpha-value>)",
-        "v-yellow-dark": "rgb(var(--color-yellow-dark) / <alpha-value>)",
-        "v-bg":         "rgb(var(--color-bg) / <alpha-value>)",
-        "v-ink":        "rgb(var(--color-ink) / <alpha-value>)",
-        "v-muted":      "rgb(var(--color-muted) / <alpha-value>)",
-        "v-border":     "rgb(var(--color-border) / <alpha-value>)",
-        "v-card":       "rgb(var(--color-surface) / <alpha-value>)",
-        "v-dark":       "rgb(var(--color-dark) / <alpha-value>)",
+        // Novus palette. All n-* colors reference CSS custom properties so the
+        // full palette can be updated in one place (globals.css :root). The
+        // <alpha-value> placeholder enables Tailwind opacity modifiers:
+        // bg-n-orange/50, etc.
+        //
+        // The three brand hues are pastel yellow / orange / purple. Token names
+        // describe the actual hue — do not reintroduce colour-neutral or
+        // inherited names, they drift from the values and mislead.
+        "n-orange":      "rgb(var(--color-orange) / <alpha-value>)",      // peach #F6B78D
+        "n-orange-dark": "rgb(var(--color-orange-dark) / <alpha-value>)",
+        "n-yellow":      "rgb(var(--color-yellow) / <alpha-value>)",      // #F3E28D
+        "n-yellow-dark": "rgb(var(--color-yellow-dark) / <alpha-value>)",
+        "n-purple":      "rgb(var(--color-purple) / <alpha-value>)",      // lavender #BEA2BA
+        "n-purple-dark": "rgb(var(--color-purple-dark) / <alpha-value>)",
+        "n-bg":          "rgb(var(--color-bg) / <alpha-value>)",
+        "n-ink":         "rgb(var(--color-ink) / <alpha-value>)",
+        "n-muted":       "rgb(var(--color-muted) / <alpha-value>)",
+        "n-border":      "rgb(var(--color-border) / <alpha-value>)",
+        "n-card":        "rgb(var(--color-surface) / <alpha-value>)",
+        "n-dark":        "rgb(var(--color-dark) / <alpha-value>)",
       },
       fontFamily: {
         display: ["var(--font-space-grotesk)", "sans-serif"],

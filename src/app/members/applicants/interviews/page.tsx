@@ -55,7 +55,7 @@ function getSlotEndTimeMs(slot: InterviewSlot): number {
   return startMs + duration * 60_000;
 }
 
-const FALLBACK_BOOKING_URL = "https://novusnyc.org/book";
+const FALLBACK_BOOKING_URL = "https://www.novusnyc.org/book";
 
 function getMondayForDate(date: Date): Date {
   const d = new Date(date);

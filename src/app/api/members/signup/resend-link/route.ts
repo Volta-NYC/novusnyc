@@ -12,7 +12,7 @@ import { loadEmailTemplate } from "@/lib/server/emailTemplates";
 export const runtime = "nodejs";
 
 function siteOrigin(req: NextRequest): string {
-  const host = req.headers.get("host") ?? "novusnyc.org";
+  const host = req.headers.get("host") ?? "www.novusnyc.org";
   const proto = req.headers.get("x-forwarded-proto") ?? "https";
   return `${proto}://${host}`;
 }
@@ -22,7 +22,7 @@ const DEFAULT_SETUP_HTML = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-  <img src="https://novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="margin-bottom:24px">
+  <img src="https://www.novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="margin-bottom:24px">
   <h2 style="margin:0 0 8px;font-size:20px">Your portal setup link</h2>
   <p style="margin:0 0 24px;color:#555;font-size:15px">Hi {{firstName}}, click below to set up your Novus NYC member portal account.</p>
   <a href="{{link}}" style="display:inline-block;background:#F6B78D;color:#0d0d0d;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:15px">Set Up Account</a>

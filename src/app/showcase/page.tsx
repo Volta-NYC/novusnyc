@@ -8,7 +8,7 @@ import ShowcaseClient from "./page-client";
 export async function generateMetadata(): Promise<Metadata> {
   const liveStats = await getPublicLiveStats();
   return {
-    title: "Our Work | Novus NYC",
+    title: "Our Work",
     description:
       `Interactive map and project portfolio showing Novus NYC's active work across New York City — websites, social media, SEO, and grant writing for ${formatCounter(liveStats.totalBusinesses)} small businesses.`,
     openGraph: {
@@ -20,32 +20,32 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const SHOWCASE_COLOR_CLASS: Record<string, string> = {
-  "blue-soft": "bg-blue-300",
-  "blue-mid": "bg-blue-500",
-  "blue-deep": "bg-blue-700",
-  "lime-soft": "bg-lime-300",
-  "lime-mid": "bg-lime-500",
-  "lime-deep": "bg-lime-700",
-  "amber-soft": "bg-amber-300",
-  "amber-mid": "bg-amber-500",
-  "amber-deep": "bg-amber-700",
-  "pink-soft": "bg-pink-300",
-  "pink-mid": "bg-pink-500",
-  "pink-deep": "bg-pink-700",
-  "purple-mid": "bg-purple-500",
-  "red-soft": "bg-red-300",
-  "red-mid": "bg-red-500",
-  "red-deep": "bg-red-700",
+  "blue-soft": "bg-violet-200",
+  "blue-mid": "bg-violet-300",
+  "blue-deep": "bg-violet-400",
+  "lime-soft": "bg-orange-200",
+  "lime-mid": "bg-orange-300",
+  "lime-deep": "bg-orange-400",
+  "amber-soft": "bg-amber-200",
+  "amber-mid": "bg-amber-300",
+  "amber-deep": "bg-amber-400",
+  "pink-soft": "bg-fuchsia-200",
+  "pink-mid": "bg-fuchsia-300",
+  "pink-deep": "bg-fuchsia-400",
+  "purple-mid": "bg-purple-300",
+  "red-soft": "bg-rose-200",
+  "red-mid": "bg-rose-300",
+  "red-deep": "bg-rose-400",
   // Safety mapping for older entries.
-  green: "bg-lime-500",
-  blue: "bg-blue-500",
-  orange: "bg-red-500",
-  amber: "bg-amber-500",
-  pink: "bg-pink-500",
-  purple: "bg-purple-500",
-  "green-soft": "bg-lime-300",
-  "green-mid": "bg-lime-500",
-  "green-deep": "bg-lime-700",
+  green: "bg-orange-300",
+  blue: "bg-violet-300",
+  orange: "bg-rose-300",
+  amber: "bg-amber-300",
+  pink: "bg-fuchsia-300",
+  purple: "bg-purple-300",
+  "green-soft": "bg-orange-200",
+  "green-mid": "bg-orange-300",
+  "green-deep": "bg-orange-400",
 };
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
@@ -83,7 +83,7 @@ export default async function Showcase() {
       borough: extractBoroughFromNeighborhood(card.neighborhood),
       services: card.services,
       status: normalizeProjectDisplayStatus(card.status),
-      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
+      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-violet-300",
       desc: card.desc,
       url: card.url,
       imageUrl: card.imageUrl,
@@ -112,7 +112,7 @@ export default async function Showcase() {
       hash |= 0;
     }
     const idx = Math.abs(hash) % colorOptions.length;
-    return colorOptions[idx] ?? "bg-blue-500";
+    return colorOptions[idx] ?? "bg-violet-300";
   };
 
   const mapProjects = publicMapEntries.map((entry) => {
@@ -122,7 +122,7 @@ export default async function Showcase() {
       !showcasedBusinessIds.has(entry.id);
     const colorClass = isBusinessWithoutCard
       ? pickPseudoRandomColor(entry.id || entry.name)
-      : (SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-blue-500");
+      : (SHOWCASE_COLOR_CLASS[entry.color] ?? "bg-violet-300");
 
     return {
       name: entry.name,

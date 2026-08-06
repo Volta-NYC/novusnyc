@@ -41,22 +41,22 @@ function TrackIcon({ track, className = "w-4 h-4" }: { track: CycleTrack; classN
 }
 
 const TRACK_COLOR: Record<CycleTrack, string> = {
-  Tech:      "text-blue-600",
-  Marketing: "text-lime-700",
+  Tech:      "text-violet-600",
+  Marketing: "text-orange-700",
   Finance:   "text-amber-600",
   General:   "text-[#8B5E48]",
 };
 
 const TRACK_ICON_BG: Record<CycleTrack, string> = {
-  Tech:      "bg-blue-50 border-blue-200",
-  Marketing: "bg-lime-50 border-lime-200",
+  Tech:      "bg-violet-50 border-violet-200",
+  Marketing: "bg-orange-50 border-orange-200",
   Finance:   "bg-amber-50 border-amber-200",
   General:   "bg-[#F6B78D]/8 border-[#F6B78D]/25",
 };
 
 const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech:      "border-blue-200 bg-blue-50 text-blue-700",
-  Marketing: "border-lime-300 bg-lime-50 text-lime-800",
+  Tech:      "border-violet-200 bg-violet-50 text-violet-700",
+  Marketing: "border-orange-300 bg-orange-50 text-orange-800",
   Finance:   "border-amber-200 bg-amber-50 text-amber-700",
   General:   "border-gray-300 bg-gray-100 text-gray-700",
 };

@@ -3,7 +3,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { progressUpdates } from "@/data/publishing";
 
 export const metadata: Metadata = {
-  title: "Progress Updates | Novus NYC",
+  title: "Progress Updates",
   description:
     "Timestamped Novus progress updates covering projects, systems, and team growth.",
   openGraph: {
@@ -54,16 +54,16 @@ export default function ProgressUpdatesPage() {
 
   return (
     <>
-      <section className="bg-v-bg pt-32 pb-16">
+      <section className="bg-n-bg pt-32 pb-16">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-v-blue uppercase tracking-widest mb-3">
+            <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">
               Progress Updates
             </p>
-            <h1 className="font-display font-bold text-v-ink text-4xl md:text-5xl leading-tight mb-5">
+            <h1 className="font-display font-bold text-n-ink text-4xl md:text-5xl leading-tight mb-5">
               What we&apos;re building, week by week.
             </h1>
-            <p className="font-body text-v-muted text-lg max-w-3xl">
+            <p className="font-body text-n-muted text-lg max-w-3xl">
               This is where we share updates on projects, team milestones, and new systems
               as they roll out. It&apos;s a simple running log of our work and progress.
             </p>
@@ -78,16 +78,16 @@ export default function ProgressUpdatesPage() {
               const embed = toEmbedInfo(entry);
               return (
                 <AnimatedSection key={entry.id} delay={idx * 0.06}>
-                  <article className="bg-v-bg border border-v-border rounded-2xl p-6 md:p-7">
-                    <p className="font-body text-xs text-v-muted mb-2">{prettyDate(entry.date)}</p>
+                  <article className="bg-n-bg border border-n-border rounded-2xl p-6 md:p-7">
+                    <p className="font-body text-xs text-n-muted mb-2">{prettyDate(entry.date)}</p>
                     {embed && (
                       <div className={`mt-4 ${embed.kind === "Instagram" ? "flex justify-center" : ""}`}>
                         <iframe
                           src={embed.url}
                           title={`${entry.title} ${embed.kind} post`}
                           className={embed.kind === "Instagram"
-                            ? "w-full max-w-[420px] rounded-xl border border-v-border bg-white"
-                            : "w-full rounded-xl border border-v-border bg-white"}
+                            ? "w-full max-w-[420px] rounded-xl border border-n-border bg-white"
+                            : "w-full rounded-xl border border-n-border bg-white"}
                           style={embed.kind === "Instagram" ? { minHeight: 720 } : { minHeight: 750 }}
                           loading="lazy"
                         />
@@ -95,12 +95,12 @@ export default function ProgressUpdatesPage() {
                     )}
                     {!embed && (
                       <>
-                        <h2 className="font-display font-bold text-v-ink text-2xl mb-3">{entry.title}</h2>
-                        <p className="font-body text-v-muted mb-4">{entry.summary}</p>
+                        <h2 className="font-display font-bold text-n-ink text-2xl mb-3">{entry.title}</h2>
+                        <p className="font-body text-n-muted mb-4">{entry.summary}</p>
                         <ul className="space-y-1.5">
                           {entry.highlights.map((item) => (
-                            <li key={item} className="font-body text-sm text-v-ink flex items-start gap-2">
-                              <span className="text-v-green mt-0.5">•</span>
+                            <li key={item} className="font-body text-sm text-n-ink flex items-start gap-2">
+                              <span className="text-n-orange mt-0.5">•</span>
                               {item}
                             </li>
                           ))}
@@ -115,7 +115,7 @@ export default function ProgressUpdatesPage() {
                             href={link.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-body px-3 py-1.5 rounded-full border border-v-border text-v-muted hover:text-v-ink hover:border-v-ink transition-colors"
+                            className="text-xs font-body px-3 py-1.5 rounded-full border border-n-border text-n-muted hover:text-n-ink hover:border-n-ink transition-colors"
                           >
                             {link.label}
                           </a>

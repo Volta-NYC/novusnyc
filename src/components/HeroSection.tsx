@@ -88,7 +88,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
                 }}
                 priority
               />
-              <span className="text-v-green">NOVUS</span>
+              <span className="text-n-orange">NOVUS</span>
             </span>
           </h1>
         </motion.div>
@@ -107,7 +107,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
               Digital equity is economic equity. Join a team of students building
               websites, social media and branding, grants and funding, and small
               business outreach for NYC&apos;s small businesses.{" "}
-              <span className="text-v-green font-semibold">Free of charge.</span>
+              <span className="text-n-orange font-semibold">Free of charge.</span>
             </p>
             <p className="font-body text-sm text-white/75 mb-8">
               A registered nonprofit organization.
@@ -115,13 +115,13 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
             <div className="flex gap-4 flex-wrap justify-center">
               <Link
                 href="/join"
-                className="bg-v-green text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-green-dark transition-all hover:scale-[1.03] shadow-xl shadow-black/35"
+                className="bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-all hover:scale-[1.03] shadow-xl shadow-black/35"
               >
                 Apply to Join
               </Link>
               <Link
                 href="/partners"
-                className="bg-v-yellow text-v-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-v-yellow-dark transition-all shadow-xl shadow-black/25"
+                className="bg-n-yellow text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-yellow-dark transition-all shadow-xl shadow-black/25"
               >
                 Get Free Business Support
               </Link>

@@ -46,7 +46,7 @@ function applyPlaceholders(input: string, meta: Record<string, string>): string 
     if (key === "firstName") {
       return (meta.firstName || meta.fullName || meta.memberName || "").split(/\s+/)[0] ?? "";
     }
-    if (key === "portalLink") return "https://novusnyc.org/members";
+    if (key === "portalLink") return "https://www.novusnyc.org/members";
     return meta[key] ?? "";
   });
 }
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
   // Pre-generate Supabase magic links per-recipient if {{magicLink}} is used.
   if (hasPlaceholders && /\{\{\s*magicLink\s*\}\}/.test(subject + message) && recipientMeta.size > 0) {
     const sb = getSupabaseAdmin();
-    const portalUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://novusnyc.org").trim() + "/members";
+    const portalUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.novusnyc.org").trim() + "/members";
     for (const [recipientEmail, meta] of recipientMeta) {
       try {
         const { data } = await sb.auth.admin.generateLink({

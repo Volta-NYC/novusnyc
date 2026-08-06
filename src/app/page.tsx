@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
     getTotalMemberCount(),
   ]);
   return {
-    title: "Novus NYC — Free Consulting for NYC Small Businesses",
+    title: { absolute: "Novus NYC — Free Consulting for NYC Small Businesses" },
     description:
       `Digital equity is economic equity. Novus connects student teams with New York City small businesses to provide free support in technology, marketing, finance, operations, websites, SEO, social media, and grant development. ${formatCounter(memberCount)} students, ${formatCounter(liveStats.totalBusinesses)} businesses served.`,
     openGraph: {
@@ -34,32 +34,32 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const SHOWCASE_COLOR_CLASS: Record<string, string> = {
-  "blue-soft": "bg-blue-300",
-  "blue-mid": "bg-blue-500",
-  "blue-deep": "bg-blue-700",
-  "lime-soft": "bg-lime-300",
-  "lime-mid": "bg-lime-500",
-  "lime-deep": "bg-lime-700",
-  "amber-soft": "bg-amber-300",
-  "amber-mid": "bg-amber-500",
-  "amber-deep": "bg-amber-700",
-  "pink-soft": "bg-pink-300",
-  "pink-mid": "bg-pink-500",
-  "pink-deep": "bg-pink-700",
-  "purple-mid": "bg-purple-500",
-  "red-soft": "bg-red-300",
-  "red-mid": "bg-red-500",
-  "red-deep": "bg-red-700",
+  "blue-soft": "bg-violet-200",
+  "blue-mid": "bg-violet-300",
+  "blue-deep": "bg-violet-400",
+  "lime-soft": "bg-orange-200",
+  "lime-mid": "bg-orange-300",
+  "lime-deep": "bg-orange-400",
+  "amber-soft": "bg-amber-200",
+  "amber-mid": "bg-amber-300",
+  "amber-deep": "bg-amber-400",
+  "pink-soft": "bg-fuchsia-200",
+  "pink-mid": "bg-fuchsia-300",
+  "pink-deep": "bg-fuchsia-400",
+  "purple-mid": "bg-purple-300",
+  "red-soft": "bg-rose-200",
+  "red-mid": "bg-rose-300",
+  "red-deep": "bg-rose-400",
   // Safety mapping for older entries.
-  green: "bg-lime-500",
-  blue: "bg-blue-500",
-  orange: "bg-red-500",
-  amber: "bg-amber-500",
-  pink: "bg-pink-500",
-  purple: "bg-purple-500",
-  "green-soft": "bg-lime-300",
-  "green-mid": "bg-lime-500",
-  "green-deep": "bg-lime-700",
+  green: "bg-orange-300",
+  blue: "bg-violet-300",
+  orange: "bg-rose-300",
+  amber: "bg-amber-300",
+  pink: "bg-fuchsia-300",
+  purple: "bg-purple-300",
+  "green-soft": "bg-orange-200",
+  "green-mid": "bg-orange-300",
+  "green-deep": "bg-orange-400",
 };
 
 type HomeProject = {
@@ -97,15 +97,15 @@ function getPartnerLogoClass(partner: CommunityPartner, baseClass: string): stri
 function getServiceTagClass(service: string): string {
   const key = service.trim().toLowerCase();
   if (key.includes("website") || key.includes("seo") || key.includes("google")) {
-    return "bg-v-blue/20 text-v-ink border-v-blue/40";
+    return "bg-n-purple/20 text-n-ink border-n-purple/40";
   }
   if (key.includes("social")) {
-    return "bg-v-green/20 text-v-ink border-v-green/40";
+    return "bg-n-orange/20 text-n-ink border-n-orange/40";
   }
   if (key.includes("finance") || key.includes("grant") || key.includes("payment")) {
-    return "bg-v-yellow/40 text-v-ink border-v-yellow";
+    return "bg-n-yellow/40 text-n-ink border-n-yellow";
   }
-  return "bg-v-border text-v-muted border-v-border";
+  return "bg-n-border text-n-muted border-n-border";
 }
 
 async function getHomeProjects(): Promise<HomeProject[]> {
@@ -120,7 +120,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
       neighborhood: card.neighborhood,
       services: card.services,
       status: card.status,
-      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
+      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-violet-300",
       url: card.url,
       imageUrl: card.imageUrl,
       desc: card.desc,
@@ -146,23 +146,23 @@ async function getHomeProjects(): Promise<HomeProject[]> {
 
 function CurrentProjectsFallback() {
   return (
-    <section className="home-depth-section home-showcase-depth py-20 bg-v-bg">
+    <section className="home-depth-section home-showcase-depth py-20 bg-n-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Selected projects</h2>
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-4xl">Selected projects</h2>
           </div>
-          <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
+          <Link href="/showcase" className="font-body text-sm font-semibold text-n-purple hover:underline">
             See all work →
           </Link>
         </AnimatedSection>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading featured projects">
           {[0, 1, 2].map((item) => (
-            <div key={item} className="overflow-hidden rounded-xl border border-v-border bg-white p-5">
-              <div className="mb-5 h-32 animate-pulse rounded-lg bg-v-green/10" />
-              <div className="mb-3 h-3 w-20 animate-pulse rounded-full bg-v-border" />
-              <div className="mb-2 h-5 w-3/4 animate-pulse rounded-full bg-v-border" />
-              <div className="h-3 w-1/2 animate-pulse rounded-full bg-v-border" />
+            <div key={item} className="overflow-hidden rounded-xl border border-n-border bg-white p-5">
+              <div className="mb-5 h-32 animate-pulse rounded-lg bg-n-orange/10" />
+              <div className="mb-3 h-3 w-20 animate-pulse rounded-full bg-n-border" />
+              <div className="mb-2 h-5 w-3/4 animate-pulse rounded-full bg-n-border" />
+              <div className="h-3 w-1/2 animate-pulse rounded-full bg-n-border" />
             </div>
           ))}
         </div>
@@ -185,10 +185,10 @@ function HomeScrollProgress() {
 function HomeProjectDesktopCard({ project, index }: { project: HomeProject; index: number }) {
   return (
     <div className={`scroll-reveal scroll-reveal-card scroll-reveal-${index % 3}`}>
-      <div className="bg-v-bg border border-v-border rounded-2xl overflow-hidden project-card flex flex-col">
+      <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
         <div className={`${project.colorClass} h-2`} />
         {project.imageUrl ? (
-          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white overflow-hidden">
+          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
             <Image
               src={project.imageUrl}
               alt={`${project.name} project`}
@@ -200,8 +200,8 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
             />
           </div>
         ) : (
-          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-v-border bg-white h-40 flex items-center justify-center">
-            <span className="font-body text-xs text-v-muted uppercase tracking-wider">Project photo coming soon</span>
+          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white h-40 flex items-center justify-center">
+            <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
           </div>
         )}
         <div className="showcase-card-content p-7 flex flex-col">
@@ -211,24 +211,24 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
                 <span key={`desktop-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
               ))}
             </div>
-            <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-v-green/25 text-v-ink" : project.status === "Ongoing" ? "bg-v-blue/25 text-v-ink" : "bg-v-yellow/35 text-v-ink"}`}>
+            <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
               {project.status}
             </span>
           </div>
-          <h3 className="font-display font-bold text-v-ink text-xl mb-1">{project.name}</h3>
-          <p className="font-body text-sm text-v-muted mb-3">{project.type}</p>
+          <h3 className="font-display font-bold text-n-ink text-xl mb-1">{project.name}</h3>
+          <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
           {project.desc && <ExpandableDescription desc={project.desc} />}
           {project.quote && (
-            <blockquote className="mt-4 border-l-2 border-v-green pl-3 font-body text-sm text-v-muted italic leading-relaxed">
+            <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
               &ldquo;{project.quote}&rdquo;
             </blockquote>
           )}
           <div className="flex items-center justify-between mt-4">
-            <p className="font-body text-xs text-v-muted/70 flex items-center gap-1.5">
+            <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
               <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
             </p>
             {project.url && (
-              <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-v-blue hover:underline">
+              <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-n-purple hover:underline">
                 View live site →
               </a>
             )}
@@ -292,13 +292,13 @@ async function CurrentProjectsSection() {
   const homeProjects = await getHomeProjects();
 
   return (
-    <section className="home-depth-section home-showcase-depth py-20 bg-v-bg">
+    <section className="home-depth-section home-showcase-depth py-20 bg-n-bg">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <AnimatedSection className="mb-10 flex items-end justify-between flex-wrap gap-4">
           <div>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">Selected projects</h2>
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-4xl">Selected projects</h2>
           </div>
-          <Link href="/showcase" className="font-body text-sm font-semibold text-v-blue hover:underline">
+          <Link href="/showcase" className="font-body text-sm font-semibold text-n-purple hover:underline">
             See all work →
           </Link>
         </AnimatedSection>
@@ -309,10 +309,10 @@ async function CurrentProjectsSection() {
             <HomeProjectStack projects={homeProjects} />
           </>
         ) : (
-          <div className="border border-v-border rounded-xl bg-white px-6 py-8 text-center">
-            <p className="font-display text-lg font-bold text-v-ink">New work is on the way.</p>
-            <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-v-muted">Our teams are preparing the next set of project stories. Explore the full body of work while we update this selection.</p>
-            <Link href="/showcase" className="mt-4 inline-flex font-body text-sm font-semibold text-v-blue hover:underline">Explore our work →</Link>
+          <div className="border border-n-border rounded-xl bg-white px-6 py-8 text-center">
+            <p className="font-display text-lg font-bold text-n-ink">New work is on the way.</p>
+            <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-n-muted">Our teams are preparing the next set of project stories. Explore the full body of work while we update this selection.</p>
+            <Link href="/showcase" className="mt-4 inline-flex font-body text-sm font-semibold text-n-purple hover:underline">Explore our work →</Link>
           </div>
         )}
       </div>
@@ -341,7 +341,7 @@ function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
       target="_blank"
       rel="noreferrer"
       aria-label={`Visit ${partner.name} website`}
-      className="bg-white border-2 border-v-green/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2"
+      className="bg-white border-2 border-n-orange/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2"
     >
       <div className="relative w-full h-[78px] mb-4">
         <Image
@@ -352,10 +352,10 @@ function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
           className={getPartnerLogoClass(partner, "object-contain p-1")}
         />
       </div>
-      <p className="font-body text-[9px] uppercase tracking-widest text-v-green font-bold mb-1">
+      <p className="font-body text-[9px] uppercase tracking-widest text-n-orange font-bold mb-1">
         Flagship partner
       </p>
-      <h3 className="font-display font-bold text-v-ink text-sm leading-tight">
+      <h3 className="font-display font-bold text-n-ink text-sm leading-tight">
         {partner.name}
       </h3>
     </a>
@@ -378,10 +378,10 @@ function PartnerLogoCard({
       rel="noreferrer"
       tabIndex={tabIndex}
       aria-label={`Visit ${partner.name} website`}
-      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v-green/50 focus-visible:ring-offset-2 ${
+      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
         important
-          ? "w-[230px] h-[142px] rounded-xl border-v-green/35 px-4"
-          : "w-[230px] h-[142px] rounded-lg border-v-border px-4"
+          ? "w-[230px] h-[142px] rounded-xl border-n-orange/35 px-4"
+          : "w-[230px] h-[142px] rounded-lg border-n-border px-4"
       }`}
     >
       <div className="relative w-full h-[72px] shrink-0">
@@ -395,11 +395,11 @@ function PartnerLogoCard({
       </div>
       <div className="mt-3 min-w-0 w-full">
         {important && (
-          <p className="font-body text-[9px] uppercase tracking-widest text-v-green font-bold mb-1">
+          <p className="font-body text-[9px] uppercase tracking-widest text-n-orange font-bold mb-1">
             Key partner
           </p>
         )}
-        <p className="font-display font-bold text-v-ink leading-tight text-xs partner-logo-label">
+        <p className="font-display font-bold text-n-ink leading-tight text-xs partner-logo-label">
           {partner.name}
         </p>
       </div>
@@ -450,14 +450,14 @@ function CommunityPartnersSection() {
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
           <div>
-            <p className="font-body text-xs uppercase tracking-[0.22em] text-v-green font-bold mb-3">
+            <p className="font-body text-xs uppercase tracking-[0.22em] text-n-orange font-bold mb-3">
               Community partners
             </p>
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-5xl max-w-3xl leading-tight">
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-5xl max-w-3xl leading-tight">
               Powered by the organizations trusted by NYC small businesses.
             </h2>
           </div>
-          <p className="font-body text-v-muted text-sm md:text-base max-w-md leading-relaxed">
+          <p className="font-body text-n-muted text-sm md:text-base max-w-md leading-relaxed">
             Chambers, BIDs, local development corporations, and merchant groups connect Novus teams directly with the businesses that need support.
           </p>
         </div>
@@ -530,8 +530,8 @@ export default function Home() {
       <section className="home-depth-section home-tracks-depth py-16 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
-            <h2 className="font-display font-bold text-v-ink text-3xl md:text-4xl">The three tracks</h2>
-            <p className="font-body text-v-muted mt-3 max-w-xl">
+            <h2 className="font-display font-bold text-n-ink text-3xl md:text-4xl">The three tracks</h2>
+            <p className="font-body text-n-muted mt-3 max-w-xl">
               Every project is staffed by students across our three tracks. Work ships to production quickly and includes ongoing support after delivery.
             </p>
           </AnimatedSection>

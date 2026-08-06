@@ -26,7 +26,7 @@ function confirmedAccountAcceptanceEmail(name: string): string {
   return wrapper(
     `<p>Hi ${firstName},</p>` +
       `<p>Congratulations! You've been accepted to Novus NYC.</p>` +
-      `<p>You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at <a href="https://novusnyc.org/members" style="color:#F6B78D;">novusnyc.org/members</a>.</p>` +
+      `<p>You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at <a href="https://www.novusnyc.org/members" style="color:#F6B78D;">novusnyc.org/members</a>.</p>` +
       `<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`
   );
 }
@@ -68,7 +68,7 @@ export function buildConfirmedAccountAcceptanceTemplate(input: {
       "",
       "Congratulations! You've been accepted to Novus NYC.",
       "",
-      "You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at https://novusnyc.org/members.",
+      "You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at https://www.novusnyc.org/members.",
       "",
       "Best,",
       "Ethan Zhang",

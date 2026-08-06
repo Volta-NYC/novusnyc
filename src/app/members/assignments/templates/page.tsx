@@ -24,15 +24,15 @@ const MEMBER_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
 const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-blue-500",
-  Marketing: "bg-lime-500",
+  Tech: "bg-violet-500",
+  Marketing: "bg-orange-500",
   Finance: "bg-amber-500",
   General: "bg-gray-400",
 };
 
 const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech:      "border-blue-400/30 bg-blue-400/10 text-blue-300",
-  Marketing: "border-lime-400/30 bg-lime-400/10 text-lime-300",
+  Tech:      "border-violet-400/30 bg-violet-400/10 text-violet-300",
+  Marketing: "border-orange-400/30 bg-orange-400/10 text-orange-300",
   Finance:   "border-amber-400/30 bg-amber-400/10 text-amber-300",
   General:   "border-white/20 bg-white/8 text-white/55",
 };

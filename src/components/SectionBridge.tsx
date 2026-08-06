@@ -8,9 +8,9 @@ interface SectionBridgeProps {
 }
 
 const toneClasses: Record<Tone, { background: string; line: string }> = {
-  peach: { background: "bg-[#fef6f0]", line: "bg-v-green/35" },
-  lavender: { background: "bg-[#f9f5f8]", line: "bg-v-blue/35" },
-  yellow: { background: "bg-[#fffbea]", line: "bg-v-yellow-dark/40" },
+  peach: { background: "bg-[#fef6f0]", line: "bg-n-orange/35" },
+  lavender: { background: "bg-[#f9f5f8]", line: "bg-n-purple/35" },
+  yellow: { background: "bg-[#fffbea]", line: "bg-n-yellow-dark/40" },
 };
 
 export default function SectionBridge({ tone, align = "left" }: SectionBridgeProps) {

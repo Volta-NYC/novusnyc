@@ -126,12 +126,12 @@ export default function ApplicationForm() {
 
   if (status === "success") {
     return (
-      <div role="status" aria-live="polite" className="bg-white border border-v-border rounded-2xl p-12 text-center">
-        <div className="w-16 h-16 rounded-full bg-v-green/20 flex items-center justify-center mx-auto mb-5">
-          <CheckIcon className="w-8 h-8 text-v-green" aria-hidden="true" />
+      <div role="status" aria-live="polite" className="bg-white border border-n-border rounded-2xl p-12 text-center">
+        <div className="w-16 h-16 rounded-full bg-n-orange/20 flex items-center justify-center mx-auto mb-5">
+          <CheckIcon className="w-8 h-8 text-n-orange" aria-hidden="true" />
         </div>
-        <h3 className="font-display font-bold text-2xl text-v-ink mb-3">Application received.</h3>
-        <p className="font-body text-v-muted max-w-sm mx-auto">
+        <h3 className="font-display font-bold text-2xl text-n-ink mb-3">Application received.</h3>
+        <p className="font-body text-n-muted max-w-sm mx-auto">
           We&apos;ll review your application and reach out within a few days to schedule a quick conversation.
         </p>
       </div>
@@ -142,7 +142,7 @@ export default function ApplicationForm() {
     <form onSubmit={handleSubmit} noValidate className="space-y-7">
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">Full Name *</label>
+        <label className="block font-body text-sm font-semibold text-n-ink mb-2">Full Name *</label>
         <input
           value={form.fullName}
           onChange={(e) => { set("fullName", e.target.value); clearError("fullName"); }}
@@ -153,8 +153,8 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">Email Address *</label>
-        <p className="text-xs text-v-muted/80 mt-1 mb-2 font-body">
+        <label className="block font-body text-sm font-semibold text-n-ink mb-2">Email Address *</label>
+        <p className="text-xs text-n-muted/80 mt-1 mb-2 font-body">
           Please use your personal email address, not a school email.
         </p>
         <input
@@ -168,8 +168,8 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">School Name *</label>
-        <p className="text-xs text-v-muted/80 mt-1 mb-2 font-body">
+        <label className="block font-body text-sm font-semibold text-n-ink mb-2">School Name *</label>
+        <p className="text-xs text-n-muted/80 mt-1 mb-2 font-body">
           Don&apos;t see your school? Just type it in.
         </p>
         <SchoolSelector
@@ -181,8 +181,8 @@ export default function ApplicationForm() {
           theme="light"
         />
         {loadingSchools && (
-          <p className="mt-2 flex items-center gap-2 font-body text-xs text-v-muted" aria-live="polite">
-            <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-v-green" />
+          <p className="mt-2 flex items-center gap-2 font-body text-xs text-n-muted" aria-live="polite">
+            <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-n-orange" />
             Loading school suggestions
           </p>
         )}
@@ -190,7 +190,7 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">High School Class Year *</label>
+        <label className="block font-body text-sm font-semibold text-n-ink mb-2">High School Class Year *</label>
         <select
           value={form.grade}
           onChange={(e) => { set("grade", e.target.value); clearError("grade"); }}
@@ -203,7 +203,7 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">City, State *</label>
+        <label className="block font-body text-sm font-semibold text-n-ink mb-2">City, State *</label>
         <input
           value={form.city}
           onChange={(e) => { set("city", e.target.value); clearError("city"); }}
@@ -214,7 +214,7 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-2">How did you hear about Novus? *</label>
+        <label className="block font-body text-sm font-semibold text-n-ink mb-2">How did you hear about Novus? *</label>
         <select
           value={form.referral}
           onChange={(e) => { set("referral", e.target.value); clearError("referral"); }}
@@ -227,13 +227,13 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-1">
+        <label className="block font-body text-sm font-semibold text-n-ink mb-1">
           Select your track(s) *{" "}
-          <a href="/join#tracks" target="_blank" rel="noopener noreferrer" className="text-v-green font-normal hover:underline text-xs">
+          <a href="/join#tracks" target="_blank" rel="noopener noreferrer" className="text-n-orange font-normal hover:underline text-xs">
             (see what each track does →)
           </a>
         </label>
-        <p className="font-body text-xs text-v-muted mb-3">You may select more than one.</p>
+        <p className="font-body text-xs text-n-muted mb-3">You may select more than one.</p>
         <div className="flex flex-col gap-3">
           {TRACK_NAMES.map((t) => {
             const active = form.tracks.includes(t);
@@ -243,11 +243,11 @@ export default function ApplicationForm() {
                 type="button"
                 onClick={() => { toggleTrack(t); clearError("tracks"); }}
                 className={`w-full text-left px-5 py-3 rounded-xl border font-body text-sm font-medium transition-all flex items-center gap-3 ${
-                  active ? "bg-v-green/10 border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"
+                  active ? "bg-n-orange/10 border-n-orange text-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"
                 }`}
               >
-                <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${active ? "bg-v-green border-v-green" : "border-v-border"}`}>
-                  {active && <CheckIcon className="w-3 h-3 text-v-ink" />}
+                <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${active ? "bg-n-orange border-n-orange" : "border-n-border"}`}>
+                  {active && <CheckIcon className="w-3 h-3 text-n-ink" />}
                 </span>
                 {t}
               </button>
@@ -258,22 +258,22 @@ export default function ApplicationForm() {
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-v-ink mb-1">Do you have a resume to attach?</label>
-        <p className="font-body text-xs text-v-muted mb-3">
+        <label className="block font-body text-sm font-semibold text-n-ink mb-1">Do you have a resume to attach?</label>
+        <p className="font-body text-xs text-n-muted mb-3">
           We strongly encourage you to attach a resume, even if it is not fully fleshed out yet. A resume is required to be considered for any role above the entry-level Analyst position.
         </p>
         <div className="flex gap-3">
           <button
             type="button"
             onClick={() => { set("hasResume", true); clearError("hasResume"); }}
-            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === true ? "bg-v-green border-v-green text-v-ink" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === true ? "bg-n-orange border-n-orange text-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
           >
             Yes — attach resume
           </button>
           <button
             type="button"
             onClick={() => { set("hasResume", false); clearError("hasResume"); }}
-            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === false ? "bg-v-ink border-v-ink text-white" : "bg-white border-v-border text-v-muted hover:border-v-ink"}`}
+            className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === false ? "bg-n-ink border-n-ink text-white" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
           >
             No resume
           </button>
@@ -282,25 +282,25 @@ export default function ApplicationForm() {
 
         {form.hasResume === true && (
           <div className="mt-5">
-            <label className="block font-body text-sm font-semibold text-v-ink mb-2">Attach Resume *</label>
+            <label className="block font-body text-sm font-semibold text-n-ink mb-2">Attach Resume *</label>
             <input
               ref={fileRef}
               type="file"
               accept=".pdf,.doc,.docx"
-              className="block w-full text-sm text-v-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-v-green file:text-v-ink hover:file:bg-v-green-dark cursor-pointer"
+              className="block w-full text-sm text-n-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-n-orange file:text-n-ink hover:file:bg-n-orange-dark cursor-pointer"
             />
-            <p className="text-xs text-v-muted/60 mt-1.5">PDF, DOC, or DOCX. Max {RESUME_MAX_MB}MB.</p>
+            <p className="text-xs text-n-muted/60 mt-1.5">PDF, DOC, or DOCX. Max {RESUME_MAX_MB}MB.</p>
             {uploadProgress && (
-              <p className="text-xs text-v-muted mt-2">{uploadProgress}</p>
+              <p className="text-xs text-n-muted mt-2">{uploadProgress}</p>
             )}
             {errors.resumeUrl && <p className="text-red-500 text-xs mt-1 font-body">{errors.resumeUrl}</p>}
           </div>
         )}
 
         {form.hasResume === false && (
-          <div className="mt-6 space-y-6 border-l-2 border-v-green pl-5">
+          <div className="mt-6 space-y-6 border-l-2 border-n-orange pl-5">
             <div>
-              <label className="block font-body text-sm font-semibold text-v-ink mb-2">
+              <label className="block font-body text-sm font-semibold text-n-ink mb-2">
                 List any specific tools or software you have experience with *
               </label>
               <textarea
@@ -313,7 +313,7 @@ export default function ApplicationForm() {
               {errors.tools && <p className="text-red-500 text-xs mt-1 font-body">{errors.tools}</p>}
             </div>
             <div>
-              <label className="block font-body text-sm font-semibold text-v-ink mb-2">
+              <label className="block font-body text-sm font-semibold text-n-ink mb-2">
                 What is your most impressive accomplishment, or a goal you&apos;re passionate about? *
               </label>
               <textarea
@@ -332,7 +332,7 @@ export default function ApplicationForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="w-full bg-v-green text-v-ink font-display font-bold text-base py-4 rounded-xl hover:bg-v-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-n-orange text-n-ink font-display font-bold text-base py-4 rounded-xl hover:bg-n-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "loading"
           ? uploadProgress || "Submitting…"
@@ -344,7 +344,7 @@ export default function ApplicationForm() {
           Something went wrong. Email us at info@novusnyc.org
         </p>
       )}
-      <p className="text-xs text-v-muted text-center font-body">
+      <p className="text-xs text-n-muted text-center font-body">
         Rolling admissions — we&apos;ll follow up within a few days.
       </p>
     </form>

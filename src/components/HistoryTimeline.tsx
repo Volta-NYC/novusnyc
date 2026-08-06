@@ -10,7 +10,7 @@ interface Milestone {
   desc: string;
 }
 
-const milestoneColors = ["bg-v-green", "bg-v-blue", "bg-v-yellow", "bg-v-green-dark", "bg-v-blue-dark"];
+const milestoneColors = ["bg-n-orange", "bg-n-purple", "bg-n-yellow", "bg-n-orange-dark", "bg-n-purple-dark"];
 
 export default function HistoryTimeline({ milestones }: { milestones: Milestone[] }) {
   const timelineRef = useRef<HTMLOListElement>(null);
@@ -23,10 +23,10 @@ export default function HistoryTimeline({ milestones }: { milestones: Milestone[
 
   return (
     <ol ref={timelineRef} className="relative ml-3 pl-8 md:ml-8 md:pl-12">
-      <span aria-hidden="true" className="absolute bottom-0 left-0 top-0 w-0.5 bg-v-green/20" />
+      <span aria-hidden="true" className="absolute bottom-0 left-0 top-0 w-0.5 bg-n-orange/20" />
       <motion.span
         aria-hidden="true"
-        className="absolute bottom-0 left-0 top-0 w-0.5 origin-top bg-v-green/90"
+        className="absolute bottom-0 left-0 top-0 w-0.5 origin-top bg-n-orange/90"
         style={{ scaleY: reducedMotion ? 1 : progress }}
       />
       {milestones.map((milestone, index) => (
@@ -40,19 +40,19 @@ export default function HistoryTimeline({ milestones }: { milestones: Milestone[
         >
           <motion.span
             aria-hidden="true"
-            className={`absolute -left-[2.38rem] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-[3px] border-white/80 md:-left-[3.38rem] ${milestoneColors[index] ?? "bg-v-green"}`}
+            className={`absolute -left-[2.38rem] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-[3px] border-white/80 md:-left-[3.38rem] ${milestoneColors[index] ?? "bg-n-orange"}`}
             initial={reducedMotion ? false : { scale: 0.5 }}
             whileInView={{ scale: 1 }}
             viewport={{ once: true, amount: 0.42 }}
             transition={{ type: "spring", stiffness: 360, damping: 20 }}
           />
           <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-7">
-            <p className="timeline-date font-body whitespace-nowrap pt-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-v-green">
+            <p className="timeline-date font-body whitespace-nowrap pt-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-n-orange">
               {milestone.month} {milestone.year}
             </p>
-            <div className={`timeline-entry-content ${index < milestones.length - 1 ? "border-b border-v-border/70 pb-10" : ""}`}>
-              <h3 className="font-display text-xl font-bold text-v-ink">{milestone.label}</h3>
-              <p className="font-body mt-2 max-w-3xl leading-relaxed text-v-muted">{milestone.desc}</p>
+            <div className={`timeline-entry-content ${index < milestones.length - 1 ? "border-b border-n-border/70 pb-10" : ""}`}>
+              <h3 className="font-display text-xl font-bold text-n-ink">{milestone.label}</h3>
+              <p className="font-body mt-2 max-w-3xl leading-relaxed text-n-muted">{milestone.desc}</p>
             </div>
           </div>
         </motion.li>

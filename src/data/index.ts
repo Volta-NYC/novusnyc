@@ -55,8 +55,8 @@ export const homeTracks = [
     icon: CodeIcon,
     name: "Digital & Tech",
     color: "bg-blue-50 border-blue-100",
-    accent: "bg-v-blue",
-    iconColor: "text-v-blue",
+    accent: "bg-n-purple",
+    iconColor: "text-n-purple",
     iconBg: "bg-blue-100",
     items: [
       "Website design & development",
@@ -69,14 +69,14 @@ export const homeTracks = [
   {
     icon: MegaphoneIcon,
     name: "Marketing",
-    color: "bg-lime-50 border-lime-100",
-    accent: "bg-v-green",
-    iconColor: "text-v-green",
-    iconBg: "bg-lime-100",
+    color: "bg-orange-50 border-orange-100",
+    accent: "bg-n-orange",
+    iconColor: "text-n-orange",
+    iconBg: "bg-orange-100",
     items: [
-      "Volta Social Media & Branding",
+      "Novus Social Media & Branding",
       "Grants & Funding",
-      "Volta Ambassadors",
+      "Novus Ambassadors",
       "Small Business Outreach",
     ],
   },
@@ -158,7 +158,7 @@ export const projects: Project[] = [
     neighborhood: "Park Slope, Brooklyn",
     services: ["Social Media"],
     status: "Active",
-    color: "bg-v-green",
+    color: "bg-n-orange",
     desc: "Social media strategy, Founder Stories content series, and Instagram account management.",
   },
   {
@@ -167,7 +167,7 @@ export const projects: Project[] = [
     neighborhood: "Chinatown, Manhattan",
     services: ["Website", "SEO"],
     status: "In Progress",
-    color: "bg-v-blue",
+    color: "bg-n-purple",
     desc: "Website build and SEO setup with Cantonese/Mandarin language support for a Chinatown tutoring center.",
   },
   {
@@ -185,7 +185,7 @@ export const projects: Project[] = [
     neighborhood: "Park Slope, Brooklyn",
     services: ["Website"],
     status: "Upcoming",
-    color: "bg-pink-400",
+    color: "bg-fuchsia-300",
     desc: "Website redesign and online ordering setup for a 5th Avenue floral boutique.",
   },
   {
@@ -238,7 +238,7 @@ export const aboutTimeline = [
     month: "Fall",
     year: "2025",
     label: "The idea takes shape",
-    desc: "Started in New York. Established under Andrew, Ethan, and Tahmid to provide technical services, digital infrastructure, and operational aid to local clients and small businesses.",
+    desc: "Started in New York. Established under Ethan, Andrew, and Tahmid to provide technical services, digital infrastructure, and operational aid to local clients and small businesses.",
   },
   {
     month: "Winter",
@@ -308,15 +308,15 @@ export const joinGains = [
     icon: MonitorIcon,
     title: "Real deliverables",
     desc: "Deployed websites, live social media campaigns, submitted grant applications. Work you can show in an interview.",
-    color: "text-v-blue",
+    color: "text-n-purple",
     bg: "bg-blue-50",
   },
   {
     icon: FolderIcon,
     title: "A portfolio that holds up",
     desc: "You can tell an interviewer exactly what you built, for which business, and what changed as a result.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
+    color: "text-n-orange",
+    bg: "bg-orange-50",
   },
   {
     icon: AwardIcon,
@@ -336,15 +336,15 @@ export const joinGains = [
     icon: ArrowUpRightIcon,
     title: "Fast path to leadership",
     desc: "Strong contributors move into lead roles quickly. We promote based on work, not time.",
-    color: "text-v-blue",
+    color: "text-n-purple",
     bg: "bg-blue-50",
   },
   {
     icon: BuildingIcon,
     title: "Real community impact",
     desc: "The businesses you work with are real. Family-owned restaurants, flower shops, tutoring centers across NYC.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
+    color: "text-n-orange",
+    bg: "bg-orange-50",
   },
 ];
 
@@ -362,12 +362,12 @@ export const trackHighlights = [
   },
   {
     name: "Marketing",
-    tagColor: "bg-lime-100 text-lime-800",
+    tagColor: "bg-orange-100 text-orange-800",
     outputs: [
-      "Created and managed social media, branding, and promotional materials for Volta and local businesses",
+      "Created and managed social media, branding, and promotional materials for Novus and local businesses",
       "Researched grant and funding opportunities, built templates, and supported grant writing",
       "Built relationships with schools, student organizations, pipeline programs, and community partners",
-      "Connected new small businesses with Volta's marketing and web services through outreach",
+      "Connected new small businesses with Novus's marketing and web services through outreach",
     ],
   },
   {
@@ -387,10 +387,10 @@ export const joinTracks = [
   {
     icon: BarChartIcon,
     name: "Finance & Operations",
-    color: "border-v-yellow/65 bg-v-yellow/8",
-    tagColor: "bg-v-yellow/50 text-v-ink",
+    color: "border-n-yellow/65 bg-n-yellow/8",
+    tagColor: "bg-n-yellow/50 text-n-ink",
     iconColor: "text-amber-600",
-    iconBg: "bg-v-yellow/40",
+    iconBg: "bg-n-yellow/40",
     skills: [
       "Comfort reading financial documents and working in spreadsheets",
       "Some background in structured analysis or research",
@@ -408,10 +408,10 @@ export const joinTracks = [
   {
     icon: CodeIcon,
     name: "Digital & Tech",
-    color: "border-v-blue/35 bg-v-blue/6",
-    tagColor: "bg-v-blue/25 text-v-ink",
-    iconColor: "text-v-blue-dark",
-    iconBg: "bg-v-blue/25",
+    color: "border-n-purple/35 bg-n-purple/6",
+    tagColor: "bg-n-purple/25 text-n-ink",
+    iconColor: "text-n-purple-dark",
+    iconBg: "bg-n-purple/25",
     skills: [
       "React.js or TypeScript, with some backend or API experience",
       "Comfortable with GitHub and basic deployment workflows",
@@ -428,27 +428,27 @@ export const joinTracks = [
   {
     icon: MegaphoneIcon,
     name: "Marketing",
-    color: "border-v-green/35 bg-v-green/6",
-    tagColor: "bg-v-green/25 text-v-ink",
-    iconColor: "text-v-green-dark",
-    iconBg: "bg-v-green/25",
+    color: "border-n-orange/35 bg-n-orange/6",
+    tagColor: "bg-n-orange/25 text-n-ink",
+    iconColor: "text-n-orange-dark",
+    iconBg: "bg-n-orange/25",
     description: "Marketing is organized into four subdepartments. Members can focus on one area or contribute across all four.",
     subdepartments: [
       {
-        title: "Volta Social Media & Branding",
-        desc: "Design social posts, manage Volta's public-facing platforms, and create promotional materials for partnering small businesses.",
+        title: "Novus Social Media & Branding",
+        desc: "Design social posts, manage Novus's public-facing platforms, and create promotional materials for partnering small businesses.",
       },
       {
         title: "Grants & Funding",
         desc: "Research funding opportunities, create grant templates, support grant writing, track impact, and help develop financial plans for growth.",
       },
       {
-        title: "Volta Ambassadors",
-        desc: "Build relationships with schools, student organizations, pipeline programs, and community partners to recruit future Volta members.",
+        title: "Novus Ambassadors",
+        desc: "Build relationships with schools, student organizations, pipeline programs, and community partners to recruit future Novus members.",
       },
       {
         title: "Small Business Outreach",
-        desc: "Find and connect with small businesses that could benefit from Volta's marketing and web services.",
+        desc: "Find and connect with small businesses that could benefit from Novus's marketing and web services.",
       },
     ],
     skills: [
@@ -458,7 +458,7 @@ export const joinTracks = [
     ],
     doWhat: [
       "Choose one Marketing subdepartment or contribute across all four",
-      "Build visible work for Volta, community partners, and local businesses",
+      "Build visible work for Novus, community partners, and local businesses",
       "Collaborate with a team on creative, research, outreach, and growth projects",
     ],
   },
@@ -495,7 +495,7 @@ export const joinFaqs = [
   },
   {
     q: "How do Marketing subdepartments work?",
-    a: "Marketing has four focus areas: Volta Social Media & Branding, Grants & Funding, Volta Ambassadors, and Small Business Outreach. Members can focus on one area or contribute across all four, depending on their interests and team needs.",
+    a: "Marketing has four focus areas: Novus Social Media & Branding, Grants & Funding, Novus Ambassadors, and Small Business Outreach. Members can focus on one area or contribute across all four, depending on their interests and team needs.",
   },
   {
     q: "Can I choose my track?",
@@ -534,15 +534,15 @@ export const partnerServices = [
     icon: GlobeIcon,
     title: "Website Design & Development",
     desc: "Custom-built sites using modern frameworks. Mobile-friendly, accessible, and maintained.",
-    color: "text-v-blue",
+    color: "text-n-purple",
     bg: "bg-blue-50",
   },
   {
     icon: SmartphoneIcon,
     title: "Social Media & Content",
     desc: "Instagram strategy, posting calendars, founder interview videos, and audience growth.",
-    color: "text-v-green",
-    bg: "bg-lime-50",
+    color: "text-n-orange",
+    bg: "bg-orange-50",
   },
   {
     icon: DollarIcon,
@@ -555,7 +555,7 @@ export const partnerServices = [
     icon: SearchIcon,
     title: "SEO & Online Visibility",
     desc: "Google Maps optimization, Yelp, Apple Maps, and search engine improvements.",
-    color: "text-v-blue",
+    color: "text-n-purple",
     bg: "bg-blue-50",
   },
   {

@@ -21,8 +21,8 @@ import {
 } from "@/lib/members/cycleCompute";
 
 const TRACK_DOT: Record<string, string> = {
-  Tech: "bg-blue-500",
-  Marketing: "bg-lime-500",
+  Tech: "bg-violet-500",
+  Marketing: "bg-orange-500",
   Finance: "bg-amber-500",
 };
 

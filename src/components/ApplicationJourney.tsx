@@ -12,9 +12,9 @@ const steps = [
     detail: "Start with a short application covering your school, relevant experience, preferred track, and the kind of client work you want to take on. You do not need a perfect resume to apply.",
     note: "The application is a starting point, not a skills test.",
     icon: PencilIcon,
-    accent: "bg-v-blue",
-    soft: "bg-v-blue/10",
-    text: "text-v-blue-dark",
+    accent: "bg-n-purple",
+    soft: "bg-n-purple/10",
+    text: "text-n-purple-dark",
   },
   {
     label: "Interview",
@@ -23,9 +23,9 @@ const steps = [
     detail: "We talk through your interests, examples of work you are proud of, and how you like to collaborate. It helps us place you on a team where you can contribute and grow.",
     note: "Expect a conversation about fit, not a formal interrogation.",
     icon: UsersIcon,
-    accent: "bg-v-green",
-    soft: "bg-v-green/10",
-    text: "text-v-green-dark",
+    accent: "bg-n-orange",
+    soft: "bg-n-orange/10",
+    text: "text-n-orange-dark",
   },
   {
     label: "Join a track",
@@ -34,8 +34,8 @@ const steps = [
     detail: "Choose Digital & Tech, Marketing, or Finance & Operations. Marketing members can focus on social media and branding, grants and funding, ambassadors, small business outreach, or work across all four.",
     note: "You can build depth in one focus while collaborating across teams.",
     icon: CheckIcon,
-    accent: "bg-v-yellow",
-    soft: "bg-v-yellow/20",
+    accent: "bg-n-yellow",
+    soft: "bg-n-yellow/20",
     text: "text-amber-700",
   },
   {
@@ -45,9 +45,9 @@ const steps = [
     detail: "Work through a live project with clear deliverables: a website, outreach plan, social content, grant research, or an owner-facing recommendation. You will respond to real feedback and project deadlines.",
     note: "The work is practical, collaborative, and client-facing.",
     icon: BuildingIcon,
-    accent: "bg-v-green-dark",
-    soft: "bg-v-green/10",
-    text: "text-v-green-dark",
+    accent: "bg-n-orange-dark",
+    soft: "bg-n-orange/10",
+    text: "text-n-orange-dark",
   },
   {
     label: "Build a portfolio",
@@ -56,9 +56,9 @@ const steps = [
     detail: "Leave with shipped deliverables, clear examples of your contribution, and project stories you can use in college applications, interviews, and future opportunities.",
     note: "Experience that gives interviews and applications real substance.",
     icon: AwardIcon,
-    accent: "bg-v-blue-dark",
-    soft: "bg-v-blue/10",
-    text: "text-v-blue-dark",
+    accent: "bg-n-purple-dark",
+    soft: "bg-n-purple/10",
+    text: "text-n-purple-dark",
   },
 ] as const;
 
@@ -97,13 +97,13 @@ export default function ApplicationJourney() {
         <div className="mb-9 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="font-body mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-700">Your Novus journey</p>
-            <h2 id="application-journey-heading" className="page-section-heading text-v-ink">From application to work you can show.</h2>
+            <h2 id="application-journey-heading" className="page-section-heading text-n-ink">From application to work you can show.</h2>
           </div>
-          <p className="max-w-md font-body text-sm leading-relaxed text-v-muted">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
+          <p className="max-w-md font-body text-sm leading-relaxed text-n-muted">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
         </div>
 
         <div
-          className="grid overflow-hidden rounded-lg border border-v-yellow/55 bg-white/70 md:grid-cols-[15rem_minmax(0,1fr)]"
+          className="grid overflow-hidden rounded-lg border border-n-yellow/55 bg-white/70 md:grid-cols-[15rem_minmax(0,1fr)]"
           onPointerEnter={() => setPaused(true)}
           onPointerLeave={() => setPaused(false)}
           onFocusCapture={() => setPaused(true)}
@@ -111,7 +111,7 @@ export default function ApplicationJourney() {
             if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
           }}
         >
-          <div role="tablist" aria-label="Novus student journey" className="grid border-b border-v-yellow/40 bg-white/45 sm:grid-cols-5 md:block md:border-b-0 md:border-r">
+          <div role="tablist" aria-label="Novus student journey" className="grid border-b border-n-yellow/40 bg-white/45 sm:grid-cols-5 md:block md:border-b-0 md:border-r">
             {steps.map((item, index) => {
               const selected = active === index;
               return (
@@ -125,14 +125,14 @@ export default function ApplicationJourney() {
                   tabIndex={selected ? 0 : -1}
                   onClick={() => setActive(index)}
                   onKeyDown={(event) => handleKeyDown(event, index)}
-                  className={`relative flex min-h-20 items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v-blue md:min-h-0 md:px-5 md:py-4 ${selected ? "bg-white text-v-ink" : "text-v-muted hover:bg-white/70"}`}
+                  className={`relative flex min-h-20 items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-n-purple md:min-h-0 md:px-5 md:py-4 ${selected ? "bg-white text-n-ink" : "text-n-muted hover:bg-white/70"}`}
                 >
                   {selected ? <motion.span layoutId={`${id}-active-step`} className={`absolute inset-y-0 left-0 w-1 ${item.accent}`} /> : null}
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${selected ? item.soft : "bg-v-bg"}`}>
-                    <item.icon className={`h-4 w-4 ${selected ? item.text : "text-v-muted"}`} aria-hidden="true" />
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${selected ? item.soft : "bg-n-bg"}`}>
+                    <item.icon className={`h-4 w-4 ${selected ? item.text : "text-n-muted"}`} aria-hidden="true" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block font-body text-[10px] font-semibold uppercase tracking-[0.14em] text-v-muted">0{index + 1}</span>
+                    <span className="block font-body text-[10px] font-semibold uppercase tracking-[0.14em] text-n-muted">0{index + 1}</span>
                     <span className="mt-0.5 block font-display text-sm font-bold leading-tight">{item.label}</span>
                   </span>
                 </button>
@@ -157,10 +157,10 @@ export default function ApplicationJourney() {
                     </span>
                     <p className={`font-body text-xs font-bold uppercase tracking-[0.18em] ${step.text}`}>{step.eyebrow}</p>
                   </div>
-                  <h3 className="max-w-xl font-display text-2xl font-bold leading-tight text-v-ink md:text-3xl">{step.title}</h3>
-                  <p className="mt-4 max-w-2xl font-body text-base leading-relaxed text-v-muted">{step.detail}</p>
+                  <h3 className="max-w-xl font-display text-2xl font-bold leading-tight text-n-ink md:text-3xl">{step.title}</h3>
+                  <p className="mt-4 max-w-2xl font-body text-base leading-relaxed text-n-muted">{step.detail}</p>
                 </div>
-                <p className="mt-8 border-t border-v-border pt-4 font-body text-sm font-semibold text-v-ink">{step.note}</p>
+                <p className="mt-8 border-t border-n-border pt-4 font-body text-sm font-semibold text-n-ink">{step.note}</p>
               </motion.div>
             </AnimatePresence>
           </div>

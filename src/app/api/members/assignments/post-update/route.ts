@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     const { transporter } = createTransportForFrom("info@novusnyc.org");
     const from = resolveFromWithName("info@novusnyc.org");
     const replyTo = getDefaultReplyToAddress("info@novusnyc.org");
-    const portalLink = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://novusnyc.org"}/members/work/${assignmentId}`;
+    const portalLink = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.novusnyc.org"}/members/work/${assignmentId}`;
     const messageTrimmed = message.trim();
     const messageFmt = messageTrimmed.replace(/\n/g, "<br>");
 

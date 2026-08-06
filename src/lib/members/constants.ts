@@ -16,22 +16,22 @@ export const TRACK_META: Record<TrackDivision, {
   chipClass: string;   // bordered pill — light bg + colored text
   dotClass: string;    // filled dot or small badge
 }> = {
-  Tech:      { label: "Tech",      chipClass: "bg-blue-100 text-blue-700 border-blue-300",   dotClass: "bg-blue-500" },
-  Marketing: { label: "Marketing", chipClass: "bg-lime-100 text-lime-700 border-lime-300",   dotClass: "bg-lime-500" },
+  Tech:      { label: "Tech",      chipClass: "bg-violet-100 text-violet-700 border-violet-300",   dotClass: "bg-violet-500" },
+  Marketing: { label: "Marketing", chipClass: "bg-orange-100 text-orange-700 border-orange-300",   dotClass: "bg-orange-500" },
   Finance:   { label: "Finance",   chipClass: "bg-amber-100 text-amber-700 border-amber-300", dotClass: "bg-amber-500" },
 };
 
 // Includes "General" for assignment-marketplace contexts.
 export const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech:      "bg-blue-500",
-  Marketing: "bg-lime-500",
+  Tech:      "bg-violet-500",
+  Marketing: "bg-orange-500",
   Finance:   "bg-amber-500",
   General:   "bg-gray-400",
 };
 
 export const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech:      "bg-blue-100 text-blue-800 border-blue-200",
-  Marketing: "bg-lime-100 text-lime-900 border-lime-200",
+  Tech:      "bg-violet-100 text-violet-800 border-violet-200",
+  Marketing: "bg-orange-100 text-orange-900 border-orange-200",
   Finance:   "bg-amber-100 text-amber-900 border-amber-200",
   General:   "bg-gray-100 text-gray-700 border-gray-200",
 };
@@ -41,8 +41,8 @@ export const TRACK_PILL: Record<CycleTrack, string> = {
 // clearly distinguishable. General uses gray-200 (not gray-100) for sufficient
 // contrast against the white unselected pill.
 export const TRACK_PILL_BASE: Record<CycleTrack, string> = {
-  Tech:      "bg-blue-100 text-blue-800",
-  Marketing: "bg-lime-100 text-lime-900",
+  Tech:      "bg-violet-100 text-violet-800",
+  Marketing: "bg-orange-100 text-orange-900",
   Finance:   "bg-amber-100 text-amber-900",
   General:   "bg-gray-200 text-gray-800",
 };
