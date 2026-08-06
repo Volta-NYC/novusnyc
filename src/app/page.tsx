@@ -14,6 +14,7 @@ import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
+import { getShowcasePastelColorClass } from "@/lib/showcaseColors";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,35 +33,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   };
 }
-
-const SHOWCASE_COLOR_CLASS: Record<string, string> = {
-  "blue-soft": "bg-blue-300",
-  "blue-mid": "bg-blue-500",
-  "blue-deep": "bg-blue-700",
-  "lime-soft": "bg-lime-300",
-  "lime-mid": "bg-lime-500",
-  "lime-deep": "bg-lime-700",
-  "amber-soft": "bg-amber-300",
-  "amber-mid": "bg-amber-500",
-  "amber-deep": "bg-amber-700",
-  "pink-soft": "bg-pink-300",
-  "pink-mid": "bg-pink-500",
-  "pink-deep": "bg-pink-700",
-  "purple-mid": "bg-purple-500",
-  "red-soft": "bg-red-300",
-  "red-mid": "bg-red-500",
-  "red-deep": "bg-red-700",
-  // Safety mapping for older entries.
-  green: "bg-lime-500",
-  blue: "bg-blue-500",
-  orange: "bg-red-500",
-  amber: "bg-amber-500",
-  pink: "bg-pink-500",
-  purple: "bg-purple-500",
-  "green-soft": "bg-lime-300",
-  "green-mid": "bg-lime-500",
-  "green-deep": "bg-lime-700",
-};
 
 type HomeProject = {
   name: string;
@@ -120,7 +92,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
       neighborhood: card.neighborhood,
       services: card.services,
       status: card.status,
-      colorClass: SHOWCASE_COLOR_CLASS[card.color] ?? "bg-blue-500",
+      colorClass: getShowcasePastelColorClass(card.color),
       url: card.url,
       imageUrl: card.imageUrl,
       desc: card.desc,
@@ -133,7 +105,7 @@ async function getHomeProjects(): Promise<HomeProject[]> {
       neighborhood: project.neighborhood,
       services: project.services,
       status: "Ongoing" as const,
-      colorClass: project.color,
+      colorClass: getShowcasePastelColorClass(project.color),
       url: project.url,
       imageUrl: undefined as string | undefined,
       desc: project.desc,
