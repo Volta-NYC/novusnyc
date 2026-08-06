@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Wordmark from "@/components/Wordmark";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -55,9 +56,7 @@ export default function Navbar() {
               height={200}
               className="h-9 w-auto object-contain"
             />
-            <span className="font-display font-bold text-xl tracking-tight text-n-orange">
-              NOVUS
-            </span>
+            <Wordmark className="text-xl text-n-orange" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">

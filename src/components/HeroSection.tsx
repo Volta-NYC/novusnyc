@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Wordmark from "@/components/Wordmark";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -94,7 +95,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
                 }}
                 priority
               />
-              <span className="text-n-orange">NOVUS</span>
+              <Wordmark className="text-n-orange" />
             </span>
           </h1>
         </motion.div>
