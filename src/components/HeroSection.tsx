@@ -75,7 +75,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
-            <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-2 sm:gap-2.5 md:gap-3.5">
+            <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-3 sm:gap-5 md:gap-7">
               <Image
                 src="/logo.png"
                 alt="Novus NYC logo"
@@ -85,7 +85,12 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
                 style={{
                   // Height only — width follows the mark's 1.115:1 aspect.
                   // Tracks the wordmark's clamp so the lockup scales together.
-                  height: "clamp(6.6rem, 19vw, 13.1rem)",
+                  height: "clamp(4.95rem, 14.25vw, 9.83rem)",
+                  // The mark's alpha centroid sits 7.3% below its geometric
+                  // centre (thin spire up top, mass in the deck), so box-centring
+                  // makes it read low against the wordmark. Lift it so the
+                  // visual mass lines up with the midline of NOVUS.
+                  transform: "translateY(-7%)",
                 }}
                 priority
               />
