@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -66,6 +66,56 @@ function isNycCoordinate(lat?: number, lng?: number): boolean {
     lng >= NYC_COORDINATE_BOUNDS.minLng &&
     lng <= NYC_COORDINATE_BOUNDS.maxLng
   );
+}
+
+/**
+ * Leaflet's scroll-wheel zoom swallows wheel events, so the page scroll gets
+ * trapped whenever the cursor crosses the map. `scrollWheelZoom` stays off and
+ * zoom is driven manually only while a modifier key is held — the same
+ * convention as embedded Google Maps.
+ *
+ * The listener must be non-passive: ctrl+wheel is the browser's own page-zoom
+ * gesture, so without preventDefault the whole page would zoom instead of the
+ * map. Zoom is applied with setZoomAround so it tracks the cursor rather than
+ * the map centre.
+ */
+function ScrollZoomGuard({ onHintChange }: { onHintChange: (v: boolean) => void }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    let hideTimer: number | undefined;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        e.preventDefault();
+        const step = e.deltaY < 0 ? 0.5 : -0.5;
+        map.setZoomAround(map.mouseEventToContainerPoint(e), map.getZoom() + step);
+        window.clearTimeout(hideTimer);
+        onHintChange(false);
+        return;
+      }
+      // No modifier: do nothing. The event bubbles and the page scrolls.
+      onHintChange(true);
+      window.clearTimeout(hideTimer);
+      hideTimer = window.setTimeout(() => onHintChange(false), 1300);
+    };
+
+    const onLeave = () => {
+      window.clearTimeout(hideTimer);
+      onHintChange(false);
+    };
+
+    container.addEventListener("wheel", onWheel, { passive: false });
+    container.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.clearTimeout(hideTimer);
+      container.removeEventListener("wheel", onWheel);
+      container.removeEventListener("mouseleave", onLeave);
+    };
+  }, [map, onHintChange]);
+
+  return null;
 }
 
 function FitMapToPoints({ points }: { points: [number, number][] }) {
@@ -162,6 +212,14 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
     return markers.map((m) => [m.lat, m.lng] as [number, number]);
   }, [markers]);
 
+  const [showZoomHint, setShowZoomHint] = useState(false);
+  // Resolved after mount: reading navigator during render would make the server
+  // and client disagree on the label and trip a hydration mismatch.
+  const [zoomModifierLabel, setZoomModifierLabel] = useState("Ctrl");
+  useEffect(() => {
+    if (/Mac|iPhone|iPad|iPod/.test(navigator.userAgent)) setZoomModifierLabel("\u2318");
+  }, []);
+
   return (
     <div className="relative w-full h-full z-0">
       <MapContainer
@@ -169,10 +227,11 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
         zoom={11}
         zoomSnap={0.25}
         style={{ height: "100%", width: "100%" }}
-        scrollWheelZoom={true}
+        scrollWheelZoom={false}
         zoomControl={true}
         aria-label="Interactive map of Novus NYC business locations across New York City"
       >
+        <ScrollZoomGuard onHintChange={setShowZoomHint} />
         <FitMapToPoints points={fitPoints} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -257,6 +316,16 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
         ))}
       </MapContainer>
 
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 z-[400] flex items-center justify-center transition-opacity duration-200 ${
+          showZoomHint ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <span className="rounded-full bg-black/70 px-4 py-2 font-body text-sm font-medium text-white shadow-lg backdrop-blur-sm">
+          Hold {zoomModifierLabel} and scroll to zoom
+        </span>
+      </div>
     </div>
   );
 }

@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="flex flex-col items-start">
             <Link href="/" className="flex items-center gap-3 mb-4">
               <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-14 w-auto object-contain" />
-              <span className="font-display font-bold text-3xl tracking-tight text-n-orange">Novus</span>
+              <span className="font-display font-bold text-3xl tracking-tight text-n-orange">NOVUS</span>
             </Link>
             <p className="font-body text-sm leading-relaxed text-white/50">
               A registered nonprofit connecting student teams with NYC small businesses.

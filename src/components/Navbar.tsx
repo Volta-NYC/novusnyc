@@ -20,11 +20,12 @@ const moreLinks = [
   { href: "/members", label: "Member Portal" },
 ];
 
-/** Pages whose hero sections have a dark background — the navbar should use white text when unscrolled. */
-const darkHeroPages = ["/", "/partners", "/showcase", "/join", "/about", "/impact"];
+// The navbar is always dark. The palette is pastel, so a light bar washes the
+// accents out and the mid-scroll theme flip read as a glitch. A constant dark
+// surface also means the header markup no longer depends on scroll position,
+// which removes a server/client hydration mismatch.
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const pathname = usePathname();
@@ -32,55 +33,17 @@ export default function Navbar() {
   const currentPathname = (pathname || browserPathname || "/").replace(/\/$/, "") || "/";
 
   useEffect(() => {
-    const onScroll = () => {
-      const darkRegionEnd = document.querySelector<HTMLElement>('[data-home-dark-end="true"]');
-      if (darkRegionEnd) {
-        const darkRegionBottom = darkRegionEnd.getBoundingClientRect().bottom;
-        setScrolled(darkRegionBottom <= 0);
-        return;
-      }
-      if (currentPathname === "/") {
-        const fallbackSwitchY = Math.max(520, window.innerHeight * 1.05);
-        setScrolled(window.scrollY > fallbackSwitchY);
-        return;
-      }
-      setScrolled(window.scrollY > 20);
-    };
-    // Sync immediately on mount so deep-links (e.g. /partners#contact) use the
-    // correct navbar contrast before any manual scroll happens.
-    onScroll();
-    const raf = window.requestAnimationFrame(onScroll);
-    const timeout = window.setTimeout(onScroll, 80);
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("hashchange", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("hashchange", onScroll);
-      window.cancelAnimationFrame(raf);
-      window.clearTimeout(timeout);
-    };
-  }, [currentPathname]);
-
-  useEffect(() => {
     setOpen(false);
     setMoreOpen(false);
   }, [currentPathname]);
 
-  const darkHero = !scrolled && !open && darkHeroPages.includes(currentPathname);
-  const navTextClass = darkHero
-    ? "text-white/80 hover:text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
-    : "text-n-muted hover:text-n-ink";
+  const navTextClass = "text-white/75 hover:text-white";
   const moreActive = moreLinks.some((l) => currentPathname === l.href) || currentPathname.startsWith("/members");
 
   return (
     <>
       <header
-        className={`fixed left-0 right-0 z-50 border-b transition-all duration-300 ${
-          darkHero
-            ? "bg-[#17151a]/88 backdrop-blur-md border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.2)]"
-            : "bg-n-bg/95 backdrop-blur-md shadow-sm border-black/10"
-        }`}
+        className="fixed left-0 right-0 z-50 border-b border-white/10 bg-[#17151a]/92 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
         style={{ top: "var(--banner-h, 0px)" }}
       >
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
@@ -92,7 +55,7 @@ export default function Navbar() {
               height={200}
               className="h-9 w-auto object-contain"
             />
-            <span className={`font-display font-bold text-xl tracking-tight text-n-orange transition-colors ${darkHero ? "drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]" : ""}`}>
+            <span className="font-display font-bold text-xl tracking-tight text-n-orange">
               NOVUS
             </span>
           </Link>
@@ -148,15 +111,15 @@ export default function Navbar() {
                     transition={{ duration: 0.15 }}
                     className="absolute top-full right-0 pt-3 min-w-[160px]"
                   >
-                    <div className="bg-white border border-n-border rounded-xl shadow-lg py-1.5 overflow-hidden">
+                    <div className="bg-[#221f26] border border-white/10 rounded-xl shadow-[0_16px_40px_rgba(0,0,0,0.45)] py-1.5 overflow-hidden">
                       {moreLinks.map((l) => (
                         <Link
                           key={l.href}
                           href={l.href}
-                          className={`block px-4 py-2.5 font-body text-sm transition-colors hover:bg-n-bg ${
+                          className={`block px-4 py-2.5 font-body text-sm transition-colors hover:bg-white/8 ${
                             l.href === "/members" || currentPathname === l.href
                               ? "text-n-orange font-semibold"
-                              : "text-n-ink"
+                              : "text-white/75 hover:text-white"
                           }`}
                         >
                           {l.label}
@@ -190,9 +153,9 @@ export default function Navbar() {
               aria-expanded={open}
               aria-controls="mobile-nav-menu"
             >
-              <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-n-ink"} ${open ? "rotate-45 translate-y-2" : ""}`} />
-              <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-n-ink"} ${open ? "opacity-0" : ""}`} />
-              <span className={`block h-0.5 w-5 transition-all duration-300 ${darkHero ? "bg-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" : "bg-n-ink"} ${open ? "-rotate-45 -translate-y-2" : ""}`} />
+              <span className={`block h-0.5 w-5 transition-all duration-300 bg-white ${open ? "rotate-45 translate-y-2" : ""}`} />
+              <span className={`block h-0.5 w-5 transition-all duration-300 bg-white ${open ? "opacity-0" : ""}`} />
+              <span className={`block h-0.5 w-5 transition-all duration-300 bg-white ${open ? "-rotate-45 -translate-y-2" : ""}`} />
             </button>
           </div>
         </div>
@@ -207,15 +170,15 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-4 overflow-y-auto bg-n-bg px-5 pb-8 pt-6 md:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-4 overflow-y-auto bg-[#17151a] px-5 pb-8 pt-6 md:hidden"
             style={{ top: "calc(var(--banner-h, 0px) + 4rem)" }}
           >
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`font-display font-bold text-xl border-b border-n-border py-3 pl-3 border-l-2 ${
-                  currentPathname === l.href ? "text-n-orange border-l-n-orange" : "text-n-ink border-l-transparent"
+                className={`font-display font-bold text-xl border-b border-white/10 py-3 pl-3 border-l-2 ${
+                  currentPathname === l.href ? "text-n-orange border-l-n-orange" : "text-white/85 border-l-transparent"
                 }`}
               >
                 {l.label}
@@ -223,15 +186,15 @@ export default function Navbar() {
             ))}
 
             {/* More section in mobile */}
-            <div className="border-b border-n-border py-3">
-              <p className="font-display font-bold text-xl text-n-ink mb-3">More</p>
+            <div className="border-b border-white/10 py-3">
+              <p className="font-display font-bold text-xl text-white/85 mb-3">More</p>
               <div className="flex flex-col gap-2 pl-2">
                 {moreLinks.map((l) => (
                   <Link
                     key={l.href}
                     href={l.href}
                     className={`font-body text-base transition-colors ${
-                      l.href === "/members" ? "text-n-orange font-semibold" : "text-n-muted hover:text-n-ink"
+                      l.href === "/members" ? "text-n-orange font-semibold" : "text-white/60 hover:text-white"
                     }`}
                   >
                     {l.label}
