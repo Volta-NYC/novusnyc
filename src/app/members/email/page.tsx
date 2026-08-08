@@ -32,10 +32,11 @@ import { computeGlobalCodes, getMemberCodes, type AssignmentCode } from "@/lib/m
 import { computeDot, computeCreditLedger, classifyMember, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { useAuth } from "@/lib/members/authContext";
 import { gradeToClassOf } from "@/lib/grades";
+import { EMAIL } from "@/lib/mail";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
-  { value: "info@voltanyc.org", label: "info@voltanyc.org" },
-  { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
+  { value: EMAIL.info, label: EMAIL.info },
+  { value: EMAIL.ethan, label: EMAIL.ethan },
 ];
 
 // System email templates seeded on first admin visit. Keys here match the
@@ -309,7 +310,7 @@ export default function MemberEmailPage() {
   const [creditClaims, setCreditClaims] = useState<AssignmentClaim[]>([]);
   const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
-  const [fromAddress, setFromAddress] = useState<string>("info@voltanyc.org");
+  const [fromAddress, setFromAddress] = useState<string>(EMAIL.info);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [lastClickedRecipientId, setLastClickedRecipientId] = useState<string | null>(null);
   const [deliveryModeById, setDeliveryModeById] = useState<Record<string, DeliveryMode>>({});

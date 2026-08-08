@@ -25,6 +25,7 @@ import MemberDrawer from "@/components/members/MemberDrawer";
 import { classifyMember, computeCreditLedger, computeDot, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { runCycleSweep } from "@/lib/members/cycleAutomation";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
+import { EMAIL } from "@/lib/mail";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -171,7 +172,7 @@ function roleSortKey(value: unknown): number {
 // accepted with. Compared loosely against name + email so casing/spacing in
 // stored data doesn't cause a miss.
 const BOARD_MEMBERS: Array<{ name: string; emails: string[] }> = [
-  { name: "Ethan Zhang", emails: ["ethan@voltanyc.org"] },
+  { name: "Ethan Zhang", emails: [EMAIL.ethan] },
   { name: "Andrew Chin", emails: [] },
   { name: "Tahmid Islam", emails: [] },
   { name: "Ellie Mak", emails: [] },

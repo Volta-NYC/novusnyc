@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { TEAM_EMAIL_ALLOWED_FROM_DEFAULT } from "@/lib/mail";
 
 export const runtime = "nodejs";
 // A full-roster send is several sequential SMTP round trips; the platform
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
 
   const allowedFrom = Array.from(
     new Set(
-      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? "info@voltanyc.org,ethan@voltanyc.org")
+      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? TEAM_EMAIL_ALLOWED_FROM_DEFAULT)
         .split(",")
         .map((value) => normalizeEmail(value))
         .filter((value) => value && isValidEmail(value))

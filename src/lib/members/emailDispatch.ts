@@ -10,6 +10,7 @@ import {
   isAutomaticDemeritAutomation,
 } from "@/lib/members/automaticDemerits";
 import { substituteEmailTokens } from "@/lib/members/cycleCompute";
+import { EMAIL } from "@/lib/mail";
 
 export interface DispatchEmailInput {
   automationId: string;
@@ -44,7 +45,7 @@ export async function dispatchTemplatedEmail(input: DispatchEmailInput): Promise
   const body    = substituteEmailTokens(template.body,    input.variables);
 
   const fd = new FormData();
-  fd.append("fromAddress", input.fromAddress ?? "info@voltanyc.org");
+  fd.append("fromAddress", input.fromAddress ?? EMAIL.info);
   fd.append("subject", subject);
   fd.append("message", body);
   fd.append("contentMode", "html");

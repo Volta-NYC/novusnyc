@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { EMAIL } from "@/lib/mail";
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
@@ -29,7 +30,7 @@ export function getDefaultFromAddress(): string {
     pickFirst(
       process.env.EMAIL_FROM,
       process.env.INTERVIEW_FROM_EMAIL,
-      "info@voltanyc.org",
+      EMAIL.info,
     ),
   );
 }
@@ -192,8 +193,8 @@ export function resolveFromWithName(rawFrom: string): string {
   if (legacyName) return `${legacyName} <${email}>`;
 
   // Practical defaults for Novus sender aliases.
-  if (email === "info@voltanyc.org") return `Novus NYC <${email}>`;
-  if (email === "ethan@voltanyc.org") return `Ethan Zhang <${email}>`;
+  if (email === EMAIL.info) return `Novus NYC <${email}>`;
+  if (email === EMAIL.ethan) return `Ethan Zhang <${email}>`;
 
   return email;
 }

@@ -3,6 +3,7 @@ import { verifyCaller } from "@/lib/server/adminApi";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { createTransportForFrom, resolveFromWithName, getDefaultReplyToAddress } from "@/lib/server/smtp";
 import { renderTemplate } from "@/lib/server/emailTemplates";
+import { EMAIL } from "@/lib/mail";
 
 export const runtime = "nodejs";
 
@@ -136,9 +137,9 @@ export async function POST(req: NextRequest) {
   let emailsSkipped = 0;
 
   try {
-    const { transporter } = createTransportForFrom("info@voltanyc.org");
-    const from = resolveFromWithName("info@voltanyc.org");
-    const replyTo = getDefaultReplyToAddress("info@voltanyc.org");
+    const { transporter } = createTransportForFrom(EMAIL.info);
+    const from = resolveFromWithName(EMAIL.info);
+    const replyTo = getDefaultReplyToAddress(EMAIL.info);
     const portalLink = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.novusnyc.org"}/members/work/${assignmentId}`;
     const messageTrimmed = message.trim();
     const messageFmt = messageTrimmed.replace(/\n/g, "<br>");

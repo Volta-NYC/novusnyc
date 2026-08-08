@@ -22,6 +22,7 @@ import { useAuth } from "@/lib/members/authContext";
 import { TRACK_META, TRACK_ORDER, DIVISION_PUBLIC_LABEL, type TrackDivision } from "@/lib/members/constants";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
 import { formatPhone } from "@/lib/format";
+import { EMAIL } from "@/lib/mail";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -106,8 +107,8 @@ const SHOWCASE_COLOR_OPTIONS: Array<{ value: ShowcaseColorValue; label: string; 
 ];
 const SHOWCASE_COLOR_VALUES = SHOWCASE_COLOR_OPTIONS.map((option) => option.value);
 const TEAM_EMAIL_FROM_OPTIONS = [
-  { value: "info@voltanyc.org", label: "info@voltanyc.org" },
-  { value: "ethan@voltanyc.org", label: "ethan@voltanyc.org" },
+  { value: EMAIL.info, label: EMAIL.info },
+  { value: EMAIL.ethan, label: EMAIL.ethan },
 ];
 
 const TECH_STATUS_SORT: Record<string, number> = {
@@ -434,7 +435,7 @@ function BusinessesPageInner() {
   const [projectTeamPickerProject, setProjectTeamPickerProject] = useState<Business | null>(null);
   const [projectEmailSubject, setProjectEmailSubject] = useState("");
   const [projectEmailMessage, setProjectEmailMessage] = useState("");
-  const [projectEmailFrom, setProjectEmailFrom] = useState("info@voltanyc.org");
+  const [projectEmailFrom, setProjectEmailFrom] = useState<string>(EMAIL.info);
   const [projectEmailSending, setProjectEmailSending] = useState(false);
   const [projectEmailStatus, setProjectEmailStatus] = useState<string | null>(null);
   const [projectEmailRecipientOverride, setProjectEmailRecipientOverride] = useState<string[] | null>(null);
@@ -1243,7 +1244,7 @@ function BusinessesPageInner() {
       setProjectEmailRecipientLabel(null);
       setProjectEmailStatus(null);
     }
-    setProjectEmailFrom("info@voltanyc.org");
+    setProjectEmailFrom(EMAIL.info);
     setProjectEmailSubject(`${project.name} — Project Update`);
     setProjectEmailMessage("");
     setProjectEmailAttachments([]);

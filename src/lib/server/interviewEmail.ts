@@ -7,6 +7,7 @@ import {
 import { buildInterviewInviteTemplate } from "@/lib/server/applicantEmails";
 import { formatInterviewInET, parseInterviewDateTime } from "@/lib/interviews/datetime";
 import { renderAutomationEmail } from "@/lib/server/templateRenderer";
+import { EMAIL } from "@/lib/mail";
 
 type BookingEmailInput = {
   to: string;
@@ -69,7 +70,7 @@ function buildIcs(input: BookingEmailInput): string {
     `DESCRIPTION:${escapeIcs(descParts.join("\n"))}`,
     organizerEmail
       ? `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:${escapeIcs(organizerEmail)}`
-      : `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:ethan@voltanyc.org`,
+      : `ORGANIZER;CN=${escapeIcs(organizerName)}:mailto:${EMAIL.ethan}`,
     input.location ? `LOCATION:${escapeIcs(input.location)}` : "",
     input.zoomLink ? `URL:${escapeIcs(input.zoomLink)}` : "",
     "BEGIN:VALARM",

@@ -6,6 +6,7 @@ import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schem
 import { TRACK_NAMES } from "@/data";
 import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
 import SchoolSelector from "@/components/SchoolSelector";
+import { EMAIL } from "@/lib/mail";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Online", "Referral", "Other"];
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS.filter((grade) => grade !== "Class of 2022");
@@ -341,7 +342,7 @@ export default function ApplicationForm() {
 
       {status === "error" && (
         <p className="text-red-500 text-sm text-center font-body">
-          Something went wrong. Email us at info@voltanyc.org
+          Something went wrong. Email us at {EMAIL.info}
         </p>
       )}
       <p className="text-xs text-n-muted text-center font-body">

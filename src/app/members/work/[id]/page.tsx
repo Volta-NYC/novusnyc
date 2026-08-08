@@ -18,6 +18,7 @@ import {
   type Business, type Cycle, type CycleTrack, type TeamMember,
 } from "@/lib/members/storage";
 import { classifyMember } from "@/lib/members/cycleCompute";
+import { EMAIL } from "@/lib/mail";
 
 const TRACK_DOT: Record<CycleTrack, string> = {
   Tech: "bg-violet-500",
@@ -351,7 +352,7 @@ export default function AssignmentDetailPage() {
         {assignment.applicationRequired && !myClaim && (
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
             <p className="font-semibold mb-1">Pre-approval required</p>
-            <p>This assignment requires you to discuss it with a senior associate before signing up. Please email <a href="mailto:info@voltanyc.org" className="underline font-medium">info@voltanyc.org</a> first, then claim it once you&apos;ve been approved.</p>
+            <p>This assignment requires you to discuss it with a senior associate before signing up. Please email <a href={`mailto:${EMAIL.info}`} className="underline font-medium">{EMAIL.info}</a> first, then claim it once you&apos;ve been approved.</p>
           </div>
         )}
 
