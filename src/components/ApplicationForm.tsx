@@ -7,6 +7,7 @@ import { TRACK_NAMES } from "@/data";
 import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
 import SchoolSelector from "@/components/SchoolSelector";
 import { EMAIL } from "@/lib/mail";
+import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
 const REFERRAL_OPTIONS = ["School counselor", "Friend", "Social media", "Online", "Referral", "Other"];
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS.filter((grade) => grade !== "Class of 2022");
@@ -120,6 +121,9 @@ export default function ApplicationForm() {
       });
       if (!res.ok) throw new Error("submit_failed");
       setStatus("success");
+      // Fired only after the API confirms the write, so this counts real
+      // applications rather than attempts.
+      trackEvent(GA_EVENTS.applicationSubmitted);
     } catch {
       setStatus("error");
     }

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next/third-parties": "^16.3.0",
     "@supabase/supabase-js": "^2.105.4",
     "@tiptap/extension-color": "^3.22.3",
     "@tiptap/extension-font-family": "^3.22.3",

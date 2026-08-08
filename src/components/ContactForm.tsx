@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { CheckIcon } from "@/components/Icons";
 import { validateContactForm, type ContactFormValues } from "@/lib/schemas";
 import { EMAIL } from "@/lib/mail";
+import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
 type Lang = "en" | "es" | "zh" | "ko" | "ar" | "fr";
 
@@ -118,6 +119,10 @@ export default function ContactForm() {
       });
       if (!res.ok) throw new Error("submit_failed");
       setStatus("success");
+      // Fired only after the API confirms the write, so this counts real
+      // submissions rather than attempts. `lang` separates the six
+      // translations, which is the point of the form being multilingual.
+      trackEvent(GA_EVENTS.contactSubmitted, { lang });
       setFormData(EMPTY);
     } catch {
       setStatus("error");

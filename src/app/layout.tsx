@@ -3,6 +3,8 @@ import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { Analytics } from "@vercel/analytics/next";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import { GA_MEASUREMENT_ID } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/site";
 import { EMAIL } from "@/lib/mail";
 import { SOCIAL } from "@/lib/social";
@@ -164,6 +166,9 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-content">Skip to main content</a>
         <ConditionalLayout>{children}</ConditionalLayout>
         <Analytics />
+        {process.env.NODE_ENV === "production" && (
+          <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />
+        )}
       </body>
     </html>
   );
