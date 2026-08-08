@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 const SERVICES = [
   {
     icon: GlobeIcon,
-    title: "Website Design & Development",
+    title: "Website design and development",
     summary: "We build your website from scratch, or fix the one you have.",
     color: "text-n-purple",
     bg: "bg-blue-50",
@@ -47,7 +47,7 @@ const SERVICES = [
   },
   {
     icon: SearchIcon,
-    title: "SEO & Online Visibility",
+    title: "Google Search and Maps visibility",
     summary: "Show up when customers search for you on Google and Maps.",
     color: "text-n-purple",
     bg: "bg-blue-50",
@@ -59,7 +59,7 @@ const SERVICES = [
   },
   {
     icon: SmartphoneIcon,
-    title: "Social Media & Content",
+    title: "Social media and content",
     summary: "A posting plan and real content — not a strategy deck you'll never use.",
     color: "text-n-orange",
     bg: "bg-orange-50",
@@ -71,7 +71,7 @@ const SERVICES = [
   },
   {
     icon: PencilIcon,
-    title: "Graphic Design",
+    title: "Graphic design",
     summary: "Print and digital materials your customers actually take home.",
     color: "text-n-orange",
     bg: "bg-orange-50",
@@ -83,7 +83,7 @@ const SERVICES = [
   },
   {
     icon: TrendingUpIcon,
-    title: "Sales & Financial Analysis",
+    title: "Sales and financial analysis",
     summary: "We go through your numbers and tell you what they actually mean.",
     color: "text-amber-500",
     bg: "bg-amber-50",
@@ -95,7 +95,7 @@ const SERVICES = [
   },
   {
     icon: DollarIcon,
-    title: "Grant Research & Writing",
+    title: "Grant research and writing",
     summary: "We find the grants, write the application, and hand it to you to sign.",
     color: "text-amber-500",
     bg: "bg-amber-50",
@@ -242,11 +242,15 @@ export default async function Partners() {
               className="font-display font-bold text-white leading-none tracking-tight mb-6"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
-              Free, dedicated support for<br />
-              <span className="text-n-orange">local businesses and entrepreneurs.</span>
+              Free websites, tools, and marketing for<br />
+              <span className="text-n-orange">NYC small businesses.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              Novus NYC partners with small businesses to provide critical digital and strategic infrastructure, from web design to marketing and outreach. Our teams provide clear project planning, consistent communication, and concrete results, entirely free of charge.
+              We&apos;ve worked with 127 businesses across all five boroughs: 17 in Park Slope,
+              15 in Bayside, 11 each in East New York and North Flatbush, plus Sunnyside,
+              Bed-Stuy, Cypress Hills, Harlem, and Staten Island&apos;s North Shore. Restaurants,
+              coffee shops, bars, flower shops, tutoring centers. If you&apos;re a small business
+              in New York City, you qualify.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a
@@ -275,8 +279,8 @@ export default async function Partners() {
             </h2>
             <p className="font-body text-n-muted max-w-xl">
               Tell us about your business and what you need. It&apos;s free, with no contract
-              or obligation. Switch the form to your preferred language using the toggle
-              below. If you were referred by a BID, mention that in your message.
+              or obligation. The form is available in English, Spanish, Chinese, Korean,
+              Arabic, and French. If you were referred by a BID, mention that in your message.
             </p>
           </AnimatedSection>
           <AnimatedSection>
@@ -293,7 +297,7 @@ export default async function Partners() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="page-section-heading text-n-ink">
-              What your business receives
+              What we build for small businesses
             </h2>
             <p className="font-body text-n-muted mt-3 max-w-xl">
               Your student team scopes the work with you, shares regular updates, and hands over clear, usable deliverables at the end of the project.
