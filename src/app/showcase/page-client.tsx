@@ -376,13 +376,10 @@ export default function ShowcaseClient({
       {/* ── PROJECT CARDS ───────────────────────────────────── */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-6 flex items-end justify-between flex-wrap gap-3">
+          <AnimatedSection className="mb-6">
             <h2 className="font-display font-bold text-n-ink text-2xl md:text-3xl">
               Selected Projects
             </h2>
-            <Link href="/updates" className="font-body text-sm font-semibold text-n-purple hover:underline">
-              See progress updates →
-            </Link>
           </AnimatedSection>
 
           {projects.length === 0 ? (

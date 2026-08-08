@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Wordmark from "@/components/Wordmark";
 import { MailIcon, LinkedInIcon, InstagramIcon } from "@/components/Icons";
+import { SOCIAL } from "@/lib/social";
 
 export default function Footer() {
   return (
@@ -29,7 +30,6 @@ export default function Footer() {
                 { href: "/join", label: "For Students" },
                 { href: "/reports", label: "Reports & Case Studies" },
                 { href: "/guides", label: "Guides for Businesses" },
-                { href: "/updates", label: "Progress Updates" },
                 { href: "/members/login", label: "Member Login" },
                 { href: "/apply", label: "Apply Now" },
               ].map((l) => (
@@ -55,7 +55,7 @@ export default function Footer() {
                 <span className="text-n-orange">nyc.novus@gmail.com</span>
               </a>
               <a
-                href="https://www.linkedin.com/company/volta-nyc/"
+                href={SOCIAL.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"
@@ -65,7 +65,7 @@ export default function Footer() {
                 <span className="text-n-purple">Novus NYC</span>
               </a>
               <a
-                href="https://www.instagram.com/voltanyc/"
+                href={SOCIAL.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"

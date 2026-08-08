@@ -97,9 +97,36 @@ const nextConfig = {
       "novus-nyc.vercel.app",
     ];
     return [
+      // Legacy paths. These were previously stub pages calling Next's
+      // redirect(), which emits 307 Temporary — that tells Google to keep the
+      // old URL indexed and withholds the consolidation. Handled here instead so
+      // they are 308 Permanent, matching the domain-level redirects.
       {
         source: "/contact",
         destination: "/partners",
+        permanent: true,
+      },
+      {
+        source: "/students",
+        destination: "/join",
+        permanent: true,
+      },
+      {
+        source: "/business-guides",
+        destination: "/guides",
+        permanent: true,
+      },
+      // /updates (Progress Updates) was retired. Its content was social embeds,
+      // most of which were deleted. Pointed at /showcase rather than left to 404
+      // — the URL is indexed, and a 404 mid-migration discards its equity.
+      {
+        source: "/updates",
+        destination: "/showcase",
+        permanent: true,
+      },
+      {
+        source: "/progress-updates",
+        destination: "/showcase",
         permanent: true,
       },
       ...OLD_HOSTS.map((host) => ({

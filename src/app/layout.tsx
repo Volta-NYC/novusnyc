@@ -5,6 +5,7 @@ import ConditionalLayout from "@/components/ConditionalLayout";
 import { Analytics } from "@vercel/analytics/next";
 import { SITE_URL } from "@/lib/site";
 import { EMAIL } from "@/lib/mail";
+import { SOCIAL } from "@/lib/social";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -152,7 +153,8 @@ export default function RootLayout({
                 ],
               },
               sameAs: [
-                "https://www.linkedin.com/company/volta-nyc/",
+                SOCIAL.linkedin,
+                SOCIAL.instagram,
               ],
             }),
           }}

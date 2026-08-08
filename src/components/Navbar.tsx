@@ -17,7 +17,6 @@ const links = [
 const moreLinks = [
   { href: "/reports", label: "Reports & Case Studies" },
   { href: "/guides", label: "Guides for Businesses" },
-  { href: "/updates", label: "Progress Updates" },
   { href: "/members", label: "Member Portal" },
 ];
 

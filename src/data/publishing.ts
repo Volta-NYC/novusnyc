@@ -7,18 +7,6 @@ export interface GuideEntry {
   bullets: string[];
 }
 
-export interface UpdateEntry {
-  id: string;
-  title: string;
-  date: string; // YYYY-MM-DD
-  summary: string;
-  highlights: string[];
-  linkedinUrl?: string;
-  linkedinUrn?: string;
-  instagramEmbedUrl?: string;
-  links?: Array<{ label: string; href: string }>;
-}
-
 export const businessGuides: GuideEntry[] = [
   {
     id: "domain-hosting-basics",
@@ -58,93 +46,5 @@ export const businessGuides: GuideEntry[] = [
       "What to template vs. what to custom-design",
       "How to scope design work so it stays affordable",
     ],
-  },
-];
-
-export const progressUpdates: UpdateEntry[] = [
-  {
-    id: "linkedin-7464042184758030336",
-    title: "Two-Month Progress Update",
-    date: "2026-05-23",
-    summary: "LinkedIn update from the Novus NYC team.",
-    highlights: [],
-    linkedinUrn: "urn:li:activity:7464042184758030336",
-  },
-  {
-    id: "linkedin-7441949940219564033",
-    title: "Apply to Novus NYC",
-    date: "2026-03-23",
-    summary: "LinkedIn update from the Novus NYC team.",
-    highlights: [],
-    linkedinUrn: "urn:li:activity:7441949940219564033",
-  },
-  {
-    id: "instagram-dvbs-6ldvk9",
-    title: "Instagram Project Update",
-    date: "2026-02-21",
-    summary:
-      "Instagram update from the Novus NYC feed.",
-    highlights: [
-      "Instagram publication",
-      "Public progress update",
-      "Cross-platform visibility",
-    ],
-    instagramEmbedUrl: "https://www.instagram.com/p/DVBS-6LDvk9/embed/",
-  },
-  {
-    id: "linkedin-7439282826857873408",
-    title: "Apply to Novus NYC",
-    date: "2026-03-16",
-    summary:
-      "LinkedIn update from the Novus NYC team.",
-    highlights: [
-      "Application announcement",
-      "LinkedIn publication",
-      "Student recruiting update",
-    ],
-    linkedinUrl: "https://www.linkedin.com/feed/update/urn:li:activity:7439282826857873408",
-    linkedinUrn: "urn:li:activity:7439282826857873408",
-  },
-  {
-    id: "linkedin-7436758651316547585",
-    title: "HUB Third Avenue BID Tour + New Jacksonville Partnerships",
-    date: "2026-03-09",
-    summary:
-      "Public update post documenting recent execution progress and current focus areas.",
-    highlights: [
-      "Timestamped public progress log",
-      "LinkedIn publication for external visibility",
-      "Feeds applicant and partner credibility",
-    ],
-    linkedinUrl: "https://www.linkedin.com/feed/update/urn:li:activity:7436758651316547585",
-    linkedinUrn: "urn:li:activity:7436758651316547585",
-  },
-  {
-    id: "linkedin-7432782997528928256",
-    title: "BID Tours Across NYC and Early Neighborhood Outreach",
-    date: "2026-02-26",
-    summary:
-      "Public update post covering student expansion, execution priorities, and chapter development.",
-    highlights: [
-      "Timestamped public progress log",
-      "LinkedIn publication for external visibility",
-      "Feeds applicant and partner credibility",
-    ],
-    linkedinUrl: "https://www.linkedin.com/feed/update/urn:li:activity:7432782997528928256",
-    linkedinUrn: "urn:li:activity:7432782997528928256",
-  },
-  {
-    id: "linkedin-7420976236715315200",
-    title: "Spring 2026 Student Recruitment Announcement",
-    date: "2026-01-24",
-    summary:
-      "Public update post on partner work, delivery outcomes, and next-stage priorities.",
-    highlights: [
-      "Timestamped public progress log",
-      "LinkedIn publication for external visibility",
-      "Feeds applicant and partner credibility",
-    ],
-    linkedinUrl: "https://www.linkedin.com/feed/update/urn:li:activity:7420976236715315200",
-    linkedinUrn: "urn:li:activity:7420976236715315200",
   },
 ];
