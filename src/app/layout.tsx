@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   description:
     "Digital equity is economic equity. Novus connects student teams with New York City small businesses to provide free support in technology, marketing, finance, operations, websites, SEO, social media, and grant development.",
   metadataBase: new URL(SITE_URL),
+  // "./" resolves per-route against metadataBase, so every page emits a
+  // self-referencing canonical on the www host. Without this Next emits no
+  // canonical at all, which leaves Google free to pick its own preferred URL —
+  // and during a domain move that is usually the old one.
+  alternates: { canonical: "./" },
   openGraph: {
     title: "Novus NYC",
     description:
