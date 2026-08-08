@@ -69,7 +69,12 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
             willChange: parallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
-          <h1
+          <h1 className="sr-only">
+            Novus NYC — free websites, marketing, and grant writing for New York City
+            small businesses, built by high school and college students
+          </h1>
+          <div
+            aria-hidden="true"
             className="font-display font-bold leading-none tracking-tight"
             style={{
               fontSize: "clamp(4.8rem, 13.6vw, 9.2rem)",
@@ -97,7 +102,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
               />
               <Wordmark className="text-n-orange" />
             </span>
-          </h1>
+          </div>
         </motion.div>
 
         {/* Subtitle + CTAs — centered under the title */}

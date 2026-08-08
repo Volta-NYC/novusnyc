@@ -15,12 +15,12 @@ import { formatCounter } from "@/lib/formatCounter";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
-  title: "Get Involved",
+  title: "Volunteer and Internship Opportunities for NYC Students",
   description:
-    "Join Novus NYC to work on real projects for real businesses. All experience levels welcome. 5-minute application and rolling admissions.",
+    "Novus is run entirely by high school and college students. Work on real websites, marketing, and finance projects for NYC small businesses. No experience required, rolling applications, five minutes to apply.",
   openGraph: {
-    title: "Get Involved | Novus NYC",
-    description: "Real projects. Real clients. All experience levels welcome.",
+    title: "Volunteer and Internship Opportunities for NYC Students | Novus NYC",
+    description: "High school and college students building real websites and marketing work for NYC small businesses. No experience required.",
     images: ["/api/og"],
   },
 };
@@ -117,11 +117,15 @@ export default async function Join() {
               className="font-display font-bold text-white leading-none tracking-tight mb-6"
               style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
             >
-              Gain hands-on experience with<br />
-              <span className="text-n-purple">real projects with real impact.</span>
+              Real client work for high school<br />
+              <span className="text-n-purple">and college students in NYC.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-4">
-              Novus NYC places you on consulting teams to deliver tech and marketing work for local businesses. In Marketing, you can focus on social media and branding, grants and funding, ambassador work, small business outreach, or contribute across all four.
+              Novus is run entirely by students. You join a small team and build something a
+              real business uses, with a real deadline and a real client on the other end.
+              Websites, social media and branding, grants and funding, small business outreach,
+              or financial analysis. No experience required, and the application takes about
+              five minutes.
             </p>
             <p className="font-body text-white/65 text-sm mb-8">
               Join {formatCounter(memberCount)} students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.
@@ -165,7 +169,7 @@ export default async function Join() {
       <section id="benefits" className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-n-ink">Built for your resume — and beyond</h2>
+            <h2 className="page-section-heading text-n-ink">Built for your resume</h2>
             <p className="font-body text-n-muted mt-3 max-w-xl">
               Novus is built around outcomes that matter in interviews and on applications.
             </p>

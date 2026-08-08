@@ -246,11 +246,13 @@ export default async function Partners() {
               <span className="text-n-orange">NYC small businesses.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              We&apos;ve worked with 127 businesses across all five boroughs: 17 in Park Slope,
-              15 in Bayside, 11 each in East New York and North Flatbush, plus Sunnyside,
-              Bed-Stuy, Cypress Hills, Harlem, and Staten Island&apos;s North Shore. Restaurants,
-              coffee shops, bars, flower shops, tutoring centers. If you&apos;re a small business
-              in New York City, you qualify.
+              Novus is a nonprofit run entirely by high school and college students. We work
+              with small businesses across all five boroughs, in neighborhoods like Park Slope,
+              Bayside, East New York, North Flatbush, Bed-Stuy, Sunnyside, Cypress Hills,
+              Crown Heights, Bay Ridge, Flushing, Jackson Heights, Harlem, Chinatown, and
+              Great Kills. Restaurants, coffee shops,
+              bars, flower shops, tutoring centers. If you&apos;re a small business in New York
+              City, you qualify.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a

@@ -3,7 +3,7 @@ import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 
 export const metadata: Metadata = {
-  title: "Reports & Case Studies",
+  title: "Small Business Research and Case Studies",
   description:
     "Field research reports and business case studies written by Novus student teams across the country, grounded in direct owner interviews and in-person fieldwork.",
   openGraph: {
@@ -24,7 +24,7 @@ export default function ReportsPage() {
               Reports &amp; Case Studies
             </p>
             <h1 className="font-display font-bold text-n-ink text-4xl md:text-5xl leading-tight mb-5">
-              Field research on small business realities.
+              Field research on NYC small business realities.
             </h1>
             <p className="font-body text-n-muted text-lg max-w-3xl">
               This is Novus&apos;s publication library of local-market reports and business case studies.

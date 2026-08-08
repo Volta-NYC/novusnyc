@@ -12,11 +12,11 @@ import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
 
 
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "About Our Student-Run Nonprofit",
   description:
     "Novus NYC is a registered 501(c)(3) nonprofit run by students from Stuyvesant High School, Baruch College, Cornell University, Stony Brook University, and other schools. Learn about our history, values, and the team behind the work.",
   openGraph: {
-    title: "About Novus NYC",
+    title: "About Novus NYC | Student-Run Nonprofit",
     description: "A student-run nonprofit built on the belief that digital equity is economic equity.",
     images: ["/api/og"],
   },

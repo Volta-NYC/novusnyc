@@ -3,7 +3,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { businessGuides } from "@/data/publishing";
 
 export const metadata: Metadata = {
-  title: "Guides for Businesses",
+  title: "Free Guides for NYC Small Business Owners",
   description:
     "Practical guides for business owners on website costs, vendor pricing, digital tools, and execution decisions.",
   openGraph: {
@@ -33,7 +33,7 @@ export default function BusinessGuidesPage() {
               Guides for Businesses
             </p>
             <h1 className="font-display font-bold text-n-ink text-4xl md:text-5xl leading-tight mb-5">
-              Practical playbooks for owners.
+              Practical guides for NYC small business owners.
             </h1>
             <p className="font-body text-n-muted text-lg max-w-3xl">
               We saw repeated confusion around vendor pricing, website costs, and what actually drives results.
