@@ -12,17 +12,28 @@ import { SITE_URL } from "@/lib/site";
 //   "monthly"  — pages that are updated a few times per year
 //   "yearly"   — stable evergreen pages
 //
-// lastModified uses static dates (not new Date()) so crawlers get meaningful
-// signals. Update a date here whenever you make a significant content change.
+// lastModified uses static dates rather than new Date(). A build-time timestamp
+// would mark every page as freshly changed on every deploy, which crawlers learn
+// to ignore. Set a date here only when a page's content actually changes.
+//
+// Every page currently shares REBRAND_DATE because the Volta -> Novus rebrand
+// genuinely rewrote all of them — titles, descriptions, brand copy and palette.
+// That is the honest value, and mid-migration it is also the signal that matters:
+// it tells Google these URLs changed and are worth recrawling. Give a page its
+// own date as soon as it diverges.
 //
 // Pages intentionally excluded:
-//   /impact      — has robots:{index:false}, not ready for indexing
+//   /impact      — exports robots:{index:false}; verified still noindex in prod
 //   /book        — internal applicant scheduling tool, not a public landing page
-//   /members/*   — private portal, behind auth
+//   /members/*   — private portal, behind auth (also disallowed in robots.txt)
 //   /students    — 301 → /join
 //   /business-guides — 301 → /guides
 //   /progress-updates — 301 → /updates
+//   /contact     — 301 → /partners
 // ───────────────────────────────────────────────────────────────────────────
+
+/** Date the rebrand landed, per `git log` on each page file. */
+const REBRAND_DATE = new Date("2026-08-06");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = SITE_URL;
@@ -31,25 +42,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ── Primary pages (1.0) ────────────────────────────────────────────────
     {
       url: base,
-      lastModified: new Date("2026-04-01"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${base}/partners`,
-      lastModified: new Date("2026-03-01"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "monthly",
       priority: 1.0,
     },
     {
       url: `${base}/join`,
-      lastModified: new Date("2026-03-01"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "monthly",
       priority: 1.0,
     },
     {
       url: `${base}/apply`,
-      lastModified: new Date("2026-03-01"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "monthly",
       priority: 1.0,
     },
@@ -57,31 +68,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ── Section hubs (0.8) ─────────────────────────────────────────────────
     {
       url: `${base}/showcase`,
-      lastModified: new Date("2026-04-01"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
       url: `${base}/about`,
-      lastModified: new Date("2026-01-01"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "yearly",
       priority: 0.8,
     },
     {
       url: `${base}/updates`,
-      lastModified: new Date("2026-04-10"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
       url: `${base}/guides`,
-      lastModified: new Date("2026-03-15"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${base}/reports`,
-      lastModified: new Date("2026-03-01"),
+      lastModified: REBRAND_DATE,
       changeFrequency: "monthly",
       priority: 0.8,
     },
