@@ -5,24 +5,30 @@ import Image from "next/image";
 import { LinkedInIcon } from "@/components/Icons";
 import type { LeadershipMember } from "@/data";
 
-function ExperienceLabel({ item }: { item: string }) {
-  const googlePrefix = "Student Engineer, Google Code Next";
+function GoogleWordmark() {
+  return (
+    <span aria-label="Google" className="font-semibold tracking-normal">
+      <span className="text-[#4285F4]">G</span>
+      <span className="text-[#EA4335]">o</span>
+      <span className="text-[#FBBC05]">o</span>
+      <span className="text-[#4285F4]">g</span>
+      <span className="text-[#34A853]">l</span>
+      <span className="text-[#EA4335]">e</span>
+    </span>
+  );
+}
 
-  if (!item.startsWith(googlePrefix)) return item;
+function ExperienceTitle({ title }: { title: string }) {
+  if (title === "Google Team Edge") {
+    return <><GoogleWordmark /> Team Edge</>;
+  }
+
+  if (title === "Google Code Next") {
+    return <><GoogleWordmark /> Code Next</>;
+  }
 
   return (
-    <>
-      Student Engineer,{" "}
-      <span aria-label="Google" className="font-semibold tracking-normal">
-        <span className="text-[#4285F4]">G</span>
-        <span className="text-[#EA4335]">o</span>
-        <span className="text-[#FBBC05]">o</span>
-        <span className="text-[#4285F4]">g</span>
-        <span className="text-[#34A853]">l</span>
-        <span className="text-[#EA4335]">e</span>
-      </span>{" "}
-      Code Next{item.slice(googlePrefix.length)}
-    </>
+    <>{title}</>
   );
 }
 
@@ -84,7 +90,17 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
       </div>
 
       {selected && (
-        <section id="leadership-profile" className="mt-5 overflow-hidden rounded-2xl border border-n-border bg-n-bg shadow-[0_16px_40px_rgba(35,31,36,0.08)]">
+        <section id="leadership-profile" className="relative mt-5 overflow-hidden rounded-2xl border border-n-border bg-n-bg shadow-[0_16px_40px_rgba(35,31,36,0.08)]">
+          <a
+            href={selected.linkedin}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`${selected.name}'s LinkedIn profile`}
+            title={`${selected.name}'s LinkedIn profile`}
+            className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-n-border bg-white text-[#0A66C2] shadow-sm transition-colors hover:border-[#0A66C2] hover:bg-[#0A66C2] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-n-orange focus-visible:ring-offset-2 sm:right-6 sm:top-6"
+          >
+            <LinkedInIcon className="h-4 w-4" />
+          </a>
           <div className="grid gap-7 p-5 sm:grid-cols-[180px_1fr] sm:p-7">
             <div className="overflow-hidden rounded-xl border border-n-border bg-white aspect-[4/5] max-w-[220px]">
               {selected.photo ? (
@@ -111,18 +127,31 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
                   <dt className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-n-muted">Focus area</dt>
                   <dd className="mt-1 font-body text-sm leading-relaxed text-n-ink">{selected.focus}</dd>
                 </div>
+                <div className="sm:col-span-2">
+                  <dt className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-n-muted">Interests</dt>
+                  <dd className="mt-2 flex flex-wrap gap-2">
+                    {selected.interests.map((interest) => (
+                      <span key={interest} className="rounded-full border border-n-border bg-white px-2.5 py-1 font-body text-xs font-medium text-n-ink">
+                        {interest}
+                      </span>
+                    ))}
+                  </dd>
+                </div>
                 <div className="sm:col-span-2 border-t border-n-border pt-5">
                   <dt className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-n-muted">Why Novus</dt>
                   <dd className="mt-1.5 max-w-2xl font-body text-sm leading-relaxed text-n-ink">{selected.whyNovus}</dd>
                 </div>
                 <div className="sm:col-span-2">
                   <dt className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-n-muted">Past experience</dt>
-                  <dd className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <dd className="mt-2 grid gap-3">
                     {selected.experience.map((item) => (
-                      <span key={item} className="flex items-start gap-2 rounded-lg border border-n-border bg-white px-3 py-2 font-body text-sm leading-snug text-n-ink">
-                        <span aria-hidden="true" className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-n-orange" />
-                        <ExperienceLabel item={item} />
-                      </span>
+                      <article key={item.title} className="rounded-lg border border-n-border bg-white px-4 py-3">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <h4 className="font-body text-sm font-bold text-n-ink"><ExperienceTitle title={item.title} /></h4>
+                          {item.role && <p className="font-body text-xs font-semibold text-n-purple">{item.role}</p>}
+                        </div>
+                        <p className="mt-1.5 font-body text-sm leading-relaxed text-n-muted">{item.description}</p>
+                      </article>
                     ))}
                   </dd>
                 </div>

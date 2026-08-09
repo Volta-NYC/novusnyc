@@ -298,7 +298,14 @@ export type LeadershipMember = {
   grade: string;
   focus: string;
   whyNovus: string;
-  experience: string[];
+  interests: string[];
+  experience: LeadershipExperience[];
+};
+
+export type LeadershipExperience = {
+  title: string;
+  role?: string;
+  description: string;
 };
 
 export const teamMembers: LeadershipMember[] = [
@@ -314,11 +321,12 @@ export const teamMembers: LeadershipMember[] = [
     grade: "12th grade, Class of 2027",
     focus: "Finance and business.",
     whyNovus: "Novus turns student talent into practical support for the small businesses that keep New York's neighborhoods moving.",
+    interests: ["Finance", "Economics", "Technology", "Community strategy"],
     experience: [
-      "Global Director of Technology, Junior Economic Club",
-      "Stuyvesant Bulls investment club and NYC Math Team",
-      "Wharton Global High School Investment Competition global champion team",
-      "USACO Gold Division qualifier",
+      { title: "Junior Economic Club", role: "Global Director of Technology", description: "Leads technology work for a global student economics community." },
+      { title: "Stuyvesant Bulls and NYC Math Team", description: "Contributes to student investing and competitive mathematics communities." },
+      { title: "Wharton Global High School Investment Competition", description: "Member of the global championship team in a field of more than 6,300 teams." },
+      { title: "USACO", description: "Gold Division qualifier." },
     ],
   },
   {
@@ -333,12 +341,21 @@ export const teamMembers: LeadershipMember[] = [
     grade: "12th grade, Class of 2027",
     focus: "Organization-wide strategy, product delivery, partnerships, and building high-performing student teams.",
     whyNovus: "I wanted to make real technical and operational support accessible to neighborhood businesses while giving students work they can be proud to own.",
+    interests: ["Bouldering", "Competitive programming", "Running", "Content creation", "Travel"],
     experience: [
-      "Student Engineer, Google Code Next - full-stack applications, machine learning, and Google engineering showcases",
-      "Software Engineering Intern, NYC DOE through CS4ALL Pathfinders",
-      "Software Engineer, StuyPulse FRC 694 - led a 15-member subsystem team and helped earn a top-20 FIRST Championship finish",
-      "Directed production of 130+ websites and digital campaigns for neighborhood businesses",
-      "USACO Gold Division, competitive programming and technical project leadership",
+      {
+        title: "Google Team Edge",
+        role: "Software Engineer",
+        description: "Completed an intensive technology leadership and computer science program through December 2025. Built interactive art, games, and dynamic web applications with Python, HTML, CSS, SQL, and JavaScript; integrated Google Maps and Firebase APIs; worked with Raspberry Pi, circuits, and robotics; met biweekly with a Google industry mentor; and presented machine-learning transit solutions to audiences of 50 to 250 engineers.",
+      },
+      {
+        title: "Google Code Next",
+        role: "Student Engineer",
+        description: "Selected for a multi-year technology leadership and engineering program. Built real-time web applications, data dashboards, and machine-learning classification models with Python, Pandas, and scikit-learn; led hackathon teams; and presented independently designed software projects and code architecture at Google-hosted showcases.",
+      },
+      { title: "NYC DOE through CS4ALL Pathfinders", role: "Software Engineering Intern", description: "Built technology for a community partner through New York City Public Schools' CS4ALL Pathfinders program." },
+      { title: "StuyPulse FRC 694", role: "Software Engineer", description: "Led a 15-member subsystem team and helped earn a top-20 FIRST Championship finish through software, integration, and competition support." },
+      { title: "USACO", description: "Gold Division." },
     ],
   },
   {
@@ -353,12 +370,14 @@ export const teamMembers: LeadershipMember[] = [
     grade: "12th grade, Class of 2027",
     focus: "Full-stack engineering, developer infrastructure, scalable workflows, and technical mentorship.",
     whyNovus: "Novus gives students a chance to build systems that matter beyond the classroom and helps local businesses access the technology they deserve.",
+    interests: ["Machine learning", "Robotics", "Open-source systems", "Technical mentorship"],
     experience: [
-      "MIT Beaver Works Summer Institute Research Intern - selected for Remote Sensing for Disaster Response on a full scholarship",
-      "Software Engineering Intern, NYC Public Schools through CS4ALL Pathfinders - sole web developer for Destiny Helpers Outreach",
-      "Software Engineer and Director of Rookie Education, StuyPulse FRC 694 - mentored 80+ students and helped drive a 200% retention increase",
-      "Founder and Lead Developer, Internyl.org - built an internship platform used by 100+ students with 1,000+ listings",
-      "USACO Gold, Congressional App Challenge, and AP Scholar with Distinction",
+      { title: "MIT Beaver Works Summer Institute", role: "Research Intern", description: "Selected for Remote Sensing for Disaster Response on a full scholarship, applying Python, machine learning, and geospatial analysis to disaster-response tools." },
+      { title: "NYC Public Schools through CS4ALL Pathfinders", role: "Software Engineering Intern", description: "Served as sole web developer for Destiny Helpers Outreach, architecting and launching a full-stack site." },
+      { title: "StuyPulse FRC 694", role: "Software Engineer, Director of IT, and Director of Rookie Education", description: "Mentored 80+ new members, built a repeatable onboarding pipeline, and contributed robot software that supported regional wins and national qualifications." },
+      { title: "Internyl.org", role: "Founder and Lead Developer", description: "Built an internship platform used by 100+ students with more than 1,000 opportunities collected through an automated pipeline." },
+      { title: "Machine Learning Researcher", description: "Trained a ResNet image-classification model on 10,000+ images and built real-time data tools for MIT BWSI's CubeSat Challenge." },
+      { title: "USACO and Congressional App Challenge", description: "USACO Gold and Congressional App Challenge honoree." },
     ],
   },
   {
@@ -373,12 +392,13 @@ export const teamMembers: LeadershipMember[] = [
     grade: "Class of 2026",
     focus: "Finance, marketing, operations, public speaking, and community-building.",
     whyNovus: "Novus is a way to pair thoughtful strategy with tangible support for neighborhood businesses and the communities around them.",
+    interests: ["Debate", "Public speaking", "Education", "Community events", "Design"],
     experience: [
-      "Chair, Stuyvesant Big Sibs Program - managed a $6K budget and led major schoolwide events",
-      "Novice Director and Varsity Debater, Stuyvesant Lincoln Douglas Debate - expanded the novice team from 5 to 45 members",
-      "Operations Committee, Stuyvesant ARISTA Honor Society - built schoolwide resource systems and led wellness initiatives",
-      "Math Manager, Metis Project - designed curriculum and supported 10 weekly tutees",
-      "Assistant Teacher, Chinese School and Summer Camp - 350+ hours teaching Mandarin to students ages 8-12",
+      { title: "Stuyvesant Big Sibs Program", role: "Chair", description: "Managed a $6K budget and led major schoolwide events for incoming students and families." },
+      { title: "Stuyvesant Lincoln Douglas Debate", role: "Novice Director and Varsity Debater", description: "Expanded the novice program from 5 to 45 members and led weekly instruction." },
+      { title: "Stuyvesant ARISTA Honor Society", role: "Operations Committee", description: "Built schoolwide resource systems and led student wellness initiatives." },
+      { title: "Metis Project", role: "Math Manager", description: "Designed curriculum and supported 10 weekly tutees." },
+      { title: "Chinese School and Summer Camp", role: "Assistant Teacher", description: "Completed 350+ hours teaching Mandarin to students ages 8-12." },
     ],
   },
 ];
