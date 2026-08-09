@@ -31,32 +31,26 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
   }, [sections]);
 
   return (
-    <nav aria-label="Page sections" className="fixed right-6 top-1/2 z-30 hidden -translate-y-1/2 xl:block">
-      <div className="relative rounded-[1.35rem] px-3 py-3">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 rounded-[1.35rem] border border-white/35 bg-[linear-gradient(90deg,rgba(255,255,255,0.84),rgba(255,255,255,0.64))] shadow-[0_12px_34px_rgba(15,16,20,0.16)] backdrop-blur-[10px] supports-[backdrop-filter]:bg-[linear-gradient(90deg,rgba(255,255,255,0.76),rgba(255,255,255,0.52))]"
-        />
-        <div className="relative border-l border-black/10 pl-3.5">
-          <p className="mb-2.5 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-n-ink/55">On this page</p>
-          <ol className="space-y-1.5">
-            {sections.map((section) => {
-              const active = activeId === section.id;
-              return (
-                <li key={section.id}>
-                  <a
-                    href={`#${section.id}`}
-                    aria-current={active ? "location" : undefined}
-                    className={`group flex items-center gap-2.5 font-body text-[0.95rem] transition-colors ${active ? "font-semibold text-n-ink" : "text-n-ink/58 hover:text-n-ink/82"}`}
-                  >
-                    <span className={`h-2 w-2 rounded-full transition-transform duration-200 ${active ? "scale-125 bg-n-orange shadow-[0_0_0_3px_rgba(246,183,141,0.22)]" : "bg-white/96 ring-1 ring-n-purple/45 group-hover:bg-n-orange/75 group-hover:ring-n-orange/35"}`} />
-                    {section.label}
-                  </a>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+    <nav aria-label="Page sections" className="fixed right-10 top-1/2 z-30 hidden -translate-y-1/2 xl:block">
+      <div className="border-l border-white/75 py-1 pl-5 [text-shadow:0_1px_10px_rgba(0,0,0,0.38)]">
+        <p className="mb-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">On this page</p>
+        <ol className="space-y-2">
+          {sections.map((section) => {
+            const active = activeId === section.id;
+            return (
+              <li key={section.id}>
+                <a
+                  href={`#${section.id}`}
+                  aria-current={active ? "location" : undefined}
+                  className={`group flex items-center gap-3 font-body text-[0.95rem] transition-colors ${active ? "font-semibold text-white" : "text-white/65 hover:text-white"}`}
+                >
+                  <span className={`h-2.5 w-2.5 rounded-full border transition-transform duration-200 ${active ? "scale-110 border-n-orange bg-n-orange shadow-[0_0_0_3px_rgba(246,183,141,0.18)]" : "border-white/65 bg-white/90 group-hover:border-n-orange/80 group-hover:bg-n-orange/85"}`} />
+                  {section.label}
+                </a>
+              </li>
+            );
+          })}
+        </ol>
       </div>
     </nav>
   );
