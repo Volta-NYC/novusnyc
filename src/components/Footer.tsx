@@ -80,7 +80,7 @@ export default function Footer() {
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="font-body text-xs text-white/30">© 2026 Novus NYC. A nonprofit corporation incorporated in New York State.</p>
           <div className="flex items-center gap-4 font-body text-xs text-white/30">
-            <span>Privacy Policy</span>
+            <Link href="/privacy">Privacy Policy</Link>
             <Link href="/">novusnyc.org</Link>
           </div>
         </div>
