@@ -32,7 +32,8 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
 
   return (
     <nav aria-label="Page sections" className="fixed right-6 top-1/2 z-30 hidden -translate-y-1/2 xl:block">
-      <div className="border-l border-white/70 pl-4 drop-shadow-sm">
+      <div className="rounded-[1.75rem] border border-white/55 bg-white/78 px-4 py-4 shadow-[0_14px_40px_rgba(45,40,46,0.12)] backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
+        <div className="border-l border-black/10 pl-4">
         <p className="mb-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-n-muted">On this page</p>
         <ol className="space-y-2">
           {sections.map((section) => {
@@ -51,6 +52,7 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
             );
           })}
         </ol>
+        </div>
       </div>
     </nav>
   );
