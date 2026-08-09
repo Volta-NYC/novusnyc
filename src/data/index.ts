@@ -286,11 +286,88 @@ export const aboutTimeline = [
   },
 ];
 
-export const teamMembers = [
-  { name: "Ethan Zhang", role: "Co-Founder", email: EMAIL.ethan, initial: "E", desc: "", photo: "/team/ethan.jpeg" },
-  { name: "Andrew Chin", role: "Co-Founder", email: EMAIL.andrew, initial: "A", desc: "", photo: "/team/andrew.jpg" },
-  { name: "Tahmid Islam", role: "Director of Tech", email: EMAIL.tahmid, initial: "T", desc: "", photo: "/team/tahmid.png" },
-  { name: "Ellie Mak", role: "Director of Finance and Marketing", email: "", initial: "E", desc: "", photo: "/team/ellie.jpg" },
+export type LeadershipMember = {
+  name: string;
+  role: string;
+  roleDetails: string;
+  email: string;
+  initial: string;
+  photo?: string;
+  school: string;
+  grade: string;
+  focus: string;
+  whyNovus: string;
+  experience: string[];
+};
+
+export const teamMembers: LeadershipMember[] = [
+  {
+    name: "Ethan Zhang",
+    role: "Co-Founder",
+    roleDetails: "Co-Founder and Executive Director, guiding organization-wide strategy, partnerships, and growth.",
+    email: EMAIL.ethan,
+    initial: "E",
+    photo: "/team/ethan.jpeg",
+    school: "Stuyvesant High School",
+    grade: "12th grade, Class of 2027",
+    focus: "Technology, economics, applied AI, and citywide strategy.",
+    whyNovus: "Novus turns student talent into practical support for the small businesses that keep New York's neighborhoods moving.",
+    experience: [
+      "Global Director of Technology, Junior Economic Club",
+      "Stuyvesant Bulls investment club and NYC Math Team",
+      "Wharton Global High School Investment Competition global champion team",
+      "USACO Gold Division qualifier",
+    ],
+  },
+  {
+    name: "Andrew Chin",
+    role: "Co-Founder",
+    roleDetails: "Co-Founder and Executive Director, leading client delivery, organizational systems, and student growth.",
+    email: EMAIL.andrew,
+    initial: "A",
+    photo: "/team/andrew.jpg",
+    school: "Stuyvesant High School",
+    grade: "12th grade, Class of 2027",
+    focus: "Full-stack development, product systems, operations, and building student teams.",
+    whyNovus: "I wanted to make real technical and operational support accessible to neighborhood businesses while giving students work they can be proud to own.",
+    experience: [
+      "Student Engineer, Google Code Next",
+      "Software Engineer, StuyPulse FRC 694",
+      "Teaching Assistant, Higher Learning Inc.",
+      "Full-stack development with React, Next.js, TypeScript, Python, and Java",
+    ],
+  },
+  {
+    name: "Tahmid Islam",
+    role: "Director of Tech",
+    roleDetails: "Leads Novus's engineering systems, developer workflows, and technical project delivery.",
+    email: EMAIL.tahmid,
+    initial: "T",
+    photo: "/team/tahmid.png",
+    school: "Stuyvesant High School",
+    grade: "12th grade, Class of 2027",
+    focus: "Full-stack engineering, developer infrastructure, scalable workflows, and technical mentorship.",
+    whyNovus: "Novus gives students a chance to build systems that matter beyond the classroom and helps local businesses access the technology they deserve.",
+    experience: [
+      "MIT Beaver Works Summer Institute research program",
+      "Software Engineering Intern, NYC Public Schools through CS4ALL Pathfinders",
+      "Software Engineer and Director of Rookie Education, StuyPulse FRC 694",
+      "Founder and Lead Developer, Internyl.org",
+    ],
+  },
+  {
+    name: "Ellie Mak",
+    role: "Director of Finance and Marketing",
+    roleDetails: "Leads finance and marketing strategy across Novus's student and small-business work.",
+    email: "",
+    initial: "E",
+    photo: "/team/ellie.jpg",
+    school: "Details coming soon",
+    grade: "Details coming soon",
+    focus: "Details coming soon",
+    whyNovus: "Details coming soon.",
+    experience: ["Details coming soon"],
+  },
 ];
 
 export const branches = [

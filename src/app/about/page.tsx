@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import HistoryTimeline from "@/components/HistoryTimeline";
+import LeadershipProfiles from "@/components/LeadershipProfiles";
 import ParallaxHero from "@/components/ParallaxHero";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import { aboutTimeline, aboutValues, teamMembers } from "@/data";
@@ -204,27 +204,9 @@ export default async function About() {
               </div>
             </div>
           </AnimatedSection>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 max-w-5xl mx-auto">
-            {teamMembers.map((m, i) => (
-              <AnimatedSection key={m.name} delay={i * 0.08}>
-                <div className="bg-white border border-n-border rounded-xl overflow-hidden h-full flex flex-col">
-                  <div className="aspect-[4/5] bg-n-border flex items-center justify-center overflow-hidden">
-                    {m.photo ? (
-                      <Image src={m.photo} alt={m.name} width={400} height={533} className="w-full h-full object-cover object-center" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-n-orange/15 border-2 border-n-orange/25 flex items-center justify-center">
-                        <span className="font-display font-bold text-n-orange text-xl">{m.initial}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2.5 flex flex-col flex-1">
-                    <h3 className="font-display font-bold text-n-ink text-xs leading-tight">{m.name}</h3>
-                    <p className="font-body text-[10px] text-n-muted mt-0.5 leading-snug">{m.role}</p>
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+          <AnimatedSection>
+            <LeadershipProfiles members={teamMembers} />
+          </AnimatedSection>
         </div>
       </section>
 
