@@ -90,7 +90,7 @@ export default function RootLayout({
               url: SITE_URL,
               logo: `${SITE_URL}/logo.png`,
               description:
-                "A registered 501(c)(3) nonprofit placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
+                "A nonprofit corporation incorporated in New York State, placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
               email: EMAIL.info,
               foundingDate: "2025",
               areaServed: {

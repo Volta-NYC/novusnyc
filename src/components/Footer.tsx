@@ -16,7 +16,7 @@ export default function Footer() {
               <Wordmark className="text-3xl text-n-orange" />
             </Link>
             <p className="font-body text-sm leading-relaxed text-white/50">
-              A registered nonprofit connecting student teams with NYC small businesses.
+              A New York nonprofit connecting student teams with NYC small businesses.
             </p>
           </div>
 
@@ -80,7 +80,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-3">
-          <p className="font-body text-xs text-white/30">© 2026 Novus NYC. A registered nonprofit organization.</p>
+          <p className="font-body text-xs text-white/30">© 2026 Novus NYC. A nonprofit corporation incorporated in New York State.</p>
           <p className="font-body text-xs text-white/30"><Link href="/">novusnyc.org</Link></p>
         </div>
       </div>
