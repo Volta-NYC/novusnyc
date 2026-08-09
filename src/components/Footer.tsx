@@ -3,6 +3,7 @@ import Image from "next/image";
 import Wordmark from "@/components/Wordmark";
 import { MailIcon, LinkedInIcon, InstagramIcon } from "@/components/Icons";
 import { SOCIAL } from "@/lib/social";
+import { EMAIL } from "@/lib/mail";
 
 export default function Footer() {
   return (
@@ -43,16 +44,13 @@ export default function Footer() {
           <div>
             <p className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4">Connect</p>
             <div className="flex flex-col gap-3">
-              {/* Mail still runs on voltanyc.org — novusnyc.org has no MX
-                  records, so @novusnyc.org addresses bounce. Do not rebrand
-                  these until Google Workspace is live on the new domain. */}
               <a
-                href="mailto:nyc.novus@gmail.com"
+                href={`mailto:${EMAIL.info}`}
                 className="font-body text-sm hover:text-white transition-colors inline-flex items-center gap-2"
               >
                 <MailIcon className="w-4 h-4 text-white/50" />
                 <span className="text-white/50">Email:</span>
-                <span className="text-n-orange">nyc.novus@gmail.com</span>
+                <span className="text-n-orange">{EMAIL.info}</span>
               </a>
               <a
                 href={SOCIAL.linkedin}

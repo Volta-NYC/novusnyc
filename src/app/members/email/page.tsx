@@ -278,9 +278,9 @@ function teamEmailErrorMessage(error: string | undefined): string {
     case "from_not_allowed":
       return "That From address is not allowed for member email.";
     case "smtp_not_configured":
-    case "primary_smtp_not_configured":
-    case "secondary_smtp_not_configured":
-      return "Email is not configured for that From address.";
+      return "Email is not configured. Check the SMTP username and app password.";
+    case "sender_not_allowed":
+      return "That From address is not a verified sender alias.";
     case "smtp_auth_failed":
       return "Email authentication failed. Check the SMTP username and app password.";
     case "smtp_sender_rejected":

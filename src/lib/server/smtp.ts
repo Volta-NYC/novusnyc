@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { EMAIL } from "@/lib/mail";
+import { EMAIL, TEAM_EMAIL_ALLOWED_FROM_DEFAULT } from "@/lib/mail";
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
@@ -46,77 +46,39 @@ export function getDefaultReplyToAddress(fromAddress: string): string {
   );
 }
 
-function getSecondaryFromSet(): Set<string> {
-  const raw = pickFirst(
-    process.env.SMTP_SECONDARY_FROM_ADDRESSES,
-    process.env.INTERVIEW_EMAIL_SECONDARY_FROM_ADDRESSES,
-  );
-  return new Set(
-    raw
-      .split(",")
-      .map((item) => normalizeEmail(item))
-      .filter(Boolean),
+/**
+ * Addresses this deployment may send from.
+ *
+ * Every one must be a verified "Send mail as" alias on the Gmail account in
+ * SMTP_USER. Gmail rejects an unverified sender outright rather than falling
+ * back to the account address, so an address that is listed here but not
+ * verified there fails at send time.
+ */
+export function getAllowedFromAddresses(): string[] {
+  return Array.from(
+    new Set(
+      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? TEAM_EMAIL_ALLOWED_FROM_DEFAULT)
+        .split(",")
+        .map((item) => normalizeEmail(item))
+        .filter(Boolean),
+    ),
   );
 }
 
-export function resolveSmtpProfile(fromAddress?: string): {
+/**
+ * One Gmail account sends for every address.
+ *
+ * Gmail lets a single authenticated account send as any of its verified
+ * aliases, so the four @novusnyc.org addresses need one credential pair
+ * between them, not one each.
+ */
+export function resolveSmtpProfile(): {
   host: string;
   port: number;
   secure: boolean;
   user: string;
   pass: string;
-  usingSecondary: boolean;
 } {
-  const normalizedFrom = normalizeEmail(fromAddress ?? "");
-  const primaryFrom = getDefaultFromAddress();
-  const secondaryFromSet = getSecondaryFromSet();
-  
-  const secondaryUser = pickFirst(process.env.SMTP_USER_SECONDARY, process.env.INTERVIEW_EMAIL_SMTP_USER_SECONDARY);
-  const secondaryPass = pickFirst(process.env.SMTP_PASS_SECONDARY, process.env.INTERVIEW_EMAIL_SMTP_PASS_SECONDARY);
-  const hasSecondaryCreds = !!secondaryUser && !!secondaryPass;
-  const isExplicitSecondary = normalizedFrom && secondaryFromSet.has(normalizedFrom);
-  const isImplicitSecondary = normalizedFrom && normalizedFrom !== primaryFrom && hasSecondaryCreds;
-  
-  const wantsSecondary = isExplicitSecondary || isImplicitSecondary;
-
-  if (wantsSecondary) {
-    const user = secondaryUser;
-    const pass = secondaryPass;
-    if (!user || !pass) {
-      throw new Error("secondary_smtp_not_configured");
-    }
-    return {
-      host: pickFirst(
-        process.env.SMTP_HOST_SECONDARY,
-        process.env.INTERVIEW_EMAIL_SMTP_HOST_SECONDARY,
-        process.env.SMTP_HOST,
-        process.env.INTERVIEW_EMAIL_SMTP_HOST,
-        "smtp.gmail.com",
-      ),
-      port: parsePort(
-        pickFirst(
-          process.env.SMTP_PORT_SECONDARY,
-          process.env.INTERVIEW_EMAIL_SMTP_PORT_SECONDARY,
-          process.env.SMTP_PORT,
-          process.env.INTERVIEW_EMAIL_SMTP_PORT,
-        ),
-        465,
-      ),
-      secure: parseBool(
-        pickFirst(
-          process.env.SMTP_SECURE_SECONDARY,
-          process.env.INTERVIEW_EMAIL_SMTP_SECURE_SECONDARY,
-          process.env.SMTP_SECURE,
-          process.env.INTERVIEW_EMAIL_SMTP_SECURE,
-        ),
-        true,
-      ),
-      user,
-      pass,
-      usingSecondary: true,
-    };
-  }
-
   const user = pickFirst(
     process.env.SMTP_USER,
     process.env.INTERVIEW_EMAIL_SMTP_USER,
@@ -128,7 +90,7 @@ export function resolveSmtpProfile(fromAddress?: string): {
     process.env.GMAIL_APP_PASSWORD,
   );
   if (!user || !pass) {
-    throw new Error("primary_smtp_not_configured");
+    throw new Error("smtp_not_configured");
   }
   return {
     host: pickFirst(
@@ -146,12 +108,15 @@ export function resolveSmtpProfile(fromAddress?: string): {
     ),
     user,
     pass,
-    usingSecondary: false,
   };
 }
 
 export function createTransportForFrom(fromAddress?: string) {
-  const profile = resolveSmtpProfile(fromAddress);
+  const from = normalizeEmail(fromAddress ?? getDefaultFromAddress());
+  if (from && !getAllowedFromAddresses().includes(from)) {
+    throw new Error("sender_not_allowed");
+  }
+  const profile = resolveSmtpProfile();
   const transporter = nodemailer.createTransport({
     host: profile.host,
     port: profile.port,
@@ -166,9 +131,9 @@ export function createTransportForFrom(fromAddress?: string) {
  *
  * Looks up the env var EMAIL_FROM_NAMES which should be a comma-separated
  * list of "email=Display Name" pairs, e.g.:
- *   info@voltanyc.org=Novus,ethan@voltanyc.org=Ethan Zhang
+ *   info@novusnyc.org=Novus NYC,ethan@novusnyc.org=Ethan Zhang
  *
- * Falls back to TEAM_EMAIL_FROM_NAME (legacy) or "Novus NYC".
+ * Falls back to TEAM_EMAIL_FROM_NAME (legacy) or the per-address defaults.
  */
 export function resolveFromWithName(rawFrom: string): string {
   const email = rawFrom.trim().toLowerCase();
@@ -195,6 +160,8 @@ export function resolveFromWithName(rawFrom: string): string {
   // Practical defaults for Novus sender aliases.
   if (email === EMAIL.info) return `Novus NYC <${email}>`;
   if (email === EMAIL.ethan) return `Ethan Zhang <${email}>`;
+  if (email === EMAIL.andrew) return `Andrew Chin <${email}>`;
+  if (email === EMAIL.tahmid) return `Tahmid Islam <${email}>`;
 
   return email;
 }

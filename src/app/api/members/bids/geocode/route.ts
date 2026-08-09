@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
+import { EMAIL } from "@/lib/mail";
 
 function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -72,7 +73,7 @@ async function geocodeWithNominatim(query: string): Promise<{ lat: number; lng: 
   const res = await fetch(url, {
     cache: "no-store",
     headers: {
-      "User-Agent": "NovusNYC/1.0 (info@voltanyc.org)",
+      "User-Agent": `NovusNYC/1.0 (${EMAIL.info})`,
       Accept: "application/json",
     },
   });

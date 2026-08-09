@@ -164,23 +164,43 @@ Don't add error handling, fallbacks, or helper functions for scenarios that can'
 
 ---
 
-## Mail domain (do not "fix" this)
+## Mail domain
 
-Every mailbox is still `@voltanyc.org`. `novusnyc.org` has **no MX records** —
-mail sent there bounces. Rebranding these addresses breaks the public contact
-link in the footer and every transactional reply-to. Change them only once
-Google Workspace is live on the new domain; verify first with:
+All four mailboxes are `@novusnyc.org` — `info@`, `ethan@`, `andrew@`,
+`tahmid@` — defined once in `src/lib/mail.ts`. Never hardcode an address
+elsewhere; import `EMAIL` instead.
+
+Cloudflare Email Routing **receives** for the domain and forwards to Gmail. It
+cannot send. Outbound still goes through Gmail SMTP, so two conditions must
+hold or messages are rejected or spam-filed:
+
+1. Every address is a verified "Send mail as" alias on the single Gmail account
+   in `SMTP_USER` / `SMTP_PASS`. Gmail rejects an unverified sender outright
+   rather than falling back to the account address.
+2. SPF authorises Google as well as Cloudflare:
+   `v=spf1 include:_spf.mx.cloudflare.net include:_spf.google.com ~all`
+
+Verify both before adding an address:
 
 ```bash
-dig +short MX novusnyc.org
+dig +short MX novusnyc.org; dig +short TXT novusnyc.org | grep spf1
 ```
 
-The `UID:...@novusnyc.org` values in calendar invites are opaque identifiers,
-not mailboxes, and are correct as-is.
+One Gmail account sends for all four addresses — `src/lib/server/smtp.ts` has a
+single credential pair by design. Do not reintroduce per-address SMTP
+credentials; aliases are what make one account sufficient.
 
-Social handles are likewise unmigrated: `linkedin.com/company/volta-nyc` and
-`instagram.com/voltanyc` are the live accounts. Renaming them in code before
-the accounts are claimed produces dead links.
+`voltanyc.org` still routes to the same inbox and is deliberately kept alive:
+partners, BIDs and applicants from before the rebrand hold those addresses. Do
+not delete that zone or its routing rules.
+
+Some `@voltanyc.org` strings are **not** mailboxes and must never be rewritten:
+`UID:...` values in calendar invites, `calendar_events.i_cal_uid` in Postgres,
+and historical `audit_logs` rows, which record what happened at the time.
+
+Social handles are migrated: `linkedin.com/company/novusnyc` and
+`instagram.com/nyc.novus`, in `src/lib/social.ts`. The accounts were renamed
+rather than recreated, so existing post permalinks still resolve.
 
 ---
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { EMAIL } from "@/lib/mail";
 
 export type PublicShowcaseStatus = "Ongoing" | "Upcoming" | "Completed";
 export type PublicShowcaseColor =
@@ -358,7 +359,7 @@ async function geocodeWithNominatim(query: string): Promise<{ lat: number; lng: 
   const res = await fetch(url, {
     cache: "no-store",
     headers: {
-      "User-Agent": "NovusNYC/1.0 (info@voltanyc.org)",
+      "User-Agent": `NovusNYC/1.0 (${EMAIL.info})`,
       Accept: "application/json",
     },
   });

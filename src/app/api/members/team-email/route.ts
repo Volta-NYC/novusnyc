@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
-import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
+import { createTransportForFrom, getAllowedFromAddresses, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { TEAM_EMAIL_ALLOWED_FROM_DEFAULT } from "@/lib/mail";
 
 export const runtime = "nodejs";
 // A full-roster send is several sequential SMTP round trips; the platform
@@ -58,7 +57,7 @@ function smtpErrorCode(err: unknown): string {
   const message = typeof error.message === "string" ? error.message : "";
   const responseCode = typeof error.responseCode === "number" ? error.responseCode : 0;
 
-  if (message === "primary_smtp_not_configured" || message === "secondary_smtp_not_configured") return message;
+  if (message === "smtp_not_configured" || message === "sender_not_allowed") return message;
   if (code === "EAUTH" || responseCode === 535) return "smtp_auth_failed";
   // Gmail reports an oversized recipient list as 452/550 5.5.3, an exhausted
   // daily quota as 5.4.5, and a bad recipient as 5.1.x. These must be matched
@@ -134,14 +133,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "too_many_recipients" }, { status: 400 });
   }
 
-  const allowedFrom = Array.from(
-    new Set(
-      String(process.env.TEAM_EMAIL_ALLOWED_FROM ?? TEAM_EMAIL_ALLOWED_FROM_DEFAULT)
-        .split(",")
-        .map((value) => normalizeEmail(value))
-        .filter((value) => value && isValidEmail(value))
-    )
-  );
+  const allowedFrom = getAllowedFromAddresses().filter((value) => isValidEmail(value));
   const defaultFrom = normalizeEmail(getDefaultFromAddress());
   const selectedFrom = requestedFrom || defaultFrom || allowedFrom[0] || "";
   if (!allowedFrom.includes(selectedFrom)) {
