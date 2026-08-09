@@ -4,6 +4,27 @@ import { useState } from "react";
 import Image from "next/image";
 import type { LeadershipMember } from "@/data";
 
+function ExperienceLabel({ item }: { item: string }) {
+  const googlePrefix = "Student Engineer, Google Code Next";
+
+  if (!item.startsWith(googlePrefix)) return item;
+
+  return (
+    <>
+      Student Engineer,{" "}
+      <span aria-label="Google" className="font-semibold tracking-normal">
+        <span className="text-[#4285F4]">G</span>
+        <span className="text-[#EA4335]">o</span>
+        <span className="text-[#FBBC05]">o</span>
+        <span className="text-[#4285F4]">g</span>
+        <span className="text-[#34A853]">l</span>
+        <span className="text-[#EA4335]">e</span>
+      </span>{" "}
+      Code Next{item.slice(googlePrefix.length)}
+    </>
+  );
+}
+
 export default function LeadershipProfiles({ members }: { members: LeadershipMember[] }) {
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const selected = members.find((member) => member.name === selectedName);
@@ -88,7 +109,7 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
                     {selected.experience.map((item) => (
                       <span key={item} className="flex items-start gap-2 rounded-lg border border-n-border bg-white px-3 py-2 font-body text-sm leading-snug text-n-ink">
                         <span aria-hidden="true" className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-n-orange" />
-                        {item}
+                        <ExperienceLabel item={item} />
                       </span>
                     ))}
                   </dd>
