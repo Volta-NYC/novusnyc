@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { Analytics } from "@vercel/analytics/next";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import { GA_MEASUREMENT_ID } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/site";
 import { EMAIL } from "@/lib/mail";
@@ -167,7 +167,21 @@ export default function RootLayout({
         <ConditionalLayout>{children}</ConditionalLayout>
         <Analytics />
         {process.env.NODE_ENV === "production" && (
-          <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}');
+              `}
+            </Script>
+          </>
         )}
       </body>
     </html>

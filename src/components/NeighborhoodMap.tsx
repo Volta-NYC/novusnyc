@@ -213,16 +213,28 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
   }, [markers]);
 
   const [showZoomHint, setShowZoomHint] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   // Resolved after mount: reading navigator during render would make the server
   // and client disagree on the label and trip a hydration mismatch.
   const [zoomModifierLabel, setZoomModifierLabel] = useState("Ctrl");
   useEffect(() => {
+    setIsMounted(true);
     if (/Mac|iPhone|iPad|iPod/.test(navigator.userAgent)) setZoomModifierLabel("\u2318");
   }, []);
+
+  const mapInstanceKey = useMemo(() => {
+    if (!isMounted) return "map-loading";
+    return `map-${fitPoints.length}`;
+  }, [fitPoints.length, isMounted]);
+
+  if (!isMounted) {
+    return <MapLoadingState />;
+  }
 
   return (
     <div className="relative w-full h-full z-0">
       <MapContainer
+        key={mapInstanceKey}
         center={[40.700, -73.940]}
         zoom={11}
         zoomSnap={0.25}

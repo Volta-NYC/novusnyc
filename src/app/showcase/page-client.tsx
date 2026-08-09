@@ -7,7 +7,6 @@ import AnimatedSection from "@/components/AnimatedSection";
 import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
 import MasonryGrid from "@/components/MasonryGrid";
-import SectionProgressNav from "@/components/SectionProgressNav";
 import { formatCounter } from "@/lib/formatCounter";
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
@@ -309,6 +308,17 @@ function ShowcaseMobileCarousel({ projects }: { projects: ShowcaseProject[] }) {
   );
 }
 
+function ShowcaseScrollProgress() {
+  return (
+    <div aria-hidden="true" className="home-scroll-rail">
+      <span className="home-scroll-rail-label">NYC / IN MOTION</span>
+      <span className="home-scroll-rail-track">
+        <span className="home-scroll-rail-fill" />
+      </span>
+    </div>
+  );
+}
+
 export default function ShowcaseClient({
   projects,
   mapProjects,
@@ -328,12 +338,7 @@ export default function ShowcaseClient({
 
   return (
     <>
-      <SectionProgressNav sections={[
-        { id: "showcase-overview", label: "Overview" },
-        { id: "showcase-map", label: "Neighborhood map" },
-        { id: "showcase-projects", label: "Selected projects" },
-        { id: "showcase-cta", label: "Work with us" },
-      ]} />
+      <ShowcaseScrollProgress />
       {/* ── INTRO ─────────────────────────────────────────────── */}
       <section id="showcase-overview" className="bg-n-dark pt-32 pb-0 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
