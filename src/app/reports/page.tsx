@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
+import SectionProgressNav from "@/components/SectionProgressNav";
 
 export const metadata: Metadata = {
   title: "Small Business Research and Case Studies",
@@ -17,7 +18,13 @@ export const metadata: Metadata = {
 export default function ReportsPage() {
   return (
     <>
-      <section className="bg-n-bg pt-32 pb-16">
+      <SectionProgressNav sections={[
+        { id: "reports-overview", label: "Overview" },
+        { id: "reports-purpose", label: "Why this exists" },
+        { id: "reports-coverage", label: "What we cover" },
+        { id: "reports-publish", label: "Publish with us" },
+      ]} />
+      <section id="reports-overview" className="bg-n-bg pt-32 pb-16">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">
@@ -38,7 +45,7 @@ export default function ReportsPage() {
       <section className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8 space-y-8">
           <AnimatedSection>
-            <article className="bg-n-bg border border-n-border rounded-2xl p-6 md:p-7">
+            <article id="reports-purpose" className="bg-n-bg border border-n-border rounded-2xl p-6 md:p-7">
               <h2 className="font-display font-bold text-n-ink text-2xl mb-3">
                 Why this series exists
               </h2>
@@ -56,7 +63,7 @@ export default function ReportsPage() {
           </AnimatedSection>
 
           <AnimatedSection delay={0.06}>
-            <article className="bg-n-bg border border-n-border rounded-2xl p-6 md:p-7">
+            <article id="reports-coverage" className="bg-n-bg border border-n-border rounded-2xl p-6 md:p-7">
               <h2 className="font-display font-bold text-n-ink text-2xl mb-3">
                 What each report covers
               </h2>
@@ -106,7 +113,7 @@ export default function ReportsPage() {
           </AnimatedSection>
 
           <AnimatedSection delay={0.18}>
-            <aside className="rounded-2xl border border-n-orange/35 bg-n-orange/5 p-6 md:p-7">
+            <aside id="reports-publish" className="rounded-2xl border border-n-orange/35 bg-n-orange/5 p-6 md:p-7">
               <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-2">
                 For Students
               </p>

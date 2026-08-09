@@ -168,6 +168,12 @@ body {
     padding-bottom: 3.75rem;
   }
 
+  .scroll-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   .home-hero-depth > .min-h-screen {
     min-height: 100svh;
     padding-top: 5.75rem;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AnimatedSection from "@/components/AnimatedSection";
+import SectionProgressNav from "@/components/SectionProgressNav";
 import { businessGuides } from "@/data/publishing";
 
 export const metadata: Metadata = {
@@ -26,7 +27,11 @@ function prettyDate(value: string): string {
 export default function BusinessGuidesPage() {
   return (
     <>
-      <section className="bg-n-bg pt-32 pb-16">
+      <SectionProgressNav sections={[
+        { id: "guides-overview", label: "Overview" },
+        { id: "guides-library", label: "Guide library" },
+      ]} />
+      <section id="guides-overview" className="bg-n-bg pt-32 pb-16">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">
@@ -43,7 +48,7 @@ export default function BusinessGuidesPage() {
         </div>
       </section>
 
-      <section className="py-14 bg-white">
+      <section id="guides-library" className="py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8 space-y-5">
           {businessGuides.map((guide, idx) => (
             <AnimatedSection key={guide.id} delay={idx * 0.06}>

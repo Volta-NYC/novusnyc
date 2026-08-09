@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationForm from "@/components/ApplicationForm";
+import SectionProgressNav from "@/components/SectionProgressNav";
 import { getApplicationsStatus } from "@/lib/server/publicShowcase";
 
 export const metadata: Metadata = {
@@ -19,7 +20,11 @@ export default async function Apply() {
 
   return (
     <>
-      <section className="bg-n-bg pt-32 pb-0">
+      <SectionProgressNav sections={[
+        { id: "application-details", label: "What to expect" },
+        { id: "application-form", label: "Application" },
+      ]} />
+      <section id="application-details" className="bg-n-bg pt-32 pb-0">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-5 gap-12 items-start pb-12">
@@ -77,7 +82,7 @@ export default async function Apply() {
               </div>
 
               {/* Right: form or paused notice */}
-              <div className="md:col-span-3">
+              <div id="application-form" className="md:col-span-3">
                 {paused ? (
                   <div className="border border-n-border rounded-2xl bg-white p-8 text-center">
                     <div className="w-12 h-12 rounded-full bg-n-bg border border-n-border flex items-center justify-center mx-auto mb-4">

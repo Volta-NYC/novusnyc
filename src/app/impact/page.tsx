@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
+import SectionProgressNav from "@/components/SectionProgressNav";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
 
@@ -134,8 +135,16 @@ export default async function Impact() {
 
   return (
     <>
+      <SectionProgressNav sections={[
+        { id: "impact-overview", label: "Overview" },
+        { id: "impact-stats", label: "By the numbers" },
+        { id: "impact-areas", label: "Three tracks" },
+        { id: "impact-voices", label: "Partner voices" },
+        { id: "impact-reach", label: "Citywide reach" },
+        { id: "impact-recognition", label: "Recognition" },
+      ]} />
       {/* Hero */}
-      <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-n-dark pt-32 pb-20" data-home-dark-end="true">
+      <section id="impact-overview" className="relative flex min-h-[100svh] items-center overflow-hidden bg-n-dark pt-32 pb-20" data-home-dark-end="true">
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
         <div className="absolute top-0 right-0 w-96 h-96 bg-n-orange/10 rounded-full blur-3xl" />
         <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
@@ -157,7 +166,7 @@ export default async function Impact() {
       </section>
 
       {/* Key Stats */}
-      <section className="py-20 bg-n-bg">
+      <section id="impact-stats" className="py-20 bg-n-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">By the numbers</p>
@@ -180,7 +189,7 @@ export default async function Impact() {
       </section>
 
       {/* Impact Areas */}
-      <section className="py-20 bg-white">
+      <section id="impact-areas" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">Three tracks of impact</p>
@@ -212,7 +221,7 @@ export default async function Impact() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-n-bg">
+      <section id="impact-voices" className="py-20 bg-n-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">From our partners</p>
@@ -241,7 +250,7 @@ export default async function Impact() {
       </section>
 
       {/* Geographic reach — links to the interactive map on /showcase */}
-      <section className="py-20 bg-n-dark">
+      <section id="impact-reach" className="py-20 bg-n-dark">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-10 items-center">
@@ -284,7 +293,7 @@ export default async function Impact() {
       </section>
 
       {/* Recognition */}
-      <section className="py-20 bg-n-bg">
+      <section id="impact-recognition" className="py-20 bg-n-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">Recognition</p>

@@ -8,6 +8,7 @@ import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
 import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
+import SectionProgressNav from "@/components/SectionProgressNav";
 import { formatCounter } from "@/lib/formatCounter";
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
@@ -337,8 +338,14 @@ export default function ShowcaseClient({
 
   return (
     <>
+      <SectionProgressNav sections={[
+        { id: "showcase-overview", label: "Overview" },
+        { id: "showcase-map", label: "Neighborhood map" },
+        { id: "showcase-projects", label: "Selected projects" },
+        { id: "showcase-cta", label: "Work with us" },
+      ]} />
       {/* ── INTRO ─────────────────────────────────────────────── */}
-      <section className="bg-n-dark pt-32 pb-0 relative overflow-hidden">
+      <section id="showcase-overview" className="bg-n-dark pt-32 pb-0 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">
@@ -368,13 +375,13 @@ export default function ShowcaseClient({
         </div>
 
         {/* ── MAP ───────────────────────────────────────────────── */}
-        <div className="w-full h-[520px] md:h-[600px] relative z-0">
+        <div id="showcase-map" className="w-full h-[520px] md:h-[600px] relative z-0">
           <NeighborhoodMap projects={mapProjects} />
         </div>
       </section>
 
       {/* ── PROJECT CARDS ───────────────────────────────────── */}
-      <section className="py-16 bg-white">
+      <section id="showcase-projects" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-6">
             <h2 className="font-display font-bold text-n-ink text-2xl md:text-3xl">
@@ -495,7 +502,7 @@ export default function ShowcaseClient({
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────── */}
-      <section className="py-20 bg-n-dark text-center">
+      <section id="showcase-cta" className="py-20 bg-n-dark text-center">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
