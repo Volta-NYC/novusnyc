@@ -32,26 +32,30 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
 
   return (
     <nav aria-label="Page sections" className="fixed right-6 top-1/2 z-30 hidden -translate-y-1/2 xl:block">
-      <div className="rounded-[1.75rem] border border-white/55 bg-white/78 px-4 py-4 shadow-[0_14px_40px_rgba(45,40,46,0.12)] backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
-        <div className="border-l border-black/10 pl-4">
-        <p className="mb-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-n-muted">On this page</p>
-        <ol className="space-y-2">
-          {sections.map((section) => {
-            const active = activeId === section.id;
-            return (
-              <li key={section.id}>
-                <a
-                  href={`#${section.id}`}
-                  aria-current={active ? "location" : undefined}
-                  className={`group flex items-center gap-2.5 font-body text-sm transition-colors ${active ? "font-semibold text-n-ink" : "text-n-muted hover:text-n-ink"}`}
-                >
-                  <span className={`h-2 w-2 rounded-full transition-transform duration-200 ${active ? "scale-125 bg-n-orange" : "bg-white/90 ring-1 ring-n-border group-hover:bg-n-orange/70"}`} />
-                  {section.label}
-                </a>
-              </li>
-            );
-          })}
-        </ol>
+      <div className="relative rounded-[1.35rem] px-3 py-3">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 rounded-[1.35rem] bg-[linear-gradient(90deg,rgba(255,255,255,0.74),rgba(255,255,255,0.5))] opacity-90 backdrop-blur-[10px] supports-[backdrop-filter]:bg-[linear-gradient(90deg,rgba(255,255,255,0.62),rgba(255,255,255,0.34))]"
+        />
+        <div className="relative border-l border-black/10 pl-3.5">
+          <p className="mb-2.5 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-n-muted/90">On this page</p>
+          <ol className="space-y-1.5">
+            {sections.map((section) => {
+              const active = activeId === section.id;
+              return (
+                <li key={section.id}>
+                  <a
+                    href={`#${section.id}`}
+                    aria-current={active ? "location" : undefined}
+                    className={`group flex items-center gap-2.5 font-body text-[0.95rem] transition-colors ${active ? "font-semibold text-n-ink" : "text-n-muted/95 hover:text-n-ink"}`}
+                  >
+                    <span className={`h-2 w-2 rounded-full transition-transform duration-200 ${active ? "scale-125 bg-n-orange shadow-[0_0_0_3px_rgba(246,183,141,0.18)]" : "bg-white/92 ring-1 ring-black/8 group-hover:bg-n-orange/70"}`} />
+                    {section.label}
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </div>
     </nav>
