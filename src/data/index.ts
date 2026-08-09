@@ -291,6 +291,7 @@ export type LeadershipMember = {
   role: string;
   roleDetails: string;
   email: string;
+  linkedin: string;
   initial: string;
   photo?: string;
   school: string;
@@ -306,6 +307,7 @@ export const teamMembers: LeadershipMember[] = [
     role: "Co-Founder",
     roleDetails: "Co-Founder, helping shape Novus's long-term direction through finance, business strategy, and community partnerships.",
     email: EMAIL.ethan,
+    linkedin: "https://www.linkedin.com/in/ezhang09/",
     initial: "E",
     photo: "/team/ethan.jpeg",
     school: "Stuyvesant High School",
@@ -324,6 +326,7 @@ export const teamMembers: LeadershipMember[] = [
     role: "Co-Founder",
     roleDetails: "Co-Founder and Executive Director, guiding organization-wide strategy, partnerships, and growth while building the systems that help student teams deliver for local businesses.",
     email: EMAIL.andrew,
+    linkedin: "https://www.linkedin.com/in/andrew-chin28/",
     initial: "A",
     photo: "/team/andrew.jpg",
     school: "Stuyvesant High School",
@@ -334,7 +337,6 @@ export const teamMembers: LeadershipMember[] = [
       "Student Engineer, Google Code Next - full-stack applications, machine learning, and Google engineering showcases",
       "Software Engineering Intern, NYC DOE through CS4ALL Pathfinders",
       "Software Engineer, StuyPulse FRC 694 - led a 15-member subsystem team and helped earn a top-20 FIRST Championship finish",
-      "Led Novus's growth to 420+ student consultants and 150+ small-business partnerships across NYC",
       "Directed production of 130+ websites and digital campaigns for neighborhood businesses",
       "USACO Gold Division, competitive programming and technical project leadership",
     ],
@@ -344,6 +346,7 @@ export const teamMembers: LeadershipMember[] = [
     role: "Director of Tech",
     roleDetails: "Leads Novus's engineering systems, developer workflows, and technical project delivery.",
     email: EMAIL.tahmid,
+    linkedin: "https://www.linkedin.com/in/tahmidd2/",
     initial: "T",
     photo: "/team/tahmid.png",
     school: "Stuyvesant High School",
@@ -351,7 +354,6 @@ export const teamMembers: LeadershipMember[] = [
     focus: "Full-stack engineering, developer infrastructure, scalable workflows, and technical mentorship.",
     whyNovus: "Novus gives students a chance to build systems that matter beyond the classroom and helps local businesses access the technology they deserve.",
     experience: [
-      "Director of Tech, Novus NYC - leads 30+ developers, 60+ merged pull requests, and technical delivery for 150+ businesses",
       "MIT Beaver Works Summer Institute Research Intern - selected for Remote Sensing for Disaster Response on a full scholarship",
       "Software Engineering Intern, NYC Public Schools through CS4ALL Pathfinders - sole web developer for Destiny Helpers Outreach",
       "Software Engineer and Director of Rookie Education, StuyPulse FRC 694 - mentored 80+ students and helped drive a 200% retention increase",
@@ -364,6 +366,7 @@ export const teamMembers: LeadershipMember[] = [
     role: "Director of Finance and Marketing",
     roleDetails: "Leads finance and marketing strategy across Novus's student and small-business work, strengthening the systems and stories that help the organization grow.",
     email: "",
+    linkedin: "https://www.linkedin.com/in/ellie-mak-4a186b3a7/",
     initial: "E",
     photo: "/team/ellie.jpg",
     school: "Stuyvesant High School",

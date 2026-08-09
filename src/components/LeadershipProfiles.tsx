@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { LinkedInIcon } from "@/components/Icons";
 import type { LeadershipMember } from "@/data";
 
 function ExperienceLabel({ item }: { item: string }) {
@@ -36,37 +37,48 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
           const selectedCard = selectedName === member.name;
 
           return (
-            <button
-              key={member.name}
-              type="button"
-              onClick={() => setSelectedName(selectedCard ? null : member.name)}
-              aria-expanded={selectedCard}
-              aria-controls="leadership-profile"
-              className={`group overflow-hidden rounded-xl border bg-white text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-n-orange focus-visible:ring-offset-2 ${
-                selectedCard
-                  ? "border-n-orange shadow-[0_10px_24px_rgba(246,183,141,0.2)]"
-                  : "border-n-border hover:-translate-y-0.5 hover:border-n-orange/55 hover:shadow-md"
-              }`}
-            >
-              <div className="aspect-[4/5] bg-n-border flex items-center justify-center overflow-hidden">
-                {member.photo ? (
-                  <Image src={member.photo} alt={member.name} width={400} height={533} className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.025]" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-n-orange/15 border-2 border-n-orange/25 flex items-center justify-center">
-                    <span className="font-display font-bold text-n-orange text-xl">{member.initial}</span>
-                  </div>
-                )}
-              </div>
-              <div className="p-3 flex min-h-[76px] flex-col justify-between">
-                <div>
-                  <h3 className="font-display font-bold text-n-ink text-xs leading-tight">{member.name}</h3>
-                  <p className="font-body text-[10px] text-n-muted mt-0.5 leading-snug">{member.role}</p>
+            <div key={member.name} className="relative">
+              <a
+                href={member.linkedin}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${member.name}'s LinkedIn profile`}
+                title={`${member.name}'s LinkedIn profile`}
+                className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/45 bg-n-ink/75 text-white backdrop-blur-sm transition-colors hover:bg-[#0A66C2] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+              >
+                <LinkedInIcon className="h-3.5 w-3.5" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setSelectedName(selectedCard ? null : member.name)}
+                aria-expanded={selectedCard}
+                aria-controls="leadership-profile"
+                className={`group w-full overflow-hidden rounded-xl border bg-white text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-n-orange focus-visible:ring-offset-2 ${
+                  selectedCard
+                    ? "border-n-orange shadow-[0_10px_24px_rgba(246,183,141,0.2)]"
+                    : "border-n-border hover:-translate-y-0.5 hover:border-n-orange/55 hover:shadow-md"
+                }`}
+              >
+                <div className="aspect-[4/5] bg-n-border flex items-center justify-center overflow-hidden">
+                  {member.photo ? (
+                    <Image src={member.photo} alt={member.name} width={400} height={533} className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.025]" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-n-orange/15 border-2 border-n-orange/25 flex items-center justify-center">
+                      <span className="font-display font-bold text-n-orange text-xl">{member.initial}</span>
+                    </div>
+                  )}
                 </div>
-                <span className={`mt-2 font-body text-[10px] font-semibold ${selectedCard ? "text-n-orange" : "text-n-purple"}`}>
-                  {selectedCard ? "Hide profile -" : "View profile +"}
-                </span>
-              </div>
-            </button>
+                <div className="p-3 flex min-h-[76px] flex-col justify-between">
+                  <div>
+                    <h3 className="font-display font-bold text-n-ink text-xs leading-tight">{member.name}</h3>
+                    <p className="font-body text-[10px] text-n-muted mt-0.5 leading-snug">{member.role}</p>
+                  </div>
+                  <span className={`mt-2 font-body text-[10px] font-semibold ${selectedCard ? "text-n-orange" : "text-n-purple"}`}>
+                    {selectedCard ? "Hide profile -" : "View profile +"}
+                  </span>
+                </div>
+              </button>
+            </div>
           );
         })}
       </div>
