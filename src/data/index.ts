@@ -323,10 +323,9 @@ export const teamMembers: LeadershipMember[] = [
     whyNovus: "Novus turns student talent into practical support for the small businesses that keep New York's neighborhoods moving.",
     interests: ["Finance", "Economics", "Technology", "Community strategy"],
     experience: [
-      { title: "Junior Economic Club", role: "Global Director of Technology", description: "Leads technology work for a global student economics community." },
-      { title: "Stuyvesant Bulls and NYC Math Team", description: "Contributes to student investing and competitive mathematics communities." },
-      { title: "Wharton Global High School Investment Competition", description: "Member of the global championship team in a field of more than 6,300 teams." },
-      { title: "USACO", description: "Gold Division qualifier." },
+      { title: "Junior Economic Club", role: "Global Director of Technology", description: "Leads technology work for a global student economics community. Builds the systems that support its members and programs." },
+      { title: "Stuyvesant Bulls and NYC Math Team", description: "Contributes to student investing and competitive mathematics communities. Brings analytical thinking to collaborative team work." },
+      { title: "Wharton Global High School Investment Competition", description: "Member of the global championship team in a field of more than 6,300 teams. Developed investment analysis in a high-pressure team setting." },
     ],
   },
   {
@@ -346,16 +345,15 @@ export const teamMembers: LeadershipMember[] = [
       {
         title: "Google Team Edge",
         role: "Software Engineer",
-        description: "Completed an intensive technology leadership and computer science program through December 2025. Built interactive art, games, and dynamic web applications with Python, HTML, CSS, SQL, and JavaScript; integrated Google Maps and Firebase APIs; worked with Raspberry Pi, circuits, and robotics; met biweekly with a Google industry mentor; and presented machine-learning transit solutions to audiences of 50 to 250 engineers.",
+        description: "Built interactive web applications, API-powered tools, and physical-computing projects with Google mentorship. Presented machine-learning transit work to audiences of up to 250 engineers.",
       },
       {
         title: "Google Code Next",
         role: "Student Engineer",
-        description: "Selected for a multi-year technology leadership and engineering program. Built real-time web applications, data dashboards, and machine-learning classification models with Python, Pandas, and scikit-learn; led hackathon teams; and presented independently designed software projects and code architecture at Google-hosted showcases.",
+        description: "Built real-time web applications, data dashboards, and machine-learning models. Led hackathon teams and presented independent projects at Google-hosted showcases.",
       },
       { title: "NYC DOE through CS4ALL Pathfinders", role: "Software Engineering Intern", description: "Built technology for a community partner through New York City Public Schools' CS4ALL Pathfinders program." },
-      { title: "StuyPulse FRC 694", role: "Software Engineer", description: "Led a 15-member subsystem team and helped earn a top-20 FIRST Championship finish through software, integration, and competition support." },
-      { title: "USACO", description: "Gold Division." },
+      { title: "StuyPulse FRC 694", role: "Software Engineer", description: "Led a 15-member subsystem team and helped earn a top-20 FIRST Championship finish." },
     ],
   },
   {
@@ -372,12 +370,10 @@ export const teamMembers: LeadershipMember[] = [
     whyNovus: "Novus gives students a chance to build systems that matter beyond the classroom and helps local businesses access the technology they deserve.",
     interests: ["Machine learning", "Robotics", "Open-source systems", "Technical mentorship"],
     experience: [
-      { title: "MIT Beaver Works Summer Institute", role: "Research Intern", description: "Selected for Remote Sensing for Disaster Response on a full scholarship, applying Python, machine learning, and geospatial analysis to disaster-response tools." },
+      { title: "MIT Beaver Works Summer Institute", role: "Research Intern", description: "Selected for Remote Sensing for Disaster Response on a full scholarship, applying machine learning to disaster-response tools." },
       { title: "NYC Public Schools through CS4ALL Pathfinders", role: "Software Engineering Intern", description: "Served as sole web developer for Destiny Helpers Outreach, architecting and launching a full-stack site." },
-      { title: "StuyPulse FRC 694", role: "Software Engineer, Director of IT, and Director of Rookie Education", description: "Mentored 80+ new members, built a repeatable onboarding pipeline, and contributed robot software that supported regional wins and national qualifications." },
-      { title: "Internyl.org", role: "Founder and Lead Developer", description: "Built an internship platform used by 100+ students with more than 1,000 opportunities collected through an automated pipeline." },
-      { title: "Machine Learning Researcher", description: "Trained a ResNet image-classification model on 10,000+ images and built real-time data tools for MIT BWSI's CubeSat Challenge." },
-      { title: "USACO and Congressional App Challenge", description: "USACO Gold and Congressional App Challenge honoree." },
+      { title: "StuyPulse FRC 694", role: "Software Engineer, Director of IT, and Director of Rookie Education", description: "Mentored 80+ new members, built an onboarding pipeline, and contributed robot software for regional wins and national qualifications." },
+      { title: "Internyl.org", role: "Founder and Lead Developer", description: "Built an internship platform used by 100+ students with more than 1,000 opportunities." },
     ],
   },
   {
@@ -394,11 +390,10 @@ export const teamMembers: LeadershipMember[] = [
     whyNovus: "Novus is a way to pair thoughtful strategy with tangible support for neighborhood businesses and the communities around them.",
     interests: ["Debate", "Public speaking", "Education", "Community events", "Design"],
     experience: [
-      { title: "Stuyvesant Big Sibs Program", role: "Chair", description: "Managed a $6K budget and led major schoolwide events for incoming students and families." },
+      { title: "Stuyvesant Big Sibs Program", role: "Chair", description: "Managed a $6K budget and led major schoolwide events." },
       { title: "Stuyvesant Lincoln Douglas Debate", role: "Novice Director and Varsity Debater", description: "Expanded the novice program from 5 to 45 members and led weekly instruction." },
-      { title: "Stuyvesant ARISTA Honor Society", role: "Operations Committee", description: "Built schoolwide resource systems and led student wellness initiatives." },
+      { title: "Stuyvesant ARISTA Honor Society", role: "Operations Committee", description: "Built schoolwide resource systems and led wellness initiatives." },
       { title: "Metis Project", role: "Math Manager", description: "Designed curriculum and supported 10 weekly tutees." },
-      { title: "Chinese School and Summer Camp", role: "Assistant Teacher", description: "Completed 350+ hours teaching Mandarin to students ages 8-12." },
     ],
   },
 ];
