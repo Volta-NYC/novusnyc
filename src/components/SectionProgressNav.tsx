@@ -32,9 +32,14 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
 
   return (
     <nav aria-label="Page sections" className="fixed right-6 top-1/2 z-30 hidden -translate-y-1/2 xl:block">
-      <div className="border-l border-white/70 pl-4 drop-shadow-sm">
-        <p className="mb-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-n-muted">On this page</p>
-        <ol className="space-y-2">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="font-body text-[9px] font-bold uppercase tracking-[0.18em] text-n-muted [writing-mode:vertical-rl] rotate-180">
+            On this page
+          </span>
+          <span aria-hidden="true" className="h-32 w-px bg-n-ink/12" />
+        </div>
+        <ol className="space-y-2.5">
           {sections.map((section) => {
             const active = activeId === section.id;
             return (
@@ -42,9 +47,12 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
                 <a
                   href={`#${section.id}`}
                   aria-current={active ? "location" : undefined}
-                  className={`group flex items-center gap-2.5 font-body text-sm transition-colors ${active ? "font-semibold text-n-ink" : "text-n-muted hover:text-n-ink"}`}
+                  className={`group flex items-center gap-2.5 font-body text-sm transition-colors ${active ? "font-semibold text-n-ink" : "text-n-muted/90 hover:text-n-ink"}`}
                 >
-                  <span className={`h-2 w-2 rounded-full transition-transform duration-200 ${active ? "scale-125 bg-n-orange" : "bg-white/90 ring-1 ring-n-border group-hover:bg-n-orange/70"}`} />
+                  <span className="relative flex h-4 w-3 items-center justify-center">
+                    <span aria-hidden="true" className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-n-ink/12" />
+                    <span className={`relative h-1.5 w-1.5 rounded-full transition-all duration-200 ${active ? "bg-n-orange scale-125" : "bg-white/95 ring-1 ring-n-border group-hover:bg-n-orange/65"}`} />
+                  </span>
                   {section.label}
                 </a>
               </li>
