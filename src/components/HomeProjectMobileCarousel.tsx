@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
-import ExpandableDescription from "@/components/ExpandableDescription";
 import { MapPinIcon } from "@/components/Icons";
 
 const AUTO_SCROLL_SPEED = 24;
@@ -38,66 +37,67 @@ function getServiceTagClass(service: string): string {
 
 function ProjectCard({ project, copy, index }: { project: HomeProject; copy: number; index: number }) {
   const isDuplicate = copy === 1;
+  const card = (
+    <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
+      <div className={`${project.colorClass} h-2`} />
+      {project.imageUrl ? (
+        <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white overflow-hidden">
+          <Image
+            src={project.imageUrl}
+            alt={isDuplicate ? "" : `${project.name} project`}
+            width={1600}
+            height={1000}
+            sizes="82vw"
+            className="block w-full h-auto"
+            loading="lazy"
+          />
+        </div>
+      ) : (
+        <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white h-36 flex items-center justify-center">
+          <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
+        </div>
+      )}
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex items-start justify-between mb-4 gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {project.services.map((service) => (
+              <span key={`${copy}-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+            ))}
+          </div>
+          <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
+            {project.status}
+          </span>
+        </div>
+        <h3 className="font-display font-bold text-n-ink text-lg mb-1">{project.name}</h3>
+        <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
+        {project.desc && (
+          <p className="home-project-mobile-description flex-1 font-body text-sm text-n-ink/70 leading-relaxed line-clamp-3">{project.desc}</p>
+        )}
+        {project.quote && (
+          <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
+            &ldquo;{project.quote}&rdquo;
+          </blockquote>
+        )}
+        <div className="flex items-center justify-between mt-4">
+          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
+            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
+          </p>
+          {project.url && <span className="font-body text-xs font-semibold text-n-purple">View live site →</span>}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <AnimatedSection
       delay={index * 0.05}
       className={`scroll-reveal scroll-reveal-card scroll-reveal-${index % 3} shrink-0 w-[82vw] max-w-[360px]`}
     >
-      <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
-        <div className={`${project.colorClass} h-2`} />
-        {project.imageUrl ? (
-          <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white overflow-hidden">
-            <Image
-              src={project.imageUrl}
-              alt={isDuplicate ? "" : `${project.name} project`}
-              width={1600}
-              height={1000}
-              sizes="82vw"
-              className="block w-full h-auto"
-              loading="lazy"
-            />
-          </div>
-        ) : (
-          <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white h-36 flex items-center justify-center">
-            <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
-          </div>
-        )}
-        <div className="p-5 flex-1 flex flex-col">
-          <div className="flex items-start justify-between mb-4 gap-2">
-            <div className="flex gap-2 flex-wrap">
-              {project.services.map((service) => (
-                <span key={`${copy}-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-              ))}
-            </div>
-            <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
-              {project.status}
-            </span>
-          </div>
-          <h3 className="font-display font-bold text-n-ink text-lg mb-1">{project.name}</h3>
-          <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
-          {project.desc && (isDuplicate ? (
-            <p className="home-project-mobile-description flex-1 font-body text-sm text-n-ink/70 leading-relaxed">{project.desc}</p>
-          ) : (
-            <ExpandableDescription desc={project.desc} className="flex-1" />
-          ))}
-          {project.quote && (
-            <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
-              &ldquo;{project.quote}&rdquo;
-            </blockquote>
-          )}
-          <div className="flex items-center justify-between mt-4">
-            <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
-              <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
-            </p>
-            {project.url && !isDuplicate && (
-              <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-n-purple hover:underline">
-                View live site →
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
+      {project.url ? (
+        <a href={project.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${project.name} live site`} className="block">
+          {card}
+        </a>
+      ) : card}
     </AnimatedSection>
   );
 }

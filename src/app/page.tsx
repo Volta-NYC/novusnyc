@@ -9,7 +9,6 @@ import HomeScrollBridge from "@/components/HomeScrollBridge";
 import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
-import ExpandableDescription from "@/components/ExpandableDescription";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
@@ -183,58 +182,64 @@ function HomeScrollProgress() {
 }
 
 function HomeProjectDesktopCard({ project, index }: { project: HomeProject; index: number }) {
-  return (
-    <div className={`scroll-reveal scroll-reveal-card scroll-reveal-${index % 3}`}>
-      <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
-        <div className={`${project.colorClass} h-2`} />
-        {project.imageUrl ? (
-          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
-            <Image
-              src={project.imageUrl}
-              alt={`${project.name} project`}
-              width={1600}
-              height={1000}
-              unoptimized
-              className="block w-full h-auto"
-              loading="lazy"
-            />
+  const card = (
+    <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
+      <div className={`${project.colorClass} h-2`} />
+      {project.imageUrl ? (
+        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
+          <Image
+            src={project.imageUrl}
+            alt={`${project.name} project`}
+            width={1600}
+            height={1000}
+            unoptimized
+            className="block w-full h-auto"
+            loading="lazy"
+          />
+        </div>
+      ) : (
+        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white h-40 flex items-center justify-center">
+          <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
+        </div>
+      )}
+      <div className="showcase-card-content p-7 flex flex-col">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex gap-2 flex-wrap">
+            {project.services.map((service) => (
+              <span key={`desktop-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
+            ))}
           </div>
-        ) : (
-          <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white h-40 flex items-center justify-center">
-            <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
-          </div>
+          <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
+            {project.status}
+          </span>
+        </div>
+        <h3 className="font-display font-bold text-n-ink text-xl mb-1">{project.name}</h3>
+        <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
+        {project.desc && <p className="font-body text-sm text-n-ink/70 leading-relaxed line-clamp-3">{project.desc}</p>}
+        {project.quote && (
+          <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
+            &ldquo;{project.quote}&rdquo;
+          </blockquote>
         )}
-        <div className="showcase-card-content p-7 flex flex-col">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex gap-2 flex-wrap">
-              {project.services.map((service) => (
-                <span key={`desktop-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
-              ))}
-            </div>
-            <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
-              {project.status}
-            </span>
-          </div>
-          <h3 className="font-display font-bold text-n-ink text-xl mb-1">{project.name}</h3>
-          <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
-          {project.desc && <ExpandableDescription desc={project.desc} />}
-          {project.quote && (
-            <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
-              &ldquo;{project.quote}&rdquo;
-            </blockquote>
+        <div className="flex items-center justify-between mt-4">
+          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
+            <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
+          </p>
+          {project.url && (
+            <span className="font-body text-xs font-semibold text-n-purple">View live site →</span>
           )}
-          <div className="flex items-center justify-between mt-4">
-            <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
-              <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
-            </p>
-            {project.url && (
-              <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-body text-xs font-semibold text-n-purple hover:underline">
-                View live site →
-              </a>
-            )}
-          </div>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className={`scroll-reveal scroll-reveal-card scroll-reveal-${index % 3}`}>
+      {project.url ? (
+        <a href={project.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${project.name} live site`} className="block">
+          {card}
+        </a>
+      ) : card}
     </div>
   );
 }

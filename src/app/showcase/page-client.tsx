@@ -6,7 +6,6 @@ import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
-import ExpandableDescription from "@/components/ExpandableDescription";
 import MasonryGrid from "@/components/MasonryGrid";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import { formatCounter } from "@/lib/formatCounter";
@@ -45,7 +44,7 @@ function getServiceTagClass(service: string): string {
 }
 
 function ShowcaseMobileCard({ project, isDuplicate = false }: { project: ShowcaseProject; isDuplicate?: boolean }) {
-  return (
+  const card = (
     <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
       <div className={`${project.colorClass} h-2`} />
       {project.imageUrl ? (
@@ -86,11 +85,7 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
         </div>
         <h3 className="font-display font-bold text-n-ink text-lg mb-1">{project.name}</h3>
         <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
-        {isDuplicate ? (
-          <p className="showcase-project-mobile-description flex-1 font-body text-sm text-n-ink/70 leading-relaxed">{project.desc}</p>
-        ) : (
-          <ExpandableDescription desc={project.desc} className="flex-1" />
-        )}
+        <p className="showcase-project-mobile-description flex-1 font-body text-sm text-n-ink/70 leading-relaxed line-clamp-3">{project.desc}</p>
         {project.quote && (
           <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
             &ldquo;{project.quote}&rdquo;
@@ -101,19 +96,18 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
             {project.neighborhood}
           </p>
-          {project.url && !isDuplicate && (
-            <a
-              href={project.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-body text-xs font-semibold text-n-purple hover:underline"
-            >
-              View live site →
-            </a>
-          )}
+          {project.url && <span className="font-body text-xs font-semibold text-n-purple">View live site →</span>}
         </div>
       </div>
     </div>
+  );
+
+  return (
+    project.url ? (
+      <a href={project.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${project.name} live site`} className="block">
+        {card}
+      </a>
+    ) : card
   );
 }
 
@@ -302,14 +296,10 @@ function ShowcaseMobileCarousel({ projects }: { projects: ShowcaseProject[] }) {
         <div className="flex w-max items-start">
           {[0, 1].map((copy) => (
             <div key={copy} className="flex gap-4 pr-4" aria-hidden={copy === 1}>
-              {projects.map((project, index) => (
-                <AnimatedSection
-                  key={`${copy}-${project.name}`}
-                  delay={index * 0.05}
-                  className="shrink-0 w-[78vw] max-w-[340px]"
-                >
+              {projects.map((project) => (
+                <div key={`${copy}-${project.name}`} className="shrink-0 w-[78vw] max-w-[340px]">
                   <ShowcaseMobileCard project={project} isDuplicate={copy === 1} />
-                </AnimatedSection>
+                </div>
               ))}
             </div>
           ))}
@@ -407,14 +397,10 @@ export default function ShowcaseClient({
                     style={{ scrollbarWidth: "none" }}
                   >
                     <div className="flex gap-4 pl-5 pr-8 items-start">
-                      {projects.map((p, i) => (
-                        <AnimatedSection
-                          key={`mobile-${p.name}`}
-                          delay={i * 0.05}
-                          className="shrink-0 w-[78vw] max-w-[340px]"
-                        >
+                      {projects.map((p) => (
+                        <div key={`mobile-${p.name}`} className="shrink-0 w-[78vw] max-w-[340px]">
                           <ShowcaseMobileCard project={p} />
-                        </AnimatedSection>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -428,8 +414,9 @@ export default function ShowcaseClient({
                   itemWidth={290}
                   gap={24}
                 >
-                  {projects.map((p) => (
-                    <div key={`desktop-${p.name}`} className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
+                  {projects.map((p) => {
+                    const card = (
+                    <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
                       <div className={`${p.colorClass} h-2`} />
                       {p.imageUrl ? (
                         <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
@@ -469,7 +456,7 @@ export default function ShowcaseClient({
                         </div>
                         <h3 className="font-display font-bold text-n-ink text-xl mb-1">{p.name}</h3>
                         <p className="font-body text-sm text-n-muted mb-3">{p.type}</p>
-                        <ExpandableDescription desc={p.desc} />
+                        <p className="font-body text-sm text-n-ink/70 leading-relaxed line-clamp-3">{p.desc}</p>
                         {p.quote && (
                           <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
                             &ldquo;{p.quote}&rdquo;
@@ -480,20 +467,18 @@ export default function ShowcaseClient({
                             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
                             {p.neighborhood}
                           </p>
-                          {p.url && (
-                            <a
-                              href={p.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-body text-xs font-semibold text-n-purple hover:underline"
-                            >
-                              View live site →
-                            </a>
-                          )}
+                          {p.url && <span className="font-body text-xs font-semibold text-n-purple">View live site →</span>}
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+
+                    return p.url ? (
+                      <a key={`desktop-${p.name}`} href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${p.name} live site`} className="block">
+                        {card}
+                      </a>
+                    ) : <div key={`desktop-${p.name}`}>{card}</div>;
+                  })}
                 </MasonryGrid>
               </div>
             </>
