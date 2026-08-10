@@ -470,26 +470,107 @@ body:has(.home-scroll-story) header .md\:hidden span {
 .home-partners-depth,
 .home-tracks-depth,
 .home-showcase-depth {
-  background-color: rgba(255, 253, 249, 0.9) !important;
+  isolation: isolate;
+}
+
+.home-partners-depth > *,
+.home-tracks-depth > *,
+.home-showcase-depth > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-partners-depth::before,
+.home-tracks-depth::before,
+.home-showcase-depth::before {
+  z-index: 0;
 }
 
 .home-partners-depth {
-  background-color: rgba(255, 255, 255, 0.88) !important;
+  background-color: #fffdf9 !important;
+  background-image:
+    radial-gradient(circle at 7% 18%, rgba(246, 183, 141, 0.22) 0 0.12rem, transparent 0.14rem),
+    radial-gradient(circle at 7% 18%, rgba(246, 183, 141, 0.1) 0 11rem, transparent 27rem),
+    radial-gradient(circle at 93% 84%, rgba(190, 162, 186, 0.16) 0 13rem, transparent 30rem),
+    linear-gradient(120deg, rgba(255, 253, 249, 0.97), rgba(255, 255, 255, 0.9));
+  background-size: 1.1rem 1.1rem, auto, auto, auto;
+}
+
+.home-partners-depth::before {
+  inset: 0;
+  opacity: 1;
+  background:
+    linear-gradient(90deg, transparent 0 12%, rgba(45, 40, 46, 0.055) 12.05% 12.1%, transparent 12.15% 100%),
+    linear-gradient(90deg, transparent 0 87%, rgba(45, 40, 46, 0.055) 87.05% 87.1%, transparent 87.15% 100%),
+    repeating-linear-gradient(90deg, transparent 0 7.8rem, rgba(45, 40, 46, 0.035) 7.8rem 7.86rem, transparent 7.86rem 15.72rem);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.home-showcase-depth {
+  background-color: #fffdf9 !important;
+  background-image:
+    radial-gradient(ellipse 44rem 31rem at -6% 26%, rgba(243, 226, 141, 0.42), transparent 68%),
+    radial-gradient(ellipse 39rem 32rem at 104% 78%, rgba(190, 162, 186, 0.24), transparent 66%),
+    linear-gradient(180deg, #fffdf9 0%, #fffaf1 50%, #fffdf9 100%);
 }
 
 .home-showcase-depth::before {
-  opacity: 0.92;
+  inset: -10% -4%;
+  opacity: 0.78;
   background:
-    radial-gradient(70% 55% at 8% 28%, rgba(243, 226, 141, 0.34), transparent 74%),
-    radial-gradient(48% 52% at 91% 68%, rgba(190, 162, 186, 0.2), transparent 74%),
-    repeating-linear-gradient(115deg, rgba(45, 40, 46, 0.04) 0 1px, transparent 1px 94px);
+    linear-gradient(115deg, transparent 0 49.85%, rgba(45, 40, 46, 0.06) 49.9% 50.1%, transparent 50.15% 100%),
+    repeating-linear-gradient(0deg, transparent 0 8.4rem, rgba(45, 40, 46, 0.042) 8.4rem 8.46rem, transparent 8.46rem 16.86rem),
+    repeating-linear-gradient(90deg, transparent 0 8.4rem, rgba(45, 40, 46, 0.042) 8.4rem 8.46rem, transparent 8.46rem 16.86rem);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0 54%, transparent 88%);
+  mask-image: radial-gradient(ellipse at center, #000 0 54%, transparent 88%);
+}
+
+.home-showcase-depth::after {
+  position: absolute;
+  z-index: 0;
+  right: clamp(-14rem, -8vw, -5rem);
+  top: 3.5rem;
+  width: clamp(15rem, 25vw, 24rem);
+  aspect-ratio: 1;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(190, 162, 186, 0.38);
+  border-radius: 999px;
+  box-shadow: 0 0 0 clamp(1.2rem, 3vw, 3.25rem) rgba(190, 162, 186, 0.08), 0 0 0 clamp(2.5rem, 6vw, 6.5rem) rgba(246, 183, 141, 0.07);
+}
+
+.home-tracks-depth {
+  background-color: #fffdf9 !important;
+  background-image:
+    radial-gradient(ellipse 35rem 26rem at 3% 87%, rgba(246, 183, 141, 0.28), transparent 68%),
+    radial-gradient(ellipse 30rem 24rem at 97% 10%, rgba(243, 226, 141, 0.34), transparent 67%),
+    linear-gradient(135deg, #fffdf9 0%, #fff8ef 52%, #fffdf9 100%);
 }
 
 .home-tracks-depth::before {
+  inset: 0;
+  opacity: 0.2;
   background:
-    radial-gradient(52% 58% at 10% 70%, rgba(246, 183, 141, 0.2), transparent 74%),
-    radial-gradient(54% 54% at 88% 18%, rgba(243, 226, 141, 0.24), transparent 74%),
-    repeating-linear-gradient(0deg, rgba(45, 40, 46, 0.035) 0 1px, transparent 1px 104px);
+    repeating-linear-gradient(0deg, rgba(45, 40, 46, 0.035) 0 1px, transparent 1px 7.2rem),
+    repeating-linear-gradient(90deg, rgba(45, 40, 46, 0.035) 0 1px, transparent 1px 7.2rem),
+    radial-gradient(circle at 18% 24%, rgba(246, 183, 141, 0.28) 0 0.28rem, transparent 0.31rem),
+    radial-gradient(circle at 82% 73%, rgba(190, 162, 186, 0.24) 0 0.28rem, transparent 0.31rem);
+  background-size: auto, auto, 1.2rem 1.2rem, 1.2rem 1.2rem;
+}
+
+.home-tracks-depth::after {
+  position: absolute;
+  z-index: 0;
+  left: clamp(-11rem, -7vw, -4rem);
+  bottom: clamp(-10rem, -9vw, -4rem);
+  width: clamp(15rem, 25vw, 23rem);
+  aspect-ratio: 1;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(246, 183, 141, 0.4);
+  border-radius: 50%;
+  box-shadow: 0 0 0 clamp(1.1rem, 2.8vw, 2.8rem) rgba(246, 183, 141, 0.08), 0 0 0 clamp(2.3rem, 5.8vw, 5.8rem) rgba(243, 226, 141, 0.1);
 }
 
 .home-network-section {
@@ -1160,6 +1241,18 @@ body:has(.home-scroll-story) footer::before {
 
   .home-depth-section::before {
     opacity: 0.42;
+  }
+
+  .home-partners-depth::before {
+    opacity: 0.34;
+  }
+
+  .home-showcase-depth::before {
+    opacity: 0.38;
+  }
+
+  .home-tracks-depth::before {
+    opacity: 0.18;
   }
 
   .home-scroll-rail {
