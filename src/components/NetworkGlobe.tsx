@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { feature } from "topojson-client";
 import landTopology from "world-atlas/land-110m.json";
 import type { ChapterConnection, ChapterLocation } from "@/data/network";
@@ -169,12 +168,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const mount = mountRef.current;
     if (!mount) return;
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-    const northAmericaView = toSpherePoint(38, -98, 9.4);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    const northAmericaView = toSpherePoint(15, -75, 5.8);
     camera.position.copy(northAmericaView);
     camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -182,17 +181,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     renderer.setClearColor(0x000000, 0);
     mount.appendChild(renderer.domElement);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enablePan = false;
-    controls.enableZoom = false;
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.065;
-    controls.autoRotate = !reducedMotion;
-    controls.autoRotateSpeed = 0.2;
-    controls.minPolarAngle = 0.45;
-    controls.maxPolarAngle = Math.PI - 0.45;
-
     const globe = new THREE.Group();
+    globe.position.set(1.65, -1.5, 0);
     scene.add(globe);
 
     const earth = new THREE.Mesh(
@@ -278,8 +268,11 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
+    const dragStart = new THREE.Vector2();
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const cameraRight = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
     let activeLocation = "";
-    let resumeRotationTimeout: number | undefined;
+    let isDragging = false;
     let animationFrame = 0;
     const clock = new THREE.Clock();
 
@@ -288,24 +281,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       if (!width || !height) return;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height);
     };
 
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(mount);
     resize();
-
-    const pauseRotation = () => {
-      if (resumeRotationTimeout) window.clearTimeout(resumeRotationTimeout);
-      controls.autoRotate = false;
-    };
-
-    const resumeRotation = () => {
-      if (reducedMotion) return;
-      resumeRotationTimeout = window.setTimeout(() => {
-        controls.autoRotate = true;
-      }, 1200);
-    };
 
     const clearTooltip = () => {
       activeLocation = "";
@@ -314,6 +295,13 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (isDragging) {
+        globe.rotateOnWorldAxis(worldUp, (event.clientX - dragStart.x) * 0.006);
+        globe.rotateOnWorldAxis(cameraRight, (event.clientY - dragStart.y) * 0.006);
+        dragStart.set(event.clientX, event.clientY);
+        return;
+      }
+
       const bounds = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
       pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
@@ -337,10 +325,34 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       });
     };
 
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      isDragging = true;
+      dragStart.set(event.clientX, event.clientY);
+      activeLocation = "";
+      setTooltip(null);
+      renderer.domElement.setPointerCapture(event.pointerId);
+      renderer.domElement.style.cursor = "grabbing";
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (!isDragging) return;
+      isDragging = false;
+      if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+        renderer.domElement.releasePointerCapture(event.pointerId);
+      }
+      renderer.domElement.style.cursor = "grab";
+    };
+
+    const onPointerLeave = () => {
+      if (!isDragging) clearTooltip();
+    };
+
     renderer.domElement.addEventListener("pointermove", onPointerMove);
-    renderer.domElement.addEventListener("pointerleave", clearTooltip);
-    renderer.domElement.addEventListener("pointerdown", pauseRotation);
-    renderer.domElement.addEventListener("pointerup", resumeRotation);
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
+    renderer.domElement.addEventListener("pointercancel", onPointerUp);
+    renderer.domElement.addEventListener("pointerleave", onPointerLeave);
 
     const render = () => {
       const elapsed = clock.getElapsedTime();
@@ -351,7 +363,6 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       curves.forEach(({ curve, pulse, phase }) => {
         pulse.position.copy(curve.getPoint((elapsed * 0.055 + phase) % 1));
       });
-      controls.update();
       renderer.render(scene, camera);
       animationFrame = window.requestAnimationFrame(render);
     };
@@ -359,13 +370,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
-      if (resumeRotationTimeout) window.clearTimeout(resumeRotationTimeout);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
-      renderer.domElement.removeEventListener("pointerleave", clearTooltip);
-      renderer.domElement.removeEventListener("pointerdown", pauseRotation);
-      renderer.domElement.removeEventListener("pointerup", resumeRotation);
-      controls.dispose();
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointerup", onPointerUp);
+      renderer.domElement.removeEventListener("pointercancel", onPointerUp);
+      renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
       globe.traverse((object) => {
         if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
           object.geometry.dispose();
