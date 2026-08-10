@@ -258,8 +258,8 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
       <div>
         <label className="block font-body text-sm font-semibold text-n-ink mb-2">Chapter *</label>
         <p className="font-body text-xs text-n-muted mb-2">
-          Not near one of these? Choose New York. You&apos;ll work remotely with the team, and we may
-          open a chapter in your area later. Tell us if that interests you.
+          Not near any of these? Pick New York and you&apos;ll work remotely with the rest of the
+          team. If you&apos;d want a chapter in your area, tell us.
         </p>
         <SelectMenu
           ariaLabel="Chapter"
@@ -405,7 +405,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
             onClick={() => { set("hasResume", true); clearError("hasResume"); }}
             className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === true ? "bg-n-orange border-n-orange text-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
           >
-            Yes — attach resume
+            Yes, attach resume
           </button>
           <button
             type="button"
@@ -482,7 +482,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
         </p>
       )}
       <p className="text-xs text-n-muted text-center font-body">
-        Rolling admissions — we&apos;ll follow up within a few days.
+        Rolling admissions. We&apos;ll follow up within a few days.
       </p>
     </form>
   );

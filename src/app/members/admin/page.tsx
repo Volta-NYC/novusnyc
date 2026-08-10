@@ -207,14 +207,47 @@ function ApplicationsTab() {
   const [status, setStatus] = useState("");
   const [paused, setPaused] = useState(false);
   const [message, setMessage] = useState("");
+  const [chapters, setChapters] = useState<string[]>([]);
+  const [newChapter, setNewChapter] = useState("");
+  const [savingChapters, setSavingChapters] = useState(false);
+  const [chapterStatus, setChapterStatus] = useState("");
 
   useEffect(() => {
     getSiteSettings().then((s) => {
       setPaused(s.applicationsPaused);
       setMessage(s.applicationsPausedMsg);
+      setChapters(s.chapters);
       setLoading(false);
     });
   }, []);
+
+  const addChapter = () => {
+    const trimmed = newChapter.trim();
+    if (!trimmed || chapters.includes(trimmed)) return;
+    setChapters((prev) => [...prev, trimmed]);
+    setNewChapter("");
+  };
+
+  const saveChapters = async () => {
+    // An empty list would render a chapter dropdown with nothing in it, and the
+    // field is required, so the form would be unsubmittable.
+    const cleaned = chapters.map((c) => c.trim()).filter(Boolean);
+    if (cleaned.length === 0) {
+      setChapterStatus("Keep at least one chapter.");
+      return;
+    }
+    setSavingChapters(true);
+    setChapterStatus("");
+    try {
+      await updateSiteSettings({ chapters: cleaned });
+      setChapters(cleaned);
+      setChapterStatus("Saved.");
+    } catch {
+      setChapterStatus("Save failed. Try again.");
+    } finally {
+      setSavingChapters(false);
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -254,6 +287,43 @@ function ApplicationsTab() {
           </div>
         </div>
         <StatusMsg msg={status} />
+      </Card>
+
+      <Card title="Chapters" subtitle="Options in the Chapter dropdown on /apply. Shown in this order.">
+        <div className="space-y-3">
+          {chapters.length === 0 && (
+            <p className="text-[11px] text-white/40">No chapters yet. Add one below.</p>
+          )}
+          {chapters.map((chapter, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Input
+                value={chapter}
+                onChange={(e) => setChapters((prev) => prev.map((c, idx) => (idx === i ? e.target.value : c)))}
+              />
+              <Btn
+                variant="ghost"
+                onClick={() => setChapters((prev) => prev.filter((_, idx) => idx !== i))}
+                disabled={chapters.length === 1}
+                title={chapters.length === 1 ? "Keep at least one chapter" : "Remove"}
+              >
+                Remove
+              </Btn>
+            </div>
+          ))}
+          <div className="flex items-center gap-2 pt-1">
+            <Input
+              value={newChapter}
+              onChange={(e) => setNewChapter(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addChapter(); } }}
+              placeholder="Add a chapter"
+            />
+            <Btn variant="secondary" onClick={addChapter} disabled={!newChapter.trim()}>Add</Btn>
+          </div>
+          <div className="pt-1">
+            <SaveBtn saving={savingChapters} onClick={() => void saveChapters()} />
+          </div>
+        </div>
+        <StatusMsg msg={chapterStatus} />
       </Card>
     </div>
   );
