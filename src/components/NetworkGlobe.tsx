@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { feature } from "topojson-client";
+import countriesTopology from "world-atlas/countries-110m.json";
 import landTopology from "world-atlas/land-110m.json";
 import type { ChapterConnection, ChapterLocation } from "@/data/network";
 
@@ -70,17 +71,17 @@ function createGlowTexture() {
 
 function addGlobeGrid(group: THREE.Group) {
   const material = new THREE.LineBasicMaterial({
-    color: "#F9F5F8",
+    color: "#E4F3F6",
     transparent: true,
-    opacity: 0.035,
+    opacity: 0.28,
   });
 
-  for (let latitude = -45; latitude <= 45; latitude += 45) {
+  for (let latitude = -60; latitude <= 60; latitude += 30) {
     const points = Array.from({ length: 97 }, (_, index) => toSpherePoint(latitude, -180 + index * 3, GLOBE_RADIUS + 0.006));
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
   }
 
-  for (let longitude = -135; longitude <= 180; longitude += 45) {
+  for (let longitude = -150; longitude <= 180; longitude += 30) {
     const points = Array.from({ length: 61 }, (_, index) => toSpherePoint(-90 + index * 3, longitude, GLOBE_RADIUS + 0.006));
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
   }
@@ -107,6 +108,10 @@ function createLandTexture() {
     landTopology as never,
     landTopology.objects.land as never,
   ) as unknown as LandFeatureCollection;
+  const countries = feature(
+    countriesTopology as never,
+    countriesTopology.objects.countries as never,
+  ) as unknown as LandFeatureCollection;
   const canvas = document.createElement("canvas");
   canvas.width = 2048;
   canvas.height = 1024;
@@ -119,31 +124,52 @@ function createLandTexture() {
     ((90 - latitude) / 180) * canvas.height,
   ] as const;
 
-  land.features.forEach(({ geometry }) => {
-    if (!geometry) return;
-    const polygons = geometry.type === "Polygon"
-      ? [geometry.coordinates as Polygon]
-      : geometry.coordinates as Polygon[];
+  const drawGeometry = (
+    collection: LandFeatureCollection,
+    drawPolygon: (rings: Coordinate[][], offset: number) => void,
+  ) => {
+    collection.features.forEach(({ geometry }) => {
+      if (!geometry) return;
+      const polygons = geometry.type === "Polygon"
+        ? [geometry.coordinates as Polygon]
+        : geometry.coordinates as Polygon[];
 
-    polygons.forEach(([outerRing, ...holeRings]) => {
-      if (!outerRing || outerRing.length < 4) return;
-      const rings = [outerRing, ...holeRings].map(unwrapRing);
-
-      // Draw each polygon at neighboring world copies so land that crosses the
-      // date line stays continuous when the texture wraps around the sphere.
-      [-canvas.width, 0, canvas.width].forEach((offset) => {
-        context.beginPath();
-        rings.forEach((ring) => {
-          ring.forEach((point, index) => {
-            const [x, y] = project(point, offset);
-            if (index === 0) context.moveTo(x, y);
-            else context.lineTo(x, y);
-          });
-          context.closePath();
-        });
-        context.fillStyle = "#ffffff";
-        context.fill("evenodd");
+      polygons.forEach((polygon) => {
+        const rings = polygon.map(unwrapRing);
+        if (!rings[0] || rings[0].length < 4) return;
+        [-canvas.width, 0, canvas.width].forEach((offset) => drawPolygon(rings, offset));
       });
+    });
+  };
+
+  // Red carries land while green carries country edges. The shader uses the
+  // two channels to lift continents and keep borders visible at any rotation.
+  drawGeometry(land, (rings, offset) => {
+    context.beginPath();
+    rings.forEach((ring) => {
+      ring.forEach((point, index) => {
+        const [x, y] = project(point, offset);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.closePath();
+    });
+    context.fillStyle = "rgb(255, 0, 0)";
+    context.fill("evenodd");
+  });
+
+  drawGeometry(countries, (rings, offset) => {
+    rings.forEach((ring) => {
+      context.beginPath();
+      ring.forEach((point, index) => {
+        const [x, y] = project(point, offset);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.closePath();
+      context.strokeStyle = "rgb(255, 255, 0)";
+      context.lineWidth = 1.35;
+      context.stroke();
     });
   });
 
@@ -189,34 +215,46 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const landTexture = createLandTexture();
 
     const earth = new THREE.Mesh(
-      new THREE.SphereGeometry(GLOBE_RADIUS, compactViewport ? 56 : 72, compactViewport ? 56 : 72),
+      new THREE.SphereGeometry(GLOBE_RADIUS, compactViewport ? 96 : 180, compactViewport ? 64 : 120),
       new THREE.ShaderMaterial({
         uniforms: {
           landMap: { value: landTexture },
-          surfaceColor: { value: new THREE.Color("#2D282E") },
-          landColor: { value: new THREE.Color("#847589") },
+          surfaceColor: { value: new THREE.Color("#8DBDCE") },
+          landColor: { value: new THREE.Color("#A9C9A4") },
+          borderColor: { value: new THREE.Color("#E2EEDC") },
         },
         vertexShader: `
+          uniform sampler2D landMap;
           varying vec3 vNormal;
+          varying vec2 vMapUv;
+          const float PI = 3.14159265359;
           void main() {
-            vNormal = normalize(normal);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            vec3 radialNormal = normalize(normal);
+            float longitude = atan(-radialNormal.z, radialNormal.x);
+            float latitude = asin(clamp(radialNormal.y, -1.0, 1.0));
+            vMapUv = vec2((longitude + PI) / (2.0 * PI), 0.5 + latitude / PI);
+            float land = texture2D(landMap, vMapUv).r;
+            vNormal = radialNormal;
+            vec3 raisedPosition = position + radialNormal * land * 0.05;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(raisedPosition, 1.0);
           }
         `,
         fragmentShader: `
           uniform sampler2D landMap;
           uniform vec3 surfaceColor;
           uniform vec3 landColor;
+          uniform vec3 borderColor;
           varying vec3 vNormal;
-          const float PI = 3.14159265359;
+          varying vec2 vMapUv;
           void main() {
             vec3 normal = normalize(vNormal);
-            float longitude = atan(-normal.z, normal.x);
-            float latitude = asin(clamp(normal.y, -1.0, 1.0));
-            vec2 mapUv = vec2((longitude + PI) / (2.0 * PI), 0.5 + latitude / PI);
-            float land = texture2D(landMap, mapUv).r;
-            vec3 color = mix(surfaceColor, landColor, land * 0.66);
-            gl_FragColor = vec4(color, 0.9);
+            vec4 mapData = texture2D(landMap, vMapUv);
+            float land = mapData.r;
+            float border = mapData.g;
+            vec3 color = mix(surfaceColor, landColor, land);
+            color = mix(color, borderColor, border * 0.88);
+            float light = 0.82 + 0.18 * max(dot(normal, normalize(vec3(-0.5, 0.72, 0.65))), 0.0);
+            gl_FragColor = vec4(color * light, 0.96);
           }
         `,
         transparent: true,
@@ -239,7 +277,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     locations.forEach((location) => {
       const isHub = location.type === "hub";
       const color = isHub ? HUB_COLOR : CHAPTER_COLOR;
-      const point = toSpherePoint(location.lat, location.lng, GLOBE_RADIUS + 0.025);
+      const point = toSpherePoint(location.lat, location.lng, GLOBE_RADIUS + 0.085);
       const glowScale = isHub ? 0.18 : 0.12;
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({
         map: glowTexture,
@@ -278,8 +316,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const to = locationsByName.get(toName);
       if (!from || !to) return;
 
-      const start = toSpherePoint(from.lat, from.lng, GLOBE_RADIUS + 0.035);
-      const end = toSpherePoint(to.lat, to.lng, GLOBE_RADIUS + 0.035);
+      const start = toSpherePoint(from.lat, from.lng, GLOBE_RADIUS + 0.095);
+      const end = toSpherePoint(to.lat, to.lng, GLOBE_RADIUS + 0.095);
       const angularDistance = start.clone().normalize().angleTo(end.clone().normalize());
       const arcLift = 0.012 + Math.min(0.12, angularDistance * 0.23);
       const middle = start.clone().add(end).normalize().multiplyScalar(GLOBE_RADIUS + arcLift);
@@ -311,6 +349,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     let dragDistance = 0;
     let pinchDistance = 0;
     let pinchAngle = 0;
+    const pinchCenter = new THREE.Vector2();
     let animationFrame = 0;
     const clock = new THREE.Clock();
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -338,6 +377,16 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       activeLocation = "";
       renderer.domElement.style.cursor = "grab";
       setTooltip(null);
+    };
+
+    const getPinchGesture = () => {
+      const [first, second] = [...activePointers.values()];
+      const center = first.clone().add(second).multiplyScalar(0.5);
+      return {
+        distance: first.distanceTo(second),
+        angle: Math.atan2(second.y - first.y, second.x - first.x),
+        center,
+      };
     };
 
     const updateTooltip = (event: PointerEvent) => {
@@ -371,19 +420,21 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       }
 
       if (activePointers.size === 2) {
-        const [first, second] = [...activePointers.values()];
-        const nextPinchDistance = first.distanceTo(second);
-        const nextPinchAngle = Math.atan2(second.y - first.y, second.x - first.x);
-        if (pinchDistance > 0) updateCameraDistance(cameraDistance - (nextPinchDistance - pinchDistance) * 0.012);
-        if (pinchAngle) {
+        const gesture = getPinchGesture();
+        if (pinchDistance > 0) updateCameraDistance(cameraDistance - (gesture.distance - pinchDistance) * 0.012);
+        if (pinchAngle !== 0) {
           const angleDelta = Math.atan2(
-            Math.sin(nextPinchAngle - pinchAngle),
-            Math.cos(nextPinchAngle - pinchAngle),
+            Math.sin(gesture.angle - pinchAngle),
+            Math.cos(gesture.angle - pinchAngle),
           );
-          globe.rotateOnWorldAxis(worldUp, angleDelta * 0.9);
+          globe.rotateOnWorldAxis(worldUp, angleDelta * 1.1);
         }
-        pinchDistance = nextPinchDistance;
-        pinchAngle = nextPinchAngle;
+        const centerDelta = gesture.center.clone().sub(pinchCenter);
+        globe.rotateOnWorldAxis(worldUp, centerDelta.x * 0.0035);
+        globe.rotateOnWorldAxis(cameraRight, centerDelta.y * 0.0035);
+        pinchDistance = gesture.distance;
+        pinchAngle = gesture.angle;
+        pinchCenter.copy(gesture.center);
         return;
       }
 
@@ -401,15 +452,16 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     };
 
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
       activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
       if (activePointers.size === 2) {
-        const [first, second] = [...activePointers.values()];
-        pinchDistance = first.distanceTo(second);
-        pinchAngle = Math.atan2(second.y - first.y, second.x - first.x);
+        const gesture = getPinchGesture();
+        pinchDistance = gesture.distance;
+        pinchAngle = gesture.angle;
+        pinchCenter.copy(gesture.center);
         isDragging = false;
         renderer.domElement.setPointerCapture(event.pointerId);
-        renderer.domElement.style.cursor = "zoom-in";
+        renderer.domElement.style.cursor = "grabbing";
         return;
       }
       isDragging = true;
@@ -428,15 +480,15 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       if (renderer.domElement.hasPointerCapture(event.pointerId)) {
         renderer.domElement.releasePointerCapture(event.pointerId);
       }
-      pinchDistance = activePointers.size === 2
-        ? [...activePointers.values()][0].distanceTo([...activePointers.values()][1])
-        : 0;
-      pinchAngle = activePointers.size === 2
-        ? Math.atan2(
-          [...activePointers.values()][1].y - [...activePointers.values()][0].y,
-          [...activePointers.values()][1].x - [...activePointers.values()][0].x,
-        )
-        : 0;
+      if (activePointers.size === 2) {
+        const gesture = getPinchGesture();
+        pinchDistance = gesture.distance;
+        pinchAngle = gesture.angle;
+        pinchCenter.copy(gesture.center);
+      } else {
+        pinchDistance = 0;
+        pinchAngle = 0;
+      }
       if (activePointers.size === 1) {
         const remainingPointer = [...activePointers.values()][0];
         isDragging = true;
@@ -454,7 +506,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     };
 
     const onPointerLeave = () => {
-      if (!isDragging) clearTooltip();
+      if (!isDragging && activePointers.size < 2) clearTooltip();
     };
 
     renderer.domElement.addEventListener("pointermove", onPointerMove);
