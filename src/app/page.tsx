@@ -6,6 +6,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
 import HomeScrollBridge from "@/components/HomeScrollBridge";
+import HomeNetworkSection from "@/components/HomeNetworkSection";
 import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
@@ -551,6 +552,8 @@ export default function Home() {
           </AnimatedSection>
         </div>
       </section>
+
+      <HomeNetworkSection />
 
     </div>
   );

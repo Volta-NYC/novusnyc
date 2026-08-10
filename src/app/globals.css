@@ -492,6 +492,39 @@ body:has(.home-scroll-story) header .md\:hidden span {
     repeating-linear-gradient(0deg, rgba(45, 40, 46, 0.035) 0 1px, transparent 1px 104px);
 }
 
+.home-network-section {
+  background:
+    radial-gradient(60% 90% at 72% 50%, rgba(190, 162, 186, 0.16), transparent 70%),
+    radial-gradient(42% 58% at 10% 80%, rgba(246, 183, 141, 0.1), transparent 72%),
+    linear-gradient(125deg, #211c22 0%, #2d282e 48%, #1a171b 100%);
+}
+
+.home-network-section::before {
+  position: absolute;
+  inset: 18px;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(249, 245, 248, 0.13);
+}
+
+.network-globe-frame {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(249, 245, 248, 0.16);
+  background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.045), transparent 64%);
+}
+
+.network-globe-frame::before {
+  position: absolute;
+  z-index: 1;
+  inset: 12px;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(249, 245, 248, 0.08);
+}
+
 body:has(.home-scroll-story) footer {
   position: relative;
   isolation: isolate;
