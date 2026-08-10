@@ -148,23 +148,41 @@ const CITIES: Record<string, string[]> = {
 /**
  * Cities lifted to the top of their state's list, in the order given.
  *
- * Keyed to where applicants actually cluster rather than to population: the
- * states with a chapter, plus the New Jersey and Connecticut towns inside the
- * NYC commuter belt, whose students join the New York chapter. Alphabetical
- * order buries Brooklyn behind Albany and Los Angeles behind Anaheim.
+ * A tier earns its place when the list is long enough to scan and the state's
+ * dominant metros sit far down it. Texas is the clearest case: Houston is
+ * nineteenth of forty-two alphabetically. Type-ahead helps only someone who
+ * already knows what they are looking for, so it does not replace this.
  *
- * Do not extend this on population alone. Type-ahead already makes a long
- * alphabetical list fast to navigate, so a tier only earns its place where the
- * likely answers are known in advance. Add a state when a chapter opens there.
+ * Short lists are left alone. Maryland has four cities; ordering four entries
+ * is not a problem worth configuration.
+ *
+ * Chapter states lead their own tiers, and New Jersey and Connecticut cover
+ * the NYC commuter belt, whose students join the New York chapter.
  */
 const CITY_PRIORITY: Record<string, string[]> = {
+  // Chapters
   NY: ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"],
   MA: ["Boston"],
   IL: ["Chicago"],
   CA: ["Los Angeles", "San Francisco", "San Diego", "San Jose"],
   MI: ["Detroit", "Ann Arbor"],
+
+  // NYC commuter belt
   NJ: ["Jersey City", "Newark"],
   CT: ["Stamford", "Bridgeport"],
+
+  // Long lists whose main metros would otherwise be buried
+  TX: ["Houston", "Dallas", "Austin", "San Antonio", "Fort Worth"],
+  FL: ["Miami", "Orlando", "Tampa", "Jacksonville"],
+  CO: ["Denver", "Boulder", "Colorado Springs"],
+  AZ: ["Phoenix", "Tucson", "Tempe"],
+  NC: ["Charlotte", "Raleigh", "Durham"],
+  VA: ["Arlington", "Richmond", "Virginia Beach"],
+  WA: ["Seattle", "Tacoma"],
+  NV: ["Las Vegas", "Reno"],
+  OH: ["Columbus", "Cleveland", "Cincinnati"],
+  PA: ["Philadelphia", "Pittsburgh"],
+  GA: ["Atlanta"],
 };
 
 /**
