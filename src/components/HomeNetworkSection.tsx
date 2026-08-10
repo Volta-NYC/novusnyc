@@ -12,6 +12,12 @@ const NetworkGlobe = dynamic(() => import("@/components/NetworkGlobe"), {
 export default function HomeNetworkSection() {
   return (
     <section className="home-network-section relative overflow-hidden py-20 md:py-24">
+      <div className="home-network-aurora" aria-hidden="true">
+        <div className="home-network-aurora-blob home-network-aurora-blob-one" />
+        <div className="home-network-aurora-blob home-network-aurora-blob-two" />
+        <div className="home-network-aurora-blob home-network-aurora-blob-three" />
+        <div className="home-network-aurora-wave" />
+      </div>
       <div className="mx-auto grid max-w-7xl items-center gap-8 px-5 md:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
         <AnimatedSection>
           <p className="font-body text-xs font-bold uppercase tracking-[0.22em] text-n-orange">Our network</p>
