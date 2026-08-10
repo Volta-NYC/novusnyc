@@ -191,7 +191,9 @@ export interface ApplicationRecord {
   grade?: string;
   cityState?: string;
   referral?: string;
+  referralName?: string;
   tracksSelected?: string;
+  marketingSubtrack?: string;
   hasResume?: string;
   resumeUrl?: string;
   toolsSoftware?: string;
@@ -986,6 +988,8 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
     grade: readLegacyText(row, ["grade", "Grade"]),
     cityState: readLegacyText(row, ["cityState", "City, State", "City"]),
     referral: readLegacyText(row, ["referral", "How They Heard"]),
+    referralName: readLegacyText(row, ["referral_name", "referralName", "Referral Name"]),
+    marketingSubtrack: readLegacyText(row, ["marketing_subtrack", "marketingSubtrack", "Marketing Subtrack"]),
     tracksSelected: (() => {
       const v = row["tracks_selected"] ?? row["tracksSelected"] ?? row["Tracks Selected"];
       if (Array.isArray(v)) return v.filter(Boolean).join(", ");

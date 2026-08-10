@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { CheckIcon } from "@/components/Icons";
-import { validateApplicationForm, type ApplicationFormValues } from "@/lib/schemas";
-import { TRACK_NAMES } from "@/data";
+import { validateApplicationForm, REFERRAL_NEEDS_NAME, type ApplicationFormValues } from "@/lib/schemas";
+import { TRACK_NAMES, MARKETING_TRACK, MARKETING_SUBTRACKS } from "@/data";
 import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
 import SchoolSelector from "@/components/SchoolSelector";
 import { EMAIL } from "@/lib/mail";
@@ -16,7 +16,8 @@ const RESUME_MAX_BYTES = RESUME_MAX_MB * 1024 * 1024;
 
 const EMPTY: ApplicationFormValues = {
   fullName: "", email: "", city: "", schoolName: "", grade: "", referral: "",
-  tracks: [], hasResume: null, tools: "", accomplishment: "",
+  referralName: "", tracks: [], marketingSubtrack: "", hasResume: null,
+  tools: "", accomplishment: "",
 };
 
 export default function ApplicationForm() {
@@ -27,6 +28,7 @@ export default function ApplicationForm() {
   const [schoolOptions, setSchoolOptions] = useState<string[]>([]);
   const [loadingSchools, setLoadingSchools] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [openSubtrack, setOpenSubtrack] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/school-names")
@@ -42,8 +44,15 @@ export default function ApplicationForm() {
   const clearError = (k: string) =>
     setErrors((p) => { const next = { ...p }; delete next[k]; return next; });
 
-  const toggleTrack = (t: string) =>
-    set("tracks", form.tracks.includes(t) ? form.tracks.filter((x) => x !== t) : [...form.tracks, t]);
+  // Dropping Marketing must also drop the focus area, or a stale one submits.
+  const toggleTrack = (t: string) => {
+    const next = form.tracks.includes(t) ? form.tracks.filter((x) => x !== t) : [...form.tracks, t];
+    setForm((p) => ({
+      ...p,
+      tracks: next,
+      marketingSubtrack: next.includes(MARKETING_TRACK) ? p.marketingSubtrack : "",
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +113,9 @@ export default function ApplicationForm() {
       Grade: form.grade,
       "City, State": form.city,
       "How They Heard": form.referral,
+      "Referral Name": REFERRAL_NEEDS_NAME.includes(form.referral) ? form.referralName : "",
       "Tracks Selected": form.tracks.join(", "),
+      "Marketing Subtrack": form.tracks.includes(MARKETING_TRACK) ? form.marketingSubtrack : "",
       "Has Resume": form.hasResume ? "Yes" : "No",
       "Resume URL": resumeUrl,
     };
@@ -231,6 +242,20 @@ export default function ApplicationForm() {
         {errors.referral && <p className="text-red-500 text-xs mt-1 font-body">{errors.referral}</p>}
       </div>
 
+      {REFERRAL_NEEDS_NAME.includes(form.referral) && (
+        <div>
+          <label className="block font-body text-sm font-semibold text-n-ink mb-2">Who referred you? *</label>
+          <input
+            type="text"
+            value={form.referralName}
+            onChange={(e) => { set("referralName", e.target.value); clearError("referralName"); }}
+            className={`novus-input ${errors.referralName ? "border-red-400" : ""}`}
+            placeholder="Their full name"
+          />
+          {errors.referralName && <p className="text-red-500 text-xs mt-1 font-body">{errors.referralName}</p>}
+        </div>
+      )}
+
       <div>
         <label className="block font-body text-sm font-semibold text-n-ink mb-1">
           Select your track(s) *{" "}
@@ -261,6 +286,70 @@ export default function ApplicationForm() {
         </div>
         {errors.tracks && <p className="text-red-500 text-xs mt-2 font-body">{errors.tracks}</p>}
       </div>
+
+      {form.tracks.includes(MARKETING_TRACK) && (
+        <div>
+          <label className="block font-body text-sm font-semibold text-n-ink mb-1">
+            Which marketing focus area? *
+          </label>
+          <p className="font-body text-xs text-n-muted mb-3">
+            Select one. Tap a name to read what it involves.
+          </p>
+          <div className="flex flex-col gap-2">
+            {MARKETING_SUBTRACKS.map((sub) => {
+              const active = form.marketingSubtrack === sub.title;
+              const open = openSubtrack === sub.title;
+              return (
+                <div
+                  key={sub.title}
+                  className={`rounded-xl border transition-all ${
+                    active ? "bg-n-orange/10 border-n-orange" : "bg-white border-n-border"
+                  }`}
+                >
+                  <div className="flex items-stretch">
+                    <button
+                      type="button"
+                      onClick={() => { set("marketingSubtrack", sub.title); clearError("marketingSubtrack"); }}
+                      aria-pressed={active}
+                      className="flex flex-1 items-center gap-3 px-5 py-3 text-left font-body text-sm font-medium"
+                    >
+                      <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${active ? "border-n-orange" : "border-n-border"}`}>
+                        {active && <span className="w-2 h-2 rounded-full bg-n-orange" />}
+                      </span>
+                      <span className={active ? "text-n-ink" : "text-n-muted"}>{sub.title}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenSubtrack(open ? null : sub.title)}
+                      aria-expanded={open}
+                      aria-label={`What ${sub.title} involves`}
+                      className="px-4 text-n-muted hover:text-n-ink transition-colors"
+                    >
+                      <svg
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
+                      >
+                        <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                  {open && (
+                    <p className="font-body text-sm leading-relaxed text-n-ink/75 px-5 pb-4 -mt-1">
+                      {sub.desc}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {errors.marketingSubtrack && (
+            <p className="text-red-500 text-xs mt-2 font-body">{errors.marketingSubtrack}</p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="block font-body text-sm font-semibold text-n-ink mb-1">Do you have a resume to attach?</label>

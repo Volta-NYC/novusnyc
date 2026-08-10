@@ -822,18 +822,24 @@ export default function ApplicantsPage() {
                             <span className="block truncate" title={app.cityState || ""}>{app.cityState || "—"}</span>
                           </td>
                         );
-                      case "referral":
+                      case "referral": {
+                        const heard = [app.referral, app.referralName && `(${app.referralName})`]
+                          .filter(Boolean).join(" ");
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/50 whitespace-nowrap">
-                            <span className="block truncate" title={app.referral || ""}>{app.referral || "—"}</span>
+                            <span className="block truncate" title={heard}>{heard || "—"}</span>
                           </td>
                         );
-                      case "tracks":
+                      }
+                      case "tracks": {
+                        const tracks = [app.tracksSelected, app.marketingSubtrack && `→ ${app.marketingSubtrack}`]
+                          .filter(Boolean).join(" ");
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/50 whitespace-nowrap">
-                            <span className="block truncate" title={app.tracksSelected || ""}>{app.tracksSelected || "—"}</span>
+                            <span className="block truncate" title={tracks}>{tracks || "—"}</span>
                           </td>
                         );
+                      }
                       case "resume":
                         return (
                           <td key={col.key} className="px-2 py-1.5">

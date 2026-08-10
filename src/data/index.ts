@@ -28,6 +28,34 @@ export const TRACK_NAMES = [
 
 export type TrackName = (typeof TRACK_NAMES)[number];
 
+/** The track whose members pick a focus area. Matches TRACK_NAMES exactly. */
+export const MARKETING_TRACK: TrackName = "Marketing & Strategy";
+
+/**
+ * Marketing's four focus areas. Applicants choose one; the same titles and
+ * descriptions render on /join, so both surfaces read from here.
+ */
+export const MARKETING_SUBTRACKS = [
+  {
+    title: "Novus Social Media & Branding",
+    desc: "Design social posts, manage Novus's public-facing platforms, and create promotional materials for partnering small businesses.",
+  },
+  {
+    title: "Grants & Funding",
+    desc: "Research funding opportunities, create grant templates, support grant writing, track impact, and help develop financial plans for growth.",
+  },
+  {
+    title: "Novus Ambassadors",
+    desc: "Build relationships with schools, student organizations, pipeline programs, and community partners to recruit future Novus members.",
+  },
+  {
+    title: "Small Business Outreach",
+    desc: "Find and connect with small businesses that could benefit from Novus's marketing and web services.",
+  },
+] as const;
+
+export type MarketingSubtrack = (typeof MARKETING_SUBTRACKS)[number]["title"];
+
 // ─── Homepage ─────────────────────────────────────────────────────────────────
 
 export const homeStats = [
@@ -46,10 +74,10 @@ export const homeTracks = [
     iconColor: "text-amber-500",
     iconBg: "bg-amber-100",
     items: [
-      "Grant research & writing",
-      "Sales & revenue analysis",
-      "Competitor benchmarking",
-      "Owner-facing report writing (see /guides)",
+      "Grant writing for Novus",
+      "Budgeting and financial tracking",
+      "Nonprofit filings and compliance",
+      "Fundraising and donor outreach",
     ],
   },
   {
@@ -474,17 +502,18 @@ export const trackHighlights = [
       "Researched grant and funding opportunities, built templates, and supported grant writing",
       "Built relationships with schools, student organizations, pipeline programs, and community partners",
       "Connected new small businesses with Novus's marketing and web services through outreach",
+      "Drafted full grant applications on behalf of client businesses",
     ],
   },
   {
     name: "Finance & Operations",
     tagColor: "bg-amber-100 text-amber-800",
     outputs: [
-      "Researched grant opportunities for NYC nonprofits and small businesses",
-      "Analyzed sales and revenue data to identify growth opportunities",
-      "Ran competitor analysis and market benchmarking",
-      "Wrote practical owner reports on execution priorities and operating costs",
-      "Drafted full grant applications on behalf of client businesses",
+      "Researched and wrote grants funding Novus's own programs",
+      "Built and maintained the operating budget across a full cycle",
+      "Prepared nonprofit filings and compliance documentation",
+      "Ran a fundraising campaign from planning through donor follow-up",
+      "Produced the financial reporting partners and funders ask for",
     ],
   },
 ];
@@ -501,14 +530,14 @@ export const joinTracks = [
       "Comfort reading financial documents and working in spreadsheets",
       "Some background in structured analysis or research",
       "Grant writing experience is a plus but not required",
-      "Interest in finance, accounting, or nonprofit operations",
+      "Interest in nonprofit finance, accounting, or operations",
     ],
     doWhat: [
-      "Research and write grant applications for small businesses",
-      "Analyze sales and revenue data to identify growth opportunities",
-      "Run competitor research and market benchmarking",
-      "Write clear, actionable reports for business owners",
-      "Support nonprofit financial filings and documentation",
+      "Research and write grants that fund Novus's own work",
+      "Track the operating budget and keep spending records clean",
+      "Prepare nonprofit filings and compliance paperwork",
+      "Plan and run fundraising campaigns",
+      "Build the financial reporting partners and funders ask for",
     ],
   },
   {
@@ -539,24 +568,7 @@ export const joinTracks = [
     iconColor: "text-n-orange-dark",
     iconBg: "bg-n-orange/25",
     description: "Marketing is organized into four subdepartments. Members can focus on one area or contribute across all four.",
-    subdepartments: [
-      {
-        title: "Novus Social Media & Branding",
-        desc: "Design social posts, manage Novus's public-facing platforms, and create promotional materials for partnering small businesses.",
-      },
-      {
-        title: "Grants & Funding",
-        desc: "Research funding opportunities, create grant templates, support grant writing, track impact, and help develop financial plans for growth.",
-      },
-      {
-        title: "Novus Ambassadors",
-        desc: "Build relationships with schools, student organizations, pipeline programs, and community partners to recruit future Novus members.",
-      },
-      {
-        title: "Small Business Outreach",
-        desc: "Find and connect with small businesses that could benefit from Novus's marketing and web services.",
-      },
-    ],
+    subdepartments: MARKETING_SUBTRACKS,
     skills: [
       "Experience with social media or content creation",
       "Design skills in Canva, Adobe, or Figma",

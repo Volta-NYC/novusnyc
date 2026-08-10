@@ -51,6 +51,9 @@ export function validateContactForm(data: ContactFormValues): ValidationResult {
 
 // ─── Application form ─────────────────────────────────────────────────────────
 
+/** Referral answers that name another person, so we ask who. */
+export const REFERRAL_NEEDS_NAME = ["Friend", "Referral"];
+
 export interface ApplicationFormValues {
   fullName: string;
   email: string;
@@ -58,7 +61,9 @@ export interface ApplicationFormValues {
   schoolName: string;
   grade: string;
   referral: string;
+  referralName: string;
   tracks: string[];
+  marketingSubtrack: string;
   hasResume: boolean | null;
   tools: string;
   accomplishment: string;
@@ -74,7 +79,13 @@ export function validateApplicationForm(
   addError(errors, "schoolName", required(data.schoolName, "School name is required"));
   addError(errors, "grade", required(data.grade, "Select your grade"));
   addError(errors, "referral", required(data.referral, "Select how you heard about us"));
+  if (REFERRAL_NEEDS_NAME.includes(data.referral)) {
+    addError(errors, "referralName", required(data.referralName, "Enter their name"));
+  }
   if (data.tracks.length === 0) errors.tracks = "Select at least one track";
+  if (data.tracks.includes("Marketing & Strategy")) {
+    addError(errors, "marketingSubtrack", required(data.marketingSubtrack, "Choose a marketing focus area"));
+  }
   if (data.hasResume === null) errors.hasResume = "Indicate whether you have a resume";
   if (data.hasResume === false) {
     addError(errors, "tools", required(data.tools, "List your tools or software"));
