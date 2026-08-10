@@ -9,7 +9,7 @@ import { useParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Btn } from "@/components/members/ui";
 import { sanitizeHtml, linkifyHtml } from "@/lib/sanitizeHtml";
-import { TRACK_DOT } from "@/lib/members/constants";
+import { TRACK_DOT, TRACK_PILL } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
@@ -22,12 +22,6 @@ import { classifyMember } from "@/lib/members/cycleCompute";
 import { EMAIL } from "@/lib/mail";
 
 
-const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech: "bg-violet-100 text-violet-800 border-violet-200",
-  Marketing: "bg-orange-100 text-orange-900 border-orange-200",
-  Finance: "bg-amber-100 text-amber-900 border-amber-200",
-  General: "bg-gray-100 text-gray-700 border-gray-200",
-};
 
 function normalizeKey(v: string): string {
   return String(v ?? "").trim().toLowerCase();

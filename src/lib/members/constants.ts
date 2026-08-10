@@ -43,6 +43,17 @@ export const TRACK_PILL: Record<CycleTrack, string> = {
   General:   "bg-gray-100 text-gray-700 border-gray-200",
 };
 
+/**
+ * Dark-surface variant. On #0D0F14 a pastel fill with n-ink text disappears,
+ * so the pastel becomes the text over a translucent tint of itself instead.
+ */
+export const TRACK_PILL_DARK: Record<CycleTrack, string> = {
+  Tech:      "border-n-purple/30 bg-n-purple/10 text-n-purple",
+  Marketing: "border-n-orange/30 bg-n-orange/10 text-n-orange",
+  Finance:   "border-n-yellow/30 bg-n-yellow/10 text-n-yellow",
+  General:   "border-white/20 bg-white/8 text-white/55",
+};
+
 // bg + text only — use when the border is applied separately (e.g. filter chips).
 // All four tracks use a solid filled background so selected vs. unselected is
 // clearly distinguishable. General uses gray-200 (not gray-100) for sufficient

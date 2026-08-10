@@ -11,7 +11,7 @@ import {
   type Assignment, type AssignmentClaim, type Business, type Cycle, type CycleTrack, type TeamMember, type ProjectGroup,
 } from "@/lib/members/storage";
 import { classifyMember, pickPrimaryTrack } from "@/lib/members/cycleCompute";
-import { ALL_TRACKS, TRACK_DOT } from "@/lib/members/constants";
+import { ALL_TRACKS, TRACK_DOT, TRACK_PILL } from "@/lib/members/constants";
 
 // ── Track SVG icons ───────────────────────────────────────────────────────────
 
@@ -48,18 +48,12 @@ const TRACK_COLOR: Record<CycleTrack, string> = {
 };
 
 const TRACK_ICON_BG: Record<CycleTrack, string> = {
-  Tech:      "bg-violet-50 border-violet-200",
-  Marketing: "bg-orange-50 border-orange-200",
-  Finance:   "bg-amber-50 border-amber-200",
+  Tech:      "bg-n-purple/15 border-n-purple/35",
+  Marketing: "bg-n-orange/15 border-n-orange/35",
+  Finance:   "bg-n-yellow/20 border-n-yellow/40",
   General:   "bg-[#F6B78D]/8 border-[#F6B78D]/25",
 };
 
-const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech:      "border-violet-200 bg-violet-50 text-violet-700",
-  Marketing: "border-orange-300 bg-orange-50 text-orange-800",
-  Finance:   "border-amber-200 bg-amber-50 text-amber-700",
-  General:   "border-gray-300 bg-gray-100 text-gray-700",
-};
 
 // ── Assignment card ───────────────────────────────────────────────────────────
 

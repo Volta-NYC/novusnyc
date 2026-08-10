@@ -18,19 +18,13 @@ import {
   createAssignmentTemplate, updateAssignmentTemplate, deleteAssignmentTemplate,
   type AssignmentTemplate, type Business, type Cycle, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
-import { TRACK_DOT } from "@/lib/members/constants";
+import { TRACK_DOT, TRACK_PILL_DARK as TRACK_PILL } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
 
 const MEMBER_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
 
-const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech:      "border-violet-400/30 bg-violet-400/10 text-violet-300",
-  Marketing: "border-orange-400/30 bg-orange-400/10 text-orange-300",
-  Finance:   "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  General:   "border-white/20 bg-white/8 text-white/55",
-};
 
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 
