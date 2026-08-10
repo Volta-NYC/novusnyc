@@ -275,6 +275,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     let isDragging = false;
     let animationFrame = 0;
     const clock = new THREE.Clock();
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const resize = () => {
       const { width, height } = mount.getBoundingClientRect();
@@ -356,12 +357,17 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
     const render = () => {
       const elapsed = clock.getElapsedTime();
+      const motionElapsed = reducedMotion ? 0 : elapsed;
+      if (!reducedMotion && !isDragging) {
+        globe.rotation.y += 0.00065;
+        globe.rotation.z = Math.sin(elapsed * 0.22) * 0.025;
+      }
       hubGlows.forEach(({ sprite, scale }) => {
-        const pulse = 1 + Math.sin(elapsed * 2) * 0.11;
+        const pulse = 1 + Math.sin(motionElapsed * 2) * 0.11;
         sprite.scale.setScalar(scale * pulse);
       });
       curves.forEach(({ curve, pulse, phase }) => {
-        pulse.position.copy(curve.getPoint((elapsed * 0.055 + phase) % 1));
+        pulse.position.copy(curve.getPoint((motionElapsed * 0.055 + phase) % 1));
       });
       renderer.render(scene, camera);
       animationFrame = window.requestAnimationFrame(render);

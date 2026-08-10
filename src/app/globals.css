@@ -522,62 +522,14 @@ body:has(.home-scroll-story) header .md\:hidden span {
   z-index: 2;
 }
 
-.home-network-aurora {
+.network-fluid-background {
   position: absolute;
-  inset: -8% -6%;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  filter: blur(18px);
   opacity: 0.96;
-}
-
-.home-network-aurora-blob,
-.home-network-aurora-wave {
-  position: absolute;
-  will-change: transform, opacity;
-}
-
-.home-network-aurora-blob {
-  border-radius: 999px;
-  mix-blend-mode: screen;
-}
-
-.home-network-aurora-blob-one {
-  top: -2%;
-  left: -8%;
-  width: 42rem;
-  height: 42rem;
-  background:
-    radial-gradient(circle at 35% 35%, rgba(190, 162, 186, 0.88) 0%, rgba(190, 162, 186, 0.22) 38%, transparent 72%);
-  animation: home-network-float-one 20s ease-in-out infinite alternate;
-}
-
-.home-network-aurora-blob-two {
-  right: -8%;
-  top: 16%;
-  width: 38rem;
-  height: 38rem;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(246, 183, 141, 0.84) 0%, rgba(246, 183, 141, 0.24) 36%, transparent 70%);
-  animation: home-network-float-two 22s ease-in-out infinite alternate;
-}
-
-.home-network-aurora-blob-three {
-  bottom: -18%;
-  left: 28%;
-  width: 34rem;
-  height: 34rem;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(110, 62, 134, 0.62) 0%, rgba(110, 62, 134, 0.18) 42%, transparent 72%);
-  animation: home-network-float-three 24s ease-in-out infinite alternate;
-}
-
-.home-network-aurora-wave {
-  inset: 8% 10% 10%;
-  background:
-    radial-gradient(55% 65% at 22% 45%, rgba(201, 126, 91, 0.24), transparent 72%),
-    radial-gradient(48% 60% at 76% 34%, rgba(149, 104, 190, 0.28), transparent 74%),
-    radial-gradient(44% 62% at 58% 82%, rgba(246, 183, 141, 0.16), transparent 78%);
-  animation: home-network-wave 26s ease-in-out infinite alternate;
 }
 
 .network-globe-frame {
@@ -594,6 +546,11 @@ body:has(.home-scroll-story) header .md\:hidden span {
   box-shadow: 0 28px 60px rgba(7, 4, 11, 0.32);
 }
 
+.network-globe-frame > * {
+  position: relative;
+  z-index: 2;
+}
+
 .network-globe-frame::before {
   position: absolute;
   z-index: 1;
@@ -601,51 +558,6 @@ body:has(.home-scroll-story) header .md\:hidden span {
   content: "";
   pointer-events: none;
   border: 1px solid rgba(249, 245, 248, 0.08);
-}
-
-@keyframes home-network-float-one {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(10%, 6%, 0) scale(1.12);
-  }
-}
-
-@keyframes home-network-float-two {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(-9%, 8%, 0) scale(1.08);
-  }
-}
-
-@keyframes home-network-float-three {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.78;
-  }
-  100% {
-    transform: translate3d(7%, -10%, 0) scale(1.14);
-    opacity: 1;
-  }
-}
-
-@keyframes home-network-wave {
-  0% {
-    transform: translate3d(-2%, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(3%, -3%, 0) scale(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-network-aurora-blob,
-  .home-network-aurora-wave {
-    animation: none;
-  }
 }
 
 body:has(.home-scroll-story) footer {
