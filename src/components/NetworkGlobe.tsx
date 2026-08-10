@@ -525,8 +525,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const elapsed = clock.getElapsedTime();
       const motionElapsed = reducedMotion ? 0 : elapsed;
       if (!reducedMotion && !isDragging) {
-        globeSweep.rotation.y = Math.sin(elapsed * 0.06) * (compactViewport ? 0.1 : 0.14);
-        globeSweep.rotation.z = Math.sin(elapsed * 0.05) * 0.008;
+        globeSweep.rotation.y = Math.sin(elapsed * 0.09) * (compactViewport ? 0.1 : 0.14);
+        globeSweep.rotation.z = Math.sin(elapsed * 0.075) * 0.008;
       }
       hubGlows.forEach(({ sprite, scale }) => {
         const pulse = 1 + Math.sin(motionElapsed * 2) * 0.11;
