@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { feature } from "topojson-client";
+import landTopology from "world-atlas/land-110m.json";
 import type { ChapterConnection, ChapterLocation } from "@/data/network";
 
 type Tooltip = {
@@ -21,6 +23,18 @@ const GLOBE_RADIUS = 2.15;
 const HUB_COLOR = "#BEA2BA";
 const CHAPTER_COLOR = "#F6B78D";
 
+type Coordinate = [number, number];
+type Polygon = Coordinate[][];
+
+type LandFeatureCollection = {
+  features: Array<{
+    geometry: {
+      type: "Polygon" | "MultiPolygon";
+      coordinates: Polygon | Polygon[];
+    } | null;
+  }>;
+};
+
 function toSpherePoint(lat: number, lng: number, radius = GLOBE_RADIUS) {
   const latitude = THREE.MathUtils.degToRad(lat);
   const longitude = THREE.MathUtils.degToRad(lng);
@@ -28,7 +42,9 @@ function toSpherePoint(lat: number, lng: number, radius = GLOBE_RADIUS) {
   return new THREE.Vector3(
     radius * Math.cos(latitude) * Math.cos(longitude),
     radius * Math.sin(latitude),
-    radius * Math.cos(latitude) * Math.sin(longitude),
+    // This longitude convention keeps west-to-east geography left-to-right
+    // from the North America-facing camera.
+    -radius * Math.cos(latitude) * Math.sin(longitude),
   );
 }
 
@@ -55,18 +71,93 @@ function addGlobeGrid(group: THREE.Group) {
   const material = new THREE.LineBasicMaterial({
     color: "#F9F5F8",
     transparent: true,
-    opacity: 0.09,
+    opacity: 0.035,
   });
 
-  for (let latitude = -60; latitude <= 60; latitude += 30) {
+  for (let latitude = -45; latitude <= 45; latitude += 45) {
     const points = Array.from({ length: 97 }, (_, index) => toSpherePoint(latitude, -180 + index * 3, GLOBE_RADIUS + 0.006));
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
   }
 
-  for (let longitude = -150; longitude <= 180; longitude += 30) {
+  for (let longitude = -135; longitude <= 180; longitude += 45) {
     const points = Array.from({ length: 61 }, (_, index) => toSpherePoint(-90 + index * 3, longitude, GLOBE_RADIUS + 0.006));
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
   }
+}
+
+function unwrapRing(ring: Coordinate[]) {
+  let previousLongitude = ring[0]?.[0] ?? 0;
+
+  return ring.map(([longitude, latitude], index) => {
+    let unwrappedLongitude = longitude;
+
+    if (index > 0) {
+      while (unwrappedLongitude - previousLongitude > 180) unwrappedLongitude -= 360;
+      while (unwrappedLongitude - previousLongitude < -180) unwrappedLongitude += 360;
+    }
+
+    previousLongitude = unwrappedLongitude;
+    return new THREE.Vector2(unwrappedLongitude, latitude);
+  });
+}
+
+function addLandmasses(group: THREE.Group) {
+  const land = feature(
+    landTopology as never,
+    landTopology.objects.land as never,
+  ) as unknown as LandFeatureCollection;
+  const positions: number[] = [];
+  const coastlineMaterial = new THREE.LineBasicMaterial({
+    color: "#B5A9B7",
+    transparent: true,
+    opacity: 0.18,
+  });
+
+  land.features.forEach(({ geometry }) => {
+    if (!geometry) return;
+    const polygons = geometry.type === "Polygon"
+      ? [geometry.coordinates as Polygon]
+      : geometry.coordinates as Polygon[];
+
+    polygons.forEach(([outerRing, ...holeRings]) => {
+      if (!outerRing || outerRing.length < 4) return;
+
+      const outer = unwrapRing(outerRing);
+      const holes = holeRings.map(unwrapRing);
+      const points = [...outer, ...holes.flat()];
+      const faces = THREE.ShapeUtils.triangulateShape(outer, holes);
+
+      faces.forEach(([first, second, third]) => {
+        [first, second, third].forEach((index) => {
+          const point = points[index];
+          if (!point) return;
+          const spherePoint = toSpherePoint(point.y, point.x, GLOBE_RADIUS + 0.014);
+          positions.push(spherePoint.x, spherePoint.y, spherePoint.z);
+        });
+      });
+
+      const coastline = outer.map((point) => toSpherePoint(point.y, point.x, GLOBE_RADIUS + 0.021));
+      group.add(new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(coastline),
+        coastlineMaterial,
+      ));
+    });
+  });
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+
+  group.add(new THREE.Mesh(
+    geometry,
+    new THREE.MeshBasicMaterial({
+      color: "#867889",
+      transparent: true,
+      opacity: 0.48,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    }),
+  ));
 }
 
 export default function NetworkGlobe({ locations, connections }: Props) {
@@ -80,7 +171,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-    const northAmericaView = toSpherePoint(40.5, -86, 7.2);
+    const northAmericaView = toSpherePoint(40.5, -86, 8.3);
     camera.position.copy(northAmericaView);
     camera.lookAt(0, 0, 0);
 
@@ -115,6 +206,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       }),
     );
     globe.add(earth);
+    addLandmasses(globe);
     addGlobeGrid(globe);
 
     scene.add(new THREE.HemisphereLight("#F9F5F8", "#171317", 1.25));
@@ -132,12 +224,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const isHub = location.type === "hub";
       const color = isHub ? HUB_COLOR : CHAPTER_COLOR;
       const point = toSpherePoint(location.lat, location.lng, GLOBE_RADIUS + 0.025);
-      const glowScale = isHub ? 0.68 : 0.42;
+      const glowScale = isHub ? 0.24 : 0.19;
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({
         map: glowTexture,
         color,
         transparent: true,
-        opacity: isHub ? 0.65 : 0.4,
+        opacity: isHub ? 0.5 : 0.32,
         depthWrite: false,
       }));
       glow.position.copy(point.clone().multiplyScalar(1.025));
@@ -145,7 +237,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       globe.add(glow);
 
       const marker = new THREE.Mesh(
-        new THREE.SphereGeometry(isHub ? 0.095 : 0.067, 20, 20),
+        new THREE.SphereGeometry(isHub ? 0.052 : 0.041, 16, 16),
         new THREE.MeshBasicMaterial({ color }),
       );
       marker.position.copy(point);
@@ -163,17 +255,19 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
       const start = toSpherePoint(from.lat, from.lng, GLOBE_RADIUS + 0.035);
       const end = toSpherePoint(to.lat, to.lng, GLOBE_RADIUS + 0.035);
-      const middle = start.clone().add(end).normalize().multiplyScalar(GLOBE_RADIUS * 1.28);
+      const angularDistance = start.clone().normalize().angleTo(end.clone().normalize());
+      const arcLift = 0.035 + Math.min(0.16, angularDistance * 0.5);
+      const middle = start.clone().add(end).normalize().multiplyScalar(GLOBE_RADIUS + arcLift);
       const curve = new THREE.CatmullRomCurve3([start, middle, end]);
       const line = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)),
-        new THREE.LineBasicMaterial({ color: CHAPTER_COLOR, transparent: true, opacity: 0.72 }),
+        new THREE.LineBasicMaterial({ color: CHAPTER_COLOR, transparent: true, opacity: 0.48 }),
       );
       globe.add(line);
 
       const pulse = new THREE.Mesh(
-        new THREE.SphereGeometry(0.032, 12, 12),
-        new THREE.MeshBasicMaterial({ color: "#FFF5EC" }),
+        new THREE.SphereGeometry(0.014, 10, 10),
+        new THREE.MeshBasicMaterial({ color: "#FFF5EC", transparent: true, opacity: 0.72 }),
       );
       globe.add(pulse);
       curves.push({ curve, pulse, phase: index * 0.5 });
