@@ -71,7 +71,7 @@ function createGlowTexture() {
 
 function addGlobeGrid(group: THREE.Group) {
   const material = new THREE.LineBasicMaterial({
-    color: "#E4F3F6",
+    color: "#E7DAC0",
     transparent: true,
     opacity: 0.28,
   });
@@ -204,6 +204,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, compactViewport ? 1.25 : 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
+    renderer.domElement.style.touchAction = "none";
     mount.appendChild(renderer.domElement);
 
     const globeSweep = new THREE.Group();
@@ -219,9 +220,9 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       new THREE.ShaderMaterial({
         uniforms: {
           landMap: { value: landTexture },
-          surfaceColor: { value: new THREE.Color("#8DBDCE") },
-          landColor: { value: new THREE.Color("#A9C9A4") },
-          borderColor: { value: new THREE.Color("#E2EEDC") },
+          surfaceColor: { value: new THREE.Color("#1C3444") },
+          landColor: { value: new THREE.Color("#B8A37B") },
+          borderColor: { value: new THREE.Color("#F1E5CC") },
         },
         vertexShader: `
           uniform sampler2D landMap;
@@ -348,7 +349,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     let isDragging = false;
     let dragDistance = 0;
     let pinchDistance = 0;
-    let pinchAngle = 0;
+    let pinchAngle = Number.NaN;
     const pinchCenter = new THREE.Vector2();
     let animationFrame = 0;
     const clock = new THREE.Clock();
@@ -415,6 +416,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch") event.preventDefault();
       if (activePointers.has(event.pointerId)) {
         activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
       }
@@ -422,12 +424,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       if (activePointers.size === 2) {
         const gesture = getPinchGesture();
         if (pinchDistance > 0) updateCameraDistance(cameraDistance - (gesture.distance - pinchDistance) * 0.012);
-        if (pinchAngle !== 0) {
+        if (Number.isFinite(pinchAngle)) {
           const angleDelta = Math.atan2(
             Math.sin(gesture.angle - pinchAngle),
             Math.cos(gesture.angle - pinchAngle),
           );
-          globe.rotateOnWorldAxis(worldUp, angleDelta * 1.1);
+          globe.rotateOnWorldAxis(worldUp, angleDelta * 1.65);
         }
         const centerDelta = gesture.center.clone().sub(pinchCenter);
         globe.rotateOnWorldAxis(worldUp, centerDelta.x * 0.0035);
@@ -453,13 +455,16 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === "mouse" && event.button !== 0) return;
+      if (event.pointerType === "touch") event.preventDefault();
       activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
       if (activePointers.size === 2) {
         const gesture = getPinchGesture();
         pinchDistance = gesture.distance;
         pinchAngle = gesture.angle;
         pinchCenter.copy(gesture.center);
-        isDragging = false;
+        // A two-finger gesture owns the viewport, so the idle sweep must pause
+        // until both pointers are released.
+        isDragging = true;
         renderer.domElement.setPointerCapture(event.pointerId);
         renderer.domElement.style.cursor = "grabbing";
         return;
@@ -487,7 +492,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
         pinchCenter.copy(gesture.center);
       } else {
         pinchDistance = 0;
-        pinchAngle = 0;
+        pinchAngle = Number.NaN;
       }
       if (activePointers.size === 1) {
         const remainingPointer = [...activePointers.values()][0];
