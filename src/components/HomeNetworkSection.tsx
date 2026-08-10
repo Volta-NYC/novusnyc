@@ -12,9 +12,9 @@ const NetworkGlobe = dynamic(() => import("@/components/NetworkGlobe"), {
 
 export default function HomeNetworkSection() {
   return (
-    <section className="home-network-section relative overflow-hidden py-20 md:py-24">
+    <section className="home-network-section relative overflow-hidden py-16 sm:py-20 md:py-24">
       <NetworkFluidBackground />
-      <div className="mx-auto grid max-w-7xl items-center gap-8 px-5 md:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
+      <div className="mx-auto grid max-w-7xl items-center gap-6 px-4 sm:gap-8 sm:px-5 md:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
         <AnimatedSection>
           <p className="font-body text-xs font-bold uppercase tracking-[0.22em] text-n-orange">Our network</p>
           <h2 className="mt-4 font-display text-4xl font-bold leading-tight text-white md:text-5xl">

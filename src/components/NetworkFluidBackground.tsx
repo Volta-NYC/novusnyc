@@ -273,7 +273,8 @@ export default function NetworkFluidBackground() {
     };
 
     const resize = () => {
-      const pixelRatio = Math.min(window.devicePixelRatio, 1.5);
+      const compactViewport = window.matchMedia("(max-width: 639px)").matches;
+      const pixelRatio = Math.min(window.devicePixelRatio, compactViewport ? 1.15 : 1.5);
       const width = Math.max(1, Math.round(canvas.clientWidth * pixelRatio));
       const height = Math.max(1, Math.round(canvas.clientHeight * pixelRatio));
       if (canvas.width === width && canvas.height === height && readTarget && writeTarget) return;

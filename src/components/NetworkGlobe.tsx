@@ -168,15 +168,16 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const mount = mountRef.current;
     if (!mount) return;
 
+    const compactViewport = window.matchMedia("(max-width: 639px)").matches;
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    const northAmericaView = toSpherePoint(15, -75, 5.8);
+    const camera = new THREE.PerspectiveCamera(compactViewport ? 52 : 45, 1, 0.1, 100);
+    const northAmericaView = toSpherePoint(15, -75, compactViewport ? 6.6 : 5.8);
     camera.position.copy(northAmericaView);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, compactViewport ? 1.25 : 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     mount.appendChild(renderer.domElement);
@@ -185,11 +186,11 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     scene.add(globeSweep);
 
     const globe = new THREE.Group();
-    globe.position.set(1.65, -1.5, 0);
+    globe.position.set(compactViewport ? 0.2 : 1.65, compactViewport ? -0.45 : -1.5, 0);
     globeSweep.add(globe);
 
     const earth = new THREE.Mesh(
-      new THREE.SphereGeometry(GLOBE_RADIUS, 72, 72),
+      new THREE.SphereGeometry(GLOBE_RADIUS, compactViewport ? 56 : 72, compactViewport ? 56 : 72),
       new THREE.MeshPhongMaterial({
         color: "#2D282E",
         emissive: "#1A161B",
@@ -254,7 +255,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const middle = start.clone().add(end).normalize().multiplyScalar(GLOBE_RADIUS + arcLift);
       const curve = new THREE.CatmullRomCurve3([start, middle, end]);
       const line = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)),
+        new THREE.BufferGeometry().setFromPoints(curve.getPoints(compactViewport ? 56 : 80)),
         new THREE.LineBasicMaterial({ color: CHAPTER_COLOR, transparent: true, opacity: 0.27 }),
       );
       globe.add(line);
@@ -362,7 +363,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const elapsed = clock.getElapsedTime();
       const motionElapsed = reducedMotion ? 0 : elapsed;
       if (!reducedMotion && !isDragging) {
-        globeSweep.rotation.y = Math.sin(elapsed * 0.24) * 0.38;
+        globeSweep.rotation.y = Math.sin(elapsed * 0.24) * (compactViewport ? 0.28 : 0.38);
         globeSweep.rotation.z = Math.sin(elapsed * 0.16) * 0.025;
       }
       hubGlows.forEach(({ sprite, scale }) => {

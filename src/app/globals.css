@@ -560,6 +560,33 @@ body:has(.home-scroll-story) header .md\:hidden span {
   border: 1px solid rgba(249, 245, 248, 0.08);
 }
 
+@media (max-width: 639px) {
+  .home-network-section::before {
+    inset: 10px;
+  }
+
+  .home-network-section::after {
+    height: 18%;
+  }
+
+  .network-fluid-background {
+    opacity: 0.9;
+  }
+
+  .network-globe-frame {
+    border-radius: 6px;
+    box-shadow: 0 20px 42px rgba(7, 4, 11, 0.28);
+  }
+
+  .network-globe-frame::before {
+    inset: 8px;
+  }
+
+  .network-globe-canvas {
+    height: clamp(20rem, 92vw, 24rem) !important;
+  }
+}
+
 body:has(.home-scroll-story) footer {
   position: relative;
   isolation: isolate;
