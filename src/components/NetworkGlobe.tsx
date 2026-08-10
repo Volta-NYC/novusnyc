@@ -406,8 +406,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       activeLocation = location.name;
       renderer.domElement.style.cursor = "pointer";
       setTooltip({
-        name: location.name,
-        state: location.type === "chapter" ? location.state : undefined,
+        name: location.globeLabel ?? location.name,
+        state: location.globeLabel ? undefined : (location.type === "chapter" ? location.state : undefined),
         subtitle: location.subtitle,
         x: event.clientX - bounds.left,
         y: event.clientY - bounds.top,
