@@ -97,21 +97,26 @@ function unwrapRing(ring: Coordinate[]) {
     }
 
     previousLongitude = unwrappedLongitude;
-    return new THREE.Vector2(unwrappedLongitude, latitude);
+    return [unwrappedLongitude, latitude] as Coordinate;
   });
 }
 
-function addLandmasses(group: THREE.Group) {
+function createLandTexture() {
   const land = feature(
     landTopology as never,
     landTopology.objects.land as never,
   ) as unknown as LandFeatureCollection;
-  const positions: number[] = [];
-  const coastlineMaterial = new THREE.LineBasicMaterial({
-    color: "#B5A9B7",
-    transparent: true,
-    opacity: 0.18,
-  });
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 1024;
+  const context = canvas.getContext("2d");
+
+  if (!context) return new THREE.CanvasTexture(canvas);
+
+  const project = ([longitude, latitude]: Coordinate, offset = 0) => [
+    ((longitude + 180) / 360) * canvas.width + offset,
+    ((90 - latitude) / 180) * canvas.height,
+  ] as const;
 
   land.features.forEach(({ geometry }) => {
     if (!geometry) return;
@@ -121,43 +126,31 @@ function addLandmasses(group: THREE.Group) {
 
     polygons.forEach(([outerRing, ...holeRings]) => {
       if (!outerRing || outerRing.length < 4) return;
+      const rings = [outerRing, ...holeRings].map(unwrapRing);
 
-      const outer = unwrapRing(outerRing);
-      const holes = holeRings.map(unwrapRing);
-      const points = [...outer, ...holes.flat()];
-      const faces = THREE.ShapeUtils.triangulateShape(outer, holes);
-
-      faces.forEach(([first, second, third]) => {
-        [first, second, third].forEach((index) => {
-          const point = points[index];
-          if (!point) return;
-          const spherePoint = toSpherePoint(point.y, point.x, GLOBE_RADIUS + 0.014);
-          positions.push(spherePoint.x, spherePoint.y, spherePoint.z);
+      // Draw each polygon at neighboring world copies so land that crosses the
+      // date line stays continuous when the texture wraps around the sphere.
+      [-canvas.width, 0, canvas.width].forEach((offset) => {
+        context.beginPath();
+        rings.forEach((ring) => {
+          ring.forEach((point, index) => {
+            const [x, y] = project(point, offset);
+            if (index === 0) context.moveTo(x, y);
+            else context.lineTo(x, y);
+          });
+          context.closePath();
         });
+        context.fillStyle = "#ffffff";
+        context.fill("evenodd");
       });
-
-      const coastline = outer.map((point) => toSpherePoint(point.y, point.x, GLOBE_RADIUS + 0.021));
-      group.add(new THREE.LineLoop(
-        new THREE.BufferGeometry().setFromPoints(coastline),
-        coastlineMaterial,
-      ));
     });
   });
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.computeVertexNormals();
-
-  group.add(new THREE.Mesh(
-    geometry,
-    new THREE.MeshBasicMaterial({
-      color: "#867889",
-      transparent: true,
-      opacity: 0.48,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    }),
-  ));
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 export default function NetworkGlobe({ locations, connections }: Props) {
@@ -171,7 +164,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const compactViewport = window.matchMedia("(max-width: 639px)").matches;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(compactViewport ? 52 : 45, 1, 0.1, 100);
-    const northAmericaView = toSpherePoint(15, -75, compactViewport ? 6.6 : 5.8);
+    const northAmericaView = toSpherePoint(38, -98, compactViewport ? 6.6 : 6.4);
     camera.position.copy(northAmericaView);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
@@ -186,22 +179,45 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     scene.add(globeSweep);
 
     const globe = new THREE.Group();
-    globe.position.set(compactViewport ? 0.2 : 1.65, compactViewport ? -0.45 : -1.5, 0);
     globeSweep.add(globe);
+
+    const landTexture = createLandTexture();
 
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(GLOBE_RADIUS, compactViewport ? 56 : 72, compactViewport ? 56 : 72),
-      new THREE.MeshPhongMaterial({
-        color: "#2D282E",
-        emissive: "#1A161B",
-        specular: "#BEA2BA",
-        shininess: 7,
+      new THREE.ShaderMaterial({
+        uniforms: {
+          landMap: { value: landTexture },
+          surfaceColor: { value: new THREE.Color("#2D282E") },
+          landColor: { value: new THREE.Color("#847589") },
+        },
+        vertexShader: `
+          varying vec3 vNormal;
+          void main() {
+            vNormal = normalize(normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D landMap;
+          uniform vec3 surfaceColor;
+          uniform vec3 landColor;
+          varying vec3 vNormal;
+          const float PI = 3.14159265359;
+          void main() {
+            vec3 normal = normalize(vNormal);
+            float longitude = atan(-normal.z, normal.x);
+            float latitude = asin(clamp(normal.y, -1.0, 1.0));
+            vec2 mapUv = vec2((longitude + PI) / (2.0 * PI), 0.5 + latitude / PI);
+            float land = texture2D(landMap, mapUv).r;
+            vec3 color = mix(surfaceColor, landColor, land * 0.66);
+            gl_FragColor = vec4(color, 0.9);
+          }
+        `,
         transparent: true,
-        opacity: 0.88,
       }),
     );
     globe.add(earth);
-    addLandmasses(globe);
     addGlobeGrid(globe);
 
     scene.add(new THREE.HemisphereLight("#F9F5F8", "#171317", 1.25));
@@ -301,8 +317,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
     const onPointerMove = (event: PointerEvent) => {
       if (isDragging) {
-        globe.rotateOnWorldAxis(worldUp, (event.clientX - dragStart.x) * 0.006);
-        globe.rotateOnWorldAxis(cameraRight, (event.clientY - dragStart.y) * 0.006);
+        globe.rotateOnWorldAxis(worldUp, (event.clientX - dragStart.x) * 0.0025);
+        globe.rotateOnWorldAxis(cameraRight, (event.clientY - dragStart.y) * 0.0025);
         dragStart.set(event.clientX, event.clientY);
         return;
       }
@@ -363,8 +379,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const elapsed = clock.getElapsedTime();
       const motionElapsed = reducedMotion ? 0 : elapsed;
       if (!reducedMotion && !isDragging) {
-        globeSweep.rotation.y = Math.sin(elapsed * 0.24) * (compactViewport ? 0.28 : 0.38);
-        globeSweep.rotation.z = Math.sin(elapsed * 0.16) * 0.025;
+        globeSweep.rotation.y = Math.sin(elapsed * 0.06) * (compactViewport ? 0.1 : 0.14);
+        globeSweep.rotation.z = Math.sin(elapsed * 0.05) * 0.008;
       }
       hubGlows.forEach(({ sprite, scale }) => {
         const pulse = 1 + Math.sin(motionElapsed * 2) * 0.11;
@@ -399,6 +415,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
         }
       });
       glowTexture.dispose();
+      landTexture.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
