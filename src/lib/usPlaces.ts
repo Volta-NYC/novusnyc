@@ -148,12 +148,14 @@ const CITIES: Record<string, string[]> = {
 /**
  * Cities lifted to the top of their state's list, in the order given.
  *
- * Keyed to the states where Novus has a chapter rather than to population:
- * that is where applicants actually cluster, and it keeps the list honest as
- * chapters change. Alphabetical order buries Brooklyn behind Albany and Los
- * Angeles behind Anaheim, which is the wrong trade for the common case.
+ * Keyed to where applicants actually cluster rather than to population: the
+ * states with a chapter, plus the New Jersey and Connecticut towns inside the
+ * NYC commuter belt, whose students join the New York chapter. Alphabetical
+ * order buries Brooklyn behind Albany and Los Angeles behind Anaheim.
  *
- * Add a state here when a chapter opens there, not before.
+ * Do not extend this on population alone. Type-ahead already makes a long
+ * alphabetical list fast to navigate, so a tier only earns its place where the
+ * likely answers are known in advance. Add a state when a chapter opens there.
  */
 const CITY_PRIORITY: Record<string, string[]> = {
   NY: ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"],
@@ -161,6 +163,8 @@ const CITY_PRIORITY: Record<string, string[]> = {
   IL: ["Chicago"],
   CA: ["Los Angeles", "San Francisco", "San Diego", "San Jose"],
   MI: ["Detroit", "Ann Arbor"],
+  NJ: ["Jersey City", "Newark"],
+  CT: ["Stamford", "Bridgeport"],
 };
 
 /**
