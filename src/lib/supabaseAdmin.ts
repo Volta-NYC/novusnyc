@@ -32,7 +32,6 @@ const PATH_TABLE: Record<string, string> = {
   emailTemplates:           "email_templates",
   userProfiles:             "user_profiles",
   auditLogs:                "audit_logs",
-  inviteCodes:              "invite_codes",
   calendarEvents:           "calendar_events",
   interviewInvites:         "interview_invites",
   interviewSlots:           "interview_slots",
