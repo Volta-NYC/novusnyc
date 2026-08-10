@@ -710,7 +710,7 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
 }
 
 
-export const DEFAULT_CHAPTERS = ["New York", "Boston", "Chicago", "California", "Michigan"];
+const DEFAULT_CHAPTERS = ["New York", "Boston", "Chicago", "California", "Michigan"];
 
 export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string; chapters: string[] }> {
   const fallback = { paused: false, message: "", chapters: DEFAULT_CHAPTERS };

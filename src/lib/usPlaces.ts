@@ -10,7 +10,7 @@
  * Every state has at least one entry so the city dropdown is never empty.
  */
 
-export const US_STATES: ReadonlyArray<{ abbr: string; name: string }> = [
+const US_STATES: ReadonlyArray<{ abbr: string; name: string }> = [
   { abbr: "AL", name: "Alabama" },
   { abbr: "AK", name: "Alaska" },
   { abbr: "AZ", name: "Arizona" },
@@ -65,7 +65,7 @@ export const US_STATES: ReadonlyArray<{ abbr: string; name: string }> = [
 ];
 
 /** Sentinel appended to every state so nobody is forced into a wrong answer. */
-export const OTHER_CITY = "Other / not listed";
+const OTHER_CITY = "Other / not listed";
 
 const CITIES: Record<string, string[]> = {
   AL: ["Birmingham", "Huntsville", "Mobile", "Montgomery", "Tuscaloosa"],

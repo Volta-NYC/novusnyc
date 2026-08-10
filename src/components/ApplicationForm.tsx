@@ -212,14 +212,14 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
 
       <div>
         <label className="block font-body text-sm font-semibold text-n-ink mb-2">High School Class Year *</label>
-        <select
+        <SelectMenu
+          ariaLabel="High school class year"
           value={form.grade}
-          onChange={(e) => { set("grade", e.target.value); clearError("grade"); }}
-          className={`novus-input ${errors.grade ? "border-red-400" : ""}`}
-        >
-          <option value="">Select your graduation year</option>
-          {GRADE_OPTIONS.map((grade) => <option key={grade} value={grade}>{grade}</option>)}
-        </select>
+          onChange={(next) => { set("grade", next); clearError("grade"); }}
+          options={GRADE_OPTIONS}
+          placeholder="Select your graduation year"
+          invalid={!!errors.grade}
+        />
         {errors.grade && <p className="text-red-500 text-xs mt-1 font-body">{errors.grade}</p>}
       </div>
 
@@ -274,14 +274,23 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
 
       <div>
         <label className="block font-body text-sm font-semibold text-n-ink mb-2">How did you hear about Novus? *</label>
-        <select
+        <SelectMenu
+          ariaLabel="How did you hear about Novus"
           value={form.referral}
-          onChange={(e) => { set("referral", e.target.value); clearError("referral"); }}
-          className={`novus-input ${errors.referral ? "border-red-400" : ""}`}
-        >
-          <option value="">Select one</option>
-          {REFERRAL_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-        </select>
+          onChange={(next) => {
+            // Switching away from a person-named answer must drop the name, or
+            // a stale referrer submits alongside "Social media".
+            setForm((p) => ({
+              ...p,
+              referral: next,
+              referralName: REFERRAL_NEEDS_NAME.includes(next) ? p.referralName : "",
+            }));
+            clearError("referral");
+          }}
+          options={REFERRAL_OPTIONS}
+          placeholder="Select one"
+          invalid={!!errors.referral}
+        />
         {errors.referral && <p className="text-red-500 text-xs mt-1 font-body">{errors.referral}</p>}
       </div>
 
