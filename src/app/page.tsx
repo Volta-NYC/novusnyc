@@ -183,10 +183,10 @@ function HomeScrollProgress() {
 
 function HomeProjectDesktopCard({ project, index }: { project: HomeProject; index: number }) {
   const card = (
-    <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
-      <div className={`${project.colorClass} h-2`} />
+    <div className="home-project-card bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
+      <div className={`${project.colorClass} home-project-card-accent h-2`} />
       {project.imageUrl ? (
-        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
+        <div className="home-project-card-media showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
           <Image
             src={project.imageUrl}
             alt={`${project.name} project`}
@@ -198,22 +198,22 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
           />
         </div>
       ) : (
-        <div className="showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white h-40 flex items-center justify-center">
+        <div className="home-project-card-media showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white h-40 flex items-center justify-center">
           <span className="font-body text-xs text-n-muted uppercase tracking-wider">Project photo coming soon</span>
         </div>
       )}
-      <div className="showcase-card-content p-7 flex flex-col">
+      <div className="home-project-card-content showcase-card-content p-7 flex flex-col">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex gap-2 flex-wrap">
+          <div className="home-project-card-tags flex gap-2 flex-wrap">
             {project.services.map((service) => (
               <span key={`desktop-${project.name}-${service}`} className={`tag border ${getServiceTagClass(service)}`}>{service}</span>
             ))}
           </div>
-          <span className={`tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
+          <span className={`home-project-card-tags tag text-xs flex-shrink-0 ${project.status === "Completed" ? "bg-n-orange/25 text-n-ink" : project.status === "Ongoing" ? "bg-n-purple/25 text-n-ink" : "bg-n-yellow/35 text-n-ink"}`}>
             {project.status}
           </span>
         </div>
-        <h3 className="font-display font-bold text-n-ink text-xl mb-1">{project.name}</h3>
+        <h3 className="home-project-card-title font-display font-bold text-n-ink text-xl mb-1">{project.name}</h3>
         <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
         {project.desc && <p className="font-body text-sm text-n-ink/70 leading-relaxed line-clamp-3">{project.desc}</p>}
         {project.quote && (
@@ -473,13 +473,19 @@ function CommunityPartnersSection() {
               className="pointer-events-none absolute -inset-x-16 top-12 bottom-0 z-0 bg-[radial-gradient(ellipse_at_center,rgba(35,31,36,0.08)_0%,rgba(35,31,36,0.035)_40%,transparent_72%)] blur-2xl"
             />
             <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8 md:mb-10">
-              {flagshipPartners.map((partner) => (
-                <FlagshipPartnerCard key={partner.name} partner={partner} />
+              {flagshipPartners.map((partner, index) => (
+                <AnimatedSection key={partner.name} delay={index * 0.055} duration={0.32}>
+                  <FlagshipPartnerCard partner={partner} />
+                </AnimatedSection>
               ))}
             </div>
             <div className="relative z-10 space-y-3 md:space-y-4">
-              <PartnerMarquee partners={importantPartners} important />
-              <PartnerMarquee partners={neighborhoodPartners} reverse />
+              <AnimatedSection delay={0.3} duration={0.32}>
+                <PartnerMarquee partners={importantPartners} important />
+              </AnimatedSection>
+              <AnimatedSection delay={0.37} duration={0.32}>
+                <PartnerMarquee partners={neighborhoodPartners} reverse />
+              </AnimatedSection>
             </div>
           </div>
         </div>
