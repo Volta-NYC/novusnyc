@@ -52,7 +52,7 @@ export default async function About() {
               </h1>
             </AnimatedSection>
           </div>
-          <AnimatedSection direction="right" className="flex-1 pt-4 md:pt-16">
+          <AnimatedSection direction="right" className="flex-1 pt-4 md:pt-16 lg:mr-48">
             <p className="font-body text-white/70 text-lg leading-relaxed mb-5">
               Novus is a nonprofit run entirely by high school and college students.
               We believe digital access and economic opportunity are inseparable, and that the family-owned
