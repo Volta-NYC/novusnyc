@@ -113,9 +113,9 @@ void main() {
   float segmentLength = length(segment);
   vec2 direction = segmentLength > 0.0001 ? segment / segmentLength : vec2(0.0);
   vec2 localOffset = uv - strokeEnd;
-  float brush = smoothstep(0.075, 0.0, distanceToSegment(uv, strokeStart, strokeEnd)) * strokeStrength;
+  float brush = smoothstep(0.052, 0.0, distanceToSegment(uv, strokeStart, strokeEnd)) * strokeStrength;
   vec2 vortex = vec2(-localOffset.y, localOffset.x);
-  flow += (vortex * 18.0 + direction * 5.5) * brush;
+  flow += (vortex * 8.0 + direction * 2.4) * brush;
 
   vec2 texel = 1.0 / resolution;
   vec3 dye = texture(previousDye, fract(uv - flow * 0.0028)).rgb * 0.986;
@@ -130,7 +130,7 @@ void main() {
   vec3 lavender = vec3(0.745, 0.635, 0.73);
   vec3 peach = vec3(0.965, 0.718, 0.553);
   float colorShift = 0.5 + 0.5 * sin(animationTime * 2.0 + strokeEnd.x * 7.0 - strokeEnd.y * 5.0);
-  dye += mix(lavender, peach, colorShift) * brush * (0.56 + strokeStrength * 0.44);
+  dye += mix(lavender, peach, colorShift) * brush * (0.24 + strokeStrength * 0.2);
 
   outputColor = vec4(min(dye, 1.0), 1.0);
 }`;
@@ -319,7 +319,7 @@ export default function NetworkFluidBackground() {
       strokeEndPoint.x = nextPoint.x;
       strokeEndPoint.y = nextPoint.y;
       const strokeLength = Math.hypot(strokeEndPoint.x - strokeStartPoint.x, strokeEndPoint.y - strokeStartPoint.y);
-      pendingStrokeStrength = Math.min(1, Math.max(pendingStrokeStrength, strokeLength * 14));
+      pendingStrokeStrength = Math.min(0.55, Math.max(pendingStrokeStrength, strokeLength * 6));
       pointerInside = true;
     };
 

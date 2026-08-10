@@ -70,7 +70,7 @@ export default function Footer() {
           <div className="flex flex-wrap items-center gap-3">
             <a
               href={`mailto:${EMAIL.info}`}
-              className="inline-flex items-center gap-2 font-body text-xs text-white/45 transition-colors hover:text-white"
+              className="inline-flex items-center gap-2 font-body text-xs text-n-orange/85 transition-colors hover:text-n-orange"
             >
               <MailIcon className="h-4 w-4" />
               {EMAIL.info}
@@ -80,7 +80,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Novus NYC on LinkedIn"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/45 transition-colors hover:border-white/30 hover:text-n-purple"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-n-purple/35 text-n-purple transition-colors hover:border-n-purple hover:bg-n-purple/10"
             >
               <LinkedInIcon className="h-4 w-4" />
             </a>
@@ -89,12 +89,12 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Novus NYC on Instagram"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/45 transition-colors hover:border-white/30 hover:text-n-yellow"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-n-yellow/35 text-n-yellow transition-colors hover:border-n-yellow hover:bg-n-yellow/10"
             >
               <InstagramIcon className="h-4 w-4" />
             </a>
             <span className="hidden h-4 w-px bg-white/10 sm:block" />
-            <Link href="/privacy" className="font-body text-xs text-white/35 transition-colors hover:text-white">Privacy Policy</Link>
+            <Link href="/privacy" className="font-body text-xs text-n-orange/75 transition-colors hover:text-n-orange">Privacy Policy</Link>
           </div>
         </div>
       </div>

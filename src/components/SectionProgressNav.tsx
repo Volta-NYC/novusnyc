@@ -12,7 +12,6 @@ function isLightSection(element: HTMLElement) {
 
   while (current && current !== document.body) {
     const styles = window.getComputedStyle(current);
-    if (styles.backgroundImage !== "none") return false;
 
     const match = styles.backgroundColor.match(/rgba?\(([^)]+)\)/);
     if (match) {
@@ -58,7 +57,7 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
   }, [sections]);
 
   return (
-    <nav aria-label="Page sections" className="fixed right-10 top-1/2 z-30 hidden -translate-y-1/2 xl:block">
+    <nav aria-label="Page sections" className="fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 lg:block xl:right-10">
       <div className={`border-l py-1 pl-5 transition-colors duration-200 ${useDarkText ? "border-black/45" : "border-white/75 [text-shadow:0_1px_10px_rgba(0,0,0,0.38)]"}`}>
         <p className={`mb-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] ${useDarkText ? "text-n-ink/55" : "text-white/60"}`}>On this page</p>
         <ol className="space-y-2">
