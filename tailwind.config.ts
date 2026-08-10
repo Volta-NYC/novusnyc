@@ -6,6 +6,10 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/data/**/*.{js,ts}",
+    // src/lib holds shared class tables (members/constants.ts). Without this the
+    // scanner never sees them and their utilities are stripped from the build,
+    // which shows up as invisible dots rather than an obvious error.
+    "./src/lib/**/*.{js,ts}",
   ],
   // Classes here are constructed dynamically via a color-name→class lookup map in
   // src/app/page.tsx (COLOR_CLASS_MAP). Tailwind can't see them at scan time.

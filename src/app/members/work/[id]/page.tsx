@@ -9,6 +9,7 @@ import { useParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Btn } from "@/components/members/ui";
 import { sanitizeHtml, linkifyHtml } from "@/lib/sanitizeHtml";
+import { TRACK_DOT } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
 import {
   subscribeAssignments, subscribeAssignmentClaims, subscribeBusinesses,
@@ -20,12 +21,6 @@ import {
 import { classifyMember } from "@/lib/members/cycleCompute";
 import { EMAIL } from "@/lib/mail";
 
-const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-violet-500",
-  Marketing: "bg-orange-500",
-  Finance: "bg-amber-500",
-  General: "bg-gray-400",
-};
 
 const TRACK_PILL: Record<CycleTrack, string> = {
   Tech: "bg-violet-100 text-violet-800 border-violet-200",

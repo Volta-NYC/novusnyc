@@ -1981,9 +1981,9 @@ function BusinessesPageInner() {
 
       {activeTab !== "showcase" && activeTab !== "discovery" && (
         <div className="grid grid-cols-3 gap-3 mb-5">
-          <StatCard label="Ongoing" value={ongoingCount} color="text-green-400" />
-          <StatCard label="Upcoming" value={upcomingCount} color="text-blue-400" />
-          <StatCard label="Completed" value={completedCount} color="text-violet-400" />
+          <StatCard label="Ongoing" value={ongoingCount} color="text-n-orange" />
+          <StatCard label="Upcoming" value={upcomingCount} color="text-n-purple" />
+          <StatCard label="Completed" value={completedCount} color="text-n-yellow" />
         </div>
       )}
 

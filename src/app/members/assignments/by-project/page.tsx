@@ -19,6 +19,7 @@ import {
   type Business, type Cycle, type CycleRole, type CycleTrack,
   type AssignmentTemplate, type ProjectGroup,
 } from "@/lib/members/storage";
+import { TRACK_DOT } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -33,12 +34,6 @@ function normalizeBizStatus(raw: unknown): ProjectStatusValue {
 }
 
 
-const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-violet-500",
-  Marketing: "bg-orange-500",
-  Finance: "bg-amber-500",
-  General: "bg-gray-400",
-};
 
 const ASSIGNMENT_STATUS_STYLES: Record<AssignmentStatus, string> = {
   Open: "border-[#F6B78D]/30 bg-[#F6B78D]/10 text-[#F3E28D]",
@@ -49,8 +44,8 @@ const ASSIGNMENT_STATUS_STYLES: Record<AssignmentStatus, string> = {
 };
 
 const BIZ_STATUS_LABEL: Record<ProjectStatusValue, { text: string; cls: string }> = {
-  Ongoing:   { text: "Ongoing",   cls: "text-green-400" },
-  Upcoming:  { text: "Upcoming",  cls: "text-blue-400" },
+  Ongoing:   { text: "Ongoing",   cls: "text-n-orange" },
+  Upcoming:  { text: "Upcoming",  cls: "text-n-purple" },
   Completed: { text: "Completed", cls: "text-white/40" },
 };
 

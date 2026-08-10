@@ -52,9 +52,10 @@ function getMemberTrack(member: TeamMember): TrackKey {
 
 function getTrackAvatarClasses(track: TrackKey): { bgClass: string; textClass: string } {
   switch (track) {
-    case "Tech":      return { bgClass: "bg-blue-100",        textClass: "text-blue-900" };
-    case "Marketing": return { bgClass: "bg-orange-100",         textClass: "text-orange-800" };
-    case "Finance":   return { bgClass: "bg-amber-100",       textClass: "text-amber-800" };
+    // Hues follow the public site: purple Tech, peach Marketing, yellow Finance.
+    case "Tech":      return { bgClass: "bg-n-purple/30",     textClass: "text-n-ink" };
+    case "Marketing": return { bgClass: "bg-n-orange/30",     textClass: "text-n-ink" };
+    case "Finance":   return { bgClass: "bg-n-yellow/40",     textClass: "text-n-ink" };
     case "Other":     return { bgClass: "bg-gray-100",        textClass: "text-gray-700" };
     default:          return { bgClass: "bg-[#F6B78D]/15",    textClass: "text-[#F6B78D]" };
   }

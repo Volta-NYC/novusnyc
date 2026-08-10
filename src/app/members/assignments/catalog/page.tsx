@@ -17,6 +17,7 @@ import {
   type Assignment, type AssignmentClaim, type AssignmentStatus, type AssignmentUpdate,
   type Business, type Cycle, type CycleRole, type CycleTrack, type ProjectGroup,
 } from "@/lib/members/storage";
+import { TRACK_DOT } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
@@ -44,12 +45,6 @@ const STATUS_STYLES: Record<AssignmentStatus, string> = {
   Archived: "border-white/10 bg-white/5 text-white/35",
 };
 
-const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-violet-500",
-  Marketing: "bg-orange-500",
-  Finance: "bg-amber-500",
-  General: "bg-gray-400",
-};
 
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 

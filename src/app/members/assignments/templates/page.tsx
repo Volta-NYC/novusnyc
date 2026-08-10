@@ -18,17 +18,12 @@ import {
   createAssignmentTemplate, updateAssignmentTemplate, deleteAssignmentTemplate,
   type AssignmentTemplate, type Business, type Cycle, type CycleRole, type CycleTrack,
 } from "@/lib/members/storage";
+import { TRACK_DOT } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
 
 const MEMBER_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 
-const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-violet-500",
-  Marketing: "bg-orange-500",
-  Finance: "bg-amber-500",
-  General: "bg-gray-400",
-};
 
 const TRACK_PILL: Record<CycleTrack, string> = {
   Tech:      "border-violet-400/30 bg-violet-400/10 text-violet-300",

@@ -20,15 +20,10 @@ import {
   type Assignment, type AssignmentClaim, type AutomationConfig, type Business,
   type EmailTemplate, type CycleTrack, type ProjectGroup, type TeamMember,
 } from "@/lib/members/storage";
+import { TRACK_DOT } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
 import { dispatchTemplatedEmail } from "@/lib/members/emailDispatch";
 
-const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech: "bg-violet-500",
-  Marketing: "bg-orange-500",
-  Finance: "bg-amber-500",
-  General: "bg-gray-400",
-};
 
 const TRACK_RANK: Record<CycleTrack, number> = { General: 0, Tech: 1, Marketing: 2, Finance: 3 };
 

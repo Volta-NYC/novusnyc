@@ -1,5 +1,7 @@
 "use client";
 
+import { TRACK_DOT } from "@/lib/members/constants";
+
 // Member-facing overview. Light theme. Replaces the older project-summary page.
 // Centerpiece of the credit system: cycle status, my work, recommended work,
 // rules card. Goal — admin emails members once a month and points them here.
@@ -20,11 +22,6 @@ import {
   lookupCreditTarget, pickPrimaryTrack,
 } from "@/lib/members/cycleCompute";
 
-const TRACK_DOT: Record<string, string> = {
-  Tech: "bg-violet-500",
-  Marketing: "bg-orange-500",
-  Finance: "bg-amber-500",
-};
 
 function normalizeKey(v: string): string {
   return String(v ?? "").trim().toLowerCase();

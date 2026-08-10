@@ -4,8 +4,15 @@
 import type { CycleTrack } from "@/lib/members/storage";
 
 // ── TRACK STYLING ─────────────────────────────────────────────────────────────
-// Light-theme chip + dot styles for Tech / Marketing / Finance / General.
-// Used in: projects, work marketplace, assignment catalog, team page.
+// Chip + dot styles for Tech / Marketing / Finance / General.
+//
+// Hues match how the tracks are coloured on the public site: purple for
+// Digital & Tech, peach for Marketing, yellow for Finance & Operations. The
+// brand tokens are used rather than Tailwind's 500-weight equivalents, which
+// read as neon beside the rest of the palette.
+//
+// Pastels are fills, so chips pair them with n-ink text rather than a tinted
+// one. Dots carry no text and can use the pastel straight.
 
 export type TrackDivision = "Tech" | "Marketing" | "Finance";
 
@@ -16,23 +23,23 @@ export const TRACK_META: Record<TrackDivision, {
   chipClass: string;   // bordered pill — light bg + colored text
   dotClass: string;    // filled dot or small badge
 }> = {
-  Tech:      { label: "Tech",      chipClass: "bg-violet-100 text-violet-700 border-violet-300",   dotClass: "bg-violet-500" },
-  Marketing: { label: "Marketing", chipClass: "bg-orange-100 text-orange-700 border-orange-300",   dotClass: "bg-orange-500" },
-  Finance:   { label: "Finance",   chipClass: "bg-amber-100 text-amber-700 border-amber-300", dotClass: "bg-amber-500" },
+  Tech:      { label: "Tech",      chipClass: "bg-n-purple/30 text-n-ink border-n-purple/60", dotClass: "bg-n-purple" },
+  Marketing: { label: "Marketing", chipClass: "bg-n-orange/30 text-n-ink border-n-orange/60", dotClass: "bg-n-orange" },
+  Finance:   { label: "Finance",   chipClass: "bg-n-yellow/40 text-n-ink border-n-yellow/70", dotClass: "bg-n-yellow" },
 };
 
 // Includes "General" for assignment-marketplace contexts.
 export const TRACK_DOT: Record<CycleTrack, string> = {
-  Tech:      "bg-violet-500",
-  Marketing: "bg-orange-500",
-  Finance:   "bg-amber-500",
+  Tech:      "bg-n-purple",
+  Marketing: "bg-n-orange",
+  Finance:   "bg-n-yellow",
   General:   "bg-gray-400",
 };
 
 export const TRACK_PILL: Record<CycleTrack, string> = {
-  Tech:      "bg-violet-100 text-violet-800 border-violet-200",
-  Marketing: "bg-orange-100 text-orange-900 border-orange-200",
-  Finance:   "bg-amber-100 text-amber-900 border-amber-200",
+  Tech:      "bg-n-purple/30 text-n-ink border-n-purple/50",
+  Marketing: "bg-n-orange/30 text-n-ink border-n-orange/50",
+  Finance:   "bg-n-yellow/40 text-n-ink border-n-yellow/60",
   General:   "bg-gray-100 text-gray-700 border-gray-200",
 };
 
@@ -41,9 +48,9 @@ export const TRACK_PILL: Record<CycleTrack, string> = {
 // clearly distinguishable. General uses gray-200 (not gray-100) for sufficient
 // contrast against the white unselected pill.
 export const TRACK_PILL_BASE: Record<CycleTrack, string> = {
-  Tech:      "bg-violet-100 text-violet-800",
-  Marketing: "bg-orange-100 text-orange-900",
-  Finance:   "bg-amber-100 text-amber-900",
+  Tech:      "bg-n-purple/30 text-n-ink",
+  Marketing: "bg-n-orange/30 text-n-ink",
+  Finance:   "bg-n-yellow/40 text-n-ink",
   General:   "bg-gray-200 text-gray-800",
 };
 
