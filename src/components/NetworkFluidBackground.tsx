@@ -14,6 +14,7 @@ precision highp float;
 out vec4 outputColor;
 uniform vec2 resolution;
 uniform float time;
+uniform vec2 pointer;
 
 float hash(vec2 point) {
   point = fract(point * vec2(123.34, 345.45));
@@ -49,13 +50,16 @@ float fbm(vec2 point) {
 
 void main() {
   vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / resolution.y;
-  float animationTime = time * 0.055;
+  vec2 cursorOffset = uv - pointer;
+  float cursorInfluence = exp(-dot(cursorOffset, cursorOffset) * 2.4);
+  float animationTime = time * 0.085;
   vec2 flow = vec2(
-    fbm(uv * 0.7 + vec2(animationTime, -animationTime * 0.55)),
-    fbm(uv * 0.7 + vec2(-animationTime * 0.7, animationTime))
+    fbm(uv * 0.7 + vec2(animationTime, -animationTime * 0.62)),
+    fbm(uv * 0.7 + vec2(-animationTime * 0.78, animationTime))
   );
-  float field = fbm(uv * 1.35 + flow * 1.6 + vec2(animationTime * 0.24, -animationTime * 0.18));
-  float ribbons = smoothstep(0.42, 0.72, sin((field + uv.y * 0.18) * 8.0) * 0.5 + 0.5);
+  flow += cursorOffset * cursorInfluence * 0.42;
+  float field = fbm(uv * 1.42 + flow * 1.9 + vec2(animationTime * 0.3, -animationTime * 0.23));
+  float ribbons = smoothstep(0.4, 0.74, sin((field + uv.y * 0.2 + animationTime * 0.16) * 8.4) * 0.5 + 0.5);
 
   vec3 ink = vec3(0.035, 0.024, 0.052);
   vec3 lavender = vec3(0.745, 0.635, 0.73);
@@ -64,12 +68,14 @@ void main() {
   float leftGlow = 1.0 - smoothstep(0.22, 1.42, length(uv - vec2(-0.72, 0.35)) - field * 0.34);
   float rightGlow = 1.0 - smoothstep(0.24, 1.48, length(uv - vec2(0.82, -0.23)) + field * 0.28);
   float centerGlow = 1.0 - smoothstep(0.2, 1.22, length(uv - vec2(0.08, -0.76)) - flow.y * 0.35);
+  float cursorGlow = cursorInfluence * (0.52 + ribbons * 0.48);
 
   vec3 color = ink;
   color += lavender * leftGlow * 0.45;
   color += peach * rightGlow * 0.37;
   color += violet * centerGlow * 0.42;
   color += mix(lavender, peach, field) * ribbons * 0.075;
+  color += mix(lavender, peach, 0.58) * cursorGlow * 0.13;
   color *= 0.86 + 0.14 * smoothstep(1.4, 0.15, length(uv));
 
   outputColor = vec4(color, 1.0);
@@ -125,7 +131,8 @@ export default function NetworkFluidBackground() {
     const position = gl.getAttribLocation(program, "position");
     const resolution = gl.getUniformLocation(program, "resolution");
     const time = gl.getUniformLocation(program, "time");
-    if (!buffer || position < 0 || !resolution || !time) {
+    const pointer = gl.getUniformLocation(program, "pointer");
+    if (!buffer || position < 0 || !resolution || !time || !pointer) {
       gl.deleteProgram(program);
       canvas.style.display = "none";
       return;
@@ -138,6 +145,8 @@ export default function NetworkFluidBackground() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let animationFrame = 0;
+    const currentPointer = { x: 0, y: 0 };
+    const targetPointer = { x: 0, y: 0 };
 
     const resize = () => {
       const pixelRatio = Math.min(window.devicePixelRatio, 1.5);
@@ -150,11 +159,25 @@ export default function NetworkFluidBackground() {
       gl.viewport(0, 0, width, height);
     };
 
+    const onPointerMove = (event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      const isInside = event.clientX >= bounds.left
+        && event.clientX <= bounds.right
+        && event.clientY >= bounds.top
+        && event.clientY <= bounds.bottom;
+
+      targetPointer.x = isInside ? ((event.clientX - bounds.left) / bounds.width - 0.5) * 2 : 0;
+      targetPointer.y = isInside ? (0.5 - (event.clientY - bounds.top) / bounds.height) * 2 : 0;
+    };
+
     const render = (now: number) => {
       resize();
       gl.useProgram(program);
       gl.uniform2f(resolution, canvas.width, canvas.height);
       gl.uniform1f(time, reducedMotion.matches ? 0 : now * 0.001);
+      currentPointer.x += (targetPointer.x - currentPointer.x) * 0.055;
+      currentPointer.y += (targetPointer.y - currentPointer.y) * 0.055;
+      gl.uniform2f(pointer, currentPointer.x, currentPointer.y);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
       if (!reducedMotion.matches) animationFrame = window.requestAnimationFrame(render);
@@ -162,11 +185,13 @@ export default function NetworkFluidBackground() {
 
     const resizeObserver = new ResizeObserver(() => render(performance.now()));
     resizeObserver.observe(canvas);
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
     render(0);
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
+      window.removeEventListener("pointermove", onPointerMove);
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
     };

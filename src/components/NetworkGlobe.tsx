@@ -181,9 +181,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     renderer.setClearColor(0x000000, 0);
     mount.appendChild(renderer.domElement);
 
+    const globeSweep = new THREE.Group();
+    scene.add(globeSweep);
+
     const globe = new THREE.Group();
     globe.position.set(1.65, -1.5, 0);
-    scene.add(globe);
+    globeSweep.add(globe);
 
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(GLOBE_RADIUS, 72, 72),
@@ -359,8 +362,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const elapsed = clock.getElapsedTime();
       const motionElapsed = reducedMotion ? 0 : elapsed;
       if (!reducedMotion && !isDragging) {
-        globe.rotation.y += 0.00065;
-        globe.rotation.z = Math.sin(elapsed * 0.22) * 0.025;
+        globeSweep.rotation.y = Math.sin(elapsed * 0.24) * 0.38;
+        globeSweep.rotation.z = Math.sin(elapsed * 0.16) * 0.025;
       }
       hubGlows.forEach(({ sprite, scale }) => {
         const pulse = 1 + Math.sin(motionElapsed * 2) * 0.11;
