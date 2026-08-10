@@ -39,7 +39,7 @@ export const chapterLocations: ChapterLocation[] = [
     lat: 33.4054,
     lng: -86.8114,
     type: "chapter",
-    globeLabel: "AL",
+    globeLabel: "Alabama",
   },
   {
     name: "Los Angeles",
@@ -68,7 +68,7 @@ export const chapterLocations: ChapterLocation[] = [
     lat: 35.4088,
     lng: -80.5795,
     type: "chapter",
-    globeLabel: "NC",
+    globeLabel: "North Carolina",
   },
   {
     name: "Princeton",
@@ -76,7 +76,7 @@ export const chapterLocations: ChapterLocation[] = [
     lat: 40.3573,
     lng: -74.6672,
     type: "chapter",
-    globeLabel: "NJ",
+    globeLabel: "New Jersey",
   },
   {
     name: "Austin",
@@ -98,7 +98,7 @@ export const chapterLocations: ChapterLocation[] = [
     lat: 39.0438,
     lng: -77.4874,
     type: "chapter",
-    globeLabel: "VA",
+    globeLabel: "Virginia",
   },
   {
     name: "Kent",
@@ -106,7 +106,7 @@ export const chapterLocations: ChapterLocation[] = [
     lat: 47.3809,
     lng: -122.2348,
     type: "chapter",
-    globeLabel: "WA",
+    globeLabel: "Washington",
   },
 ];
 
