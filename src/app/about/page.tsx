@@ -69,11 +69,11 @@ export default async function About() {
       </ParallaxHero>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
-      <section id="impact" className="py-14 bg-white overflow-x-auto">
+      <section id="impact" className="public-surface public-surface-grid py-14 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="page-section-heading text-n-ink mb-10">Our impact</h2>
-            <div className="flex min-w-max md:min-w-0 md:grid md:grid-cols-6 divide-x divide-n-border border border-n-border rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-n-border bg-n-border md:grid-cols-6 md:gap-0 md:divide-x md:divide-n-border">
               {[
                 { value: "150+", label: "Total\nbusinesses", color: "text-n-orange" },
                 { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects", color: "text-n-purple" },
@@ -82,10 +82,10 @@ export default async function About() {
                 { value: formatCounter(liveStats.educationalReports), label: "Educational guides\nfor merchants", color: "text-amber-600" },
                 { value: formatCounter(liveStats.bidPartners, true), label: "Community\norganizations", color: "text-n-ink" },
               ].map((s, i) => (
-                <AnimatedSection key={s.label} delay={i * 0.06}>
-                  <div className="px-5 py-7 md:px-6 md:py-8 text-center min-w-[130px] md:min-w-0">
-                    <p className={`font-display font-bold text-4xl md:text-5xl leading-none mb-3 ${s.color}`}>{s.value}</p>
-                    <p className="font-body text-[10px] text-n-muted uppercase tracking-widest whitespace-pre-line leading-relaxed">{s.label}</p>
+                <AnimatedSection key={s.label} delay={i * 0.06} className="flex min-h-28 flex-col justify-center bg-white px-3 py-5 text-center sm:px-5 sm:py-7 md:min-h-0 md:px-6 md:py-8">
+                  <div>
+                    <p className={`mb-2 font-display text-3xl font-bold leading-none sm:text-4xl md:mb-3 md:text-5xl ${s.color}`}>{s.value}</p>
+                    <p className="whitespace-pre-line font-body text-[10px] uppercase leading-relaxed tracking-[0.12em] text-n-muted">{s.label}</p>
                   </div>
                 </AnimatedSection>
               ))}
@@ -95,7 +95,7 @@ export default async function About() {
       </section>
 
       {/* ── MISSION ─────────────────────────────────────────── */}
-      <section id="mission" className="py-16 bg-n-bg">
+      <section id="mission" className="public-surface public-surface-lavender py-16 bg-n-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
@@ -180,7 +180,7 @@ export default async function About() {
       </section>
 
       {/* ── TEAM ────────────────────────────────────────────── */}
-      <section id="leadership" className="py-16 bg-white">
+      <section id="leadership" className="public-surface public-surface-peach py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -211,7 +211,7 @@ export default async function About() {
       </section>
 
       {/* ── HOW WE OPERATE ─────────────────────────────────── */}
-      <section id="values" className="py-16 bg-n-bg">
+      <section id="values" className="public-surface public-surface-sand py-16 bg-n-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="page-section-heading text-n-ink">How we operate</h2>

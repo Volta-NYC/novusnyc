@@ -6,6 +6,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import HomeStats from "@/components/HomeStats";
 import HeroSection from "@/components/HeroSection";
 import HomeScrollBridge from "@/components/HomeScrollBridge";
+import HomeNetworkSection from "@/components/HomeNetworkSection";
 import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
@@ -534,7 +535,7 @@ export default function Home() {
         eyebrow="FROM PROJECT TO PRACTICE"
         title="Not one path. Three ways to make an impact."
         detail="Choose digital, marketing, or finance and operations—then bring what you do best to neighborhood businesses."
-        imageSrc="/student-collaboration-wide.jpg"
+        imageSrc="/student-collaboration-wide.webp"
       />
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
@@ -551,6 +552,8 @@ export default function Home() {
           </AnimatedSection>
         </div>
       </section>
+
+      <HomeNetworkSection />
 
     </div>
   );

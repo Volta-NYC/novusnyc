@@ -28,18 +28,18 @@ export default function TracksParallax({ children }: { children: ReactNode }) {
       ref={sectionRef}
       id="tracks"
       className="tracks-parallax relative isolate overflow-hidden py-14"
-      style={{ backgroundImage: "url(/trackbackground.jpg)" }}
+      style={{ backgroundImage: "url(/trackbackground.webp)" }}
     >
       <motion.div
         aria-hidden="true"
         className="tracks-parallax-mobile-media"
         style={isMobile
           ? {
-            backgroundImage: "url(/trackbackground.jpg)",
+            backgroundImage: "url(/trackbackground.webp)",
             y: imageY,
             willChange: imageParallaxEnabled ? "transform" : "auto",
           }
-          : { backgroundImage: "url(/trackbackground.jpg)" }}
+          : { backgroundImage: "url(/trackbackground.webp)" }}
       />
       <motion.div
         className="relative z-10 max-w-5xl mx-auto px-5 md:px-8"

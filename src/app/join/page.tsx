@@ -166,7 +166,7 @@ export default async function Join() {
       </ParallaxHero>
 
       {/* ── WHY NOVUS / RESUME VALUE ───────────────────────── */}
-      <section id="benefits" className="py-14 bg-white">
+      <section id="benefits" className="public-surface public-surface-grid py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="page-section-heading text-n-ink">Built for your resume</h2>

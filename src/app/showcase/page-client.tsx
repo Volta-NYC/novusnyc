@@ -376,7 +376,7 @@ export default function ShowcaseClient({
       </section>
 
       {/* ── PROJECT CARDS ───────────────────────────────────── */}
-      <section id="showcase-projects" className="py-16 bg-white">
+      <section id="showcase-projects" className="public-surface public-surface-grid py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-6">
             <h2 className="font-display font-bold text-n-ink text-2xl md:text-3xl">

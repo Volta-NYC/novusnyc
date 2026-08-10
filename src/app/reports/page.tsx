@@ -24,7 +24,7 @@ export default function ReportsPage() {
         { id: "reports-coverage", label: "What we cover" },
         { id: "reports-publish", label: "Publish with us" },
       ]} />
-      <section id="reports-overview" className="bg-n-bg pt-32 pb-16">
+      <section id="reports-overview" className="public-surface public-surface-lavender bg-n-bg pt-32 pb-16">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">
@@ -42,7 +42,7 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      <section className="py-14 bg-white">
+      <section className="public-surface public-surface-grid py-14 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8 space-y-8">
           <AnimatedSection>
             <article id="reports-purpose" className="bg-n-bg border border-n-border rounded-2xl p-6 md:p-7">
