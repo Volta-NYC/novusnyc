@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationForm from "@/components/ApplicationForm";
-import SectionProgressNav from "@/components/SectionProgressNav";
 import { getApplicationsStatus } from "@/lib/server/publicShowcase";
 
 export const metadata: Metadata = {
@@ -20,10 +19,6 @@ export default async function Apply() {
 
   return (
     <>
-      <SectionProgressNav sections={[
-        { id: "application-details", label: "What to expect" },
-        { id: "application-form", label: "Application" },
-      ]} />
       <section id="application-details" className="section-flush-bottom public-surface public-surface-lavender bg-n-bg pt-32 pb-0">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
