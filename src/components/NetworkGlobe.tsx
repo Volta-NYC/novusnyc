@@ -165,8 +165,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const compactViewport = window.matchMedia("(max-width: 639px)").matches;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(compactViewport ? 52 : 45, 1, 0.1, 100);
-    const northAmericaView = toSpherePoint(38, -98, compactViewport ? 6.6 : 6.4);
-    camera.position.copy(northAmericaView);
+    const cameraDirection = toSpherePoint(38, -98).normalize();
+    const defaultCameraDistance = compactViewport ? 6.6 : 6.4;
+    const minCameraDistance = compactViewport ? 5.2 : 4.9;
+    const maxCameraDistance = compactViewport ? 9.2 : 8.8;
+    let cameraDistance = defaultCameraDistance;
+    camera.position.copy(cameraDirection).multiplyScalar(cameraDistance);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
 
@@ -301,9 +305,11 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const dragStart = new THREE.Vector2();
     const worldUp = new THREE.Vector3(0, 1, 0);
     const cameraRight = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+    const activePointers = new Map<number, THREE.Vector2>();
     let activeLocation = "";
     let isDragging = false;
     let dragDistance = 0;
+    let pinchDistance = 0;
     let animationFrame = 0;
     const clock = new THREE.Clock();
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -319,6 +325,13 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(mount);
     resize();
+
+    const updateCameraDistance = (nextDistance: number) => {
+      cameraDistance = THREE.MathUtils.clamp(nextDistance, minCameraDistance, maxCameraDistance);
+      camera.position.copy(cameraDirection).multiplyScalar(cameraDistance);
+      camera.lookAt(0, 0, 0);
+      camera.updateMatrixWorld();
+    };
 
     const clearTooltip = () => {
       activeLocation = "";
@@ -352,6 +365,18 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (activePointers.has(event.pointerId)) {
+        activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
+      }
+
+      if (activePointers.size === 2) {
+        const [first, second] = [...activePointers.values()];
+        const nextPinchDistance = first.distanceTo(second);
+        if (pinchDistance > 0) updateCameraDistance(cameraDistance - (nextPinchDistance - pinchDistance) * 0.012);
+        pinchDistance = nextPinchDistance;
+        return;
+      }
+
       if (isDragging) {
         const deltaX = event.clientX - dragStart.x;
         const deltaY = event.clientY - dragStart.y;
@@ -367,6 +392,15 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
+      activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
+      if (activePointers.size === 2) {
+        const [first, second] = [...activePointers.values()];
+        pinchDistance = first.distanceTo(second);
+        isDragging = false;
+        renderer.domElement.setPointerCapture(event.pointerId);
+        renderer.domElement.style.cursor = "zoom-in";
+        return;
+      }
       isDragging = true;
       dragDistance = 0;
       dragStart.set(event.clientX, event.clientY);
@@ -377,13 +411,29 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     };
 
     const onPointerUp = (event: PointerEvent) => {
-      if (!isDragging) return;
+      const wasDragging = isDragging;
+      activePointers.delete(event.pointerId);
       isDragging = false;
       if (renderer.domElement.hasPointerCapture(event.pointerId)) {
         renderer.domElement.releasePointerCapture(event.pointerId);
       }
-      if (dragDistance < 6) updateTooltip(event);
+      pinchDistance = activePointers.size === 2
+        ? [...activePointers.values()][0].distanceTo([...activePointers.values()][1])
+        : 0;
+      if (activePointers.size === 1) {
+        const remainingPointer = [...activePointers.values()][0];
+        isDragging = true;
+        dragDistance = 0;
+        dragStart.copy(remainingPointer);
+        return;
+      }
+      if (wasDragging && dragDistance < 6) updateTooltip(event);
       else renderer.domElement.style.cursor = "grab";
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      updateCameraDistance(cameraDistance + event.deltaY * 0.006);
     };
 
     const onPointerLeave = () => {
@@ -395,6 +445,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     renderer.domElement.addEventListener("pointerup", onPointerUp);
     renderer.domElement.addEventListener("pointercancel", onPointerUp);
     renderer.domElement.addEventListener("pointerleave", onPointerLeave);
+    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
     const render = () => {
       const elapsed = clock.getElapsedTime();
@@ -423,6 +474,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointercancel", onPointerUp);
       renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
+      renderer.domElement.removeEventListener("wheel", onWheel);
       globe.traverse((object) => {
         if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
           object.geometry.dispose();

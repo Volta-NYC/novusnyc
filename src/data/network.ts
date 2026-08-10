@@ -16,7 +16,7 @@ export const chapterLocations: ChapterLocation[] = [
     lat: 40.7128,
     lng: -74.006,
     type: "hub",
-    subtitle: "Flagship Chapter",
+    subtitle: "Flagship Team",
   },
   {
     name: "Boston",

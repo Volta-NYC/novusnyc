@@ -21,7 +21,7 @@ export default function HomeNetworkSection() {
             Built in New York. Growing beyond it.
           </h2>
           <p className="mt-5 max-w-xl font-body text-base leading-relaxed text-white/70 md:text-lg">
-            Novus began in New York City and is growing through student-led chapters in communities across the country.
+            Novus began in New York City and is growing through student-led teams rooted in communities across the country.
           </p>
 
           <div className="mt-8 border-y border-white/10 py-4" aria-label="Novus chapter locations">
@@ -48,7 +48,7 @@ export default function HomeNetworkSection() {
             </ul>
           </div>
           <p className="mt-7 max-w-md font-body text-sm leading-relaxed text-white/55">
-            From our flagship chapter in New York City, Novus has grown into a nationwide network of student-led teams.
+            From our flagship New York City team, Novus has grown into a nationwide network of student-led teams.
           </p>
         </AnimatedSection>
 
