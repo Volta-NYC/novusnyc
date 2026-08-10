@@ -22,6 +22,7 @@ type Props = {
 const GLOBE_RADIUS = 2.15;
 const HUB_COLOR = "#BEA2BA";
 const CHAPTER_COLOR = "#F6B78D";
+const NETWORK_ACCENT = "#F3E28D";
 
 type Coordinate = [number, number];
 type Polygon = Coordinate[][];
@@ -252,9 +253,18 @@ export default function NetworkGlobe({ locations, connections }: Props) {
         new THREE.MeshBasicMaterial({ color }),
       );
       marker.position.copy(point);
-      marker.userData.location = location;
       globe.add(marker);
-      markerTargets.push(marker);
+
+      // Keep visual nodes compact while making each chapter easy to identify
+      // on hover or tap, including in the dense Northeast cluster.
+      const hitTarget = new THREE.Mesh(
+        new THREE.SphereGeometry(isHub ? 0.11 : 0.085, 12, 12),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+      );
+      hitTarget.position.copy(point.clone().multiplyScalar(1.02));
+      hitTarget.userData.location = location;
+      globe.add(hitTarget);
+      markerTargets.push(hitTarget);
 
       if (isHub) hubGlows.push({ sprite: glow, scale: glowScale });
     });
@@ -279,7 +289,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       if (angularDistance > 0.2) {
         const pulse = new THREE.Mesh(
           new THREE.SphereGeometry(0.009, 10, 10),
-          new THREE.MeshBasicMaterial({ color: "#FFF5EC", transparent: true, opacity: 0.5 }),
+          new THREE.MeshBasicMaterial({ color: NETWORK_ACCENT, transparent: true, opacity: 0.5 }),
         );
         globe.add(pulse);
         curves.push({ curve, pulse, phase: index * 0.5 });
@@ -293,6 +303,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const cameraRight = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
     let activeLocation = "";
     let isDragging = false;
+    let dragDistance = 0;
     let animationFrame = 0;
     const clock = new THREE.Clock();
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -315,14 +326,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       setTooltip(null);
     };
 
-    const onPointerMove = (event: PointerEvent) => {
-      if (isDragging) {
-        globe.rotateOnWorldAxis(worldUp, (event.clientX - dragStart.x) * 0.0025);
-        globe.rotateOnWorldAxis(cameraRight, (event.clientY - dragStart.y) * 0.0025);
-        dragStart.set(event.clientX, event.clientY);
-        return;
-      }
-
+    const updateTooltip = (event: PointerEvent) => {
       const bounds = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
       pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
@@ -331,7 +335,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
 
       if (!hit) {
         if (activeLocation) clearTooltip();
-        return;
+        return false;
       }
 
       const location = hit.object.userData.location as ChapterLocation;
@@ -344,11 +348,27 @@ export default function NetworkGlobe({ locations, connections }: Props) {
         x: event.clientX - bounds.left,
         y: event.clientY - bounds.top,
       });
+      return true;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (isDragging) {
+        const deltaX = event.clientX - dragStart.x;
+        const deltaY = event.clientY - dragStart.y;
+        dragDistance += Math.hypot(deltaX, deltaY);
+        globe.rotateOnWorldAxis(worldUp, deltaX * 0.0045);
+        globe.rotateOnWorldAxis(cameraRight, deltaY * 0.0045);
+        dragStart.set(event.clientX, event.clientY);
+        return;
+      }
+
+      updateTooltip(event);
     };
 
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
       isDragging = true;
+      dragDistance = 0;
       dragStart.set(event.clientX, event.clientY);
       activeLocation = "";
       setTooltip(null);
@@ -362,7 +382,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       if (renderer.domElement.hasPointerCapture(event.pointerId)) {
         renderer.domElement.releasePointerCapture(event.pointerId);
       }
-      renderer.domElement.style.cursor = "grab";
+      if (dragDistance < 6) updateTooltip(event);
+      else renderer.domElement.style.cursor = "grab";
     };
 
     const onPointerLeave = () => {
@@ -422,7 +443,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
   }, [connections, locations]);
 
   return (
-    <div ref={mountRef} className="network-globe-canvas relative h-[360px] w-full sm:h-[460px] lg:h-[560px]" aria-hidden="true">
+    <div ref={mountRef} className="network-globe-canvas relative h-[360px] w-full touch-none sm:h-[460px] lg:h-[560px]" aria-hidden="true">
       {tooltip && (
         <div
           className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+12px)] rounded-md border border-white/20 bg-n-dark/90 px-3 py-2 font-body text-xs text-white shadow-lg backdrop-blur-sm"
