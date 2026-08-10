@@ -1768,6 +1768,8 @@ export interface SiteSettings {
   applicationsPaused:       boolean;
   applicationsPausedMsg:    string;
   services:                 string[];
+  /** Chapter options on the public application form. Order is shown as-is. */
+  chapters:                 string[];
   publicBannerEnabled:      boolean;
   publicBannerMessage:      string;
   publicBannerBg:           string;
@@ -1791,6 +1793,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   applicationsPaused:    false,
   applicationsPausedMsg: "Applications are currently paused. Check back soon.",
   services:              ["Website", "SEO", "Social Media", "Graphic Design", "Grants"],
+  chapters:              ["New York", "Boston", "Chicago", "California", "Michigan"],
   publicBannerEnabled:   false,
   publicBannerMessage:   "",
   publicBannerBg:        "#1a1a2e",
@@ -1824,6 +1827,7 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
     applicationsPaused:    Boolean(r.applications_paused ?? false),
     applicationsPausedMsg: String(r.applications_paused_msg ?? DEFAULT_SITE_SETTINGS.applicationsPausedMsg),
     services:              Array.isArray(r.services) ? (r.services as string[]) : DEFAULT_SITE_SETTINGS.services,
+    chapters:              Array.isArray(r.chapters) && r.chapters.length > 0 ? (r.chapters as string[]) : DEFAULT_SITE_SETTINGS.chapters,
     publicBannerEnabled:   Boolean(r.public_banner_enabled ?? false),
     publicBannerMessage:   String(r.public_banner_message ?? ""),
     publicBannerBg:        String(r.public_banner_bg ?? DEFAULT_SITE_SETTINGS.publicBannerBg),
@@ -1861,6 +1865,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.applicationsPaused    !== undefined) row.applications_paused     = patch.applicationsPaused;
   if (patch.applicationsPausedMsg !== undefined) row.applications_paused_msg = patch.applicationsPausedMsg;
   if (patch.services              !== undefined) row.services                = patch.services;
+  if (patch.chapters              !== undefined) row.chapters                = patch.chapters;
   if (patch.publicBannerEnabled   !== undefined) row.public_banner_enabled   = patch.publicBannerEnabled;
   if (patch.publicBannerMessage   !== undefined) row.public_banner_message   = patch.publicBannerMessage;
   if (patch.publicBannerBg        !== undefined) row.public_banner_bg        = patch.publicBannerBg;

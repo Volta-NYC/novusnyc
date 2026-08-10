@@ -710,14 +710,18 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
 }
 
 
-export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string }> {
+export const DEFAULT_CHAPTERS = ["New York", "Boston", "Chicago", "California", "Michigan"];
+
+export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string; chapters: string[] }> {
+  const fallback = { paused: false, message: "", chapters: DEFAULT_CHAPTERS };
   let sb;
-  try { sb = getSupabaseAdmin(); } catch { return { paused: false, message: "" }; }
-  const { data } = await sb.from("site_settings").select("applications_paused, applications_paused_msg").eq("id", "singleton").maybeSingle();
-  if (!data) return { paused: false, message: "" };
+  try { sb = getSupabaseAdmin(); } catch { return fallback; }
+  const { data } = await sb.from("site_settings").select("applications_paused, applications_paused_msg, chapters").eq("id", "singleton").maybeSingle();
+  if (!data) return fallback;
   const r = data as Record<string, unknown>;
   return {
     paused: Boolean(r.applications_paused ?? false),
     message: String(r.applications_paused_msg ?? "Applications are currently paused. Check back soon."),
+    chapters: Array.isArray(r.chapters) && r.chapters.length > 0 ? (r.chapters as string[]) : DEFAULT_CHAPTERS,
   };
 }

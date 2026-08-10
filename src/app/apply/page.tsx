@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Apply() {
-  const { paused, message } = await getApplicationsStatus();
+  const { paused, message, chapters } = await getApplicationsStatus();
 
   return (
     <>
@@ -96,7 +96,7 @@ export default async function Apply() {
                     </p>
                   </div>
                 ) : (
-                  <ApplicationForm />
+                  <ApplicationForm chapters={chapters} />
                 )}
               </div>
             </div>

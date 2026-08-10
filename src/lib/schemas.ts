@@ -62,6 +62,8 @@ export interface ApplicationFormValues {
   grade: string;
   referral: string;
   referralName: string;
+  state: string;
+  chapter: string;
   tracks: string[];
   marketingSubtrack: string;
   hasResume: boolean | null;
@@ -75,7 +77,9 @@ export function validateApplicationForm(
   const errors: Record<string, string> = {};
   addError(errors, "fullName", required(data.fullName, "Full name is required"));
   addError(errors, "email", validEmail(data.email, "Enter a valid email address"));
-  addError(errors, "city", required(data.city, "City, state is required"));
+  addError(errors, "state", required(data.state, "Select your state"));
+  addError(errors, "city", required(data.city, "Select your city"));
+  addError(errors, "chapter", required(data.chapter, "Select a chapter"));
   addError(errors, "schoolName", required(data.schoolName, "School name is required"));
   addError(errors, "grade", required(data.grade, "Select your grade"));
   addError(errors, "referral", required(data.referral, "Select how you heard about us"));

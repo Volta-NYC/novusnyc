@@ -6,6 +6,8 @@ import { validateApplicationForm, REFERRAL_NEEDS_NAME, type ApplicationFormValue
 import { TRACK_NAMES, MARKETING_TRACK, MARKETING_SUBTRACKS } from "@/data";
 import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
 import SchoolSelector from "@/components/SchoolSelector";
+import SelectMenu from "@/components/SelectMenu";
+import { STATE_ABBRS, citiesForState } from "@/lib/usPlaces";
 import { EMAIL } from "@/lib/mail";
 import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
@@ -15,12 +17,12 @@ const RESUME_MAX_MB = 4;
 const RESUME_MAX_BYTES = RESUME_MAX_MB * 1024 * 1024;
 
 const EMPTY: ApplicationFormValues = {
-  fullName: "", email: "", city: "", schoolName: "", grade: "", referral: "",
-  referralName: "", tracks: [], marketingSubtrack: "", hasResume: null,
-  tools: "", accomplishment: "",
+  fullName: "", email: "", city: "", state: "", chapter: "", schoolName: "",
+  grade: "", referral: "", referralName: "", tracks: [], marketingSubtrack: "",
+  hasResume: null, tools: "", accomplishment: "",
 };
 
-export default function ApplicationForm() {
+export default function ApplicationForm({ chapters }: { chapters: string[] }) {
   const [form, setForm] = useState<ApplicationFormValues>(EMPTY);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState<string>("");
@@ -111,7 +113,10 @@ export default function ApplicationForm() {
       Email: form.email,
       "School Name": form.schoolName,
       Grade: form.grade,
-      "City, State": form.city,
+      "City, State": [form.city, form.state].filter(Boolean).join(", "),
+      State: form.state,
+      City: form.city,
+      Chapter: form.chapter,
       "How They Heard": form.referral,
       "Referral Name": REFERRAL_NEEDS_NAME.includes(form.referral) ? form.referralName : "",
       "Tracks Selected": form.tracks.join(", "),
@@ -218,15 +223,53 @@ export default function ApplicationForm() {
         {errors.grade && <p className="text-red-500 text-xs mt-1 font-body">{errors.grade}</p>}
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block font-body text-sm font-semibold text-n-ink mb-2">State *</label>
+          <SelectMenu
+            ariaLabel="State"
+            value={form.state}
+            onChange={(next) => {
+              // Cities are state-specific, so a state change invalidates the city.
+              setForm((p) => ({ ...p, state: next, city: "" }));
+              clearError("state");
+            }}
+            options={STATE_ABBRS}
+            placeholder="Select"
+            invalid={!!errors.state}
+          />
+          {errors.state && <p className="text-red-500 text-xs mt-1 font-body">{errors.state}</p>}
+        </div>
+        <div>
+          <label className="block font-body text-sm font-semibold text-n-ink mb-2">City *</label>
+          <SelectMenu
+            ariaLabel="City"
+            value={form.city}
+            onChange={(next) => { set("city", next); clearError("city"); }}
+            options={form.state ? citiesForState(form.state) : []}
+            placeholder={form.state ? "Select" : "Pick a state first"}
+            disabled={!form.state}
+            invalid={!!errors.city}
+          />
+          {errors.city && <p className="text-red-500 text-xs mt-1 font-body">{errors.city}</p>}
+        </div>
+      </div>
+
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-2">City, State *</label>
-        <input
-          value={form.city}
-          onChange={(e) => { set("city", e.target.value); clearError("city"); }}
-          className={`novus-input ${errors.city ? "border-red-400" : ""}`}
-          placeholder="e.g. New York, New York"
+        <label className="block font-body text-sm font-semibold text-n-ink mb-2">Chapter *</label>
+        <p className="font-body text-xs text-n-muted mb-2">
+          Not near one of these? Choose New York. You&apos;ll work remotely with the team, and we may
+          open a chapter in your area later. Tell us if that interests you.
+        </p>
+        <SelectMenu
+          ariaLabel="Chapter"
+          value={form.chapter}
+          onChange={(next) => { set("chapter", next); clearError("chapter"); }}
+          options={chapters}
+          placeholder="Select a chapter"
+          invalid={!!errors.chapter}
         />
-        {errors.city && <p className="text-red-500 text-xs mt-1 font-body">{errors.city}</p>}
+        {errors.chapter && <p className="text-red-500 text-xs mt-1 font-body">{errors.chapter}</p>}
       </div>
 
       <div>
