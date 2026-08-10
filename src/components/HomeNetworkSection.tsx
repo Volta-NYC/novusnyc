@@ -22,17 +22,31 @@ export default function HomeNetworkSection() {
             Novus began in New York City and is growing through student-led chapters in communities across the country.
           </p>
 
-          <ul className="mt-8 space-y-3" aria-label="Novus chapter locations">
-            {chapterLocations.map((location) => (
-              <li key={location.name} className="flex items-center gap-3 font-body text-sm text-white/80">
-                <span className={`h-2.5 w-2.5 rounded-full ${location.type === "hub" ? "bg-n-purple shadow-[0_0_14px_rgba(190,162,186,0.9)]" : "bg-n-orange shadow-[0_0_12px_rgba(246,183,141,0.75)]"}`} />
-                <span className="font-semibold text-white">{location.name}</span>
-                {location.subtitle && <span className="text-xs text-white/50">{location.subtitle}</span>}
-              </li>
-            ))}
-          </ul>
+          <div className="mt-8 border-y border-white/10 py-4" aria-label="Novus chapter locations">
+            <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-white/50">
+              {chapterLocations.length} locations
+            </p>
+            <p className="mt-2 font-body text-sm leading-6 text-white/65">
+              {chapterLocations.map((location, index) => (
+                <span key={location.name}>
+                  {index > 0 && <span aria-hidden="true"> · </span>}
+                  <span className={location.type === "hub" ? "font-semibold text-white" : "text-white/70"}>
+                    {location.name}
+                  </span>
+                  {location.subtitle && <span className="ml-1 text-xs text-n-purple">{location.subtitle}</span>}
+                </span>
+              ))}
+            </p>
+            <ul className="sr-only">
+              {chapterLocations.map((location) => (
+                <li key={location.name}>
+                  {location.name}, {location.state}{location.subtitle ? `, ${location.subtitle}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
           <p className="mt-7 max-w-md font-body text-sm leading-relaxed text-white/55">
-            New York City connects directly with our chapters in Boston and Chicago. More locations are on the way.
+            From our flagship chapter in New York City, Novus has grown into a nationwide network of student-led teams.
           </p>
         </AnimatedSection>
 

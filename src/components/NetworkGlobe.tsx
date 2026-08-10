@@ -9,6 +9,7 @@ import type { ChapterConnection, ChapterLocation } from "@/data/network";
 
 type Tooltip = {
   name: string;
+  state?: string;
   subtitle?: string;
   x: number;
   y: number;
@@ -171,7 +172,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-    const northAmericaView = toSpherePoint(40.5, -86, 8.3);
+    const northAmericaView = toSpherePoint(38, -98, 9.4);
     camera.position.copy(northAmericaView);
     camera.lookAt(0, 0, 0);
 
@@ -224,12 +225,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const isHub = location.type === "hub";
       const color = isHub ? HUB_COLOR : CHAPTER_COLOR;
       const point = toSpherePoint(location.lat, location.lng, GLOBE_RADIUS + 0.025);
-      const glowScale = isHub ? 0.24 : 0.19;
+      const glowScale = isHub ? 0.18 : 0.12;
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({
         map: glowTexture,
         color,
         transparent: true,
-        opacity: isHub ? 0.5 : 0.32,
+        opacity: isHub ? 0.46 : 0.22,
         depthWrite: false,
       }));
       glow.position.copy(point.clone().multiplyScalar(1.025));
@@ -237,7 +238,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       globe.add(glow);
 
       const marker = new THREE.Mesh(
-        new THREE.SphereGeometry(isHub ? 0.052 : 0.041, 16, 16),
+        new THREE.SphereGeometry(isHub ? 0.046 : 0.034, 16, 16),
         new THREE.MeshBasicMaterial({ color }),
       );
       marker.position.copy(point);
@@ -256,21 +257,23 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       const start = toSpherePoint(from.lat, from.lng, GLOBE_RADIUS + 0.035);
       const end = toSpherePoint(to.lat, to.lng, GLOBE_RADIUS + 0.035);
       const angularDistance = start.clone().normalize().angleTo(end.clone().normalize());
-      const arcLift = 0.035 + Math.min(0.16, angularDistance * 0.5);
+      const arcLift = 0.012 + Math.min(0.12, angularDistance * 0.23);
       const middle = start.clone().add(end).normalize().multiplyScalar(GLOBE_RADIUS + arcLift);
       const curve = new THREE.CatmullRomCurve3([start, middle, end]);
       const line = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)),
-        new THREE.LineBasicMaterial({ color: CHAPTER_COLOR, transparent: true, opacity: 0.48 }),
+        new THREE.LineBasicMaterial({ color: CHAPTER_COLOR, transparent: true, opacity: 0.27 }),
       );
       globe.add(line);
 
-      const pulse = new THREE.Mesh(
-        new THREE.SphereGeometry(0.014, 10, 10),
-        new THREE.MeshBasicMaterial({ color: "#FFF5EC", transparent: true, opacity: 0.72 }),
-      );
-      globe.add(pulse);
-      curves.push({ curve, pulse, phase: index * 0.5 });
+      if (angularDistance > 0.2) {
+        const pulse = new THREE.Mesh(
+          new THREE.SphereGeometry(0.009, 10, 10),
+          new THREE.MeshBasicMaterial({ color: "#FFF5EC", transparent: true, opacity: 0.5 }),
+        );
+        globe.add(pulse);
+        curves.push({ curve, pulse, phase: index * 0.5 });
+      }
     });
 
     const raycaster = new THREE.Raycaster();
@@ -327,6 +330,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       renderer.domElement.style.cursor = "pointer";
       setTooltip({
         name: location.name,
+        state: location.type === "chapter" ? location.state : undefined,
         subtitle: location.subtitle,
         x: event.clientX - bounds.left,
         y: event.clientY - bounds.top,
@@ -387,7 +391,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
           className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+12px)] rounded-md border border-white/20 bg-n-dark/90 px-3 py-2 font-body text-xs text-white shadow-lg backdrop-blur-sm"
           style={{ left: tooltip.x, top: tooltip.y }}
         >
-          <p className="font-semibold">{tooltip.name}</p>
+          <p className="font-semibold">{tooltip.state ? `${tooltip.name}, ${tooltip.state}` : tooltip.name}</p>
           {tooltip.subtitle && <p className="mt-0.5 text-[10px] uppercase tracking-[0.13em] text-n-orange">{tooltip.subtitle}</p>}
         </div>
       )}
