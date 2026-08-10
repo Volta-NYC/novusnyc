@@ -220,7 +220,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       new THREE.ShaderMaterial({
         uniforms: {
           landMap: { value: landTexture },
-          surfaceColor: { value: new THREE.Color("#1C3444") },
+          surfaceColor: { value: new THREE.Color("#29495A") },
           landColor: { value: new THREE.Color("#B8A37B") },
           borderColor: { value: new THREE.Color("#F1E5CC") },
         },
