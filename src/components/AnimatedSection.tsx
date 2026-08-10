@@ -7,6 +7,7 @@ interface Props {
   children: ReactNode;
   className?: string;
   delay?: number;
+  duration?: number;
   direction?: "up" | "left" | "right" | "none";
 }
 
@@ -14,6 +15,7 @@ export default function AnimatedSection({
   children,
   className = "",
   delay = 0,
+  duration = 0.55,
   direction = "up",
 }: Props) {
   const reduced = useReducedMotion();
@@ -32,7 +34,7 @@ export default function AnimatedSection({
     <motion.div
       initial={initial}
       whileInView={{ opacity: 1, y: 0, x: 0 }}
-      transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration, delay, ease: [0.22, 1, 0.36, 1] }}
       viewport={{ once: true, margin: "-80px" }}
       className={className}
     >

@@ -473,13 +473,19 @@ function CommunityPartnersSection() {
               className="pointer-events-none absolute -inset-x-16 top-12 bottom-0 z-0 bg-[radial-gradient(ellipse_at_center,rgba(35,31,36,0.08)_0%,rgba(35,31,36,0.035)_40%,transparent_72%)] blur-2xl"
             />
             <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8 md:mb-10">
-              {flagshipPartners.map((partner) => (
-                <FlagshipPartnerCard key={partner.name} partner={partner} />
+              {flagshipPartners.map((partner, index) => (
+                <AnimatedSection key={partner.name} delay={index * 0.055} duration={0.32}>
+                  <FlagshipPartnerCard partner={partner} />
+                </AnimatedSection>
               ))}
             </div>
             <div className="relative z-10 space-y-3 md:space-y-4">
-              <PartnerMarquee partners={importantPartners} important />
-              <PartnerMarquee partners={neighborhoodPartners} reverse />
+              <AnimatedSection delay={0.3} duration={0.32}>
+                <PartnerMarquee partners={importantPartners} important />
+              </AnimatedSection>
+              <AnimatedSection delay={0.37} duration={0.32}>
+                <PartnerMarquee partners={neighborhoodPartners} reverse />
+              </AnimatedSection>
             </div>
           </div>
         </div>
