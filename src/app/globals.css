@@ -1170,6 +1170,59 @@ body:has(.home-scroll-story) footer::before {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .home-project-card {
+    transform-style: preserve-3d;
+    perspective: 1200px;
+    will-change: transform;
+    transition: transform 240ms ease, box-shadow 240ms ease;
+  }
+
+  .home-project-card:hover {
+    transform: rotateX(3deg) rotateY(-4deg) translateY(-7px);
+    box-shadow: 0 20px 46px rgba(35, 31, 36, 0.16);
+  }
+
+  .home-project-card-accent,
+  .home-project-card-media,
+  .home-project-card-content,
+  .home-project-card-tags,
+  .home-project-card-title {
+    transition: transform 240ms ease;
+  }
+
+  .home-project-card:hover .home-project-card-accent {
+    transform: translateZ(8px);
+  }
+
+  .home-project-card:hover .home-project-card-media {
+    transform: translateZ(24px);
+  }
+
+  .home-project-card:hover .home-project-card-content {
+    transform: translateZ(18px);
+  }
+
+  .home-project-card:hover .home-project-card-tags {
+    transform: translateZ(36px);
+  }
+
+  .home-project-card:hover .home-project-card-title {
+    transform: translateZ(42px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-project-card,
+  .home-project-card-accent,
+  .home-project-card-media,
+  .home-project-card-content,
+  .home-project-card-tags,
+  .home-project-card-title {
+    transition: none;
+  }
+}
+
 /* Marquee */
 .marquee-track {
   display: flex;
