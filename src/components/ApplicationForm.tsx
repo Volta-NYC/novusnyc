@@ -29,6 +29,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [schoolOptions, setSchoolOptions] = useState<string[]>([]);
   const [loadingSchools, setLoadingSchools] = useState(true);
+  const [resumeName, setResumeName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [openSubtrack, setOpenSubtrack] = useState<string | null>(null);
 
@@ -429,12 +430,19 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
         {form.hasResume === true && (
           <div className="mt-5">
             <label className="block font-body text-sm font-semibold text-n-ink mb-2">Attach Resume *</label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".pdf,.doc,.docx"
-              className="block w-full text-sm text-n-muted file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:font-body file:font-semibold file:text-sm file:bg-n-orange file:text-n-ink hover:file:bg-n-orange-dark cursor-pointer"
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center rounded-full bg-n-orange px-5 py-2.5 font-body text-sm font-semibold text-n-ink transition-colors hover:bg-n-orange-dark focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-n-ink">
+                Choose file
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="sr-only"
+                  onChange={(event) => setResumeName(event.target.files?.[0]?.name ?? "")}
+                />
+              </label>
+              <span className="font-body text-sm text-n-muted">{resumeName || "No file chosen"}</span>
+            </div>
             <p className="text-xs text-n-muted/60 mt-1.5">PDF, DOC, or DOCX. Max {RESUME_MAX_MB}MB.</p>
             {uploadProgress && (
               <p className="text-xs text-n-muted mt-2">{uploadProgress}</p>

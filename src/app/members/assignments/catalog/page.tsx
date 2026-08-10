@@ -39,7 +39,7 @@ function decodeProjectRef(ref: string): { businessId?: string; projectGroupId?: 
 
 const STATUS_STYLES: Record<AssignmentStatus, string> = {
   Open: "border-[#F6B78D]/30 bg-[#F6B78D]/10 text-[#F3E28D]",
-  Active: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  Active: "border-[#BEA2BA]/30 bg-[#BEA2BA]/10 text-[#D9C7D6]",
   "Under Review": "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   Completed: "border-violet-400/30 bg-violet-400/10 text-violet-300",
   Archived: "border-white/10 bg-white/5 text-white/35",
@@ -643,7 +643,7 @@ export default function CatalogPage() {
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
                                   title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                                  className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
+                                  className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-[#BEA2BA]/[0.06] border-[#BEA2BA]/25 text-[#D9C7D6]/65 hover:text-[#D9C7D6] hover:bg-[#BEA2BA]/[0.1] hover:border-[#BEA2BA]/40 text-[10px] font-medium transition-colors whitespace-nowrap"
                                 >
                                   <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -768,7 +768,7 @@ export default function CatalogPage() {
                     <button
                       onClick={() => setClaimsModal(a)}
                       title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                      className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
+                      className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-[#BEA2BA]/[0.06] border-[#BEA2BA]/25 text-[#D9C7D6]/65 hover:text-[#D9C7D6] hover:bg-[#BEA2BA]/[0.1] hover:border-[#BEA2BA]/40 text-[10px] font-medium transition-colors whitespace-nowrap"
                     >
                       <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -1005,8 +1005,8 @@ export default function CatalogPage() {
           (a, b) => (b.claimedAt ?? "").localeCompare(a.claimedAt ?? ""),
         );
         const STATUS_CHIP: Record<string, string> = {
-          claimed:       "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
-          "In Progress": "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+          claimed:       "border-[#BEA2BA]/30 bg-[#BEA2BA]/10 text-[#D9C7D6]",
+          "In Progress": "border-[#BEA2BA]/30 bg-[#BEA2BA]/10 text-[#D9C7D6]",
           Submitted:     "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
           Approved:      "border-violet-400/30 bg-violet-400/10 text-violet-300",
           rejected:      "border-red-400/30 bg-red-400/10 text-red-300",

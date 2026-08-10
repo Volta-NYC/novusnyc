@@ -37,7 +37,7 @@ function normalizeBizStatus(raw: unknown): ProjectStatusValue {
 
 const ASSIGNMENT_STATUS_STYLES: Record<AssignmentStatus, string> = {
   Open: "border-[#F6B78D]/30 bg-[#F6B78D]/10 text-[#F3E28D]",
-  Active: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  Active: "border-[#BEA2BA]/30 bg-[#BEA2BA]/10 text-[#D9C7D6]",
   "Under Review": "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   Completed: "border-violet-400/30 bg-violet-400/10 text-violet-300",
   Archived: "border-white/10 bg-white/5 text-white/35",
@@ -51,15 +51,15 @@ const BIZ_STATUS_LABEL: Record<ProjectStatusValue, { text: string; cls: string }
 
 const GROUP_COLOR_BORDER: Record<ProjectGroup["color"], string> = {
   green:  "border-l-[#F6B78D]/60",
-  blue:   "border-l-blue-500/60",
-  amber:  "border-l-amber-500/60",
-  purple: "border-l-purple-500/60",
+  blue:   "border-l-[#BEA2BA]/60",
+  amber:  "border-l-[#F3E28D]/60",
+  purple: "border-l-[#BEA2BA]/60",
   gray:   "border-l-white/20",
 };
 
 const BIZ_STATUS_BORDER: Record<ProjectStatusValue, string> = {
   Ongoing:   "border-l-[#F6B78D]/40",
-  Upcoming:  "border-l-blue-500/40",
+  Upcoming:  "border-l-[#BEA2BA]/40",
   Completed: "border-l-white/15",
 };
 
@@ -67,6 +67,13 @@ const MEMBER_TRACKS: CycleTrack[] = ["Tech", "Marketing", "Finance", "General"];
 const ROLES: CycleRole[] = ["Analyst", "Senior Analyst", "Associate"];
 const STATUS_OPTIONS: AssignmentStatus[] = ["Open", "Active", "Under Review", "Completed", "Archived"];
 const GROUP_COLORS: ProjectGroup["color"][] = ["green", "blue", "amber", "purple", "gray"];
+const GROUP_COLOR_LABELS: Record<ProjectGroup["color"], string> = {
+  green: "Peach",
+  blue: "Lavender",
+  amber: "Yellow",
+  purple: "Lilac",
+  gray: "Neutral",
+};
 const GROUP_STATUSES: ProjectGroup["status"][] = ["Ongoing", "Upcoming", "Completed"];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -745,7 +752,7 @@ export default function ByProjectPage() {
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setClaimsModal(a); }}
                                       title={`${claimList.length} claim${claimList.length !== 1 ? "s" : ""}`}
-                                      className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-cyan-400/[0.06] border-cyan-400/25 text-cyan-300/65 hover:text-cyan-300 hover:bg-cyan-400/[0.1] hover:border-cyan-400/40 text-[10px] font-medium transition-colors whitespace-nowrap"
+                                      className="h-7 inline-flex items-center gap-1 px-2 rounded-md border bg-[#BEA2BA]/[0.06] border-[#BEA2BA]/25 text-[#D9C7D6]/65 hover:text-[#D9C7D6] hover:bg-[#BEA2BA]/[0.1] hover:border-[#BEA2BA]/40 text-[10px] font-medium transition-colors whitespace-nowrap"
                                     >
                                       <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -1150,7 +1157,7 @@ export default function ByProjectPage() {
                   onChange={(e) => setGroupForm((p) => ({ ...p, color: e.target.value as ProjectGroup["color"] }))}
                 >
                   {GROUP_COLORS.map((c) => (
-                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                    <option key={c} value={c}>{GROUP_COLOR_LABELS[c]}</option>
                   ))}
                 </Select>
               </Field>
@@ -1179,7 +1186,7 @@ export default function ByProjectPage() {
       {claimsModal && (() => {
         const claimList = claimsByAssignment.get(claimsModal.id) ?? [];
         const GROUPS: { label: string; statuses: string[]; color: string }[] = [
-          { label: "Active",    statuses: ["claimed", "In Progress"], color: "text-cyan-300" },
+          { label: "Active",    statuses: ["claimed", "In Progress"], color: "text-[#D9C7D6]" },
           { label: "Submitted", statuses: ["Submitted"],              color: "text-yellow-300" },
           { label: "Approved",  statuses: ["Approved"],               color: "text-violet-300" },
           { label: "Rejected",  statuses: ["rejected"],               color: "text-red-300" },

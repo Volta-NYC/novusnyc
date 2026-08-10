@@ -42,8 +42,8 @@ const DEFAULT_SORT_RULES: SortRule[] = [
 ];
 
 const LOG_STATUS_STYLES: Record<string, string> = {
-  claimed:        "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
-  "In Progress":  "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  claimed:        "border-[#BEA2BA]/30 bg-[#BEA2BA]/10 text-[#D9C7D6]",
+  "In Progress":  "border-[#BEA2BA]/30 bg-[#BEA2BA]/10 text-[#D9C7D6]",
   Submitted:      "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   "Under Review": "border-orange-400/30 bg-orange-400/10 text-orange-300",
   Approved:       "border-violet-400/30 bg-violet-400/10 text-violet-300",

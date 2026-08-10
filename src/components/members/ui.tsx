@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, ReactNode, useCallback, useEffect, useId, useMemo, useRef } from "react";
+import Combobox from "@/components/Combobox";
 
 // ── BADGE ─────────────────────────────────────────────────────────────────────
 // Maps status/priority/role strings to their Tailwind color classes.
@@ -335,8 +336,6 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
 }
 
 // ── TYPEAHEAD INPUTS ─────────────────────────────────────────────────────────
-// Browser-native datalist typeahead used for member-directory-backed fields.
-
 export function AutocompleteInput({
   value,
   onChange,
@@ -352,35 +351,7 @@ export function AutocompleteInput({
   className?: string;
   showOnEmpty?: boolean;
 }) {
-  const listId = `ac-${useId().replace(/[:]/g, "")}`;
-  const normalizedOptions = Array.from(
-    new Set(
-      (options ?? [])
-        .map((option) => option.trim())
-        .filter(Boolean)
-    )
-  ).sort((a, b) => a.localeCompare(b));
-  const query = value.trim().toLowerCase();
-  const filteredOptions = query || showOnEmpty
-    ? normalizedOptions.filter((option) => option.toLowerCase().includes(query))
-    : [];
-
-  return (
-    <div className="w-full">
-      <input
-        list={listId}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
-      />
-      <datalist id={listId}>
-        {filteredOptions.map((option) => (
-          <option key={option} value={option} />
-        ))}
-      </datalist>
-    </div>
-  );
+  return <Combobox value={value} onChange={onChange} options={options} placeholder={placeholder} theme="dark" className={className} showOnEmpty={showOnEmpty} />;
 }
 
 export function AutocompleteTagInput({
@@ -397,6 +368,9 @@ export function AutocompleteTagInput({
   placeholder?: string;
 }) {
   const [inputText, setInputText] = useState("");
+  const [open, setOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const rootRef = useRef<HTMLDivElement>(null);
   const listId = `tag-ac-${useId().replace(/[:]/g, "")}`;
   const safeValues = values ?? [];
 
@@ -415,9 +389,30 @@ export function AutocompleteTagInput({
   };
 
   const removeTag = (tag: string) => onChange(safeValues.filter((value) => value !== tag));
+  const filteredOptions = normalizedOptions.filter((option) => {
+    const query = inputText.trim().toLowerCase();
+    return !safeValues.includes(option) && (!query || option.toLowerCase().includes(query));
+  });
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        setFocusedIndex(-1);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  const addOption = (option: string) => {
+    addTag(option);
+    setOpen(false);
+    setFocusedIndex(-1);
+  };
 
   return (
-    <div>
+    <div ref={rootRef} className="relative">
       <div className="flex flex-wrap gap-1.5 mb-2">
         {safeValues.map((tag) => (
           <span key={tag} className="flex items-center gap-1 text-xs bg-[#F6B78D]/15 text-[#F6B78D] border border-[#F6B78D]/20 px-2 py-0.5 rounded-full">
@@ -428,13 +423,35 @@ export function AutocompleteTagInput({
       </div>
 
       <input
-        list={listId}
+        role="combobox"
+        aria-expanded={open && filteredOptions.length > 0}
+        aria-controls={listId}
+        aria-activedescendant={focusedIndex >= 0 ? `${listId}-${focusedIndex}` : undefined}
+        aria-autocomplete="list"
         value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
+        onChange={(e) => { setInputText(e.target.value); setOpen(true); setFocusedIndex(-1); }}
+        onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setOpen(false);
+            setFocusedIndex(-1);
+            return;
+          }
+          if (e.key === "ArrowDown" && filteredOptions.length > 0) {
+            e.preventDefault();
+            setOpen(true);
+            setFocusedIndex((index) => Math.min(index + 1, filteredOptions.length - 1));
+            return;
+          }
+          if (e.key === "ArrowUp" && filteredOptions.length > 0) {
+            e.preventDefault();
+            setFocusedIndex((index) => Math.max(index - 1, 0));
+            return;
+          }
           if (e.key === "Enter" || e.key === "," || e.key === "Tab") {
             e.preventDefault();
-            addTag(inputText);
+            if (e.key === "Enter" && focusedIndex >= 0) addOption(filteredOptions[focusedIndex]);
+            else addTag(inputText);
           }
         }}
         onBlur={() => {
@@ -444,13 +461,23 @@ export function AutocompleteTagInput({
         className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50"
       />
 
-      <datalist id={listId}>
-        {normalizedOptions
-          .filter((option) => !safeValues.includes(option))
-          .map((option) => (
-            <option key={option} value={option} />
+      {open && filteredOptions.length > 0 && (
+        <ul id={listId} role="listbox" className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-[#13161D] py-1 shadow-xl">
+          {filteredOptions.map((option, index) => (
+            <li
+              key={option}
+              id={`${listId}-${index}`}
+              role="option"
+              aria-selected={focusedIndex === index}
+              onMouseEnter={() => setFocusedIndex(index)}
+              onMouseDown={(event) => { event.preventDefault(); addOption(option); }}
+              className={`cursor-pointer px-3 py-2 text-sm text-white/80 transition-colors ${focusedIndex === index ? "bg-white/10" : "hover:bg-white/5"}`}
+            >
+              {option}
+            </li>
           ))}
-      </datalist>
+        </ul>
+      )}
     </div>
   );
 }

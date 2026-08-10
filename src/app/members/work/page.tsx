@@ -287,7 +287,7 @@ export default function MyWorkPage() {
               )}
               {myInProgress.length > 0 && (
                 <div className={myRejected.length > 0 ? "border-b border-black/6" : ""}>
-                  <SectionHeader color="bg-cyan-400" label="In Progress" count={myInProgress.length} />
+                  <SectionHeader color="bg-[#BEA2BA]" label="In Progress" count={myInProgress.length} />
                   <div className="divide-y divide-black/6">{myInProgress.map(claimCard)}</div>
                 </div>
               )}

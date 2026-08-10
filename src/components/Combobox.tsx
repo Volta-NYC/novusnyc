@@ -9,6 +9,8 @@ interface ComboboxProps {
   placeholder?: string;
   isDisabled?: boolean;
   theme?: "light" | "dark";
+  className?: string;
+  showOnEmpty?: boolean;
 }
 
 /**
@@ -26,6 +28,8 @@ export default function Combobox({
   placeholder = "Start typing",
   isDisabled = false,
   theme = "dark",
+  className = "",
+  showOnEmpty = false,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -35,14 +39,14 @@ export default function Combobox({
 
   const matches = useMemo(() => {
     const query = value.trim().toLowerCase();
-    if (!query) return [];
+    if (!query && !showOnEmpty) return [];
     return Array.from(new Set(options.map((o) => o.trim()).filter(Boolean)))
-      .filter((o) => o.toLowerCase().includes(query))
+      .filter((o) => !query || o.toLowerCase().includes(query))
       // An exact match means they have already arrived; no need to offer it back.
       .filter((o) => o.toLowerCase() !== query)
       .sort((a, b) => a.localeCompare(b))
       .slice(0, 50);
-  }, [value, options]);
+  }, [value, options, showOnEmpty]);
 
   useEffect(() => {
     if (!open) return;
@@ -108,7 +112,7 @@ export default function Combobox({
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         disabled={isDisabled}
-        className={inputClass}
+        className={`${inputClass} ${className}`}
       />
 
       {open && matches.length > 0 && (

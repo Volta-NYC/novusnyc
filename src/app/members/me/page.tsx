@@ -391,7 +391,7 @@ export default function MyRecordPage() {
                 {myActiveInProgress.length > 0 && (
                   <div>
                     <div className="px-5 pt-4 pb-2 flex items-center gap-2">
-                      <span className="inline-block h-2 w-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#BEA2BA] flex-shrink-0" />
                       <p className="text-[10px] uppercase tracking-wider text-black/45 font-semibold">
                         In Progress · {myActiveInProgress.length}
                       </p>
