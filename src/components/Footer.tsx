@@ -19,84 +19,82 @@ const footerLinks = [
 export default function Footer() {
   return (
     <footer className="site-footer relative overflow-hidden bg-n-dark py-14 text-white/70 md:py-16">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(190,162,186,0.16),transparent_34%),radial-gradient(circle_at_91%_88%,rgba(246,183,141,0.13),transparent_32%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(190,162,186,0.14),transparent_36%),radial-gradient(circle_at_90%_100%,rgba(246,183,141,0.12),transparent_34%)]" />
       <div className="relative mx-auto max-w-7xl px-5 md:px-8">
-        <div className="grid gap-12 border-b border-white/10 pb-12 lg:grid-cols-[0.9fr_1.5fr] lg:gap-20">
-          <div className="flex max-w-sm flex-col items-start">
-            <Link href="/" className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-14 w-auto object-contain" />
-              <Wordmark className="text-3xl text-n-orange" />
+        <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="max-w-md">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain sm:h-[4.5rem]" />
+              <Wordmark className="text-4xl text-n-orange sm:text-5xl" />
             </Link>
             <p className="mt-5 font-body text-sm leading-relaxed text-white/55">
               A New York nonprofit connecting student teams with NYC small businesses.
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
+          </div>
+
+          <div className="max-w-sm lg:pb-1 lg:text-right">
+            <p className="font-display text-[11px] font-bold uppercase tracking-[0.18em] text-n-orange">Build with Novus</p>
+            <p className="mt-2 font-display text-xl font-semibold leading-snug text-white sm:text-2xl">
+              Student talent for your next big step.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3 lg:justify-end">
               <Link
                 href="/partners"
                 className="inline-flex items-center gap-2 rounded-full bg-n-orange px-4 py-2.5 font-body text-sm font-semibold text-n-ink transition-transform hover:-translate-y-0.5"
               >
-                Work with us
+                Start a project
                 <ArrowUpRightIcon className="h-4 w-4" />
               </Link>
               <Link
                 href="/join"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 font-body text-sm font-medium text-white/80 transition-colors hover:border-white/35 hover:text-white"
+                className="inline-flex items-center rounded-full border border-white/15 px-4 py-2.5 font-body text-sm font-medium text-white/80 transition-colors hover:border-white/35 hover:text-white"
               >
-                Join Novus
+                Join the team
               </Link>
-            </div>
-          </div>
-
-          <div className="grid gap-10 sm:grid-cols-[1.2fr_0.9fr] sm:gap-12">
-            <div>
-              <p className="font-display text-xs font-bold uppercase tracking-[0.18em] text-white/45">Explore Novus</p>
-              <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3">
-                {footerLinks.map((link) => (
-                  <Link key={link.href} href={link.href} className="font-body text-sm text-white/65 transition-colors hover:text-n-orange">
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="font-display text-xs font-bold uppercase tracking-[0.18em] text-white/45">Stay Connected</p>
-              <div className="mt-5 flex flex-col gap-3">
-                <a
-                  href={`mailto:${EMAIL.info}`}
-                  className="inline-flex items-center gap-2 font-body text-sm transition-colors hover:text-white"
-                >
-                  <MailIcon className="h-4 w-4 text-white/50" />
-                  <span className="text-n-orange">{EMAIL.info}</span>
-                </a>
-                <a
-                  href={SOCIAL.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 font-body text-sm transition-colors hover:text-white"
-                >
-                  <LinkedInIcon className="h-4 w-4 text-white/50" />
-                  <span className="text-n-purple">LinkedIn</span>
-                </a>
-                <a
-                  href={SOCIAL.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 font-body text-sm transition-colors hover:text-white"
-                >
-                  <InstagramIcon className="h-4 w-4 text-white/50" />
-                  <span className="text-n-yellow">Instagram</span>
-                </a>
-              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <nav aria-label="Footer" className="mt-12 border-y border-white/10 py-5">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            {footerLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="font-body text-sm text-white/60 transition-colors hover:text-n-orange">
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+
+        <div className="flex flex-col gap-5 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-body text-xs text-white/35">© 2026 Novus Inc.</p>
-          <div className="flex items-center gap-5 font-body text-xs text-white/35">
-            <Link href="/privacy" className="transition-colors hover:text-white">Privacy Policy</Link>
-            <Link href="/" className="transition-colors hover:text-white">novusnyc.org</Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={`mailto:${EMAIL.info}`}
+              className="inline-flex items-center gap-2 font-body text-xs text-white/45 transition-colors hover:text-white"
+            >
+              <MailIcon className="h-4 w-4" />
+              {EMAIL.info}
+            </a>
+            <a
+              href={SOCIAL.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Novus NYC on LinkedIn"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/45 transition-colors hover:border-white/30 hover:text-n-purple"
+            >
+              <LinkedInIcon className="h-4 w-4" />
+            </a>
+            <a
+              href={SOCIAL.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Novus NYC on Instagram"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/45 transition-colors hover:border-white/30 hover:text-n-yellow"
+            >
+              <InstagramIcon className="h-4 w-4" />
+            </a>
+            <span className="hidden h-4 w-px bg-white/10 sm:block" />
+            <Link href="/privacy" className="font-body text-xs text-white/35 transition-colors hover:text-white">Privacy Policy</Link>
           </div>
         </div>
       </div>
