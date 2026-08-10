@@ -95,7 +95,7 @@ function formatDateTime(value: string): string {
 
 // ── Column definitions ─────────────────────────────────────────────────────────
 
-type ColumnKey = "status" | "actions" | "name" | "email" | "school" | "grade" | "cityState" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals";
+type ColumnKey = "status" | "actions" | "name" | "email" | "school" | "grade" | "cityState" | "chapter" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "name", label: "Name" },
@@ -105,6 +105,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "school", label: "School Name" },
   { key: "grade", label: "HS Class" },
   { key: "cityState", label: "City, State" },
+  { key: "chapter", label: "Chapter" },
   { key: "referral", label: "How They Heard" },
   { key: "tracks", label: "Tracks" },
   { key: "resume", label: "Resume URL" },
@@ -124,6 +125,7 @@ const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
   school: "w-[230px]",
   grade: "w-[92px]",
   cityState: "w-[160px]",
+  chapter: "w-[110px]",
   referral: "w-[150px]",
   tracks: "w-[220px]",
   resume: "w-[90px]",
@@ -141,6 +143,7 @@ const COLUMN_WIDTH_PX: Record<ColumnKey, number> = {
   school: 230,
   grade: 92,
   cityState: 160,
+  chapter: 110,
   referral: 150,
   tracks: 220,
   resume: 90,
@@ -820,6 +823,12 @@ export default function ApplicantsPage() {
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/50 whitespace-nowrap">
                             <span className="block truncate" title={app.cityState || ""}>{app.cityState || "—"}</span>
+                          </td>
+                        );
+                      case "chapter":
+                        return (
+                          <td key={col.key} className="px-2 py-1.5 text-white/50 whitespace-nowrap">
+                            <span className="block truncate" title={app.chapter || ""}>{app.chapter || "—"}</span>
                           </td>
                         );
                       case "referral": {

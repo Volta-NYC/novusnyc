@@ -142,11 +142,17 @@ const CITIES: Record<string, string[]> = {
   WY: ["Cheyenne"],
 };
 
-/** Cities for a state, alphabetical, always ending in the escape hatch. */
+/**
+ * Cities for a state, alphabetical, always ending in the escape hatch.
+ *
+ * Sorted here rather than trusting the literal above: hand-maintaining
+ * alphabetical order across fifty arrays is a guarantee that one of them
+ * eventually is not.
+ */
 export function citiesForState(abbr: string): string[] {
   const list = CITIES[abbr];
   if (!list) return [OTHER_CITY];
-  return [...list, OTHER_CITY];
+  return [...list].sort((a, b) => a.localeCompare(b, "en")).concat(OTHER_CITY);
 }
 
 export const STATE_ABBRS: ReadonlyArray<string> = US_STATES.map((s) => s.abbr);
