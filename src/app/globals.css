@@ -622,7 +622,7 @@ body:has(.home-scroll-story) footer::before {
   min-height: clamp(38rem, 72vh, 52rem);
   color: #fffdf9;
   background-color: #231f24;
-  background-image: url("/trackbackground.jpg");
+  background-image: url("/trackbackground.webp");
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;

@@ -535,7 +535,7 @@ export default function Home() {
         eyebrow="FROM PROJECT TO PRACTICE"
         title="Not one path. Three ways to make an impact."
         detail="Choose digital, marketing, or finance and operations—then bring what you do best to neighborhood businesses."
-        imageSrc="/student-collaboration-wide.jpg"
+        imageSrc="/student-collaboration-wide.webp"
       />
 
       {/* ── THREE TRACKS ─────────────────────────────────────── */}
