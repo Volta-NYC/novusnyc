@@ -310,6 +310,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     let isDragging = false;
     let dragDistance = 0;
     let pinchDistance = 0;
+    let pinchAngle = 0;
     let animationFrame = 0;
     const clock = new THREE.Clock();
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -372,8 +373,17 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       if (activePointers.size === 2) {
         const [first, second] = [...activePointers.values()];
         const nextPinchDistance = first.distanceTo(second);
+        const nextPinchAngle = Math.atan2(second.y - first.y, second.x - first.x);
         if (pinchDistance > 0) updateCameraDistance(cameraDistance - (nextPinchDistance - pinchDistance) * 0.012);
+        if (pinchAngle) {
+          const angleDelta = Math.atan2(
+            Math.sin(nextPinchAngle - pinchAngle),
+            Math.cos(nextPinchAngle - pinchAngle),
+          );
+          globe.rotateOnWorldAxis(worldUp, angleDelta * 0.9);
+        }
         pinchDistance = nextPinchDistance;
+        pinchAngle = nextPinchAngle;
         return;
       }
 
@@ -396,6 +406,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       if (activePointers.size === 2) {
         const [first, second] = [...activePointers.values()];
         pinchDistance = first.distanceTo(second);
+        pinchAngle = Math.atan2(second.y - first.y, second.x - first.x);
         isDragging = false;
         renderer.domElement.setPointerCapture(event.pointerId);
         renderer.domElement.style.cursor = "zoom-in";
@@ -419,6 +430,12 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       }
       pinchDistance = activePointers.size === 2
         ? [...activePointers.values()][0].distanceTo([...activePointers.values()][1])
+        : 0;
+      pinchAngle = activePointers.size === 2
+        ? Math.atan2(
+          [...activePointers.values()][1].y - [...activePointers.values()][0].y,
+          [...activePointers.values()][1].x - [...activePointers.values()][0].x,
+        )
         : 0;
       if (activePointers.size === 1) {
         const remainingPointer = [...activePointers.values()][0];
