@@ -7,7 +7,7 @@ import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, useConfirm,
   ViewPanel, ViewSection, SortPanel, type SortRule,
 } from "@/components/members/ui";
-import SchoolSelector from "@/components/SchoolSelector";
+import Combobox from "@/components/Combobox";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
   subscribeBusinesses, subscribeCycles, subscribeAssignments, subscribeAssignmentClaims,
@@ -1581,7 +1581,7 @@ export default function TeamPage() {
             </Field>
           )}
           <Field label="School">
-            <SchoolSelector
+            <Combobox
               value={form.school}
               onChange={(value) => setField("school", value)}
               options={loadingSchools ? [] : schoolOptions}

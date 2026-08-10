@@ -13,7 +13,7 @@ import {
   classifyMember, computeCreditLedger, computeDot, computeStrikeCount,
   computeStrikePoints, lookupCreditTarget, pickPrimaryTrack,
 } from "@/lib/members/cycleCompute";
-import { Btn, Field, Input } from "@/components/members/ui";
+import { Btn, Field, Input, useConfirm } from "@/components/members/ui";
 
 const DOT_HEX: Record<string, string> = {
   green: "#16A34A",
@@ -104,17 +104,24 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
       .sort((a, b) => (b.claim.claimedAt ?? "").localeCompare(a.claim.claimedAt ?? ""));
   }, [memberClaims, assignments]);
 
+  // Called before the early return below: hooks cannot sit behind a condition.
+  const { ask: askConfirm, Dialog: ConfirmDialog } = useConfirm();
+
   if (!member) return null;
 
-  const handleRevokeStrike = async (id: string) => {
-    if (!confirm("Revoke this strike? It is removed from the member's record.")) return;
-    await deleteMemberStrike(id);
+  const handleRevokeStrike = (id: string) => {
+    askConfirm(
+      async () => { await deleteMemberStrike(id); },
+      "Revoke this strike? It is removed from the member's record.",
+    );
   };
 
-  const handleClearStrikes = async () => {
+  const handleClearStrikes = () => {
     if (memberStrikes.length === 0) return;
-    if (!confirm(`Clear all ${memberStrikes.length} strikes for this cycle?`)) return;
-    await clearMemberStrikes(memberStrikes.map((s) => s.id));
+    askConfirm(
+      async () => { await clearMemberStrikes(memberStrikes.map((s) => s.id)); },
+      `Clear all ${memberStrikes.length} strikes for this cycle?`,
+    );
   };
 
   const handleIssueStrike = async () => {
@@ -335,6 +342,7 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
           </section>
         </div>
       </aside>
+      <ConfirmDialog />
     </>
   );
 }

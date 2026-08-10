@@ -5,7 +5,7 @@ import { CheckIcon } from "@/components/Icons";
 import { validateApplicationForm, REFERRAL_NEEDS_NAME, type ApplicationFormValues } from "@/lib/schemas";
 import { TRACK_NAMES, MARKETING_TRACK, MARKETING_SUBTRACKS } from "@/data";
 import { CLASS_GRADE_OPTIONS } from "@/lib/grades";
-import SchoolSelector from "@/components/SchoolSelector";
+import Combobox from "@/components/Combobox";
 import SelectMenu from "@/components/SelectMenu";
 import { STATE_ABBRS, citiesForState } from "@/lib/usPlaces";
 import { EMAIL } from "@/lib/mail";
@@ -193,7 +193,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
         <p className="text-xs text-n-muted/80 mt-1 mb-2 font-body">
           Don&apos;t see your school? Just type it in.
         </p>
-        <SchoolSelector
+        <Combobox
           value={form.schoolName}
           onChange={(value) => { set("schoolName", value); clearError("schoolName"); }}
           options={loadingSchools ? [] : schoolOptions}

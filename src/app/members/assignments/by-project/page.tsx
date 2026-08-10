@@ -545,7 +545,7 @@ export default function ByProjectPage() {
     if (!editingGroup) return;
     const assignmentCount = assignments.filter((a) => a.projectGroupId === editingGroup.id).length;
     if (assignmentCount > 0) {
-      alert(`Cannot delete — this group has ${assignmentCount} assignment${assignmentCount !== 1 ? "s" : ""} attached. Reassign or delete them first.`);
+      setGroupError(`Cannot delete: this group has ${assignmentCount} assignment${assignmentCount !== 1 ? "s" : ""} attached. Reassign or delete them first.`);
       return;
     }
     await ask(async () => {

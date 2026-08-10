@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckIcon } from "@/components/Icons";
+import Combobox from "@/components/Combobox";
 import { validateContactForm, type ContactFormValues } from "@/lib/schemas";
 import { EMAIL } from "@/lib/mail";
 import { trackEvent, GA_EVENTS } from "@/lib/analytics";
@@ -213,17 +214,13 @@ export default function ContactForm() {
           </div>
           <div>
             <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.neighborhood}</label>
-            <input
-              list="neighborhood-options"
+            <Combobox
+              theme="light"
               value={formData.neighborhood}
-              onChange={(e) => setFormData((p) => ({ ...p, neighborhood: e.target.value }))}
-              className="novus-input"
+              onChange={(next) => setFormData((p) => ({ ...p, neighborhood: next }))}
+              options={neighborhoodOptions}
+              placeholder="Start typing"
             />
-            {neighborhoodOptions.length > 0 && (
-              <datalist id="neighborhood-options">
-                {neighborhoodOptions.map((n) => <option key={n} value={n} />)}
-              </datalist>
-            )}
           </div>
         </div>
         <div>
@@ -243,20 +240,13 @@ export default function ContactForm() {
         </div>
         <div>
           <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.referredBy}</label>
-          <input
-            list="org-partner-options"
+          <Combobox
+            theme="light"
             value={formData.referredBy}
-            onChange={(e) => setFormData((p) => ({ ...p, referredBy: e.target.value }))}
-            className="novus-input"
+            onChange={(next) => setFormData((p) => ({ ...p, referredBy: next }))}
+            options={[...partnerOptions, "Social media", "Online search / Google", "Flyer or printed material", "Other"]}
             placeholder={c.referredByPlaceholder}
           />
-          <datalist id="org-partner-options">
-            {partnerOptions.map((o) => <option key={o} value={o} />)}
-            <option value="Social media" />
-            <option value="Online search / Google" />
-            <option value="Flyer or printed material" />
-            <option value="Other" />
-          </datalist>
         </div>
         <div>
           <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.message}</label>
