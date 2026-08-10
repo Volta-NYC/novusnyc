@@ -166,7 +166,7 @@ export default async function Impact() {
       </section>
 
       {/* Key Stats */}
-      <section id="impact-stats" className="py-20 bg-n-bg">
+      <section id="impact-stats" className="public-surface public-surface-sand py-20 bg-n-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">By the numbers</p>
@@ -189,7 +189,7 @@ export default async function Impact() {
       </section>
 
       {/* Impact Areas */}
-      <section id="impact-areas" className="py-20 bg-white">
+      <section id="impact-areas" className="public-surface public-surface-grid py-20 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">Three tracks of impact</p>
@@ -221,7 +221,7 @@ export default async function Impact() {
       </section>
 
       {/* Testimonials */}
-      <section id="impact-voices" className="py-20 bg-n-bg">
+      <section id="impact-voices" className="public-surface public-surface-lavender py-20 bg-n-bg">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-12">
             <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-3">From our partners</p>
@@ -293,7 +293,7 @@ export default async function Impact() {
       </section>
 
       {/* Recognition */}
-      <section id="impact-recognition" className="py-20 bg-n-bg">
+      <section id="impact-recognition" className="public-surface public-surface-peach py-20 bg-n-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-3">Recognition</p>

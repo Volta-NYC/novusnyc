@@ -273,7 +273,7 @@ export default async function Partners() {
       </ParallaxHero>
 
       {/* ── CONTACT FORM ─────────────────────────────────────── */}
-      <section className="py-16 bg-n-bg" id="contact">
+      <section className="public-surface public-surface-lavender py-16 bg-n-bg" id="contact">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="page-section-heading text-n-ink mb-4">
@@ -295,7 +295,7 @@ export default async function Partners() {
       <BusinessProcessTimeline />
 
       {/* ── SERVICES 2×3 GRID ──────────────────────────────── */}
-      <section id="services" className="py-16 bg-white">
+      <section id="services" className="public-surface public-surface-grid py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="page-section-heading text-n-ink">

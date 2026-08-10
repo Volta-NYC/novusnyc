@@ -69,7 +69,7 @@ export default async function About() {
       </ParallaxHero>
 
       {/* ── IMPACT NUMBERS ───────────────────────────────────── */}
-      <section id="impact" className="py-14 bg-white">
+      <section id="impact" className="public-surface public-surface-grid py-14 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="page-section-heading text-n-ink mb-10">Our impact</h2>
@@ -95,7 +95,7 @@ export default async function About() {
       </section>
 
       {/* ── MISSION ─────────────────────────────────────────── */}
-      <section id="mission" className="py-16 bg-n-bg">
+      <section id="mission" className="public-surface public-surface-lavender py-16 bg-n-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
@@ -180,7 +180,7 @@ export default async function About() {
       </section>
 
       {/* ── TEAM ────────────────────────────────────────────── */}
-      <section id="leadership" className="py-16 bg-white">
+      <section id="leadership" className="public-surface public-surface-peach py-16 bg-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -211,7 +211,7 @@ export default async function About() {
       </section>
 
       {/* ── HOW WE OPERATE ─────────────────────────────────── */}
-      <section id="values" className="py-16 bg-n-bg">
+      <section id="values" className="public-surface public-surface-sand py-16 bg-n-bg">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="page-section-heading text-n-ink">How we operate</h2>

@@ -19,7 +19,7 @@ const sanitizedPrivacyHtml = PRIVACY_POLICY_HTML
 
 export default function PrivacyPage() {
   return (
-    <main className="bg-n-bg pt-32 pb-20">
+    <main className="public-surface public-surface-lavender bg-n-bg pt-32 pb-20">
       <section className="max-w-5xl mx-auto px-5 md:px-8">
         <div className="mb-12 rounded-[2rem] border border-n-border bg-white px-6 py-8 shadow-[0_18px_50px_rgba(45,40,46,0.08)] md:px-10 md:py-10">
           <p className="font-body text-sm font-semibold uppercase tracking-widest text-n-orange">

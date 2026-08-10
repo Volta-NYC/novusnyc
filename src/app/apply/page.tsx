@@ -24,7 +24,7 @@ export default async function Apply() {
         { id: "application-details", label: "What to expect" },
         { id: "application-form", label: "Application" },
       ]} />
-      <section id="application-details" className="bg-n-bg pt-32 pb-0">
+      <section id="application-details" className="public-surface public-surface-lavender bg-n-bg pt-32 pb-0">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <div className="grid md:grid-cols-5 gap-12 items-start pb-12">
