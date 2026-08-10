@@ -340,7 +340,7 @@ export default function ShowcaseClient({
     <>
       <ShowcaseScrollProgress />
       {/* ── INTRO ─────────────────────────────────────────────── */}
-      <section id="showcase-overview" className="bg-n-dark pt-32 pb-0 relative overflow-hidden">
+      <section id="showcase-overview" className="section-flush-bottom bg-n-dark pt-32 pb-0 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
           <AnimatedSection>
             <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">
