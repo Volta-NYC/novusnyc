@@ -117,7 +117,10 @@ const CITIES: Record<string, string[]> = {
   NJ: ["Elizabeth", "Jersey City", "Newark", "Paterson", "Trenton"],
   NM: ["Albuquerque", "Las Cruces", "Rio Rancho"],
   NV: ["Enterprise", "Henderson", "Las Vegas", "North Las Vegas", "Paradise", "Reno", "Spring Valley", "Sunrise Manor"],
-  NY: ["Albany", "Brooklyn", "Buffalo", "Bronx", "Manhattan", "New Rochelle", "New York City", "Queens", "Rochester", "Staten Island", "Syracuse", "Yonkers"],
+  // The five boroughs, not "New York City": offering both would leave an
+  // applicant guessing whether the latter means Manhattan or anywhere in the
+  // city, and split the answers unpredictably.
+  NY: ["Albany", "Bronx", "Brooklyn", "Buffalo", "Manhattan", "New Rochelle", "Queens", "Rochester", "Staten Island", "Syracuse", "Yonkers"],
   OH: ["Akron", "Cincinnati", "Cleveland", "Columbus", "Dayton", "Parma", "Toledo"],
   OK: ["Broken Arrow", "Norman", "Oklahoma City", "Tulsa"],
   OR: ["Bend", "Eugene", "Gresham", "Hillsboro", "Portland", "Salem"],
@@ -143,16 +146,43 @@ const CITIES: Record<string, string[]> = {
 };
 
 /**
- * Cities for a state, alphabetical, always ending in the escape hatch.
+ * Cities lifted to the top of their state's list, in the order given.
  *
- * Sorted here rather than trusting the literal above: hand-maintaining
+ * Keyed to the states where Novus has a chapter rather than to population:
+ * that is where applicants actually cluster, and it keeps the list honest as
+ * chapters change. Alphabetical order buries Brooklyn behind Albany and Los
+ * Angeles behind Anaheim, which is the wrong trade for the common case.
+ *
+ * Add a state here when a chapter opens there, not before.
+ */
+const CITY_PRIORITY: Record<string, string[]> = {
+  NY: ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"],
+  MA: ["Boston"],
+  IL: ["Chicago"],
+  CA: ["Los Angeles", "San Francisco", "San Diego", "San Jose"],
+  MI: ["Detroit", "Ann Arbor"],
+};
+
+/**
+ * Cities for a state: prioritised metros first, then everything else
+ * alphabetically, always ending in the escape hatch.
+ *
+ * Sorted here rather than trusting the literal above, because hand-maintaining
  * alphabetical order across fifty arrays is a guarantee that one of them
  * eventually is not.
  */
 export function citiesForState(abbr: string): string[] {
   const list = CITIES[abbr];
   if (!list) return [OTHER_CITY];
-  return [...list].sort((a, b) => a.localeCompare(b, "en")).concat(OTHER_CITY);
+
+  // Only promote names that actually exist for the state, so a typo in the
+  // priority table drops the entry rather than inventing a city.
+  const promoted = (CITY_PRIORITY[abbr] ?? []).filter((c) => list.includes(c));
+  const rest = list
+    .filter((c) => !promoted.includes(c))
+    .sort((a, b) => a.localeCompare(b, "en"));
+
+  return [...promoted, ...rest, OTHER_CITY];
 }
 
 export const STATE_ABBRS: ReadonlyArray<string> = US_STATES.map((s) => s.abbr);

@@ -221,32 +221,39 @@ function ApplicationsTab() {
     });
   }, []);
 
-  const addChapter = () => {
-    const trimmed = newChapter.trim();
-    if (!trimmed || chapters.includes(trimmed)) return;
-    setChapters((prev) => [...prev, trimmed]);
-    setNewChapter("");
-  };
-
-  const saveChapters = async () => {
-    // An empty list would render a chapter dropdown with nothing in it, and the
-    // field is required, so the form would be unsubmittable.
-    const cleaned = chapters.map((c) => c.trim()).filter(Boolean);
+  /**
+   * Persist immediately rather than staging edits behind a Save button.
+   * "Add" reads as committing, so a separate save step is a reliable way to
+   * lose a change without noticing.
+   */
+  const commitChapters = async (next: string[]) => {
+    // The field is required on /apply, so an empty list would leave applicants
+    // with a dropdown they cannot satisfy.
+    const cleaned = next.map((c) => c.trim()).filter(Boolean);
     if (cleaned.length === 0) {
       setChapterStatus("Keep at least one chapter.");
       return;
     }
+    const previous = chapters;
+    setChapters(cleaned);
     setSavingChapters(true);
     setChapterStatus("");
     try {
       await updateSiteSettings({ chapters: cleaned });
-      setChapters(cleaned);
       setChapterStatus("Saved.");
     } catch {
-      setChapterStatus("Save failed. Try again.");
+      setChapters(previous);
+      setChapterStatus("Save failed. Nothing changed.");
     } finally {
       setSavingChapters(false);
     }
+  };
+
+  const addChapter = () => {
+    const trimmed = newChapter.trim();
+    if (!trimmed || chapters.includes(trimmed)) return;
+    setNewChapter("");
+    void commitChapters([...chapters, trimmed]);
   };
 
   const save = async () => {
@@ -298,13 +305,19 @@ function ApplicationsTab() {
             <div key={i} className="flex items-center gap-2">
               <Input
                 value={chapter}
+                disabled={savingChapters}
                 onChange={(e) => setChapters((prev) => prev.map((c, idx) => (idx === i ? e.target.value : c)))}
+                onBlur={(e) => {
+                  const edited = e.target.value.trim();
+                  if (edited && edited !== chapter) {
+                    void commitChapters(chapters.map((c, idx) => (idx === i ? edited : c)));
+                  }
+                }}
               />
               <Btn
                 variant="ghost"
-                onClick={() => setChapters((prev) => prev.filter((_, idx) => idx !== i))}
-                disabled={chapters.length === 1}
-                title={chapters.length === 1 ? "Keep at least one chapter" : "Remove"}
+                onClick={() => void commitChapters(chapters.filter((_, idx) => idx !== i))}
+                disabled={chapters.length === 1 || savingChapters}
               >
                 Remove
               </Btn>
@@ -313,15 +326,16 @@ function ApplicationsTab() {
           <div className="flex items-center gap-2 pt-1">
             <Input
               value={newChapter}
+              disabled={savingChapters}
               onChange={(e) => setNewChapter(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addChapter(); } }}
               placeholder="Add a chapter"
             />
-            <Btn variant="secondary" onClick={addChapter} disabled={!newChapter.trim()}>Add</Btn>
+            <Btn variant="secondary" onClick={addChapter} disabled={!newChapter.trim() || savingChapters}>
+              {savingChapters ? "Saving…" : "Add"}
+            </Btn>
           </div>
-          <div className="pt-1">
-            <SaveBtn saving={savingChapters} onClick={() => void saveChapters()} />
-          </div>
+          <p className="text-[11px] text-white/35">Changes save as you make them.</p>
         </div>
         <StatusMsg msg={chapterStatus} />
       </Card>

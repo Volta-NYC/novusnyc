@@ -2,6 +2,9 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
+/** How long typed characters keep accumulating before the buffer resets. */
+const TYPE_AHEAD_MS = 700;
+
 /**
  * A select that looks like the rest of the public form.
  *
@@ -29,6 +32,7 @@ export default function SelectMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const typeAhead = useRef({ text: "", at: 0 });
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const listId = useId();
@@ -73,8 +77,12 @@ export default function SelectMenu({
       if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         openWith(selectedIndex >= 0 ? selectedIndex : 0);
+        return;
       }
-      return;
+      // Typing on a closed trigger opens the menu and seeds the search below,
+      // so reaching NY never requires opening the list first.
+      if (!(e.key.length === 1 && /\S/.test(e.key))) return;
+      setOpen(true);
     }
 
     if (e.key === "Escape") { e.preventDefault(); setOpen(false); return; }
@@ -85,14 +93,28 @@ export default function SelectMenu({
     if (e.key === "End") { e.preventDefault(); setActive(items.length - 1); return; }
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); commit(active); return; }
 
-    // Type-ahead: jump to the first option starting with the typed letter.
+    // Type-ahead. Keystrokes accumulate into a buffer that expires after a
+    // pause, which is what makes "NY" reach NY instead of stopping at NC: a
+    // per-key search would restart on the Y and match nothing.
     if (e.key.length === 1 && /\S/.test(e.key)) {
-      const from = active + 1;
-      const lower = e.key.toLowerCase();
-      const found =
-        items.findIndex((o, i) => i >= from && o.toLowerCase().startsWith(lower)) !== -1
-          ? items.findIndex((o, i) => i >= from && o.toLowerCase().startsWith(lower))
-          : items.findIndex((o) => o.toLowerCase().startsWith(lower));
+      e.preventDefault();
+      const now = Date.now();
+      const fresh = now - typeAhead.current.at > TYPE_AHEAD_MS;
+      const buffer = (fresh ? "" : typeAhead.current.text) + e.key.toLowerCase();
+      typeAhead.current = { text: buffer, at: now };
+
+      // A repeated single letter cycles through its matches, the way a native
+      // select does; a longer buffer is a prefix and matches from the top.
+      const matches = (i: number) => items[i]?.toLowerCase().startsWith(buffer);
+      let found = -1;
+      if (buffer.length === 1) {
+        for (let n = 1; n <= items.length; n += 1) {
+          const i = (active + n + items.length) % items.length;
+          if (matches(i)) { found = i; break; }
+        }
+      } else {
+        found = items.findIndex((_, i) => matches(i));
+      }
       if (found !== -1) setActive(found);
     }
   };
