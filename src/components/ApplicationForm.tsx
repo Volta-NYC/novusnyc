@@ -258,8 +258,8 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
       <div>
         <label className="block font-body text-sm font-semibold text-n-ink mb-2">Chapter *</label>
         <p className="font-body text-xs text-n-muted mb-2">
-          Not near any of these? Pick New York and you&apos;ll work remotely with the rest of the
-          team. If you&apos;d want a chapter in your area, tell us.
+          If you&apos;re not near any of these, select New York and you&apos;ll work remotely with the
+          core team. If you&apos;d want to establish a chapter in your area, let us know.
         </p>
         <SelectMenu
           ariaLabel="Chapter"
