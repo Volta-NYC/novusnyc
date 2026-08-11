@@ -396,7 +396,7 @@ export const teamMembers: LeadershipMember[] = [
     grade: "12th grade, Class of 2027",
     focus: "Full-stack engineering, developer infrastructure, scalable workflows, and technical mentorship.",
     whyNovus: "Novus gives students a chance to build systems that matter beyond the classroom and helps local businesses access the technology they deserve.",
-    interests: ["Machine learning", "Robotics", "Open-source systems", "Technical mentorship"],
+    interests: ["Binge-watching shows", "Foodie", "Roblox", "Chocolate"],
     experience: [
       { title: "MIT Beaver Works Summer Institute", role: "Research Intern", description: "Selected for Remote Sensing for Disaster Response on a full scholarship, applying machine learning to disaster-response tools." },
       { title: "NYC Public Schools through CS4ALL Pathfinders", role: "Software Engineering Intern", description: "Served as sole web developer for Destiny Helpers Outreach, architecting and launching a full-stack site." },
