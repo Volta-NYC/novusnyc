@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const sections = [
   { id: "scope", label: "1. Scope" },
@@ -17,6 +17,8 @@ const sections = [
 
 export default function PrivacySectionNav() {
   const [activeId, setActiveId] = useState(sections[0].id);
+  const [pinnedPosition, setPinnedPosition] = useState<{ left: number; width: number } | null>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const sectionElements = sections
@@ -37,25 +39,52 @@ export default function PrivacySectionNav() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const updatePinnedPosition = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) {
+        setPinnedPosition(null);
+        return;
+      }
+
+      const bounds = anchor.getBoundingClientRect();
+      setPinnedPosition(bounds.top <= 96 ? { left: bounds.left, width: bounds.width } : null);
+    };
+
+    updatePinnedPosition();
+    window.addEventListener("scroll", updatePinnedPosition, { passive: true });
+    window.addEventListener("resize", updatePinnedPosition);
+    return () => {
+      window.removeEventListener("scroll", updatePinnedPosition);
+      window.removeEventListener("resize", updatePinnedPosition);
+    };
+  }, []);
+
   return (
-    <nav aria-label="Privacy policy sections" className="rounded-2xl border border-n-border bg-white p-5 lg:sticky lg:top-28">
-      <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-n-orange">On this page</p>
-      <ol className="mt-4 space-y-1 font-body text-sm">
-        {sections.map((section) => {
-          const active = section.id === activeId;
-          return (
-            <li key={section.id}>
-              <a
-                href={`#${section.id}`}
-                aria-current={active ? "location" : undefined}
-                className={`block rounded-lg px-2.5 py-2 transition-colors ${active ? "bg-n-yellow/45 font-semibold text-n-ink" : "text-n-muted hover:bg-n-bg hover:text-n-ink"}`}
-              >
-                {section.label}
-              </a>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+    <div ref={anchorRef} className="self-start">
+      <nav
+        aria-label="Privacy policy sections"
+        className={`max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-n-border bg-white p-5 ${pinnedPosition ? "fixed top-24 z-30" : ""}`}
+        style={pinnedPosition ?? undefined}
+      >
+        <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-n-orange">On this page</p>
+        <ol className="mt-4 space-y-1 font-body text-sm">
+          {sections.map((section) => {
+            const active = section.id === activeId;
+            return (
+              <li key={section.id}>
+                <a
+                  href={`#${section.id}`}
+                  aria-current={active ? "location" : undefined}
+                  className={`block rounded-lg px-2.5 py-2 transition-colors ${active ? "bg-n-yellow/45 font-semibold text-n-ink" : "text-n-muted hover:bg-n-bg hover:text-n-ink"}`}
+                >
+                  {section.label}
+                </a>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    </div>
   );
 }

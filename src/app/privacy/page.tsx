@@ -38,7 +38,7 @@ export default function PrivacyPage() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
+        <div className="mt-8 grid gap-6 sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-start md:grid-cols-[15rem_minmax(0,1fr)] md:gap-8">
           <PrivacySectionNav />
 
           <article className="rounded-[2rem] border border-n-border bg-white px-6 py-8 shadow-[0_18px_50px_rgba(45,40,46,0.06)] md:px-10 md:py-10">
