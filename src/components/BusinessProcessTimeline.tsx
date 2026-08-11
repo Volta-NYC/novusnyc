@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 const stages = [
   {
     title: "Initial reply",
-    detail: "Within a few days of your inquiry.",
+    detail: "Within 2–3 business days of your inquiry.",
     accent: "bg-n-orange",
     ring: "ring-n-orange/25",
   },

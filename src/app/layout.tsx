@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
-import { Analytics } from "@vercel/analytics/next";
-import { GA_MEASUREMENT_ID } from "@/lib/analytics";
+import PublicAnalytics from "@/components/PublicAnalytics";
 import { SITE_URL } from "@/lib/site";
 import { EMAIL } from "@/lib/mail";
 import { SOCIAL } from "@/lib/social";
@@ -74,8 +72,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
+              "@id": `${SITE_URL}/#website`,
               name: "Novus NYC",
               url: SITE_URL,
+              publisher: { "@id": `${SITE_URL}/#organization` },
             }),
           }}
         />
@@ -85,6 +85,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "NGO",
+              "@id": `${SITE_URL}/#organization`,
               name: "Novus NYC",
               alternateName: "Novus New York City",
               url: SITE_URL,
@@ -115,6 +116,7 @@ export default function RootLayout({
                 contactType: "customer service",
                 areaServed: "US",
                 availableLanguage: ["English", "Spanish", "Chinese", "Bengali", "Korean", "Arabic"],
+                url: `${SITE_URL}/partners#contact`,
               },
               hasOfferCatalog: {
                 "@type": "OfferCatalog",
@@ -165,24 +167,7 @@ export default function RootLayout({
       <body className="overflow-x-hidden" suppressHydrationWarning>
         <a href="#main-content" className="skip-to-content">Skip to main content</a>
         <ConditionalLayout>{children}</ConditionalLayout>
-        <Analytics />
-        {process.env.NODE_ENV === "production" && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                window.gtag = gtag;
-                gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}');
-              `}
-            </Script>
-          </>
-        )}
+        <PublicAnalytics />
       </body>
     </html>
   );

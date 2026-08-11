@@ -190,7 +190,7 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
         <div className="home-project-card-media showcase-card-media mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
           <Image
             src={project.imageUrl}
-            alt={`${project.name} project`}
+            alt={`Preview of ${project.name}, a ${project.type.toLowerCase()} project in ${project.neighborhood}`}
             width={1600}
             height={1000}
             unoptimized

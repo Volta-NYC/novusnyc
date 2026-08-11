@@ -50,7 +50,7 @@ export default async function Apply() {
                     {
                       n: "1",
                       title: "We review your application",
-                      desc: "Usually within a few days.",
+                      desc: "Usually within 2–3 business days.",
                     },
                     {
                       n: "2",

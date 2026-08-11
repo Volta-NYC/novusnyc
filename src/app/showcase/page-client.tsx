@@ -50,7 +50,7 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
         <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white overflow-hidden">
           <Image
             src={project.imageUrl}
-            alt={isDuplicate ? "" : `${project.name} project`}
+            alt={isDuplicate ? "" : `Preview of ${project.name}, a ${project.type.toLowerCase()} project in ${project.neighborhood}`}
             width={1600}
             height={1000}
             sizes="(max-width: 1024px) 78vw, 290px"
@@ -427,7 +427,7 @@ export default function ShowcaseClient({
                         <div className="mx-4 sm:mx-7 mt-7 rounded-xl border border-n-border bg-white overflow-hidden">
                           <Image
                             src={p.imageUrl}
-                            alt={`${p.name} project`}
+                            alt={`Preview of ${p.name}, a ${p.type.toLowerCase()} project in ${p.neighborhood}`}
                             width={1600}
                             height={1000}
                             unoptimized

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EMAIL } from "@/lib/mail";
 
 export default function NotFound() {
   return (
@@ -31,6 +32,12 @@ export default function NotFound() {
             For Students
           </Link>
         </div>
+        <a
+          href={`mailto:${EMAIL.info}?subject=Broken%20link%20on%20novusnyc.org`}
+          className="mt-6 inline-flex font-body text-sm font-semibold text-violet-700 hover:underline"
+        >
+          Report a broken link
+        </a>
       </div>
     </section>
   );

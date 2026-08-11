@@ -103,7 +103,7 @@ export default async function Join() {
       {/* ── HERO + MARQUEE ─────────────────────────────────── */}
       <ParallaxHero
         image={cornellPhoto}
-        alt="Cornell University campus"
+        alt="Cornell University campus, one of the schools represented in Novus"
         className="relative flex min-h-[100svh] flex-col overflow-hidden pt-32"
         imageClassName="object-cover object-[54%_center] md:object-center"
         parallaxRange={[0, 290]}

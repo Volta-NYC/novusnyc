@@ -442,7 +442,7 @@ export default async function Partners() {
               Your business could be next.
             </h2>
             <p className="font-body text-white/65 text-base md:text-lg mb-8 max-w-lg mx-auto">
-              We&apos;re actively taking on projects across all five boroughs. Fill out the form above or reach out directly — we&apos;ll get back to you within a few days.
+              We&apos;re actively taking on projects across all five boroughs. Fill out the form above or reach out directly — we&apos;ll get back to you within 2–3 business days.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <a

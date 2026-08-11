@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import HistoryTimeline from "@/components/HistoryTimeline";
 import LeadershipProfiles from "@/components/LeadershipProfiles";
@@ -38,7 +39,7 @@ export default async function About() {
       {/* ── HERO ─────────────────────────────────────────────── */}
       <ParallaxHero
         image={brooklynBridgePhoto}
-        alt="Brooklyn Bridge"
+        alt="Brooklyn Bridge spanning the East River in New York City"
         className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-20"
         imageClassName="object-cover object-[58%_center] md:object-center"
         parallaxRange={[0, 290]}
@@ -109,6 +110,15 @@ export default async function About() {
                   Most small business owners know what they need. What they lack is time
                   and the right connections. We help them see what is possible,
                   then we do the work.
+                </p>
+                <p className="mt-5 font-body text-sm leading-relaxed text-n-muted">
+                  See that model in practice in our{" "}
+                  <Link href="/showcase" className="font-semibold text-violet-700 hover:underline">
+                    NYC project portfolio
+                  </Link>, or learn how students can{" "}
+                  <Link href="/join" className="font-semibold text-violet-700 hover:underline">
+                    join the Novus team
+                  </Link>.
                 </p>
               </div>
               <div className="flex justify-center md:justify-end">

@@ -154,7 +154,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
         </div>
         <h3 className="font-display font-bold text-2xl text-n-ink mb-3">Application received.</h3>
         <p className="font-body text-n-muted max-w-sm mx-auto">
-          We&apos;ll review your application and reach out within a few days to schedule a quick conversation.
+          We&apos;ll review your application and reach out within 2–3 business days to schedule a quick conversation.
         </p>
       </div>
     );
@@ -499,7 +499,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
         </p>
       )}
       <p className="text-xs text-n-muted text-center font-body">
-        Rolling admissions. We&apos;ll follow up within a few days.
+        Rolling admissions. We&apos;ll follow up within 2–3 business days.
       </p>
     </form>
   );

@@ -44,7 +44,7 @@ function ProjectCard({ project, copy, index }: { project: HomeProject; copy: num
         <div className="mx-4 mt-5 rounded-xl border border-n-border bg-white overflow-hidden">
           <Image
             src={project.imageUrl}
-            alt={isDuplicate ? "" : `${project.name} project`}
+            alt={isDuplicate ? "" : `Preview of ${project.name}, a ${project.type.toLowerCase()} project in ${project.neighborhood}`}
             width={1600}
             height={1000}
             sizes="82vw"

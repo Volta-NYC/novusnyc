@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import { businessGuides } from "@/data/publishing";
@@ -76,6 +77,36 @@ export default function BusinessGuidesPage() {
               </article>
             </AnimatedSection>
           ))}
+
+          <AnimatedSection delay={businessGuides.length * 0.06}>
+            <aside className="rounded-2xl border border-n-purple/40 bg-n-purple/10 p-6 md:flex md:items-center md:justify-between md:gap-8 md:p-8">
+              <div>
+                <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-violet-700">
+                  Put the guidance to work
+                </p>
+                <h2 className="mt-2 font-display text-2xl font-bold text-n-ink">
+                  Need a team to help you execute?
+                </h2>
+                <p className="mt-2 max-w-2xl font-body text-sm leading-relaxed text-n-muted">
+                  Novus pairs NYC small businesses with student teams for free website, SEO, social media, grant, and operations support.
+                </p>
+              </div>
+              <div className="mt-5 flex shrink-0 flex-wrap gap-3 md:mt-0">
+                <Link
+                  href="/partners#contact"
+                  className="rounded-full bg-n-orange px-5 py-2.5 font-body text-sm font-bold text-n-ink transition-colors hover:bg-n-orange-dark"
+                >
+                  Request free support
+                </Link>
+                <Link
+                  href="/showcase"
+                  className="rounded-full border border-n-purple/60 px-5 py-2.5 font-body text-sm font-semibold text-n-ink transition-colors hover:bg-white/70"
+                >
+                  See our work
+                </Link>
+              </div>
+            </aside>
+          </AnimatedSection>
         </div>
       </section>
     </>
