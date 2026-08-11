@@ -93,7 +93,23 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
   const showDarkText = useDarkText && !isOverDarkBoundary;
 
   return (
-    <nav ref={navRef} aria-label="Page sections" className="fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 lg:block xl:right-10">
+    <nav
+      ref={navRef}
+      aria-label="Page sections"
+      className="fixed top-1/2 z-30 hidden -translate-y-1/2 xl:block"
+      style={{ left: "calc(50% + 42rem)" }}
+    >
+      {/*
+        Positioned off the content column's true right edge (half of the
+        page's max-w-7xl content width, plus a gutter) rather than a fixed
+        distance from the viewport edge. A viewport-relative position let this
+        nav sit on top of full-width content on any screen narrower than
+        ~1700px, since max-w-7xl content isn't actually centered with real
+        margins until the viewport exceeds 1280px. Anchoring to the content
+        edge means the nav is mathematically guaranteed to clear content: at
+        1280px it renders just off-screen, and it comes into view exactly
+        when there's genuine gutter space for it.
+      */}
       <div className={`border-l py-1 pl-5 transition-colors duration-200 ${showDarkText ? "border-black/45" : "border-white/75 [text-shadow:0_1px_10px_rgba(0,0,0,0.38)]"}`}>
         <p className={`mb-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] ${showDarkText ? "text-n-ink/55" : "text-white/60"}`}>On this page</p>
         <ol className="space-y-2">

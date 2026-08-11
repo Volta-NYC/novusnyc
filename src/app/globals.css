@@ -531,20 +531,6 @@ body:has(.home-scroll-story) header .md\:hidden span {
   mask-image: linear-gradient(250deg, transparent 0%, #000 26%, #000 58%, transparent 86%);
 }
 
-.home-showcase-depth::after {
-  position: absolute;
-  z-index: 0;
-  right: clamp(-6rem, -3vw, -1rem);
-  top: clamp(-8rem, -5vw, -3rem);
-  width: clamp(27rem, 39vw, 41rem);
-  height: clamp(9rem, 13vw, 14rem);
-  content: "";
-  pointer-events: none;
-  border: 1px solid rgba(190, 162, 186, 0.38);
-  border-radius: 50%;
-  box-shadow: 0 0 0 clamp(1.1rem, 2.7vw, 2.9rem) rgba(190, 162, 186, 0.08), 0 0 0 clamp(2.3rem, 5.4vw, 5.8rem) rgba(246, 183, 141, 0.07);
-}
-
 .home-tracks-depth {
   background-color: #fffdf9 !important;
   background-image:
@@ -561,20 +547,6 @@ body:has(.home-scroll-story) header .md\:hidden span {
   mask-image: linear-gradient(20deg, transparent 0%, #000 26%, #000 58%, transparent 86%);
 }
 
-.home-tracks-depth::after {
-  position: absolute;
-  z-index: 0;
-  left: clamp(-6rem, -3vw, -1rem);
-  bottom: clamp(-8rem, -7vw, -4rem);
-  width: clamp(26rem, 39vw, 39rem);
-  height: clamp(9rem, 13vw, 14rem);
-  content: "";
-  pointer-events: none;
-  border: 1px solid rgba(246, 183, 141, 0.4);
-  border-radius: 50%;
-  box-shadow: 0 0 0 clamp(1rem, 2.4vw, 2.4rem) rgba(246, 183, 141, 0.08), 0 0 0 clamp(2.1rem, 5vw, 5rem) rgba(243, 226, 141, 0.1);
-}
-
 .public-surface {
   position: relative;
   isolation: isolate;
@@ -586,8 +558,7 @@ body:has(.home-scroll-story) header .md\:hidden span {
   z-index: 1;
 }
 
-.public-surface::before,
-.public-surface::after {
+.public-surface::before {
   position: absolute;
   z-index: 0;
   content: "";
@@ -616,21 +587,6 @@ body:has(.home-scroll-story) header .md\:hidden span {
   -webkit-mask-image: linear-gradient(70deg, transparent 0%, #000 28%, #000 60%, transparent 88%);
 }
 
-/*
- * Shallow-arc accent: a wide, flat ellipse hung mostly off-canvas so only its
- * curved edge shows, like a cable's catenary swag, instead of a full ring.
- */
-.public-surface-peach::after {
-  right: clamp(-6rem, -3vw, -1rem);
-  top: clamp(-9rem, -6vw, -4rem);
-  width: clamp(26rem, 38vw, 40rem);
-  height: clamp(9rem, 13vw, 14rem);
-  aspect-ratio: auto;
-  border: 1px solid rgba(246, 183, 141, 0.42);
-  border-radius: 50%;
-  box-shadow: 0 0 0 clamp(0.9rem, 2.2vw, 2.2rem) rgba(246, 183, 141, 0.07), 0 0 0 clamp(2rem, 5vw, 5rem) rgba(243, 226, 141, 0.08);
-}
-
 .public-surface-lavender {
   background-color: #fffdf9 !important;
   background-image:
@@ -645,17 +601,6 @@ body:has(.home-scroll-story) header .md\:hidden span {
   background: repeating-conic-gradient(from 70deg at 108% -12%, rgba(190, 162, 186, 0.2) 0deg 0.45deg, transparent 0.45deg 7.5deg);
   mask-image: linear-gradient(250deg, transparent 0%, #000 28%, #000 60%, transparent 88%);
   -webkit-mask-image: linear-gradient(250deg, transparent 0%, #000 28%, #000 60%, transparent 88%);
-}
-
-.public-surface-lavender::after {
-  left: clamp(-6rem, -3vw, -1rem);
-  bottom: clamp(-9rem, -6vw, -4rem);
-  width: clamp(27rem, 39vw, 41rem);
-  height: clamp(9rem, 13vw, 14rem);
-  aspect-ratio: auto;
-  border: 1px solid rgba(190, 162, 186, 0.38);
-  border-radius: 50%;
-  box-shadow: 0 0 0 clamp(1rem, 2.5vw, 2.5rem) rgba(190, 162, 186, 0.07), 0 0 0 clamp(2.2rem, 5vw, 5rem) rgba(246, 183, 141, 0.05);
 }
 
 .public-surface-grid {
@@ -675,17 +620,6 @@ body:has(.home-scroll-story) header .md\:hidden span {
     repeating-linear-gradient(90deg, transparent 0 8.5rem, rgba(45, 40, 46, 0.038) 8.5rem 8.56rem, transparent 8.56rem 17.06rem);
   -webkit-mask-image: radial-gradient(ellipse at center, #000 0 52%, transparent 88%);
   mask-image: radial-gradient(ellipse at center, #000 0 52%, transparent 88%);
-}
-
-.public-surface-grid::after {
-  right: clamp(-6rem, -3vw, -1rem);
-  bottom: clamp(-8rem, -6vw, -4rem);
-  width: clamp(25rem, 36vw, 38rem);
-  height: clamp(8rem, 12vw, 13rem);
-  aspect-ratio: auto;
-  border: 1px solid rgba(190, 162, 186, 0.34);
-  border-radius: 50%;
-  box-shadow: 0 0 0 clamp(0.9rem, 2.2vw, 2.2rem) rgba(190, 162, 186, 0.07), 0 0 0 clamp(2rem, 5vw, 5rem) rgba(243, 226, 141, 0.08);
 }
 
 .public-surface-sand {
@@ -710,10 +644,6 @@ body:has(.home-scroll-story) header .md\:hidden span {
   .public-surface-grid::before,
   .public-surface-sand::before {
     opacity: 0.38;
-  }
-
-  .public-surface::after {
-    opacity: 0.65;
   }
 }
 
