@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PrivacySectionNav from "@/components/PrivacySectionNav";
 import { EMAIL } from "@/lib/mail";
 
 export const metadata: Metadata = {
@@ -38,23 +39,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
-          <nav aria-label="Privacy policy sections" className="rounded-2xl border border-n-border bg-white p-5 lg:sticky lg:top-28">
-            <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-n-orange">
-              On this page
-            </p>
-            <ol className="mt-4 space-y-2 font-body text-sm text-n-muted">
-              <li><a className="hover:text-n-ink" href="#scope">1. Scope</a></li>
-              <li><a className="hover:text-n-ink" href="#information">2. Information we collect</a></li>
-              <li><a className="hover:text-n-ink" href="#use">3. How we use information</a></li>
-              <li><a className="hover:text-n-ink" href="#sharing">4. Service providers and sharing</a></li>
-              <li><a className="hover:text-n-ink" href="#analytics-cookies">5. Analytics and cookies</a></li>
-              <li><a className="hover:text-n-ink" href="#retention">6. Retention</a></li>
-              <li><a className="hover:text-n-ink" href="#security">7. Security</a></li>
-              <li><a className="hover:text-n-ink" href="#choices">8. Your choices and rights</a></li>
-              <li><a className="hover:text-n-ink" href="#young-people">9. Young people</a></li>
-              <li><a className="hover:text-n-ink" href="#changes">10. Changes and contact</a></li>
-            </ol>
-          </nav>
+          <PrivacySectionNav />
 
           <article className="rounded-[2rem] border border-n-border bg-white px-6 py-8 shadow-[0_18px_50px_rgba(45,40,46,0.06)] md:px-10 md:py-10">
             <section id="scope" className="scroll-mt-28">
