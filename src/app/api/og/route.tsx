@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
   const origin = new URL(req.url).origin;
   const bgSrc = `${origin}/hero-nyc-skyline.jpg`;
   const logoSrc = `${origin}/logo.png`;
-  const fontSrc = `${origin}/fonts/SpaceGrotesk-Latin.woff2`;
-  const displayFont = await fetch(fontSrc).then((res) => res.arrayBuffer());
+  const fontSrc = `${origin}/fonts/Sora-Bold-Latin.woff2`;
+  const wordmarkFont = await fetch(fontSrc).then((res) => res.arrayBuffer());
 
   // Exact desktop hero clamp math at 1200px OG width:
   // font-size: clamp(4.8rem, 13.6vw, 9.2rem) => 147.2px
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
                   fontWeight: 700,
                   letterSpacing: "-0.025em", // tracking-tight
                   lineHeight: 1,
-                  fontFamily: "Space Grotesk",
+                  fontFamily: "Sora",
                 }}
               >
                 NOVUS
@@ -125,8 +125,8 @@ export async function GET(req: NextRequest) {
       height: 630,
       fonts: [
         {
-          name: "Space Grotesk",
-          data: displayFont,
+          name: "Sora",
+          data: wordmarkFont,
           weight: 700,
           style: "normal",
         },
