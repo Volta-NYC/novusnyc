@@ -384,10 +384,10 @@ function PartnerLogoCard({
       rel="noreferrer"
       tabIndex={tabIndex}
       aria-label={`Visit ${partner.name} website`}
-      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
+      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-start text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
         important
-          ? "w-[230px] h-[142px] rounded-xl border-n-orange/35 px-4"
-          : "w-[230px] h-[142px] rounded-lg border-n-border px-4"
+          ? "w-[230px] h-[156px] rounded-xl border-n-orange/35 px-4 pt-5"
+          : "w-[230px] h-[156px] rounded-lg border-n-border px-4 pt-5"
       }`}
     >
       <div className="relative w-full h-[72px] shrink-0">

@@ -96,19 +96,28 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
     <nav
       ref={navRef}
       aria-label="Page sections"
-      className="fixed top-1/2 z-30 hidden -translate-y-1/2 xl:block"
+      className="fixed top-1/2 z-30 hidden w-[12rem] -translate-y-1/2 min-[1730px]:block"
       style={{ left: "calc(50% + 42rem)" }}
     >
       {/*
         Positioned off the content column's true right edge (half of the
         page's max-w-7xl content width, plus a gutter) rather than a fixed
-        distance from the viewport edge. A viewport-relative position let this
-        nav sit on top of full-width content on any screen narrower than
-        ~1700px, since max-w-7xl content isn't actually centered with real
-        margins until the viewport exceeds 1280px. Anchoring to the content
-        edge means the nav is mathematically guaranteed to clear content: at
-        1280px it renders just off-screen, and it comes into view exactly
-        when there's genuine gutter space for it.
+        distance from the viewport edge, so it's mathematically guaranteed to
+        clear content instead of sitting on top of it.
+
+        Two things had to be true together, not just the position:
+        1. An explicit `width`. Without one, a fixed-position element with
+           only `left` set uses shrink-to-fit sizing, and the shrink-to-fit
+           algorithm clamps to the *available* space (viewport edge minus
+           left) before wrapping — so on medium-wide screens the nav would
+           still render on-screen, just with its labels wrapping mid-word
+           ("Get supp" / "ort") instead of overflowing cleanly.
+        2. Visibility gated to the width where the nav's full box — not just
+           its left edge — fits inside the viewport (1280px content cap +
+           2rem gutter + this 12rem width, rounded up for scrollbar slop).
+           Anything narrower and it's `hidden` outright; there's no
+           partially-on-screen state where a clipped or wrapped label could
+           show.
       */}
       <div className={`border-l py-1 pl-5 transition-colors duration-200 ${showDarkText ? "border-black/45" : "border-white/75 [text-shadow:0_1px_10px_rgba(0,0,0,0.38)]"}`}>
         <p className={`mb-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] ${showDarkText ? "text-n-ink/55" : "text-white/60"}`}>On this page</p>
