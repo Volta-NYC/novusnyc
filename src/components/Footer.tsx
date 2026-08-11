@@ -19,7 +19,15 @@ const footerLinks = [
 export default function Footer() {
   return (
     <footer className="site-footer relative overflow-hidden bg-n-dark py-14 text-white/70 md:py-16">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(190,162,186,0.14),transparent_36%),radial-gradient(circle_at_90%_100%,rgba(246,183,141,0.12),transparent_34%)]" />
+      {/*
+        The top-left glow used to center at 8% 0% — exactly on the seam where a
+        preceding bg-n-dark section (showcase/partners/impact CTAs) meets the
+        footer. That put the gradient's steepest falloff right on the boundary
+        line, which read as a visible seam between two "identical" dark
+        surfaces. Moving the center down and widening the falloff keeps the
+        glow but removes the hard edge at the exact seam.
+      */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(190,162,186,0.12),transparent_42%),radial-gradient(circle_at_90%_100%,rgba(246,183,141,0.12),transparent_34%)]" />
       <div className="relative mx-auto max-w-7xl px-5 md:px-8">
         <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-md">
