@@ -4,7 +4,6 @@ import Wordmark from "@/components/Wordmark";
 import { ArrowUpRightIcon, InstagramIcon, LinkedInIcon, MailIcon } from "@/components/Icons";
 import { EMAIL } from "@/lib/mail";
 import { SOCIAL } from "@/lib/social";
-import AnalyticsChoicesButton from "@/components/AnalyticsChoicesButton";
 
 const footerLinks = [
   { href: "/showcase", label: "Our Work" },
@@ -96,7 +95,6 @@ export default function Footer() {
             </a>
             <span className="hidden h-4 w-px bg-white/10 sm:block" />
             <Link href="/privacy" className="font-body text-xs text-n-orange/75 transition-colors hover:text-n-orange">Privacy Policy</Link>
-            <AnalyticsChoicesButton />
           </div>
         </div>
       </div>
