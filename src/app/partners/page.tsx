@@ -9,7 +9,7 @@ import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
 import SectionBridge from "@/components/SectionBridge";
-import { communityPartners, currentProjects } from "@/data";
+import { communityPartners } from "@/data";
 import {
   GlobeIcon,
   SmartphoneIcon,
@@ -168,20 +168,6 @@ const PARTNER_FAQ_CATEGORIES = [
   { title: "Support and referrals", items: PARTNER_FAQS.slice(10) },
 ];
 
-const PARTNER_EXAMPLES = currentProjects.map((project) => {
-  if (project.name !== "Anatolico") return project;
-
-  return {
-    ...project,
-    name: "Spin Bagel",
-    type: "Bagel Shop",
-    neighborhood: "Bayside, Queens",
-    services: ["Website", "Social Media"],
-    color: "bg-orange-400",
-    desc: "Digital support project for Spin Bagel, a neighborhood bagel shop in Bayside.",
-  };
-});
-
 const TRUSTED_PARTNER_NAMES = new Set([
   "NYC Small Business Services",
   "NYC Small Business Resource Network",
@@ -216,7 +202,6 @@ export default async function Partners() {
         { id: "contact", label: "Get support" },
         { id: "process", label: "Our process" },
         { id: "services", label: "Services" },
-        { id: "examples", label: "Our work" },
         { id: "community", label: "Partners" },
         { id: "faq", label: "FAQ" },
       ]} />
@@ -342,42 +327,6 @@ export default async function Partners() {
       </section>
 
       <SectionBridge tone="peach" align="right" />
-
-      {/* ── PARTNER EXAMPLES ───────────────────────────────── */}
-      <section id="examples" className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
-        <BrandTexture tone="peach" />
-        <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-n-ink">Partners we&apos;re supporting</h2>
-            <p className="font-body text-n-muted mt-3 max-w-2xl">
-              A few examples of the neighborhood businesses currently working with Novus.
-            </p>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-4">
-            {PARTNER_EXAMPLES.map((project, index) => (
-              <AnimatedSection key={project.name} delay={index * 0.08}>
-                <article className="h-full border border-n-border rounded-xl bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-n-orange/60 hover:shadow-[0_8px_20px_rgba(31,36,42,0.08)]">
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                      <p className="font-display font-bold text-n-ink text-xl">{project.name}</p>
-                      <p className="font-body text-sm text-n-muted mt-1">{project.type} · {project.neighborhood}</p>
-                    </div>
-                    <span className={`w-3 h-3 rounded-full ${project.color} shrink-0 mt-1.5`} aria-hidden="true" />
-                  </div>
-                  <p className="font-body text-sm text-n-muted leading-relaxed mb-4">{project.desc}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {project.services.map((service) => (
-                      <span key={service} className="font-body text-xs font-semibold text-n-ink bg-n-bg border border-n-border px-2.5 py-1 rounded-full">
-                        {service}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── TRUST SIGNALS ──────────────────────────────────── */}
       <section id="community" className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
