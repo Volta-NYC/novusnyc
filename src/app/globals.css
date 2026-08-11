@@ -116,6 +116,19 @@ html {
   overscroll-behavior-y: auto;
 }
 
+/*
+ * Anchor-linked sections (the SectionProgressNav "On this page" links, and
+ * any other #id link) land flush with the viewport top by default, which
+ * tucks the section heading behind the fixed navbar. scroll-margin-top holds
+ * the scroll position back by the navbar's height (plus the optional
+ * announcement banner, via the same --banner-h variable the navbar itself
+ * uses) so anchored content always lands clear of it, with a little
+ * breathing room on top.
+ */
+.public-site section[id] {
+  scroll-margin-top: calc(var(--banner-h, 0px) + 4rem + 1.5rem);
+}
+
 body {
   background-color: #0D0F14;
   color: var(--ink);
