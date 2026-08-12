@@ -15,8 +15,6 @@ const links = [
 ];
 
 const moreLinks = [
-  { href: "/reports", label: "Reports & Case Studies" },
-  { href: "/guides", label: "Guides for Businesses" },
   { href: "/members", label: "Member Portal" },
 ];
 

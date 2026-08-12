@@ -4,29 +4,25 @@ import Image from "next/image";
 import Wordmark from "@/components/Wordmark";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 import { useParallax } from "@/hooks/useParallax";
 
-export default function HeroSection({ children }: { children?: ReactNode }) {
+export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { y: backgroundY, enabled: parallaxEnabled } = useParallax(sectionRef, {
     range: [-120, 170],
     offset: ["start start", "end start"],
   });
-  const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
-    range: [90, -120],
-    offset: ["start start", "end start"],
-  });
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
   });
-  const titleY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -230] : [0, -32]);
-  const contentY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -150] : [0, -20]);
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.72, 1], isDesktop ? [1, 1, 0.1] : [1, 1, 0.88]);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.78, 1], isDesktop ? [1, 1, 0] : [1, 1, 0.82]);
+  const titleY = useTransform(scrollYProgress, [0, 1], [0, -170]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, -110]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 1, 0.15]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.78, 1], [1, 1, 0]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 768px)");
@@ -42,7 +38,10 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       <motion.div
         aria-hidden="true"
         className="absolute -inset-y-[34vh] inset-x-0"
-        style={{ y: backgroundY, willChange: parallaxEnabled ? "transform" : "auto" }}
+        style={{
+          y: isDesktop && parallaxEnabled ? backgroundY : 0,
+          willChange: isDesktop && parallaxEnabled ? "transform" : "auto",
+        }}
       >
         <Image
           src={heroSkyline}
@@ -59,43 +58,32 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       <div className="absolute inset-0 home-shared-wash" />
       <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
 
-      <div className="relative min-h-screen md:min-h-[108vh] flex flex-col items-center justify-center pt-20 pb-20">
-        {/* Logo + Title */}
+      <div className="relative flex flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-40">
         <motion.div
-          className="relative z-10 w-full max-w-5xl mx-auto px-8 flex justify-center"
+          className="relative z-10 flex w-full max-w-5xl justify-center"
           style={{
-            y: parallaxEnabled ? titleY : 0,
-            opacity: parallaxEnabled ? titleOpacity : 1,
-            willChange: parallaxEnabled ? "transform, opacity" : "auto",
+            y: isDesktop && parallaxEnabled ? titleY : 0,
+            opacity: isDesktop && parallaxEnabled ? titleOpacity : 1,
+            willChange: isDesktop && parallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
-          <h1 className="sr-only">
-            Novus NYC — free websites, marketing, and grant writing for New York City
-            small businesses, built by high school and college students
-          </h1>
           <div
             aria-hidden="true"
             className="font-display font-bold leading-none tracking-tight"
             style={{
-              fontSize: "clamp(4.8rem, 13.6vw, 9.2rem)",
+              fontSize: "clamp(2.25rem, 5vw, 3.75rem)",
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
-            <span className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-3 sm:gap-5 md:gap-7">
+            <span className="flex items-center gap-3 text-left sm:gap-4">
               <Image
                 src="/logo.png"
-                alt="Novus NYC logo"
+                alt=""
                 width={223}
                 height={200}
                 className="object-contain flex-shrink-0 w-auto"
                 style={{
-                  // Height only — width follows the mark's 1.115:1 aspect.
-                  // Tracks the wordmark's clamp so the lockup scales together.
-                  height: "clamp(4.95rem, 14.25vw, 9.83rem)",
-                  // The mark's alpha centroid sits 7.3% below its geometric
-                  // centre (thin spire up top, mass in the deck), so box-centring
-                  // makes it read low against the wordmark. Lift it so the
-                  // visual mass lines up with the midline of NOVUS.
+                  height: "clamp(2.5rem, 5.4vw, 4.15rem)",
                   transform: "translateY(-7%)",
                 }}
                 priority
@@ -105,49 +93,37 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
           </div>
         </motion.div>
 
-        {/* Subtitle + CTAs — centered under the title */}
         <motion.div
-          className="relative z-10 w-full max-w-5xl mx-auto px-8 mt-8 flex flex-col items-center text-center"
+          className="relative z-10 mt-10 flex w-full max-w-5xl flex-col items-center text-center md:mt-12"
           style={{
-            y: parallaxEnabled ? contentY : 0,
-            opacity: parallaxEnabled ? contentOpacity : 1,
-            willChange: parallaxEnabled ? "transform, opacity" : "auto",
+            y: isDesktop && parallaxEnabled ? contentY : 0,
+            opacity: isDesktop && parallaxEnabled ? contentOpacity : 1,
+            willChange: isDesktop && parallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
-          <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-black/60 backdrop-blur-[2px] px-6 py-6 md:px-8 md:py-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
-            <p className="font-body text-lg md:text-xl text-white/95 max-w-2xl mx-auto leading-relaxed mb-3">
-              Digital equity is economic equity. Join a team of students building
-              websites, social media and branding, grants and funding, and small
-              business outreach for NYC&apos;s small businesses.{" "}
-              <span className="text-n-orange font-semibold">Free of charge.</span>
-            </p>
-            <p className="font-body text-sm text-white/75 mb-8">
-              A registered nonprofit organization.
-            </p>
-            <div className="flex gap-4 flex-wrap justify-center">
-              <Link
-                href="/join"
-                className="border-2 border-transparent bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-all hover:scale-[1.03] shadow-xl shadow-black/35"
-              >
-                Apply to Join
-              </Link>
-              <Link
-                href="/partners"
-                className="border-2 border-white/70 bg-[#17151a]/80 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:border-white hover:bg-[#231f24] transition-all shadow-xl shadow-black/25"
-              >
-                Get Free Business Support
-              </Link>
-            </div>
+          <h1 className="max-w-4xl font-display text-[clamp(2.35rem,7vw,4.75rem)] font-bold leading-[0.98] tracking-[-0.04em] text-white [text-shadow:0_8px_28px_rgba(0,0,0,0.65)]">
+            Real experience for students. Real support for NYC small businesses.
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl font-body text-lg leading-relaxed text-white/95 [text-shadow:0_2px_12px_rgba(0,0,0,0.75)] md:text-xl">
+            Student teams build websites and provide marketing support for New York City
+            small businesses, completely free.
+          </p>
+          <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            <Link
+              href="/join"
+              className="inline-flex min-h-14 w-full items-center justify-center rounded-full border-2 border-transparent bg-n-orange px-6 py-4 font-display text-base font-bold text-n-ink shadow-xl shadow-black/35 transition-all hover:scale-[1.02] hover:bg-n-orange-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
+            >
+              Join as a Student
+            </Link>
+            <Link
+              href="/partners"
+              className="inline-flex min-h-14 w-full items-center justify-center rounded-full border-2 border-transparent bg-n-yellow px-6 py-4 font-display text-base font-bold text-n-ink shadow-xl shadow-black/35 transition-all hover:scale-[1.02] hover:bg-n-yellow-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
+            >
+              Get Free Business Support
+            </Link>
           </div>
         </motion.div>
       </div>
-
-      <motion.div
-        className="relative z-10"
-        style={{ y: statsY, willChange: statsParallaxEnabled ? "transform" : "auto" }}
-      >
-        {children}
-      </motion.div>
     </section>
   );
 }

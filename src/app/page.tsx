@@ -11,9 +11,11 @@ import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
+import { chapterLocations } from "@/data/network";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
+import { getPublicStatOverrides, publicStat } from "@/lib/server/publicStats";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -327,14 +329,12 @@ async function CurrentProjectsSection() {
 }
 
 async function LiveHomeStats() {
+  const overrides = await getPublicStatOverrides();
   const liveHomeStats = [
-    { value: "400+", label: "Student Members" },
-    { value: "150+", label: "Businesses Supported" },
-    {
-      value: "120+",
-      label: "Student Publications and Research Projects",
-    },
-    { value: "30", label: "Community Organizations" },
+    { value: publicStat(overrides, "homeStudentMembers", "400+"), label: "Student Members" },
+    { value: publicStat(overrides, "homeBusinessesSupported", "150+"), label: "Businesses Supported" },
+    { value: publicStat(overrides, "homeCommunityPartners", "30"), label: "Community Partners" },
+    { value: publicStat(overrides, "homeNetworkLocations", String(chapterLocations.length)), label: "Network Locations" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;
@@ -464,7 +464,7 @@ function CommunityPartnersSection() {
               Community partners
             </p>
             <h2 className="font-display font-bold text-n-ink text-3xl md:text-5xl max-w-3xl leading-tight">
-              Powered by the organizations trusted by NYC small businesses.
+              Working with the organizations trusted by NYC small businesses.
             </h2>
           </div>
           <p className="font-body text-n-muted text-sm md:text-base max-w-md leading-relaxed">
@@ -505,18 +505,17 @@ export default function Home() {
     <div className="home-scroll-story">
       <div aria-hidden="true" className="home-scroll-backdrop" />
       <HomeScrollProgress />
-      <HeroSection>
-        {/* ── STATS ─────────────────────────────────────────────── */}
-        <section data-home-dark-end="true" className="relative py-14">
-          <LiveHomeStats />
-        </section>
-      </HeroSection>
+      <HeroSection />
+
+      <section aria-label="Novus impact at a glance" className="relative border-y border-white/10 bg-n-dark py-7 md:py-9">
+        <LiveHomeStats />
+      </section>
 
       <HomeScrollBridge
         index={0}
-        eyebrow="FROM STUDENTS TO STREETS"
-        title="A citywide network starts with one introduction."
-        detail="Novus works through trusted neighborhood organizations to find the small businesses where support can have a real, practical impact."
+        eyebrow="THE RIGHT CONNECTIONS"
+        title="A citywide network of local partnerships."
+        detail="Novus works with neighborhood organizations that know the businesses they serve and help us connect with owners who could use support."
         imageSrc="/brooklyn-bridge.jpg"
       />
 
@@ -524,9 +523,9 @@ export default function Home() {
 
       <HomeScrollBridge
         index={1}
-        eyebrow="FROM CONNECTION TO DELIVERY"
+        eyebrow="SUPPORT WITH A PURPOSE"
         title="One small business stronger. One city moving forward."
-        detail="We turn a business owner's goals into practical projects that make a difference every day."
+        detail="We turn a business owner’s priorities into websites, marketing, and other practical work they can use."
         imageSrc="/soho-streetscape.png"
       />
 
@@ -536,9 +535,9 @@ export default function Home() {
 
       <HomeScrollBridge
         index={2}
-        eyebrow="FROM PROJECT TO PRACTICE"
-        title="Not one path. Three ways to make an impact."
-        detail="Choose digital, marketing, or finance and operations—then bring what you do best to neighborhood businesses."
+        eyebrow="FIND YOUR PLACE"
+        title="Three ways to work with local businesses."
+        detail="Choose Digital & Tech, Marketing, or Finance & Operations and help deliver work that businesses can use."
         imageSrc="/student-collaboration-wide.webp"
       />
 

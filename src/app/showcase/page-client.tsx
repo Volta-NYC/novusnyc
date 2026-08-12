@@ -504,10 +504,10 @@ export default function ShowcaseClient({
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="font-display font-bold text-white text-3xl md:text-4xl mb-4">
-              Your business could be next.
+              Looking for support for your business?
             </h2>
             <p className="font-body text-white/65 text-base md:text-lg mb-8">
-              We&apos;re actively taking on projects in Brooklyn, Queens, Manhattan, the Bronx, and Staten Island.
+              We&apos;re taking on new projects across New York City. Tell us about your business and the support you need, and we&apos;ll follow up within a few business days.
             </p>
             <Link
               href="/partners#contact"

@@ -114,12 +114,6 @@ export default async function Impact() {
       sub: "Social, content, SEO",
     },
     {
-      value: boosted(liveStats.caseStudies + liveStats.educationalReports),
-      suffix: "+",
-      label: "Student Publications",
-      sub: "Case studies & guides",
-    },
-    {
       value: boosted(liveStats.bidPartners),
       suffix: "+",
       label: "Community Partners",

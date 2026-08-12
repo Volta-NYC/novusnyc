@@ -235,9 +235,9 @@ export default async function Partners() {
               with small businesses across all five boroughs, in neighborhoods like Park Slope,
               Bayside, East New York, North Flatbush, Bed-Stuy, Sunnyside, Cypress Hills,
               Crown Heights, Bay Ridge, Flushing, Jackson Heights, Harlem, Chinatown, and
-              Great Kills. Restaurants, coffee shops,
-              bars, flower shops, tutoring centers. If you&apos;re a small business in New York
-              City, you qualify.
+              Great Kills. We work with restaurants, coffee shops, bars, flower shops, tutoring
+              centers, and other small businesses. Tell us what you need, and we&apos;ll let you know
+              how a Novus team may be able to help.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a
@@ -388,10 +388,10 @@ export default async function Partners() {
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection>
             <h2 className="page-section-heading text-white mb-4">
-              Your business could be next.
+              Looking for support for your business?
             </h2>
             <p className="font-body text-white/65 text-base md:text-lg mb-8 max-w-lg mx-auto">
-              We&apos;re actively taking on projects across all five boroughs. Fill out the form above or reach out directly — we&apos;ll get back to you within 2–3 business days.
+              We&apos;re taking on new projects across New York City. Tell us about your business and the support you need, and we&apos;ll follow up within a few business days.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <a

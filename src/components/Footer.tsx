@@ -10,8 +10,6 @@ const footerLinks = [
   { href: "/about", label: "About" },
   { href: "/partners", label: "For Businesses" },
   { href: "/join", label: "For Students" },
-  { href: "/reports", label: "Reports & Case Studies" },
-  { href: "/guides", label: "Guides for Businesses" },
   { href: "/members/login", label: "Member Login" },
   { href: "/apply", label: "Apply Now" },
 ];
@@ -41,9 +39,9 @@ export default function Footer() {
           </div>
 
           <div className="max-w-sm lg:pb-1 lg:text-right">
-            <p className="font-display text-[11px] font-bold uppercase tracking-[0.18em] text-n-orange">Build with Novus</p>
+            <p className="font-display text-[11px] font-bold uppercase tracking-[0.18em] text-n-orange">Work with Novus</p>
             <p className="mt-2 font-display text-xl font-semibold leading-snug text-white sm:text-2xl">
-              Student talent for your next big step.
+              Practical help from a student team.
             </p>
             <div className="mt-5 flex flex-wrap gap-3 lg:justify-end">
               <Link

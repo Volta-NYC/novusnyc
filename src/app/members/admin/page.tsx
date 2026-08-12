@@ -629,6 +629,65 @@ function BannersTab() {
   );
 }
 
+const PUBLIC_STAT_FIELDS = [
+  { key: "homeStudentMembers", label: "Homepage: Student members", placeholder: "400+" },
+  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", placeholder: "150+" },
+  { key: "homeCommunityPartners", label: "Homepage: Community partners", placeholder: "30" },
+  { key: "homeNetworkLocations", label: "Homepage: Network locations", placeholder: "13" },
+  { key: "joinStudentMembers", label: "Students page: Student members", placeholder: "Live count" },
+  { key: "joinHighSchools", label: "Students page: High schools", placeholder: "Live count" },
+  { key: "joinColleges", label: "Students page: Colleges", placeholder: "Live count" },
+  { key: "aboutBusinesses", label: "About: Total businesses", placeholder: "150+" },
+  { key: "aboutWebsiteProjects", label: "About: Website projects", placeholder: "Live count" },
+  { key: "aboutMarketingProjects", label: "About: Marketing projects", placeholder: "Live count" },
+  { key: "aboutCommunityPartners", label: "About: Community organizations", placeholder: "Live count" },
+] as const;
+
+function PublicStatsTab() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    getSiteSettings().then((settings) => {
+      setOverrides(settings.publicStatOverrides);
+      setLoading(false);
+    });
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setStatus("");
+    try {
+      const cleaned = Object.fromEntries(Object.entries(overrides).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value));
+      await updateSiteSettings({ publicStatOverrides: cleaned });
+      setOverrides(cleaned);
+      setStatus("Saved. Blank fields use the live count instead.");
+    } catch {
+      setStatus("Save failed. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="flex h-24 items-center"><Spinner size="sm" /></div>;
+
+  return (
+    <Card title="Public Numbers" subtitle="Set a verified display value when you need one. Leave a field blank to use the live count from the site data.">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {PUBLIC_STAT_FIELDS.map((field) => (
+          <Field key={field.key} label={field.label}>
+            <Input value={overrides[field.key] ?? ""} placeholder={field.placeholder} onChange={(event) => setOverrides((current) => ({ ...current, [field.key]: event.target.value }))} />
+          </Field>
+        ))}
+      </div>
+      <div className="mt-5"><SaveBtn saving={saving} onClick={() => void save()} /></div>
+      <StatusMsg msg={status} />
+    </Card>
+  );
+}
+
 // ── TAB: MANAGE FRONTEND ─────────────────────────────────────────────────────
 
 function FrontendSection({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -688,6 +747,10 @@ function ManageFrontendTab() {
       <section>
         <FrontendSection title="Banners" subtitle="Configure announcement banners shown on the public site and members portal." />
         <BannersTab />
+      </section>
+      <section>
+        <FrontendSection title="Public Numbers" subtitle="Override the numbers shown on the homepage, Students page, and About page when a verified figure needs to be published." />
+        <PublicStatsTab />
       </section>
       <section>
         <FrontendSection title="Member Handbook" subtitle="Control when members are prompted to re-read and re-confirm the handbook." />

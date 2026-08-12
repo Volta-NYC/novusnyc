@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { AwardIcon, BuildingIcon, CheckIcon, PencilIcon, UsersIcon } from "@/components/Icons";
 
 const steps = [
@@ -9,30 +9,30 @@ const steps = [
     label: "Apply",
     eyebrow: "Start here",
     title: "Share your interests and availability.",
-    detail: "Start with a short application covering your school, relevant experience, preferred track, and the kind of client work you want to take on. You do not need a perfect resume to apply.",
-    note: "The application is a starting point, not a skills test.",
+    detail: "Start with a short application covering your school, preferred track, and availability.",
+    note: "Tell us what you want to work on and when you can contribute.",
     icon: PencilIcon,
     accent: "bg-n-purple",
     soft: "bg-n-purple/10",
     text: "text-n-purple-dark",
   },
   {
-    label: "Interview",
-    eyebrow: "Meet the team",
-    title: "Meet a Novus lead for a conversation.",
-    detail: "We talk through your interests, examples of work you are proud of, and how you like to collaborate. It helps us place you on a team where you can contribute and grow.",
-    note: "Expect a conversation about fit, not a formal interrogation.",
+    label: "Application review",
+    eyebrow: "We review applications",
+    title: "We review applications for current openings.",
+    detail: "We look at your interests, availability, and the teams that are currently onboarding. Not every applicant will have a call.",
+    note: "We will contact you if there is an opening that fits.",
     icon: UsersIcon,
     accent: "bg-n-orange",
     soft: "bg-n-orange/10",
     text: "text-n-orange-dark",
   },
   {
-    label: "Join a track",
-    eyebrow: "Find your fit",
-    title: "Start in the track that fits you best.",
-    detail: "Choose Digital & Tech, Marketing, or Finance & Operations. Marketing members can focus on social media and branding, grants and funding, ambassadors, small business outreach, or work across all four.",
-    note: "You can build depth in one focus while collaborating across teams.",
+    label: "Onboarding email",
+    eyebrow: "If there is a fit",
+    title: "Receive your next steps by email.",
+    detail: "When there is an opening that matches your interests and availability, we will send an onboarding email with your track, team, and what to do next.",
+    note: "Applicants are onboarded as teams have room to grow.",
     icon: CheckIcon,
     accent: "bg-n-yellow",
     soft: "bg-n-yellow/20",
@@ -42,19 +42,19 @@ const steps = [
     label: "Work with a business",
     eyebrow: "Make it real",
     title: "Join a team serving a real business.",
-    detail: "Work through a live project with clear deliverables: a website, outreach plan, social content, grant research, or an owner-facing recommendation. You will respond to real feedback and project deadlines.",
-    note: "The work is practical, collaborative, and client-facing.",
+    detail: "Work with a business on a website, marketing plan, social content, grant research, or another practical project. You will receive feedback, meet deadlines, and contribute to deliverables that go live.",
+    note: "You can point to the work when you apply for future opportunities.",
     icon: BuildingIcon,
     accent: "bg-n-orange-dark",
     soft: "bg-n-orange/10",
     text: "text-n-orange-dark",
   },
   {
-    label: "Build a portfolio",
+    label: "Show your work",
     eyebrow: "Carry it forward",
-    title: "Document work that is genuinely yours.",
-    detail: "Leave with shipped deliverables, clear examples of your contribution, and project stories you can use in college applications, interviews, and future opportunities.",
-    note: "Experience that gives interviews and applications real substance.",
+    title: "Leave with work you can explain clearly.",
+    detail: "Keep examples of what you built, what you owned, and what changed for the business. Team leads can speak to your contribution, and strong contributors can move into leadership roles.",
+    note: "Your portfolio grows from real projects, not practice exercises.",
     icon: AwardIcon,
     accent: "bg-n-purple-dark",
     soft: "bg-n-purple/10",
@@ -64,21 +64,10 @@ const steps = [
 
 export default function ApplicationJourney() {
   const [active, setActive] = useState(0);
-  const [manualPaused, setManualPaused] = useState(false);
-  const [interactionPaused, setInteractionPaused] = useState(false);
   const id = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const reducedMotion = useReducedMotion();
   const step = steps[active];
-  const paused = manualPaused || interactionPaused;
-
-  useEffect(() => {
-    if (paused || reducedMotion) return;
-    const interval = window.setInterval(() => {
-      setActive((current) => (current + 1) % steps.length);
-    }, 5500);
-    return () => window.clearInterval(interval);
-  }, [paused, reducedMotion]);
 
   const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
     let next = index;
@@ -99,31 +88,13 @@ export default function ApplicationJourney() {
         <div className="mb-9 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="font-body mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-700">Your Novus journey</p>
-            <h2 id="application-journey-heading" className="page-section-heading text-n-ink">From application to work you can show.</h2>
+            <h2 id="application-journey-heading" className="page-section-heading text-n-ink">Work you can put on your resume.</h2>
           </div>
-          <div className="flex max-w-md flex-col items-start gap-3 md:items-end">
-            <p className="font-body text-sm leading-relaxed text-n-muted md:text-right">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
-            {!reducedMotion && (
-              <button
-                type="button"
-                aria-pressed={manualPaused}
-                onClick={() => setManualPaused((value) => !value)}
-                className="rounded-full border border-n-control-border bg-white px-3 py-1.5 font-body text-xs font-semibold text-n-purple-ink hover:bg-n-purple/10"
-              >
-                {manualPaused ? "Resume animation" : "Pause animation"}
-              </button>
-            )}
-          </div>
+          <p className="max-w-md font-body text-sm leading-relaxed text-n-muted md:text-right">Follow the steps from application to work you can use in college applications, interviews, and future roles.</p>
         </div>
 
         <div
           className="grid overflow-hidden rounded-lg border border-n-yellow/55 bg-white/70 md:grid-cols-[15rem_minmax(0,1fr)]"
-          onPointerEnter={() => setInteractionPaused(true)}
-          onPointerLeave={() => setInteractionPaused(false)}
-          onFocusCapture={() => setInteractionPaused(true)}
-          onBlurCapture={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setInteractionPaused(false);
-          }}
         >
           <div role="tablist" aria-label="Novus student journey" className="grid border-b border-n-yellow/40 bg-white/45 sm:grid-cols-5 md:block md:border-b-0 md:border-r">
             {steps.map((item, index) => {
@@ -146,7 +117,7 @@ export default function ApplicationJourney() {
                     <item.icon className={`h-4 w-4 ${selected ? item.text : "text-n-muted"}`} aria-hidden="true" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block font-body text-[10px] font-semibold uppercase tracking-[0.14em] text-n-muted">0{index + 1}</span>
+                    <span className="block font-body text-[10px] font-semibold uppercase tracking-[0.14em] text-n-muted">{index + 1}</span>
                     <span className="mt-0.5 block font-display text-sm font-bold leading-tight">{item.label}</span>
                   </span>
                 </button>

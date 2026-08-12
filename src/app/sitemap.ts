@@ -27,7 +27,7 @@ import { SITE_URL } from "@/lib/site";
 //   /book        — internal applicant scheduling tool, not a public landing page
 //   /members/*   — private portal, behind auth (also disallowed in robots.txt)
 //   /updates, /progress-updates — 308 → /showcase (page retired)
-//   /students, /business-guides, /contact — 308 → /join, /guides, /partners
+//   /students, /business-guides, /contact, /guides, /reports — 308 redirects to active pages
 // ───────────────────────────────────────────────────────────────────────────
 
 /** Date the rebrand landed, per `git log` on each page file. */
@@ -74,18 +74,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${base}/about`,
       lastModified: REBRAND_DATE,
       changeFrequency: "yearly",
-      priority: 0.8,
-    },
-    {
-      url: `${base}/guides`,
-      lastModified: REBRAND_DATE,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${base}/reports`,
-      lastModified: REBRAND_DATE,
-      changeFrequency: "monthly",
       priority: 0.8,
     },
   ];

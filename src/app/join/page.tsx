@@ -9,18 +9,19 @@ import SectionBridge from "@/components/SectionBridge";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import TracksTabbed from "@/components/TracksTabbed";
 import TracksParallax from "@/components/TracksParallax";
-import { joinFaqs, joinGains, marqueeSchools } from "@/data";
+import { joinFaqs, marqueeSchools } from "@/data";
 import { getMemberEducationSnapshot, getTotalMemberCount } from "@/lib/server/memberEducation";
 import { formatCounter } from "@/lib/formatCounter";
+import { getPublicStatOverrides, publicStat } from "@/lib/server/publicStats";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
   title: "Volunteer and Internship Opportunities for NYC Students",
   description:
-    "Novus is run entirely by high school and college students. Work on real websites, marketing, and finance projects for NYC small businesses. No experience required, rolling applications, five minutes to apply.",
+    "Novus is run entirely by high school and college students. Build websites, marketing, grant research, and financial projects for NYC small businesses.",
   openGraph: {
     title: "Volunteer and Internship Opportunities for NYC Students | Novus NYC",
-    description: "High school and college students building real websites and marketing work for NYC small businesses. No experience required.",
+    description: "High school and college students building real websites, marketing, grant research, and financial work for NYC small businesses.",
     images: ["/api/og"],
   },
 };
@@ -72,7 +73,7 @@ const JOIN_FAQ_CATEGORIES = [
 ];
 
 export default async function Join() {
-  const [education, memberCount] = await Promise.all([getMemberEducationSnapshot(), getTotalMemberCount()]);
+  const [education, memberCount, overrides] = await Promise.all([getMemberEducationSnapshot(), getTotalMemberCount(), getPublicStatOverrides()]);
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -121,14 +122,11 @@ export default async function Join() {
               <span className="text-n-purple">and college students in NYC.</span>
             </h1>
             <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-4">
-              Novus is run entirely by students. You join a small team and build something a
-              real business uses, with a real deadline and a real client on the other end.
-              Websites, social media and branding, grants and funding, small business outreach,
-              or financial analysis. No experience required, and the application takes about
-              five minutes.
+              Join a student team and build websites, marketing, grant research, and financial projects for real businesses.
+              You gain practical experience and examples of work you can discuss in college applications and interviews.
             </p>
             <p className="font-body text-white/65 text-sm mb-8">
-              Join {formatCounter(memberCount)} students from {education.highSchoolCount} high schools and {education.collegeCount} colleges.
+              Join {publicStat(overrides, "joinStudentMembers", formatCounter(memberCount))} students from {publicStat(overrides, "joinHighSchools", String(education.highSchoolCount))} high schools and {publicStat(overrides, "joinColleges", String(education.collegeCount))} colleges.
             </p>
             <div className="flex gap-4 flex-wrap mb-3">
               <Link
@@ -164,31 +162,6 @@ export default async function Join() {
           </div>
         </div>
       </ParallaxHero>
-
-      {/* ── WHY NOVUS / RESUME VALUE ───────────────────────── */}
-      <section id="benefits" className="public-surface public-surface-grid py-14 bg-white">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <AnimatedSection className="mb-10">
-            <h2 className="page-section-heading text-n-ink">Built for your resume</h2>
-            <p className="font-body text-n-muted mt-3 max-w-xl">
-              Novus is built around outcomes that matter in interviews and on applications.
-            </p>
-          </AnimatedSection>
-          <div className="grid sm:grid-cols-2 gap-x-12 gap-y-6">
-            {joinGains.map((g, i) => (
-              <AnimatedSection key={g.title} delay={i * 0.04}>
-                <div className="flex gap-3 items-start">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[0.4rem] ${g.color.replace("text-", "bg-")}`} />
-                  <div>
-                    <p className="font-display font-bold text-n-ink text-sm">{g.title}</p>
-                    <p className="font-body text-sm text-n-muted mt-0.5 leading-relaxed">{g.desc}</p>
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── TRACKS ─────────────────────────────────────────── */}
       <TracksParallax>

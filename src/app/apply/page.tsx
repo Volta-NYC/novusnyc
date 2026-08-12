@@ -54,13 +54,13 @@ export default async function Apply() {
                     },
                     {
                       n: "2",
-                      title: "Quick conversation",
-                      desc: "A 15-minute call to learn more about you.",
+                      title: "We review current openings",
+                      desc: "We consider your interests, availability, and the teams that are onboarding.",
                     },
                     {
                       n: "3",
-                      title: "Project match",
-                      desc: "We assign you to a team and project based on your track and availability.",
+                      title: "Onboarding email",
+                      desc: "If there is a fit, we will email your next steps, team, and track.",
                     },
                   ].map((s) => (
                     <div key={s.n} className="flex gap-4">

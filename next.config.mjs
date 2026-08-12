@@ -113,7 +113,17 @@ const nextConfig = {
       },
       {
         source: "/business-guides",
-        destination: "/guides",
+        destination: "/partners",
+        permanent: true,
+      },
+      {
+        source: "/guides",
+        destination: "/partners",
+        permanent: true,
+      },
+      {
+        source: "/reports",
+        destination: "/showcase",
         permanent: true,
       },
       // /updates (Progress Updates) was retired. Its content was social embeds,

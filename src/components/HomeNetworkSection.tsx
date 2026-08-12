@@ -18,10 +18,10 @@ export default function HomeNetworkSection() {
         <AnimatedSection>
           <p className="font-body text-xs font-bold uppercase tracking-[0.22em] text-n-orange">Our network</p>
           <h2 className="mt-4 font-display text-4xl font-bold leading-tight text-white md:text-5xl">
-            Built in New York. Growing beyond it.
+            From New York City to new communities.
           </h2>
           <p className="mt-5 max-w-xl font-body text-base leading-relaxed text-white/70 md:text-lg">
-            Novus began in New York City and is growing through student-led teams rooted in communities across the country.
+            Novus began in New York City and is growing through student-led teams in communities across the country.
           </p>
 
           <div className="mt-8 border-y border-white/10 py-4" aria-label="Novus chapter locations">
@@ -47,9 +47,6 @@ export default function HomeNetworkSection() {
               ))}
             </ul>
           </div>
-          <p className="mt-7 max-w-md font-body text-sm leading-relaxed text-white/55">
-            From our flagship New York City team, Novus has grown into a nationwide network of student-led teams.
-          </p>
         </AnimatedSection>
 
         <AnimatedSection delay={0.08} direction="right" className="network-globe-frame">

@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 type Tone = "peach" | "lavender" | "yellow";
 
 interface SectionBridgeProps {
@@ -17,17 +15,9 @@ export default function SectionBridge({ tone, align = "left" }: SectionBridgePro
   const colors = toneClasses[tone];
 
   return (
-    <div aria-hidden="true" className={`section-bridge h-11 ${colors.background}`}>
-      <div className={`mx-auto flex h-full max-w-7xl items-center gap-3 px-5 md:px-8 ${align === "right" ? "flex-row-reverse" : ""}`}>
-        <span className={`h-px flex-1 ${colors.line}`} />
-        <Image
-          src="/logo.png"
-          alt=""
-          width={223}
-          height={200}
-          className="h-8 w-auto object-contain opacity-80"
-        />
-        <span className={`h-px w-12 md:w-20 ${colors.line}`} />
+    <div aria-hidden="true" className={`section-bridge h-7 ${colors.background}`}>
+      <div className={`mx-auto flex h-full max-w-7xl items-center px-5 md:px-8 ${align === "right" ? "justify-end" : "justify-start"}`}>
+        <span className={`h-px w-20 md:w-32 ${colors.line}`} />
       </div>
     </div>
   );

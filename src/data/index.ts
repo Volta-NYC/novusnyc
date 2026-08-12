@@ -245,20 +245,20 @@ export const showcaseStats = [
 
 export const aboutValues = [
   {
-    title: "Equity-first",
-    desc: "We focus on businesses that can't afford to hire consultants or keep up with digital marketing on their own. We help them see what's possible, then work to make it happen.",
+    title: "Useful work",
+    desc: "We focus on work a business can use right away, from clearer websites to stronger marketing and better internal systems.",
   },
   {
-    title: "Student-led",
-    desc: "Every project is designed and delivered by students, from the first outreach call to the final handoff.",
+    title: "Student ownership",
+    desc: "Students do the work, communicate with clients, and take responsibility for the quality of each project.",
   },
   {
-    title: "Community-rooted",
-    desc: "We work through local business improvement districts because trust in a neighborhood takes time. We show up in person, learn the story behind each business, and stay involved through the whole project.",
+    title: "Local trust",
+    desc: "We work with community organizations that know their neighborhoods and the businesses within them.",
   },
   {
-    title: "Transparent",
-    desc: "Every project has a clear scope, set timeline, and regular updates. Business owners know who is on their team, what's being built, and when to expect it.",
+    title: "Clear communication",
+    desc: "Every project has a defined scope, a point of contact, and regular updates from start to handoff.",
   },
 ];
 
@@ -266,50 +266,50 @@ export const aboutTimeline = [
   {
     month: "Fall",
     year: "2025",
-    label: "The idea takes shape",
-    desc: "Started in New York. Established under Ethan, Andrew, and Tahmid to provide technical services, digital infrastructure, and operational aid to local clients and small businesses.",
+    label: "Novus begins",
+    desc: "Novus began in New York to give small businesses practical technical, marketing, and operational support while giving students meaningful project experience.",
   },
   {
     month: "Winter",
     year: "2026",
     label: "First community connections",
-    desc: "Recruited the first cohort of students. Initiated external outreach strategies and submitted initial bids to neighborhood partners, including initial outreach to Park Slope.",
+    desc: "We recruited our first student cohort and began reaching out to neighborhood partners, including organizations in Park Slope.",
   },
   {
     month: "Late Winter",
     year: "2026",
-    label: "Groundwork",
-    desc: "Conducted the first in-person tours of neighborhoods and potential client sites to establish a direct community presence.",
+    label: "Meeting businesses in person",
+    desc: "Students visited neighborhoods and spoke with business owners to understand where support was most useful.",
   },
   {
     month: "Spring",
     year: "2026",
-    label: "First student cohort & project launches",
-    desc: "Initiated the first client projects with the student cohort while continuing in-person tours throughout the season. Conducted promotional flyering and live service demonstrations in neighborhoods like Sunnyside, North Flatbush, Bayside, and many others.",
+    label: "First projects launch",
+    desc: "Our first student teams began client projects while continuing outreach in Sunnyside, North Flatbush, Bayside, and other neighborhoods.",
   },
   {
     month: "Early Summer",
     year: "2026",
-    label: "Strategic partnerships",
-    desc: "Held a collaborative introduction meeting with the NYC Department of Small Business Services in early June. Established partnerships with the Small Business Resource Network (SBRN) and all five boroughs' Chambers of Commerce.",
+    label: "Growing local partnerships",
+    desc: "We connected with NYC Small Business Services, the Small Business Resource Network, and Chambers of Commerce across the five boroughs.",
   },
   {
     month: "Summer",
     year: "2026",
-    label: "Reorganization and rebrand",
-    desc: "Separated operations entirely from the Jacksonville Volta branch. Restructured the marketing department into four distinct subdepartments. Initiated the comprehensive organizational rebrand from Volta NYC to Novus, updating design assets and leadership structures.",
+    label: "Becoming Novus",
+    desc: "The New York organization became Novus, with a clearer identity, updated systems, and teams built around the work we do with businesses.",
   },
   {
     month: "Fall",
     year: "2026",
-    label: "Consolidating operations",
-    desc: "Finalizing the deployment of Novus design assets and onboarding new student technical talent to scale project capacity for the upcoming academic year.",
+    label: "Building capacity",
+    desc: "We are bringing in new students, improving our systems, and preparing to support more projects during the academic year.",
   },
   {
     month: "Next",
     year: "2027",
-    label: "What comes next",
-    desc: "Scaling technical infrastructure, expanding the student engineering teams, and continuing to build long-term service partnerships with neighborhood businesses across New York City.",
+    label: "Next steps",
+    desc: "We will continue building reliable student teams and long-term partnerships with neighborhood businesses across New York City.",
     tentative: true,
   },
 ];
@@ -529,7 +529,7 @@ export const joinTracks = [
     skills: [
       "Comfort reading financial documents and working in spreadsheets",
       "Some background in structured analysis or research",
-      "Grant writing experience is a plus but not required",
+      "Interest in grant research and writing",
       "Interest in nonprofit finance, accounting, or operations",
     ],
     doWhat: [
@@ -588,8 +588,8 @@ export const joinFaqs = [
     a: "No. Novus is a nonprofit and all roles are volunteer. You get real project experience, portfolio work, references, and the opportunity to move into a leadership role.",
   },
   {
-    q: "Do I need prior experience?",
-    a: "It depends on the track. Tech requires coding experience. Finance and marketing are more open to students who are still building their skills.",
+    q: "What skills are helpful?",
+    a: "It depends on the track. Digital & Tech work benefits from coding experience, while Finance & Operations and Marketing have roles for students building their skills.",
   },
   {
     q: "Is it remote?",

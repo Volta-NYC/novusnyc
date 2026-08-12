@@ -1784,6 +1784,7 @@ export interface SiteSettings {
   portalBannerText:         string;
   permissions:              PortalPermissions;
   handbookAckRequiredAt:    string | null;
+  publicStatOverrides:      Record<string, string>;
 }
 
 const DEFAULT_PERMISSIONS: PortalPermissions = {
@@ -1808,6 +1809,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   portalBannerText:      "#0D0D0D",
   permissions:           DEFAULT_PERMISSIONS,
   handbookAckRequiredAt: null,
+  publicStatOverrides:    {},
 };
 
 function parsePermissions(raw: unknown): PortalPermissions {
@@ -1842,6 +1844,9 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
     portalBannerText:      String(r.portal_banner_text ?? DEFAULT_SITE_SETTINGS.portalBannerText),
     permissions:           parsePermissions(r.permissions),
     handbookAckRequiredAt: r.handbook_ack_required_at ? String(r.handbook_ack_required_at) : null,
+    publicStatOverrides: typeof r.public_stat_overrides === "object" && r.public_stat_overrides !== null && !Array.isArray(r.public_stat_overrides)
+      ? Object.fromEntries(Object.entries(r.public_stat_overrides as Record<string, unknown>).map(([key, value]) => [key, String(value ?? "")]))
+      : {},
   };
 }
 
@@ -1880,6 +1885,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.portalBannerText      !== undefined) row.portal_banner_text      = patch.portalBannerText;
   if (patch.permissions           !== undefined) row.permissions             = patch.permissions;
   if (patch.handbookAckRequiredAt !== undefined) row.handbook_ack_required_at = patch.handbookAckRequiredAt;
+  if (patch.publicStatOverrides      !== undefined) row.public_stat_overrides      = patch.publicStatOverrides;
   const { error } = await supabase.from("site_settings").update(row).eq("id", "singleton");
   if (error) throw new Error(error.message);
   void writeAuditLog({ action: "update", collection: "siteSettings", recordId: "singleton", details: { fields: Object.keys(patch) } });

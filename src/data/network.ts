@@ -17,7 +17,6 @@ export const chapterLocations: ChapterLocation[] = [
     lat: 40.7128,
     lng: -74.006,
     type: "hub",
-    subtitle: "Flagship Team",
   },
   {
     name: "Boston",
@@ -34,7 +33,7 @@ export const chapterLocations: ChapterLocation[] = [
     type: "chapter",
   },
   {
-    name: "Hoover",
+    name: "Alabama",
     state: "AL",
     lat: 33.4054,
     lng: -86.8114,
@@ -63,7 +62,7 @@ export const chapterLocations: ChapterLocation[] = [
     type: "chapter",
   },
   {
-    name: "Concord",
+    name: "North Carolina",
     state: "NC",
     lat: 35.4088,
     lng: -80.5795,
@@ -71,7 +70,7 @@ export const chapterLocations: ChapterLocation[] = [
     globeLabel: "North Carolina",
   },
   {
-    name: "Princeton",
+    name: "New Jersey",
     state: "NJ",
     lat: 40.3573,
     lng: -74.6672,
@@ -93,7 +92,7 @@ export const chapterLocations: ChapterLocation[] = [
     type: "chapter",
   },
   {
-    name: "Ashburn",
+    name: "Virginia",
     state: "VA",
     lat: 39.0438,
     lng: -77.4874,
@@ -101,7 +100,7 @@ export const chapterLocations: ChapterLocation[] = [
     globeLabel: "Virginia",
   },
   {
-    name: "Kent",
+    name: "Washington",
     state: "WA",
     lat: 47.3809,
     lng: -122.2348,
