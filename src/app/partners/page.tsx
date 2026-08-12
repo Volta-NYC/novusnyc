@@ -242,13 +242,13 @@ export default async function Partners() {
             <div className="flex gap-4 flex-wrap">
               <a
                 href="#contact"
-                className="bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-colors"
+                className="border-2 border-transparent bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-colors"
               >
                 Get started →
               </a>
               <Link
                 href="/showcase"
-                className="bg-n-purple text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-purple-dark transition-colors"
+                className="border-2 border-white/55 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-white/10 hover:border-white transition-colors"
               >
                 See our work
               </Link>
@@ -396,13 +396,13 @@ export default async function Partners() {
             <div className="flex gap-4 justify-center flex-wrap">
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center rounded-full bg-n-orange px-8 py-3.5 font-display text-base font-bold text-n-ink transition-colors hover:bg-n-orange-dark"
+                className="inline-flex items-center justify-center rounded-full border-2 border-transparent bg-n-orange px-8 py-3.5 font-display text-base font-bold text-n-ink transition-colors hover:bg-n-orange-dark"
               >
                 Request support →
               </a>
               <Link
                 href="/showcase"
-                className="inline-flex items-center justify-center rounded-full bg-n-purple px-8 py-3.5 font-display text-base font-bold text-n-ink transition-colors hover:bg-n-purple-dark"
+                className="inline-flex items-center justify-center rounded-full border-2 border-white/55 px-8 py-3.5 font-display text-base font-bold text-white transition-colors hover:border-white hover:bg-white/10"
               >
                 See our work
               </Link>

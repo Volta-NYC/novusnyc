@@ -127,13 +127,13 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
             <div className="flex gap-4 flex-wrap justify-center">
               <Link
                 href="/join"
-                className="bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-all hover:scale-[1.03] shadow-xl shadow-black/35"
+                className="border-2 border-transparent bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-all hover:scale-[1.03] shadow-xl shadow-black/35"
               >
                 Apply to Join
               </Link>
               <Link
                 href="/partners"
-                className="bg-n-yellow text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-yellow-dark transition-all shadow-xl shadow-black/25"
+                className="border-2 border-transparent bg-n-yellow text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-yellow-dark transition-all shadow-xl shadow-black/25"
               >
                 Get Free Business Support
               </Link>

@@ -94,42 +94,36 @@ export default async function Impact() {
       suffix: "+",
       label: "Businesses Served",
       sub: "Across NYC and beyond",
-      color: "text-n-orange",
     },
     {
       value: boosted(memberCount),
       suffix: "+",
       label: "Student Members",
       sub: "High school & college",
-      color: "text-n-purple",
     },
     {
       value: boosted(liveStats.websiteProjects),
       suffix: "+",
       label: "Website Projects",
       sub: "Built and deployed",
-      color: "text-n-purple-dark",
     },
     {
       value: boosted(liveStats.marketingProjects),
       suffix: "+",
       label: "Marketing Projects",
       sub: "Social, content, SEO",
-      color: "text-n-orange-dark",
     },
     {
       value: boosted(liveStats.caseStudies + liveStats.educationalReports),
       suffix: "+",
       label: "Student Publications",
       sub: "Case studies & guides",
-      color: "text-amber-600",
     },
     {
       value: boosted(liveStats.bidPartners),
       suffix: "+",
       label: "Community Partners",
       sub: "BIDs and nonprofits",
-      color: "text-n-ink",
     },
   ];
 
@@ -176,7 +170,7 @@ export default async function Impact() {
             {outcomes.map((o, i) => (
               <AnimatedSection key={o.label} delay={i * 0.07}>
                 <div className="text-center">
-                  <div className={`font-display font-bold text-5xl mb-2 ${o.color}`}>
+                  <div className="font-display font-bold text-5xl mb-2 text-n-ink">
                     <CountUp end={o.value} suffix={o.suffix} />
                   </div>
                   <p className="font-body text-sm font-semibold text-n-ink">{o.label}</p>

@@ -76,16 +76,21 @@ export default async function About() {
             <h2 className="page-section-heading text-n-ink mb-10">Our impact</h2>
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-n-border bg-n-border md:grid-cols-6 md:gap-0 md:divide-x md:divide-n-border">
               {[
-                { value: "150+", label: "Total\nbusinesses", color: "text-n-orange" },
-                { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects", color: "text-n-purple" },
-                { value: formatCounter(liveStats.marketingProjects), label: "Marketing\nprojects", color: "text-n-orange-dark" },
-                { value: formatCounter(liveStats.caseStudies), label: "Case studies\nby students", color: "text-n-purple-dark" },
-                { value: formatCounter(liveStats.educationalReports), label: "Educational guides\nfor merchants", color: "text-amber-600" },
-                { value: formatCounter(liveStats.bidPartners, true), label: "Community\norganizations", color: "text-n-ink" },
+                // Numbers are ink, not one pastel each. Six competing hues read
+                // as decoration rather than data, and on these white cards the
+                // pastels measured 1.7-2.9:1 against the 3:1 large-text floor —
+                // n-orange was 1.74:1. CLAUDE.md already says not to use pastels
+                // as text on light backgrounds.
+                { value: "150+", label: "Total\nbusinesses" },
+                { value: formatCounter(liveStats.websiteProjects), label: "Website\nprojects" },
+                { value: formatCounter(liveStats.marketingProjects), label: "Marketing\nprojects" },
+                { value: formatCounter(liveStats.caseStudies), label: "Case studies\nby students" },
+                { value: formatCounter(liveStats.educationalReports), label: "Educational guides\nfor merchants" },
+                { value: formatCounter(liveStats.bidPartners, true), label: "Community\norganizations" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06} className="flex min-h-28 flex-col justify-center bg-white px-3 py-5 text-center sm:px-5 sm:py-7 md:min-h-0 md:px-6 md:py-8">
                   <div>
-                    <p className={`mb-2 font-display text-3xl font-bold leading-none sm:text-4xl md:mb-3 md:text-5xl ${s.color}`}>{s.value}</p>
+                    <p className="mb-2 font-display text-3xl font-bold leading-none text-n-ink sm:text-4xl md:mb-3 md:text-5xl">{s.value}</p>
                     <p className="whitespace-pre-line font-body text-[10px] uppercase leading-relaxed tracking-[0.12em] text-n-muted">{s.label}</p>
                   </div>
                 </AnimatedSection>
@@ -229,13 +234,15 @@ export default async function About() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
             {aboutValues.map((v, i) => {
-              const numColor = ["text-n-orange", "text-n-purple", "text-amber-600", "text-n-orange-dark"][i] ?? "text-n-orange";
+              // One accent, not a different hue per card. These numerals are
+              // aria-hidden decoration, so a pastel is fine here — cycling four
+              // of them was the problem, not the softness.
               return (
                 <AnimatedSection key={v.title} delay={i * 0.1}>
                   <div className="flex flex-col gap-4 bg-white rounded-2xl border border-n-border p-7 hover:shadow-md transition-shadow duration-200 h-full">
                     <div className="flex items-center gap-6">
                       <span
-                        className={`font-display font-bold leading-none select-none flex-shrink-0 ${numColor}`}
+                        className="font-display font-bold leading-none select-none flex-shrink-0 text-n-orange"
                         style={{ fontSize: "clamp(3rem, 7vw, 4.5rem)" }}
                         aria-hidden="true"
                       >
