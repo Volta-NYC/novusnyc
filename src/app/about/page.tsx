@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
-import CoreValuesCompass from "@/components/CoreValuesCompass";
+import CoreValuesEarth from "@/components/CoreValuesEarth";
 import HistoryTimeline from "@/components/HistoryTimeline";
 import LeadershipProfiles from "@/components/LeadershipProfiles";
 import ParallaxHero from "@/components/ParallaxHero";
@@ -180,7 +180,7 @@ export default async function About() {
           </AnimatedSection>
 
           <AnimatedSection>
-            <CoreValuesCompass values={aboutValues} />
+            <CoreValuesEarth values={aboutValues} />
           </AnimatedSection>
         </div>
       </section>
