@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -201,6 +201,9 @@ interface DrawerProps {
 }
 
 function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClose }: DrawerProps) {
+  const titleId = useId();
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
   const track = ((a?.track ?? a?.primaryTrack ?? "General") as CycleTrack);
   const activeClaims = claimList.filter((c) => c.status !== "rejected");
   const taken = activeClaims.length;
@@ -213,6 +216,30 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
   const deadline = a ? (a.deadlines?.[0]?.date ?? a.deadline ?? "") : "";
   const deadlineDays = deadline ? Math.round((Date.parse(deadline) - Date.now()) / 86400000) : null;
 
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const drawer = drawerRef.current;
+    window.setTimeout(() => drawer?.querySelector<HTMLElement>('button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); onCloseRef.current(); return; }
+      if (event.key !== "Tab" || !drawer) return;
+      const focusable = Array.from(drawer.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [open]);
+
   return (
     <>
       {/* Backdrop */}
@@ -223,6 +250,12 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
 
       {/* Drawer panel */}
       <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={a ? titleId : undefined}
+        aria-hidden={!open}
+        inert={!open}
         className={`fixed right-0 top-0 h-full w-full max-w-lg z-50 bg-white border-l border-black/8 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         {!a ? null : (
@@ -239,11 +272,12 @@ function AssignmentDrawer({ assignment: a, claimList, business, me, open, onClos
                     {a.priority && <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">⚡ Priority</span>}
                     {a.recurringEnabled && <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">↻ Recurring</span>}
                   </div>
-                  <h2 className="text-[15px] font-bold text-black/90 leading-snug">{a.title}</h2>
+                  <h2 id={titleId} className="text-[15px] font-bold text-black/90 leading-snug">{a.title}</h2>
                 </div>
               </div>
               <button
                 type="button"
+                aria-label="Close assignment details"
                 onClick={onClose}
                 className="flex-shrink-0 w-8 h-8 rounded-lg bg-black/5 hover:bg-black/10 text-black/35 hover:text-black/70 flex items-center justify-center transition-colors mt-0.5"
               >
@@ -643,6 +677,7 @@ export default function CatalogPage() {
 
   return (
     <MembersLayout>
+      <h1 className="sr-only">Assignment catalog</h1>
       {/* ── Command Bar ─────────────────────────────────────────────────── */}
       <div className="mb-6">
         <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -654,6 +689,7 @@ export default function CatalogPage() {
             </svg>
             <input
               type="text"
+              aria-label="Search assignments"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search assignments…"
@@ -667,6 +703,7 @@ export default function CatalogPage() {
               <button
                 key={t}
                 type="button"
+                aria-pressed={trackFilters.has(t)}
                 onClick={() => toggleTrack(t)}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                   trackFilters.has(t)

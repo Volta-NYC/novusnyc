@@ -1151,8 +1151,9 @@ export default function CatalogPage() {
 
               {/* Compose */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">New update</label>
+                <label htmlFor="assignment-new-update" className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-2">New update</label>
                 <TextArea
+                  id="assignment-new-update"
                   rows={5}
                   value={updateDraft}
                   onChange={(e) => setUpdateDraft(e.target.value)}

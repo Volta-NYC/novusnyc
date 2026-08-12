@@ -73,7 +73,8 @@ export default function ResetPasswordPage() {
 
   if (phase === "waiting") {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
+      <div className="members-auth min-h-screen bg-[#0F1014] flex items-center justify-center">
+        <h1 className="sr-only">Reset your password</h1>
         <Spinner />
       </div>
     );
@@ -81,7 +82,7 @@ export default function ResetPasswordPage() {
 
   if (phase === "invalid") {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+      <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-6 mx-auto" />
           <h1 className="font-display font-bold text-white text-2xl mb-3">Link Expired</h1>
@@ -101,7 +102,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+    <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-4" />
@@ -111,10 +112,11 @@ export default function ResetPasswordPage() {
 
         <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+            <label htmlFor="reset-password-new" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               New Password
             </label>
             <PasswordInput
+              id="reset-password-new"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -125,10 +127,11 @@ export default function ResetPasswordPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+            <label htmlFor="reset-password-confirm" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Confirm Password
             </label>
             <PasswordInput
+              id="reset-password-confirm"
               required
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
@@ -138,7 +141,7 @@ export default function ResetPasswordPage() {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
+            <div role="alert" className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
               {error}
             </div>
           )}

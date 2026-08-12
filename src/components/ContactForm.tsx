@@ -46,6 +46,11 @@ const EMPTY: ContactFormValues = {
   businessName: "", name: "", email: "", phone: "", neighborhood: "", services: [], referredBy: "", message: "",
 };
 
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return <p id={id} role="alert" className="mt-1 font-body text-xs text-red-500">{message}</p>;
+}
+
 export default function ContactForm() {
   const [lang, setLang] = useState<Lang>("en");
   const [formData, setFormData] = useState<ContactFormValues>(EMPTY);
@@ -88,6 +93,9 @@ export default function ContactForm() {
     const result = validateContactForm(formData);
     if (!result.success) {
       setErrors(result.errors);
+      window.setTimeout(() => {
+        document.querySelector<HTMLElement>("#partner-contact-form [aria-invalid='true']")?.focus();
+      });
       return;
     }
     setErrors({});
@@ -132,8 +140,8 @@ export default function ContactForm() {
 
   if (status === "success") {
     return (
-      <div role="status" aria-live="polite" className="bg-white border border-n-border rounded-2xl p-10 text-center" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
-        <div className="w-14 h-14 rounded-full bg-n-orange/20 flex items-center justify-center mx-auto mb-4">
+      <div role="status" aria-live="polite" className="bg-white border border-n-border rounded-2xl p-10 text-center" dir={c.dir} lang={lang}>
+        <div aria-hidden="true" className="w-14 h-14 rounded-full bg-n-orange/20 flex items-center justify-center mx-auto mb-4">
           <CheckIcon className="w-7 h-7 text-n-orange" />
         </div>
         <h3 className="font-display font-bold text-2xl text-n-ink mb-3">{c.successTitle}</h3>
@@ -150,6 +158,7 @@ export default function ContactForm() {
           <button
             key={l}
             type="button"
+            aria-pressed={lang === l}
             onClick={() => {
               // Preserve selections by index so switching language keeps the
               // same items checked (e.g. slot 2 in EN maps to slot 2 in ES).
@@ -172,49 +181,65 @@ export default function ContactForm() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="bg-white border border-n-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir} lang={lang === "ar" ? "ar" : undefined}>
+      <form id="partner-contact-form" onSubmit={handleSubmit} noValidate className="bg-white border border-n-border rounded-2xl p-8 md:p-10 space-y-5" dir={c.dir} lang={lang}>
         <div className="grid md:grid-cols-2 gap-5">
           <div>
-            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.businessName}</label>
+            <label htmlFor="contact-business-name" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.businessName}</label>
             <input
+              id="contact-business-name"
+              autoComplete="organization"
               value={formData.businessName}
+              aria-invalid={Boolean(errors.businessName)}
+              aria-describedby={errors.businessName ? "contact-business-name-error" : undefined}
               onChange={(e) => { setFormData((p) => ({ ...p, businessName: e.target.value })); clearError("businessName"); }}
               className={`novus-input ${errors.businessName ? "border-red-400" : ""}`}
             />
-            {errors.businessName && <p className="text-red-500 text-xs mt-1 font-body">{errors.businessName}</p>}
+            <FieldError id="contact-business-name-error" message={errors.businessName} />
           </div>
           <div>
-            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.ownerName}</label>
+            <label htmlFor="contact-owner-name" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.ownerName}</label>
             <input
+              id="contact-owner-name"
+              autoComplete="name"
               value={formData.name}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? "contact-owner-name-error" : undefined}
               onChange={(e) => { setFormData((p) => ({ ...p, name: e.target.value })); clearError("name"); }}
               className={`novus-input ${errors.name ? "border-red-400" : ""}`}
             />
-            {errors.name && <p className="text-red-500 text-xs mt-1 font-body">{errors.name}</p>}
+            <FieldError id="contact-owner-name-error" message={errors.name} />
           </div>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           <div>
-            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.email}</label>
+            <label htmlFor="contact-email" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.email}</label>
             <input
+              id="contact-email"
               type="email"
+              autoComplete="email"
               value={formData.email}
+              aria-invalid={Boolean(errors.email)}
+              aria-describedby={errors.email ? "contact-email-error" : undefined}
               onChange={(e) => { setFormData((p) => ({ ...p, email: e.target.value })); clearError("email"); }}
               className={`novus-input ${errors.email ? "border-red-400" : ""}`}
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
+            <FieldError id="contact-email-error" message={errors.email} />
           </div>
           <div>
-            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.phone}</label>
+            <label htmlFor="contact-phone" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.phone}</label>
             <input
+              id="contact-phone"
+              type="tel"
+              autoComplete="tel"
               value={formData.phone}
               onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
               className="novus-input"
             />
           </div>
           <div>
-            <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.neighborhood}</label>
+            <label htmlFor="contact-neighborhood" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.neighborhood}</label>
             <Combobox
+              id="contact-neighborhood"
               theme="light"
               value={formData.neighborhood}
               onChange={(next) => setFormData((p) => ({ ...p, neighborhood: next }))}
@@ -223,13 +248,14 @@ export default function ContactForm() {
             />
           </div>
         </div>
-        <div>
-          <label className="block font-body text-sm font-semibold text-n-ink mb-3">{c.services}</label>
+        <fieldset>
+          <legend className="block font-body text-sm font-semibold text-n-ink mb-3">{c.services}</legend>
           <div className="flex flex-wrap gap-2">
             {serviceList.map((s) => (
               <button
                 key={s}
                 type="button"
+                aria-pressed={formData.services.includes(s)}
                 onClick={() => toggleService(s)}
                 className={`text-sm font-body font-medium px-4 py-2 rounded-full border transition-all ${formData.services.includes(s) ? "bg-n-orange border-n-orange text-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
               >
@@ -237,10 +263,11 @@ export default function ContactForm() {
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
         <div>
-          <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.referredBy}</label>
+          <label htmlFor="contact-referred-by" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.referredBy}</label>
           <Combobox
+            id="contact-referred-by"
             theme="light"
             value={formData.referredBy}
             onChange={(next) => setFormData((p) => ({ ...p, referredBy: next }))}
@@ -249,8 +276,9 @@ export default function ContactForm() {
           />
         </div>
         <div>
-          <label className="block font-body text-sm font-semibold text-n-ink mb-2">{c.message}</label>
+          <label htmlFor="contact-message" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.message}</label>
           <textarea
+            id="contact-message"
             value={formData.message}
             onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
             className="novus-input resize-none"
@@ -265,7 +293,7 @@ export default function ContactForm() {
         >
           {status === "loading" ? c.submitting : c.submit}
         </button>
-        {status === "error" && <p className="text-red-500 text-sm text-center font-body">{c.errorMsg}</p>}
+        {status === "error" && <p role="alert" className="text-red-500 text-sm text-center font-body">{c.errorMsg}</p>}
         <p className="text-xs text-n-muted text-center font-body">{c.footerNote}</p>
       </form>
     </div>

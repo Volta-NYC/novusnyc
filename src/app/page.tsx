@@ -223,7 +223,7 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
           </blockquote>
         )}
         <div className="flex items-center justify-between mt-4">
-          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
+          <p className="font-body text-xs text-n-muted flex items-center gap-1.5">
             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
           </p>
           {project.url && (
@@ -372,10 +372,12 @@ function PartnerLogoCard({
   partner,
   important,
   tabIndex,
+  isDuplicate = false,
 }: {
   partner: CommunityPartner;
   important: boolean;
   tabIndex?: number;
+  isDuplicate?: boolean;
 }) {
   return (
     <a
@@ -383,6 +385,7 @@ function PartnerLogoCard({
       target="_blank"
       rel="noreferrer"
       tabIndex={tabIndex}
+      aria-hidden={isDuplicate || undefined}
       aria-label={`Visit ${partner.name} website`}
       className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-start text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
         important
@@ -393,7 +396,7 @@ function PartnerLogoCard({
       <div className="relative w-full h-[72px] shrink-0">
         <Image
           src={partner.logo}
-          alt={`${partner.name} logo`}
+          alt={isDuplicate ? "" : `${partner.name} logo`}
           fill
           sizes="190px"
           className={getPartnerLogoClass(partner, "object-contain partner-logo-image p-1")}
@@ -433,6 +436,7 @@ function PartnerMarquee({
                 partner={partner}
                 important={important}
                 tabIndex={copy === 1 ? -1 : undefined}
+                isDuplicate={copy === 1}
               />
             ))}
           </div>

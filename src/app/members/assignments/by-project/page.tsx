@@ -707,7 +707,16 @@ export default function ByProjectPage() {
                         return (
                           <Fragment key={a.id}>
                             <tr
+                              tabIndex={0}
+                              aria-label={`${isRowExpanded ? "Collapse" : "Expand"} ${a.title}`}
                               onClick={() => toggleRowExpand(a.id)}
+                              onKeyDown={(event) => {
+                                if (event.target !== event.currentTarget) return;
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  toggleRowExpand(a.id);
+                                }
+                              }}
                               className={`border-b border-white/5 cursor-pointer hover:bg-white/[0.025] transition-colors ${a.priority ? "bg-amber-400/[0.035]" : ""}`}
                             >
                               {/* Title */}
@@ -837,6 +846,7 @@ export default function ByProjectPage() {
                 <div className="relative">
                   <input
                     type="text"
+                    aria-label="Use template"
                     value={templateSearch}
                     onChange={(e) => { setTemplateSearch(e.target.value); setTemplateDropdownOpen(true); }}
                     onFocus={() => setTemplateDropdownOpen(true)}
@@ -856,7 +866,8 @@ export default function ByProjectPage() {
                           <button
                             key={t.id}
                             type="button"
-                            onMouseDown={() => { applyTemplate(t); setTemplateSearch(`${t.track} · ${t.title}`); setTemplateDropdownOpen(false); }}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => { applyTemplate(t); setTemplateSearch(`${t.track} · ${t.title}`); setTemplateDropdownOpen(false); }}
                             className="w-full text-left px-3 py-2 hover:bg-white/[0.06] transition-colors"
                           >
                             <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wide mr-2">{t.track}</span>
@@ -932,8 +943,8 @@ export default function ByProjectPage() {
                   onChange={(e) => setAssignmentForm((p) => ({ ...p, credits: Number(e.target.value) }))}
                 />
               </Field>
-              <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1.5">Claimant limit</label>
+              <fieldset>
+                <legend className="block text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1.5">Claimant limit</legend>
                 <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 space-y-2">
                   <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer">
                     <input
@@ -947,6 +958,7 @@ export default function ByProjectPage() {
                   {assignmentForm.limitClaims && (
                     <div className="flex items-center gap-2 pl-5">
                       <Input
+                        aria-label="Maximum claimants"
                         type="number"
                         min={1}
                         value={assignmentForm.capacity}
@@ -960,7 +972,7 @@ export default function ByProjectPage() {
                     <p className="text-xs text-white/35 pl-5">Unlimited spots.</p>
                   )}
                 </div>
-              </div>
+              </fieldset>
               <Field label="Min Role">
                 <Select
                   value={assignmentForm.minRole}

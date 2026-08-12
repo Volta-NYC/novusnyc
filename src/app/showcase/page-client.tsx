@@ -91,7 +91,7 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
           </blockquote>
         )}
         <div className="flex items-center justify-between mt-4">
-          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
+          <p className="font-body text-xs text-n-muted flex items-center gap-1.5">
             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
             {project.neighborhood}
           </p>
@@ -103,7 +103,15 @@ function ShowcaseMobileCard({ project, isDuplicate = false }: { project: Showcas
 
   return (
     project.url ? (
-      <a href={project.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${project.name} live site`} className="block">
+      <a
+        href={project.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Visit ${project.name} live site`}
+        aria-hidden={isDuplicate || undefined}
+        tabIndex={isDuplicate ? -1 : undefined}
+        className="block"
+      >
         {card}
       </a>
     ) : card
@@ -468,7 +476,7 @@ export default function ShowcaseClient({
                           </blockquote>
                         )}
                         <div className="flex items-center justify-between mt-4">
-                          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
+                          <p className="font-body text-xs text-n-muted flex items-center gap-1.5">
                             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" />
                             {p.neighborhood}
                           </p>

@@ -52,7 +52,7 @@ export default function MembersLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+    <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-4" />
@@ -68,10 +68,11 @@ export default function MembersLogin() {
 
         <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+            <label htmlFor="member-login-email" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Email
             </label>
             <Input
+              id="member-login-email"
               type="email"
               required
               value={email}
@@ -84,10 +85,11 @@ export default function MembersLogin() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+            <label htmlFor="member-login-password" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Password
             </label>
             <PasswordInput
+              id="member-login-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -97,7 +99,7 @@ export default function MembersLogin() {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
+            <div role="alert" className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
               {error}
             </div>
           )}

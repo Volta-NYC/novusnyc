@@ -1444,10 +1444,19 @@ function BusinessesPageInner() {
       <tr
         id={`project-${b.id}`}
         key={b.id}
+        tabIndex={0}
+        aria-label={`Edit ${b.name}`}
         className="border-b border-white/5 hover:bg-white/[0.025] cursor-pointer"
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("button,a,input,select")) return;
           void openEdit(b);
+        }}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            void openEdit(b);
+          }
         }}
       >
         <td className="px-3 py-0 h-9 align-middle">
@@ -1567,10 +1576,19 @@ function BusinessesPageInner() {
       <tr
         id={`project-${b.id}`}
         key={b.id}
+        tabIndex={0}
+        aria-label={`Edit ${b.name}`}
         className="border-b border-white/5 hover:bg-white/[0.025] cursor-pointer"
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("button,a,input,select")) return;
           void openEdit(b);
+        }}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            void openEdit(b);
+          }
         }}
       >
         <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">

@@ -64,11 +64,13 @@ const steps = [
 
 export default function ApplicationJourney() {
   const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [manualPaused, setManualPaused] = useState(false);
+  const [interactionPaused, setInteractionPaused] = useState(false);
   const id = useId();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const reducedMotion = useReducedMotion();
   const step = steps[active];
+  const paused = manualPaused || interactionPaused;
 
   useEffect(() => {
     if (paused || reducedMotion) return;
@@ -99,16 +101,28 @@ export default function ApplicationJourney() {
             <p className="font-body mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-700">Your Novus journey</p>
             <h2 id="application-journey-heading" className="page-section-heading text-n-ink">From application to work you can show.</h2>
           </div>
-          <p className="max-w-md font-body text-sm leading-relaxed text-n-muted">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
+          <div className="flex max-w-md flex-col items-start gap-3 md:items-end">
+            <p className="font-body text-sm leading-relaxed text-n-muted md:text-right">Explore how a student moves from a first conversation to a portfolio of real client work.</p>
+            {!reducedMotion && (
+              <button
+                type="button"
+                aria-pressed={manualPaused}
+                onClick={() => setManualPaused((value) => !value)}
+                className="rounded-full border border-n-control-border bg-white px-3 py-1.5 font-body text-xs font-semibold text-n-purple-ink hover:bg-n-purple/10"
+              >
+                {manualPaused ? "Resume animation" : "Pause animation"}
+              </button>
+            )}
+          </div>
         </div>
 
         <div
           className="grid overflow-hidden rounded-lg border border-n-yellow/55 bg-white/70 md:grid-cols-[15rem_minmax(0,1fr)]"
-          onPointerEnter={() => setPaused(true)}
-          onPointerLeave={() => setPaused(false)}
-          onFocusCapture={() => setPaused(true)}
+          onPointerEnter={() => setInteractionPaused(true)}
+          onPointerLeave={() => setInteractionPaused(false)}
+          onFocusCapture={() => setInteractionPaused(true)}
           onBlurCapture={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
+            if (!event.currentTarget.contains(event.relatedTarget)) setInteractionPaused(false);
           }}
         >
           <div role="tablist" aria-label="Novus student journey" className="grid border-b border-n-yellow/40 bg-white/45 sm:grid-cols-5 md:block md:border-b-0 md:border-r">

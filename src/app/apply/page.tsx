@@ -38,7 +38,7 @@ export default async function Apply() {
                   High school and college students. Real projects for real businesses.
                   2–4 hours a week, fully remote.
                 </p>
-                <p className="font-body text-sm text-n-muted/70 mb-8">
+                <p className="font-body text-sm text-n-muted mb-8">
                   ~30% acceptance rate.
                 </p>
 

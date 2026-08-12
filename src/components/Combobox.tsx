@@ -11,6 +11,11 @@ interface ComboboxProps {
   theme?: "light" | "dark";
   className?: string;
   showOnEmpty?: boolean;
+  id?: string;
+  ariaLabel?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
+  invalid?: boolean;
 }
 
 /**
@@ -30,6 +35,11 @@ export default function Combobox({
   theme = "dark",
   className = "",
   showOnEmpty = false,
+  id,
+  ariaLabel,
+  ariaLabelledBy,
+  ariaDescribedBy,
+  invalid = false,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -99,6 +109,7 @@ export default function Combobox({
   return (
     <div ref={rootRef} className="relative">
       <input
+        id={id}
         type="text"
         autoComplete="off"
         role="combobox"
@@ -106,9 +117,19 @@ export default function Combobox({
         aria-controls={listId}
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
         aria-autocomplete="list"
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        aria-invalid={invalid || undefined}
+        aria-describedby={ariaDescribedBy}
         value={value}
         onChange={(e) => { onChange(e.target.value); setOpen(true); setActive(-1); }}
         onFocus={() => setOpen(true)}
+        onBlur={(event) => {
+          if (!rootRef.current?.contains(event.relatedTarget as Node | null)) {
+            setOpen(false);
+            setActive(-1);
+          }
+        }}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         disabled={isDisabled}

@@ -45,6 +45,11 @@ const config: Config = {
         "n-yellow-dark": "rgb(var(--color-yellow-dark) / <alpha-value>)",
         "n-purple":      "rgb(var(--color-purple) / <alpha-value>)",      // lavender #BEA2BA
         "n-purple-dark": "rgb(var(--color-purple-dark) / <alpha-value>)",
+        "n-orange-ink":  "rgb(var(--color-orange-ink) / <alpha-value>)",
+        "n-purple-ink":  "rgb(var(--color-purple-ink) / <alpha-value>)",
+        "n-on-accent":   "rgb(var(--color-on-accent) / <alpha-value>)",
+        "n-control-border": "rgb(var(--color-control-border) / <alpha-value>)",
+        "n-error":       "rgb(var(--color-error) / <alpha-value>)",
         "n-bg":          "rgb(var(--color-bg) / <alpha-value>)",
         "n-ink":         "rgb(var(--color-ink) / <alpha-value>)",
         "n-muted":       "rgb(var(--color-muted) / <alpha-value>)",

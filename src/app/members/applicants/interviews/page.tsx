@@ -2370,10 +2370,11 @@ function InterviewsContent() {
               </p>
             </div>
             <input
+              aria-label="Search interviewer access by name or email"
               value={interviewerSearch}
               onChange={(e) => setInterviewerSearch(e.target.value)}
               placeholder="Search by name or email"
-              className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/25 outline-none"
+              className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#F6B78D]"
             />
             <div className="divide-y divide-white/5 max-h-72 overflow-y-auto">
               {activeMembers.length === 0 && (
@@ -2386,6 +2387,10 @@ function InterviewsContent() {
                     <p className="text-[11px] text-white/35 font-body">{member.role} · {member.email}</p>
                   </div>
                   <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(member.canInterview)}
+                    aria-label={`Interviewer access for ${member.name}`}
                     onClick={() => void toggleInterviewer(member)}
                     disabled={togglingId === member.id}
                     className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${

@@ -165,6 +165,7 @@ export default function SignupPage() {
     if (sendDone) {
       return (
         <div className="bg-[#F6B78D]/10 border border-[#F6B78D]/25 rounded-xl p-5 text-center">
+          <h1 className="sr-only">Set up your account</h1>
           <p className="text-[#F6B78D] font-semibold font-display mb-1">Check your email</p>
           <p className="text-white/50 text-sm font-body">
             A setup link has been sent to{" "}
@@ -209,15 +210,16 @@ export default function SignupPage() {
             // Fallback: no email in URL (e.g. someone navigates here directly).
             <form onSubmit={(e) => { e.preventDefault(); void sendSetupLink(manualEmail); }}>
               <div className="mb-4">
-                <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+                <label htmlFor="signup-link-email" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
                   Your Email
                 </label>
                 <input
+                  id="signup-link-email"
                   type="email"
                   required
                   value={manualEmail}
                   onChange={(e) => setManualEmail(e.target.value)}
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
+                  className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors"
                   placeholder="you@email.com"
                   autoFocus
                   autoComplete="email"
@@ -248,7 +250,8 @@ export default function SignupPage() {
 
   if (phase === "waiting") {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
+      <div className="members-auth min-h-screen bg-[#0F1014] flex items-center justify-center">
+        <h1 className="sr-only">Set up your account</h1>
         <Spinner />
       </div>
     );
@@ -256,7 +259,7 @@ export default function SignupPage() {
 
   if (phase === "landing" || phase === "expired") {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+      <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
           <SendLinkCard
             heading={phase === "expired" ? "Link Expired" : "Set Up Your Account"}
@@ -273,7 +276,7 @@ export default function SignupPage() {
 
   if (phase === "invalid") {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+      <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-6 mx-auto" />
           <h1 className="font-display font-bold text-white text-2xl mb-3">Invalid Link</h1>
@@ -290,7 +293,7 @@ export default function SignupPage() {
 
   // phase === "form" — valid OTP session, set password
   return (
-    <div className="min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+    <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-4" />
@@ -300,34 +303,37 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="bg-[#1C1F26] border border-white/8 rounded-2xl p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+            <label htmlFor="signup-full-name" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Full Name
             </label>
             <input
+              id="signup-full-name"
               value={name}
               readOnly
-              className="w-full bg-[#0F1014] border border-white/6 rounded-lg px-3 py-2.5 text-sm text-white/50 cursor-default select-none focus:outline-none"
+              className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white/60 cursor-default select-none focus:outline-none"
             />
           </div>
 
           {sessionEmail && (
             <div>
-              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+              <label htmlFor="signup-email" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
                 Email
               </label>
               <input
+                id="signup-email"
                 value={sessionEmail}
                 readOnly
-                className="w-full bg-[#0F1014] border border-white/6 rounded-lg px-3 py-2.5 text-sm text-white/50 cursor-default select-none focus:outline-none"
+                className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white/60 cursor-default select-none focus:outline-none"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+            <label htmlFor="signup-password" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Password
             </label>
             <PasswordInput
+              id="signup-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -338,10 +344,11 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+            <label htmlFor="signup-password-confirm" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
               Confirm Password
             </label>
             <PasswordInput
+              id="signup-password-confirm"
               required
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
@@ -351,7 +358,7 @@ export default function SignupPage() {
           </div>
 
           {formError && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
+            <div role="alert" className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 text-red-400 text-sm">
               {formError}
             </div>
           )}

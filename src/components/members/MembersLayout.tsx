@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/members/authContext";
 import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
 import { supabase } from "@/lib/supabaseClient";
 import { sora } from "@/lib/fonts";
+import { Modal } from "@/components/members/ui";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -354,10 +355,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     <div className={`members-portal ${lightTheme ? "members-portal-light" : ""} min-h-screen ${tone.page} flex`}>
 
       {/* Handbook acknowledgment modal */}
-      {showAckModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 md:p-8">
-            <h2 className="font-display font-bold text-black/85 text-xl mb-2">Before you continue</h2>
+      <Modal open={showAckModal} onClose={() => {}} title="Before you continue" dismissible={false}>
+          <div className="max-w-md rounded-xl bg-white p-5">
             <p className="text-black/60 text-sm font-body mb-4 leading-relaxed">
               By continuing, you acknowledge that you have read and understand the Novus NYC credit and infraction system as described in the Member Handbook.
             </p>
@@ -379,6 +378,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
               </span>
             </label>
             <button
+              type="button"
               onClick={() => void handleConfirmAck()}
               disabled={!ackChecked || ackLoading}
               className={`w-full py-2.5 rounded-xl font-display font-bold text-sm transition-colors ${
@@ -390,8 +390,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
               {ackLoading ? "Saving…" : "Confirm"}
             </button>
           </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
@@ -419,7 +418,13 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Logo + collapse toggle — fixed height keeps the border-b from shifting */}
         <div className={`h-[52px] border-b ${tone.sidebarBorder} flex items-center shrink-0 ${sidebarCollapsed ? "justify-center" : "px-3 gap-2"}`}>
-          <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className={`h-8 w-auto object-contain shrink-0 ${sidebarCollapsed ? "cursor-pointer" : ""}`} onClick={sidebarCollapsed ? toggleCollapsed : undefined} />
+          {sidebarCollapsed ? (
+            <button type="button" onClick={toggleCollapsed} aria-label="Expand sidebar" className="rounded-md p-1">
+              <Image src="/logo.png" alt="" width={223} height={200} className="h-8 w-auto object-contain shrink-0" />
+            </button>
+          ) : (
+            <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-8 w-auto object-contain shrink-0" />
+          )}
           {!sidebarCollapsed && (
             <>
               <div className="min-w-0 flex-1">
@@ -430,6 +435,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={toggleCollapsed}
                 title="Collapse sidebar"
+                aria-label="Collapse sidebar"
                 className={`rounded-md p-1 shrink-0 transition-colors ${tone.collapseBtn}`}
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -533,6 +539,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                     Back to public site
                   </Link>
                   <button
+                    type="button"
                     onClick={() => { closeProfilePopover(); void handleSignOut(); }}
                     className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-body rounded-lg transition-colors ${tone.signOut}`}
                   >
@@ -551,7 +558,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Mobile top bar */}
         <div className={`lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-10 ${tone.mobileBar}`}>
-          <button onClick={() => setSidebarOpen(true)} className={`p-1 ${tone.burgerText}`}>
+          <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open member navigation" className={`rounded p-1 ${tone.burgerText}`}>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="12" x2="21" y2="12"/>

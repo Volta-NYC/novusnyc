@@ -200,7 +200,7 @@ export default async function Impact() {
                       <div key={m} className="flex items-center gap-2.5 font-body text-sm text-n-ink">
                         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${area.dot}`} />
                         {area.placeholder ? (
-                          <span className="text-n-muted/60 italic">{m} — data pending</span>
+                          <span className="text-n-muted italic">{m} — data pending</span>
                         ) : (
                           m
                         )}
@@ -304,7 +304,7 @@ export default async function Impact() {
                     <h3 className="font-display font-bold text-n-ink text-lg">{r.org}</h3>
                     <p className="font-body text-sm text-n-muted mt-1">
                       {r.desc}
-                      {r.placeholder && <span className="italic text-n-muted/50"> — details to be added</span>}
+                      {r.placeholder && <span className="italic text-n-muted"> — details to be added</span>}
                     </p>
                   </div>
                 </div>

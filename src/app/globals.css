@@ -40,6 +40,14 @@
   --color-yellow:           243 226 141;
   --color-yellow-dark:      228 210 124;
 
+  /* Accessible semantic accents for light surfaces. The pastel brand values
+     remain available for fills and for text on dark surfaces. */
+  --color-orange-ink:       140 74 29;
+  --color-purple-ink:       116 68 103;
+  --color-on-accent:        45 40 46;
+  --color-control-border:   159 141 155;
+  --color-error:            185 28 28;
+
   /* ─── Surfaces ───────────────────────────────────────────────── */
   /* Page / section background — warm off-white */
   --color-bg:               255 253 249;
@@ -98,6 +106,20 @@
   --purple:  rgb(var(--color-purple));
   --bg:    rgb(var(--color-bg));
   --ink:   rgb(var(--color-ink));
+}
+
+/* Opt-in public dark theme. Accent fills retain their pastel brand values,
+   while semantic foreground and structural tokens change with the surface. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg:               23 21 26;
+  --color-surface:          35 31 36;
+  --color-dark:             13 15 20;
+  --color-ink:              255 253 249;
+  --color-muted:            207 196 204;
+  --color-border:           109 98 109;
+  --color-dot:              132 119 130;
+  --color-scrollbar:        132 119 130;
 }
 
 *,
@@ -1935,7 +1957,7 @@ body:has(.home-scroll-story) footer::before {
 .novus-input {
   width: 100%;
   background: white;
-  border: 1.5px solid rgb(var(--color-border));
+  border: 1.5px solid rgb(var(--color-control-border));
   border-radius: 10px;
   padding: 12px 16px;
   font-family: var(--font-dm-sans), sans-serif;
@@ -1945,7 +1967,7 @@ body:has(.home-scroll-story) footer::before {
   transition: border-color 0.15s;
 }
 .novus-input:focus {
-  border-color: rgb(var(--color-orange));
+  border-color: rgb(var(--color-orange-ink));
 }
 .novus-input::placeholder {
   color: #9CA3AF;
@@ -2008,21 +2030,26 @@ details[open] > .accordion-body {
   outline-offset: 2px;
 }
 
-/* Public site interactive element focus rings */
-a:focus-visible,
-button:focus-visible,
-[role="tab"]:focus-visible,
-summary:focus-visible {
-  outline: 2px solid rgb(var(--color-orange));
-  outline-offset: 2px;
+/* Public-site light surfaces use a dark brand hue. */
+.public-site :where(a, button, input, select, textarea, summary, [role="tab"]):focus-visible {
+  outline: 3px solid rgb(var(--color-orange-ink));
+  outline-offset: 3px;
   border-radius: 2px;
+}
+
+/* Dark navigation, footer, booking, authentication, and portal surfaces use
+   the original pastel, which has strong contrast against the dark canvas. */
+:where(header, footer, .members-portal, .members-auth, .booking-flow)
+  :where(a, button, input, select, textarea, summary, [role="tab"]):focus-visible {
+  outline: 3px solid rgb(var(--color-orange));
+  outline-offset: 3px;
 }
 
 /* Keep form element focus rings consistent */
 .novus-input:focus-visible {
-  outline: 2px solid rgb(var(--color-orange));
+  outline: 3px solid rgb(var(--color-orange-ink));
   outline-offset: 0;
-  border-color: rgb(var(--color-orange));
+  border-color: rgb(var(--color-orange-ink));
 }
 
 /* Accordion summary focus ring */
@@ -2033,9 +2060,76 @@ summary:focus {
   outline: none;
 }
 summary:focus-visible {
-  outline: 2px solid rgb(var(--color-orange));
+  outline: 3px solid rgb(var(--color-orange-ink));
   outline-offset: 3px;
   border-radius: 4px;
+}
+
+/* Dark UI secondary copy must remain at or above 4.5:1. These utilities are
+   intentionally scoped so public photo overlays keep their authored values. */
+:where(.members-portal, .members-auth, .booking-flow) :where(
+  .text-white\/20,
+  .text-white\/25,
+  .text-white\/30,
+  .text-white\/35,
+  .text-white\/40,
+  .text-white\/45
+) {
+  color: rgb(255 255 255 / 0.5);
+}
+
+:where(.members-portal, .members-auth, .booking-flow) :where(
+  .placeholder-white\/20,
+  .placeholder-white\/25,
+  .placeholder-white\/30,
+  .placeholder-white\/35,
+  .placeholder-white\/40,
+  .placeholder-white\/45
+)::placeholder {
+  color: rgb(255 255 255 / 0.5);
+  opacity: 1;
+}
+
+/* Filled brand controls always keep dark ink, including in public dark mode. */
+:where(
+  [class*="bg-n-orange"],
+  [class*="bg-n-yellow"],
+  [class*="bg-n-purple"]
+)[class*="text-n-ink"] {
+  color: rgb(var(--color-on-accent));
+}
+
+/* Pastels are fills on light surfaces, not readable foregrounds. Dark public
+   surfaces opt back into the original brand values. */
+.public-site :where(.text-n-orange, .text-n-orange-dark) {
+  color: rgb(var(--color-orange-ink));
+}
+
+.public-site :where(.text-n-purple, .text-n-purple-dark) {
+  color: rgb(var(--color-purple-ink));
+}
+
+.public-site :where(.bg-n-dark, [data-home-dark-end="true"], .home-hero-depth, .home-scroll-bridge)
+  :where(.text-n-orange, .text-n-orange-dark) {
+  color: rgb(var(--color-orange));
+}
+
+.public-site :where(.bg-n-dark, [data-home-dark-end="true"], .home-hero-depth, .home-scroll-bridge)
+  :where(.text-n-purple, .text-n-purple-dark) {
+  color: rgb(var(--color-purple));
+}
+
+.public-site .text-red-500 {
+  color: rgb(var(--color-error));
+}
+
+.public-site .border-red-400 {
+  border-color: rgb(var(--color-error));
+}
+
+.public-site :where(button, [role="button"], [role="option"]).border-n-border,
+.public-site :where(button, [role="button"], [role="option"]) .border-n-border {
+  border-color: rgb(var(--color-control-border));
 }
 
 /* Make copy button a larger touch target while keeping visual size the same */

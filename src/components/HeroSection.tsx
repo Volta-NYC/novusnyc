@@ -114,7 +114,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
             willChange: parallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
-          <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-black/35 backdrop-blur-[2px] px-6 py-6 md:px-8 md:py-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+          <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-black/60 backdrop-blur-[2px] px-6 py-6 md:px-8 md:py-8 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             <p className="font-body text-lg md:text-xl text-white/95 max-w-2xl mx-auto leading-relaxed mb-3">
               Digital equity is economic equity. Join a team of students building
               websites, social media and branding, grants and funding, and small
@@ -133,7 +133,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
               </Link>
               <Link
                 href="/partners"
-                className="border-2 border-transparent bg-n-yellow text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-yellow-dark transition-all shadow-xl shadow-black/25"
+                className="border-2 border-white/70 bg-[#17151a]/80 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:border-white hover:bg-[#231f24] transition-all shadow-xl shadow-black/25"
               >
                 Get Free Business Support
               </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   subscribeAssignmentClaims, subscribeAssignments, subscribeCycles,
   subscribeMemberStrikes, subscribeInfractions,
@@ -49,6 +49,12 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
   const [issueNote, setIssueNote] = useState("");
   const [issuePointsOverride, setIssuePointsOverride] = useState("");
   const [issueStatus, setIssueStatus] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const drawerRef = useRef<HTMLElement>(null);
+  const drawerTitleId = useId();
+  const onCloseRef = useRef(onClose);
+  const memberId = member?.id;
+
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => subscribeCycles(setCycles), []);
   useEffect(() => subscribeMemberStrikes(setStrikes), []);
@@ -107,6 +113,29 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
   // Called before the early return below: hooks cannot sit behind a condition.
   const { ask: askConfirm, Dialog: ConfirmDialog } = useConfirm();
 
+  useEffect(() => {
+    if (!memberId) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const drawer = drawerRef.current;
+    const timer = window.setTimeout(() => drawer?.querySelector<HTMLElement>('button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); onCloseRef.current(); return; }
+      if (event.key !== "Tab" || !drawer) return;
+      const focusable = Array.from(drawer.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [memberId]);
+
   if (!member) return null;
 
   const handleRevokeStrike = (id: string) => {
@@ -157,11 +186,11 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <aside className="fixed top-0 right-0 z-50 h-full w-full md:w-[480px] bg-[#13161D] border-l border-white/10 shadow-2xl overflow-y-auto">
+      <div aria-hidden="true" className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
+      <aside ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby={drawerTitleId} className="fixed top-0 right-0 z-50 h-full w-full md:w-[480px] bg-[#13161D] border-l border-white/10 shadow-2xl overflow-y-auto">
         <div className="sticky top-0 z-10 bg-[#13161D] border-b border-white/8 px-5 py-3 flex items-center justify-between">
-          <h2 className="font-display font-bold text-white text-base">{member.name}</h2>
-          <button onClick={onClose} className="text-white/55 hover:text-white text-xl leading-none">×</button>
+          <h2 id={drawerTitleId} className="font-display font-bold text-white text-base">{member.name}</h2>
+          <button type="button" aria-label="Close member details" onClick={onClose} className="rounded text-white/55 hover:text-white text-xl leading-none">×</button>
         </div>
 
         <div className="p-5 space-y-5">

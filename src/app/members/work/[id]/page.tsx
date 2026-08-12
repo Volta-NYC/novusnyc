@@ -3,7 +3,7 @@
 // Member-facing assignment detail page. Light theme. Shows full description,
 // business context, who else is working it, and the claim → submit flow.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
@@ -52,6 +52,31 @@ export default function AssignmentDetailPage() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmDrop, setConfirmDrop] = useState(false);
+  const submitDialogRef = useRef<HTMLDivElement>(null);
+  const submitTitleId = useId();
+
+  useEffect(() => {
+    if (!submitOpen) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = submitDialogRef.current;
+    const timer = window.setTimeout(() => dialog?.querySelector<HTMLElement>('input:not([disabled]),textarea:not([disabled]),button:not([disabled])')?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setSubmitOpen(false); return; }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [submitOpen]);
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => {
@@ -610,8 +635,8 @@ export default function AssignmentDetailPage() {
         const urlEntered = deliverableUrl.trim().length > 0;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSubmitOpen(false)}>
-            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-6">
-              <h2 className="font-display font-bold text-black text-lg mb-1">
+            <div ref={submitDialogRef} role="dialog" aria-modal="true" aria-labelledby={submitTitleId} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-6">
+              <h2 id={submitTitleId} className="font-display font-bold text-black text-lg mb-1">
                 {isRecurring
                   ? `Submit check-in${(myClaim?.checkinsApproved ?? 0) > 0 ? ` #${(myClaim!.checkinsApproved! + 1)}` : ""}`
                   : autoApprove ? "Mark as complete" : "Submit your work"}
@@ -626,12 +651,13 @@ export default function AssignmentDetailPage() {
 
               {/* Link field */}
               <div className="mb-4">
-                <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1.5">
+                <label htmlFor="submission-deliverable-url" className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1.5">
                   {autoApprove ? "Link to your work" : "Link to your deliverable"}
                   {!autoApprove && <span className="text-red-500 ml-1">*</span>}
                   {autoApprove && <span className="text-black/30 ml-1 normal-case font-normal">optional</span>}
                 </label>
                 <input
+                  id="submission-deliverable-url"
                   type="url"
                   value={deliverableUrl}
                   onChange={(e) => setDeliverableUrl(e.target.value)}
@@ -662,11 +688,12 @@ export default function AssignmentDetailPage() {
 
               {/* Notes field */}
               <div className="mb-1">
-                <label className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1.5">
+                <label htmlFor="submission-notes" className="block text-[10px] uppercase tracking-wider text-black/45 font-semibold mb-1.5">
                   Notes
                   <span className="text-black/30 ml-1 normal-case font-normal">optional</span>
                 </label>
                 <textarea
+                  id="submission-notes"
                   rows={3}
                   value={submissionNotes}
                   onChange={(e) => setSubmissionNotes(e.target.value)}

@@ -130,6 +130,7 @@ export default async function About() {
                 <div className="rounded-2xl overflow-hidden border border-n-border shadow-xl w-full max-w-sm bg-white">
                   <iframe
                     src="https://www.instagram.com/p/DVBS-6LDvk9/embed/"
+                    title="Novus NYC community impact Instagram post"
                     width="400"
                     height="505"
                     frameBorder="0"

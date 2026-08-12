@@ -886,8 +886,9 @@ function HandbookTab() {
         <Card title="Credit & Infraction Policy" subtitle={page?.updatedAt ? `Last saved: ${new Date(page.updatedAt).toLocaleString()}${page.updatedBy ? ` by ${page.updatedBy}` : ""}` : "Edit the handbook page shown to members. Members must acknowledge this page on first login."}>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-white/50 font-body mb-1">Page Title</label>
+              <label htmlFor="handbook-page-title" className="block text-xs text-white/50 font-body mb-1">Page Title</label>
               <input
+                id="handbook-page-title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -896,8 +897,8 @@ function HandbookTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-white/50 font-body mb-1">Content</label>
-              <RichTextEditor content={content} onChange={setContent} lightMode={true} />
+              <label id="handbook-content-label" className="block text-xs text-white/50 font-body mb-1">Content</label>
+              <RichTextEditor aria-labelledby="handbook-content-label" content={content} onChange={setContent} lightMode={true} />
             </div>
           </div>
           <div className="mt-4">

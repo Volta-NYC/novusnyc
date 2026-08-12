@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode, useCallback, useEffect, useId, useMemo, useRef } from "react";
+import { cloneElement, isValidElement, useState, ReactNode, ReactElement, useCallback, useEffect, useId, useMemo, useRef } from "react";
 import Combobox from "@/components/Combobox";
 
 // ── BADGE ─────────────────────────────────────────────────────────────────────
@@ -70,18 +70,24 @@ export function Badge({ label }: { label: string }) {
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 
-export function Modal({ open, onClose, title, children }: {
+export function Modal({ open, onClose, title, children, dismissible = true }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  dismissible?: boolean;
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Escape" && dismissible) { onCloseRef.current(); return; }
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && dialogRef.current) {
         const form = dialogRef.current.querySelector<HTMLFormElement>("form");
         if (form) { e.preventDefault(); form.requestSubmit(); return; }
@@ -102,8 +108,11 @@ export function Modal({ open, onClose, title, children }: {
       }
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [dismissible, open]);
 
   // Auto-focus the first real form field when the modal opens. We pick the
   // first input/textarea/select before falling back to a button so the close
@@ -125,7 +134,7 @@ export function Modal({ open, onClose, title, children }: {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-3 sm:py-8 sm:px-4">
-      <div className="fixed inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/70" onClick={dismissible ? onClose : undefined} aria-hidden="true" />
       <div
         ref={dialogRef}
         role="dialog"
@@ -135,11 +144,11 @@ export function Modal({ open, onClose, title, children }: {
       >
         <div className="flex items-center justify-between mb-5">
           <h2 id={titleId} className="font-display font-bold text-white text-lg">{title}</h2>
-          <button onClick={onClose} aria-label="Close dialog" className="text-white/40 hover:text-white p-2 transition-colors rounded-lg">
+          {dismissible && <button type="button" onClick={onClose} aria-label="Close dialog" className="text-white/50 hover:text-white p-2 transition-colors rounded-lg">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
-          </button>
+          </button>}
         </div>
         {children}
       </div>
@@ -154,12 +163,24 @@ export function Field({ label, children, required }: {
   children: ReactNode;
   required?: boolean;
 }) {
+  const generatedId = `members-field-${useId().replace(/:/g, "")}`;
+  const labelId = `${generatedId}-label`;
+  const controlId = isValidElement(children) && typeof (children.props as { id?: unknown }).id === "string"
+    ? (children.props as { id: string }).id
+    : generatedId;
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        id: controlId,
+        "aria-labelledby": labelId,
+      })
+    : children;
+
   return (
     <div>
-      <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">
+      <label id={labelId} htmlFor={controlId} className="block text-xs font-semibold text-white/60 uppercase tracking-wider mb-1.5">
         {label}{required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
-      {children}
+      {control}
     </div>
   );
 }
@@ -169,7 +190,7 @@ export function Input({ className = "", ...props }: InputProps) {
   return (
     <input
       {...props}
-      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
+      className={`w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
     />
   );
 }
@@ -184,7 +205,7 @@ export function PasswordInput({ className = "", ...props }: PasswordInputProps) 
       <input
         {...props}
         type={reveal ? "text" : "password"}
-        className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 pr-10 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
+        className={`w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 pr-10 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
       />
       <button
         type="button"
@@ -213,7 +234,7 @@ export function TextArea({ className = "", ...props }: TextAreaProps) {
   return (
     <textarea
       {...props}
-      className={`w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors resize-none ${className}`}
+      className={`w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors resize-none ${className}`}
     />
   );
 }
@@ -228,7 +249,7 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
     <div className="relative w-full">
       <select
         {...props}
-        className={`w-full appearance-none bg-[#0F1014] border border-white/10 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D]/50 transition-colors ${className}`}
+        className={`w-full appearance-none bg-[#0F1014] border border-white/35 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
       >
         {children ?? (
           <>
@@ -307,12 +328,13 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
       </svg>
       <input
         data-search-bar=""
+        aria-label="Search"
         value={local}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
-        className="w-full bg-[#1C1F26] border border-white/8 rounded-lg pl-9 pr-16 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
+        className="w-full bg-[#1C1F26] border border-white/35 rounded-lg pl-9 pr-16 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors"
       />
       {local ? (
         <button
@@ -337,6 +359,8 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
 
 // ── TYPEAHEAD INPUTS ─────────────────────────────────────────────────────────
 export function AutocompleteInput({
+  id,
+  "aria-labelledby": ariaLabelledBy,
   value,
   onChange,
   options,
@@ -344,6 +368,8 @@ export function AutocompleteInput({
   className = "",
   showOnEmpty = false,
 }: {
+  id?: string;
+  "aria-labelledby"?: string;
   value: string;
   onChange: (value: string) => void;
   options: string[];
@@ -351,16 +377,20 @@ export function AutocompleteInput({
   className?: string;
   showOnEmpty?: boolean;
 }) {
-  return <Combobox value={value} onChange={onChange} options={options} placeholder={placeholder} theme="dark" className={className} showOnEmpty={showOnEmpty} />;
+  return <Combobox id={id} ariaLabelledBy={ariaLabelledBy} value={value} onChange={onChange} options={options} placeholder={placeholder} theme="dark" className={className} showOnEmpty={showOnEmpty} />;
 }
 
 export function AutocompleteTagInput({
+  id,
+  "aria-labelledby": ariaLabelledBy,
   values,
   onChange,
   options,
   commitOnBlur = false,
   placeholder = "Type to search, then press Enter",
 }: {
+  id?: string;
+  "aria-labelledby"?: string;
   values: string[];
   onChange: (values: string[]) => void;
   options: string[];
@@ -417,12 +447,14 @@ export function AutocompleteTagInput({
         {safeValues.map((tag) => (
           <span key={tag} className="flex items-center gap-1 text-xs bg-[#F6B78D]/15 text-[#F6B78D] border border-[#F6B78D]/20 px-2 py-0.5 rounded-full">
             {tag}
-            <button type="button" onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
+            <button type="button" aria-label={`Remove ${tag}`} onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
           </span>
         ))}
       </div>
 
       <input
+        id={id}
+        aria-labelledby={ariaLabelledBy}
         role="combobox"
         aria-expanded={open && filteredOptions.length > 0}
         aria-controls={listId}
@@ -458,7 +490,7 @@ export function AutocompleteTagInput({
           if (commitOnBlur) addTag(inputText);
         }}
         placeholder={placeholder}
-        className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50"
+        className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D]"
       />
 
       {open && filteredOptions.length > 0 && (
@@ -493,6 +525,8 @@ export interface SearchSelectOption {
 }
 
 export function SearchSelect({
+  id,
+  "aria-labelledby": ariaLabelledBy,
   value,
   onChange,
   options,
@@ -501,6 +535,8 @@ export function SearchSelect({
   emptyLabel = "No matches",
   className = "",
 }: {
+  id?: string;
+  "aria-labelledby"?: string;
   value: string;
   onChange: (value: string) => void;
   options: SearchSelectOption[];
@@ -571,6 +607,10 @@ export function SearchSelect({
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
       <button
+        id={id}
+        aria-labelledby={ariaLabelledBy}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         type="button"
         onClick={() => (open ? setOpen(false) : openDropdown())}
         className={`w-full flex items-center justify-between bg-[#0F1014] border rounded-lg px-3 py-2.5 text-sm text-left transition-colors ${open ? "border-[#F6B78D]/50" : "border-white/10 hover:border-white/20"}`}
@@ -769,13 +809,11 @@ export function useConfirm() {
 
   const Dialog = () =>
     pendingAction ? (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black/70" onClick={cancel} />
-        <div className="relative bg-[#1C1F26] border border-white/10 rounded-xl p-6 max-w-sm w-full">
-          <p className="text-white font-semibold mb-2">Are you sure?</p>
+      <Modal open={Boolean(pendingAction)} onClose={cancel} title="Are you sure?">
+        <div className="max-w-sm">
           <p className="text-white/40 text-sm mb-5">{message ?? "This cannot be undone."}</p>
           {errMsg && (
-            <p className="text-red-400 text-xs mb-3 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
+            <p role="alert" className="text-red-400 text-xs mb-3 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
               {errMsg}
             </p>
           )}
@@ -786,7 +824,7 @@ export function useConfirm() {
             </Btn>
           </div>
         </div>
-      </div>
+      </Modal>
     ) : null;
 
   return { ask, Dialog };
@@ -829,13 +867,14 @@ export function TagInput({
         {safeValues.map((tag) => (
           <span key={tag} className="flex items-center gap-1 text-xs bg-[#F6B78D]/15 text-[#F6B78D] border border-[#F6B78D]/20 px-2 py-0.5 rounded-full">
             {tag}
-            <button type="button" onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
+            <button type="button" aria-label={`Remove ${tag}`} onClick={() => removeTag(tag)} className="text-red-300 hover:text-red-200 transition-colors">×</button>
           </span>
         ))}
       </div>
       {/* Add tag controls */}
       <div className="flex gap-2">
         <select
+          aria-label="Add an item from the list"
           value=""
           onChange={(e) => { if (e.target.value) addTag(e.target.value); }}
           className="bg-[#0F1014] border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-[#F6B78D]/50 flex-1"
@@ -844,6 +883,7 @@ export function TagInput({
           {options.filter((opt) => !safeValues.includes(opt)).map((opt) => <option key={opt}>{opt}</option>)}
         </select>
         <input
+          aria-label="Add a custom item"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => {
@@ -876,7 +916,7 @@ export function TagInput({
 export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const sz = size === "sm" ? "w-5 h-5" : size === "lg" ? "w-8 h-8" : "w-6 h-6";
   return (
-    <div className={`${sz} border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin`} />
+    <div role="status" aria-label="Loading" className={`${sz} border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin`} />
   );
 }
 
@@ -950,17 +990,22 @@ export function Toggle({ checked, onChange, label }: {
   label?: string;
 }) {
   return (
-    <label className={`flex items-center cursor-pointer select-none ${label ? "gap-3 group" : "w-fit"}`}>
-      <div
+    <span className={`flex items-center select-none ${label ? "gap-3 group" : "w-fit"}`}>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label ?? "Toggle setting"}
         onClick={() => onChange(!checked)}
         className={`relative h-[22px] w-10 rounded-full flex-shrink-0 cursor-pointer transition-colors ${checked ? "bg-[#F6B78D]" : "bg-white/15"}`}
       >
-        <div
+        <span
+          aria-hidden="true"
           className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}
         />
-      </div>
-      {label && <span className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>}
-    </label>
+      </button>
+      {label && <span aria-hidden="true" className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>}
+    </span>
   );
 }
 
@@ -1121,14 +1166,13 @@ export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
               return (
               <th
                 key={col}
-                onClick={sortable ? () => onSort!(i) : undefined}
+                aria-sort={isActive ? (sortDir === "desc" ? "descending" : "ascending") : undefined}
                 className={`text-left px-4 py-3 text-white/40 font-medium text-xs uppercase tracking-wider whitespace-nowrap
-                  ${sortable ? "cursor-pointer hover:text-white/70 select-none" : ""}`}
+                  ${sortable ? "select-none" : ""}`}
               >
-                <span className="inline-flex items-center gap-1">
+                {sortable ? <button type="button" onClick={() => onSort!(i)} className="inline-flex items-center gap-1 rounded hover:text-white/70">
                   {col}
-                  {sortable && (
-                    <span className="inline-flex flex-col gap-px">
+                    <span aria-hidden="true" className="inline-flex flex-col gap-px">
                       <svg className={`w-2 h-2 ${isActive && sortDir === "asc" ? "text-[#F6B78D]" : "text-white/20"}`} viewBox="0 0 8 5" fill="currentColor">
                         <path d="M4 0L8 5H0L4 0Z"/>
                       </svg>
@@ -1136,8 +1180,7 @@ export function Table({ cols, rows, sortCol, sortDir, onSort, sortableCols }: {
                         <path d="M4 5L0 0H8L4 5Z"/>
                       </svg>
                     </span>
-                  )}
-                </span>
+                </button> : <span>{col}</span>}
               </th>
               );
             })}

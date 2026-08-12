@@ -9,6 +9,8 @@ export interface EmailBodyEditorHandle {
 }
 
 interface Props {
+  id?: string;
+  "aria-labelledby"?: string;
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
@@ -17,7 +19,7 @@ interface Props {
 }
 
 const EmailBodyEditor = forwardRef<EmailBodyEditorHandle, Props>(function EmailBodyEditor(
-  { content, onChange, placeholder, attachments, onAttachmentsChange },
+  { id, "aria-labelledby": ariaLabelledBy, content, onChange, placeholder, attachments, onAttachmentsChange },
   ref
 ) {
   const [mode, setMode] = useState<"rich" | "html">("rich");
@@ -71,6 +73,7 @@ const EmailBodyEditor = forwardRef<EmailBodyEditorHandle, Props>(function EmailB
         <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-0.5 text-xs font-body">
           <button
             type="button"
+            aria-pressed={mode === "rich"}
             onClick={switchToRich}
             className={`px-2.5 py-1 rounded-md transition-colors ${
               mode === "rich"
@@ -82,6 +85,7 @@ const EmailBodyEditor = forwardRef<EmailBodyEditorHandle, Props>(function EmailB
           </button>
           <button
             type="button"
+            aria-pressed={mode === "html"}
             onClick={switchToHtml}
             className={`px-2.5 py-1 rounded-md transition-colors ${
               mode === "html"
@@ -96,6 +100,8 @@ const EmailBodyEditor = forwardRef<EmailBodyEditorHandle, Props>(function EmailB
 
       {mode === "rich" ? (
         <RichTextEditor
+          id={id}
+          aria-labelledby={ariaLabelledBy}
           ref={richRef}
           content={content}
           onChange={onChange}
@@ -106,6 +112,9 @@ const EmailBodyEditor = forwardRef<EmailBodyEditorHandle, Props>(function EmailB
       ) : (
         <div className="relative">
           <textarea
+            id={id}
+            aria-labelledby={ariaLabelledBy}
+            aria-label={ariaLabelledBy ? undefined : "Email body HTML"}
             ref={textareaRef}
             value={content}
             onChange={e => onChange(e.target.value)}

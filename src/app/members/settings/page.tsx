@@ -77,8 +77,9 @@ export default function SettingsPage() {
           <h2 className="text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-4">Profile</h2>
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Display Name</label>
+              <label htmlFor="settings-display-name" className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Display Name</label>
               <input
+                id="settings-display-name"
                 className="w-full bg-white border border-black/12 rounded-lg px-3 py-2.5 text-sm text-black/85 placeholder-black/30 focus:outline-none focus:border-[#F6B78D]/60 transition-colors"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
@@ -88,8 +89,9 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Email</label>
+              <label htmlFor="settings-email" className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Email</label>
               <input
+                id="settings-email"
                 className="w-full bg-black/4 border border-black/8 rounded-lg px-3 py-2.5 text-sm text-black/50 cursor-not-allowed"
                 value={userProfile?.email ?? user?.email ?? ""}
                 readOnly
@@ -102,8 +104,9 @@ export default function SettingsPage() {
 
             {(me?.divisions?.length ?? 0) > 0 && (
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Division(s)</label>
+                <label htmlFor="settings-divisions" className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Division(s)</label>
                 <input
+                  id="settings-divisions"
                   className="w-full bg-black/4 border border-black/8 rounded-lg px-3 py-2.5 text-sm text-black/50 cursor-not-allowed"
                   value={(me?.divisions ?? []).join(", ")}
                   readOnly
@@ -114,8 +117,9 @@ export default function SettingsPage() {
 
             {me?.role && (
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Role</label>
+                <label htmlFor="settings-role" className="block text-[10px] uppercase tracking-wider text-black/40 font-semibold mb-1.5">Role</label>
                 <input
+                  id="settings-role"
                   className="w-full bg-black/4 border border-black/8 rounded-lg px-3 py-2.5 text-sm text-black/50 cursor-not-allowed"
                   value={me.role}
                   readOnly

@@ -21,6 +21,8 @@ export default function SelectMenu({
   disabled = false,
   invalid = false,
   ariaLabel,
+  id,
+  ariaDescribedBy,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -29,6 +31,8 @@ export default function SelectMenu({
   disabled?: boolean;
   invalid?: boolean;
   ariaLabel?: string;
+  id?: string;
+  ariaDescribedBy?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -122,7 +126,9 @@ export default function SelectMenu({
   return (
     <div ref={rootRef} className="relative">
       <button
+        id={id}
         type="button"
+        role="combobox"
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openWith(Math.max(items.indexOf(value), 0)))}
         onKeyDown={onKeyDown}
@@ -130,6 +136,8 @@ export default function SelectMenu({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-label={ariaLabel}
+        aria-invalid={invalid || undefined}
+        aria-describedby={ariaDescribedBy}
         className={`novus-input flex items-center justify-between gap-3 text-left ${
           invalid ? "border-red-400" : ""
         } ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"}`}

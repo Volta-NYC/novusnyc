@@ -16,6 +16,11 @@ const GRADE_OPTIONS = CLASS_GRADE_OPTIONS.filter((grade) => grade !== "Class of 
 const RESUME_MAX_MB = 4;
 const RESUME_MAX_BYTES = RESUME_MAX_MB * 1024 * 1024;
 
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return <p id={id} role="alert" className="mt-1 font-body text-xs text-red-500">{message}</p>;
+}
+
 const EMPTY: ApplicationFormValues = {
   fullName: "", email: "", city: "", state: "", chapter: "", schoolName: "",
   grade: "", referral: "", referralName: "", tracks: [], marketingSubtrack: "",
@@ -62,6 +67,9 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
     const result = validateApplicationForm(form);
     if (!result.success) {
       setErrors(result.errors);
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      });
       return;
     }
     setErrors({});
@@ -164,37 +172,47 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
     <form onSubmit={handleSubmit} noValidate className="space-y-7">
 
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-2">Full Name *</label>
+        <label htmlFor="application-full-name" className="block font-body text-sm font-semibold text-n-ink mb-2">Full Name *</label>
         <input
+          id="application-full-name"
           value={form.fullName}
           onChange={(e) => { set("fullName", e.target.value); clearError("fullName"); }}
+          aria-invalid={Boolean(errors.fullName)}
+          aria-describedby={errors.fullName ? "application-full-name-error" : undefined}
           className={`novus-input ${errors.fullName ? "border-red-400" : ""}`}
           placeholder="Your full name"
         />
-        {errors.fullName && <p className="text-red-500 text-xs mt-1 font-body">{errors.fullName}</p>}
+        <FieldError id="application-full-name-error" message={errors.fullName} />
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-2">Email Address *</label>
-        <p className="text-xs text-n-muted/80 mt-1 mb-2 font-body">
+        <label htmlFor="application-email" className="block font-body text-sm font-semibold text-n-ink mb-2">Email Address *</label>
+        <p id="application-email-help" className="text-xs text-n-muted mt-1 mb-2 font-body">
           Please use your personal email address, not a school email.
         </p>
         <input
+          id="application-email"
           type="email"
           value={form.email}
           onChange={(e) => { set("email", e.target.value); clearError("email"); }}
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={`application-email-help${errors.email ? " application-email-error" : ""}`}
           className={`novus-input ${errors.email ? "border-red-400" : ""}`}
           placeholder="you@email.com"
         />
-        {errors.email && <p className="text-red-500 text-xs mt-1 font-body">{errors.email}</p>}
+        <FieldError id="application-email-error" message={errors.email} />
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-2">School Name *</label>
-        <p className="text-xs text-n-muted/80 mt-1 mb-2 font-body">
+        <label htmlFor="application-school" className="block font-body text-sm font-semibold text-n-ink mb-2">School Name *</label>
+        <p id="application-school-help" className="text-xs text-n-muted mt-1 mb-2 font-body">
           Don&apos;t see your school? Just type it in.
         </p>
         <Combobox
+          id="application-school"
+          ariaLabel="School name"
+          ariaDescribedBy={`application-school-help${errors.schoolName ? " application-school-error" : ""}`}
+          invalid={Boolean(errors.schoolName)}
           value={form.schoolName}
           onChange={(value) => { set("schoolName", value); clearError("schoolName"); }}
           options={loadingSchools ? [] : schoolOptions}
@@ -208,27 +226,31 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
             Loading school suggestions
           </p>
         )}
-        {errors.schoolName && <p className="text-red-500 text-xs mt-1 font-body">{errors.schoolName}</p>}
+        <FieldError id="application-school-error" message={errors.schoolName} />
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-2">High School Class Year *</label>
+        <label htmlFor="application-grade" className="block font-body text-sm font-semibold text-n-ink mb-2">High School Class Year *</label>
         <SelectMenu
+          id="application-grade"
           ariaLabel="High school class year"
+          ariaDescribedBy={errors.grade ? "application-grade-error" : undefined}
           value={form.grade}
           onChange={(next) => { set("grade", next); clearError("grade"); }}
           options={GRADE_OPTIONS}
           placeholder="Select your graduation year"
           invalid={!!errors.grade}
         />
-        {errors.grade && <p className="text-red-500 text-xs mt-1 font-body">{errors.grade}</p>}
+        <FieldError id="application-grade-error" message={errors.grade} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="block font-body text-sm font-semibold text-n-ink mb-2">State *</label>
+          <label htmlFor="application-state" className="block font-body text-sm font-semibold text-n-ink mb-2">State *</label>
           <SelectMenu
+            id="application-state"
             ariaLabel="State"
+            ariaDescribedBy={errors.state ? "application-state-error" : undefined}
             value={form.state}
             onChange={(next) => {
               // Cities are state-specific, so a state change invalidates the city.
@@ -239,12 +261,14 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
             placeholder="Select"
             invalid={!!errors.state}
           />
-          {errors.state && <p className="text-red-500 text-xs mt-1 font-body">{errors.state}</p>}
+          <FieldError id="application-state-error" message={errors.state} />
         </div>
         <div>
-          <label className="block font-body text-sm font-semibold text-n-ink mb-2">City *</label>
+          <label htmlFor="application-city" className="block font-body text-sm font-semibold text-n-ink mb-2">City *</label>
           <SelectMenu
+            id="application-city"
             ariaLabel="City"
+            ariaDescribedBy={errors.city ? "application-city-error" : undefined}
             value={form.city}
             onChange={(next) => { set("city", next); clearError("city"); }}
             options={form.state ? citiesForState(form.state) : []}
@@ -252,31 +276,35 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
             disabled={!form.state}
             invalid={!!errors.city}
           />
-          {errors.city && <p className="text-red-500 text-xs mt-1 font-body">{errors.city}</p>}
+          <FieldError id="application-city-error" message={errors.city} />
         </div>
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-2">Chapter *</label>
-        <p className="font-body text-xs text-n-muted mb-2">
+        <label htmlFor="application-chapter" className="block font-body text-sm font-semibold text-n-ink mb-2">Chapter *</label>
+        <p id="application-chapter-help" className="font-body text-xs text-n-muted mb-2">
           If you&apos;re not near any of these, select New York and you&apos;ll work remotely with the
           core team. If you&apos;d want to establish a chapter in your area, let us know.
         </p>
         <SelectMenu
+          id="application-chapter"
           ariaLabel="Chapter"
+          ariaDescribedBy={`application-chapter-help${errors.chapter ? " application-chapter-error" : ""}`}
           value={form.chapter}
           onChange={(next) => { set("chapter", next); clearError("chapter"); }}
           options={chapters}
           placeholder="Select a chapter"
           invalid={!!errors.chapter}
         />
-        {errors.chapter && <p className="text-red-500 text-xs mt-1 font-body">{errors.chapter}</p>}
+        <FieldError id="application-chapter-error" message={errors.chapter} />
       </div>
 
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-2">How did you hear about Novus? *</label>
+        <label htmlFor="application-referral" className="block font-body text-sm font-semibold text-n-ink mb-2">How did you hear about Novus? *</label>
         <SelectMenu
+          id="application-referral"
           ariaLabel="How did you hear about Novus"
+          ariaDescribedBy={errors.referral ? "application-referral-error" : undefined}
           value={form.referral}
           onChange={(next) => {
             // Switching away from a person-named answer must drop the name, or
@@ -292,30 +320,33 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
           placeholder="Select one"
           invalid={!!errors.referral}
         />
-        {errors.referral && <p className="text-red-500 text-xs mt-1 font-body">{errors.referral}</p>}
+        <FieldError id="application-referral-error" message={errors.referral} />
       </div>
 
       {REFERRAL_NEEDS_NAME.includes(form.referral) && (
         <div>
-          <label className="block font-body text-sm font-semibold text-n-ink mb-2">Who referred you? *</label>
+          <label htmlFor="application-referral-name" className="block font-body text-sm font-semibold text-n-ink mb-2">Who referred you? *</label>
           <input
+            id="application-referral-name"
             type="text"
             value={form.referralName}
             onChange={(e) => { set("referralName", e.target.value); clearError("referralName"); }}
+            aria-invalid={Boolean(errors.referralName)}
+            aria-describedby={errors.referralName ? "application-referral-name-error" : undefined}
             className={`novus-input ${errors.referralName ? "border-red-400" : ""}`}
             placeholder="Their full name"
           />
-          {errors.referralName && <p className="text-red-500 text-xs mt-1 font-body">{errors.referralName}</p>}
+          <FieldError id="application-referral-name-error" message={errors.referralName} />
         </div>
       )}
 
-      <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-1">
+      <fieldset aria-describedby={errors.tracks ? "application-tracks-error" : undefined}>
+        <legend className="block font-body text-sm font-semibold text-n-ink mb-1">
           Select your track(s) *{" "}
           <a href="/join#tracks" target="_blank" rel="noopener noreferrer" className="text-n-orange font-normal hover:underline text-xs">
             (see what each track does →)
           </a>
-        </label>
+        </legend>
         <p className="font-body text-xs text-n-muted mb-3">You may select more than one.</p>
         <div className="flex flex-col gap-3">
           {TRACK_NAMES.map((t) => {
@@ -324,6 +355,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
               <button
                 key={t}
                 type="button"
+                aria-pressed={active}
                 onClick={() => { toggleTrack(t); clearError("tracks"); }}
                 className={`w-full text-left px-5 py-3 rounded-xl border font-body text-sm font-medium transition-all flex items-center gap-3 ${
                   active ? "bg-n-orange/10 border-n-orange text-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"
@@ -337,14 +369,14 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
             );
           })}
         </div>
-        {errors.tracks && <p className="text-red-500 text-xs mt-2 font-body">{errors.tracks}</p>}
-      </div>
+        <FieldError id="application-tracks-error" message={errors.tracks} />
+      </fieldset>
 
       {form.tracks.includes(MARKETING_TRACK) && (
-        <div>
-          <label className="block font-body text-sm font-semibold text-n-ink mb-1">
+        <fieldset aria-describedby={errors.marketingSubtrack ? "application-marketing-error" : undefined}>
+          <legend className="block font-body text-sm font-semibold text-n-ink mb-1">
             Which marketing focus area? *
-          </label>
+          </legend>
           <p className="font-body text-xs text-n-muted mb-3">
             Select one. Tap a name to read what it involves.
           </p>
@@ -398,20 +430,25 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
               );
             })}
           </div>
-          {errors.marketingSubtrack && (
-            <p className="text-red-500 text-xs mt-2 font-body">{errors.marketingSubtrack}</p>
-          )}
-        </div>
+          <FieldError id="application-marketing-error" message={errors.marketingSubtrack} />
+        </fieldset>
       )}
 
       <div>
-        <label className="block font-body text-sm font-semibold text-n-ink mb-1">Do you have a resume to attach?</label>
-        <p className="font-body text-xs text-n-muted mb-3">
+        <p id="application-resume-question" className="block font-body text-sm font-semibold text-n-ink mb-1">Do you have a resume to attach?</p>
+        <p id="application-resume-help" className="font-body text-xs text-n-muted mb-3">
           We strongly encourage you to attach a resume, even if it is not fully fleshed out yet. A resume is required to be considered for any role above the entry-level Analyst position.
         </p>
-        <div className="flex gap-3">
+        <div
+          className="flex gap-3"
+          role="radiogroup"
+          aria-labelledby="application-resume-question"
+          aria-describedby={`application-resume-help${errors.hasResume ? " application-resume-choice-error" : ""}`}
+        >
           <button
             type="button"
+            role="radio"
+            aria-checked={form.hasResume === true}
             onClick={() => { set("hasResume", true); clearError("hasResume"); }}
             className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === true ? "bg-n-orange border-n-orange text-n-ink" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
           >
@@ -419,65 +456,77 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
           </button>
           <button
             type="button"
+            role="radio"
+            aria-checked={form.hasResume === false}
             onClick={() => { set("hasResume", false); clearError("hasResume"); }}
             className={`flex-1 py-3 rounded-xl border font-body text-sm font-medium transition-all ${form.hasResume === false ? "bg-n-ink border-n-ink text-white" : "bg-white border-n-border text-n-muted hover:border-n-ink"}`}
           >
             No resume
           </button>
         </div>
-        {errors.hasResume && <p className="text-red-500 text-xs mt-2 font-body">{errors.hasResume}</p>}
+        <FieldError id="application-resume-choice-error" message={errors.hasResume} />
 
         {form.hasResume === true && (
           <div className="mt-5">
-            <label className="block font-body text-sm font-semibold text-n-ink mb-2">Attach Resume *</label>
+            <p id="application-resume-label" className="block font-body text-sm font-semibold text-n-ink mb-2">Attach Resume *</p>
             <div className="flex flex-wrap items-center gap-3">
               <label className="inline-flex cursor-pointer items-center rounded-full bg-n-orange px-5 py-2.5 font-body text-sm font-semibold text-n-ink transition-colors hover:bg-n-orange-dark focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-n-ink">
                 Choose file
                 <input
+                  id="application-resume-file"
                   ref={fileRef}
                   type="file"
                   accept=".pdf,.doc,.docx"
                   className="sr-only"
+                  aria-labelledby="application-resume-label"
+                  aria-invalid={Boolean(errors.resumeUrl)}
+                  aria-describedby={errors.resumeUrl ? "application-resume-error" : undefined}
                   onChange={(event) => setResumeName(event.target.files?.[0]?.name ?? "")}
                 />
               </label>
               <span className="font-body text-sm text-n-muted">{resumeName || "No file chosen"}</span>
             </div>
-            <p className="text-xs text-n-muted/60 mt-1.5">PDF, DOC, or DOCX. Max {RESUME_MAX_MB}MB.</p>
+            <p className="text-xs text-n-muted mt-1.5">PDF, DOC, or DOCX. Max {RESUME_MAX_MB}MB.</p>
             {uploadProgress && (
               <p className="text-xs text-n-muted mt-2">{uploadProgress}</p>
             )}
-            {errors.resumeUrl && <p className="text-red-500 text-xs mt-1 font-body">{errors.resumeUrl}</p>}
+            <FieldError id="application-resume-error" message={errors.resumeUrl} />
           </div>
         )}
 
         {form.hasResume === false && (
           <div className="mt-6 space-y-6 border-l-2 border-n-orange pl-5">
             <div>
-              <label className="block font-body text-sm font-semibold text-n-ink mb-2">
+              <label htmlFor="application-tools" className="block font-body text-sm font-semibold text-n-ink mb-2">
                 List any specific tools or software you have experience with *
               </label>
               <textarea
+                id="application-tools"
                 value={form.tools}
+                aria-invalid={Boolean(errors.tools)}
+                aria-describedby={errors.tools ? "application-tools-error" : undefined}
                 onChange={(e) => { set("tools", e.target.value); clearError("tools"); }}
                 className={`novus-input resize-none ${errors.tools ? "border-red-400" : ""}`}
                 rows={3}
                 placeholder="e.g. Figma, React, Excel, Canva, Python, Google Ads…"
               />
-              {errors.tools && <p className="text-red-500 text-xs mt-1 font-body">{errors.tools}</p>}
+              <FieldError id="application-tools-error" message={errors.tools} />
             </div>
             <div>
-              <label className="block font-body text-sm font-semibold text-n-ink mb-2">
+              <label htmlFor="application-accomplishment" className="block font-body text-sm font-semibold text-n-ink mb-2">
                 What is your most impressive accomplishment, or a goal you&apos;re passionate about? *
               </label>
               <textarea
+                id="application-accomplishment"
                 value={form.accomplishment}
+                aria-invalid={Boolean(errors.accomplishment)}
+                aria-describedby={errors.accomplishment ? "application-accomplishment-error" : undefined}
                 onChange={(e) => { set("accomplishment", e.target.value); clearError("accomplishment"); }}
                 className={`novus-input resize-none ${errors.accomplishment ? "border-red-400" : ""}`}
                 rows={5}
                 placeholder="Tell us something you're proud of or working toward."
               />
-              {errors.accomplishment && <p className="text-red-500 text-xs mt-1 font-body">{errors.accomplishment}</p>}
+              <FieldError id="application-accomplishment-error" message={errors.accomplishment} />
             </div>
           </div>
         )}
@@ -494,7 +543,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
       </button>
 
       {status === "error" && (
-        <p className="text-red-500 text-sm text-center font-body">
+        <p role="alert" className="text-red-500 text-sm text-center font-body">
           Something went wrong. Email us at {EMAIL.info}
         </p>
       )}

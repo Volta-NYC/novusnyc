@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Wordmark from "@/components/Wordmark";
@@ -28,6 +28,10 @@ const moreLinks = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const browserPathname = typeof window !== "undefined" ? window.location.pathname : "";
   const currentPathname = (pathname || browserPathname || "/").replace(/\/$/, "") || "/";
@@ -36,6 +40,57 @@ export default function Navbar() {
     setOpen(false);
     setMoreOpen(false);
   }, [currentPathname]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMoreOpen(false);
+        moreButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [moreOpen]);
+
+  useEffect(() => {
+    if (!open) return;
+    const menu = mobileMenuRef.current;
+    const mobileButton = mobileButtonRef.current;
+    const background = Array.from(document.querySelectorAll<HTMLElement>("main, footer"));
+    background.forEach((element) => { element.inert = true; });
+    const timer = window.setTimeout(() => menu?.querySelector<HTMLElement>("a[href]")?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !menu) return;
+      const menuItems = Array.from(menu.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])'));
+      const focusable = mobileButton ? [mobileButton, ...menuItems] : menuItems;
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+      background.forEach((element) => { element.inert = false; });
+      mobileButton?.focus();
+    };
+  }, [open]);
 
   const navTextClass = "text-white/75 hover:text-white";
   const moreActive = moreLinks.some((l) => currentPathname === l.href) || currentPathname.startsWith("/members");
@@ -75,14 +130,18 @@ export default function Navbar() {
 
             {/* More dropdown */}
             <div
+              ref={moreRef}
               className="relative"
               onMouseEnter={() => setMoreOpen(true)}
               onMouseLeave={() => setMoreOpen(false)}
             >
               <button
+                ref={moreButtonRef}
+                type="button"
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
                 aria-haspopup="true"
+                aria-controls="desktop-more-menu"
                 className={`relative flex h-16 items-center gap-1 font-body text-sm font-semibold transition-colors after:absolute after:bottom-1 after:left-0 after:h-0.5 after:w-full after:origin-left after:bg-n-orange after:transition-transform after:duration-200 ${
                   moreActive
                     ? "text-n-orange after:scale-x-100"
@@ -103,6 +162,7 @@ export default function Navbar() {
               <AnimatePresence>
                 {moreOpen && (
                   <motion.div
+                    id="desktop-more-menu"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
@@ -145,6 +205,8 @@ export default function Navbar() {
               Apply
             </Link>
             <button
+              ref={mobileButtonRef}
+              type="button"
               onClick={() => setOpen(!open)}
               className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-full"
               aria-label={open ? "Close menu" : "Open menu"}
@@ -163,7 +225,11 @@ export default function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={mobileMenuRef}
             id="mobile-nav-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Main navigation"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

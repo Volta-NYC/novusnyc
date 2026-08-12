@@ -79,7 +79,7 @@ function ProjectCard({ project, copy, index }: { project: HomeProject; copy: num
           </blockquote>
         )}
         <div className="flex items-center justify-between mt-4">
-          <p className="font-body text-xs text-n-muted/70 flex items-center gap-1.5">
+          <p className="font-body text-xs text-n-muted flex items-center gap-1.5">
             <MapPinIcon className="w-3.5 h-3.5 flex-shrink-0" /> {project.neighborhood}
           </p>
           {project.url && <span className="font-body text-xs font-semibold text-n-purple">View live site →</span>}
@@ -94,7 +94,15 @@ function ProjectCard({ project, copy, index }: { project: HomeProject; copy: num
       className={`scroll-reveal scroll-reveal-card scroll-reveal-${index % 3} shrink-0 w-[82vw] max-w-[360px]`}
     >
       {project.url ? (
-        <a href={project.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${project.name} live site`} className="block">
+        <a
+          href={project.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Visit ${project.name} live site`}
+          aria-hidden={isDuplicate || undefined}
+          tabIndex={isDuplicate ? -1 : undefined}
+          className="block"
+        >
           {card}
         </a>
       ) : card}

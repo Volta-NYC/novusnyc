@@ -267,7 +267,10 @@ function ToolbarBtn({
   return (
     <button
       type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      aria-label={title}
+      aria-pressed={active || undefined}
       title={title}
       disabled={disabled}
       className={[
@@ -331,6 +334,8 @@ function ColorPalette({
   return (
     <div
       ref={ref}
+      role="group"
+      aria-label={label}
       style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
       className="bg-[#1C1F26] border border-white/10 rounded-lg p-2 shadow-xl"
     >
@@ -340,7 +345,9 @@ function ColorPalette({
           <button
             key={color}
             type="button"
-            onMouseDown={(e) => { e.preventDefault(); onSelect(color); onClose(); }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { onSelect(color); onClose(); }}
+            aria-label={`${label}: ${color === "transparent" ? "none" : color}`}
             title={color}
             className="h-7 w-7 rounded border border-white/10 hover:scale-110 transition-transform"
             style={{
@@ -394,6 +401,7 @@ function LinkPopup({
       <input
         ref={inputRef}
         type="url"
+        aria-label="Link URL"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         onKeyDown={(e) => {
@@ -406,7 +414,8 @@ function LinkPopup({
       <div className="flex gap-2">
         <button
           type="button"
-          onMouseDown={(e) => { e.preventDefault(); onSet(url); onClose(); }}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => { onSet(url); onClose(); }}
           className="flex-1 h-7 rounded bg-[#F6B78D]/15 text-[#F6B78D] text-xs font-medium hover:bg-[#F6B78D]/25 transition-colors"
         >
           Set link
@@ -414,7 +423,8 @@ function LinkPopup({
         {initialUrl && (
           <button
             type="button"
-            onMouseDown={(e) => { e.preventDefault(); onRemove(); onClose(); }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { onRemove(); onClose(); }}
             className="flex-1 h-7 rounded bg-white/5 text-white/50 text-xs hover:bg-white/10 transition-colors"
           >
             Remove
@@ -422,7 +432,8 @@ function LinkPopup({
         )}
         <button
           type="button"
-          onMouseDown={(e) => { e.preventDefault(); onClose(); }}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onClose}
           className="h-7 px-3 rounded bg-white/5 text-white/50 text-xs hover:bg-white/10 transition-colors"
         >
           Cancel
@@ -434,6 +445,8 @@ function LinkPopup({
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 export interface RichTextEditorProps {
+  id?: string;
+  "aria-labelledby"?: string;
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
@@ -450,6 +463,8 @@ export interface RichTextEditorHandle {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(function RichTextEditor({
+  id,
+  "aria-labelledby": ariaLabelledBy,
   content,
   onChange,
   placeholder = "Write your email...",
@@ -491,6 +506,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     },
     editorProps: {
       attributes: {
+        ...(id ? { id } : {}),
+        ...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : { "aria-label": placeholder }),
+        role: "textbox",
+        "aria-multiline": "true",
         class: lightMode ? "prose-rte prose-rte-light focus:outline-none" : "prose-rte focus:outline-none",
         style: `min-height: ${minHeight}px; padding: 12px;`,
       },

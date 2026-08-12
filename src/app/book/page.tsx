@@ -264,8 +264,9 @@ export default function BookPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F1014] flex items-center justify-center p-4">
+    <div className="booking-flow min-h-screen bg-[#0F1014] flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
+        <h1 className="sr-only">Novus NYC interview scheduling</h1>
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
             <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-8 w-auto object-contain" />
@@ -303,27 +304,31 @@ export default function BookPage() {
             </div>
             <form onSubmit={handleInfoSubmit} className="px-6 py-5 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Name</label>
+                <label htmlFor="booking-name" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Name</label>
                 <input
+                  id="booking-name"
+                  autoComplete="name"
                   required
                   value={bookerName}
                   onChange={(e) => setBookerName(e.target.value)}
                   placeholder="Jane Smith"
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
+                  className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Email</label>
+                <label htmlFor="booking-email" className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Email</label>
                 <input
+                  id="booking-email"
                   required
                   type="email"
+                  autoComplete="email"
                   value={bookerEmail}
                   onChange={(e) => setBookerEmail(e.target.value)}
                   placeholder="jane@example.com"
-                  className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#F6B78D]/50 transition-colors"
+                  className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors"
                 />
               </div>
-              {infoError && <p className="text-red-400 text-xs">{infoError}</p>}
+              {infoError && <p role="alert" className="text-red-400 text-xs">{infoError}</p>}
               <button
                 type="submit"
                 className="w-full py-3 rounded-xl bg-[#F6B78D] text-[#0D0D0D] font-display font-bold text-sm hover:bg-[#E9A77E] transition-colors"
@@ -356,6 +361,8 @@ export default function BookPage() {
                       {sortedDates.map((date) => (
                         <button
                           key={date}
+                          type="button"
+                          aria-pressed={selectedDate === date}
                           onClick={() => {
                             setSelectedDate(date);
                             const first = dateSlotMap[date]?.[0];
@@ -387,6 +394,8 @@ export default function BookPage() {
                         return (
                           <button
                             key={slot.id}
+                            type="button"
+                            aria-pressed={active}
                             onClick={() => setSelectedTime(slot.datetime)}
                             className={`px-3 py-2 rounded-lg border text-sm font-body transition-colors ${
                               active
@@ -403,6 +412,7 @@ export default function BookPage() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleBook}
                   disabled={!selectedSlot || submitting}
                   className={`w-full py-3 rounded-xl font-display font-bold text-sm transition-all ${

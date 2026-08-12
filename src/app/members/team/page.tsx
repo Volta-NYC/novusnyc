@@ -1144,8 +1144,16 @@ export default function TeamPage() {
                       <th
                         key={col.key}
                         style={{ width: col.width }}
+                        aria-sort={isActive ? (dir === "desc" ? "descending" : "ascending") : undefined}
+                        tabIndex={sortable ? 0 : undefined}
                         className={`px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${sortable ? "cursor-pointer select-none" : ""}`}
-                        onClick={() => sortable && handleSort(col.sortCol as number)}
+                        onClick={sortable ? () => handleSort(col.sortCol as number) : undefined}
+                        onKeyDown={sortable ? (event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleSort(col.sortCol as number);
+                          }
+                        } : undefined}
                       >
                         <span className="inline-flex items-center gap-0.5">
                           {col.label}
@@ -1156,7 +1164,7 @@ export default function TeamPage() {
                             </span>
                           )}
                           {col.key !== "actions" && (
-                            <button className="members-col-hide-btn" onClick={(e) => { e.stopPropagation(); setHiddenAdminCols((p) => new Set([...p, col.key])); }} title={`Hide ${col.label}`}>✕</button>
+                            <button type="button" aria-label={`Hide ${col.label} column`} className="members-col-hide-btn" onClick={(e) => { e.stopPropagation(); setHiddenAdminCols((p) => new Set([...p, col.key])); }} title={`Hide ${col.label}`}>✕</button>
                           )}
                         </span>
                       </th>
@@ -1175,10 +1183,19 @@ export default function TeamPage() {
                   return (
                     <tr
                       key={member.id}
+                      tabIndex={0}
+                      aria-label={`Open ${member.name}`}
                       className="hover:bg-white/3 transition-colors align-middle cursor-pointer"
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest("button,a,input,select")) return;
                         setDrawerMember(member);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.target !== event.currentTarget) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setDrawerMember(member);
+                        }
                       }}
                     >
                       {visCols.map((col) => {
