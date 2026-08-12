@@ -58,9 +58,9 @@ export default function HeroSection() {
       <div className="absolute inset-0 home-shared-wash" />
       <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
 
-      <div className="relative flex flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-40">
+      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-36">
         <motion.div
-          className="relative z-10 flex w-full max-w-5xl justify-center"
+          className="relative z-10 flex w-full max-w-6xl justify-center"
           style={{
             y: isDesktop && parallaxEnabled ? titleY : 0,
             opacity: isDesktop && parallaxEnabled ? titleOpacity : 1,
@@ -71,11 +71,11 @@ export default function HeroSection() {
             aria-hidden="true"
             className="font-display font-bold leading-none tracking-tight"
             style={{
-              fontSize: "clamp(2.25rem, 5vw, 3.75rem)",
+              fontSize: "clamp(4rem, 8vw, 7.25rem)",
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
-            <span className="flex items-center gap-3 text-left sm:gap-4">
+            <span className="flex items-center gap-3 text-left sm:gap-5">
               <Image
                 src="/logo.png"
                 alt=""
@@ -83,7 +83,7 @@ export default function HeroSection() {
                 height={200}
                 className="object-contain flex-shrink-0 w-auto"
                 style={{
-                  height: "clamp(2.5rem, 5.4vw, 4.15rem)",
+                  height: "clamp(4.25rem, 8.4vw, 7.6rem)",
                   transform: "translateY(-7%)",
                 }}
                 priority
@@ -94,20 +94,20 @@ export default function HeroSection() {
         </motion.div>
 
         <motion.div
-          className="relative z-10 mt-10 flex w-full max-w-5xl flex-col items-center text-center md:mt-12"
+          className="relative z-10 mt-8 flex w-full max-w-5xl flex-col items-center text-center md:mt-10"
           style={{
             y: isDesktop && parallaxEnabled ? contentY : 0,
             opacity: isDesktop && parallaxEnabled ? contentOpacity : 1,
             willChange: isDesktop && parallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
-          <h1 className="max-w-4xl font-display text-[clamp(2.35rem,7vw,4.75rem)] font-bold leading-[0.98] tracking-[-0.04em] text-white [text-shadow:0_8px_28px_rgba(0,0,0,0.65)]">
+          <h1 className="max-w-[22ch] font-display text-[clamp(1.8rem,3.8vw,3.25rem)] font-bold leading-[1.06] tracking-[-0.035em] text-white [text-shadow:0_8px_28px_rgba(0,0,0,0.65)]">
             Free websites and marketing support for NYC small businesses.
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl font-body text-lg leading-relaxed text-white/95 [text-shadow:0_2px_12px_rgba(0,0,0,0.75)] md:text-xl">
+          <p className="mx-auto mt-5 max-w-2xl font-body text-base leading-relaxed text-white/90 [text-shadow:0_2px_12px_rgba(0,0,0,0.75)] md:text-lg">
             Built by student teams. Businesses get practical help, and students gain experience they can use in applications and interviews.
           </p>
-          <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <div className="mt-7 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Link
               href="/join"
               className="inline-flex min-h-14 w-full items-center justify-center rounded-full border-2 border-transparent bg-n-orange px-6 py-4 font-display text-base font-bold text-n-ink shadow-xl shadow-black/35 transition-all hover:scale-[1.02] hover:bg-n-orange-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
