@@ -349,30 +349,39 @@ export default function ShowcaseClient({
       <ShowcaseScrollProgress />
       {/* ── INTRO ─────────────────────────────────────────────── */}
       <section id="showcase-overview" className="section-flush-bottom bg-n-dark pt-32 pb-0 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
+        <div className="mx-auto max-w-7xl px-5 pb-12 md:px-8 md:pb-14">
           <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">
-              Our Work
+            <p className="mb-5 font-body text-xs font-bold uppercase tracking-[0.2em] text-n-orange sm:text-sm">
+              Our work
             </p>
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-              <h1
-                className="font-display font-bold text-white leading-none tracking-tight"
-                style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-              >
-                Projects across<br />
-                <span className="text-n-orange">New York City</span>
-              </h1>
-              <div className="flex gap-8 md:pb-2">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12">
+              <div>
+                <h1 className="max-w-[15ch] font-display text-[clamp(3.1rem,7vw,5.8rem)] font-bold leading-[0.94] tracking-[-0.045em] text-white">
+                  See what we&apos;ve built <span className="text-n-orange">across NYC.</span>
+                </h1>
+                <p className="mt-6 max-w-[54ch] font-body text-lg leading-[1.6] text-white/85 md:text-xl">
+                  Explore websites, marketing projects, and other work created by Novus student teams for local businesses.
+                </p>
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                  <Link href="#showcase-projects" className="inline-flex min-h-14 items-center justify-center rounded-full bg-n-orange px-8 py-4 font-display text-base font-bold text-n-ink transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-n-orange-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80">
+                    Explore projects <span aria-hidden="true" className="ml-2">↓</span>
+                  </Link>
+                  <Link href="/partners#contact" className="inline-flex min-h-14 items-center justify-center rounded-full border-2 border-white/55 px-8 py-4 font-display text-base font-bold text-white transition-[background-color,border-color,transform] hover:-translate-y-0.5 hover:border-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80">
+                    Request free support
+                  </Link>
+                </div>
+              </div>
+              <dl className="grid grid-cols-2 gap-3 lg:w-[22rem]">
                 {[
-                  { value: formatCounter(totalBusinesses), label: "Businesses" },
-                  { value: formatCounter(orgPartners, true), label: "Community organizations" },
+                  { value: formatCounter(totalBusinesses), label: "Businesses supported" },
+                  { value: formatCounter(orgPartners, true), label: "Community partners" },
                 ].map((s) => (
-                  <div key={s.label} className="text-center">
-                    <p className="font-display font-bold text-n-orange text-3xl leading-none">{s.value}</p>
-                    <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-1">{s.label}</p>
+                  <div key={s.label} className="rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-5 backdrop-blur-sm">
+                    <dt className="font-body text-xs font-bold uppercase tracking-[0.14em] text-white/60">{s.label}</dt>
+                    <dd className="mt-2 font-display text-4xl font-bold leading-none text-n-orange">{s.value}</dd>
                   </div>
                 ))}
-              </div>
+              </dl>
             </div>
           </AnimatedSection>
         </div>

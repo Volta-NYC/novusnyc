@@ -8,6 +8,7 @@ import SectionProgressNav from "@/components/SectionProgressNav";
 import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
+import PageHeroContent from "@/components/PageHeroContent";
 import SectionBridge from "@/components/SectionBridge";
 import { communityPartners } from "@/data";
 import {
@@ -218,42 +219,15 @@ export default async function Partners() {
         mediaClassName="absolute -inset-y-[16vh] inset-x-0"
         parallaxRange={[160, -40]}
       >
-        <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">
-              For NYC Small Businesses
-            </p>
-            <h1
-              className="font-display font-bold text-white leading-none tracking-tight mb-6"
-              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-            >
-              Free websites, tools, and marketing for<br />
-              <span className="text-n-orange">NYC small businesses.</span>
-            </h1>
-            <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-8">
-              Novus is a nonprofit run entirely by high school and college students. We work
-              with small businesses across all five boroughs, in neighborhoods like Park Slope,
-              Bayside, East New York, North Flatbush, Bed-Stuy, Sunnyside, Cypress Hills,
-              Crown Heights, Bay Ridge, Flushing, Jackson Heights, Harlem, Chinatown, and
-              Great Kills. We work with restaurants, coffee shops, bars, flower shops, tutoring
-              centers, and other small businesses. Tell us what you need, and we&apos;ll let you know
-              how a Novus team may be able to help.
-            </p>
-            <div className="flex gap-4 flex-wrap">
-              <a
-                href="#contact"
-                className="border-2 border-transparent bg-n-orange text-n-ink font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-orange-dark transition-colors"
-              >
-                Get started →
-              </a>
-              <Link
-                href="/showcase"
-                className="border-2 border-white/55 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-white/10 hover:border-white transition-colors"
-              >
-                See our work
-              </Link>
-            </div>
-          </AnimatedSection>
+        <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8">
+          <PageHeroContent
+            eyebrow="For NYC small businesses"
+            title={<>Free support for <span className="text-n-orange">your small business.</span></>}
+            description="Novus is a student-run nonprofit helping small businesses across NYC. Tell us what you need, and we’ll connect you with a team that can help."
+            primaryAction={{ href: "#contact", label: "Request free support" }}
+            secondaryAction={{ href: "/showcase", label: "See our work" }}
+            highlights={["No cost", "No contract", "Reply in 2–3 business days"]}
+          />
         </div>
       </ParallaxHero>
 
@@ -262,12 +236,11 @@ export default async function Partners() {
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-8">
             <h2 className="page-section-heading text-n-ink mb-4">
-              Work with us
+              Tell us what you need
             </h2>
             <p className="font-body text-n-muted max-w-xl">
-              Tell us about your business and what you need. It&apos;s free, with no contract
-              or obligation. The form is available in English, Spanish, Chinese, Korean,
-              Arabic, and French. If you were referred by a BID, mention that in your message.
+              Share a few details about your business and the support you are looking for.
+              The form is available in English, Spanish, Chinese, Korean, Arabic, and French.
             </p>
           </AnimatedSection>
           <AnimatedSection>

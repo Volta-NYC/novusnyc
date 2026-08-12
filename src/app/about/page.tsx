@@ -5,6 +5,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import CoreValuesEarth from "@/components/CoreValuesEarth";
 import HistoryTimeline from "@/components/HistoryTimeline";
 import LeadershipProfiles from "@/components/LeadershipProfiles";
+import PageHeroContent from "@/components/PageHeroContent";
 import ParallaxHero from "@/components/ParallaxHero";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import { aboutTimeline, aboutValues, teamMembers } from "@/data";
@@ -47,28 +48,16 @@ export default async function About() {
         imageClassName="object-cover object-[58%_center] md:object-center"
         parallaxRange={[0, 290]}
       >
-        <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-16 items-start">
-          <div className="flex-1">
-            <AnimatedSection>
-              <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">About Novus</p>
-              <h1 className="font-display font-bold text-white leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}>
-                Students building<br /><span className="text-n-purple">real skills</span><br />through <span className="text-n-orange">real work.</span>
-              </h1>
-            </AnimatedSection>
-          </div>
-          <AnimatedSection direction="right" className="flex-1 pt-4 md:pt-16 lg:mr-48">
-            <p className="font-body text-white/70 text-lg leading-relaxed mb-5">
-              Novus is a nonprofit run entirely by high school and college students.
-              We believe digital access and economic opportunity are inseparable, and that the family-owned
-              restaurants, flower shops, and community businesses that make up NYC&apos;s neighborhoods
-              deserve the same tools and resources as larger ones.
-            </p>
-            <p className="font-body text-white/65 text-base leading-relaxed">
-              Our members build websites, grow social media audiences, and write grants for
-              businesses across the city. In the process, they build real professional skills
-              and portfolios they can stand behind.
-            </p>
-          </AnimatedSection>
+        <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8">
+          <PageHeroContent
+            eyebrow="About Novus"
+            title={<>Students doing work that <span className="text-n-purple">matters.</span></>}
+            description="Novus connects high school and college students with real projects for NYC small businesses. Businesses get useful support; students build experience they can show."
+            primaryAction={{ href: "/showcase", label: "See our work" }}
+            secondaryAction={{ href: "#leadership", label: "Meet the team" }}
+            highlights={["Student-run", "Real client projects", "Built for NYC"]}
+            accent="purple"
+          />
         </div>
       </ParallaxHero>
 

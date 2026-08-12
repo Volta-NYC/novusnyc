@@ -25,24 +25,26 @@ export default async function Apply() {
             <div className="grid md:grid-cols-5 gap-12 items-start pb-12">
               {/* Left: what to expect */}
               <div className="md:col-span-2 md:pt-2">
-                <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">
-                  Apply Now
+                <p className="mb-4 font-body text-xs font-bold uppercase tracking-[0.2em] text-n-orange sm:text-sm">
+                  Student application
                 </p>
-                <h1
-                  className="font-display font-bold text-n-ink leading-tight mb-5"
-                  style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}
-                >
-                  Apply to join Novus
+                <h1 className="mb-5 max-w-[12ch] font-display text-[clamp(2.8rem,5vw,4.4rem)] font-bold leading-[0.98] tracking-[-0.04em] text-n-ink">
+                  Start your Novus application.
                 </h1>
-                <p className="font-body text-n-muted text-base leading-relaxed mb-3">
-                  High school and college students. Real projects for real businesses.
-                  2–4 hours a week, fully remote.
+                <p className="mb-6 font-body text-lg leading-relaxed text-n-muted">
+                  Join a student-led team doing real client work. The application takes about five minutes.
                 </p>
-                <p className="font-body text-sm text-n-muted mb-8">
-                  ~30% acceptance rate.
-                </p>
+                <ul className="mb-9 flex flex-wrap gap-2 font-body text-sm font-semibold text-n-ink" aria-label="Program details">
+                  {[
+                    "High school + college",
+                    "2–4 hours a week",
+                    "Fully remote",
+                  ].map((detail) => (
+                    <li key={detail} className="rounded-full border border-n-border bg-white px-3.5 py-2">{detail}</li>
+                  ))}
+                </ul>
 
-                <div className="space-y-5">
+                <div className="space-y-5 border-t border-n-border pt-7">
                   <p className="font-body text-xs font-semibold text-n-muted uppercase tracking-widest">
                     What happens next
                   </p>

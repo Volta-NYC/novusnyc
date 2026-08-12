@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CountUp from "@/components/CountUp";
+import PageHeroContent from "@/components/PageHeroContent";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getTotalMemberCount } from "@/lib/server/memberEducation";
@@ -135,21 +136,15 @@ export default async function Impact() {
       <section id="impact-overview" className="relative flex min-h-[100svh] items-center overflow-hidden bg-n-dark pt-32 pb-20" data-home-dark-end="true">
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
         <div className="absolute top-0 right-0 w-96 h-96 bg-n-orange/10 rounded-full blur-3xl" />
-        <div className="relative w-full max-w-7xl mx-auto px-5 md:px-8">
-          <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">Impact Report</p>
-            <h1
-              className="font-display font-bold text-white leading-none tracking-tight mb-6"
-              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-            >
-              Measurable outcomes.<br />
-              <span className="text-n-orange">Real communities.</span>
-            </h1>
-            <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed">
-              Novus NYC is not just a student organization — it&apos;s a proof of concept that students can
-              deliver professional-grade work to under-resourced businesses at scale. This page documents that work.
-            </p>
-          </AnimatedSection>
+        <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8">
+          <PageHeroContent
+            eyebrow="Impact report"
+            title={<>Real work. <span className="text-n-orange">Measurable impact.</span></>}
+            description="See how Novus student teams help small businesses strengthen their digital presence, marketing, and access to financial resources."
+            primaryAction={{ href: "/showcase", label: "Explore our work" }}
+            secondaryAction={{ href: "/partners#contact", label: "Get business support" }}
+            highlights={["Student-led teams", "Practical deliverables", "Citywide reach"]}
+          />
         </div>
       </section>
 

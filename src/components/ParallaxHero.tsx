@@ -50,8 +50,8 @@ export default function ParallaxHero({
           className={imageClassName}
         />
       </motion.div>
-      <div className="absolute inset-0 bg-[#1a1e24]/75" />
-      <div className="absolute inset-0 hero-vignette opacity-50 pointer-events-none" />
+      <div className="page-photo-hero-overlay absolute inset-0" />
+      <div className="absolute inset-0 hero-vignette opacity-40 pointer-events-none" />
       {children}
     </section>
   );

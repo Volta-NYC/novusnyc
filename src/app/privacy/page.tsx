@@ -27,13 +27,13 @@ export default function PrivacyPage() {
           <div className="h-2 bg-gradient-to-r from-n-orange via-n-yellow to-n-purple" />
           <div className="px-6 py-9 md:px-10 md:py-12">
             <p className="font-body text-xs font-bold uppercase tracking-[0.2em] text-n-orange">
-              Legal · Last updated August 10, 2026
+              Privacy policy · Updated August 10, 2026
             </p>
-            <h1 className="mt-4 font-display text-4xl font-bold leading-tight md:text-6xl">
-              Privacy Policy
+            <h1 className="mt-4 max-w-[13ch] font-display text-[clamp(2.8rem,6vw,4.8rem)] font-bold leading-[0.98] tracking-[-0.04em]">
+              How we handle your information.
             </h1>
-            <p className="mt-5 max-w-3xl font-body text-base leading-7 text-white/65 md:text-lg">
-              This policy explains what Novus Inc. collects, why we use it, which services help us operate, and the choices available to you.
+            <p className="mt-6 max-w-[56ch] font-body text-lg leading-[1.6] text-white/80 md:text-xl">
+              What we collect, why we use it, who helps us operate, and the choices you have.
             </p>
           </div>
         </div>

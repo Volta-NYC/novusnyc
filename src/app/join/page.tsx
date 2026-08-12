@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationJourney from "@/components/ApplicationJourney";
 import BrandTexture from "@/components/BrandTexture";
 import FaqAccordion from "@/components/FaqAccordion";
+import PageHeroContent from "@/components/PageHeroContent";
 import ParallaxHero from "@/components/ParallaxHero";
 import SectionBridge from "@/components/SectionBridge";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import TracksTabbed from "@/components/TracksTabbed";
 import TracksParallax from "@/components/TracksParallax";
 import { joinFaqs, marqueeSchools } from "@/data";
-import { getMemberEducationSnapshot, getTotalMemberCount } from "@/lib/server/memberEducation";
+import { getTotalMemberCount } from "@/lib/server/memberEducation";
 import { formatCounter } from "@/lib/formatCounter";
 import { getPublicStatOverrides, publicStat } from "@/lib/server/publicStats";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
@@ -73,7 +73,7 @@ const JOIN_FAQ_CATEGORIES = [
 ];
 
 export default async function Join() {
-  const [education, memberCount, overrides] = await Promise.all([getMemberEducationSnapshot(), getTotalMemberCount(), getPublicStatOverrides()]);
+  const [memberCount, overrides] = await Promise.all([getTotalMemberCount(), getPublicStatOverrides()]);
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -109,43 +109,20 @@ export default async function Join() {
         imageClassName="object-cover object-[54%_center] md:object-center"
         parallaxRange={[0, 290]}
       >
-        <div className="relative flex flex-1 items-center max-w-7xl mx-auto w-full px-5 md:px-8 pb-16">
-          <AnimatedSection>
-            <p className="font-body text-sm font-semibold text-n-purple uppercase tracking-widest mb-4">
-              For Students
-            </p>
-            <h1
-              className="font-display font-bold text-white leading-none tracking-tight mb-6"
-              style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
-            >
-              Real client work for high school<br />
-              <span className="text-n-purple">and college students in NYC.</span>
-            </h1>
-            <p className="font-body text-white/70 text-lg max-w-2xl leading-relaxed mb-4">
-              Join a student team and build websites, marketing, grant research, and financial projects for real businesses.
-              You gain practical experience and examples of work you can discuss in college applications and interviews.
-            </p>
-            <p className="font-body text-white/65 text-sm mb-8">
-              Join {publicStat(overrides, "joinStudentMembers", formatCounter(memberCount))} students from {publicStat(overrides, "joinHighSchools", String(education.highSchoolCount))} high schools and {publicStat(overrides, "joinColleges", String(education.collegeCount))} colleges.
-            </p>
-            <div className="flex gap-4 flex-wrap mb-3">
-              <Link
-                href="/apply"
-                className="bg-n-purple text-white font-display font-bold text-base px-8 py-4 rounded-full hover:bg-n-purple-dark transition-colors"
-              >
-                Apply Now →
-              </Link>
-              <a
-                href="#tracks"
-                className="border border-white/20 text-white font-display font-bold text-base px-8 py-4 rounded-full hover:border-white/50 transition-colors"
-              >
-                See tracks
-              </a>
-            </div>
-            <p className="font-body text-sm text-white/60">
-              Takes 5 minutes · Apply anytime · ~30% acceptance rate.
-            </p>
-          </AnimatedSection>
+        <div className="relative mx-auto flex w-full max-w-7xl flex-1 items-center px-5 pb-16 md:px-8">
+          <PageHeroContent
+            eyebrow="For students"
+            title={<>Build real work. <span className="text-n-purple">Grow real skills.</span></>}
+            description="Join a student team doing real client work for NYC small businesses. Build experience you can show in applications, portfolios, and interviews."
+            primaryAction={{ href: "/apply", label: "Start your application" }}
+            secondaryAction={{ href: "#tracks", label: "Explore the tracks" }}
+            highlights={[
+              "2–4 hours a week",
+              "Fully remote",
+              `${publicStat(overrides, "joinStudentMembers", formatCounter(memberCount))} student members`,
+            ]}
+            accent="purple"
+          />
         </div>
         {/* Marquee sits over photo, separated by a subtle top border */}
         <div className="relative border-t border-white/10 overflow-hidden py-3">
