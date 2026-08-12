@@ -198,6 +198,10 @@ body {
     padding-bottom: 3.5rem;
   }
 
+  .public-site > section:first-of-type:not(.home-scroll-bridge) {
+    padding-top: calc(var(--banner-h, 0px) + 7.5rem) !important;
+  }
+
   /* This rule outranks Tailwind's padding utilities, so a section that sets
      pb-0 to sit flush against the next one still gets 3.5rem here. Opt out
      rather than fight it; the mobile top padding is still wanted. */
@@ -207,7 +211,7 @@ body {
   }
 
   .public-site > section[data-home-dark-end="true"] {
-    padding-top: 6.25rem;
+    padding-top: calc(var(--banner-h, 0px) + 8.5rem) !important;
     padding-bottom: 3.75rem;
   }
 
@@ -218,8 +222,8 @@ body {
   }
 
   .home-scroll-bridge {
-    min-height: 31rem;
-    padding: 3.5rem 1rem;
+    min-height: 0;
+    padding: 2.5rem 1rem;
   }
 
   .home-scroll-bridge-copy {
@@ -1355,14 +1359,14 @@ body:has(.home-scroll-story) footer::before {
   }
 
   .home-scroll-bridge {
-    min-height: max(46rem, 100svh);
-    padding-block: 5.5rem;
+    min-height: 0;
+    padding-block: 2.5rem;
   }
 
   .home-scroll-bridge-mobile-media {
     position: absolute;
     z-index: -2;
-    inset: -32% 0;
+    inset: 0;
     display: block;
     background-position: center;
     background-repeat: no-repeat;

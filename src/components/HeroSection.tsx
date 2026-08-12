@@ -102,11 +102,10 @@ export default function HeroSection() {
           }}
         >
           <h1 className="max-w-4xl font-display text-[clamp(2.35rem,7vw,4.75rem)] font-bold leading-[0.98] tracking-[-0.04em] text-white [text-shadow:0_8px_28px_rgba(0,0,0,0.65)]">
-            Real experience for students. Real support for NYC small businesses.
+            Free websites and marketing support for NYC small businesses.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl font-body text-lg leading-relaxed text-white/95 [text-shadow:0_2px_12px_rgba(0,0,0,0.75)] md:text-xl">
-            Student teams build websites and provide marketing support for New York City
-            small businesses, completely free.
+            Built by student teams. Businesses get practical help, and students gain experience they can use in applications and interviews.
           </p>
           <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Link

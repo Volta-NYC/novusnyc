@@ -39,23 +39,23 @@ export default function Footer() {
           </div>
 
           <div className="max-w-sm lg:pb-1 lg:text-right">
-            <p className="font-display text-[11px] font-bold uppercase tracking-[0.18em] text-n-orange">Work with Novus</p>
+            <p className="font-display text-[11px] font-bold uppercase tracking-[0.18em] text-n-orange">Get involved</p>
             <p className="mt-2 font-display text-xl font-semibold leading-snug text-white sm:text-2xl">
-              Practical help from a student team.
+              Support for businesses. Real client work for students.
             </p>
             <div className="mt-5 flex flex-wrap gap-3 lg:justify-end">
               <Link
                 href="/partners"
                 className="inline-flex items-center gap-2 rounded-full bg-n-orange px-4 py-2.5 font-body text-sm font-semibold text-n-ink transition-transform hover:-translate-y-0.5"
               >
-                Start a project
+                Get business support
                 <ArrowUpRightIcon className="h-4 w-4" />
               </Link>
               <Link
                 href="/join"
                 className="inline-flex items-center rounded-full border border-white/15 px-4 py-2.5 font-body text-sm font-medium text-white/80 transition-colors hover:border-white/35 hover:text-white"
               >
-                Join the team
+                Join as a student
               </Link>
             </div>
           </div>
