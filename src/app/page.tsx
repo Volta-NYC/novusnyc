@@ -507,7 +507,9 @@ export default function Home() {
       <HomeScrollProgress />
       <HeroSection />
 
-      <section aria-label="Novus impact at a glance" className="relative border-y border-white/10 bg-n-dark py-7 md:py-9">
+      <section aria-label="Novus impact at a glance" className="relative isolate overflow-hidden border-y border-white/15 bg-n-dark py-7 md:py-9">
+        <div aria-hidden="true" className="absolute inset-0 -z-20 bg-[url('/hero-nyc-skyline.jpg')] bg-cover bg-[center_72%]" />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[#17151a]/80" />
         <LiveHomeStats />
       </section>
 

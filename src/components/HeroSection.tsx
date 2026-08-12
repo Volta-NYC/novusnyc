@@ -71,7 +71,7 @@ export default function HeroSection() {
             aria-hidden="true"
             className="font-display font-bold leading-none tracking-tight"
             style={{
-              fontSize: "clamp(4rem, 8vw, 7.25rem)",
+              fontSize: "clamp(4.4rem, 8.8vw, 8rem)",
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
             }}
           >
@@ -83,7 +83,7 @@ export default function HeroSection() {
                 height={200}
                 className="object-contain flex-shrink-0 w-auto"
                 style={{
-                  height: "clamp(4.25rem, 8.4vw, 7.6rem)",
+                  height: "clamp(4.7rem, 9.25vw, 8.4rem)",
                   transform: "translateY(-7%)",
                 }}
                 priority
@@ -101,7 +101,7 @@ export default function HeroSection() {
             willChange: isDesktop && parallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
-          <h1 className="max-w-[22ch] font-display text-[clamp(1.8rem,3.8vw,3.25rem)] font-bold leading-[1.06] tracking-[-0.035em] text-white [text-shadow:0_8px_28px_rgba(0,0,0,0.65)]">
+          <h1 className="max-w-[24ch] font-display text-[clamp(1.65rem,3.35vw,2.85rem)] font-bold leading-[1.08] tracking-[-0.03em] text-white [text-shadow:0_8px_28px_rgba(0,0,0,0.65)]">
             Free websites and marketing support for NYC small businesses.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl font-body text-base leading-relaxed text-white/90 [text-shadow:0_2px_12px_rgba(0,0,0,0.75)] md:text-lg">
