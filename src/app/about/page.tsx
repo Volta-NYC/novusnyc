@@ -101,7 +101,7 @@ export default async function About() {
               <div className="flex justify-center md:justify-end">
                 <div className="grid w-full max-w-md grid-cols-2 gap-3">
                   <Image src="/novus1.jpg" alt="Novus students working together" width={640} height={800} className="h-full min-h-64 w-full rounded-2xl border border-n-border object-cover shadow-lg" />
-                  <Image src="/novus2.jpeg" alt="Novus students at a community event" width={640} height={800} className="mt-10 h-full min-h-64 w-full rounded-2xl border border-n-border object-cover shadow-lg" />
+                  <Image src="/novus2.jpeg" alt="Four Novus students and a community partner at a community event" width={1280} height={853} className="mt-10 h-auto w-full self-start rounded-2xl border border-n-border shadow-lg" />
                 </div>
               </div>
             </div>
@@ -173,7 +173,7 @@ export default async function About() {
 
       {/* ── CORE VALUES ────────────────────────────────────── */}
       <section id="values" className="public-surface public-surface-sand py-16 bg-n-bg">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
+        <div className="max-w-7xl mx-auto px-5 md:px-8">
           <AnimatedSection className="mb-10">
             <h2 className="page-section-heading text-n-ink">Our core values</h2>
             <p className="mt-3 max-w-xl font-body leading-relaxed text-n-muted">The standards we use to decide what to take on and how to do the work.</p>
