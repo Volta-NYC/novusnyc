@@ -502,6 +502,16 @@ body:has(.home-scroll-story) header .md\:hidden span {
   overflow: clip;
 }
 
+.home-hero-stage {
+  min-height: 100svh;
+}
+
+@media (min-width: 768px) {
+  .home-hero-stage {
+    min-height: max(43rem, 100svh);
+  }
+}
+
 .home-depth-section::before {
   position: absolute;
   z-index: -1;

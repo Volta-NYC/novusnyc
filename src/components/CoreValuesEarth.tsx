@@ -170,10 +170,10 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
           const anchor = anchors[layer.title];
           const startX = globeRect.left - layoutRect.left + globeRect.width * anchor.x;
           const startY = globeRect.top - layoutRect.top + globeRect.height * anchor.y;
-          const endX = buttonRect.left - layoutRect.left - 10;
+          const endX = buttonRect.left - layoutRect.left;
           const endY = buttonRect.top - layoutRect.top + buttonRect.height / 2;
           const controlX = startX + Math.max(34, (endX - startX) * 0.48);
-          const path = `M ${endX} ${endY} C ${endX - 48} ${endY}, ${controlX} ${startY}, ${startX} ${startY}`;
+          const path = `M ${endX - 18} ${endY} C ${endX - 72} ${endY}, ${controlX} ${startY}, ${startX} ${startY}`;
           return [{ color: layer.color, path, title: layer.title }];
         });
         setConnectors(nextConnectors);
@@ -184,10 +184,14 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
     resizeObserver.observe(layout);
     resizeObserver.observe(globe);
     buttonRefs.current.forEach((button) => resizeObserver.observe(button));
+    window.addEventListener("resize", updateConnectors);
+    window.addEventListener("load", updateConnectors);
     updateConnectors();
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", updateConnectors);
+      window.removeEventListener("load", updateConnectors);
       resizeObserver.disconnect();
     };
   }, [activeTitle]);
@@ -219,17 +223,15 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
             ))}
           </defs>
           {connectors.map((connector) => (
-            <g key={connector.title}>
-              <path d={connector.path} fill="none" stroke="rgba(255,253,249,0.9)" strokeWidth="5" />
-              <path
-                d={connector.path}
-                fill="none"
-                markerEnd={`url(#${instanceId}-${connector.title.replace(/\s/g, "-")}-arrow)`}
-                stroke={connector.color}
-                strokeLinecap="round"
-                strokeWidth="2"
-              />
-            </g>
+            <path
+              key={connector.title}
+              d={connector.path}
+              fill="none"
+              markerEnd={`url(#${instanceId}-${connector.title.replace(/\s/g, "-")}-arrow)`}
+              stroke={connector.color}
+              strokeLinecap="round"
+              strokeWidth="2.25"
+            />
           ))}
         </svg>
 
@@ -293,8 +295,7 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
                   <span className="flex shrink-0 items-center" aria-hidden="true">
                     <span className="font-body text-base font-bold leading-none md:hidden" style={{ color: layer.color }}>↑</span>
                     <span className="hidden font-body text-sm font-bold leading-none md:inline" style={{ color: layer.color }}>←</span>
-                    <span className="mx-1.5 h-px w-4 md:w-5" style={{ backgroundColor: layer.color }} />
-                    <span className="h-3 w-3 rounded-full border border-n-ink/15" style={{ backgroundColor: layer.color }} />
+                    <span className="ml-2 h-3 w-3 rounded-full border border-n-ink/15" style={{ backgroundColor: layer.color }} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="sr-only">{layer.layer}: </span>
