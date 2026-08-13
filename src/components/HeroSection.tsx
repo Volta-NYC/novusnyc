@@ -73,7 +73,23 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
         >
           <div
             aria-hidden="true"
-            className="font-display font-bold leading-none tracking-tight"
+            className="flex flex-col items-center gap-2 md:hidden"
+            style={{ textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)" }}
+          >
+            <Image
+              src="/logo.png"
+              alt=""
+              width={223}
+              height={200}
+              className="h-[clamp(4.75rem,21.5vw,5.75rem)] w-auto translate-x-[3%] object-contain"
+              priority
+            />
+            <Wordmark className="text-[clamp(4rem,17.5vw,4.5rem)] leading-none text-n-orange" />
+          </div>
+
+          <div
+            aria-hidden="true"
+            className="hidden font-display font-bold leading-none tracking-tight md:block"
             style={{
               fontSize: "clamp(4.4rem, 8.8vw, 8rem)",
               textShadow: "0 10px 28px rgba(0, 0, 0, 0.55)",
@@ -98,7 +114,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
         </motion.div>
 
         <motion.div
-          className="relative z-10 mt-8 flex w-full max-w-5xl flex-col items-center text-center md:mt-10"
+          className="relative z-10 mt-7 flex w-full max-w-5xl flex-col items-center text-center sm:mt-8 md:mt-10"
           style={{
             y: backgroundParallaxEnabled ? contentY : 0,
             opacity: backgroundParallaxEnabled ? contentOpacity : 1,
