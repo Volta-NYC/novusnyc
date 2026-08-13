@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import CoreValuesEarth from "@/components/CoreValuesEarth";
@@ -63,36 +62,42 @@ export default async function About() {
 
       {/* ── MISSION ─────────────────────────────────────────── */}
       <section id="mission" className="public-surface public-surface-lavender py-16 bg-n-bg">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
+        <div className="mx-auto max-w-7xl px-5 md:px-8">
           <AnimatedSection>
-            <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
-              <div>
+            <div className="grid gap-7 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] md:items-end md:gap-14 lg:gap-20">
+              <div className="max-w-4xl">
                 <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">Our mission</p>
-                <h2 className="font-display font-bold text-n-ink leading-tight mb-6" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)" }}>
+                <h2 className="font-display font-bold text-n-ink leading-tight" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)" }}>
                   “To close the digital and financial equity gap for small businesses by connecting them with the next generation of tech, finance, and marketing talent.”
                 </h2>
-                <p className="font-body text-n-muted text-base leading-relaxed">
-                  Students build websites, marketing materials, grant applications, and operational tools. Businesses receive work they can use, and students gain experience they can explain with confidence.
-                </p>
-                <p className="mt-4 font-body text-n-muted text-base leading-relaxed">
-                  Novus means new. It reflects a new resource for neighborhood businesses and a first chance for students to do real client work. For businesses, that can mean a clearer website, better marketing materials, or support with a grant application. For students, it means taking responsibility for work that matters to a real client.
-                </p>
-                <p className="mt-5 font-body text-sm leading-relaxed text-n-muted">
-                  See that model in practice in our{" "}
-                  <Link href="/showcase" className="font-semibold text-violet-700 hover:underline">
-                    NYC project portfolio
-                  </Link>, or learn how students can{" "}
-                  <Link href="/join" className="font-semibold text-violet-700 hover:underline">
-                    join the Novus team
-                  </Link>.
-                </p>
               </div>
-              <div className="flex justify-center md:justify-end">
-                <div className="grid w-full max-w-md grid-cols-2 gap-3">
-                  <Image src="/novus1.jpg" alt="Novus students working together" width={640} height={800} className="h-full min-h-64 w-full rounded-2xl border border-n-border object-cover shadow-lg" />
-                  <Image src="/novus2.jpeg" alt="Four Novus students and a community partner at a community event" width={1280} height={853} className="mt-10 h-auto w-full self-start rounded-2xl border border-n-border shadow-lg" />
-                </div>
-              </div>
+              <p className="max-w-xl font-body text-base leading-relaxed text-n-muted md:pb-1">
+                Students build websites, marketing materials, grant applications, and operational tools that neighborhood businesses can put to use. Along the way, they gain practical client experience and learn to take responsibility for work they can explain with confidence. Novus means “new”: a new resource for businesses and a first opportunity for students to contribute work that matters to a client.
+              </p>
+            </div>
+
+            <div className="mt-12 grid grid-cols-12 items-center pb-5 sm:mt-14 md:mt-16 md:pb-8">
+              <figure className="relative z-10 col-[1/span_10] row-start-1 w-full -rotate-[3deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_24px_65px_rgba(42,35,43,0.18)] sm:col-[1/span_9] md:col-[1/span_7] md:max-w-[36rem] md:-rotate-[4deg]">
+                <Image
+                  src="/novus1.jpg"
+                  alt="Two Novus students with a local restaurant owner"
+                  width={640}
+                  height={800}
+                  sizes="(max-width: 767px) 78vw, 43vw"
+                  className="aspect-[4/5] w-full rounded-[1.15rem] object-cover"
+                />
+              </figure>
+
+              <figure className="relative z-20 col-[2/span_11] row-start-2 -mt-12 w-full rotate-[2.5deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_28px_70px_rgba(42,35,43,0.22)] sm:col-[3/span_10] sm:-mt-20 md:col-[6/span_7] md:row-start-1 md:mt-20 md:max-w-[44rem] md:rotate-[3deg]">
+                <Image
+                  src="/novus2.jpeg"
+                  alt="Three Novus students with a community partner at a neighborhood event"
+                  width={1280}
+                  height={853}
+                  sizes="(max-width: 767px) 86vw, 55vw"
+                  className="aspect-[3/2] w-full rounded-[1.15rem] object-cover"
+                />
+              </figure>
             </div>
           </AnimatedSection>
         </div>
