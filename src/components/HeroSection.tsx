@@ -6,37 +6,35 @@ import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
+import { useParallax } from "@/hooks/useParallax";
 
 export default function HeroSection({ children }: { children?: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [canAnimate, setCanAnimate] = useState(false);
+  const { y: backgroundY, enabled: backgroundParallaxEnabled } = useParallax(sectionRef, {
+    range: [-120, 170],
+    offset: ["start start", "end start"],
+  });
+  const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
+    range: [90, -120],
+    offset: ["start start", "end start"],
+  });
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
   });
-  const backgroundY = useTransform(scrollYProgress, [0, 1], [-120, 170]);
-  const statsY = useTransform(scrollYProgress, [0, 1], [90, -120]);
-  const titleY = useTransform(scrollYProgress, [0, 1], [0, -170]);
-  const contentY = useTransform(scrollYProgress, [0, 1], [0, -110]);
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 1, 0.15]);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.78, 1], [1, 1, 0]);
+  const titleY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -170] : [0, -32]);
+  const contentY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -110] : [0, -20]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.72, 1], isDesktop ? [1, 1, 0.15] : [1, 1, 0.88]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.78, 1], isDesktop ? [1, 1, 0] : [1, 1, 0.82]);
 
   useEffect(() => {
-    const desktopQuery = window.matchMedia("(min-width: 768px)");
-    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreferences = () => {
-      setIsDesktop(desktopQuery.matches);
-      setCanAnimate(!reducedMotionQuery.matches);
-    };
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const updateViewport = () => setIsDesktop(mediaQuery.matches);
 
-    updatePreferences();
-    desktopQuery.addEventListener("change", updatePreferences);
-    reducedMotionQuery.addEventListener("change", updatePreferences);
-    return () => {
-      desktopQuery.removeEventListener("change", updatePreferences);
-      reducedMotionQuery.removeEventListener("change", updatePreferences);
-    };
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
   return (
@@ -45,8 +43,8 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
         aria-hidden="true"
         className="absolute -inset-y-[34vh] inset-x-0"
         style={{
-          y: isDesktop && canAnimate ? backgroundY : 0,
-          willChange: isDesktop && canAnimate ? "transform" : "auto",
+          y: backgroundY,
+          willChange: backgroundParallaxEnabled ? "transform" : "auto",
         }}
       >
         <Image
@@ -68,9 +66,9 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
         <motion.div
           className="relative z-10 flex w-full max-w-6xl justify-center"
           style={{
-            y: isDesktop && canAnimate ? titleY : 0,
-            opacity: isDesktop && canAnimate ? titleOpacity : 1,
-            willChange: isDesktop && canAnimate ? "transform, opacity" : "auto",
+            y: backgroundParallaxEnabled ? titleY : 0,
+            opacity: backgroundParallaxEnabled ? titleOpacity : 1,
+            willChange: backgroundParallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
           <div
@@ -102,9 +100,9 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
         <motion.div
           className="relative z-10 mt-8 flex w-full max-w-5xl flex-col items-center text-center md:mt-10"
           style={{
-            y: isDesktop && canAnimate ? contentY : 0,
-            opacity: isDesktop && canAnimate ? contentOpacity : 1,
-            willChange: isDesktop && canAnimate ? "transform, opacity" : "auto",
+            y: backgroundParallaxEnabled ? contentY : 0,
+            opacity: backgroundParallaxEnabled ? contentOpacity : 1,
+            willChange: backgroundParallaxEnabled ? "transform, opacity" : "auto",
           }}
         >
           <h1 className="max-w-[24ch] font-display text-[clamp(1.65rem,3.35vw,2.85rem)] font-bold leading-[1.08] tracking-[-0.03em] text-white [text-shadow:0_8px_28px_rgba(0,0,0,0.65)]">
@@ -133,8 +131,8 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       <motion.div
         className="relative z-10"
         style={{
-          y: isDesktop && canAnimate ? statsY : 0,
-          willChange: isDesktop && canAnimate ? "transform" : "auto",
+          y: statsY,
+          willChange: statsParallaxEnabled ? "transform" : "auto",
         }}
       >
         {children}
