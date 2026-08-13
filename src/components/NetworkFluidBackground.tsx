@@ -255,6 +255,8 @@ export default function NetworkFluidBackground() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let animationFrame = 0;
+    let isVisible = !("IntersectionObserver" in window);
+    let pageVisible = !document.hidden;
     let readTarget: RenderTarget | null = null;
     let writeTarget: RenderTarget | null = null;
     const strokeStartPoint = { x: 0.5, y: 0.5 };
@@ -294,6 +296,7 @@ export default function NetworkFluidBackground() {
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (!isVisible) return;
       const bounds = canvas.getBoundingClientRect();
       const isInside = event.clientX >= bounds.left
         && event.clientX <= bounds.right
@@ -324,7 +327,7 @@ export default function NetworkFluidBackground() {
     };
 
     const render = (now: number) => {
-      resize();
+      animationFrame = 0;
       if (!readTarget || !writeTarget) return;
 
       const animationTime = reducedMotion.matches ? 0 : now * 0.001;
@@ -359,17 +362,56 @@ export default function NetworkFluidBackground() {
       gl.uniform1f(displayTime, animationTime);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-      if (!reducedMotion.matches) animationFrame = window.requestAnimationFrame(render);
+      if (!reducedMotion.matches && isVisible && pageVisible) {
+        animationFrame = window.requestAnimationFrame(render);
+      }
     };
 
-    const resizeObserver = new ResizeObserver(() => render(performance.now()));
+    const startRendering = () => {
+      if (!isVisible || !pageVisible || animationFrame) return;
+      animationFrame = window.requestAnimationFrame(render);
+    };
+
+    const stopRendering = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+    };
+
+    const visibilityObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible) startRendering();
+        else stopRendering();
+      })
+      : null;
+    const handleVisibilityChange = () => {
+      pageVisible = !document.hidden;
+      if (pageVisible) startRendering();
+      else stopRendering();
+    };
+    const handleMotionPreferenceChange = () => {
+      stopRendering();
+      startRendering();
+    };
+    const resizeObserver = new ResizeObserver(() => {
+      resize();
+      if (!animationFrame) render(performance.now());
+    });
+
     resizeObserver.observe(canvas);
+    visibilityObserver?.observe(canvas);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    reducedMotion.addEventListener("change", handleMotionPreferenceChange);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
+    resize();
     render(0);
 
     return () => {
-      window.cancelAnimationFrame(animationFrame);
+      stopRendering();
       resizeObserver.disconnect();
+      visibilityObserver?.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      reducedMotion.removeEventListener("change", handleMotionPreferenceChange);
       window.removeEventListener("pointermove", onPointerMove);
       deleteTargets();
       gl.deleteBuffer(buffer);

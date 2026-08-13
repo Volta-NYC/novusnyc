@@ -121,6 +121,7 @@ export default function HomeProjectMobileCarousel({ projects }: { projects: Home
   const documentHiddenRef = useRef(false);
   const reducedMotionRef = useRef(false);
   const mobileViewportRef = useRef(false);
+  const carouselVisibleRef = useRef(false);
   const lastAutoScrollRef = useRef(0);
   const autoScrollPositionRef = useRef(0);
   const resumeTimerRef = useRef<number>();
@@ -197,32 +198,31 @@ export default function HomeProjectMobileCarousel({ projects }: { projects: Home
   }, [updateProgress]);
 
   useEffect(() => {
-    const updateMotionPreference = (event: MediaQueryListEvent | MediaQueryList) => {
-      reducedMotionRef.current = event.matches;
-    };
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    updateMotionPreference(mediaQuery);
-    mediaQuery.addEventListener("change", updateMotionPreference);
-
-    const updateMobileViewport = (event: MediaQueryListEvent | MediaQueryList) => {
-      mobileViewportRef.current = event.matches;
-    };
-    const mobileMediaQuery = window.matchMedia("(max-width: 639px)");
-    updateMobileViewport(mobileMediaQuery);
-    mobileMediaQuery.addEventListener("change", updateMobileViewport);
-
-    const handleVisibilityChange = () => {
-      documentHiddenRef.current = document.hidden;
+    const stopAnimation = () => {
+      if (animationFrameRef.current !== undefined) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = undefined;
+      }
       lastFrameRef.current = undefined;
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     const animate = (timestamp: number) => {
+      if (
+        !carouselVisibleRef.current
+        || !mobileViewportRef.current
+        || documentHiddenRef.current
+        || reducedMotionRef.current
+      ) {
+        animationFrameRef.current = undefined;
+        lastFrameRef.current = undefined;
+        return;
+      }
+
       const carousel = carouselRef.current;
       const previousTimestamp = lastFrameRef.current ?? timestamp;
       lastFrameRef.current = timestamp;
 
-      if (carousel && mobileViewportRef.current && !interactionRef.current && !documentHiddenRef.current && !reducedMotionRef.current) {
+      if (carousel && !interactionRef.current) {
         const loopWidth = carousel.scrollWidth / 2;
         if (loopWidth > carousel.clientWidth) {
           const elapsedSeconds = Math.min((timestamp - previousTimestamp) / 1000, 0.05);
@@ -238,15 +238,57 @@ export default function HomeProjectMobileCarousel({ projects }: { projects: Home
       animationFrameRef.current = window.requestAnimationFrame(animate);
     };
 
-    animationFrameRef.current = window.requestAnimationFrame(animate);
+    const syncAnimation = () => {
+      const shouldAnimate = carouselVisibleRef.current
+        && mobileViewportRef.current
+        && !documentHiddenRef.current
+        && !reducedMotionRef.current;
+      if (shouldAnimate && animationFrameRef.current === undefined) {
+        animationFrameRef.current = window.requestAnimationFrame(animate);
+      } else if (!shouldAnimate) {
+        stopAnimation();
+      }
+    };
+
+    const updateMotionPreference = (event: MediaQueryListEvent | MediaQueryList) => {
+      reducedMotionRef.current = event.matches;
+      syncAnimation();
+    };
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    mediaQuery.addEventListener("change", updateMotionPreference);
+
+    const updateMobileViewport = (event: MediaQueryListEvent | MediaQueryList) => {
+      mobileViewportRef.current = event.matches;
+      syncAnimation();
+    };
+    const mobileMediaQuery = window.matchMedia("(max-width: 639px)");
+    mobileMediaQuery.addEventListener("change", updateMobileViewport);
+
+    const handleVisibilityChange = () => {
+      documentHiddenRef.current = document.hidden;
+      syncAnimation();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const carousel = carouselRef.current;
+    const visibilityObserver = carousel && "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => {
+        carouselVisibleRef.current = entry.isIntersecting;
+        syncAnimation();
+      })
+      : null;
+    if (carousel && visibilityObserver) visibilityObserver.observe(carousel);
+    else carouselVisibleRef.current = true;
+
+    updateMotionPreference(mediaQuery);
+    updateMobileViewport(mobileMediaQuery);
     window.addEventListener("resize", updateProgress);
     updateProgress();
 
     return () => {
-      if (animationFrameRef.current !== undefined) {
-        window.cancelAnimationFrame(animationFrameRef.current);
-      }
+      stopAnimation();
       window.clearTimeout(resumeTimerRef.current);
+      visibilityObserver?.disconnect();
       window.removeEventListener("resize", updateProgress);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       mediaQuery.removeEventListener("change", updateMotionPreference);

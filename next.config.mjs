@@ -51,6 +51,7 @@ const nextConfig = {
     ],
     // Serve WebP/AVIF where supported and cache optimized images on Vercel CDN.
     formats: ["image/avif", "image/webp"],
+    qualities: [72, 75],
     minimumCacheTTL: 3600,
   },
   async headers() {

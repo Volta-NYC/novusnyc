@@ -195,7 +195,7 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
             alt={`Preview of ${project.name}, a ${project.type.toLowerCase()} project in ${project.neighborhood}`}
             width={1600}
             height={1000}
-            unoptimized
+            sizes="(min-width: 1280px) 370px, (min-width: 1024px) 29vw, 44vw"
             className="block w-full h-auto"
             loading="lazy"
           />
@@ -526,7 +526,7 @@ export default function Home() {
         eyebrow="SUPPORT WITH A PURPOSE"
         title="One small business stronger. One city moving forward."
         detail="We turn a business owner’s priorities into websites, marketing, and other practical work they can use."
-        imageSrc="/soho-streetscape.png"
+        imageSrc="/soho-streetscape.webp"
       />
 
       <Suspense fallback={<CurrentProjectsFallback />}>

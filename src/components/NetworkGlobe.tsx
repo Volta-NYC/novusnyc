@@ -352,7 +352,9 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     let pinchAngle = Number.NaN;
     const pinchCenter = new THREE.Vector2();
     let animationFrame = 0;
-    const clock = new THREE.Clock();
+    let isVisible = !("IntersectionObserver" in window);
+    let pageVisible = !document.hidden;
+    const startedAt = performance.now();
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const resize = () => {
@@ -361,6 +363,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
+      if (reducedMotion) renderer.render(scene, camera);
     };
 
     const resizeObserver = new ResizeObserver(resize);
@@ -372,6 +375,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
       camera.position.copy(cameraDirection).multiplyScalar(cameraDistance);
       camera.lookAt(0, 0, 0);
       camera.updateMatrixWorld();
+      if (reducedMotion) renderer.render(scene, camera);
     };
 
     const clearTooltip = () => {
@@ -437,6 +441,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
         pinchDistance = gesture.distance;
         pinchAngle = gesture.angle;
         pinchCenter.copy(gesture.center);
+        if (reducedMotion) renderer.render(scene, camera);
         return;
       }
 
@@ -447,6 +452,7 @@ export default function NetworkGlobe({ locations, connections }: Props) {
         globe.rotateOnWorldAxis(worldUp, deltaX * 0.0045);
         globe.rotateOnWorldAxis(cameraRight, deltaY * 0.0045);
         dragStart.set(event.clientX, event.clientY);
+        if (reducedMotion) renderer.render(scene, camera);
         return;
       }
 
@@ -522,7 +528,8 @@ export default function NetworkGlobe({ locations, connections }: Props) {
     renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
     const render = () => {
-      const elapsed = clock.getElapsedTime();
+      animationFrame = 0;
+      const elapsed = (performance.now() - startedAt) / 1000;
       const motionElapsed = reducedMotion ? 0 : elapsed;
       if (!reducedMotion && !isDragging) {
         globeSweep.rotation.y = Math.sin(elapsed * 0.09) * (compactViewport ? 0.32 : 0.44);
@@ -536,12 +543,42 @@ export default function NetworkGlobe({ locations, connections }: Props) {
         pulse.position.copy(curve.getPoint((motionElapsed * 0.055 + phase) % 1));
       });
       renderer.render(scene, camera);
+      if (!reducedMotion && isVisible && pageVisible) {
+        animationFrame = window.requestAnimationFrame(render);
+      }
+    };
+
+    const startRendering = () => {
+      if (!isVisible || !pageVisible || animationFrame) return;
       animationFrame = window.requestAnimationFrame(render);
     };
+
+    const stopRendering = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+    };
+
+    const visibilityObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible) startRendering();
+        else stopRendering();
+      })
+      : null;
+    const handleVisibilityChange = () => {
+      pageVisible = !document.hidden;
+      if (pageVisible) startRendering();
+      else stopRendering();
+    };
+
+    visibilityObserver?.observe(mount);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     render();
 
     return () => {
-      window.cancelAnimationFrame(animationFrame);
+      stopRendering();
+      visibilityObserver?.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);

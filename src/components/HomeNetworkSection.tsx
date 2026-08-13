@@ -1,9 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
-import NetworkFluidBackground from "@/components/NetworkFluidBackground";
 import { chapterConnections, chapterLocations } from "@/data/network";
+
+const NetworkFluidBackground = dynamic(() => import("@/components/NetworkFluidBackground"), {
+  ssr: false,
+});
 
 const NetworkGlobe = dynamic(() => import("@/components/NetworkGlobe"), {
   ssr: false,
@@ -11,9 +15,32 @@ const NetworkGlobe = dynamic(() => import("@/components/NetworkGlobe"), {
 });
 
 export default function HomeNetworkSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [shouldLoadVisuals, setShouldLoadVisuals] = useState(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || !("IntersectionObserver" in window)) {
+      setShouldLoadVisuals(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setShouldLoadVisuals(true);
+        observer.disconnect();
+      },
+      { rootMargin: "1200px 0px" },
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="home-network-section relative overflow-hidden py-16 sm:py-20 md:py-24">
-      <NetworkFluidBackground />
+    <section ref={sectionRef} className="home-network-section relative overflow-hidden py-16 sm:py-20 md:py-24">
+      {shouldLoadVisuals && <NetworkFluidBackground />}
       <div className="mx-auto grid max-w-7xl items-center gap-6 px-4 sm:gap-8 sm:px-5 md:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
         <AnimatedSection>
           <p className="font-body text-xs font-bold uppercase tracking-[0.22em] text-n-orange">Our network</p>
@@ -50,7 +77,11 @@ export default function HomeNetworkSection() {
         </AnimatedSection>
 
         <AnimatedSection delay={0.08} direction="right" className="network-globe-frame">
-          <NetworkGlobe locations={chapterLocations} connections={chapterConnections} />
+          {shouldLoadVisuals ? (
+            <NetworkGlobe locations={chapterLocations} connections={chapterConnections} />
+          ) : (
+            <div className="h-[360px] sm:h-[460px] lg:h-[560px]" aria-hidden="true" />
+          )}
         </AnimatedSection>
       </div>
     </section>
