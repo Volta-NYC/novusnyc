@@ -4,15 +4,19 @@ import Image from "next/image";
 import Wordmark from "@/components/Wordmark";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import heroSkyline from "../../public/hero-nyc-skyline.jpg";
 import { useParallax } from "@/hooks/useParallax";
 
-export default function HeroSection() {
+export default function HeroSection({ children }: { children?: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { y: backgroundY, enabled: parallaxEnabled } = useParallax(sectionRef, {
     range: [-120, 170],
+    offset: ["start start", "end start"],
+  });
+  const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
+    range: [90, -120],
     offset: ["start start", "end start"],
   });
   const { scrollYProgress } = useScroll({
@@ -123,6 +127,13 @@ export default function HeroSection() {
           </div>
         </motion.div>
       </div>
+
+      <motion.div
+        className="relative z-10"
+        style={{ y: statsY, willChange: statsParallaxEnabled ? "transform" : "auto" }}
+      >
+        {children}
+      </motion.div>
     </section>
   );
 }

@@ -505,13 +505,11 @@ export default function Home() {
     <div className="home-scroll-story">
       <div aria-hidden="true" className="home-scroll-backdrop" />
       <HomeScrollProgress />
-      <HeroSection />
-
-      <section aria-label="Novus impact at a glance" className="relative isolate overflow-hidden border-y border-white/15 bg-n-dark py-7 md:py-9">
-        <div aria-hidden="true" className="absolute inset-0 -z-20 bg-[url('/hero-nyc-skyline.jpg')] bg-cover bg-[center_72%]" />
-        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[#17151a]/80" />
-        <LiveHomeStats />
-      </section>
+      <HeroSection>
+        <section aria-label="Novus impact at a glance" data-home-dark-end="true" className="relative py-14">
+          <LiveHomeStats />
+        </section>
+      </HeroSection>
 
       <HomeScrollBridge
         index={0}

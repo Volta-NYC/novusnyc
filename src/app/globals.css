@@ -322,7 +322,8 @@ body {
   }
 
   .mobile-scroll-row::-webkit-scrollbar,
-  .mobile-logo-row::-webkit-scrollbar {
+  .mobile-logo-row::-webkit-scrollbar,
+  .mobile-stat-row::-webkit-scrollbar {
     display: none;
   }
 
@@ -330,13 +331,17 @@ body {
     scroll-snap-align: start;
   }
 
-  .mobile-logo-row {
+  .mobile-logo-row,
+  .mobile-stat-row {
     display: flex;
     width: calc(100% + var(--mobile-gutter));
     margin-right: calc(var(--mobile-gutter) * -1);
     padding-right: var(--mobile-gutter);
     overflow-x: auto;
     overscroll-behavior-inline: contain;
+  }
+
+  .mobile-logo-row {
     scroll-snap-type: inline mandatory;
   }
 
@@ -345,6 +350,11 @@ body {
     min-width: min(72vw, 17rem);
     min-height: 10rem;
     scroll-snap-align: start;
+  }
+
+  .mobile-stat-row > * {
+    width: min(54vw, 12rem);
+    min-width: min(54vw, 12rem);
   }
 
   .home-scroll-rail {
