@@ -137,6 +137,18 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
                     ))}
                   </dd>
                 </div>
+                {selected.highlights && (
+                  <div className="sm:col-span-2">
+                    <dt className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-n-muted">Selected distinctions</dt>
+                    <dd className="mt-2 flex flex-wrap gap-2">
+                      {selected.highlights.map((highlight) => (
+                        <span key={highlight} className="rounded-full border border-n-yellow-dark/30 bg-n-yellow/35 px-2.5 py-1 font-body text-xs font-semibold text-n-ink">
+                          {highlight}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
                 <div className="sm:col-span-2 border-t border-n-border pt-5">
                   <dt className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-n-muted">Why Novus</dt>
                   <dd className="mt-1.5 max-w-2xl font-body text-sm leading-relaxed text-n-ink">{selected.whyNovus}</dd>

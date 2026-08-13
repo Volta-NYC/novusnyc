@@ -1229,7 +1229,10 @@ body:has(.home-scroll-story) footer::before {
   .home-project-mobile-marquee,
   .showcase-project-mobile-carousel {
     scrollbar-width: none;
-    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 1.25rem;
+    touch-action: pan-x pan-y;
   }
 
   .home-project-mobile-marquee::-webkit-scrollbar,
@@ -1237,7 +1240,6 @@ body:has(.home-scroll-story) footer::before {
     display: none;
   }
 
-  .home-project-mobile-progress,
   .showcase-project-mobile-progress {
     display: flex;
     align-items: center;
@@ -1245,7 +1247,6 @@ body:has(.home-scroll-story) footer::before {
     margin-bottom: 0.75rem;
   }
 
-  .home-project-mobile-progress-label,
   .showcase-project-mobile-progress-label {
     flex: none;
     color: rgba(35, 31, 36, 0.55);
@@ -1256,7 +1257,6 @@ body:has(.home-scroll-story) footer::before {
     text-transform: uppercase;
   }
 
-  .home-project-mobile-progress-track,
   .showcase-project-mobile-progress-track {
     --carousel-progress: 0;
     flex: 1;
@@ -1268,12 +1268,10 @@ body:has(.home-scroll-story) footer::before {
     background: transparent;
   }
 
-  .home-project-mobile-progress-track:active,
   .showcase-project-mobile-progress-track:active {
     cursor: grabbing;
   }
 
-  .home-project-mobile-progress-track::-webkit-slider-runnable-track,
   .showcase-project-mobile-progress-track::-webkit-slider-runnable-track {
     height: 0.25rem;
     border-radius: 999px;
@@ -1284,7 +1282,6 @@ body:has(.home-scroll-story) footer::before {
     );
   }
 
-  .home-project-mobile-progress-track::-webkit-slider-thumb,
   .showcase-project-mobile-progress-track::-webkit-slider-thumb {
     width: 1rem;
     height: 1rem;
@@ -1296,21 +1293,18 @@ body:has(.home-scroll-story) footer::before {
     background: rgb(var(--color-bg));
   }
 
-  .home-project-mobile-progress-track::-moz-range-track,
   .showcase-project-mobile-progress-track::-moz-range-track {
     height: 0.25rem;
     border-radius: 999px;
     background: rgba(35, 31, 36, 0.14);
   }
 
-  .home-project-mobile-progress-track::-moz-range-progress,
   .showcase-project-mobile-progress-track::-moz-range-progress {
     height: 0.25rem;
     border-radius: 999px;
     background: rgb(var(--color-orange));
   }
 
-  .home-project-mobile-progress-track::-moz-range-thumb,
   .showcase-project-mobile-progress-track::-moz-range-thumb {
     width: 0.75rem;
     height: 0.75rem;
@@ -1319,7 +1313,6 @@ body:has(.home-scroll-story) footer::before {
     background: rgb(var(--color-bg));
   }
 
-  .home-project-mobile-progress-track:focus-visible,
   .showcase-project-mobile-progress-track:focus-visible {
     outline: 2px solid rgb(var(--color-orange));
     outline-offset: 0.25rem;
@@ -1332,10 +1325,31 @@ body:has(.home-scroll-story) footer::before {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
   }
+
+  .home-project-mobile-swipe-hint {
+    margin: 0 1.25rem 0.625rem;
+    color: rgba(35, 31, 36, 0.56);
+    font-family: var(--font-dm-sans), sans-serif;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .home-project-mobile-swipe-hint span {
+    display: inline-block;
+    margin-left: 0.25rem;
+    color: rgb(var(--color-orange-ink));
+    font-size: 0.875rem;
+    line-height: 0;
+  }
+
+  .home-project-mobile-track > * {
+    scroll-snap-align: start;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-project-mobile-progress-track,
   .showcase-project-mobile-progress-track {
     will-change: auto;
   }

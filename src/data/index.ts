@@ -327,6 +327,7 @@ export type LeadershipMember = {
   focus: string;
   whyNovus: string;
   interests: string[];
+  highlights?: string[];
   experience: LeadershipExperience[];
 };
 
@@ -339,21 +340,46 @@ export type LeadershipExperience = {
 export const teamMembers: LeadershipMember[] = [
   {
     name: "Ethan Zhang",
-    role: "Co-Founder",
-    roleDetails: "Co-Founder, helping shape Novus's long-term direction through finance, business strategy, and community partnerships.",
+    role: "Founder & Director",
+    roleDetails: "Founder and Director of Novus NYC, co-leading a 400+ student organization that has built a pipeline of 80+ small businesses across all five boroughs and delivered 100+ engagements through partnerships with NYC Small Business Services, the Small Business Resource Network, and local Business Improvement Districts.",
     email: EMAIL.ethan,
-    linkedin: "https://www.linkedin.com/in/ezhang09/",
+    linkedin: "https://www.linkedin.com/in/ez09",
     initial: "E",
     photo: "/team/ethan.jpeg",
     school: "Stuyvesant High School",
-    grade: "12th grade, Class of 2027",
-    focus: "Finance and business.",
-    whyNovus: "Novus turns student talent into practical support for the small businesses that keep New York's neighborhoods moving.",
-    interests: ["Finance", "Economics", "Technology", "Community strategy"],
+    grade: "Class of 2027",
+    focus: "Organizational strategy, quantitative finance, technology systems, and scalable community partnerships.",
+    whyNovus: "I founded Novus to give ambitious students meaningful ownership while bringing practical technology, marketing, and consulting support to the small businesses that power New York's neighborhoods.",
+    interests: ["Music", "Running", "Photography", "Graphic design", "Rowing", "Classical piano"],
+    highlights: [
+      "1600 SAT",
+      "Wharton global champion",
+      "USACO Gold Division",
+      "2x AIME qualifier",
+      "U.S. Department of State NSLI-Y scholar",
+      "Best Overall Pitch at Columbia's Young Entrepreneurs Program",
+    ],
     experience: [
-      { title: "Junior Economic Club", role: "Global Director of Technology", description: "Leads technology work for a global student economics community. Builds the systems that support its members and programs." },
-      { title: "Stuyvesant Bulls and NYC Math Team", description: "Contributes to student investing and competitive mathematics communities. Brings analytical thinking to collaborative team work." },
-      { title: "Wharton Global High School Investment Competition", description: "Member of the global championship team in a field of more than 6,300 teams. Developed investment analysis in a high-pressure team setting." },
+      {
+        title: "Novus NYC",
+        role: "Founder & Director",
+        description: "Founded and co-directs a 400+ student organization serving small businesses across all five boroughs. Built partnerships and an 80+ business pipeline, scaled delivery to 100+ engagements, and developed the Next.js, TypeScript, and PostgreSQL platform coordinating 10+ concurrent projects.",
+      },
+      {
+        title: "Stuyvesant Bulls",
+        role: "Co-President & Competitor",
+        description: "Co-led a six-person team to first place globally among 6,300+ teams in the Wharton Global High School Investment Competition. Developed a quantitative investment framework combining fundamental research, Black-Litterman allocation, multi-objective risk optimization, and a machine-learning regime classifier.",
+      },
+      {
+        title: "Junior Economic Club",
+        role: "Global Technology Officer",
+        description: "Maintains web and database infrastructure for a global student economics community. Consolidated member and alumni data across 17+ chapters into a centralized directory serving 1,500+ members.",
+      },
+      {
+        title: "Stuyvesant Study Society",
+        role: "Director of Operations & Tutor",
+        description: "Delivered 120+ hours of one-on-one mathematics and STEM instruction before moving into operations. Now leads outreach for 100+ K-8 students and 80+ volunteer tutors, supported by an automated Google Apps Script logistics system.",
+      },
     ],
   },
   {
