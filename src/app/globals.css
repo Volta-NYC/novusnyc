@@ -234,8 +234,8 @@ body {
   }
 
   .home-scroll-bridge {
-    min-height: 0;
-    padding: 2.5rem 1rem;
+    min-height: 31rem;
+    padding: 3.5rem 1rem;
   }
 
   .home-scroll-bridge-copy {
@@ -1374,14 +1374,14 @@ body:has(.home-scroll-story) footer::before {
   }
 
   .home-scroll-bridge {
-    min-height: 0;
-    padding-block: 2.5rem;
+    min-height: max(46rem, 100svh);
+    padding-block: 5.5rem;
   }
 
   .home-scroll-bridge-mobile-media {
     position: absolute;
     z-index: -2;
-    inset: 0;
+    inset: -32% 0;
     display: block;
     background-position: center;
     background-repeat: no-repeat;

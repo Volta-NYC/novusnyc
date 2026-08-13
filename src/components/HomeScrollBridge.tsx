@@ -1,3 +1,9 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { useParallax } from "@/hooks/useParallax";
+
 interface HomeScrollBridgeProps {
   eyebrow: string;
   title: string;
@@ -6,6 +12,21 @@ interface HomeScrollBridgeProps {
   index: number;
 }
 
+const MOBILE_MOTION = [
+  {
+    imageY: [-72, 72] as [number, number],
+    copyY: [56, -56] as [number, number],
+  },
+  {
+    imageY: [-224, 224] as [number, number],
+    copyY: [56, -56] as [number, number],
+  },
+  {
+    imageY: [-248, 248] as [number, number],
+    copyY: [64, -64] as [number, number],
+  },
+] as const;
+
 export default function HomeScrollBridge({
   eyebrow,
   title,
@@ -13,21 +34,55 @@ export default function HomeScrollBridge({
   imageSrc,
   index,
 }: HomeScrollBridgeProps) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const motionProfile = MOBILE_MOTION[index] ?? MOBILE_MOTION[0];
+  const { y: imageY, enabled: imageParallaxEnabled } = useParallax(sectionRef, {
+    range: motionProfile.imageY,
+  });
+  const { y: copyY, enabled: copyParallaxEnabled } = useParallax(sectionRef, {
+    range: motionProfile.copyY,
+  });
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const updateViewport = () => setIsMobile(mediaQuery.matches);
+
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       className={`home-scroll-bridge home-scroll-bridge-${index}`}
       style={{ backgroundImage: `url(${imageSrc})` }}
     >
-      <div
+      <motion.div
         aria-hidden="true"
         className="home-scroll-bridge-mobile-media"
-        style={{ backgroundImage: `url(${imageSrc})` }}
+        style={isMobile
+          ? {
+            backgroundImage: `url(${imageSrc})`,
+            y: imageY,
+            willChange: imageParallaxEnabled ? "transform" : "auto",
+          }
+          : { backgroundImage: `url(${imageSrc})` }}
       />
-      <div className="home-scroll-bridge-copy">
+      <motion.div
+        className="home-scroll-bridge-copy"
+        style={isMobile
+          ? {
+            y: copyY,
+            willChange: copyParallaxEnabled ? "transform" : "auto",
+          }
+          : undefined}
+      >
         <p className="home-scroll-bridge-eyebrow">{eyebrow}</p>
         <h2>{title}</h2>
         <p>{detail}</p>
-      </div>
+      </motion.div>
     </section>
   );
 }
