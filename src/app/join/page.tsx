@@ -5,14 +5,10 @@ import BrandTexture from "@/components/BrandTexture";
 import FaqAccordion from "@/components/FaqAccordion";
 import PageHeroContent from "@/components/PageHeroContent";
 import ParallaxHero from "@/components/ParallaxHero";
-import SectionBridge from "@/components/SectionBridge";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import TracksTabbed from "@/components/TracksTabbed";
 import TracksParallax from "@/components/TracksParallax";
 import { joinFaqs, marqueeSchools } from "@/data";
-import { getTotalMemberCount } from "@/lib/server/memberEducation";
-import { formatCounter } from "@/lib/formatCounter";
-import { getPublicStatOverrides, publicStat } from "@/lib/server/publicStats";
 import cornellPhoto from "../../../public/cornell-campus-photo.jpg";
 
 export const metadata: Metadata = {
@@ -73,7 +69,6 @@ const JOIN_FAQ_CATEGORIES = [
 ];
 
 export default async function Join() {
-  const [memberCount, overrides] = await Promise.all([getTotalMemberCount(), getPublicStatOverrides()]);
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -116,11 +111,6 @@ export default async function Join() {
             description="Join a student team doing real client work for NYC small businesses. Build experience you can show in applications, portfolios, and interviews."
             primaryAction={{ href: "/apply", label: "Start your application" }}
             secondaryAction={{ href: "#tracks", label: "Explore the tracks" }}
-            highlights={[
-              "2–4 hours a week",
-              "Fully remote",
-              `${publicStat(overrides, "joinStudentMembers", formatCounter(memberCount))} student members`,
-            ]}
             accent="purple"
           />
         </div>
@@ -152,8 +142,6 @@ export default async function Join() {
             <TracksTabbed />
           </AnimatedSection>
       </TracksParallax>
-
-      <SectionBridge tone="lavender" align="right" />
 
       {/* ── LEADERSHIP TRACK ───────────────────────────────── */}
       <section id="leadership" className="relative isolate overflow-hidden py-14 bg-[#f9f5f8]">
@@ -195,8 +183,6 @@ export default async function Join() {
           </AnimatedSection>
         </div>
       </section>
-
-      <SectionBridge tone="yellow" />
 
       <ApplicationJourney />
 

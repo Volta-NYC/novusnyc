@@ -532,7 +532,7 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
   const [businessRows, { data: financeRows }, { data: bidsRows }] = await Promise.all([
     fetchBusinesses(),
     sb.from("finance_assignments").select("type"),
-    sb.from("bids").select("id"),
+    sb.from("bids").select("id").eq("status", "Active Partner"),
   ]);
 
   let totalBusinesses = 0;

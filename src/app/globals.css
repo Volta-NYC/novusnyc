@@ -366,14 +366,6 @@ body {
     opacity: 0.35 !important;
   }
 
-  .section-bridge {
-    height: 2.25rem;
-  }
-
-  .section-bridge img {
-    height: 1.5rem;
-  }
-
   .home-scroll-bridge::after {
     inset: 0.75rem;
     opacity: 0.55;
@@ -503,12 +495,14 @@ body:has(.home-scroll-story) header .md\:hidden span {
 }
 
 .home-hero-stage {
-  min-height: 100svh;
+  min-height: auto;
+  padding-bottom: 4rem;
 }
 
 @media (min-width: 768px) {
   .home-hero-stage {
-    min-height: max(43rem, 100svh);
+    min-height: clamp(40rem, calc(100svh - 10rem), 46rem);
+    padding-bottom: 0;
   }
 }
 
@@ -1213,6 +1207,7 @@ body:has(.home-scroll-story) footer::before {
   display: -webkit-box;
   min-height: 2.35em;
   overflow: hidden;
+  align-content: center;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }

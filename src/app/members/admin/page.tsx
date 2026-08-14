@@ -630,14 +630,11 @@ function BannersTab() {
 }
 
 const PUBLIC_STAT_FIELDS = [
-  { key: "homeStudentMembers", label: "Homepage: Student members", placeholder: "400+" },
-  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", placeholder: "150+" },
-  { key: "homeCommunityPartners", label: "Homepage: Community partners", placeholder: "30" },
+  { key: "homeStudentMembers", label: "Homepage: Student members", placeholder: "Live count" },
+  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", placeholder: "Live count" },
+  { key: "homeCommunityPartners", label: "Homepage: Community partners", placeholder: "Live count" },
   { key: "homeNetworkLocations", label: "Homepage: Network locations", placeholder: "13" },
-  { key: "joinStudentMembers", label: "Students page: Student members", placeholder: "Live count" },
-  { key: "joinHighSchools", label: "Students page: High schools", placeholder: "Live count" },
-  { key: "joinColleges", label: "Students page: Colleges", placeholder: "Live count" },
-  { key: "aboutBusinesses", label: "About: Total businesses", placeholder: "150+" },
+  { key: "aboutBusinesses", label: "About: Total businesses", placeholder: "Live count" },
   { key: "aboutWebsiteProjects", label: "About: Website projects", placeholder: "Live count" },
   { key: "aboutMarketingProjects", label: "About: Marketing projects", placeholder: "Live count" },
   { key: "aboutCommunityPartners", label: "About: Community organizations", placeholder: "Live count" },

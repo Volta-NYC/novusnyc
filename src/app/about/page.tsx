@@ -54,7 +54,6 @@ export default async function About() {
             description="Novus connects high school and college students with real projects for NYC small businesses. Businesses get useful support; students build experience they can show."
             primaryAction={{ href: "/showcase", label: "See our work" }}
             secondaryAction={{ href: "#leadership", label: "Meet the team" }}
-            highlights={["Student-run", "Real client projects", "Built for NYC"]}
             accent="purple"
           />
         </div>
@@ -64,40 +63,40 @@ export default async function About() {
       <section id="mission" className="public-surface public-surface-lavender py-16 bg-n-bg">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <AnimatedSection>
-            <div className="grid gap-7 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] md:items-end md:gap-14 lg:gap-20">
-              <div className="max-w-4xl">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,1.02fr)_minmax(26rem,0.98fr)] lg:items-center lg:gap-14 xl:gap-20">
+              <div className="max-w-3xl">
                 <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">Our mission</p>
-                <h2 className="font-display font-bold text-n-ink leading-tight" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)" }}>
+                <h2 className="font-display font-bold text-n-ink leading-tight" style={{ fontSize: "clamp(1.5rem, 3.35vw, 2.45rem)" }}>
                   “To close the digital and financial equity gap for small businesses by connecting them with the next generation of tech, finance, and marketing talent.”
                 </h2>
+                <p className="mt-7 max-w-2xl font-body text-base leading-relaxed text-n-muted">
+                  Students build websites, marketing materials, grant applications, and operational tools that neighborhood businesses can put to use. Along the way, they gain practical client experience and learn to take responsibility for work they can explain with confidence. Novus means “new”: a new resource for businesses and a first opportunity for students to contribute work that matters to a client.
+                </p>
               </div>
-              <p className="max-w-xl font-body text-base leading-relaxed text-n-muted md:pb-1">
-                Students build websites, marketing materials, grant applications, and operational tools that neighborhood businesses can put to use. Along the way, they gain practical client experience and learn to take responsibility for work they can explain with confidence. Novus means “new”: a new resource for businesses and a first opportunity for students to contribute work that matters to a client.
-              </p>
-            </div>
 
-            <div className="mt-12 grid grid-cols-12 items-center pb-5 sm:mt-14 md:mt-16 md:pb-8">
-              <figure className="relative z-10 col-[1/span_10] row-start-1 w-full -rotate-[3deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_24px_65px_rgba(42,35,43,0.18)] sm:col-[1/span_9] md:col-[1/span_7] md:max-w-[36rem] md:-rotate-[4deg]">
-                <Image
-                  src="/novus1.jpg"
-                  alt="Two Novus students with a local restaurant owner"
-                  width={640}
-                  height={800}
-                  sizes="(max-width: 767px) 78vw, 43vw"
-                  className="aspect-[4/5] w-full rounded-[1.15rem] object-cover"
-                />
-              </figure>
+              <div className="grid grid-cols-12 items-center pb-5 sm:pb-8 lg:pb-10">
+                <figure className="relative z-10 col-[1/span_8] row-start-1 w-full -rotate-[3deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_24px_65px_rgba(42,35,43,0.18)] sm:col-[1/span_7] lg:col-[1/span_7] lg:max-w-[19rem] lg:-rotate-[4deg] xl:max-w-[21rem]">
+                  <Image
+                    src="/novus1.jpg"
+                    alt="Two Novus students with a local restaurant owner"
+                    width={640}
+                    height={800}
+                    sizes="(max-width: 639px) 60vw, (max-width: 1023px) 45vw, 19rem"
+                    className="aspect-[4/5] w-full rounded-[1.15rem] object-cover"
+                  />
+                </figure>
 
-              <figure className="relative z-20 col-[2/span_11] row-start-2 -mt-12 w-full rotate-[2.5deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_28px_70px_rgba(42,35,43,0.22)] sm:col-[3/span_10] sm:-mt-20 md:col-[6/span_7] md:row-start-1 md:mt-20 md:max-w-[44rem] md:rotate-[3deg]">
-                <Image
-                  src="/novus2.jpeg"
-                  alt="Three Novus students with a community partner at a neighborhood event"
-                  width={1280}
-                  height={853}
-                  sizes="(max-width: 767px) 86vw, 55vw"
-                  className="aspect-[3/2] w-full rounded-[1.15rem] object-cover"
-                />
-              </figure>
+                <figure className="relative z-20 col-[4/span_9] row-start-1 mt-36 w-full rotate-[2.5deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_28px_70px_rgba(42,35,43,0.22)] sm:col-[4/span_8] sm:mt-40 lg:col-[5/span_8] lg:mt-28 lg:max-w-[25rem] lg:rotate-[3deg] xl:max-w-[28rem]">
+                  <Image
+                    src="/novus2.jpeg"
+                    alt="Three Novus students with a community partner at a neighborhood event"
+                    width={1280}
+                    height={853}
+                    sizes="(max-width: 639px) 70vw, (max-width: 1023px) 52vw, 25rem"
+                    className="aspect-[3/2] w-full rounded-[1.15rem] object-cover"
+                  />
+                </figure>
+              </div>
             </div>
           </AnimatedSection>
         </div>
@@ -110,7 +109,7 @@ export default async function About() {
             <h2 className="page-section-heading text-n-ink mb-10">Our impact</h2>
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-n-border bg-n-border md:grid-cols-4 md:gap-0 md:divide-x md:divide-n-border">
               {[
-                { value: publicStat(overrides, "aboutBusinesses", "150+"), label: "Total\nbusinesses", color: "text-n-orange-ink" },
+                { value: publicStat(overrides, "aboutBusinesses", formatCounter(liveStats.totalBusinesses)), label: "Total\nbusinesses", color: "text-n-orange-ink" },
                 { value: publicStat(overrides, "aboutWebsiteProjects", formatCounter(liveStats.websiteProjects)), label: "Website\nprojects", color: "text-n-purple-ink" },
                 { value: publicStat(overrides, "aboutMarketingProjects", formatCounter(liveStats.marketingProjects)), label: "Marketing\nprojects", color: "text-amber-700" },
                 { value: publicStat(overrides, "aboutCommunityPartners", formatCounter(liveStats.bidPartners, true)), label: "Community\norganizations", color: "text-amber-700" },

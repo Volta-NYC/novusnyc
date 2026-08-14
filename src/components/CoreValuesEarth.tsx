@@ -284,7 +284,7 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
                   }}
                   type="button"
                   aria-expanded={expanded}
-                  aria-controls={panelId}
+                  aria-controls={expanded ? panelId : undefined}
                   onClick={() => toggleLayer(layer.title)}
                   onFocus={() => setFocusedTitle(layer.title)}
                   onBlur={() => setFocusedTitle(null)}

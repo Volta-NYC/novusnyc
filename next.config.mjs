@@ -127,6 +127,11 @@ const nextConfig = {
         destination: "/showcase",
         permanent: true,
       },
+      {
+        source: "/impact",
+        destination: "/about#impact",
+        permanent: true,
+      },
       // /updates (Progress Updates) was retired. Its content was social embeds,
       // most of which were deleted. Pointed at /showcase rather than left to 404
       // — the URL is indexed, and a 404 mid-migration discards its equity.

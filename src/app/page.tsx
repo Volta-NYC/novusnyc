@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     getTotalMemberCount(),
   ]);
   return {
-    title: { absolute: "Novus NYC — Free Consulting for NYC Small Businesses" },
+    title: { absolute: "Novus NYC | Free Consulting for NYC Small Businesses" },
     description:
       `Digital equity is economic equity. Novus connects student teams with New York City small businesses to provide free support in technology, marketing, finance, operations, websites, SEO, social media, and grant development. ${formatCounter(memberCount)} students, ${formatCounter(liveStats.totalBusinesses)} businesses served.`,
     openGraph: {
@@ -329,11 +329,15 @@ async function CurrentProjectsSection() {
 }
 
 async function LiveHomeStats() {
-  const overrides = await getPublicStatOverrides();
+  const [liveStats, memberCount, overrides] = await Promise.all([
+    getPublicLiveStats(),
+    getTotalMemberCount(),
+    getPublicStatOverrides(),
+  ]);
   const liveHomeStats = [
-    { value: publicStat(overrides, "homeStudentMembers", "400+"), label: "Student Members" },
-    { value: publicStat(overrides, "homeBusinessesSupported", "150+"), label: "Businesses Supported" },
-    { value: publicStat(overrides, "homeCommunityPartners", "30"), label: "Community Partners" },
+    { value: publicStat(overrides, "homeStudentMembers", formatCounter(memberCount)), label: "Student Members" },
+    { value: publicStat(overrides, "homeBusinessesSupported", formatCounter(liveStats.totalBusinesses)), label: "Businesses Supported" },
+    { value: publicStat(overrides, "homeCommunityPartners", formatCounter(liveStats.bidPartners, true)), label: "Community Partners" },
     { value: publicStat(overrides, "homeNetworkLocations", String(chapterLocations.length)), label: "Network Locations" },
   ];
 
@@ -387,10 +391,10 @@ function PartnerLogoCard({
       tabIndex={tabIndex}
       aria-hidden={isDuplicate || undefined}
       aria-label={`Visit ${partner.name} website`}
-      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-start text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
+      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-between text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
         important
-          ? "w-[230px] h-[156px] rounded-xl border-n-orange/35 px-4 pt-5"
-          : "w-[230px] h-[156px] rounded-lg border-n-border px-4 pt-5"
+          ? "w-[230px] h-[168px] rounded-xl border-n-orange/35 px-4 py-5"
+          : "w-[230px] h-[168px] rounded-lg border-n-border px-4 py-5"
       }`}
     >
       <div className="relative w-full h-[72px] shrink-0">
@@ -402,7 +406,7 @@ function PartnerLogoCard({
           className={getPartnerLogoClass(partner, "object-contain partner-logo-image p-1")}
         />
       </div>
-      <div className="mt-3 min-w-0 w-full">
+      <div className="min-w-0 w-full">
         {important && (
           <p className="font-body text-[9px] uppercase tracking-widest text-n-orange font-bold mb-1">
             Key partner

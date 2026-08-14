@@ -2,20 +2,7 @@ import {
   BarChartIcon,
   CodeIcon,
   MegaphoneIcon,
-  MonitorIcon,
-  FolderIcon,
-  AwardIcon,
-  ArrowUpRightIcon,
-  BuildingIcon,
-  UsersIcon,
-  GlobeIcon,
-  SmartphoneIcon,
-  DollarIcon,
-  SearchIcon,
-  TrendingUpIcon,
-  CreditCardIcon,
 } from "@/components/Icons";
-import { NOVUS_STATS } from "./stats";
 import { EMAIL } from "@/lib/mail";
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
@@ -55,61 +42,6 @@ export const MARKETING_SUBTRACKS = [
 ] as const;
 
 export type MarketingSubtrack = (typeof MARKETING_SUBTRACKS)[number]["title"];
-
-// ─── Homepage ─────────────────────────────────────────────────────────────────
-
-export const homeStats = [
-  { value: NOVUS_STATS.businessesServed.value, suffix: NOVUS_STATS.businessesServed.suffix, label: "Businesses Supported" },
-  { value: NOVUS_STATS.nycNeighborhoods.value, suffix: NOVUS_STATS.nycNeighborhoods.suffix, label: "NYC Neighborhoods" },
-  { value: NOVUS_STATS.studentMembers.value, suffix: NOVUS_STATS.studentMembers.suffix, label: "Student Members" },
-  { value: NOVUS_STATS.bidPartners.value, suffix: NOVUS_STATS.bidPartners.suffix, label: "BID Partners" },
-];
-
-export const homeTracks = [
-  {
-    icon: BarChartIcon,
-    name: "Finance & Operations",
-    color: "bg-amber-50 border-amber-100",
-    accent: "bg-amber-400",
-    iconColor: "text-amber-500",
-    iconBg: "bg-amber-100",
-    items: [
-      "Grant writing for Novus",
-      "Budgeting and financial tracking",
-      "Nonprofit filings and compliance",
-      "Fundraising and donor outreach",
-    ],
-  },
-  {
-    icon: CodeIcon,
-    name: "Digital & Tech",
-    color: "bg-blue-50 border-blue-100",
-    accent: "bg-n-purple",
-    iconColor: "text-n-purple",
-    iconBg: "bg-blue-100",
-    items: [
-      "Website design & development",
-      "Backend workflows (forms, DB, auth)",
-      "SEO & Google Maps visibility",
-      "Web accessibility (ADA)",
-      "Production deployment & iteration",
-    ],
-  },
-  {
-    icon: MegaphoneIcon,
-    name: "Marketing",
-    color: "bg-orange-50 border-orange-100",
-    accent: "bg-n-orange",
-    iconColor: "text-n-orange",
-    iconBg: "bg-orange-100",
-    items: [
-      "Novus Social Media & Branding",
-      "Grants & Funding",
-      "Novus Ambassadors",
-      "Small Business Outreach",
-    ],
-  },
-];
 
 export const communityPartners = [
   { name: "Manhattan Chamber of Commerce", logo: "/partners/logos/manhattan-chamber.png", website: "https://www.manhattancc.org/", important: true },
@@ -167,8 +99,8 @@ export interface Project {
   status: ProjectStatus;
   color: string;
   desc: string;
-  url?: string;   // live website or social media link — add when available
-  quote?: string; // client testimonial — add when available
+  url?: string;   // live website or social media link; add when available
+  quote?: string; // client testimonial; add when available
 }
 
 export const projects: Project[] = [
@@ -232,14 +164,6 @@ export const projects: Project[] = [
 export const currentProjects = projects
   .filter((p) => p.status !== "Upcoming")
   .slice(0, 3);
-
-// ─── Showcase ─────────────────────────────────────────────────────────────────
-
-export const showcaseStats = [
-  { value: NOVUS_STATS.businessesServed.value, suffix: NOVUS_STATS.businessesServed.suffix, label: "Businesses helped" },
-  { value: NOVUS_STATS.nycNeighborhoods.value, suffix: NOVUS_STATS.nycNeighborhoods.suffix, label: "NYC neighborhoods" },
-  { value: NOVUS_STATS.studentMembers.value, suffix: NOVUS_STATS.studentMembers.suffix, label: "Student contributors" },
-];
 
 // ─── About ────────────────────────────────────────────────────────────────────
 
@@ -452,98 +376,7 @@ export const teamMembers: LeadershipMember[] = [
   },
 ];
 
-export const branches = [
-  { city: "Jacksonville", state: "FL" },
-  { city: "New York City", state: "NY" },
-  { city: "Bay Area", state: "CA" },
-  { city: "Atlanta", state: "GA" },
-  { city: "Alexandria", state: "VA" },
-  { city: "Dallas", state: "TX" },
-];
-
 // ─── Join page ────────────────────────────────────────────────────────────────
-
-export const joinGains = [
-  {
-    icon: MonitorIcon,
-    title: "Real deliverables",
-    desc: "Deployed websites, live social media campaigns, submitted grant applications. Work you can show in an interview.",
-    color: "text-n-purple",
-    bg: "bg-blue-50",
-  },
-  {
-    icon: FolderIcon,
-    title: "A portfolio that holds up",
-    desc: "You can tell an interviewer exactly what you built, for which business, and what changed as a result.",
-    color: "text-n-orange",
-    bg: "bg-orange-50",
-  },
-  {
-    icon: AwardIcon,
-    title: "References that count",
-    desc: "Your team leads and project directors know your work firsthand and can speak to it specifically.",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-  },
-  {
-    icon: UsersIcon,
-    title: "Feedback on your work",
-    desc: "Experienced members review your work and give you direct feedback as you go.",
-    color: "text-purple-500",
-    bg: "bg-purple-50",
-  },
-  {
-    icon: ArrowUpRightIcon,
-    title: "Fast path to leadership",
-    desc: "Strong contributors move into lead roles quickly. We promote based on work, not time.",
-    color: "text-n-purple",
-    bg: "bg-blue-50",
-  },
-  {
-    icon: BuildingIcon,
-    title: "Real community impact",
-    desc: "The businesses you work with are real. Family-owned restaurants, flower shops, tutoring centers across NYC.",
-    color: "text-n-orange",
-    bg: "bg-orange-50",
-  },
-];
-
-export const trackHighlights = [
-  {
-    name: "Digital & Tech",
-    tagColor: "bg-blue-100 text-blue-800",
-    outputs: [
-      "Built and launched websites for NYC businesses from scratch",
-      "Implemented backend features for forms, scheduling, and database sync",
-      "Implemented bilingual support for Chinese-speaking communities",
-      "Optimized Google Maps and Yelp listings for search visibility",
-      "Deployed production code across multiple active client repos",
-    ],
-  },
-  {
-    name: "Marketing",
-    tagColor: "bg-orange-100 text-orange-800",
-    outputs: [
-      "Created and managed social media, branding, and promotional materials for Novus and local businesses",
-      "Researched grant and funding opportunities, built templates, and supported grant writing",
-      "Built relationships with schools, student organizations, pipeline programs, and community partners",
-      "Connected new small businesses with Novus's marketing and web services through outreach",
-      "Drafted full grant applications on behalf of client businesses",
-    ],
-  },
-  {
-    name: "Finance & Operations",
-    tagColor: "bg-amber-100 text-amber-800",
-    outputs: [
-      "Researched and wrote grants funding Novus's own programs",
-      "Built and maintained the operating budget across a full cycle",
-      "Prepared nonprofit filings and compliance documentation",
-      "Ran a fundraising campaign from planning through donor follow-up",
-      "Produced the financial reporting partners and funders ask for",
-    ],
-  },
-];
-
 export const joinTracks = [
   {
     icon: BarChartIcon,
@@ -647,7 +480,7 @@ export const joinFaqs = [
   },
   {
     q: "What happens after I apply?",
-    a: "We review applications on a rolling basis, then invite selected students to a short conversation. We use that time to learn about your goals and answer questions about the current cohort.",
+    a: "We review applications on a rolling basis against current team openings. If there is a fit, we will email your onboarding steps, track, and team assignment. Not every applicant will receive a call.",
   },
   {
     q: "Will I work directly with business owners?",
@@ -668,52 +501,5 @@ export const joinFaqs = [
   {
     q: "What should I include in my application?",
     a: "Tell us about your interests, relevant coursework or experience, and what you hope to learn. We care more about curiosity, follow-through, and care for community businesses than a perfect resume.",
-  },
-];
-
-// ─── Partners page ────────────────────────────────────────────────────────────
-
-export const partnerServices = [
-  {
-    icon: GlobeIcon,
-    title: "Website Design & Development",
-    desc: "Custom-built sites using modern frameworks. Mobile-friendly, accessible, and maintained.",
-    color: "text-n-purple",
-    bg: "bg-blue-50",
-  },
-  {
-    icon: SmartphoneIcon,
-    title: "Social Media & Content",
-    desc: "Instagram strategy, posting calendars, founder interview videos, and audience growth.",
-    color: "text-n-orange",
-    bg: "bg-orange-50",
-  },
-  {
-    icon: DollarIcon,
-    title: "Grant Research & Writing",
-    desc: "We find grants your business qualifies for and help prepare the full application.",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-  },
-  {
-    icon: SearchIcon,
-    title: "SEO & Online Visibility",
-    desc: "Google Maps optimization, Yelp, Apple Maps, and search engine improvements.",
-    color: "text-n-purple",
-    bg: "bg-blue-50",
-  },
-  {
-    icon: TrendingUpIcon,
-    title: "Sales & Financial Analysis",
-    desc: "Sales and revenue analysis, competitor benchmarking, pricing strategy, and owner-facing reporting.",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-  },
-  {
-    icon: CreditCardIcon,
-    title: "Digital Payment Setup",
-    desc: "Help transitioning from cash-only to digital, setting up loyalty programs and online ordering.",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
   },
 ];

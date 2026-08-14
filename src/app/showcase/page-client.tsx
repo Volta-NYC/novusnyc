@@ -404,7 +404,7 @@ export default function ShowcaseClient({
           {projects.length === 0 ? (
             <div className="border border-n-border rounded-xl bg-n-bg px-6 py-10 text-center">
               <p className="font-display text-xl font-bold text-n-ink">Project stories are being prepared.</p>
-              <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-n-muted">Novus teams are actively building with businesses across the city. Check back soon for the next published case studies.</p>
+              <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-n-muted">Novus teams are actively building with businesses across the city. Check back soon for the next published project stories.</p>
               <Link href="/partners#contact" className="mt-5 inline-flex font-body text-sm font-semibold text-n-purple hover:underline">Get free business support →</Link>
             </div>
           ) : (

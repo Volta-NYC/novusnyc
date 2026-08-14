@@ -58,7 +58,7 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
                 type="button"
                 onClick={() => setSelectedName(selectedCard ? null : member.name)}
                 aria-expanded={selectedCard}
-                aria-controls="leadership-profile"
+                aria-controls={selectedCard ? "leadership-profile" : undefined}
                 className={`group w-full overflow-hidden rounded-xl border bg-white text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-n-orange focus-visible:ring-offset-2 ${
                   selectedCard
                     ? "border-n-orange shadow-[0_10px_24px_rgba(246,183,141,0.2)]"

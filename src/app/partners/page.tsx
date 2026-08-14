@@ -9,7 +9,6 @@ import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
 import PageHeroContent from "@/components/PageHeroContent";
-import SectionBridge from "@/components/SectionBridge";
 import { communityPartners } from "@/data";
 import {
   GlobeIcon,
@@ -28,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Free Help for NYC Small Businesses | Novus NYC",
     description:
-      "Student teams build websites, grow social media, write grants, and optimize SEO for NYC small businesses — at no cost. Reach out to get started.",
+      "Student teams build websites, grow social media, write grants, and optimize SEO for NYC small businesses at no cost. Reach out to get started.",
     images: ["/api/og"],
   },
 };
@@ -61,7 +60,7 @@ const SERVICES = [
   {
     icon: SmartphoneIcon,
     title: "Social media and content",
-    summary: "A posting plan and real content — not a strategy deck you'll never use.",
+    summary: "A posting plan and real content, not a strategy deck you'll never use.",
     color: "text-n-orange",
     bg: "bg-orange-50",
     details: [
@@ -102,7 +101,7 @@ const SERVICES = [
     bg: "bg-amber-50",
     details: [
       "Grant eligibility research for your business",
-      "Full application drafting — writing, budget, materials",
+      "Full application drafting, including writing, budget, and materials",
       "Deadline tracking and final submission prep",
     ],
   },
@@ -226,7 +225,6 @@ export default async function Partners() {
             description="Novus is a student-run nonprofit helping small businesses across NYC. Tell us what you need, and we’ll connect you with a team that can help."
             primaryAction={{ href: "#contact", label: "Request free support" }}
             secondaryAction={{ href: "/showcase", label: "See our work" }}
-            highlights={["No cost", "No contract", "Reply in 2–3 business days"]}
           />
         </div>
       </ParallaxHero>
@@ -299,8 +297,6 @@ export default async function Partners() {
         </div>
       </section>
 
-      <SectionBridge tone="peach" align="right" />
-
       {/* ── TRUST SIGNALS ──────────────────────────────────── */}
       <section id="community" className="relative isolate overflow-hidden py-16 bg-[#fef6f0]">
         <BrandTexture tone="peach" />
@@ -321,7 +317,7 @@ export default async function Partners() {
                   href={partner.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex min-h-32 flex-col items-center justify-center border border-n-border bg-n-bg px-3 py-4 rounded-lg transition duration-200 hover:-translate-y-0.5 hover:border-n-orange/60 hover:bg-white hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)]"
+                  className="group flex min-h-32 flex-col items-center justify-center border border-n-border bg-n-bg px-3 py-5 rounded-lg transition duration-200 hover:-translate-y-0.5 hover:border-n-orange/60 hover:bg-white hover:shadow-[0_8px_18px_rgba(31,36,42,0.06)]"
                   aria-label={`Visit ${partner.name}`}
                 >
                   <Image
@@ -331,7 +327,7 @@ export default async function Partners() {
                     height={90}
                     className="max-h-12 w-full object-contain transition duration-200 group-hover:brightness-110"
                   />
-                  <span className="mt-3 text-center font-body text-[11px] font-semibold leading-snug text-n-ink">
+                  <span className="mt-3 flex min-h-[2.35em] items-center text-center font-body text-[11px] font-semibold leading-snug text-n-ink">
                     {partner.name}
                   </span>
                 </a>
@@ -340,8 +336,6 @@ export default async function Partners() {
           </AnimatedSection>
         </div>
       </section>
-
-      <SectionBridge tone="lavender" />
 
       {/* ── FAQ ACCORDION ──────────────────────────────────── */}
       <section id="faq" className="relative isolate overflow-hidden py-16 bg-[#f9f5f8]">

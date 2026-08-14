@@ -114,7 +114,7 @@ export default function Combobox({
         autoComplete="off"
         role="combobox"
         aria-expanded={open && matches.length > 0}
-        aria-controls={listId}
+        aria-controls={open && matches.length > 0 ? listId : undefined}
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
         aria-autocomplete="list"
         aria-label={ariaLabel}

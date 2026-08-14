@@ -23,11 +23,11 @@ import { SITE_URL } from "@/lib/site";
 // own date as soon as it diverges.
 //
 // Pages intentionally excluded:
-//   /impact      — exports robots:{index:false}; verified still noindex in prod
+//   /impact      — 308 redirects to the impact section on /about
 //   /book        — internal applicant scheduling tool, not a public landing page
 //   /members/*   — private portal, behind auth (also disallowed in robots.txt)
 //   /updates, /progress-updates — 308 → /showcase (page retired)
-//   /students, /business-guides, /contact, /guides, /reports — 308 redirects to active pages
+//   /students, /business-guides, /contact, /guides, /reports, /impact — 308 redirects to active pages
 // ───────────────────────────────────────────────────────────────────────────
 
 /** Date the rebrand landed, per `git log` on each page file. */

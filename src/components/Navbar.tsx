@@ -139,7 +139,7 @@ export default function Navbar() {
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
                 aria-haspopup="true"
-                aria-controls="desktop-more-menu"
+                aria-controls={moreOpen ? "desktop-more-menu" : undefined}
                 className={`relative flex h-16 items-center gap-1 font-body text-sm font-semibold transition-colors after:absolute after:bottom-1 after:left-0 after:h-0.5 after:w-full after:origin-left after:bg-n-orange after:transition-transform after:duration-200 ${
                   moreActive
                     ? "text-n-orange after:scale-x-100"
@@ -209,7 +209,7 @@ export default function Navbar() {
               className="relative flex h-11 w-11 items-center justify-center rounded-full"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              aria-controls="mobile-nav-menu"
+              aria-controls={open ? "mobile-nav-menu" : undefined}
             >
               <span className={`absolute h-0.5 w-6 bg-white transition-transform duration-200 ${open ? "rotate-45" : "-translate-y-2"}`} />
               <span className={`absolute h-0.5 w-6 bg-white transition-transform duration-200 ${open ? "-rotate-45" : "translate-y-2"}`} />
