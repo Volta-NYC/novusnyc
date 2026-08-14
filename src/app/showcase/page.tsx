@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { projects as fallbackProjects } from "@/data";
+import { communityPartners, projects as fallbackProjects } from "@/data";
 import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
-import { PUBLISHED_IMPACT_TOTALS } from "@/lib/server/publicStats";
+import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicCommunityOrganizationStat } from "@/lib/server/publicStats";
 import ShowcaseClient from "./page-client";
 
 
@@ -68,9 +68,10 @@ function extractBoroughFromNeighborhood(neighborhood: string): string {
 
 export default async function Showcase() {
   // Fetch all public datasets in parallel so the showcase does not repeat work.
-  const [publicShowcase, publicMapEntries] = await Promise.all([
+  const [publicShowcase, publicMapEntries, statOverrides] = await Promise.all([
     getPublicShowcaseCards(),
     getPublicMapEntries(),
+    getPublicStatOverrides(),
   ]);
 
   const projects = publicShowcase.length > 0
@@ -142,7 +143,7 @@ export default async function Showcase() {
       projects={projects}
       mapProjects={mapProjects}
       totalBusinesses={PUBLISHED_IMPACT_TOTALS.businesses}
-      orgPartners={PUBLISHED_IMPACT_TOTALS.communityOrganizations}
+      orgPartners={publicCommunityOrganizationStat(statOverrides, String(communityPartners.length))}
     />
   );
 }

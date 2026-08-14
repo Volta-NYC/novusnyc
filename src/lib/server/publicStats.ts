@@ -7,7 +7,6 @@ export type PublicStatOverrides = Record<string, string>;
 export const PUBLISHED_IMPACT_TOTALS = {
   students: "400+",
   businesses: "150+",
-  communityOrganizations: "25+",
 } as const;
 
 export async function getPublicStatOverrides(): Promise<PublicStatOverrides> {
@@ -27,4 +26,11 @@ export async function getPublicStatOverrides(): Promise<PublicStatOverrides> {
 
 export function publicStat(overrides: PublicStatOverrides, key: string, fallback: string): string {
   return overrides[key] || fallback;
+}
+
+export function publicCommunityOrganizationStat(overrides: PublicStatOverrides, fallback: string): string {
+  return overrides.communityOrganizations
+    || overrides.homeCommunityPartners
+    || overrides.aboutCommunityPartners
+    || fallback;
 }

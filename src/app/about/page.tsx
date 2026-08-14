@@ -7,11 +7,11 @@ import LeadershipProfiles from "@/components/LeadershipProfiles";
 import PageHeroContent from "@/components/PageHeroContent";
 import ParallaxHero from "@/components/ParallaxHero";
 import SectionProgressNav from "@/components/SectionProgressNav";
-import { aboutTimeline, aboutValues, teamMembers } from "@/data";
+import { aboutTimeline, aboutValues, communityPartners, teamMembers } from "@/data";
 import { formatCounter } from "@/lib/formatCounter";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
-import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicStat } from "@/lib/server/publicStats";
+import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicCommunityOrganizationStat, publicStat } from "@/lib/server/publicStats";
 import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
 
 
@@ -63,8 +63,8 @@ export default async function About() {
       <section id="mission" className="public-surface public-surface-lavender py-16 bg-n-bg">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <AnimatedSection>
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,1.02fr)_minmax(26rem,0.98fr)] lg:items-center lg:gap-14 xl:gap-20">
-              <div className="max-w-3xl">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(27rem,1.08fr)] lg:items-center lg:gap-16 xl:gap-24">
+              <div className="max-w-3xl lg:max-w-[31rem]">
                 <p className="font-body text-sm font-semibold text-n-orange uppercase tracking-widest mb-4">Our mission</p>
                 <h2 className="font-display font-bold text-n-ink leading-tight" style={{ fontSize: "clamp(1.5rem, 3.35vw, 2.45rem)" }}>
                   “To close the digital and financial equity gap for small businesses by connecting them with the next generation of tech, finance, and marketing talent.”
@@ -86,7 +86,7 @@ export default async function About() {
                   />
                 </figure>
 
-                <figure className="relative z-20 col-[4/span_9] row-start-1 mt-36 w-full rotate-[2.5deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_28px_70px_rgba(42,35,43,0.22)] sm:col-[4/span_8] sm:mt-40 lg:col-[5/span_8] lg:mt-28 lg:max-w-[25rem] lg:rotate-[3deg] xl:max-w-[28rem]">
+                <figure className="relative z-20 col-[4/span_9] row-start-1 mt-36 w-full rotate-[2.5deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_28px_70px_rgba(42,35,43,0.22)] sm:col-[4/span_8] sm:mt-40 lg:col-[6/span_7] lg:mt-28 lg:max-w-[25rem] lg:rotate-[3deg] xl:max-w-[28rem]">
                   <Image
                     src="/novus2.jpeg"
                     alt="Three Novus students with a community partner at a neighborhood event"
@@ -112,7 +112,7 @@ export default async function About() {
                 { value: publicStat(overrides, "aboutBusinesses", PUBLISHED_IMPACT_TOTALS.businesses), label: "Total\nbusinesses", color: "text-n-orange-ink" },
                 { value: publicStat(overrides, "aboutWebsiteProjects", formatCounter(liveStats.websiteProjects)), label: "Website\nprojects", color: "text-n-purple-ink" },
                 { value: publicStat(overrides, "aboutMarketingProjects", formatCounter(liveStats.marketingProjects)), label: "Marketing\nprojects", color: "text-amber-700" },
-                { value: publicStat(overrides, "aboutCommunityPartners", PUBLISHED_IMPACT_TOTALS.communityOrganizations), label: "Community\norganizations", color: "text-amber-700" },
+                { value: publicCommunityOrganizationStat(overrides, String(communityPartners.length)), label: "Community\norganizations", color: "text-amber-700" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06} className="flex min-h-28 flex-col justify-center bg-white px-3 py-5 text-center sm:px-5 sm:py-7 md:min-h-0 md:px-6 md:py-8">
                   <div><p className={`mb-2 font-display text-3xl font-bold leading-none sm:text-4xl md:mb-3 md:text-5xl ${s.color}`}>{s.value}</p><p className="whitespace-pre-line font-body text-[10px] uppercase leading-relaxed tracking-[0.12em] text-n-muted">{s.label}</p></div>

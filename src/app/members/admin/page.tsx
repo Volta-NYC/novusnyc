@@ -632,12 +632,11 @@ function BannersTab() {
 const PUBLIC_STAT_FIELDS = [
   { key: "homeStudentMembers", label: "Homepage: Student members", placeholder: "Live count" },
   { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", placeholder: "Live count" },
-  { key: "homeCommunityPartners", label: "Homepage: Community partners", placeholder: "Live count" },
+  { key: "communityOrganizations", label: "All public pages: Community organizations", placeholder: "Site list count" },
   { key: "homeNetworkLocations", label: "Homepage: Network locations", placeholder: "13" },
   { key: "aboutBusinesses", label: "About: Total businesses", placeholder: "Live count" },
   { key: "aboutWebsiteProjects", label: "About: Website projects", placeholder: "Live count" },
   { key: "aboutMarketingProjects", label: "About: Marketing projects", placeholder: "Live count" },
-  { key: "aboutCommunityPartners", label: "About: Community organizations", placeholder: "Live count" },
 ] as const;
 
 function PublicStatsTab() {
@@ -648,7 +647,15 @@ function PublicStatsTab() {
 
   useEffect(() => {
     getSiteSettings().then((settings) => {
-      setOverrides(settings.publicStatOverrides);
+      const saved = settings.publicStatOverrides;
+      const communityOrganizations = saved.communityOrganizations
+        || saved.homeCommunityPartners
+        || saved.aboutCommunityPartners
+        || "";
+      const normalized: Record<string, string> = { ...saved, communityOrganizations };
+      delete normalized.homeCommunityPartners;
+      delete normalized.aboutCommunityPartners;
+      setOverrides(normalized);
       setLoading(false);
     });
   }, []);
@@ -660,9 +667,20 @@ function PublicStatsTab() {
       const cleaned = Object.fromEntries(Object.entries(overrides).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value));
       await updateSiteSettings({ publicStatOverrides: cleaned });
       setOverrides(cleaned);
-      setStatus("Saved. Blank fields use the live count instead.");
-    } catch {
-      setStatus("Save failed. Try again.");
+      try {
+        const token = await getAuthToken();
+        const response = await fetch("/api/members/admin/revalidate", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error("revalidate_failed");
+        setStatus("Saved and public pages refreshed. Blank fields use the live count.");
+      } catch {
+        setStatus("Saved, but the public pages could not refresh automatically. Use Refresh Public Pages in the Data tab.");
+      }
+    } catch (error) {
+      console.error("Failed to save public number overrides", error);
+      setStatus("Save failed. Check your admin access and try again.");
     } finally {
       setSaving(false);
     }
@@ -746,7 +764,7 @@ function ManageFrontendTab() {
         <BannersTab />
       </section>
       <section>
-        <FrontendSection title="Public Numbers" subtitle="Override the numbers shown on the homepage, Students page, and About page when a verified figure needs to be published." />
+        <FrontendSection title="Public Numbers" subtitle="Override the numbers shown on the homepage and About page when a verified figure needs to be published." />
         <PublicStatsTab />
       </section>
       <section>

@@ -13,7 +13,7 @@ import TracksTabbed from "@/components/TracksTabbed";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
 import { chapterLocations } from "@/data/network";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
-import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicStat } from "@/lib/server/publicStats";
+import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicCommunityOrganizationStat, publicStat } from "@/lib/server/publicStats";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -327,7 +327,7 @@ async function LiveHomeStats() {
   const liveHomeStats = [
     { value: publicStat(overrides, "homeStudentMembers", PUBLISHED_IMPACT_TOTALS.students), label: "Student Members" },
     { value: publicStat(overrides, "homeBusinessesSupported", PUBLISHED_IMPACT_TOTALS.businesses), label: "Businesses Supported" },
-    { value: publicStat(overrides, "homeCommunityPartners", PUBLISHED_IMPACT_TOTALS.communityOrganizations), label: "Community Partners" },
+    { value: publicCommunityOrganizationStat(overrides, String(communityPartners.length)), label: "Community Partners" },
     { value: publicStat(overrides, "homeNetworkLocations", String(chapterLocations.length)), label: "Network Locations" },
   ];
 

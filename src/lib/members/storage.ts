@@ -1886,8 +1886,9 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.permissions           !== undefined) row.permissions             = patch.permissions;
   if (patch.handbookAckRequiredAt !== undefined) row.handbook_ack_required_at = patch.handbookAckRequiredAt;
   if (patch.publicStatOverrides      !== undefined) row.public_stat_overrides      = patch.publicStatOverrides;
-  const { error } = await supabase.from("site_settings").update(row).eq("id", "singleton");
+  const { data, error } = await supabase.from("site_settings").update(row).eq("id", "singleton").select("id").maybeSingle();
   if (error) throw new Error(error.message);
+  if (!data) throw new Error("Site settings were not updated. Confirm that this account has admin access.");
   void writeAuditLog({ action: "update", collection: "siteSettings", recordId: "singleton", details: { fields: Object.keys(patch) } });
 }
 
