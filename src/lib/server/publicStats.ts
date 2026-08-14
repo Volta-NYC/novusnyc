@@ -4,6 +4,12 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export type PublicStatOverrides = Record<string, string>;
 
+export const PUBLISHED_IMPACT_TOTALS = {
+  students: "400+",
+  businesses: "150+",
+  communityOrganizations: "25+",
+} as const;
+
 export async function getPublicStatOverrides(): Promise<PublicStatOverrides> {
   try {
     const { data } = await getSupabaseAdmin()

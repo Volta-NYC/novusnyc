@@ -12,21 +12,15 @@ import { communityPartners, currentProjects as fallbackCurrentProjects } from "@
 import TracksTabbed from "@/components/TracksTabbed";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
 import { chapterLocations } from "@/data/network";
-import { formatCounter } from "@/lib/formatCounter";
-import { getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
-import { getTotalMemberCount } from "@/lib/server/memberEducation";
-import { getPublicStatOverrides, publicStat } from "@/lib/server/publicStats";
+import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
+import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicStat } from "@/lib/server/publicStats";
 
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [liveStats, memberCount] = await Promise.all([
-    getPublicLiveStats(),
-    getTotalMemberCount(),
-  ]);
   return {
     title: { absolute: "Novus NYC | Free Consulting for NYC Small Businesses" },
     description:
-      `Digital equity is economic equity. Novus connects student teams with New York City small businesses to provide free support in technology, marketing, finance, operations, websites, SEO, social media, and grant development. ${formatCounter(memberCount)} students, ${formatCounter(liveStats.totalBusinesses)} businesses served.`,
+      `Digital equity is economic equity. Novus connects student teams with New York City small businesses to provide free support in technology, marketing, finance, operations, websites, SEO, social media, and grant development. ${PUBLISHED_IMPACT_TOTALS.students} students, ${PUBLISHED_IMPACT_TOTALS.businesses} businesses served.`,
     openGraph: {
       title: "Novus NYC",
       description: "Digital equity is economic equity. Student teams providing free consulting support for New York City small businesses.",
@@ -329,15 +323,11 @@ async function CurrentProjectsSection() {
 }
 
 async function LiveHomeStats() {
-  const [liveStats, memberCount, overrides] = await Promise.all([
-    getPublicLiveStats(),
-    getTotalMemberCount(),
-    getPublicStatOverrides(),
-  ]);
+  const overrides = await getPublicStatOverrides();
   const liveHomeStats = [
-    { value: publicStat(overrides, "homeStudentMembers", formatCounter(memberCount)), label: "Student Members" },
-    { value: publicStat(overrides, "homeBusinessesSupported", formatCounter(liveStats.totalBusinesses)), label: "Businesses Supported" },
-    { value: publicStat(overrides, "homeCommunityPartners", formatCounter(liveStats.bidPartners, true)), label: "Community Partners" },
+    { value: publicStat(overrides, "homeStudentMembers", PUBLISHED_IMPACT_TOTALS.students), label: "Student Members" },
+    { value: publicStat(overrides, "homeBusinessesSupported", PUBLISHED_IMPACT_TOTALS.businesses), label: "Businesses Supported" },
+    { value: publicStat(overrides, "homeCommunityPartners", PUBLISHED_IMPACT_TOTALS.communityOrganizations), label: "Community Partners" },
     { value: publicStat(overrides, "homeNetworkLocations", String(chapterLocations.length)), label: "Network Locations" },
   ];
 

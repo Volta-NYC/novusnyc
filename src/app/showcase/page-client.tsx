@@ -7,7 +7,6 @@ import AnimatedSection from "@/components/AnimatedSection";
 import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
 import MasonryGrid from "@/components/MasonryGrid";
-import { formatCounter } from "@/lib/formatCounter";
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
 
@@ -339,8 +338,8 @@ export default function ShowcaseClient({
     borough?: string; lat?: number; lng?: number; status: ProjectDisplayStatus;
     url?: string; colorClass: string; source?: "business" | "bid";
   }>;
-  totalBusinesses: number;
-  orgPartners: number;
+  totalBusinesses: string;
+  orgPartners: string;
 }) {
   const mobileScrollRef = useRef<HTMLDivElement>(null);
 
@@ -373,8 +372,8 @@ export default function ShowcaseClient({
               </div>
               <dl className="grid grid-cols-2 gap-3 lg:w-[22rem]">
                 {[
-                  { value: formatCounter(totalBusinesses), label: "Businesses supported" },
-                  { value: formatCounter(orgPartners, true), label: "Community partners" },
+                  { value: totalBusinesses, label: "Businesses supported" },
+                  { value: orgPartners, label: "Community partners" },
                 ].map((s) => (
                   <div key={s.label} className="rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-5 backdrop-blur-sm">
                     <dt className="font-body text-xs font-bold uppercase tracking-[0.14em] text-white/60">{s.label}</dt>

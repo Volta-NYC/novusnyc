@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
 import { projects as fallbackProjects } from "@/data";
-import { getPublicMapEntries, getPublicShowcaseCards, getPublicLiveStats } from "@/lib/server/publicShowcase";
-import { formatCounter } from "@/lib/formatCounter";
+import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
+import { PUBLISHED_IMPACT_TOTALS } from "@/lib/server/publicStats";
 import ShowcaseClient from "./page-client";
 
 
 export async function generateMetadata(): Promise<Metadata> {
-  const liveStats = await getPublicLiveStats();
   return {
     title: "Our Work",
     description:
-      `Interactive map and project portfolio showing Novus NYC's active work across New York City — websites, social media, SEO, and grant writing for ${formatCounter(liveStats.totalBusinesses)} small businesses.`,
+      `Interactive map and project portfolio showing Novus NYC's active work across New York City — websites, social media, SEO, and grant writing for ${PUBLISHED_IMPACT_TOTALS.businesses} small businesses.`,
     openGraph: {
       title: "Our Work | Novus NYC",
-      description: `${formatCounter(liveStats.totalBusinesses)} businesses across New York City. See every project.`,
+      description: `${PUBLISHED_IMPACT_TOTALS.businesses} businesses across New York City. See every project.`,
       images: ["/api/og"],
     },
   };
@@ -69,10 +68,9 @@ function extractBoroughFromNeighborhood(neighborhood: string): string {
 
 export default async function Showcase() {
   // Fetch all public datasets in parallel so the showcase does not repeat work.
-  const [publicShowcase, publicMapEntries, liveStats] = await Promise.all([
+  const [publicShowcase, publicMapEntries] = await Promise.all([
     getPublicShowcaseCards(),
     getPublicMapEntries(),
-    getPublicLiveStats(),
   ]);
 
   const projects = publicShowcase.length > 0
@@ -143,8 +141,8 @@ export default async function Showcase() {
     <ShowcaseClient
       projects={projects}
       mapProjects={mapProjects}
-      totalBusinesses={liveStats.totalBusinesses}
-      orgPartners={liveStats.bidPartners}
+      totalBusinesses={PUBLISHED_IMPACT_TOTALS.businesses}
+      orgPartners={PUBLISHED_IMPACT_TOTALS.communityOrganizations}
     />
   );
 }
