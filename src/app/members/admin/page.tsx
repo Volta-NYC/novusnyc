@@ -630,43 +630,85 @@ function BannersTab() {
 }
 
 const PUBLIC_STAT_FIELDS = [
-  { key: "homeStudentMembers", label: "Homepage: Student members", placeholder: "Live count" },
-  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", placeholder: "Live count" },
-  { key: "communityOrganizations", label: "All public pages: Community organizations", placeholder: "Site list count" },
-  { key: "homeNetworkLocations", label: "Homepage: Network locations", placeholder: "13" },
-  { key: "aboutBusinesses", label: "About: Total businesses", placeholder: "Live count" },
-  { key: "aboutWebsiteProjects", label: "About: Website projects", placeholder: "Live count" },
-  { key: "aboutMarketingProjects", label: "About: Marketing projects", placeholder: "Live count" },
+  { key: "homeStudentMembers", label: "Homepage: Student members" },
+  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported" },
+  { key: "communityOrganizations", label: "All public pages: Community organizations" },
+  { key: "homeNetworkLocations", label: "Homepage: Network locations" },
+  { key: "aboutBusinesses", label: "About: Total businesses" },
+  { key: "aboutWebsiteProjects", label: "About: Website projects" },
+  { key: "aboutMarketingProjects", label: "About: Marketing projects" },
 ] as const;
+
+type PublicStatFieldKey = (typeof PUBLIC_STAT_FIELDS)[number]["key"];
+type PublicStatFieldValues = Record<PublicStatFieldKey, string>;
+type PublicStatSnapshotResponse = {
+  automaticValues: PublicStatFieldValues;
+  effectiveValues: PublicStatFieldValues;
+  overrides: Record<string, string>;
+};
+
+const MANAGED_PUBLIC_STAT_KEYS = new Set<string>([
+  ...PUBLIC_STAT_FIELDS.map((field) => field.key),
+  "homeCommunityPartners",
+  "aboutCommunityPartners",
+]);
 
 function PublicStatsTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
-  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Partial<PublicStatFieldValues>>({});
+  const [automaticValues, setAutomaticValues] = useState<Partial<PublicStatFieldValues>>({});
+  const [savedOverrides, setSavedOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    getSiteSettings().then((settings) => {
-      const saved = settings.publicStatOverrides;
-      const communityOrganizations = saved.communityOrganizations
-        || saved.homeCommunityPartners
-        || saved.aboutCommunityPartners
-        || "";
-      const normalized: Record<string, string> = { ...saved, communityOrganizations };
-      delete normalized.homeCommunityPartners;
-      delete normalized.aboutCommunityPartners;
-      setOverrides(normalized);
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const token = await getAuthToken();
+        const response = await fetch("/api/members/admin/public-stats", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error("public_stats_load_failed");
+        const snapshot = await response.json() as PublicStatSnapshotResponse;
+        if (cancelled) return;
+        setValues(snapshot.effectiveValues);
+        setAutomaticValues(snapshot.automaticValues);
+        setSavedOverrides(snapshot.overrides);
+      } catch (error) {
+        console.error("Failed to load public number values", error);
+        if (!cancelled) setStatus("Could not load the current public numbers. Try refreshing this page.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => { cancelled = true; };
   }, []);
 
   const save = async () => {
     setSaving(true);
     setStatus("");
     try {
-      const cleaned = Object.fromEntries(Object.entries(overrides).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value));
+      const cleaned: Record<string, string> = Object.fromEntries(
+        Object.entries(savedOverrides).filter(([key]) => !MANAGED_PUBLIC_STAT_KEYS.has(key)),
+      );
+
+      for (const field of PUBLIC_STAT_FIELDS) {
+        const value = (values[field.key] ?? "").trim();
+        const automaticValue = (automaticValues[field.key] ?? "").trim();
+        if (value && value !== automaticValue) cleaned[field.key] = value;
+      }
+
       await updateSiteSettings({ publicStatOverrides: cleaned });
-      setOverrides(cleaned);
+      setSavedOverrides(cleaned);
+      setValues(Object.fromEntries(PUBLIC_STAT_FIELDS.map((field) => [
+        field.key,
+        cleaned[field.key] || automaticValues[field.key] || "",
+      ])) as PublicStatFieldValues);
       try {
         const token = await getAuthToken();
         const response = await fetch("/api/members/admin/revalidate", {
@@ -674,7 +716,7 @@ function PublicStatsTab() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) throw new Error("revalidate_failed");
-        setStatus("Saved and public pages refreshed. Blank fields use the live count.");
+        setStatus("Saved and public pages refreshed. Values matching the automatic count remain automatic.");
       } catch {
         setStatus("Saved, but the public pages could not refresh automatically. Use Refresh Public Pages in the Data tab.");
       }
@@ -689,13 +731,31 @@ function PublicStatsTab() {
   if (loading) return <div className="flex h-24 items-center"><Spinner size="sm" /></div>;
 
   return (
-    <Card title="Public Numbers" subtitle="Set a verified display value when you need one. Leave a field blank to use the live count from the site data.">
+    <Card title="Public Numbers" subtitle="Each field starts with the exact value currently shown on the public site. Edit a value to override it, or clear it and save to return to the automatic count.">
       <div className="grid gap-3 sm:grid-cols-2">
-        {PUBLIC_STAT_FIELDS.map((field) => (
-          <Field key={field.key} label={field.label}>
-            <Input value={overrides[field.key] ?? ""} placeholder={field.placeholder} onChange={(event) => setOverrides((current) => ({ ...current, [field.key]: event.target.value }))} />
-          </Field>
-        ))}
+        {PUBLIC_STAT_FIELDS.map((field) => {
+          const value = values[field.key] ?? "";
+          const automaticValue = automaticValues[field.key] ?? "";
+          const isAutomatic = !value.trim() || value.trim() === automaticValue;
+          const savedValue = savedOverrides[field.key]?.trim() ?? "";
+          const hasUnsavedChange = value.trim() !== (savedValue || automaticValue);
+
+          return (
+            <Field key={field.key} label={field.label}>
+              <Input
+                value={value}
+                placeholder={automaticValue}
+                onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))}
+              />
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-[11px] text-white/45">
+                <span className={isAutomatic ? "text-emerald-300/80" : "text-n-orange"}>
+                  {hasUnsavedChange ? "Unsaved change" : isAutomatic ? "Automatic" : "Override active"}
+                </span>
+                <span>Automatic value: {automaticValue}</span>
+              </p>
+            </Field>
+          );
+        })}
       </div>
       <div className="mt-5"><SaveBtn saving={saving} onClick={() => void save()} /></div>
       <StatusMsg msg={status} />

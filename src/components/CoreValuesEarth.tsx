@@ -115,6 +115,7 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
   const layoutRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef(new Map<LayerTitle, HTMLButtonElement>());
+  const scheduleConnectorUpdateRef = useRef<() => void>(() => {});
   const [activeTitle, setActiveTitle] = useState<LayerTitle | null>(null);
   const [focusedTitle, setFocusedTitle] = useState<LayerTitle | null>(null);
   const [hoveredTitle, setHoveredTitle] = useState<LayerTitle | null>(null);
@@ -179,6 +180,7 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
         setConnectors(nextConnectors);
       });
     };
+    scheduleConnectorUpdateRef.current = updateConnectors;
 
     const resizeObserver = new ResizeObserver(updateConnectors);
     resizeObserver.observe(layout);
@@ -190,11 +192,14 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
+      if (scheduleConnectorUpdateRef.current === updateConnectors) {
+        scheduleConnectorUpdateRef.current = () => {};
+      }
       window.removeEventListener("resize", updateConnectors);
       window.removeEventListener("load", updateConnectors);
       resizeObserver.disconnect();
     };
-  }, [activeTitle]);
+  }, []);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -274,6 +279,7 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
               <motion.div
                 layout
                 key={layer.title}
+                onLayoutAnimationComplete={() => scheduleConnectorUpdateRef.current()}
                 className={`overflow-hidden rounded-2xl border bg-white/[0.92] shadow-[0_12px_30px_rgba(45,40,46,0.08)] backdrop-blur-sm transition-colors ${expanded ? "border-n-ink/30" : highlighted ? "border-n-purple/55" : "border-n-border"}`}
               >
                 <button
@@ -310,7 +316,7 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
                   </span>
                 </button>
 
-                <AnimatePresence initial={false}>
+                <AnimatePresence initial={false} onExitComplete={() => scheduleConnectorUpdateRef.current()}>
                   {expanded && (
                     <motion.div
                       id={panelId}
@@ -319,6 +325,7 @@ export default function CoreValuesEarth({ values }: { values: CoreValue[] }) {
                       initial={reducedMotion ? false : { height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={reducedMotion ? undefined : { height: 0, opacity: 0 }}
+                      onAnimationComplete={() => scheduleConnectorUpdateRef.current()}
                       transition={reducedMotion ? { duration: 0 } : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                     >
                       <div className="border-t border-n-border px-4 pb-5 pt-4 sm:px-5">

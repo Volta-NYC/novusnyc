@@ -7,11 +7,9 @@ import LeadershipProfiles from "@/components/LeadershipProfiles";
 import PageHeroContent from "@/components/PageHeroContent";
 import ParallaxHero from "@/components/ParallaxHero";
 import SectionProgressNav from "@/components/SectionProgressNav";
-import { aboutTimeline, aboutValues, communityPartners, teamMembers } from "@/data";
-import { formatCounter } from "@/lib/formatCounter";
+import { aboutTimeline, aboutValues, teamMembers } from "@/data";
 import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
-import { getPublicLiveStats } from "@/lib/server/publicShowcase";
-import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicCommunityOrganizationStat, publicStat } from "@/lib/server/publicStats";
+import { getPublicStatSnapshot } from "@/lib/server/publicStats";
 import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
 
 
@@ -27,8 +25,10 @@ export const metadata: Metadata = {
 };
 
 export default async function About() {
-  const education = await getMemberEducationSnapshot();
-  const [liveStats, overrides] = await Promise.all([getPublicLiveStats(), getPublicStatOverrides()]);
+  const [education, { effectiveValues }] = await Promise.all([
+    getMemberEducationSnapshot(),
+    getPublicStatSnapshot(),
+  ]);
 
   return (
     <>
@@ -109,10 +109,10 @@ export default async function About() {
             <h2 className="page-section-heading text-n-ink mb-10">Our impact</h2>
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-n-border bg-n-border md:grid-cols-4 md:gap-0 md:divide-x md:divide-n-border">
               {[
-                { value: publicStat(overrides, "aboutBusinesses", PUBLISHED_IMPACT_TOTALS.businesses), label: "Total\nbusinesses", color: "text-n-orange-ink" },
-                { value: publicStat(overrides, "aboutWebsiteProjects", formatCounter(liveStats.websiteProjects)), label: "Website\nprojects", color: "text-n-purple-ink" },
-                { value: publicStat(overrides, "aboutMarketingProjects", formatCounter(liveStats.marketingProjects)), label: "Marketing\nprojects", color: "text-amber-700" },
-                { value: publicCommunityOrganizationStat(overrides, String(communityPartners.length)), label: "Community\norganizations", color: "text-amber-700" },
+                { value: effectiveValues.aboutBusinesses, label: "Total\nbusinesses", color: "text-n-orange-ink" },
+                { value: effectiveValues.aboutWebsiteProjects, label: "Website\nprojects", color: "text-n-purple-ink" },
+                { value: effectiveValues.aboutMarketingProjects, label: "Marketing\nprojects", color: "text-amber-700" },
+                { value: effectiveValues.communityOrganizations, label: "Community\norganizations", color: "text-amber-700" },
               ].map((s, i) => (
                 <AnimatedSection key={s.label} delay={i * 0.06} className="flex min-h-28 flex-col justify-center bg-white px-3 py-5 text-center sm:px-5 sm:py-7 md:min-h-0 md:px-6 md:py-8">
                   <div><p className={`mb-2 font-display text-3xl font-bold leading-none sm:text-4xl md:mb-3 md:text-5xl ${s.color}`}>{s.value}</p><p className="whitespace-pre-line font-body text-[10px] uppercase leading-relaxed tracking-[0.12em] text-n-muted">{s.label}</p></div>

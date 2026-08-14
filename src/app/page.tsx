@@ -11,9 +11,8 @@ import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
-import { chapterLocations } from "@/data/network";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
-import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicCommunityOrganizationStat, publicStat } from "@/lib/server/publicStats";
+import { getPublicStatSnapshot, PUBLISHED_IMPACT_TOTALS } from "@/lib/server/publicStats";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -323,12 +322,12 @@ async function CurrentProjectsSection() {
 }
 
 async function LiveHomeStats() {
-  const overrides = await getPublicStatOverrides();
+  const { effectiveValues } = await getPublicStatSnapshot();
   const liveHomeStats = [
-    { value: publicStat(overrides, "homeStudentMembers", PUBLISHED_IMPACT_TOTALS.students), label: "Student Members" },
-    { value: publicStat(overrides, "homeBusinessesSupported", PUBLISHED_IMPACT_TOTALS.businesses), label: "Businesses Supported" },
-    { value: publicCommunityOrganizationStat(overrides, String(communityPartners.length)), label: "Community Partners" },
-    { value: publicStat(overrides, "homeNetworkLocations", String(chapterLocations.length)), label: "Network Locations" },
+    { value: effectiveValues.homeStudentMembers, label: "Student Members" },
+    { value: effectiveValues.homeBusinessesSupported, label: "Businesses Supported" },
+    { value: effectiveValues.communityOrganizations, label: "Community Partners" },
+    { value: effectiveValues.homeNetworkLocations, label: "Network Locations" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;
@@ -500,7 +499,7 @@ export default function Home() {
       <div aria-hidden="true" className="home-scroll-backdrop" />
       <HomeScrollProgress />
       <HeroSection>
-        <section aria-label="Novus impact at a glance" data-home-dark-end="true" className="relative pb-14 pt-10 sm:pb-16 sm:pt-12">
+        <section aria-label="Novus impact at a glance" data-home-dark-end="true" className="relative pb-14 pt-10 sm:pb-16 sm:pt-12 md:-mt-16">
           <LiveHomeStats />
         </section>
       </HeroSection>

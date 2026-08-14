@@ -54,7 +54,7 @@ export default function BusinessProcessTimeline() {
           <div className="relative">
             <motion.div
               aria-hidden="true"
-              className="hidden md:block absolute top-12 left-[12.5%] right-[12.5%] h-px bg-n-border origin-left"
+              className="hidden md:block absolute top-6 left-[12.5%] right-[12.5%] h-px bg-n-border origin-left"
               initial={reducedMotion ? false : { scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
               viewport={{ once: true, amount: 0.4 }}
@@ -91,11 +91,6 @@ export default function BusinessProcessTimeline() {
                 </motion.li>
               ))}
             </ol>
-          </div>
-          <div className="mt-8 grid gap-4 border-t border-n-border pt-6 sm:grid-cols-3">
-            {["No cost", "No contract", "Regular updates"].map((item) => (
-              <p key={item} className="font-display text-base font-bold text-n-ink">{item}</p>
-            ))}
           </div>
         </div>
       </div>

@@ -123,9 +123,11 @@ export default function CoreValuesEarthScene({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.06;
     renderer.setClearColor(0x000000, 0);
+    renderer.domElement.style.cursor = "grab";
     renderer.domElement.style.display = "block";
     renderer.domElement.style.height = "100%";
-    renderer.domElement.style.pointerEvents = "none";
+    renderer.domElement.style.pointerEvents = "auto";
+    renderer.domElement.style.touchAction = "pan-y";
     renderer.domElement.style.width = "100%";
     mount.appendChild(renderer.domElement);
 
@@ -230,6 +232,14 @@ export default function CoreValuesEarthScene({
     let visible = true;
     let scrollImpulse = 0;
     let lastScrollY = window.scrollY;
+    let dragging = false;
+    let dragPointerId: number | null = null;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+    let dragPitch = 0;
+    let dragYaw = 0;
+    let pitchVelocity = 0;
+    let yawVelocity = 0;
     const clock = new THREE.Clock();
 
     const onScroll = () => {
@@ -242,8 +252,45 @@ export default function CoreValuesEarthScene({
         return;
       }
       const delta = THREE.MathUtils.clamp(window.scrollY - lastScrollY, -64, 64);
-      scrollImpulse = THREE.MathUtils.clamp(scrollImpulse + delta * 0.00065, -0.04, 0.04);
+      scrollImpulse = THREE.MathUtils.clamp(scrollImpulse + delta * 0.0011, -0.075, 0.075);
       lastScrollY = window.scrollY;
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      dragging = true;
+      dragPointerId = event.pointerId;
+      lastPointerX = event.clientX;
+      lastPointerY = event.clientY;
+      pitchVelocity = 0;
+      yawVelocity = 0;
+      renderer.domElement.setPointerCapture(event.pointerId);
+      renderer.domElement.style.cursor = "grabbing";
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!dragging || dragPointerId !== event.pointerId) return;
+      const deltaX = event.clientX - lastPointerX;
+      const deltaY = event.clientY - lastPointerY;
+      lastPointerX = event.clientX;
+      lastPointerY = event.clientY;
+
+      const yawDelta = deltaX * 0.0065;
+      const pitchDelta = deltaY * 0.0045;
+      dragYaw = THREE.MathUtils.clamp(dragYaw + yawDelta, -0.48, 0.48);
+      dragPitch = THREE.MathUtils.clamp(dragPitch + pitchDelta, -0.24, 0.24);
+      yawVelocity = yawDelta;
+      pitchVelocity = pitchDelta;
+    };
+
+    const stopDragging = (event: PointerEvent) => {
+      if (dragPointerId !== event.pointerId) return;
+      dragging = false;
+      dragPointerId = null;
+      if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+        renderer.domElement.releasePointerCapture(event.pointerId);
+      }
+      renderer.domElement.style.cursor = "grab";
     };
 
     const onContextLost = (event: Event) => {
@@ -253,6 +300,10 @@ export default function CoreValuesEarthScene({
 
     window.addEventListener("scroll", onScroll, { passive: true });
     renderer.domElement.addEventListener("webglcontextlost", onContextLost);
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerup", stopDragging);
+    renderer.domElement.addEventListener("pointercancel", stopDragging);
 
     const resize = () => {
       const { height, width } = mount.getBoundingClientRect();
@@ -280,13 +331,21 @@ export default function CoreValuesEarthScene({
         earth.rotation.set(BASE_ROTATION.x, BASE_ROTATION.y, BASE_ROTATION.z);
         scrollImpulse = 0;
       } else {
-        scrollImpulse *= 0.9;
-        const targetX = BASE_ROTATION.x + Math.sin(elapsed * 0.34) * 0.012 + scrollImpulse * 0.22;
-        const targetY = BASE_ROTATION.y + Math.sin(elapsed * 0.28) * 0.026 + scrollImpulse;
-        const targetZ = BASE_ROTATION.z + Math.cos(elapsed * 0.24) * 0.008;
-        earth.rotation.x = THREE.MathUtils.lerp(earth.rotation.x, targetX, 0.045);
-        earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetY, 0.045);
-        earth.rotation.z = THREE.MathUtils.lerp(earth.rotation.z, targetZ, 0.045);
+        scrollImpulse *= 0.91;
+        if (!dragging) {
+          dragYaw = THREE.MathUtils.clamp(dragYaw + yawVelocity, -0.48, 0.48);
+          dragPitch = THREE.MathUtils.clamp(dragPitch + pitchVelocity, -0.24, 0.24);
+          yawVelocity *= 0.86;
+          pitchVelocity *= 0.86;
+          dragYaw *= 0.996;
+          dragPitch *= 0.996;
+        }
+        const targetX = BASE_ROTATION.x + Math.sin(elapsed * 0.46) * 0.026 + scrollImpulse * 0.42 + dragPitch;
+        const targetY = BASE_ROTATION.y + Math.sin(elapsed * 0.31) * 0.054 + scrollImpulse * 1.35 + dragYaw;
+        const targetZ = BASE_ROTATION.z + Math.cos(elapsed * 0.38) * 0.018 - dragYaw * 0.045;
+        earth.rotation.x = THREE.MathUtils.lerp(earth.rotation.x, targetX, 0.075);
+        earth.rotation.y = THREE.MathUtils.lerp(earth.rotation.y, targetY, 0.075);
+        earth.rotation.z = THREE.MathUtils.lerp(earth.rotation.z, targetZ, 0.075);
       }
 
       renderedLayers.forEach(({ baseColor, materials, title }) => {
@@ -316,6 +375,10 @@ export default function CoreValuesEarthScene({
       window.cancelAnimationFrame(animationFrame);
       window.removeEventListener("scroll", onScroll);
       renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("pointerup", stopDragging);
+      renderer.domElement.removeEventListener("pointercancel", stopDragging);
       intersectionObserver.disconnect();
       resizeObserver.disconnect();
       onHoverRef.current(null);
