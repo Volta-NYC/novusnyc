@@ -190,8 +190,8 @@ export const aboutTimeline = [
   {
     month: "Fall",
     year: "2025",
-    label: "Novus begins",
-    desc: "Novus began in New York to give small businesses practical technical, marketing, and operational support while giving students meaningful project experience.",
+    label: "The work begins",
+    desc: "We began in New York by providing small businesses with practical technical, marketing, and operational support while giving students meaningful project experience.",
   },
   {
     month: "Winter",
@@ -221,7 +221,7 @@ export const aboutTimeline = [
     month: "Summer",
     year: "2026",
     label: "Becoming Novus",
-    desc: "The New York organization became Novus, with a clearer identity, updated systems, and teams built around the work we do with businesses.",
+    desc: "The organization became Novus, with a clearer identity, updated systems, and teams built around the work we do with businesses.",
   },
   {
     month: "Fall",

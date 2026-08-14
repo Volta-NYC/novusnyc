@@ -18,8 +18,8 @@ Novus NYC is a student-led, pro-bono consulting organization providing free digi
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Volta-NYC/voltanyc.git   # GitHub org/repo rename still pending
-cd voltanyc
+git clone https://github.com/Volta-NYC/novusnyc.git
+cd novusnyc
 npm install
 ```
 
@@ -123,7 +123,7 @@ RESUME_UPLOAD_MAX_MB=
 ## Project Structure
 
 ```
-voltanyc/
+novusnyc/
 ├── public/                         # Static assets (images, favicons, og image)
 │
 ├── supabase/

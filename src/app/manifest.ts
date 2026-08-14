@@ -12,10 +12,16 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#F6B78D",
     icons: [
       {
-        src: "/icon.png?v=bridge-logo-20260803",
-        sizes: "1024x1024",
+        src: "/icon-192.png?v=novus-bridge-20260814",
+        sizes: "192x192",
         type: "image/png",
-        purpose: "maskable",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png?v=novus-bridge-20260814",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
       },
     ],
   };

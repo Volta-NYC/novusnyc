@@ -205,14 +205,17 @@ export default function Navbar() {
             <button
               ref={mobileButtonRef}
               type="button"
-              onClick={() => setOpen(!open)}
+              onClick={() => setOpen((current) => !current)}
               className="relative flex h-11 w-11 items-center justify-center rounded-full"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              aria-controls={open ? "mobile-nav-menu" : undefined}
+              aria-controls="mobile-nav-menu"
             >
-              <span className={`absolute h-0.5 w-6 bg-white transition-transform duration-200 ${open ? "rotate-45" : "-translate-y-2"}`} />
-              <span className={`absolute h-0.5 w-6 bg-white transition-transform duration-200 ${open ? "-rotate-45" : "translate-y-2"}`} />
+              <span aria-hidden="true" className="relative block h-5 w-7">
+                <span className={`absolute left-0 h-0.5 w-7 rounded-full bg-white transition-[top,transform] duration-200 ease-out ${open ? "top-[9px] rotate-45" : "top-0 rotate-0"}`} />
+                <span className={`absolute left-0 top-[9px] h-0.5 w-7 rounded-full bg-white transition-[opacity,transform] duration-150 ease-out ${open ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"}`} />
+                <span className={`absolute left-0 h-0.5 w-7 rounded-full bg-white transition-[top,transform] duration-200 ease-out ${open ? "top-[9px] -rotate-45" : "top-[18px] rotate-0"}`} />
+              </span>
             </button>
           </div>
         </div>

@@ -52,8 +52,15 @@ export const metadata: Metadata = {
     images: ["/api/og"],
   },
   icons: {
-    icon: "/icon.png?v=sora-wordmark-20260811",
-    apple: "/icon.png?v=sora-wordmark-20260811",
+    icon: [
+      { url: "/favicon.ico?v=novus-bridge-20260814", sizes: "any" },
+      { url: "/icon-192.png?v=novus-bridge-20260814", sizes: "192x192", type: "image/png" },
+      { url: "/icon.png?v=novus-bridge-20260814", sizes: "1024x1024", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico?v=novus-bridge-20260814",
+    apple: [
+      { url: "/apple-touch-icon.png?v=novus-bridge-20260814", sizes: "180x180", type: "image/png" },
+    ],
   },
   appleWebApp: {
     title: "Novus NYC",
