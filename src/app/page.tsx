@@ -420,7 +420,7 @@ function PartnerMarquee({
   reverse?: boolean;
 }) {
   return (
-    <div className="partner-marquee -mx-5 md:-mx-8 overflow-hidden py-2">
+    <div className="partner-marquee -mx-5 overflow-hidden py-1 md:-mx-8">
       <div className={`partner-marquee-track flex gap-3 md:gap-4 ${reverse ? "partner-marquee-track-reverse" : ""}`}>
         {[0, 1].map((copy) => (
           <div key={copy} className="flex gap-3 md:gap-4" aria-hidden={copy === 1}>
@@ -471,14 +471,14 @@ function CommunityPartnersSection() {
               aria-hidden="true"
               className="pointer-events-none absolute -inset-x-16 top-12 bottom-0 z-0 bg-[radial-gradient(ellipse_at_center,rgba(35,31,36,0.08)_0%,rgba(35,31,36,0.035)_40%,transparent_72%)] blur-2xl"
             />
-            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8 md:mb-10">
-              {flagshipPartners.map((partner, index) => (
-                <AnimatedSection key={partner.name} delay={index * 0.055} duration={0.32}>
-                  <FlagshipPartnerCard partner={partner} />
-                </AnimatedSection>
-              ))}
-            </div>
-            <div className="relative z-10 space-y-3 md:space-y-4">
+            <div className="relative z-10 space-y-2 md:space-y-3">
+              <div className="grid grid-cols-1 gap-3 py-1 sm:grid-cols-2 md:gap-4 lg:grid-cols-5">
+                {flagshipPartners.map((partner, index) => (
+                  <AnimatedSection key={partner.name} delay={index * 0.055} duration={0.32}>
+                    <FlagshipPartnerCard partner={partner} />
+                  </AnimatedSection>
+                ))}
+              </div>
               <AnimatedSection delay={0.3} duration={0.32}>
                 <PartnerMarquee partners={importantPartners} important />
               </AnimatedSection>
