@@ -53,13 +53,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico?v=novus-bridge-20260814", sizes: "any" },
-      { url: "/icon-192.png?v=novus-bridge-20260814", sizes: "192x192", type: "image/png" },
-      { url: "/icon.png?v=novus-bridge-20260814", sizes: "1024x1024", type: "image/png" },
+      { url: "/favicon.ico?v=novus-transparent-20260815", sizes: "any" },
+      { url: "/icon-192.png?v=novus-transparent-20260815", sizes: "192x192", type: "image/png" },
+      { url: "/icon.png?v=novus-transparent-20260815", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/favicon.ico?v=novus-bridge-20260814",
+    shortcut: "/favicon.ico?v=novus-transparent-20260815",
     apple: [
-      { url: "/apple-touch-icon.png?v=novus-bridge-20260814", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png?v=novus-transparent-20260815", sizes: "180x180", type: "image/png" },
     ],
   },
   appleWebApp: {

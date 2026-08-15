@@ -13,8 +13,7 @@
 
   .page-photo-hero-overlay {
     background:
-      linear-gradient(90deg, rgb(var(--color-dark) / 0.97) 0%, rgb(var(--color-dark) / 0.88) 48%, rgb(var(--color-dark) / 0.48) 78%, rgb(var(--color-dark) / 0.32) 100%),
-      linear-gradient(0deg, rgb(var(--color-dark) / 0.72) 0%, transparent 48%);
+      linear-gradient(0deg, rgb(var(--color-dark) / 0.78) 0%, rgb(var(--color-dark) / 0.42) 52%, rgb(var(--color-dark) / 0.22) 100%);
   }
 }
 
@@ -178,8 +177,7 @@ body {
 @media (max-width: 767px) {
   .page-photo-hero-overlay {
     background:
-      linear-gradient(90deg, rgb(var(--color-dark) / 0.93), rgb(var(--color-dark) / 0.76)),
-      linear-gradient(0deg, rgb(var(--color-dark) / 0.84), transparent 55%);
+      linear-gradient(0deg, rgb(var(--color-dark) / 0.86), rgb(var(--color-dark) / 0.4) 72%, rgb(var(--color-dark) / 0.25));
   }
 
   .public-site {

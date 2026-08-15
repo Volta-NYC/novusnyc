@@ -12,11 +12,11 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { y: backgroundY, enabled: backgroundParallaxEnabled } = useParallax(sectionRef, {
-    range: [-24, 120],
+    range: [-120, 170],
     offset: ["start start", "end start"],
   });
   const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
-    range: [0, -64],
+    range: [90, -120],
     offset: ["start start", "end start"],
   });
   const { scrollYProgress } = useScroll({
@@ -41,7 +41,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
     <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a]">
       <motion.div
         aria-hidden="true"
-        className="absolute -inset-y-48 inset-x-0"
+        className="absolute -inset-y-[34vh] inset-x-0"
         style={{
           y: backgroundY,
           willChange: backgroundParallaxEnabled ? "transform" : "auto",
@@ -56,13 +56,13 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
           placeholder="blur"
           quality={72}
           sizes="100vw"
-          className="object-cover object-[center_32%]"
+          className="object-cover"
         />
       </motion.div>
       <div className="absolute inset-0 home-shared-wash" />
       <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
 
-      <div className="home-hero-stage relative flex flex-col items-center px-5 pt-28 sm:pt-32 md:pt-36">
+      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-36">
         <motion.div
           className="relative z-10 flex w-full max-w-6xl justify-center"
           style={{
