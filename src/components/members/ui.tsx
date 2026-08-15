@@ -990,22 +990,25 @@ export function Toggle({ checked, onChange, label }: {
   label?: string;
 }) {
   return (
-    <span className={`flex items-center select-none ${label ? "gap-3 group" : "w-fit"}`}>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label ?? "Toggle setting"}
-        onClick={() => onChange(!checked)}
-        className={`relative h-[22px] w-10 rounded-full flex-shrink-0 cursor-pointer transition-colors ${checked ? "bg-[#F6B78D]" : "bg-white/15"}`}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label ? undefined : "Toggle setting"}
+      onClick={() => onChange(!checked)}
+      className={`group inline-flex w-fit select-none items-center focus-visible:outline-none ${label ? "gap-3" : ""}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 group-focus-visible:ring-2 group-focus-visible:ring-[#F6B78D]/60 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-[#1C1F26] ${checked ? "bg-[#F6B78D]" : "bg-white/15"}`}
       >
         <span
           aria-hidden="true"
-          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}
+          className={`absolute left-[3px] top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${checked ? "translate-x-5" : "translate-x-0"}`}
         />
-      </button>
-      {label && <span aria-hidden="true" className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</span>}
-    </span>
+      </span>
+      {label && <span className="text-sm text-white/80 transition-colors group-hover:text-white">{label}</span>}
+    </button>
   );
 }
 
