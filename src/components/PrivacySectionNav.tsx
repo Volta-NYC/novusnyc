@@ -64,7 +64,7 @@ export default function PrivacySectionNav() {
     <div ref={anchorRef} className="self-start">
       <nav
         aria-label="Privacy policy sections"
-        className={`max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-n-border bg-white p-5 ${pinnedPosition ? "fixed top-24 z-30" : ""}`}
+        className={`max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-n-border bg-white p-5 ${pinnedPosition ? "sm:fixed sm:top-24 sm:z-30" : ""}`}
         style={pinnedPosition ?? undefined}
       >
         <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-n-orange">On this page</p>
