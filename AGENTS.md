@@ -106,6 +106,14 @@ npm start          # serve the production build locally
 
 ---
 
+## Git workflow
+
+After completing and verifying code changes, create a local commit. Do not run
+`git push` unless the user explicitly asks to push in the current request. A
+push request from an earlier message does not carry forward to later changes.
+
+---
+
 ## Code Conventions
 
 ### TypeScript
