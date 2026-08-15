@@ -12,7 +12,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { y: backgroundY, enabled: backgroundParallaxEnabled } = useParallax(sectionRef, {
-    range: [-120, 170],
+    range: [-24, 120],
     offset: ["start start", "end start"],
   });
   const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
@@ -56,7 +56,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
           placeholder="blur"
           quality={72}
           sizes="100vw"
-          className="object-cover object-[center_42%]"
+          className="object-cover object-[center_32%]"
         />
       </motion.div>
       <div className="absolute inset-0 home-shared-wash" />

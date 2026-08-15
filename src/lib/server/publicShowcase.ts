@@ -536,7 +536,13 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
   ]);
 
   let totalBusinesses = 0;
-  const businesses: Array<{ id: string; name: string; projectTracks?: string[]; trackProjects?: Record<string, unknown> }> = [];
+  const businesses: Array<{
+    id: string;
+    name: string;
+    division: "Tech" | "Marketing" | "Finance";
+    projectTracks?: string[];
+    trackProjects?: Record<string, unknown>;
+  }> = [];
 
   for (const [id, row] of Object.entries(businessRows)) {
     const name = asText(row.showcaseName) || asText(row.name);
@@ -545,6 +551,7 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
     businesses.push({
       id,
       name,
+      division: inferDivision(row.division, row),
       projectTracks: Array.isArray(row.projectTracks) ? row.projectTracks as string[] : undefined,
       trackProjects: typeof row.trackProjects === "object" && row.trackProjects !== null
         ? row.trackProjects as Record<string, unknown>
@@ -563,13 +570,15 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
       (t) => t === "Tech" || t === "Marketing" || t === "Finance"
     );
 
+    const countTrack = (track: "Tech" | "Marketing" | "Finance") => {
+      if (track === "Tech") wCount++;
+      if (track === "Marketing") mCount++;
+    };
+
     if (allTracks.length === 0) {
-      wCount++;
+      countTrack(business.division);
     } else {
-      for (const track of allTracks) {
-        if (track === "Marketing") mCount++;
-        else wCount++;
-      }
+      for (const track of allTracks) countTrack(track as "Tech" | "Marketing" | "Finance");
     }
   }
 

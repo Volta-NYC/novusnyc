@@ -41,7 +41,7 @@ const OWNER_NAV_ITEMS: NavItem[] = [
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
   },
   {
-    href: "/members/bids",
+    href: "/members/orgs",
     label: "Organizations",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/><path d="M10 21v-4h4v4"/></svg>,
   },
@@ -131,7 +131,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
       "/members/projects",
       "/members/overview",
       "/members/assignments",
-      "/members/bids",
+      "/members/orgs",
       "/members/team",
       "/members/applicants",
       "/members/email",
