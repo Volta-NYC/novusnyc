@@ -107,7 +107,7 @@ export default async function Join() {
         <div className="relative mx-auto flex w-full max-w-7xl flex-1 items-center px-5 pb-16 md:px-8">
           <PageHeroContent
             eyebrow="For students"
-            title={<>Build <span className="text-n-purple">real skills</span> through projects with <span className="text-n-orange">real impact.</span></>}
+            title={<>Build <span className="text-n-purple">real skills</span> through projects with <span className="text-n-purple">real impact.</span></>}
             description="Join a student team doing real client work for NYC small businesses. Build experience you can show in applications, portfolios, and interviews."
             primaryAction={{ href: "/apply", label: "Start your application" }}
             secondaryAction={{ href: "#tracks", label: "Explore the tracks" }}
