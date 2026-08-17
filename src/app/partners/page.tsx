@@ -221,7 +221,7 @@ export default async function Partners() {
         <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8">
           <PageHeroContent
             eyebrow="For NYC small businesses"
-            title={<>Free support for <span className="text-n-orange">your small business.</span></>}
+            title={<>Free websites, tools, and marketing for <span className="text-n-orange">your small business.</span></>}
             description="Novus is a student-run nonprofit helping small businesses across NYC. Tell us what you need, and we’ll connect you with a team that can help."
             primaryAction={{ href: "#contact", label: "Request free support" }}
             secondaryAction={{ href: "/showcase", label: "See our work" }}

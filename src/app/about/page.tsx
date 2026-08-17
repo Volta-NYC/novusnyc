@@ -50,11 +50,11 @@ export default async function About() {
         <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8">
           <PageHeroContent
             eyebrow="About Novus"
-            title={<>Students doing work that <span className="text-n-purple">matters.</span></>}
+            title={<>Students doing work that <span className="text-n-orange">matters.</span></>}
             description="Novus connects high school and college students with real projects for NYC small businesses. Businesses get useful support; students build experience they can show."
             primaryAction={{ href: "/showcase", label: "See our work" }}
             secondaryAction={{ href: "#leadership", label: "Meet the team" }}
-            accent="purple"
+            accent="orange"
           />
         </div>
       </ParallaxHero>
