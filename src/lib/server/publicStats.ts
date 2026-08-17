@@ -1,8 +1,6 @@
 import "server-only";
 
-import { communityPartners } from "@/data";
 import { chapterLocations } from "@/data/network";
-import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export type PublicStatOverrides = Record<string, string>;
@@ -28,7 +26,10 @@ export interface PublicStatSnapshot {
 
 export const PUBLISHED_IMPACT_TOTALS = {
   students: "400+",
-  businesses: "150+",
+  businesses: "170+",
+  websiteProjects: "130",
+  marketingProjects: "90+",
+  communityOrganizations: "30",
 } as const;
 
 export async function getPublicStatOverrides(): Promise<PublicStatOverrides> {
@@ -57,33 +58,13 @@ export function publicCommunityOrganizationStat(overrides: PublicStatOverrides, 
     || fallback;
 }
 
-async function getCommunityOrganizationCount(): Promise<number> {
-  try {
-    const { count, error } = await getSupabaseAdmin()
-      .from("bids")
-      .select("id", { count: "exact", head: true })
-      .not("name", "is", null)
-      .neq("name", "");
-
-    if (!error && count !== null) return count;
-  } catch {
-    // Keep public counters available if the live portal data is temporarily unavailable.
-  }
-
-  return communityPartners.length;
-}
-
 /**
  * The single source of truth for every value shown in the Public Numbers admin
  * panel and its corresponding public counter. Keeping both the automatic and
  * effective values here prevents the admin preview from drifting from the site.
  */
 export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
-  const [rawOverrides, liveStats, communityOrganizationCount] = await Promise.all([
-    getPublicStatOverrides(),
-    getPublicLiveStats(),
-    getCommunityOrganizationCount(),
-  ]);
+  const rawOverrides = await getPublicStatOverrides();
 
   const overrides: PublicStatOverrides = { ...rawOverrides };
   const communityOverride = rawOverrides.communityOrganizations
@@ -96,11 +77,11 @@ export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
   const automaticValues: PublicStatValues = {
     homeStudentMembers: PUBLISHED_IMPACT_TOTALS.students,
     homeBusinessesSupported: PUBLISHED_IMPACT_TOTALS.businesses,
-    communityOrganizations: String(communityOrganizationCount),
+    communityOrganizations: PUBLISHED_IMPACT_TOTALS.communityOrganizations,
     homeNetworkLocations: String(chapterLocations.length),
     aboutBusinesses: PUBLISHED_IMPACT_TOTALS.businesses,
-    aboutWebsiteProjects: String(liveStats.websiteProjects),
-    aboutMarketingProjects: String(liveStats.marketingProjects),
+    aboutWebsiteProjects: PUBLISHED_IMPACT_TOTALS.websiteProjects,
+    aboutMarketingProjects: PUBLISHED_IMPACT_TOTALS.marketingProjects,
   };
 
   const effectiveValues: PublicStatValues = {

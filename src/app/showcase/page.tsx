@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { communityPartners, projects as fallbackProjects } from "@/data";
+import { projects as fallbackProjects } from "@/data";
 import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import { getPublicStatOverrides, PUBLISHED_IMPACT_TOTALS, publicCommunityOrganizationStat } from "@/lib/server/publicStats";
 import ShowcaseClient from "./page-client";
@@ -143,7 +143,7 @@ export default async function Showcase() {
       projects={projects}
       mapProjects={mapProjects}
       totalBusinesses={PUBLISHED_IMPACT_TOTALS.businesses}
-      orgPartners={publicCommunityOrganizationStat(statOverrides, String(communityPartners.length))}
+      orgPartners={publicCommunityOrganizationStat(statOverrides, PUBLISHED_IMPACT_TOTALS.communityOrganizations)}
     />
   );
 }
