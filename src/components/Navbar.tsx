@@ -211,11 +211,18 @@ export default function Navbar() {
               aria-expanded={open}
               aria-controls="mobile-nav-menu"
             >
-              <span aria-hidden="true" className="relative block h-5 w-7">
-                <span className={`absolute left-0 h-0.5 w-7 rounded-full bg-white transition-[top,transform] duration-200 ease-out ${open ? "top-[9px] rotate-45" : "top-0 rotate-0"}`} />
-                <span className={`absolute left-0 top-[9px] h-0.5 w-7 rounded-full bg-white transition-[opacity,transform] duration-150 ease-out ${open ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"}`} />
-                <span className={`absolute left-0 h-0.5 w-7 rounded-full bg-white transition-[top,transform] duration-200 ease-out ${open ? "top-[9px] -rotate-45" : "top-[18px] rotate-0"}`} />
-              </span>
+              {/*
+                Three absolutely-positioned 2px divs used to render as a
+                solid white blob on mobile Chrome/Safari, both under the
+                header's backdrop-blur-md — a hairline-flattening artifact,
+                not a layout bug (positions/CSS were correct in devtools).
+                An SVG with real strokes doesn't hit it.
+              */}
+              <svg aria-hidden="true" viewBox="0 0 28 20" className="h-5 w-7 overflow-visible">
+                <line x1="0" y1={open ? "10" : "1"} x2="28" y2={open ? "10" : "1"} stroke="white" strokeWidth="2" strokeLinecap="round" className="transition-[y1,y2,opacity,transform] duration-200 ease-out" style={{ transform: open ? "rotate(45deg)" : "none", transformOrigin: "14px 10px" }} />
+                <line x1="0" y1="10" x2="28" y2="10" stroke="white" strokeWidth="2" strokeLinecap="round" className={`transition-[opacity,transform] duration-150 ease-out ${open ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"}`} style={{ transformOrigin: "14px 10px" }} />
+                <line x1="0" y1={open ? "10" : "19"} x2="28" y2={open ? "10" : "19"} stroke="white" strokeWidth="2" strokeLinecap="round" className="transition-[y1,y2,opacity,transform] duration-200 ease-out" style={{ transform: open ? "rotate(-45deg)" : "none", transformOrigin: "14px 10px" }} />
+              </svg>
             </button>
           </div>
         </div>
