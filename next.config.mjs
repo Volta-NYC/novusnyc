@@ -33,6 +33,11 @@ const SECURITY_HEADERS = [
 
 const nextConfig = {
   poweredByHeader: false,
+  // react-leaflet's MapContainer initializes Leaflet on its container div in
+  // a way that doesn't survive React 18 Strict Mode's dev-only double-mount
+  // ("Map container is already initialized"). Strict Mode has no effect on a
+  // production build, so this only changes local dev behavior.
+  reactStrictMode: false,
   images: {
     // businesses.showcase_image_url may point at a partner's own domain. Any
     // host used there MUST be listed, or next/image throws and the whole
