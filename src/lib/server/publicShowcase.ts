@@ -217,8 +217,16 @@ function defaultShowcaseColor(): PublicShowcaseColor {
 function mapBusinessStatusToShowcase(value: unknown): PublicShowcaseStatus {
   const key = asText(value);
   if (key === "Completed" || key === "Complete") return "Completed";
-  if (key === "Ongoing" || key === "Active" || key === "In Progress") return "Ongoing";
-  if (key === "Upcoming" || key === "Not Started" || key === "Discovery" || key === "On Hold") return "Upcoming";
+  if (
+    key === "Ongoing" || 
+    key === "Active" || 
+    key === "In Progress" || 
+    key === "In Development" || 
+    key === "Awaiting Client" || 
+    key === "Awaiting Deployment" || 
+    key === "In Planning" || 
+    key === "Consistent Posts"
+  ) return "Ongoing";
   return "Upcoming";
 }
 

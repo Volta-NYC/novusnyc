@@ -6,7 +6,6 @@ import Image from "next/image";
 import AnimatedSection from "@/components/AnimatedSection";
 import NeighborhoodMap from "@/components/NeighborhoodMap";
 import { MapPinIcon } from "@/components/Icons";
-import MasonryGrid from "@/components/MasonryGrid";
 
 type ProjectDisplayStatus = "Ongoing" | "Upcoming" | "Completed";
 
@@ -421,11 +420,8 @@ export default function ShowcaseClient({
               </div>
 
               <div className="hidden lg:block">
-                <MasonryGrid
-                  itemIds={projects.map((p) => p.name)}
-                  itemWidth={290}
-                  gap={24}
-                >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  
                   {projects.map((p) => {
                     const card = (
                     <div className="bg-n-bg border border-n-border rounded-2xl overflow-hidden project-card flex flex-col">
@@ -491,7 +487,8 @@ export default function ShowcaseClient({
                       </a>
                     ) : <div key={`desktop-${p.name}`}>{card}</div>;
                   })}
-                </MasonryGrid>
+                
+                </div>
               </div>
             </>
           )}

@@ -11,7 +11,6 @@ import {
   ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
-import MasonryGrid from "@/components/MasonryGrid";
 import {
   subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
   createBusiness, updateBusiness, hardDeleteBusiness,
@@ -2218,17 +2217,8 @@ function BusinessesPageInner() {
             }
 
             return (
-              <MasonryGrid
-                itemIds={sorted.map((b) => b.id)}
-                itemWidth={290}
-                gap={scView === "home" ? 20 : 24}
-              >
-                {sorted.map((b) => {
-                  const colorSwatch = SHOWCASE_COLOR_OPTIONS.find((o) => o.value === b.showcaseColor)?.swatch ?? "#3B82F6";
-                  const imgUrl = b.showcaseImageUrl || null;
-                  const services = b.showcaseServices ?? [];
-                  const neighborhood = (b.neighborhood ?? b.showcaseNeighborhood ?? "").trim();
-                  const status = normalizeProjectStatus(b.projectStatus ?? "Upcoming");
+              <div className="flex flex-col gap-2 max-w-2xl">
+                {sorted.map((b, i) => {
                   const isDragging = scDragSrcId === b.id;
                   const isDragOver = scDragOverId === b.id;
                   return (
@@ -2239,67 +2229,28 @@ function BusinessesPageInner() {
                       onDragOver={(e) => handleDragOver(e, b.id)}
                       onDrop={(e) => void handleDrop(e, b.id)}
                       onDragEnd={handleDragEnd}
-                      className="rounded-2xl overflow-hidden flex flex-col select-none project-card"
+                      className="flex items-center gap-4 bg-white border border-[#E4E2DC] rounded-xl px-4 py-3 select-none"
                       style={{
-                        background: "#F8F7F4",
-                        border: isDragOver ? `2px solid ${colorSwatch}` : "1px solid #E4E2DC",
-                        opacity: isDragging ? 0.25 : anyDragging && !isDragOver ? 0.65 : 1,
-                        transform: isDragOver ? "scale(1.03)" : anyDragging && !isDragging ? "scale(0.97)" : "scale(1)",
+                        background: isDragOver ? "#F8F7F4" : "white",
+                        border: isDragOver ? `2px solid #3B82F6` : "1px solid #E4E2DC",
+                        opacity: isDragging ? 0.4 : anyDragging && !isDragOver ? 0.7 : 1,
+                        transform: isDragOver ? "scale(1.01)" : "scale(1)",
                         cursor: isDragging ? "grabbing" : "grab",
-                        boxShadow: isDragOver ? `0 0 0 3px ${colorSwatch}40` : undefined,
-                        transition: "opacity 0.15s, transform 0.15s, border 0.1s, box-shadow 0.1s",
+                        transition: "all 0.15s ease",
                       }}
                     >
-                      {/* color bar — matches public h-2 (8px) */}
-                      <div style={{ backgroundColor: colorSwatch, height: "8px", flexShrink: 0 }} />
-                      {/* image — natural aspect ratio, matches public frontend */}
-                      <div className="mx-4 sm:mx-7 mt-7 rounded-xl overflow-hidden" style={{ border: "1px solid #E4E2DC", background: "white" }}>
-                        {imgUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={imgUrl} alt={b.name} className="block w-full h-auto" />
-                        ) : (
-                          <div className="w-full flex items-center justify-center" style={{ height: "160px", color: "#C4C2BC" }}>
-                            <span className="font-body text-xs uppercase tracking-wider">Project photo coming soon</span>
-                          </div>
-                        )}
+                      <div className="font-display font-bold text-[#9B9B95] w-6 flex-shrink-0 text-right">
+                        {i + 1}.
                       </div>
-                      {/* content — matches public p-7 layout exactly */}
-                      <div className="p-7 flex flex-col">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex gap-2 flex-wrap">
-                            {services.map((s) => (
-                              <span key={s} className="tag border" style={{ background: "#EFF6FF", borderColor: "#BFDBFE", color: "#1D4ED8" }}>{s}</span>
-                            ))}
-                          </div>
-                          <span className={`tag text-xs flex-shrink-0 ml-2 ${status === "Completed" ? "bg-orange-100 text-orange-700" : status === "Ongoing" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
-                            {status}
-                          </span>
-                        </div>
-                        <h3 className="font-display font-bold text-xl mb-1" style={{ color: "#1A1A18" }}>{b.name}</h3>
-                        <p className="font-body text-sm mb-3" style={{ color: "#6B6B65" }}>{b.showcaseType || "Digital & Tech"}</p>
-                        {b.showcaseDescription && (
-                          <p className="font-body text-sm" style={{ color: "#6B6B65" }}>{b.showcaseDescription}</p>
-                        )}
-                        <div className="flex items-center justify-between mt-4">
-                          {neighborhood && (
-                            <p className="font-body text-xs" style={{ color: "#9B9B95" }}>📍 {neighborhood}</p>
-                          )}
-                          {b.showcaseUrl && (
-                            <span className="font-body text-xs font-semibold" style={{ color: "#4B7A0A" }}>View live site →</span>
-                          )}
-                        </div>
+                      <div className="flex-1 font-display font-bold text-[#1A1A18] whitespace-nowrap overflow-hidden text-ellipsis">
+                        {b.name}
                       </div>
-                      {/* admin action buttons — sits below card content */}
-                      <div
-                        className="flex gap-1.5 px-3 py-2 justify-end items-center border-t"
-                        style={{ borderColor: "#E4E2DC", background: "#F2F1EE" }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
+                      <div className="flex gap-2">
                         <button
                           type="button"
                           title={b.showcaseFeaturedOnHome ? "Remove from home page" : "Feature on home page"}
                           onClick={(e) => { e.stopPropagation(); void handleScToggleHome(b); }}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors ${b.showcaseFeaturedOnHome ? "bg-orange-100 border-orange-300 text-orange-700" : "bg-white/80 border-[#E4E2DC] text-[#9B9B95]"}`}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${b.showcaseFeaturedOnHome ? "bg-orange-100 border-orange-300 text-orange-700" : "bg-white border-[#E4E2DC] text-[#9B9B95] hover:bg-[#F2F1EE]"}`}
                           draggable={false}
                         >
                           {b.showcaseFeaturedOnHome ? "★ Home" : "☆ Home"}
@@ -2307,7 +2258,7 @@ function BusinessesPageInner() {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); void openEdit(b); }}
-                          className="px-2 py-1 rounded-lg text-[10px] font-semibold border bg-white/80 border-[#E4E2DC] text-[#4B4B45] hover:bg-white transition-colors"
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white border-[#E4E2DC] text-[#4B4B45] hover:bg-[#F2F1EE] transition-colors"
                           draggable={false}
                         >
                           Edit
@@ -2315,7 +2266,7 @@ function BusinessesPageInner() {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); void handleScRemove(b); }}
-                          className="px-2 py-1 rounded-lg text-[10px] font-semibold border bg-white/80 border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white border-red-200 text-red-500 hover:bg-red-50 transition-colors"
                           draggable={false}
                         >
                           Remove
@@ -2324,7 +2275,7 @@ function BusinessesPageInner() {
                     </div>
                   );
                 })}
-              </MasonryGrid>
+              </div>
             );
           })()}
         </>
