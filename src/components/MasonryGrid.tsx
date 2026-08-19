@@ -42,18 +42,18 @@ export default function MasonryGrid({
     const columnHeights = new Array(columnCount).fill(0);
     const newPositions: Record<string, Position> = {};
 
-    itemIds.forEach((id) => {
+    itemIds.forEach((id, i) => {
       const el = cardRefs.current[id];
       if (!el) return;
 
       const height = el.offsetHeight;
-      const shortestCol = columnHeights.indexOf(Math.min(...columnHeights));
+      const targetCol = i % columnCount;
 
       newPositions[id] = {
-        x: shortestCol * (actualColWidth + gap),
-        y: columnHeights[shortestCol],
+        x: targetCol * (actualColWidth + gap),
+        y: columnHeights[targetCol],
       };
-      columnHeights[shortestCol] += height + gap;
+      columnHeights[targetCol] += height + gap;
     });
 
     const maxHeight = Math.max(0, Math.max(...columnHeights) - gap);
