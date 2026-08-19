@@ -844,6 +844,14 @@ body:has(.home-scroll-story) footer::before {
   z-index: 1;
   display: grid;
   min-height: clamp(26rem, 54vh, 40rem);
+  /* The -1/-2 variants offset the copy with justify-self against this track.
+     Unbounded, the track is the whole viewport, so on an ultra-wide display or
+     at ~33% browser zoom (~6000 CSS px) the 43rem box pins to the bezel with a
+     vast empty gap instead of reading as an offset inside the layout. Capping
+     the track and centring it keeps the offset proportional. 96rem is above the
+     common 1440px viewport, so nothing changes at normal widths. */
+  grid-template-columns: minmax(0, 96rem);
+  justify-content: center;
   place-items: center;
   isolation: isolate;
   overflow: clip;
