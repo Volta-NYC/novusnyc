@@ -38,7 +38,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a] flex flex-col min-h-[100vh] pb-4 md:pb-6">
+    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a] flex flex-col min-h-[100svh] md:min-h-[100vh] pb-4 md:pb-6">
       <motion.div
         aria-hidden="true"
         className="absolute -inset-y-[34vh] inset-x-0"
