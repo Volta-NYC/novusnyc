@@ -94,11 +94,19 @@ export default function RootLayout({
               "@type": "NGO",
               "@id": `${SITE_URL}/#organization`,
               name: "Novus NYC",
-              alternateName: "Novus New York City",
+              // "Volta NYC" is this organization's own former name (its old
+              // domain, voltanyc.org, 301s here) — not a claim about any
+              // other org. Schema.org's alternateName is exactly the field
+              // search engines use to resolve a rebrand: "novusnyc.org is
+              // the entity formerly named Volta NYC." Kept out of visible
+              // page copy by design; this block is the only place it lives.
+              alternateName: ["Novus New York City", "Volta NYC"],
               url: SITE_URL,
               logo: `${SITE_URL}/logo.png`,
               description:
                 "A nonprofit corporation incorporated in New York State, placing high school and college student teams on real consulting projects — websites, social media, grant writing, and SEO — for NYC small businesses at no cost.",
+              disambiguatingDescription:
+                "Novus NYC was founded and operated under the name Volta NYC before rebranding. It is unaffiliated with any other organization using the Volta name.",
               email: EMAIL.info,
               foundingDate: "2025",
               areaServed: {
