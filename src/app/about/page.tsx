@@ -32,7 +32,7 @@ export default async function About() {
 
   return (
     <>
-      <SectionProgressNav sections={[
+      <SectionProgressNav accent="orange" sections={[
         { id: "mission", label: "Mission" },
         { id: "impact", label: "Impact" },
         { id: "leadership", label: "Leadership" },

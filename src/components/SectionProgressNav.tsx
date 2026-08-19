@@ -7,6 +7,14 @@ interface SectionLink {
   label: string;
 }
 
+type NavAccent = "orange" | "purple" | "yellow";
+
+const ACCENT_CLASSES: Record<NavAccent, { dot: string; ring: string; hover: string }> = {
+  orange: { dot: "border-n-orange bg-n-orange", ring: "shadow-[0_0_0_3px_rgba(246,183,141,0.18)]", hover: "group-hover:border-n-orange/80 group-hover:bg-n-orange/85" },
+  purple: { dot: "border-n-purple bg-n-purple", ring: "shadow-[0_0_0_3px_rgba(190,162,186,0.22)]", hover: "group-hover:border-n-purple/80 group-hover:bg-n-purple/85" },
+  yellow: { dot: "border-n-yellow bg-n-yellow", ring: "shadow-[0_0_0_3px_rgba(243,226,141,0.22)]", hover: "group-hover:border-n-yellow/80 group-hover:bg-n-yellow/85" },
+};
+
 function isLightSection(element: HTMLElement) {
   let current: HTMLElement | null = element;
 
@@ -28,7 +36,8 @@ function isLightSection(element: HTMLElement) {
   return true;
 }
 
-export default function SectionProgressNav({ sections }: { sections: SectionLink[] }) {
+export default function SectionProgressNav({ sections, accent = "orange" }: { sections: SectionLink[]; accent?: NavAccent }) {
+  const colors = ACCENT_CLASSES[accent];
   const [activeId, setActiveId] = useState(sections[0]?.id);
   const [useDarkText, setUseDarkText] = useState(true);
   const [isOverDarkBoundary, setIsOverDarkBoundary] = useState(false);
@@ -63,15 +72,28 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
       document.querySelector<HTMLElement>(".public-site > section[data-home-dark-end='true']"),
       document.querySelector<HTMLElement>(".site-footer"),
     ].filter((element): element is HTMLElement => Boolean(element));
-    if (!darkRegions.length) return;
+
+    // The observer's rootMargin ("-35% 0px -50%") only watches a band from
+    // 35%-50% of viewport height, and the hero above the first tracked
+    // section isn't itself tracked. Scrolled back to the very top, that band
+    // sits inside the untracked hero, no observed section intersects it, and
+    // the observer simply stops firing — activeId is left stuck on whatever
+    // was last active on the way up. Force it back to sections[0] whenever
+    // the first section hasn't reached the band's bottom edge yet.
+    const firstSection = sections[0] ? document.getElementById(sections[0].id) : null;
+
+    if (!darkRegions.length && !firstSection) return;
 
     let frameId = 0;
-    const updateBoundaryColor = () => {
+    const update = () => {
       cancelAnimationFrame(frameId);
       frameId = requestAnimationFrame(() => {
-        const nav = navRef.current;
-        if (!nav) return;
+        if (firstSection && firstSection.getBoundingClientRect().top > window.innerHeight * 0.5) {
+          setActiveId(sections[0].id);
+        }
 
+        const nav = navRef.current;
+        if (!nav || !darkRegions.length) return;
         const navBounds = nav.getBoundingClientRect();
         setIsOverDarkBoundary(darkRegions.some((region) => {
           const regionBounds = region.getBoundingClientRect();
@@ -80,15 +102,15 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
       });
     };
 
-    updateBoundaryColor();
-    window.addEventListener("scroll", updateBoundaryColor, { passive: true });
-    window.addEventListener("resize", updateBoundaryColor);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
     return () => {
       cancelAnimationFrame(frameId);
-      window.removeEventListener("scroll", updateBoundaryColor);
-      window.removeEventListener("resize", updateBoundaryColor);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
     };
-  }, []);
+  }, [sections]);
 
   const showDarkText = useDarkText && !isOverDarkBoundary;
 
@@ -131,7 +153,7 @@ export default function SectionProgressNav({ sections }: { sections: SectionLink
                   aria-current={active ? "location" : undefined}
                   className={`group flex items-center gap-3 font-body text-[0.95rem] transition-colors ${active ? (showDarkText ? "font-semibold text-n-ink" : "font-semibold text-white") : (showDarkText ? "text-n-ink/60 hover:text-n-ink" : "text-white/65 hover:text-white")}`}
                 >
-                  <span className={`h-2.5 w-2.5 rounded-full border transition-transform duration-200 ${active ? "scale-110 border-n-orange bg-n-orange shadow-[0_0_0_3px_rgba(246,183,141,0.18)]" : (showDarkText ? "border-n-ink/40 bg-n-ink/80 group-hover:border-n-orange/80 group-hover:bg-n-orange/85" : "border-white/65 bg-white/90 group-hover:border-n-orange/80 group-hover:bg-n-orange/85")}`} />
+                  <span className={`h-2.5 w-2.5 rounded-full border transition-transform duration-200 ${active ? `scale-110 ${colors.dot} ${colors.ring}` : (showDarkText ? `border-n-ink/40 bg-n-ink/80 ${colors.hover}` : `border-white/65 bg-white/90 ${colors.hover}`)}`} />
                   {section.label}
                 </a>
               </li>

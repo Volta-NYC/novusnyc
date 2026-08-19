@@ -84,8 +84,7 @@ export default async function Join() {
 
   return (
     <>
-      <SectionProgressNav sections={[
-        { id: "benefits", label: "Why Novus" },
+      <SectionProgressNav accent="purple" sections={[
         { id: "tracks", label: "Tracks" },
         { id: "leadership", label: "Leadership" },
         { id: "journey", label: "Your journey" },

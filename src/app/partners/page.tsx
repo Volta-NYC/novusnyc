@@ -198,7 +198,7 @@ export default async function Partners() {
 
   return (
     <>
-      <SectionProgressNav sections={[
+      <SectionProgressNav accent="orange" sections={[
         { id: "contact", label: "Get support" },
         { id: "process", label: "Our process" },
         { id: "services", label: "Services" },
