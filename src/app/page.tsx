@@ -497,7 +497,7 @@ export default function Home() {
       <div aria-hidden="true" className="home-scroll-backdrop" />
       <HomeScrollProgress />
       <HeroSection>
-        <section aria-label="Novus impact at a glance" data-home-dark-end="true" className="relative pb-14 pt-10 sm:pb-16 sm:pt-12 md:-mt-16">
+        <section aria-label="Novus impact at a glance" data-home-dark-end="true" className="relative pb-6 pt-10 sm:pb-8 sm:pt-12 z-20">
           <LiveHomeStats />
         </section>
       </HeroSection>

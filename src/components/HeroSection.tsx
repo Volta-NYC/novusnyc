@@ -16,7 +16,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
     offset: ["start start", "end start"],
   });
   const { y: statsY, enabled: statsParallaxEnabled } = useParallax(sectionRef, {
-    range: [90, -120],
+    range: [0, -80],
     offset: ["start start", "end start"],
   });
   const { scrollYProgress } = useScroll({
@@ -38,7 +38,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a]">
+    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a] flex flex-col min-h-[calc(100svh-4rem)]">
       <motion.div
         aria-hidden="true"
         className="absolute -inset-y-[34vh] inset-x-0"
@@ -62,7 +62,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       <div className="absolute inset-0 home-shared-wash" />
       <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
 
-      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-36">
+      <div className="relative flex flex-1 flex-col items-center justify-center px-5 pt-16 pb-8 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12 z-10">
         <motion.div
           className="relative z-10 flex w-full max-w-6xl justify-center"
           style={{
@@ -145,7 +145,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       </div>
 
       <motion.div
-        className="relative z-10"
+        className="relative z-10 w-full mt-auto"
         style={{
           y: statsY,
           willChange: statsParallaxEnabled ? "transform" : "auto",
