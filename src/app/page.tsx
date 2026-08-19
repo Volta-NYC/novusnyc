@@ -209,11 +209,9 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
             {project.status}
           </span>
         </div>
-        <h3 className="home-project-card-title font-display font-bold text-n-ink text-xl mb-1">{project.name}</h3>
-        <p className="font-body text-sm text-n-muted mb-3">{project.type}</p>
-        {project.desc && <p className="font-body text-sm text-n-ink/70 leading-relaxed line-clamp-3">{project.desc}</p>}
+        <h3 className="home-project-card-title font-display font-bold text-n-ink text-2xl mb-4">{project.name}</h3>
         {project.quote && (
-          <blockquote className="mt-4 border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
+          <blockquote className="border-l-2 border-n-orange pl-3 font-body text-sm text-n-muted italic leading-relaxed">
             &ldquo;{project.quote}&rdquo;
           </blockquote>
         )}
