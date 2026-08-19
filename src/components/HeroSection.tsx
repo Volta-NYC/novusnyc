@@ -38,7 +38,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a] flex flex-col min-h-[calc(100svh-4rem)]">
+    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a] flex flex-col min-h-[100svh]">
       <motion.div
         aria-hidden="true"
         className="absolute -inset-y-[34vh] inset-x-0"
@@ -56,7 +56,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
           placeholder="blur"
           quality={72}
           sizes="100vw"
-          className="object-cover"
+          className="object-cover object-[center_30%]"
         />
       </motion.div>
       <div className="absolute inset-0 home-shared-wash" />
