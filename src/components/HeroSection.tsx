@@ -38,7 +38,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a] flex flex-col min-h-[100svh] md:min-h-[100vh] pb-4 md:pb-6">
+    <section ref={sectionRef} className="home-depth-section home-hero-depth relative overflow-hidden bg-[#17151a]">
       <motion.div
         aria-hidden="true"
         className="absolute -inset-y-[34vh] inset-x-0"
@@ -62,7 +62,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       <div className="absolute inset-0 home-shared-wash" />
       <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
 
-      <div className="relative flex flex-1 flex-col items-center justify-center px-5 pt-20 pb-4 sm:pt-24 sm:pb-6 md:pt-32 md:pb-8 z-10">
+      <div className="relative z-10 flex min-h-[100svh] flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-36">
         <motion.div
           className="relative z-10 flex w-full max-w-6xl justify-center"
           style={{
@@ -145,7 +145,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       </div>
 
       <motion.div
-        className="relative z-10 w-full mt-auto"
+        className="relative z-10 w-full"
         style={{
           y: statsY,
           willChange: statsParallaxEnabled ? "transform" : "auto",
