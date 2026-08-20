@@ -27,9 +27,9 @@ export interface PublicStatSnapshot {
 export const PUBLISHED_IMPACT_TOTALS = {
   students: "400+",
   businesses: "170+",
-  websiteProjects: "130",
+  websiteProjects: "130+",
   marketingProjects: "90+",
-  communityOrganizations: "30",
+  communityOrganizations: "30+",
 } as const;
 
 export async function getPublicStatOverrides(): Promise<PublicStatOverrides> {
