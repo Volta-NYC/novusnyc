@@ -1510,6 +1510,16 @@ body:has(.home-scroll-story) footer::before {
     transition: transform 240ms ease;
   }
 
+  .home-project-masonry[data-masonry-ready="true"] {
+    display: block;
+  }
+
+  .home-project-masonry[data-masonry-ready="true"] > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
   .home-project-card:hover .home-project-card-accent {
     transform: translateZ(14px);
   }

@@ -11,6 +11,7 @@ import { MapPinIcon } from "@/components/Icons";
 import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
+import HomeProjectMasonry from "@/components/HomeProjectMasonry";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import { getPublicStatSnapshot, PUBLISHED_IMPACT_TOTALS } from "@/lib/server/publicStats";
 
@@ -240,11 +241,11 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
 
 function HomeProjectStack({ projects }: { projects: HomeProject[] }) {
   return (
-    <div className="hidden sm:grid grid-cols-2 gap-5 lg:grid-cols-3">
+    <HomeProjectMasonry>
       {projects.map((project, index) => (
         <HomeProjectDesktopCard key={`${project.name}-${index}`} project={project} index={index} />
       ))}
-    </div>
+    </HomeProjectMasonry>
   );
 }
 
