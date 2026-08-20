@@ -2,6 +2,7 @@ import "server-only";
 
 import { chapterLocations } from "@/data/network";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 
 export type PublicStatOverrides = Record<string, string>;
 
@@ -24,13 +25,30 @@ export interface PublicStatSnapshot {
   overrides: PublicStatOverrides;
 }
 
+/**
+ * Explicitly preserved public all-time totals. These are deliberately kept
+ * separate from the live active-record counts below: the current database is
+ * not a complete historical archive of every student or business served.
+ */
 export const PUBLISHED_IMPACT_TOTALS = {
   students: "400+",
   businesses: "170+",
-  websiteProjects: "130+",
-  marketingProjects: "90+",
-  communityOrganizations: "30+",
 } as const;
+
+async function getCommunityOrganizationCount(): Promise<number> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("bids")
+      .select("name");
+    if (error) throw error;
+
+    return (data ?? []).filter((row) => typeof row.name === "string" && row.name.trim().length > 0).length;
+  } catch {
+    // Do not substitute an unverifiable marketing claim when the live source
+    // cannot be reached. A manual portal override remains available if needed.
+    return 0;
+  }
+}
 
 export async function getPublicStatOverrides(): Promise<PublicStatOverrides> {
   try {
@@ -64,7 +82,11 @@ export function publicCommunityOrganizationStat(overrides: PublicStatOverrides, 
  * effective values here prevents the admin preview from drifting from the site.
  */
 export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
-  const rawOverrides = await getPublicStatOverrides();
+  const [rawOverrides, liveStats, communityOrganizations] = await Promise.all([
+    getPublicStatOverrides(),
+    getPublicLiveStats(),
+    getCommunityOrganizationCount(),
+  ]);
 
   const overrides: PublicStatOverrides = { ...rawOverrides };
   const communityOverride = rawOverrides.communityOrganizations
@@ -77,11 +99,11 @@ export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
   const automaticValues: PublicStatValues = {
     homeStudentMembers: PUBLISHED_IMPACT_TOTALS.students,
     homeBusinessesSupported: PUBLISHED_IMPACT_TOTALS.businesses,
-    communityOrganizations: PUBLISHED_IMPACT_TOTALS.communityOrganizations,
-    homeNetworkLocations: String(chapterLocations.length),
+    communityOrganizations: `${communityOrganizations}+`,
+    homeNetworkLocations: `${chapterLocations.length}+`,
     aboutBusinesses: PUBLISHED_IMPACT_TOTALS.businesses,
-    aboutWebsiteProjects: PUBLISHED_IMPACT_TOTALS.websiteProjects,
-    aboutMarketingProjects: PUBLISHED_IMPACT_TOTALS.marketingProjects,
+    aboutWebsiteProjects: `${liveStats.websiteProjects}+`,
+    aboutMarketingProjects: `${liveStats.marketingProjects}+`,
   };
 
   const effectiveValues: PublicStatValues = {

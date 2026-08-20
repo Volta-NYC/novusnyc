@@ -238,52 +238,13 @@ function HomeProjectDesktopCard({ project, index }: { project: HomeProject; inde
   );
 }
 
-const HOME_TABLET_STACK = [[], []];
-const HOME_DESKTOP_STACK = [[], [], []];
-
-function getHomeProjectColumns(projects: HomeProject[], arrangement: number[][]) {
-  const assigned = new Set<number>();
-  const columns = arrangement.map((column) => column.flatMap((index) => {
-    const project = projects[index];
-    if (!project) return [];
-    assigned.add(index);
-    return [{ project, index }];
-  }));
-
-  projects.forEach((project, index) => {
-    if (!assigned.has(index)) {
-      columns[index % columns.length]?.push({ project, index });
-    }
-  });
-
-  return columns.filter((column) => column.length > 0);
-}
-
 function HomeProjectStack({ projects }: { projects: HomeProject[] }) {
-  const tabletColumns = getHomeProjectColumns(projects, HOME_TABLET_STACK);
-  const desktopColumns = getHomeProjectColumns(projects, HOME_DESKTOP_STACK);
-
   return (
-    <>
-      <div className="hidden sm:grid lg:hidden grid-cols-2 gap-5">
-        {tabletColumns.map((column, columnIndex) => (
-          <div key={`tablet-column-${columnIndex}`} className="flex flex-col gap-5">
-            {column.map(({ project, index }) => (
-              <HomeProjectDesktopCard key={`tablet-${project.name}`} project={project} index={index} />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="hidden lg:grid grid-cols-3 gap-5">
-        {desktopColumns.map((column, columnIndex) => (
-          <div key={`desktop-column-${columnIndex}`} className="flex flex-col gap-5">
-            {column.map(({ project, index }) => (
-              <HomeProjectDesktopCard key={`desktop-${project.name}`} project={project} index={index} />
-            ))}
-          </div>
-        ))}
-      </div>
-    </>
+    <div className="hidden sm:grid grid-cols-2 gap-5 lg:grid-cols-3">
+      {projects.map((project, index) => (
+        <HomeProjectDesktopCard key={`${project.name}-${index}`} project={project} index={index} />
+      ))}
+    </div>
   );
 }
 

@@ -630,13 +630,13 @@ function BannersTab() {
 }
 
 const PUBLIC_STAT_FIELDS = [
-  { key: "homeStudentMembers", label: "Homepage: Student members" },
-  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported" },
-  { key: "communityOrganizations", label: "All public pages: Community organizations" },
-  { key: "homeNetworkLocations", label: "Homepage: Network locations" },
-  { key: "aboutBusinesses", label: "About: Total businesses" },
-  { key: "aboutWebsiteProjects", label: "About: Website projects" },
-  { key: "aboutMarketingProjects", label: "About: Marketing projects" },
+  { key: "homeStudentMembers", label: "Homepage: Student members", source: "Published all-time total" },
+  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", source: "Published all-time total" },
+  { key: "communityOrganizations", label: "All public pages: Community organizations", source: "Live partner-organization records" },
+  { key: "homeNetworkLocations", label: "Homepage: Network locations", source: "Exact network-location list" },
+  { key: "aboutBusinesses", label: "About: Total businesses", source: "Published all-time total" },
+  { key: "aboutWebsiteProjects", label: "About: Website projects", source: "Live Tech project-track records" },
+  { key: "aboutMarketingProjects", label: "About: Marketing projects", source: "Live Marketing project-track records" },
 ] as const;
 
 type PublicStatFieldKey = (typeof PUBLIC_STAT_FIELDS)[number]["key"];
@@ -731,7 +731,7 @@ function PublicStatsTab() {
   if (loading) return <div className="flex h-24 items-center"><Spinner size="sm" /></div>;
 
   return (
-    <Card title="Public Numbers" subtitle="Each field starts with the exact value currently shown on the public site. Edit a value to override it, or clear it and save to return to the automatic count.">
+    <Card title="Public Numbers" subtitle="Each field starts with the value currently shown on the public site. Automatic values are either live counts or explicitly preserved all-time totals, identified under each field. Edit a value to override it, or clear it and save to restore the automatic value.">
       <div className="grid gap-3 sm:grid-cols-2">
         {PUBLIC_STAT_FIELDS.map((field) => {
           const value = values[field.key] ?? "";
@@ -752,6 +752,7 @@ function PublicStatsTab() {
                   {hasUnsavedChange ? "Unsaved change" : isAutomatic ? "Automatic" : "Override active"}
                 </span>
                 <span>Automatic value: {automaticValue}</span>
+                <span>Source: {field.source}</span>
               </p>
             </Field>
           );
