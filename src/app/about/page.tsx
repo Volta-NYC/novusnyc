@@ -134,9 +134,9 @@ export default async function About() {
               </div>
               <div className="flex gap-8 md:pb-1 shrink-0">
                 {[
-                  { label: "High Schools", value: education.highSchoolCount },
-                  { label: "Colleges", value: education.collegeCount },
-                  { label: "States", value: education.stateCount },
+                  { label: "High Schools", value: `${education.highSchoolCount}+` },
+                  { label: "Colleges", value: `${education.collegeCount}+` },
+                  { label: "States", value: `${education.stateCount}+` },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-n-orange text-3xl leading-none">{s.value}</p>
