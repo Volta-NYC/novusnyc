@@ -39,9 +39,14 @@ export default function HomeProjectMasonry({ children }: HomeProjectMasonryProps
           (shortest, height, index) => height < columnHeights[shortest] ? index : shortest,
           0,
         );
+        const x = column * (cardWidth + gap);
         const y = columnHeights[column];
 
-        card.style.transform = `translate(${column * (cardWidth + gap)}px, ${y}px)`;
+        // The reveal animation owns `transform`, so masonry positioning must
+        // use physical coordinates or every animated card collapses to x = 0.
+        card.style.removeProperty("transform");
+        card.style.left = `${x}px`;
+        card.style.top = `${y}px`;
         columnHeights[column] += card.offsetHeight + gap;
       });
 
@@ -69,7 +74,7 @@ export default function HomeProjectMasonry({ children }: HomeProjectMasonryProps
   return (
     <div
       ref={containerRef}
-      className="home-project-masonry hidden sm:grid grid-cols-2 gap-5 lg:grid-cols-3"
+      className="home-project-masonry relative hidden sm:grid grid-cols-2 gap-5 lg:grid-cols-3"
     >
       {children}
     </div>
