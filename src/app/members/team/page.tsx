@@ -10,15 +10,20 @@ import {
 import Combobox from "@/components/Combobox";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
-  subscribeBusinesses, subscribeMemberStrikes,
-  subscribePods, subscribePodMembers, fetchHoursTotals,
+  subscribeBusinesses,
+  subscribePods, subscribePodMembers, fetchMemberContributions, getSiteSettings,
   subscribeApplications,
   type TeamMember, type Business, type ApplicationRecord,
-  type MemberStrike, type Pod, type PodMember, type HoursTotals,
+  type Pod, type PodMember, type MemberContribution,
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
-import { MEMBER_ROLES, ROLE_SORT_ORDER, DEFAULT_MEMBER_ROLE, isInactiveMember, type MemberRole } from "@/lib/members/roles";
+import {
+  MEMBER_ROLES, DEFAULT_MEMBER_ROLE, isInactiveMember,
+  TIER_ORDER, TIER_LABEL, memberTier, infractionStanding, STANDING_LABEL,
+  STANDING_STYLE, DEFAULT_INFRACTION_THRESHOLDS, WORK_SCORE_EXPLAINER,
+  type MemberRole,
+} from "@/lib/members/roles";
 import { CLASS_GRADE_OPTIONS, gradeToClassOf } from "@/lib/grades";
 import MemberDrawer from "@/components/members/MemberDrawer";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
@@ -124,8 +129,10 @@ const SORT_OPTIONS = [
   { value: 1, label: "Track" },
   { value: 2, label: "Name" },
   { value: 3, label: "School" },
-  { value: 4, label: "Role" },
+  { value: 4, label: "Rank" },
   { value: 5, label: "Date Accepted" },
+  { value: 6, label: "Work" },
+  { value: 7, label: "Hours" },
 ];
 
 const ADMIN_COLS = [
@@ -136,9 +143,10 @@ const ADMIN_COLS = [
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: 5   as number | null },
-  { key: "hours",          label: "Hours",           width: 74,  sortCol: null },
+  { key: "rank",           label: "Rank",            width: 96,  sortCol: 4  as number | null },
+  { key: "work",           label: "Work",            width: 190, sortCol: 6  as number | null },
   { key: "pods",           label: "Pods",            width: 150, sortCol: null },
-  { key: "strikes",        label: "Infractions",     width: 84,  sortCol: null },
+  { key: "strikes",        label: "Standing",        width: 96,  sortCol: null },
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
 
@@ -150,11 +158,6 @@ type RoleOption = MemberRole;
 function displayRoleValue(value: unknown): string {
   const raw = String(value ?? "").trim();
   return raw || "—";
-}
-
-function roleSortKey(value: unknown): number {
-  const raw = String(value ?? "").trim();
-  return raw in ROLE_SORT_ORDER ? ROLE_SORT_ORDER[raw] : 99;
 }
 
 function normalizeText(v: string): string {
@@ -190,8 +193,8 @@ export default function TeamPage() {
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   // Hours + pods drive the member row; credits were retired.
-  const [creditStrikes, setCreditStrikes] = useState<MemberStrike[]>([]);
-  const [hoursTotals, setHoursTotals] = useState<HoursTotals[]>([]);
+  const [thresholds, setThresholds] = useState(DEFAULT_INFRACTION_THRESHOLDS);
+  const [contributions, setContributions] = useState<MemberContribution[]>([]);
   const [pods, setPods] = useState<Pod[]>([]);
   const [podMembers, setPodMembers] = useState<PodMember[]>([]);
   const [drawerMember, setDrawerMember] = useState<TeamMember | null>(null);
@@ -229,15 +232,14 @@ export default function TeamPage() {
   // Real-time subscriptions for all supporting data — automatic updates when database changes.
   useEffect(() => {
     const unsubscribeBusinesses = subscribeBusinesses(setBusinesses);
-    const unsubscribeCreditStrikes = subscribeMemberStrikes(setCreditStrikes);
     const unsubscribePods = subscribePods(setPods);
     const unsubscribePodMembers = subscribePodMembers(setPodMembers);
-    void fetchHoursTotals().then(setHoursTotals);
+    void fetchMemberContributions().then(setContributions);
+    void getSiteSettings().then((settings) => setThresholds(settings.infractionThresholds));
 
     // Cleanup subscriptions on unmount
     return () => {
       unsubscribeBusinesses();
-      unsubscribeCreditStrikes();
       unsubscribePods();
       unsubscribePodMembers();
     };
@@ -450,8 +452,25 @@ export default function TeamPage() {
       case 2: return (a.name || "").localeCompare(b.name || "");
       case 3: return (a.school || "").localeCompare(b.school || "");
       case 4: {
-        const roleCmp = roleSortKey(a.role) - roleSortKey(b.role);
-        return roleCmp !== 0 ? roleCmp : (a.name || "").localeCompare(b.name || "");
+        // Rank means the display tier — Board, Leadership, LIT, then members
+        // ordered by how much work they've actually done.
+        const ta = TIER_ORDER.indexOf(tierOf(a));
+        const tb = TIER_ORDER.indexOf(tierOf(b));
+        if (ta !== tb) return ta - tb;
+        const wa = workByMemberId.get(a.id)?.workScore ?? 0;
+        const wb = workByMemberId.get(b.id)?.workScore ?? 0;
+        if (wa !== wb) return wb - wa;
+        return (a.name || "").localeCompare(b.name || "");
+      }
+      case 6: {
+        const wa = workByMemberId.get(a.id)?.workScore ?? 0;
+        const wb = workByMemberId.get(b.id)?.workScore ?? 0;
+        return wb - wa;
+      }
+      case 7: {
+        const ha = workByMemberId.get(a.id)?.hoursTotal ?? 0;
+        const hb = workByMemberId.get(b.id)?.hoursTotal ?? 0;
+        return hb - ha;
       }
       case 5: {
         const da = a.acceptedDate || "";
@@ -647,20 +666,15 @@ export default function TeamPage() {
     return 0;
   });
 
-  const strikesByMemberId = useMemo(() => {
-    const map = new Map<string, MemberStrike[]>();
-    for (const s of creditStrikes) {
-      const list = map.get(s.memberId) ?? [];
-      list.push(s);
-      map.set(s.memberId, list);
-    }
-    return map;
-  }, [creditStrikes]);
-
-  const hoursByMemberId = useMemo(
-    () => new Map(hoursTotals.map((h) => [h.memberId, h])),
-    [hoursTotals],
+  const workByMemberId = useMemo(
+    () => new Map(contributions.map((c) => [c.memberId, c])),
+    [contributions],
   );
+
+  // LIT is derived from pod leadership, never stored on the member, so the
+  // badge can't disagree with who actually runs a pod.
+  const tierOf = (member: TeamMember) =>
+    memberTier(member.role, workByMemberId.get(member.id)?.podsLed ?? 0);
 
   const podsByMemberId = useMemo(() => {
     const map = new Map<string, { name: string; lit: boolean }[]>();
@@ -678,14 +692,14 @@ export default function TeamPage() {
   // Recency, not pace. Credits had a per-cycle target to measure against;
   // hours don't, so the useful signal is whether someone is still active.
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
-    const totals = hoursByMemberId.get(member.id);
-    if (!totals || !totals.lastActivity) {
-      return { colorClass: "bg-gray-400", label: "No hours logged yet" };
+    const work = workByMemberId.get(member.id);
+    if (!work || work.noRecordedWork || !work.lastActivity || work.lastActivity < "2000-01-01") {
+      return { colorClass: "bg-gray-400", label: "No recorded work yet" };
     }
     const days = Math.floor(
-      (Date.now() - new Date(totals.lastActivity + "T12:00:00").getTime()) / 86_400_000,
+      (Date.now() - new Date(work.lastActivity + "T12:00:00").getTime()) / 86_400_000,
     );
-    const hrs = Number(totals.totalHours ?? 0).toFixed(1);
+    const hrs = Number(work.hoursTotal ?? 0).toFixed(1);
     if (days <= 21) return { colorClass: "bg-emerald-400", label: `${hrs}h · active ${days}d ago` };
     if (days <= 45) return { colorClass: "bg-yellow-400", label: `${hrs}h · last active ${days}d ago` };
     if (days <= 90) return { colorClass: "bg-orange-400", label: `${hrs}h · quiet for ${days}d` };
@@ -740,7 +754,12 @@ export default function TeamPage() {
                   pods: (podsByMemberId.get(m.id) ?? [])
                     .map((p) => (p.lit ? `${p.name} (LIT)` : p.name))
                     .join("; "),
-                  hours: Number(hoursByMemberId.get(m.id)?.totalHours ?? 0).toFixed(1),
+                  hours: Number(workByMemberId.get(m.id)?.hoursTotal ?? 0).toFixed(1),
+                  rank: TIER_LABEL[tierOf(m)],
+                  work: Number(workByMemberId.get(m.id)?.workScore ?? 0).toFixed(0),
+                  sitesShipped: workByMemberId.get(m.id)?.projectsLive ?? 0,
+                  tasksDone: workByMemberId.get(m.id)?.tasksDone ?? 0,
+                  meetings: workByMemberId.get(m.id)?.meetingsPresent ?? 0,
                 }));
                 const csv = toCsv(exportRows, [
                   { key: "name", label: "Name" },
@@ -748,8 +767,13 @@ export default function TeamPage() {
                   { key: "school", label: "School" },
                   { key: "grade", label: "Grade" },
                   { key: "role", label: "Role" },
+                  { key: "rank", label: "Rank" },
                   { key: "status", label: "Status" },
                   { key: "pods", label: "Pods" },
+                  { key: "work", label: "Work Score" },
+                  { key: "sitesShipped", label: "Sites Shipped" },
+                  { key: "tasksDone", label: "Tasks Done" },
+                  { key: "meetings", label: "Meetings" },
                   { key: "hours", label: "Hours" },
                   { key: "joinDate", label: "Join Date" },
                   { key: "slackHandle", label: "Slack" },
@@ -936,8 +960,6 @@ export default function TeamPage() {
                   const avatar = getTrackAvatarClasses(track);
                   const indicator = getMemberIndicator(member);
                   const _hasPortalAccount = !!member.authUid;
-                  const memberStrikes = strikesByMemberId.get(member.id) ?? [];
-                  const strikeCount = memberStrikes.length;
                   return (
                     <tr
                       key={member.id}
@@ -1056,13 +1078,44 @@ export default function TeamPage() {
                               <span className="text-white/50">{member.acceptedDate || "—"}</span>
                             </td>
                           );
-                          case "hours": return (
-                            <td key="hours" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                          case "rank": return (
+                            <td key="rank" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               {(() => {
-                                const n = Number(hoursByMemberId.get(member.id)?.totalHours ?? 0);
-                                return n > 0
-                                  ? <span className="font-mono text-[11px] tabular-nums text-white/80">{n.toFixed(1)}</span>
-                                  : <span className="text-white/25">—</span>;
+                                const tier = tierOf(member);
+                                if (tier === "member") {
+                                  return <span className="text-[11px] text-white/45">{member.role || "Member"}</span>;
+                                }
+                                return (
+                                  <span className={`members-chip ${
+                                    tier === "board" ? "border-[#F3E28D]/40 bg-[#F3E28D]/12 text-[#F3E28D]"
+                                      : tier === "leadership" ? "border-violet-400/35 bg-violet-400/10 text-violet-300"
+                                      : "border-sky-400/35 bg-sky-400/10 text-sky-300"
+                                  }`}>
+                                    {tier === "leadership" ? member.role : TIER_LABEL[tier]}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          );
+                          case "work": return (
+                            <td key="work" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                              {(() => {
+                                const w = workByMemberId.get(member.id);
+                                if (!w || w.noRecordedWork) return <span className="text-white/25">—</span>;
+                                const parts: string[] = [];
+                                if (w.projectsLive > 0)    parts.push(`${w.projectsLive} live`);
+                                if (w.projectsActive > 0)  parts.push(`${w.projectsActive} building`);
+                                if (w.tasksDone > 0)       parts.push(`${w.tasksDone} tasks`);
+                                if (w.meetingsPresent > 0) parts.push(`${w.meetingsPresent} mtgs`);
+                                if (w.hoursTotal > 0)      parts.push(`${Number(w.hoursTotal).toFixed(1)}h`);
+                                return (
+                                  <span className="flex items-baseline gap-2" title={`Work score ${w.workScore} — ${WORK_SCORE_EXPLAINER}`}>
+                                    <span className="font-mono text-[11px] tabular-nums text-white/85">
+                                      {Number(w.workScore).toFixed(0)}
+                                    </span>
+                                    <span className="text-[10px] text-white/40">{parts.join(" · ")}</span>
+                                  </span>
+                                );
                               })()}
                             </td>
                           );
@@ -1084,18 +1137,21 @@ export default function TeamPage() {
                           );
                           case "strikes": return (
                             <td key="strikes" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
-                              {strikeCount > 0 ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setDrawerMember(member)}
-                                  title={`${strikeCount} infraction${strikeCount === 1 ? "" : "s"} — open the member record`}
-                                  className="members-chip border-red-400/35 bg-red-400/10 text-red-300 hover:bg-red-400/20 transition-colors cursor-pointer"
-                                >
-                                  {strikeCount} strike{strikeCount === 1 ? "" : "s"}
-                                </button>
-                              ) : (
-                                <span className="text-white/25">—</span>
-                              )}
+                              {(() => {
+                                const points = workByMemberId.get(member.id)?.infractionPoints ?? 0;
+                                const standing = infractionStanding(points, thresholds);
+                                if (standing === "clear") return <span className="text-white/25">—</span>;
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDrawerMember(member)}
+                                    title={`${points} infraction point${points === 1 ? "" : "s"} — open the member record`}
+                                    className={`text-[11px] ${STANDING_STYLE[standing]} hover:underline`}
+                                  >
+                                    {STANDING_LABEL[standing]} · {points}
+                                  </button>
+                                );
+                              })()}
                             </td>
                           );
                           case "actions": return (

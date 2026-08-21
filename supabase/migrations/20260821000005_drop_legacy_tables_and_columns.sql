@@ -37,6 +37,9 @@ ALTER TABLE assignment_templates
   DROP COLUMN IF EXISTS requires_approval,
   DROP COLUMN IF EXISTS allow_multiple_completions;
 
+ALTER TABLE member_strikes
+  DROP COLUMN IF EXISTS cycle_id;          -- cycles are gone; infractions are org-level now
+
 ALTER TABLE team
   DROP COLUMN IF EXISTS pod,                            -- replaced by pod_members
   DROP COLUMN IF EXISTS last_warning_cycle_id,

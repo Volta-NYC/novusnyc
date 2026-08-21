@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Btn } from "@/components/members/ui";
 import {
   fetchAttendance, saveAttendance, updatePodMeeting,
+  subscribeInfractions, subscribeMemberStrikes, createMemberStrike,
   ATTENDANCE_STATUSES,
   type Pod, type PodMeeting, type PodMember, type AttendanceStatus,
+  type Infraction, type MemberStrike,
 } from "@/lib/members/storage";
 
 type Cell = { status: AttendanceStatus; tasksDone: number; note: string; hours: number | null };
@@ -35,6 +37,51 @@ export default function AttendanceGrid({
   const [saved, setSaved]   = useState(false);
   const [hours, setHours]   = useState(String(meeting.hours));
   const [title, setTitle]   = useState(meeting.title);
+  const [infractions, setInfractions] = useState<Infraction[]>([]);
+  const [strikes, setStrikes] = useState<MemberStrike[]>([]);
+  const [issuing, setIssuing] = useState<string | null>(null);
+
+  useEffect(() => subscribeInfractions(setInfractions), []);
+  useEffect(() => subscribeMemberStrikes(setStrikes), []);
+
+  // The infraction the grid offers for an unexcused absence. Falls back to the
+  // repeat version once someone already has one on record, so the escalation
+  // doesn't depend on anyone remembering to pick the harsher entry.
+  const absenceInfraction = useMemo(
+    () => infractions.find((i) => i.name.toLowerCase() === "unexcused absence") ?? null,
+    [infractions],
+  );
+  const repeatInfraction = useMemo(
+    () => infractions.find((i) => i.name.toLowerCase() === "repeated unexcused absence") ?? null,
+    [infractions],
+  );
+
+  const issuedFor = (memberId: string) =>
+    strikes.some((s) => s.memberId === memberId && (s.note ?? "").includes(meeting.id));
+
+  const issueAbsence = async (memberId: string, memberName: string) => {
+    const priorAbsences = strikes.filter(
+      (s) => s.memberId === memberId && /absence/i.test(s.infractionName ?? ""),
+    ).length;
+    const chosen = (priorAbsences > 0 ? repeatInfraction : absenceInfraction) ?? absenceInfraction;
+    if (!chosen) return;
+    setIssuing(memberId);
+    try {
+      await createMemberStrike({
+        memberId,
+        memberName,
+        infractionId: chosen.id,
+        infractionName: chosen.name,
+        points: chosen.points,
+        source: "attendance",
+        issuedBy: "attendance grid",
+        // The meeting id makes this idempotent: the button won't offer twice.
+        note: `${pod.name} meeting ${meeting.meetsOn} (${meeting.id})`,
+      });
+    } finally {
+      setIssuing(null);
+    }
+  };
 
   useEffect(() => {
     let live = true;
@@ -172,8 +219,8 @@ export default function AttendanceGrid({
           <table className="w-full min-w-[620px] border-collapse">
             <thead>
               <tr className="bg-white/[0.02]">
-                {["Member", "Attendance", "Tasks done", "Note"].map((h) => (
-                  <th key={h} className="border-b border-white/10 px-3 py-2 text-left text-[10px] uppercase tracking-wide text-white/40">
+                {["Member", "Attendance", "Tasks done", "Note", ""].map((h, i) => (
+                  <th key={h + i} className="border-b border-white/10 px-3 py-2 text-left text-[10px] uppercase tracking-wide text-white/40">
                     {h}
                   </th>
                 ))}
@@ -239,6 +286,21 @@ export default function AttendanceGrid({
                         onChange={(e) => set(m.memberId, { note: e.target.value })}
                         aria-label={`Note for ${nameById.get(m.memberId) ?? "member"}`}
                       />
+                    </td>
+                    <td className="px-3 py-1.5 whitespace-nowrap">
+                      {c.status === "Unexcused" && canEdit && absenceInfraction && (
+                        issuedFor(m.memberId) ? (
+                          <span className="text-[10px] text-white/30">Infraction issued</span>
+                        ) : (
+                          <button
+                            disabled={issuing === m.memberId}
+                            onClick={() => void issueAbsence(m.memberId, nameById.get(m.memberId) ?? "")}
+                            className="rounded border border-red-400/30 px-1.5 py-0.5 text-[10px] text-red-300 transition-colors hover:bg-red-400/10 disabled:opacity-50"
+                          >
+                            {issuing === m.memberId ? "…" : "Issue infraction"}
+                          </button>
+                        )
+                      )}
                     </td>
                   </tr>
                 );

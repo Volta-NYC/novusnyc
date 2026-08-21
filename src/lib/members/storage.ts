@@ -379,14 +379,14 @@ export interface MemberStrike {
   id: string;
   memberId: string;
   memberName: string;              // denormalized for display
-  cycleId: string;
   infractionId: string;            // catalog reference
   infractionName: string;          // denormalized in case the catalog row is retired
-  points: number;                  // 1 minor, 2 major, 3 severe — matches Infraction.points
+  points: number;                  // matches Infraction.points at time of issue
   issuedAt: string;
   issuedBy: string;
   note: string;
-  source: "manual" | "auto_pace";  // how it was issued (manual or by automation)
+  // "attendance" is issued straight from the grid, where the absence happened.
+  source: "manual" | "attendance";
 }
 
 // ── Handbook pages ────────────────────────────────────────────────────────────
@@ -1519,6 +1519,7 @@ export interface SiteSettings {
   portalBannerBg:           string;
   portalBannerText:         string;
   permissions:              PortalPermissions;
+  infractionThresholds:     { notice: number; warning: number; review: number };
   handbookAckRequiredAt:    string | null;
   publicStatOverrides:      Record<string, string>;
 }
@@ -1544,6 +1545,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   portalBannerBg:        "#F6B78D",
   portalBannerText:      "#0D0D0D",
   permissions:           DEFAULT_PERMISSIONS,
+  infractionThresholds:  { notice: 3, warning: 6, review: 10 },
   handbookAckRequiredAt: null,
   publicStatOverrides:    {},
 };
@@ -1579,6 +1581,7 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
     portalBannerBg:        String(r.portal_banner_bg ?? DEFAULT_SITE_SETTINGS.portalBannerBg),
     portalBannerText:      String(r.portal_banner_text ?? DEFAULT_SITE_SETTINGS.portalBannerText),
     permissions:           parsePermissions(r.permissions),
+    infractionThresholds:  parseThresholds(r.infraction_thresholds),
     handbookAckRequiredAt: r.handbook_ack_required_at ? String(r.handbook_ack_required_at) : null,
     publicStatOverrides: typeof r.public_stat_overrides === "object" && r.public_stat_overrides !== null && !Array.isArray(r.public_stat_overrides)
       ? Object.fromEntries(Object.entries(r.public_stat_overrides as Record<string, unknown>).map(([key, value]) => [key, String(value ?? "")]))
@@ -1598,6 +1601,15 @@ export function subscribeSiteSettings(callback: (s: SiteSettings) => void): () =
     .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => void fetch())
     .subscribe();
   return () => { void supabase.removeChannel(channel); };
+}
+
+function parseThresholds(value: unknown): { notice: number; warning: number; review: number } {
+  const fallback = { notice: 3, warning: 6, review: 10 };
+  if (!value || typeof value !== "object") return fallback;
+  const raw = value as Record<string, unknown>;
+  const num = (key: keyof typeof fallback) =>
+    typeof raw[key] === "number" && Number.isFinite(raw[key]) ? (raw[key] as number) : fallback[key];
+  return { notice: num("notice"), warning: num("warning"), review: num("review") };
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
@@ -1620,6 +1632,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.portalBannerBg        !== undefined) row.portal_banner_bg        = patch.portalBannerBg;
   if (patch.portalBannerText      !== undefined) row.portal_banner_text      = patch.portalBannerText;
   if (patch.permissions           !== undefined) row.permissions             = patch.permissions;
+  if (patch.infractionThresholds  !== undefined) row.infraction_thresholds   = patch.infractionThresholds;
   if (patch.handbookAckRequiredAt !== undefined) row.handbook_ack_required_at = patch.handbookAckRequiredAt;
   if (patch.publicStatOverrides      !== undefined) row.public_stat_overrides      = patch.publicStatOverrides;
   const { data, error } = await supabase.from("site_settings").update(row).eq("id", "singleton").select("id").maybeSingle();
@@ -2023,6 +2036,37 @@ export interface HoursEntry {
   occurredOn: string;
   hours: number;
   detail: string;
+}
+
+// Everything a member has done, in one row. Sources are disjoint, so nothing is
+// counted twice and no kind of work is missing.
+export interface MemberContribution {
+  memberId: string;
+  hoursTotal: number;
+  hoursMeeting: number;
+  hoursTask: number;
+  hoursProject: number;
+  meetingsPresent: number;
+  meetingsExcused: number;
+  meetingsMissed: number;
+  tasksDone: number;
+  tasksOpen: number;
+  tasksOverdue: number;
+  projectsLive: number;
+  projectsActive: number;
+  projectsTotal: number;
+  podsLed: number;
+  podsJoined: number;
+  infractionPoints: number;
+  infractionCount: number;
+  workScore: number;
+  lastActivity: string | null;
+  noRecordedWork: boolean;
+}
+
+export async function fetchMemberContributions(): Promise<MemberContribution[]> {
+  const { data } = await supabase.from("member_contributions").select("*");
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<MemberContribution>(r));
 }
 
 export interface HoursTotals {

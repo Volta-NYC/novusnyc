@@ -111,7 +111,7 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
         source: "manual",
         issuedBy: reviewerLabel,
         note: issueNote.trim(),
-      } as Omit<MemberStrike, "id" | "issuedAt">);
+      });
       setIssueStatus("done");
       setIssueOpen(false);
       setIssueInfractionId(""); setIssueNote(""); setIssuePointsOverride("");
