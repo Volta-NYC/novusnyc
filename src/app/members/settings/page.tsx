@@ -98,7 +98,7 @@ export default function SettingsPage() {
                 disabled
               />
               <p className="text-[11px] text-black/40 mt-1">
-                To change your email, contact your cycle lead.
+                To change your email, contact an admin.
               </p>
             </div>
 

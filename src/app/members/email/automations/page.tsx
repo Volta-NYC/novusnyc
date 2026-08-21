@@ -18,10 +18,6 @@ import {
   type EmailTemplate,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
-import {
-  AUTOMATIC_DEMERITS_ENABLED,
-  isAutomaticDemeritAutomation,
-} from "@/lib/members/automaticDemerits";
 
 interface NewTemplateForm {
   label: string;
@@ -161,7 +157,7 @@ export default function AutomationsPage() {
             <tbody className="divide-y divide-white/5">
               {sortedAutomations.map((a) => {
                 const linkedTemplate = templates.find((t) => t.key === a.templateKey);
-                const pausedInCode = !AUTOMATIC_DEMERITS_ENABLED && isAutomaticDemeritAutomation(a.automationId);
+                const pausedInCode = false;
                 return (
                   <tr key={a.automationId} className="hover:bg-white/4 group">
                     <td className="px-4 py-3 align-middle">

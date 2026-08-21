@@ -1,9 +1,10 @@
-import type { Business, FinanceAssignment } from "@/lib/members/storage";
+import type { Business } from "@/lib/members/storage";
 
-export type CodePrefix = "W" | "M" | "F" | "R" | "C";
+// R (reports) and C (case studies) went with the finance-assignments table.
+export type CodePrefix = "W" | "M" | "F";
 
 export interface AssignmentCode {
-  code: string;           // "W1", "M2", "F3", "R1", "C1"
+  code: string;           // "W1", "M2", "F3"
   prefix: CodePrefix;
   entityKey: string;      // unique key: "businessId-Tech", "businessId-Marketing", or assignmentId
   title: string;          // display name for tooltip
@@ -39,15 +40,6 @@ function getBusinessTracks(business: Business): Array<{ track: "Tech" | "Marketi
   }));
 }
 
-function sortAssignments(assignments: FinanceAssignment[]): FinanceAssignment[] {
-  return [...assignments].sort((a, b) => {
-    const aTime = Date.parse(String(a.createdAt ?? "")) || 0;
-    const bTime = Date.parse(String(b.createdAt ?? "")) || 0;
-    if (aTime !== bTime) return aTime - bTime;
-    return (a.topic || a.title || "").localeCompare(b.topic || b.title || "");
-  });
-}
-
 export interface GlobalCodeMaps {
   // key: "businessId-Tech", "businessId-Marketing", "businessId-Finance", or "businessId" (legacy no-track)
   businessTrackCode: Map<string, string>;
@@ -57,10 +49,7 @@ export interface GlobalCodeMaps {
   allCodes: AssignmentCode[];
 }
 
-export function computeGlobalCodes(
-  businesses: Business[],
-  financeAssignments: FinanceAssignment[],
-): GlobalCodeMaps {
+export function computeGlobalCodes(businesses: Business[]): GlobalCodeMaps {
   const businessTrackCode = new Map<string, string>();
   const assignmentCode = new Map<string, string>();
   const allCodes: AssignmentCode[] = [];
@@ -134,43 +123,13 @@ export function computeGlobalCodes(
     }
   }
 
-  // Finance assignments: Reports → R#, Case Studies → C#
-  let rCount = 0;
-  let cCount = 0;
-
-  const reports = sortAssignments(financeAssignments.filter((a) => a.type === "Report"));
-  const caseStudies = sortAssignments(financeAssignments.filter((a) => a.type === "Case Study"));
-
-  for (const a of reports) {
-    rCount++;
-    const code = `R${rCount}`;
-    assignmentCode.set(a.id, code);
-    allCodes.push({
-      code, prefix: "R", entityKey: a.id,
-      title: a.topic || a.title || "Report",
-      href: `/members/assignments/by-business`,
-      assignmentId: a.id,
-    });
-  }
-  for (const a of caseStudies) {
-    cCount++;
-    const code = `C${cCount}`;
-    assignmentCode.set(a.id, code);
-    allCodes.push({
-      code, prefix: "C", entityKey: a.id,
-      title: a.topic || a.title || "Case Study",
-      href: `/members/assignments/by-business`,
-      assignmentId: a.id,
-    });
-  }
   return { businessTrackCode, assignmentCode, allCodes };
 }
 
-/** Given a member name, return all codes assigned to them (from businesses + finance assignments). */
+/** Given a member name, return every project code assigned to them. */
 export function getMemberCodes(
   memberName: string,
   businesses: Business[],
-  financeAssignments: FinanceAssignment[],
   globalCodes: GlobalCodeMaps,
 ): AssignmentCode[] {
   const normName = memberName.trim().replace(/\s+/g, " ").toLowerCase();
@@ -214,19 +173,8 @@ export function getMemberCodes(
     }
   }
 
-  // Finance assignments
-  for (const assignment of financeAssignments) {
-    const names = (assignment.assignedMemberNames ?? []).map((n) =>
-      n.trim().replace(/\s+/g, " ").toLowerCase()
-    );
-    if (names.some((n) => n === normName || n.includes(normName) || normName.includes(n))) {
-      const codeEntry = globalCodes.allCodes.find((c) => c.assignmentId === assignment.id);
-      if (codeEntry) addCode(codeEntry);
-    }
-  }
-
-  // Sort: W first, then M, then F, then R, then C, then G; within prefix by number
-  const prefixOrder: Record<string, number> = { W: 0, M: 1, F: 2, R: 3, C: 4, G: 5 };
+  // W first, then M, then F; within a prefix, by number
+  const prefixOrder: Record<string, number> = { W: 0, M: 1, F: 2 };
   return result.sort((a, b) => {
     const pa = prefixOrder[a.prefix] ?? 9;
     const pb = prefixOrder[b.prefix] ?? 9;

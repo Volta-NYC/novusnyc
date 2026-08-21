@@ -69,7 +69,7 @@ function HandbookContent() {
         {sortedInfractions.length > 0 && (
           <div className="mt-8 pt-8 border-t border-black/8">
             <h3 className="font-display font-bold text-black/85 text-base mb-1">Infraction Reference</h3>
-            <p className="text-black/45 text-sm font-body mb-4">Demerit values assigned for each type of infraction. Current strike thresholds are shown on your Overview page.</p>
+            <p className="text-black/45 text-sm font-body mb-4">Point values assigned for each type of infraction.</p>
             <div className="rounded-xl border border-black/8 overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="bg-black/[0.03] border-b border-black/8">

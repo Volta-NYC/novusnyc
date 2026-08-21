@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { substituteEmailTokens } from "@/lib/members/cycleCompute";
+import { substituteEmailTokens } from "@/lib/members/emailTokens";
 
 export interface RenderedEmail {
   subject: string;

@@ -5,11 +5,7 @@
 // copy — callers decide whether to fall back or skip.
 
 import type { AutomationConfig, EmailTemplate } from "@/lib/members/storage";
-import {
-  AUTOMATIC_DEMERITS_ENABLED,
-  isAutomaticDemeritAutomation,
-} from "@/lib/members/automaticDemerits";
-import { substituteEmailTokens } from "@/lib/members/cycleCompute";
+import { substituteEmailTokens } from "@/lib/members/emailTokens";
 import { EMAIL } from "@/lib/mail";
 
 export interface DispatchEmailInput {
@@ -30,9 +26,6 @@ export interface DispatchEmailResult {
 
 export async function dispatchTemplatedEmail(input: DispatchEmailInput): Promise<DispatchEmailResult> {
   if (!input.toEmail) return { ok: false, error: "missing_recipient" };
-  if (!AUTOMATIC_DEMERITS_ENABLED && isAutomaticDemeritAutomation(input.automationId)) {
-    return { ok: false, error: "automatic_demerits_disabled" };
-  }
 
   const config = input.automationConfigs.find((c) => c.automationId === input.automationId);
   if (!config || !config.enabled) return { ok: false, error: "automation_disabled" };

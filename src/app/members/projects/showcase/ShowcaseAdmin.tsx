@@ -12,10 +12,10 @@ import {
 } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
 import {
-  subscribeBusinesses, subscribeTeam, subscribeAssignments, subscribeAssignmentClaims,
+  subscribeBusinesses, subscribeTeam,
   createBusiness, updateBusiness, hardDeleteBusiness,
   getSiteSettings,
-  type Business, type TeamMember, type Assignment, type AssignmentClaim,
+  type Business, type TeamMember,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { TRACK_META, TRACK_ORDER, DIVISION_PUBLIC_LABEL, type TrackDivision } from "@/lib/members/constants";
@@ -415,8 +415,6 @@ function BusinessesPageInner() {
 
   const [businesses, setBusinesses]           = useState<Business[]>([]);
   const [team, setTeam]                       = useState<TeamMember[]>([]);
-  const [assignments, setAssignments]         = useState<Assignment[]>([]);
-  const [claims, setClaims]                   = useState<AssignmentClaim[]>([]);
   const [search, setSearch]                   = useState("");
   const [openStatusPopover, setOpenStatusPopover] = useState<{ id: string; track: TrackDivision } | null>(null);
   const [modal, setModal]                     = useState<"create" | "edit" | null>(null);
@@ -515,8 +513,6 @@ function BusinessesPageInner() {
     []
   );
   useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribeAssignments(setAssignments), []);
-  useEffect(() => subscribeAssignmentClaims(setClaims), []);
   useEffect(() => {
     getSiteSettings().then((s) => { if (s.services.length > 0) setShowcaseServiceOptions(s.services); });
   }, []);
@@ -1195,22 +1191,17 @@ function BusinessesPageInner() {
   };
 
   const resolveProjectRecipients = (project: Business): { emails: string[]; unresolved: string[] } => {
-    // Use AssignmentClaims as the authoritative source: includes everyone who has ever
-    // claimed or worked on an assignment for this business (not just current active ones).
-    const bizAssignmentIds = new Set(
-      assignments.filter((a) => a.businessId === project.id).map((a) => a.id)
-    );
-    const claimerNames = claims
-      .filter((c) => bizAssignmentIds.has(c.assignmentId) && c.status !== "rejected")
-      .map((c) => (c.memberName ?? "").trim())
+    // Claims are gone; assignees on the project record are now the source of truth,
+    // falling back to the per-track team lists on older rows.
+    const assigneeNames = (project.assignees ?? [])
+      .map((id) => team.find((t) => t.id === id)?.name ?? "")
       .filter(Boolean);
 
-    // Fall back to legacy trackProjects teamMembers if no claims exist yet.
-    const fallbackNames = claimerNames.length === 0
+    const fallbackNames = assigneeNames.length === 0
       ? getTrackAssignments(project).flatMap((a) => a.members).map((v) => String(v ?? "").trim()).filter(Boolean)
       : [];
 
-    return resolveRecipientsFromAssignedNames([...new Set([...claimerNames, ...fallbackNames])]);
+    return resolveRecipientsFromAssignedNames([...new Set([...assigneeNames, ...fallbackNames])]);
   };
 
   const baseProjectEmailRecipients = emailModalProject ? resolveProjectRecipients(emailModalProject) : { emails: [], unresolved: [] };

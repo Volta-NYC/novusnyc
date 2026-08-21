@@ -10,20 +10,16 @@ import {
 import Combobox from "@/components/Combobox";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
-  subscribeBusinesses, subscribeCycles, subscribeAssignments, subscribeAssignmentClaims,
-  subscribeMemberStrikes, subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
-  subscribeApplications, subscribeFinanceAssignments, subscribeAutomationConfigs,
-  createMemberCreditAdjustment, deleteMemberCreditAdjustment,
-  type TeamMember, type Business, type FinanceAssignment, type ApplicationRecord,
-  type AutomationConfig, type Cycle, type Assignment, type AssignmentClaim,
-  type MemberStrike, type MemberCreditAdjustment, type EmailTemplate, type Infraction,
+  subscribeBusinesses, subscribeMemberStrikes,
+  subscribePods, subscribePodMembers, fetchHoursTotals,
+  subscribeApplications,
+  type TeamMember, type Business, type ApplicationRecord,
+  type MemberStrike, type Pod, type PodMember, type HoursTotals,
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 import { CLASS_GRADE_OPTIONS, gradeToClassOf } from "@/lib/grades";
 import MemberDrawer from "@/components/members/MemberDrawer";
-import { classifyMember, computeCreditLedger, computeDot, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
-import { runCycleSweep } from "@/lib/members/cycleAutomation";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
 import { EMAIL } from "@/lib/mail";
 
@@ -116,7 +112,7 @@ type MemberAssignmentLink = {
   href: string;
 };
 
-// col 0=Status(credit pace), 1=Track, 2=Name, 3=School, 4=Role
+// col 0=Status(activity), 1=Track, 2=Name, 3=School, 4=Role
 const DEFAULT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 1, dir: "asc" },
   { col: 4, dir: "asc" },
@@ -140,7 +136,9 @@ const ADMIN_COLS = [
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: 5   as number | null },
-  { key: "strikes",        label: "Strikes",         width: 72,  sortCol: null },
+  { key: "hours",          label: "Hours",           width: 74,  sortCol: null },
+  { key: "pods",           label: "Pods",            width: 150, sortCol: null },
+  { key: "strikes",        label: "Infractions",     width: 84,  sortCol: null },
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
 
@@ -207,36 +205,11 @@ function truncateCell(value: string, max = 64): string {
   return `${text.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
 }
 
-function readAssignmentNames(assignment: FinanceAssignment): string[] {
-  const raw = (assignment as { assignedMemberNames?: unknown }).assignedMemberNames;
-  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
-  if (raw && typeof raw === "object") {
-    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
-  }
-  if (typeof raw === "string") {
-    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-}
-
-function readAssignmentIds(assignment: FinanceAssignment): string[] {
-  const raw = (assignment as { assignedMemberIds?: unknown }).assignedMemberIds;
-  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
-  if (raw && typeof raw === "object") {
-    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
-  }
-  if (typeof raw === "string") {
-    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-}
-
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
   const [businesses, setBusinesses]   = useState<Business[]>([]);
-  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -250,22 +223,13 @@ export default function TeamPage() {
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   const boardMigrationRef = useRef(false);
-  // Credit-system inputs for the dot color computation + drawer.
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [creditAssignments, setCreditAssignments] = useState<Assignment[]>([]);
-  const [creditClaims, setCreditClaims] = useState<AssignmentClaim[]>([]);
+  // Hours + pods drive the member row; credits were retired.
   const [creditStrikes, setCreditStrikes] = useState<MemberStrike[]>([]);
-  const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
-  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
-  const [automationConfigs, setAutomationConfigs] = useState<AutomationConfig[]>([]);
-  const [infractionCatalog, setInfractionCatalog] = useState<Infraction[]>([]);
+  const [hoursTotals, setHoursTotals] = useState<HoursTotals[]>([]);
+  const [pods, setPods] = useState<Pod[]>([]);
+  const [podMembers, setPodMembers] = useState<PodMember[]>([]);
   const [drawerMember, setDrawerMember] = useState<TeamMember | null>(null);
-  const sweepRanRef = useRef(false);
   const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
-  const [creditSummaryMember, setCreditSummaryMember] = useState<TeamMember | null>(null);
-  const [adjPoints, setAdjPoints] = useState("0");
-  const [adjReason, setAdjReason] = useState("");
-  const [adjBusy, setAdjBusy] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [inviteAllState, setInviteAllState] = useState<"idle" | "running" | "done">("idle");
   const [inviteAllProgress, setInviteAllProgress] = useState({ sent: 0, total: 0 });
@@ -299,62 +263,20 @@ export default function TeamPage() {
   // Real-time subscriptions for all supporting data — automatic updates when database changes.
   useEffect(() => {
     const unsubscribeBusinesses = subscribeBusinesses(setBusinesses);
-    const unsubscribeCycles = subscribeCycles(setCycles);
-    const unsubscribeCreditAssignments = subscribeAssignments(setCreditAssignments);
-    const unsubscribeCreditClaims = subscribeAssignmentClaims(setCreditClaims);
     const unsubscribeCreditStrikes = subscribeMemberStrikes(setCreditStrikes);
-    const unsubscribeCreditAdjustments = subscribeMemberCreditAdjustments(setCreditAdjustments);
-    const unsubscribeEmailTemplates = subscribeEmailTemplates(setEmailTemplates);
-    const unsubscribeAutomationConfigs = subscribeAutomationConfigs(setAutomationConfigs);
-    const unsubscribeInfractionCatalog = subscribeInfractions(setInfractionCatalog);
+    const unsubscribePods = subscribePods(setPods);
+    const unsubscribePodMembers = subscribePodMembers(setPodMembers);
+    void fetchHoursTotals().then(setHoursTotals);
 
     // Cleanup subscriptions on unmount
     return () => {
       unsubscribeBusinesses();
-      unsubscribeCycles();
-      unsubscribeCreditAssignments();
-      unsubscribeCreditClaims();
       unsubscribeCreditStrikes();
-      unsubscribeCreditAdjustments();
-      unsubscribeEmailTemplates();
-      unsubscribeAutomationConfigs();
-      unsubscribeInfractionCatalog();
+      unsubscribePods();
+      unsubscribePodMembers();
     };
   }, []);
 
-  // One-shot automation sweep: when admin loads this page with full cycle data,
-  // walk every active member and run cycle reminders. Pace warnings/auto-strikes
-  // stay paused unless automatic demerits are enabled in code.
-  useEffect(() => {
-    if (sweepRanRef.current) return;
-    if (!canEdit || !user) return;
-    if (team.length === 0) return;
-    if (cycles.length === 0) return;
-    sweepRanRef.current = true;
-    void (async () => {
-      try {
-        const idToken = await getAuthToken();
-        await runCycleSweep({
-          team,
-          cycles,
-          assignments: creditAssignments,
-          claims: creditClaims,
-          strikes: creditStrikes,
-          adjustments: creditAdjustments,
-          templates: emailTemplates,
-          automationConfigs,
-          infractions: infractionCatalog,
-          idToken,
-          reviewerLabel: "system (auto)",
-        });
-      } catch {
-        // Non-fatal: never block the directory render.
-      }
-    })();
-  }, [
-    canEdit, user, team, cycles, creditAssignments, creditClaims, creditStrikes,
-    creditAdjustments, emailTemplates, automationConfigs, infractionCatalog,
-  ]);
   useEffect(() => subscribeApplications(setApplications), []);
 
   // Close the inline role-edit popover on click outside, scroll, or resize.
@@ -395,38 +317,6 @@ export default function TeamPage() {
       }
     })();
   }, [team, canEdit]);
-  useEffect(() => {
-    let mounted = true;
-    let timer: number | null = null;
-
-    if (!canEdit || !user) {
-      return subscribeFinanceAssignments(setFinanceAssignments);
-    }
-
-    const loadAssignments = async () => {
-      try {
-        const token = await getAuthToken();
-        const res = await fetch("/api/members/finance-assignments", {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json() as { assignments?: FinanceAssignment[] };
-        if (!mounted) return;
-        setFinanceAssignments(Array.isArray(data.assignments) ? data.assignments : []);
-      } catch {
-        // Keep existing in-memory assignments.
-      }
-    };
-
-    void loadAssignments();
-    timer = window.setInterval(() => { void loadAssignments(); }, 30000);
-
-    return () => {
-      mounted = false;
-      if (timer) window.clearInterval(timer);
-    };
-  }, [canEdit, user]);
 
   const copyText = async (value: string) => {
     const safe = value.trim();
@@ -563,7 +453,7 @@ export default function TeamPage() {
 
   const filtered = team.filter(member => {
     const isInactive = normalizeKey(member.status ?? "") === "inactive";
-    const isReserve = classifyMember(member).status === "reserve";
+    const isReserve = ["reserve", "alumni", "on leave"].includes(normalizeKey(member.status ?? ""));
     const isInactiveOrReserve = isInactive || isReserve;
     if (showOnlyInactive) {
       if (!isInactiveOrReserve) return false;
@@ -669,65 +559,13 @@ export default function TeamPage() {
     setField("divisions", [track]);
   };
 
-  const resolvedFinanceMemberKeysByAssignment = useMemo(() => {
-    const map = new Map<string, string[]>();
-    const teamRows = team.map((member) => {
-      const full = normalizeKey(member.name ?? "");
-      const first = normalizeKey((member.name ?? "").split(/\s+/)[0] ?? "");
-      return {
-        id: member.id,
-        full,
-        first,
-      };
-    }).filter((row) => row.full);
-    const fullById = new Map(teamRows.map((row) => [row.id, row.full]));
-
-    const resolveName = (rawName: string): string[] => {
-      const rawKey = normalizeKey(rawName ?? "");
-      if (!rawKey) return [];
-
-      // Exact full-name match takes priority.
-      const exactFull = teamRows.filter((row) => row.full === rawKey);
-      if (exactFull.length === 1) return [exactFull[0].full];
-      if (exactFull.length > 1) return exactFull.map((row) => row.full);
-
-      // If first-name match is unique, use it.
-      const firstMatches = teamRows.filter((row) => row.first && row.first === rawKey);
-      if (firstMatches.length === 1) return [firstMatches[0].full];
-
-      // Fallback: closest contains relation when unique.
-      const containsMatches = teamRows.filter((row) => row.full.includes(rawKey) || rawKey.includes(row.full));
-      if (containsMatches.length === 1) return [containsMatches[0].full];
-
-      // Unknown/ambiguous raw names still get recorded as their own key.
-      return [rawKey];
-    };
-
-    for (const assignment of financeAssignments) {
-      const keySet = new Set<string>();
-
-      for (const memberId of readAssignmentIds(assignment)) {
-        const memberKey = fullById.get(memberId);
-        if (memberKey) keySet.add(memberKey);
-      }
-
-      for (const memberName of readAssignmentNames(assignment)) {
-        for (const resolved of resolveName(memberName)) keySet.add(resolved);
-      }
-
-      map.set(assignment.id, Array.from(keySet));
-    }
-    return map;
-  }, [financeAssignments, team]);
-
   const globalCodeMaps = useMemo(
-    () => computeGlobalCodes(businesses, financeAssignments),
-    [businesses, financeAssignments]
+    () => computeGlobalCodes(businesses),
+    [businesses]
   );
 
   const _assignmentsByMemberName = useMemo(() => {
     const map = new Map<string, MemberAssignmentLink[]>();
-    const teamNameById = new Map(team.map((member) => [member.id, String(member.name ?? "").trim()]));
     const pushForMemberKey = (memberKey: string, item: Omit<MemberAssignmentLink, "code">) => {
       const key = normalizeKey(memberKey);
       if (!key) return;
@@ -811,39 +649,6 @@ export default function TeamPage() {
       }
     }
 
-    for (const assignment of financeAssignments) {
-      const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
-      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
-      const assignmentTypeLabel =
-        assignmentType === "case study" ? "Case Study"
-          : "Report";
-      const region = String(assignment.region ?? "").trim();
-      const assignmentDisplayTitle = region ? `${region} ${assignmentTypeLabel}` : assignmentTypeLabel;
-      const firstDeadlineDate = Array.isArray(assignment.deadlines)
-        ? assignment.deadlines
-          .map((entry) => (entry && typeof entry === "object" ? String((entry as { date?: string }).date ?? "").trim() : ""))
-          .find(Boolean)
-        : "";
-      const deadline = firstDeadlineDate || assignment.deadline || assignment.finalDueDate || assignment.firstDraftDueDate || assignment.interviewDueDate || "—";
-      const assignmentTeamNames = Array.from(new Set([
-        ...readAssignmentIds(assignment).map((memberId) => teamNameById.get(memberId) ?? "").filter(Boolean),
-        ...readAssignmentNames(assignment),
-      ]));
-      const entry: Omit<MemberAssignmentLink, "code"> = {
-        id: assignment.id,
-        kind: "Finance Assignment",
-        title: assignmentDisplayTitle,
-        topic: "",
-        teamNames: assignmentTeamNames,
-        codePrefix,
-        status: assignment.status || "—",
-        deadline,
-        href: `/members/projects`,
-      };
-      for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
-        pushForMemberKey(memberKey, entry);
-      }
-    }
 
     // Assign global codes using globalCodeMaps
     for (const [key, items] of Array.from(map.entries())) {
@@ -884,7 +689,7 @@ export default function TeamPage() {
       );
     }
     return map;
-  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment, team, globalCodeMaps]);
+  }, [businesses, globalCodeMaps]);
 
 
   const sorted = [...filtered].sort((a, b) => {
@@ -894,8 +699,6 @@ export default function TeamPage() {
     }
     return 0;
   });
-
-  const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
 
   const strikesByMemberId = useMemo(() => {
     const map = new Map<string, MemberStrike[]>();
@@ -907,41 +710,39 @@ export default function TeamPage() {
     return map;
   }, [creditStrikes]);
 
-  // Dot color is driven by the credit-system pace computation. Falls back to a
-  // gray "no cycle" state when there's no active cycle to anchor the math.
+  const hoursByMemberId = useMemo(
+    () => new Map(hoursTotals.map((h) => [h.memberId, h])),
+    [hoursTotals],
+  );
+
+  const podsByMemberId = useMemo(() => {
+    const map = new Map<string, { name: string; lit: boolean }[]>();
+    for (const pm of podMembers) {
+      if (pm.leftAt) continue;
+      const pod = pods.find((p) => p.id === pm.podId);
+      if (!pod) continue;
+      const list = map.get(pm.memberId) ?? [];
+      list.push({ name: pod.name, lit: pm.role === "lit" });
+      map.set(pm.memberId, list);
+    }
+    return map;
+  }, [podMembers, pods]);
+
+  // Recency, not pace. Credits had a per-cycle target to measure against;
+  // hours don't, so the useful signal is whether someone is still active.
   const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
-    const memberClaims = creditClaims.filter(
-      (c) => c.memberId === member.id && (!activeCycle || c.cycleId === activeCycle.id),
+    const totals = hoursByMemberId.get(member.id);
+    if (!totals || !totals.lastActivity) {
+      return { colorClass: "bg-gray-400", label: "No hours logged yet" };
+    }
+    const days = Math.floor(
+      (Date.now() - new Date(totals.lastActivity + "T12:00:00").getTime()) / 86_400_000,
     );
-    const memberAdjustments = creditAdjustments.filter(
-      (a) => a.memberId === member.id && (!activeCycle || a.cycleId === activeCycle.id),
-    );
-    const credits = new Map<string, number>();
-    for (const a of creditAssignments) credits.set(a.id, a.credits);
-    const ledger = computeCreditLedger({
-      claims: memberClaims,
-      adjustments: memberAdjustments,
-      assignmentCredits: credits,
-    });
-    const classification = classifyMember(member);
-    const primaryTrack = pickPrimaryTrack(member);
-    const target = activeCycle && classification.cycleRole
-      ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
-      : 0;
-    const dot = computeDot({
-      cycle: activeCycle,
-      member,
-      earnedCredits: ledger.total,
-      targetCredits: target,
-      hasAnyClaims: memberClaims.length > 0,
-    });
-    const colorClass =
-      dot.color === "green" ? "bg-emerald-400"
-        : dot.color === "yellow" ? "bg-yellow-400"
-        : dot.color === "orange" ? "bg-orange-400"
-        : dot.color === "red" ? "bg-red-500"
-        : "bg-gray-400";
-    return { colorClass, label: dot.label };
+    const hrs = Number(totals.totalHours ?? 0).toFixed(1);
+    if (days <= 21) return { colorClass: "bg-emerald-400", label: `${hrs}h · active ${days}d ago` };
+    if (days <= 45) return { colorClass: "bg-yellow-400", label: `${hrs}h · last active ${days}d ago` };
+    if (days <= 90) return { colorClass: "bg-orange-400", label: `${hrs}h · quiet for ${days}d` };
+    return { colorClass: "bg-red-500", label: `${hrs}h · nothing for ${days}d` };
   };
 
   const assignmentQuickViewRestTeam = useMemo(() => {
@@ -1103,8 +904,8 @@ export default function TeamPage() {
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
                           title={`${indicator.label} · Click for progress summary`}
-                          onClick={() => setCreditSummaryMember(member)}
-                          aria-label={`View credit progress for ${member.name}`}
+                          onClick={() => setDrawerMember(member)}
+                          aria-label={`Open ${member.name}’s record`}
                         />
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${avatar.bgClass} ${avatar.textClass}`}>
                           <TrackAvatarIcon track={track} />
@@ -1207,8 +1008,8 @@ export default function TeamPage() {
                                   type="button"
                                   className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
                                   title={`${indicator.label} · Click for progress summary`}
-                                  onClick={() => setCreditSummaryMember(member)}
-                                  aria-label={`View credit progress for ${member.name}`}
+                                  onClick={() => setDrawerMember(member)}
+                                  aria-label={`Open ${member.name}’s record`}
                                 />
                                 <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${avatar.bgClass} ${avatar.textClass}`}>
                                   <TrackAvatarIcon track={track} />
@@ -1298,13 +1099,39 @@ export default function TeamPage() {
                               <span className="text-white/50">{member.acceptedDate || "—"}</span>
                             </td>
                           );
+                          case "hours": return (
+                            <td key="hours" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                              {(() => {
+                                const n = Number(hoursByMemberId.get(member.id)?.totalHours ?? 0);
+                                return n > 0
+                                  ? <span className="font-mono text-[11px] tabular-nums text-white/80">{n.toFixed(1)}</span>
+                                  : <span className="text-white/25">—</span>;
+                              })()}
+                            </td>
+                          );
+                          case "pods": return (
+                            <td key="pods" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                              {(() => {
+                                const list = podsByMemberId.get(member.id) ?? [];
+                                if (list.length === 0) return <span className="text-white/25">—</span>;
+                                return (
+                                  <span className="text-[11px] text-white/70" title={list.map((p) => p.name).join(", ")}>
+                                    {list.map((p) => p.name.replace(/^Novus /, "")).join(", ")}
+                                    {list.some((p) => p.lit) && (
+                                      <span className="ml-1 text-[9px] uppercase tracking-wide text-[#F3E28D]">LIT</span>
+                                    )}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          );
                           case "strikes": return (
                             <td key="strikes" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
                               {strikeCount > 0 ? (
                                 <button
                                   type="button"
                                   onClick={() => setDrawerMember(member)}
-                                  title={`${strikeCount} strike${strikeCount === 1 ? "" : "s"} — click to view in member drawer`}
+                                  title={`${strikeCount} infraction${strikeCount === 1 ? "" : "s"} — open the member record`}
                                   className="members-chip border-red-400/35 bg-red-400/10 text-red-300 hover:bg-red-400/20 transition-colors cursor-pointer"
                                 >
                                   {strikeCount} strike{strikeCount === 1 ? "" : "s"}
@@ -1389,172 +1216,6 @@ export default function TeamPage() {
         )}
         <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
           <Btn variant="ghost" onClick={() => setAssignmentQuickView(null)}>Close</Btn>
-        </div>
-      </Modal>
-
-      <Modal
-        open={!!creditSummaryMember}
-        onClose={() => setCreditSummaryMember(null)}
-        title={`Credit Progress · ${creditSummaryMember?.name ?? ""}`}
-      >
-        {creditSummaryMember && (() => {
-          const m = creditSummaryMember;
-          const memberClaims = creditClaims.filter(
-            (c) => c.memberId === m.id && (!activeCycle || c.cycleId === activeCycle.id),
-          );
-          const memberAdjustments = creditAdjustments.filter(
-            (a) => a.memberId === m.id && (!activeCycle || a.cycleId === activeCycle.id),
-          );
-          const credits = new Map<string, number>();
-          for (const a of creditAssignments) credits.set(a.id, a.credits);
-          const ledger = computeCreditLedger({ claims: memberClaims, adjustments: memberAdjustments, assignmentCredits: credits });
-          const classification = classifyMember(m);
-          const primaryTrack = pickPrimaryTrack(m);
-          const target = activeCycle && classification.cycleRole
-            ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
-            : 0;
-          const dot = computeDot({ cycle: activeCycle, member: m, earnedCredits: ledger.total, targetCredits: target, hasAnyClaims: memberClaims.length > 0 });
-          const dotColorClass = dot.color === "green" ? "bg-emerald-400" : dot.color === "yellow" ? "bg-yellow-400" : dot.color === "orange" ? "bg-orange-400" : dot.color === "red" ? "bg-red-500" : "bg-gray-400";
-          const pendingClaims = memberClaims.filter((c) => c.status === "claimed" || c.status === "In Progress" || c.status === "Submitted");
-          const approvedClaims = memberClaims.filter((c) => c.status === "Approved");
-          return (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <span className={`h-3 w-3 rounded-full flex-shrink-0 ${dotColorClass}`} />
-                <span className="text-sm text-white/80">{dot.label}</span>
-              </div>
-              {activeCycle ? (
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-white tabular-nums">{ledger.total}</p>
-                    <p className="text-[10px] text-white/55 mt-0.5">Credits earned</p>
-                  </div>
-                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-white tabular-nums">{target}</p>
-                    <p className="text-[10px] text-white/55 mt-0.5">Target</p>
-                  </div>
-                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className={`text-lg font-bold tabular-nums ${dot.checkInsBehind > 0 ? "text-red-400" : "text-emerald-400"}`}>{dot.checkInsBehind > 0 ? `-${dot.checkInsBehind}` : "On track"}</p>
-                    <p className="text-[10px] text-white/55 mt-0.5">Check-ins behind</p>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-white/45">No active cycle — credit tracking is paused.</p>
-              )}
-              {memberClaims.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-white/70 mb-1.5">Claims this cycle ({memberClaims.length})</p>
-                  <div className="max-h-[180px] overflow-y-auto space-y-1 pr-1">
-                    {memberClaims.map((claim) => {
-                      const assignment = creditAssignments.find((a) => a.id === claim.assignmentId);
-                      return (
-                        <div key={claim.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/8 bg-[#0F1014] px-3 py-2">
-                          <span className="text-xs text-white/70 truncate">{assignment?.title ?? claim.assignmentId}</span>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-white/50">{credits.get(claim.assignmentId) ?? "?"} credits</span>
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${claim.status === "Approved" ? "bg-emerald-500/15 text-emerald-300" : claim.status === "rejected" ? "bg-red-500/15 text-red-300" : "bg-yellow-500/15 text-yellow-300"}`}>
-                              {claim.status}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] text-white/35 mt-1.5">{approvedClaims.length} approved · {pendingClaims.length} pending</p>
-                </div>
-              )}
-              {memberClaims.length === 0 && activeCycle && (
-                <p className="text-xs text-white/45">No claims submitted this cycle.</p>
-              )}
-
-              {/* Manual adjustments */}
-              {canEdit && activeCycle && (
-                <div className="border-t border-white/8 pt-3 space-y-2">
-                  <p className="text-xs font-semibold text-white/70">Manual credit adjustment</p>
-                  {memberAdjustments.length > 0 && (
-                    <div className="space-y-1">
-                      {memberAdjustments.map((adj) => (
-                        <div key={adj.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/8 bg-[#0F1014] px-3 py-2">
-                          <span className={`text-xs font-mono font-bold ${adj.points >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                            {adj.points >= 0 ? "+" : ""}{adj.points}
-                          </span>
-                          <span className="text-xs text-white/60 flex-1 truncate">{adj.reason}</span>
-                          <button
-                            type="button"
-                            onClick={() => void ask(async () => { await deleteMemberCreditAdjustment(adj.id); }, `Remove adjustment "${adj.reason}"?`)}
-                            className="members-icon-btn members-icon-btn-danger h-5 w-5 text-[10px] flex-shrink-0"
-                            title="Remove adjustment"
-                          >✕</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {[+1, +2, +5, -1, -2, -3].map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setAdjPoints(String(n))}
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border transition-colors ${
-                          adjPoints === String(n)
-                            ? n > 0
-                              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-                              : "border-red-400/40 bg-red-400/10 text-red-300"
-                            : "border-white/12 text-white/45 hover:border-white/25 hover:text-white/70"
-                        }`}
-                      >
-                        {n > 0 ? `+${n}` : n}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={adjPoints}
-                      onChange={(e) => setAdjPoints(e.target.value)}
-                      placeholder="±pts"
-                      className="w-20 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
-                    />
-                    <input
-                      type="text"
-                      value={adjReason}
-                      onChange={(e) => setAdjReason(e.target.value)}
-                      placeholder="Reason…"
-                      className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
-                    />
-                    <Btn
-                      size="sm"
-                      variant="secondary"
-                      disabled={adjBusy || !adjReason.trim() || !adjPoints.trim() || adjPoints === "0"}
-                      onClick={async () => {
-                        if (!activeCycle || !adjReason.trim()) return;
-                        setAdjBusy(true);
-                        try {
-                          await createMemberCreditAdjustment({
-                            memberId: m.id,
-                            memberName: m.name,
-                            cycleId: activeCycle.id,
-                            points: Number(adjPoints) || 0,
-                            reason: adjReason.trim(),
-                            createdBy: user?.email ?? "admin",
-                          });
-                          setAdjPoints("0");
-                          setAdjReason("");
-                        } finally {
-                          setAdjBusy(false);
-                        }
-                      }}
-                    >
-                      Add
-                    </Btn>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-        <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => { setCreditSummaryMember(null); setAdjPoints("0"); setAdjReason(""); }}>Close</Btn>
         </div>
       </Modal>
 

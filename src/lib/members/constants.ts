@@ -1,7 +1,7 @@
 // Shared constants for the members portal.
 // Import from here rather than redefining per-page.
 
-import type { CycleTrack } from "@/lib/members/storage";
+import type { TrackName } from "@/lib/members/storage";
 
 // ── TRACK STYLING ─────────────────────────────────────────────────────────────
 // Chip + dot styles for Tech / Marketing / Finance / General.
@@ -29,14 +29,14 @@ export const TRACK_META: Record<TrackDivision, {
 };
 
 // Includes "General" for assignment-marketplace contexts.
-export const TRACK_DOT: Record<CycleTrack, string> = {
+export const TRACK_DOT: Record<TrackName, string> = {
   Tech:      "bg-n-purple",
   Marketing: "bg-n-orange",
   Finance:   "bg-n-yellow",
   General:   "bg-gray-400",
 };
 
-export const TRACK_PILL: Record<CycleTrack, string> = {
+export const TRACK_PILL: Record<TrackName, string> = {
   Tech:      "bg-n-purple/30 text-n-ink border-n-purple/50",
   Marketing: "bg-n-orange/30 text-n-ink border-n-orange/50",
   Finance:   "bg-n-yellow/40 text-n-ink border-n-yellow/60",
@@ -47,7 +47,7 @@ export const TRACK_PILL: Record<CycleTrack, string> = {
  * Dark-surface variant. On #0D0F14 a pastel fill with n-ink text disappears,
  * so the pastel becomes the text over a translucent tint of itself instead.
  */
-export const TRACK_PILL_DARK: Record<CycleTrack, string> = {
+export const TRACK_PILL_DARK: Record<TrackName, string> = {
   Tech:      "border-n-purple/30 bg-n-purple/10 text-n-purple",
   Marketing: "border-n-orange/30 bg-n-orange/10 text-n-orange",
   Finance:   "border-n-yellow/30 bg-n-yellow/10 text-n-yellow",
@@ -58,14 +58,14 @@ export const TRACK_PILL_DARK: Record<CycleTrack, string> = {
 // All four tracks use a solid filled background so selected vs. unselected is
 // clearly distinguishable. General uses gray-200 (not gray-100) for sufficient
 // contrast against the white unselected pill.
-export const TRACK_PILL_BASE: Record<CycleTrack, string> = {
+export const TRACK_PILL_BASE: Record<TrackName, string> = {
   Tech:      "bg-n-purple/30 text-n-ink",
   Marketing: "bg-n-orange/30 text-n-ink",
   Finance:   "bg-n-yellow/40 text-n-ink",
   General:   "bg-gray-200 text-gray-800",
 };
 
-export const ALL_TRACKS: CycleTrack[] = ["General", "Tech", "Marketing", "Finance"];
+export const ALL_TRACKS: TrackName[] = ["General", "Tech", "Marketing", "Finance"];
 
 // ── DIVISION LABELS ───────────────────────────────────────────────────────────
 // Human-readable labels for public-facing track names.

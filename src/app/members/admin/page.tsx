@@ -25,11 +25,8 @@ const EXPORT_OPTIONS = [
   { key: "businesses",          label: "Businesses" },
   { key: "assignments",         label: "Assignments" },
   { key: "assignmentCatalog",   label: "Assignment Catalog" },
-  { key: "assignmentClaims",    label: "Assignment Claims" },
   { key: "applicants",          label: "Applicants" },
   { key: "bids",                label: "BID Directory" },
-  { key: "cycles",              label: "Cycles" },
-  { key: "creditAdjustments",   label: "Credit Adjustments" },
   { key: "emailTemplates",      label: "Email Templates" },
   { key: "calendarEvents",      label: "Calendar Events" },
   { key: "auditLogs",           label: "Audit Logs" },
@@ -965,7 +962,7 @@ function HandbookTab() {
     getHandbookPage("credit-infraction-policy")
       .then((p) => {
         setPage(p);
-        setTitle(p?.title ?? "Credit & Infraction Policy");
+        setTitle(p?.title ?? "Conduct & Infraction Policy");
         setContent(p?.content ?? "");
       })
       .finally(() => setLoading(false));
@@ -1022,7 +1019,7 @@ function HandbookTab() {
   return (
     <div className="space-y-4">
       <div className="max-w-2xl space-y-4">
-        <Card title="Credit & Infraction Policy" subtitle={page?.updatedAt ? `Last saved: ${new Date(page.updatedAt).toLocaleString()}${page.updatedBy ? ` by ${page.updatedBy}` : ""}` : "Edit the handbook page shown to members. Members must acknowledge this page on first login."}>
+        <Card title="Conduct & Infraction Policy" subtitle={page?.updatedAt ? `Last saved: ${new Date(page.updatedAt).toLocaleString()}${page.updatedBy ? ` by ${page.updatedBy}` : ""}` : "Edit the handbook page shown to members. Members must acknowledge this page on first login."}>
           <div className="space-y-3">
             <div>
               <label htmlFor="handbook-page-title" className="block text-xs text-white/50 font-body mb-1">Page Title</label>
@@ -1032,7 +1029,7 @@ function HandbookTab() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#F6B78D]/50"
-                placeholder="Credit & Infraction Policy"
+                placeholder="Conduct & Infraction Policy"
               />
             </div>
             <div>

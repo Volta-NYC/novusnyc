@@ -270,70 +270,11 @@ export interface Project {
   updatedAt: string;
 }
 
-export type FinanceAssignmentType = "Report" | "Case Study";
-export type FinanceAssignmentStatus = "Upcoming" | "Ongoing" | "Completed";
-
-export interface FinanceAssignment {
-  id: string;
-  seedKey?: string;
-  type: FinanceAssignmentType;
-  title: string;
-  topic: string;
-  teamLabel: string;
-  region: string;
-  assignedMemberNames: string[]; // may be undefined on legacy rows
-  assignedMemberIds?: string[];  // may be undefined on legacy rows
-  deadlines?: Array<{
-    label: string;
-    date: string;
-  }>;
-  deadline?: string;
-  interviewDueDate?: string;
-  firstDraftDueDate?: string;
-  finalDueDate?: string;
-  deliverableUrl?: string;
-  status: FinanceAssignmentStatus;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // ── Credit cycle types ────────────────────────────────────────────────────────
 //
 // A Cycle defines a credit-earning period (typically a quarter). Targets are
 // per-track × per-role. Senior Associate and Board are intentionally excluded
 // from the credit/strike system — they run it.
-
-export type CycleTrack = "Tech" | "Marketing" | "Finance" | "General";
-export type CycleRole = "Analyst" | "Senior Analyst" | "Associate";
-
-export interface CycleCreditTargets {
-  baseRequirement: number;
-  promotionTargets: {
-    Analyst: number;
-    "Senior Analyst": number;
-    Associate: number;
-  };
-}
-
-export interface CycleStrikeThresholds {
-  warning: number;       // points to first strike
-  demotion: number;      // points to second strike
-  reserve: number;       // points to third strike
-}
-
-export interface Cycle {
-  id: string;
-  name: string;                       // e.g. "Summer 2026"
-  startDate: string;                  // ISO date (YYYY-MM-DD)
-  endDate: string;                    // ISO date (YYYY-MM-DD)
-  active: boolean;                    // exactly one cycle is active at a time
-  pacingPercentPerCheckin: number;    // default 20 — drives biweekly nudge + dot
-  creditTargets: CycleCreditTargets;
-  strikeThresholds: CycleStrikeThresholds;
-  createdAt: string;
-  updatedAt: string;
-}
 
 // ── Infraction catalog ────────────────────────────────────────────────────────
 // One row per *type* of infraction. Issued instances live separately on a
@@ -412,93 +353,9 @@ export interface AutomationConfig {
   updatedBy: string;
 }
 
-// ── Assignment templates (admin-managed blueprints) ───────────────────────────
-// Templates are reusable blueprints for creating assignments. They have no
-// business_id and no status — they are never "open" assignments themselves.
-
-export interface AssignmentTemplate {
-  id: string;
-  title: string;
-  description: string;             // HTML (rich-text)
-  type?: string;                   // null | 'Report' | 'Case Study'
-  track: CycleTrack;
-  credits: number;
-  creditsMax?: number;
-  creditsNote?: string;
-  difficulty: string;
-  estimatedHours: number;
-  minRole: CycleRole;
-  capacity: number;
-  requiresApproval?: boolean;
-  applicationRequired?: boolean;    // true = member must contact board before claiming
-  allowMultipleCompletions?: boolean;
-  deadlineOffsetDays?: number | null; // null clears offset when switching to recurring
-  // Recurring check-in support
-  recurringEnabled?: boolean;      // true = periodic check-ins with per-check-in credits
-  checkinIntervalDays?: number | null; // null clears when switching away from recurring
-  maxDurationDays?: number | null;     // null clears when switching away from recurring
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-}
-
-// ── Active assignments (unified: Tech + Marketing + Finance) ──────────────────
-
-export type AssignmentDifficulty = string; // admin-configurable, free-form
-
-export type AssignmentStatus =
-  | "Open"          // visible in catalog; accepting new claims
-  | "Active"        // at least one claim in progress
-  | "Under Review"  // at least one submission pending admin approval
-  | "Completed"     // all work done and credits awarded
-  | "Archived";     // manually hidden; history preserved; hard-deletable by admins
-
-export interface Assignment {
-  id: string;
-  title: string;
-  description: string;             // HTML (rich-text)
-  type?: string;                   // null | 'Report' | 'Case Study' (Finance)
-  track: CycleTrack;
-  businessId?: string;             // required for active assignments
-  status: AssignmentStatus;
-  assignedMemberIds?: string[];
-  assignedMemberNames?: string[];
-  deadlines?: Array<{ label: string; date: string }> | null; // hard deadline dates; null clears them
-  deliverableUrl?: string;
-  credits: number;
-  creditsMax?: number;
-  creditsNote?: string;
-  difficulty: AssignmentDifficulty;
-  estimatedHours: number;
-  minRole: CycleRole;
-  capacity: number;
-  priority?: boolean;
-  requiresApproval?: boolean;       // false = auto-approve on member submit; default true
-  applicationRequired?: boolean;    // true = member must contact board before claiming; admin alerted on claim
-  allowMultipleCompletions?: boolean; // true = same member can claim again after Approved; default false
-  projectGroupId?: string;          // set when assignment belongs to a standalone project group
-  cycleId?: string;
-  templateId?: string;             // template used to create this assignment
-  // Deadline system: 'hard' = admin-set date in deadlines[]; 'offset' = days after member claims
-  deadlineType?: "hard" | "offset"; // default 'hard'
-  deadlineOffsetDays?: number | null; // null clears the offset when switching to hard/recurring
-  // Recurring check-in support (credits awarded per approved check-in)
-  recurringEnabled?: boolean;
-  checkinIntervalDays?: number | null; // null clears when switching away from recurring
-  maxDurationDays?: number | null;     // null clears when switching away from recurring
-  // Finance-specific
-  region?: string;
-  teamLabel?: string;
-  seedKey?: string;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-  primaryTrack?: CycleTrack;
-  visibleTracks?: CycleTrack[];
-  deadline?: string;
-}
+// Work tracks. Named CycleTrack while credits existed; the cycles are gone but
+// the three tracks still label divisions and project work.
+export type TrackName = "Tech" | "Marketing" | "Finance" | "General";
 
 // ── Project groups (standalone non-business project containers) ───────────────
 // Businesses already serve as their own group via business_id on assignments.
@@ -514,38 +371,6 @@ export interface ProjectGroup {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
-}
-
-export type AssignmentClaimStatus =
-  | "claimed"
-  | "In Progress"
-  | "Submitted"
-  | "Approved"
-  | "rejected";
-
-export interface AssignmentClaim {
-  id: string;
-  assignmentId: string;
-  memberId: string;
-  memberName: string;              // denormalized for display
-  cycleId: string;
-  status: AssignmentClaimStatus;
-  deliverableUrl?: string | null;
-  submissionNotes?: string | null;
-  claimedAt: string;
-  submittedAt?: string | null;
-  approvedAt?: string;
-  rejectedAt?: string;
-  rejectReason?: string;
-  // Awarded credits — for one-time claims: set at approval. For recurring: cumulative total.
-  creditsAwarded?: number;
-  approvedBy?: string;
-  // Offset deadline: calculated at claim time when assignment.deadlineType = 'offset'
-  dueDate?: string;               // ISO date string
-  // Recurring check-in tracking
-  checkinsApproved?: number;      // how many check-ins have been approved so far
-  totalCreditsEarned?: number;    // cumulative credits from all check-ins
-  nextCheckinDue?: string;        // ISO date string for next required check-in
 }
 
 // ── Member strikes + credit adjustments ───────────────────────────────────────
@@ -564,17 +389,6 @@ export interface MemberStrike {
   issuedBy: string;
   note: string;
   source: "manual" | "auto_pace";  // how it was issued (manual or by automation)
-}
-
-export interface MemberCreditAdjustment {
-  id: string;
-  memberId: string;
-  memberName: string;
-  cycleId: string;
-  points: number;                  // can be negative
-  reason: string;
-  createdAt: string;
-  createdBy: string;
 }
 
 // ── Handbook pages ────────────────────────────────────────────────────────────
@@ -704,40 +518,6 @@ export interface AuditLogEntry {
 // ── STATUS NORMALIZERS ────────────────────────────────────────────────────────
 // The DB may contain legacy lowercase values written before the types were
 // formalised. Normalise on read so all callers see canonical Title-Case values.
-
-function normalizeAssignmentStatus(raw: unknown): AssignmentStatus {
-  const v = String(raw ?? "").trim();
-  if (v === "Open") return "Open";
-  if (v === "Active") return "Active";
-  if (v === "Under Review") return "Under Review";
-  if (v === "Completed") return "Completed";
-  if (v === "Archived") return "Archived";
-  return "Open";
-}
-
-function normalizeClaimStatus(raw: unknown): AssignmentClaimStatus {
-  const v = String(raw ?? "").trim().toLowerCase().replace(/_/g, " ");
-  if (v === "in progress") return "In Progress";
-  if (v === "submitted") return "Submitted";
-  if (v === "approved") return "Approved";
-  if (v === "rejected") return "rejected";
-  return "claimed";
-}
-
-function assignmentFromRow(r: Record<string, unknown>): Assignment {
-  const a = fromRow<Assignment>(r);
-  a.status = normalizeAssignmentStatus(r.status);
-  // New table uses `track`; old catalog used `primary_track` — normalise both.
-  if (!a.track && a.primaryTrack) a.track = a.primaryTrack;
-  if (!a.track) a.track = "Tech";
-  return a;
-}
-
-function claimFromRow(r: Record<string, unknown>): AssignmentClaim {
-  const c = fromRow<AssignmentClaim>(r);
-  c.status = normalizeClaimStatus(r.status);
-  return c;
-}
 
 // ── INTERNAL HELPERS ──────────────────────────────────────────────────────────
 
@@ -1069,12 +849,6 @@ export const subscribeTeam =
 export const subscribeProjects =
   makeSubscriber<Project>("projects", (r) => fromRow<Project>(r));
 
-export const subscribeFinanceAssignments =
-  makeSubscriber<FinanceAssignment>("finance_assignments", (r) => fromRow<FinanceAssignment>(r));
-
-export const subscribeCycles =
-  makeSubscriber<Cycle>("cycles", (r) => fromRow<Cycle>(r));
-
 export const subscribeInfractions =
   makeSubscriber<Infraction>("infractions", (r) => fromRow<Infraction>(r));
 
@@ -1096,25 +870,11 @@ export const subscribeAutomationConfigs =
     updatedBy:    String(r.updated_by ?? ""),
   }));
 
-// Legacy subscriber retained for the old catalog page (will be removed once
-// the catalog page is fully migrated).
-export const subscribeAssignments =
-  makeSubscriber<Assignment>("assignments", assignmentFromRow, { excludeSoftDeleted: true });
-
-export const subscribeAssignmentClaims =
-  makeSubscriber<AssignmentClaim>("assignment_claims", claimFromRow);
-
-export const subscribeAssignmentTemplates =
-  makeSubscriber<AssignmentTemplate>("assignment_templates", (r) => fromRow<AssignmentTemplate>(r));
-
 export const subscribeProjectGroups =
   makeSubscriber<ProjectGroup>("project_groups", (r) => fromRow<ProjectGroup>(r));
 
 export const subscribeMemberStrikes =
   makeSubscriber<MemberStrike>("member_strikes", (r) => fromRow<MemberStrike>(r));
-
-export const subscribeMemberCreditAdjustments =
-  makeSubscriber<MemberCreditAdjustment>("member_credit_adjustments", (r) => fromRow<MemberCreditAdjustment>(r));
 
 export const subscribeAuditLogs =
   makeSubscriber<AuditLogEntry>("audit_logs", (r) => fromRow<AuditLogEntry>(r));
@@ -1348,31 +1108,6 @@ export async function deleteProject(id: string): Promise<void> {
 
 // ── Finance Assignments ──────────────────────────────────────────────────────
 
-export async function createFinanceAssignment(
-  data: Omit<FinanceAssignment, "id" | "createdAt" | "updatedAt">
-): Promise<void> {
-  const id = genId();
-  const now = nowISO();
-  const { error: financeInsertError } = await supabase.from("finance_assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (financeInsertError) throw new Error(financeInsertError.message);
-  await writeAuditLog({ action: "create", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function updateFinanceAssignment(
-  id: string,
-  data: Partial<FinanceAssignment>
-): Promise<void> {
-  const { error: financeUpdateError } = await supabase.from("finance_assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (financeUpdateError) throw new Error(financeUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteFinanceAssignment(id: string): Promise<void> {
-  const { error: financeDeleteError } = await supabase.from("finance_assignments").delete().eq("id", id);
-  if (financeDeleteError) throw new Error(financeDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "financeAssignments", recordId: id });
-}
-
 // ── UserProfiles (admin only) ─────────────────────────────────────────────────
 
 export function subscribeUserProfiles(callback: (items: UserProfile[]) => void): (() => void) {
@@ -1490,16 +1225,6 @@ export async function getProjectsList(): Promise<Project[]> {
   return (data ?? []).map((r) => fromRow<Project>(r as Record<string, unknown>));
 }
 
-export async function getFinanceAssignmentsList(): Promise<FinanceAssignment[]> {
-  const { data } = await supabase.from("finance_assignments").select("*");
-  return (data ?? []).map((r) => fromRow<FinanceAssignment>(r as Record<string, unknown>));
-}
-
-export async function getCyclesList(): Promise<Cycle[]> {
-  const { data } = await supabase.from("cycles").select("*");
-  return (data ?? []).map((r) => fromRow<Cycle>(r as Record<string, unknown>));
-}
-
 export async function getInfractionsList(): Promise<Infraction[]> {
   const { data } = await supabase.from("infractions").select("*");
   return (data ?? []).map((r) => fromRow<Infraction>(r as Record<string, unknown>));
@@ -1551,19 +1276,9 @@ export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
 
 // getAssignmentsList is defined above in the unified assignments section.
 
-export async function getAssignmentClaimsList(): Promise<AssignmentClaim[]> {
-  const { data } = await supabase.from("assignment_claims").select("*");
-  return (data ?? []).map((r) => claimFromRow(r as Record<string, unknown>));
-}
-
 export async function getMemberStrikesList(): Promise<MemberStrike[]> {
   const { data } = await supabase.from("member_strikes").select("*");
   return (data ?? []).map((r) => fromRow<MemberStrike>(r as Record<string, unknown>));
-}
-
-export async function getMemberCreditAdjustmentsList(): Promise<MemberCreditAdjustment[]> {
-  const { data } = await supabase.from("member_credit_adjustments").select("*");
-  return (data ?? []).map((r) => fromRow<MemberCreditAdjustment>(r as Record<string, unknown>));
 }
 
 export async function getApplicationsList(): Promise<ApplicationRecord[]> {
@@ -1920,34 +1635,6 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
 
 // ── Cycles ────────────────────────────────────────────────────────────────────
 
-export async function createCycle(data: Omit<Cycle, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
-  const id = genId();
-  const now = nowISO();
-  await supabase.from("cycles").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  await writeAuditLog({ action: "create", collection: "cycles", recordId: id, details: { fields: Object.keys(data) } });
-  return id;
-}
-
-export async function updateCycle(id: string, data: Partial<Cycle>): Promise<void> {
-  await supabase.from("cycles").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "cycles", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteCycle(id: string): Promise<void> {
-  await supabase.from("cycles").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "cycles", recordId: id });
-}
-
-export async function activateCycleExclusive(id: string, allCycleIds: string[]): Promise<void> {
-  const now = nowISO();
-  await supabase.from("cycles").update({ active: true,  updated_at: now }).eq("id", id);
-  const others = allCycleIds.filter((c) => c !== id);
-  if (others.length) {
-    await supabase.from("cycles").update({ active: false, updated_at: now }).in("id", others);
-  }
-  await writeAuditLog({ action: "update", collection: "cycles", recordId: id, details: { activated: true, deactivated: others } });
-}
-
 // ── Infractions ───────────────────────────────────────────────────────────────
 
 export async function createInfraction(data: Omit<Infraction, "id" | "createdAt" | "updatedAt">): Promise<void> {
@@ -2030,78 +1717,8 @@ export async function updateAutomationConfig(automationId: string, patch: {
 
 // ── Assignments (new unified table) ──────────────────────────────────────────
 
-export async function createAssignment(data: Omit<Assignment, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
-  const id = genId();
-  const now = nowISO();
-  const { error: assignmentInsertError } = await supabase.from("assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (assignmentInsertError) throw new Error(assignmentInsertError.message);
-  await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { title: data.title, track: data.track } });
-  return id;
-}
-
-export async function updateAssignment(id: string, data: Partial<Assignment>): Promise<void> {
-  const { error: assignmentUpdateError } = await supabase.from("assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (assignmentUpdateError) throw new Error(assignmentUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function archiveAssignment(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("assignments")
-    .update({ status: "Archived", updated_at: nowISO() })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: ["status"], note: "archived" } });
-}
-
-export async function hardDeleteAssignment(id: string): Promise<void> {
-  const { error } = await supabase.from("assignments").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
-}
-
 // Legacy soft-delete kept for existing callers; prefer archiveAssignment.
-export async function deleteAssignment(id: string): Promise<void> {
-  const { error: assignmentDeleteError } = await supabase
-    .from("assignments")
-    .update({ deleted_at: nowISO(), updated_at: nowISO() })
-    .eq("id", id);
-  if (assignmentDeleteError) throw new Error(assignmentDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
-}
-
-export async function getAssignmentsList(): Promise<Assignment[]> {
-  const { data } = await supabase.from("assignments").select("*").is("deleted_at", null);
-  return (data ?? []).map((r) => assignmentFromRow(r as Record<string, unknown>));
-}
-
 // ── Assignment templates ──────────────────────────────────────────────────────
-
-export async function createAssignmentTemplate(data: Omit<AssignmentTemplate, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
-  const id = genId();
-  const now = nowISO();
-  const { error: templateInsertError } = await supabase.from("assignment_templates").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (templateInsertError) throw new Error(templateInsertError.message);
-  await writeAuditLog({ action: "create", collection: "assignmentTemplates", recordId: id, details: { title: data.title, track: data.track } });
-  return id;
-}
-
-export async function updateAssignmentTemplate(id: string, data: Partial<AssignmentTemplate>): Promise<void> {
-  const { error: templateUpdateError } = await supabase.from("assignment_templates").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (templateUpdateError) throw new Error(templateUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "assignmentTemplates", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteAssignmentTemplate(id: string): Promise<void> {
-  const { error: templateDeleteError } = await supabase.from("assignment_templates").delete().eq("id", id);
-  if (templateDeleteError) throw new Error(templateDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "assignmentTemplates", recordId: id });
-}
-
-export async function getAssignmentTemplatesList(): Promise<AssignmentTemplate[]> {
-  const { data } = await supabase.from("assignment_templates").select("*");
-  return (data ?? []).map((r) => fromRow<AssignmentTemplate>(r as Record<string, unknown>));
-}
 
 // ── Project groups ────────────────────────────────────────────────────────────
 
@@ -2130,56 +1747,9 @@ export async function deleteProjectGroup(id: string): Promise<void> {
 
 // ── Assignment claims ─────────────────────────────────────────────────────────
 
-export async function createAssignmentClaim(data: Omit<AssignmentClaim, "id">): Promise<string | null> {
-  const id = genId();
-  const { error: claimInsertError } = await supabase.from("assignment_claims").insert(toRow({ ...data, id }));
-  if (claimInsertError) throw new Error(claimInsertError.message);
-  await writeAuditLog({ action: "create", collection: "assignmentClaims", recordId: id, details: { assignmentId: data.assignmentId, memberId: data.memberId } });
-  return id;
-}
-
-export async function updateAssignmentClaim(id: string, data: Partial<AssignmentClaim>): Promise<void> {
-  const { error: claimUpdateError } = await supabase.from("assignment_claims").update(toRow(data as Record<string, unknown>)).eq("id", id);
-  if (claimUpdateError) throw new Error(claimUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "assignmentClaims", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteAssignmentClaim(id: string): Promise<void> {
-  const { error: claimDeleteError } = await supabase.from("assignment_claims").delete().eq("id", id);
-  if (claimDeleteError) throw new Error(claimDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "assignmentClaims", recordId: id });
-}
-
 // Approve a recurring check-in. Awards credits for this period, increments the
 // check-in counter, sets the next due date, and resets the claim to In Progress
 // so the member can submit the following period.
-export async function approveCheckinClaim(
-  claim: AssignmentClaim,
-  creditsPerCheckin: number,
-  checkinIntervalDays: number,
-  approvedBy: string,
-): Promise<void> {
-  const newCheckinsApproved = (claim.checkinsApproved ?? 0) + 1;
-  const newTotalCredits = (claim.totalCreditsEarned ?? 0) + creditsPerCheckin;
-  const nextDue = new Date();
-  nextDue.setDate(nextDue.getDate() + checkinIntervalDays);
-  await updateAssignmentClaim(claim.id, {
-    status: "In Progress",
-    checkinsApproved: newCheckinsApproved,
-    totalCreditsEarned: newTotalCredits,
-    // creditsAwarded tracks cumulative total so the credit ledger picks it up
-    creditsAwarded: newTotalCredits,
-    nextCheckinDue: nextDue.toISOString().slice(0, 10),
-    approvedBy,
-    approvedAt: new Date().toISOString(),
-    // clear deliverable/notes/submittedAt for next check-in
-    // (null is sent to DB as NULL; undefined is skipped by toRow and leaves stale values)
-    deliverableUrl: null,
-    submissionNotes: null,
-    submittedAt: null,
-  });
-}
-
 // ── Assignment updates (admin → member messages) ──────────────────────────────
 
 export const subscribeAssignmentUpdates =
@@ -2224,20 +1794,6 @@ export async function clearMemberStrikes(strikeIds: string[]): Promise<void> {
 }
 
 // ── Member credit adjustments ─────────────────────────────────────────────────
-
-export async function createMemberCreditAdjustment(data: Omit<MemberCreditAdjustment, "id" | "createdAt">): Promise<string | null> {
-  const id = genId();
-  const { error: creditInsertError } = await supabase.from("member_credit_adjustments").insert(toRow({ ...data, id, createdAt: nowISO() }));
-  if (creditInsertError) throw new Error(creditInsertError.message);
-  await writeAuditLog({ action: "create", collection: "memberCreditAdjustments", recordId: id, details: { memberId: data.memberId, points: data.points } });
-  return id;
-}
-
-export async function deleteMemberCreditAdjustment(id: string): Promise<void> {
-  const { error: creditDeleteError } = await supabase.from("member_credit_adjustments").delete().eq("id", id);
-  if (creditDeleteError) throw new Error(creditDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "memberCreditAdjustments", recordId: id });
-}
 
 // ── Handbook pages ────────────────────────────────────────────────────────────
 
