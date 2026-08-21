@@ -75,9 +75,8 @@ export default function SectionTabs({
 }
 
 export const PROJECT_GROUP_TABS: SectionTab[] = [
-  { href: "/members/projects", label: "Businesses", exact: true },
-  { href: "/members/projects/discovery", label: "Discovery" },
-  { href: "/members/projects/showcase", label: "Showcase" },
+  { href: "/members/projects", label: "Tracker", exact: true },
+  { href: "/members/projects/showcase", label: "Public Showcase" },
 ];
 
 export const MEMBERS_GROUP_TABS: SectionTab[] = [
@@ -97,15 +96,3 @@ export const EMAIL_TABS: SectionTab[] = [
   { href: "/members/email/automations", label: "Automations" },
 ];
 
-// Assignments: by-project grouped view, flat list, review queue, templates.
-export const ASSIGNMENTS_TABS: SectionTab[] = [
-  { href: "/members/assignments/catalog", label: "All Assignments" },
-  { href: "/members/assignments/by-project", label: "By Project" },
-  { href: "/members/assignments/for-review", label: "For Review" },
-  { href: "/members/assignments/templates", label: "Create from Template" },
-];
-
-export const WORK_TABS: SectionTab[] = [
-  { href: "/members/work", label: "My Work", exact: true },
-  { href: "/members/work/catalog", label: "Assignment Catalog" },
-];

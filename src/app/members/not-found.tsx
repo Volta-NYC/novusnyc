@@ -20,7 +20,7 @@ export default function MembersNotFound() {
             Go to Overview
           </Link>
           <Link
-            href="/members/work/catalog"
+            href="/members/pods"
             className="rounded-full border border-black/15 text-black/70 font-display font-bold text-sm px-6 py-2.5 hover:border-black/35 transition-colors"
           >
             Browse Work

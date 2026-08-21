@@ -458,7 +458,10 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
     const status = mapBusinessStatusToShowcase(row.projectStatus);
     const desc = normalizeDescription(row.showcaseDescription);
-    const url = asText(row.showcaseUrl);
+    // Read the tracker's own fields first so the public link follows the project
+    // rather than a separately-maintained copy. A launched domain wins over a
+    // preview; showcaseUrl remains only as a fallback for un-migrated rows.
+    const url = asText(row.liveUrl) || asText(row.previewUrl) || asText(row.showcaseUrl);
     const imageUrl = resolvePublicShowcaseImageUrl(id, row);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
@@ -626,7 +629,10 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
     const services = asStringArray(row.showcaseServices);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
     const status = mapBusinessStatusToShowcase(row.projectStatus);
-    const url = asText(row.showcaseUrl);
+    // Read the tracker's own fields first so the public link follows the project
+    // rather than a separately-maintained copy. A launched domain wins over a
+    // preview; showcaseUrl remains only as a fallback for un-migrated rows.
+    const url = asText(row.liveUrl) || asText(row.previewUrl) || asText(row.showcaseUrl);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();

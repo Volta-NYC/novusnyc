@@ -46,6 +46,20 @@ export interface BID {
   updatedAt: string;
 }
 
+// Tech pipeline. Draft Ready requires previewUrl and Live requires liveUrl —
+// enforced at the transition so the list stays honest without anyone policing it.
+export const TECH_STATUSES = [
+  "Backlog", "Assigned", "Building", "Draft Ready", "With Client", "Live", "On Hold", "Dropped",
+] as const;
+export type TechStatus = (typeof TECH_STATUSES)[number];
+
+export const TECH_PIPELINE: TechStatus[] = [
+  "Backlog", "Assigned", "Building", "Draft Ready", "With Client", "Live",
+];
+
+export const TECH_PRIORITIES = ["High", "Medium", "Maybe"] as const;
+export type TechPriority = (typeof TECH_PRIORITIES)[number];
+
 export interface Business {
   id: string;
   name: string;
@@ -60,6 +74,18 @@ export interface Business {
   lat?: number;
   lng?: number;
   website: string;
+  // ── Tech project tracker ──────────────────────────────────────────────────
+  // Three URLs because two columns previously carried three meanings between
+  // them, and launching a site overwrote its preview link.
+  clientUrl?: string;     // what the business had before Novus
+  previewUrl?: string;    // the Vercel deploy
+  liveUrl?: string;       // launched on its own domain — the "real domains" list
+  techStatus?: TechStatus;
+  techPriority?: TechPriority;
+  assignees?: string[];   // team member ids
+  hoursLogged?: number;   // entered by hand by a tech lead; optional by design
+  targetDate?: string;
+  lastTouchedAt?: string;
   activeServices?: string[];   // legacy field
   projectStatus:
     | "Ongoing"
@@ -2262,4 +2288,270 @@ export async function createMemberAcknowledgment(data: Omit<MemberAcknowledgment
     { onConflict: "member_id,page_slug" }
   );
   if (ackUpsertError) throw new Error(ackUpsertError.message);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PODS — marketing & finance
+//
+// A pod is a standing group with one or more LITs, meeting on its own cadence.
+// Membership is many-to-many: the recruitment page offers "choose a focus, or
+// work across all four", and a member can lead one pod while sitting in another.
+// ═════════════════════════════════════════════════════════════════════════════
+
+export interface Pod {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  cadenceDays: number;
+  // Prefill values for the LIT — editable per pod, overridable per meeting or
+  // task. Nothing about hours is fixed in code.
+  defaultMeetingHours: number;
+  defaultTaskHours: number;
+  status: "Active" | "Archived";
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type PodRole = "lit" | "member";
+
+export interface PodMember {
+  id: string;
+  podId: string;
+  memberId: string;
+  role: PodRole;
+  joinedAt: string;
+  leftAt?: string | null;
+}
+
+export interface PodMeeting {
+  id: string;
+  podId: string;
+  meetsOn: string;
+  title: string;
+  hours: number;
+  notes: string;
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export const ATTENDANCE_STATUSES = ["Present", "Excused", "Unexcused"] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+
+export interface PodAttendance {
+  id: string;
+  meetingId: string;
+  memberId: string;
+  status: AttendanceStatus;
+  tasksDone: number;
+  hours?: number | null;   // null inherits the meeting's hours
+  note: string;
+  markedBy?: string;
+  markedAt?: string;
+}
+
+export const subscribePods         = makeSubscriber<Pod>("pods");
+export const subscribePodMembers   = makeSubscriber<PodMember>("pod_members");
+export const subscribePodMeetings  = makeSubscriber<PodMeeting>("pod_meetings");
+
+export async function updatePod(id: string, patch: Partial<Pod>): Promise<void> {
+  const { error } = await supabase.from("pods")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pods", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+export async function setPodMembers(
+  podId: string,
+  members: { memberId: string; role: PodRole }[],
+): Promise<void> {
+  const { data: existing } = await supabase.from("pod_members")
+    .select("*").eq("pod_id", podId).is("left_at", null);
+  const rows = (existing ?? []) as Record<string, unknown>[];
+  const wanted = new Map(members.map((m) => [m.memberId, m.role]));
+
+  // Departures keep their row with left_at set — service letters need the history.
+  const departing = rows.filter((r) => !wanted.has(String(r.member_id)));
+  if (departing.length) {
+    const { error } = await supabase.from("pod_members")
+      .update({ left_at: nowISO() })
+      .in("id", departing.map((r) => String(r.id)));
+    if (error) throw new Error(error.message);
+  }
+
+  const current = new Map(rows.map((r) => [String(r.member_id), r]));
+  const inserts: Record<string, unknown>[] = [];
+  for (const [memberId, role] of wanted) {
+    const row = current.get(memberId);
+    if (!row) {
+      inserts.push({ id: genId(), pod_id: podId, member_id: memberId, role, joined_at: nowISO() });
+    } else if (String(row.role) !== role) {
+      const { error } = await supabase.from("pod_members").update({ role }).eq("id", String(row.id));
+      if (error) throw new Error(error.message);
+    }
+  }
+  if (inserts.length) {
+    const { error } = await supabase.from("pod_members").upsert(inserts, { onConflict: "pod_id,member_id" });
+    if (error) throw new Error(error.message);
+  }
+  await writeAuditLog({ action: "update", collection: "pod_members", recordId: podId, details: { count: members.length } });
+}
+
+export async function createPodMeeting(
+  podId: string,
+  meetsOn: string,
+  title: string,
+  hours: number,
+): Promise<string> {
+  const id = genId();
+  const { error } = await supabase.from("pod_meetings")
+    .insert(toRow({ id, podId, meetsOn, title, hours, notes: "", createdAt: nowISO() }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "pod_meetings", recordId: id, details: { podId, meetsOn } });
+  return id;
+}
+
+export async function updatePodMeeting(id: string, patch: Partial<PodMeeting>): Promise<void> {
+  const { error } = await supabase.from("pod_meetings").update(toRow(patch)).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deletePodMeeting(id: string): Promise<void> {
+  const { error } = await supabase.from("pod_meetings").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "pod_meetings", recordId: id });
+}
+
+export async function fetchAttendance(meetingId: string): Promise<PodAttendance[]> {
+  const { data } = await supabase.from("pod_attendance").select("*").eq("meeting_id", meetingId);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<PodAttendance>(r));
+}
+
+// The whole grid saves in one call — a LIT fills a column and presses save once.
+export async function saveAttendance(
+  meetingId: string,
+  cells: { memberId: string; status: AttendanceStatus; tasksDone: number; hours?: number | null; note?: string }[],
+): Promise<void> {
+  const existing = await fetchAttendance(meetingId);
+  const byMember = new Map(existing.map((c) => [c.memberId, c.id]));
+  const rows = cells.map((c) => toRow({
+    id: byMember.get(c.memberId) ?? genId(),
+    meetingId,
+    memberId: c.memberId,
+    status: c.status,
+    tasksDone: c.tasksDone,
+    hours: c.hours ?? null,
+    note: c.note ?? "",
+    markedAt: nowISO(),
+  }));
+  const { error } = await supabase.from("pod_attendance")
+    .upsert(rows, { onConflict: "meeting_id,member_id" });
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pod_attendance", recordId: meetingId, details: { cells: cells.length } });
+}
+
+// ── Hours ────────────────────────────────────────────────────────────────────
+// Hours replaced credits. The ledger is a view over meetings, pod tasks, tech
+// projects and manual adjustments, so there is no total to keep in sync.
+
+export interface HoursEntry {
+  memberId: string;
+  source: "meeting" | "task" | "project" | "adjustment";
+  department: string;
+  occurredOn: string;
+  hours: number;
+  detail: string;
+}
+
+export interface HoursTotals {
+  memberId: string;
+  totalHours: number;
+  meetingHours: number | null;
+  taskHours: number | null;
+  projectHours: number | null;
+  adjustmentHours: number | null;
+  firstActivity: string | null;
+  lastActivity: string | null;
+}
+
+export async function fetchHoursTotals(): Promise<HoursTotals[]> {
+  const { data } = await supabase.from("member_hours_totals").select("*");
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<HoursTotals>(r));
+}
+
+export async function fetchMemberHours(memberId: string, from?: string, to?: string): Promise<HoursEntry[]> {
+  let q = supabase.from("member_hours_ledger").select("*").eq("member_id", memberId);
+  if (from) q = q.gte("occurred_on", from);
+  if (to)   q = q.lte("occurred_on", to);
+  const { data } = await q.order("occurred_on", { ascending: false });
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<HoursEntry>(r));
+}
+
+export async function createHoursAdjustment(
+  memberId: string, hours: number, reason: string, occurredOn: string,
+): Promise<void> {
+  const id = genId();
+  const { error } = await supabase.from("hours_adjustments")
+    .insert(toRow({ id, memberId, hours, reason, occurredOn, createdAt: nowISO() }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "hours_adjustments", recordId: id, details: { memberId, hours } });
+}
+
+// ── Pod assignments ──────────────────────────────────────────────────────────
+// The assignments table survives the marketplace, scoped to a pod and pushed to
+// named people instead of posted to a catalog for anyone to claim.
+
+export interface PodAssignment {
+  id: string;
+  podId: string;
+  title: string;
+  description: string;
+  status: "Open" | "Done";
+  assignedMemberIds: string[];
+  assignedMemberNames: string[];
+  dueDate?: string | null;
+  hours?: number | null;
+  completedAt?: string | null;
+  completedBy?: string | null;
+  createdAt?: string;
+}
+
+export function subscribePodAssignments(callback: (items: PodAssignment[]) => void): () => void {
+  return makeSubscriber<PodAssignment>("assignments")((rows) =>
+    callback(rows.filter((r) => !!r.podId)));
+}
+
+export async function createPodAssignment(
+  data: Omit<PodAssignment, "id" | "createdAt" | "completedAt" | "completedBy">,
+): Promise<void> {
+  const id = genId();
+  const { error } = await supabase.from("assignments")
+    .insert(toRow({ ...data, id, type: "Task", track: "Marketing", createdAt: nowISO(), updatedAt: nowISO() }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { podId: data.podId, title: data.title } });
+}
+
+export async function updatePodAssignment(id: string, patch: Partial<PodAssignment>): Promise<void> {
+  const { error } = await supabase.from("assignments")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function completePodAssignment(id: string, done: boolean): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from("assignments").update({
+    status: done ? "Done" : "Open",
+    completed_at: done ? nowISO() : null,
+    completed_by: done ? (user?.email ?? null) : null,
+    updated_at: nowISO(),
+  }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { completed: done } });
+}
+
+export async function deletePodAssignment(id: string): Promise<void> {
+  const { error } = await supabase.from("assignments").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
 }

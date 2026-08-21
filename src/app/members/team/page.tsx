@@ -838,7 +838,7 @@ export default function TeamPage() {
         codePrefix,
         status: assignment.status || "—",
         deadline,
-        href: `/members/assignments/by-business`,
+        href: `/members/projects`,
       };
       for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
         pushForMemberKey(memberKey, entry);
