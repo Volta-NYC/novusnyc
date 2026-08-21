@@ -1887,6 +1887,10 @@ export const subscribeChapters = makeSubscriber<Chapter>("chapters");
 export interface Pod {
   id: string;
   chapterId: string;
+  // Marketing exists for the businesses we take on as clients; finance and
+  // operations keep Novus running. Shown on the pod so nobody has to infer it.
+  track: "Marketing" | "Finance";
+  serves: "clients" | "novus";
   name: string;
   slug: string;
   description: string;

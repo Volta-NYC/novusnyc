@@ -105,6 +105,7 @@ export default function PodDetailPage() {
         title={pod.name}
         subtitle={[
           chapters.find((c) => c.id === pod.chapterId)?.name,
+          pod.serves === "clients" ? "for our clients" : "for Novus itself",
           lits.length ? `led by ${lits.join(", ")}` : "no LIT assigned yet",
         ].filter(Boolean).join(" · ")}
         action={canRun && tab === "meetings"

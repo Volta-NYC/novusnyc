@@ -207,7 +207,14 @@ export default function TracksTabbed() {
                     <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                       {track.subdepartments.map((department) => (
                         <div key={department.title}>
-                          <h4 className="font-display font-bold text-n-ink text-sm">{department.title}</h4>
+                          <div className="flex flex-wrap items-baseline gap-x-2">
+                            <h4 className="font-display font-bold text-n-ink text-sm">{department.title}</h4>
+                            {"serves" in department && department.serves ? (
+                              <span className={`font-body text-[11px] font-semibold uppercase tracking-wide ${preview.text}`}>
+                                {department.serves}
+                              </span>
+                            ) : null}
+                          </div>
                           <p className="font-body mt-1 text-sm leading-relaxed text-n-ink/75">{department.desc}</p>
                         </div>
                       ))}

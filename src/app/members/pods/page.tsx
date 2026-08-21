@@ -101,6 +101,14 @@ export default function PodsPage() {
                 {iLead && <Badge label="lit" />}
               </div>
 
+              <span className={`-mt-1.5 w-fit rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide ${
+                pod.serves === "clients"
+                  ? "border-[#F6B78D]/35 bg-[#F6B78D]/10 text-[#F6B78D]"
+                  : "border-[#BEA2BA]/35 bg-[#BEA2BA]/10 text-[#BEA2BA]"
+              }`}>
+                {pod.serves === "clients" ? "For our clients" : "For Novus itself"}
+              </span>
+
               <p className="line-clamp-2 text-[11px] leading-relaxed text-white/40">
                 {pod.description}
               </p>

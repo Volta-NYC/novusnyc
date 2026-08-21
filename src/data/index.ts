@@ -22,22 +22,29 @@ export const MARKETING_TRACK: TrackName = "Marketing & Strategy";
  * Marketing's four focus areas. Applicants choose one; the same titles and
  * descriptions render on /join, so both surfaces read from here.
  */
+// `serves` is the distinction people kept having to ask about: some of this work
+// is for the businesses we take on as clients, and some of it keeps Novus itself
+// running. Shown on the join page so nobody has to infer it from the title.
 export const MARKETING_SUBTRACKS = [
   {
+    title: "Small Business Outreach",
+    serves: "For our clients",
+    desc: "Find and connect with small businesses that could benefit from Novus's marketing and web services.",
+  },
+  {
     title: "Novus Social Media & Branding",
-    desc: "Design social posts, manage Novus's public-facing platforms, and create promotional materials for partnering small businesses.",
+    serves: "For our clients",
+    desc: "Create promotional materials and social content for partnering small businesses, and manage Novus's own public-facing platforms.",
   },
   {
     title: "Grants & Funding",
-    desc: "Research funding opportunities, create grant templates, support grant writing, track impact, and help develop financial plans for growth.",
+    serves: "For Novus itself",
+    desc: "Research funding opportunities, build grant templates, support grant writing, and track the impact funders ask about — all of it funding Novus's own work.",
   },
   {
     title: "Novus Ambassadors",
+    serves: "For Novus itself",
     desc: "Build relationships with schools, student organizations, pipeline programs, and community partners to recruit future Novus members.",
-  },
-  {
-    title: "Small Business Outreach",
-    desc: "Find and connect with small businesses that could benefit from Novus's marketing and web services.",
   },
 ] as const;
 
@@ -381,6 +388,7 @@ export const joinTracks = [
   {
     icon: BarChartIcon,
     name: "Finance & Operations",
+    description: "Internal work: the money, filings and reporting that keep Novus running. This track supports the organization rather than client businesses.",
     color: "border-n-yellow/65 bg-n-yellow/8",
     tagColor: "bg-n-yellow/50 text-n-ink",
     iconColor: "text-amber-600",
@@ -426,7 +434,7 @@ export const joinTracks = [
     tagColor: "bg-n-orange/25 text-n-ink",
     iconColor: "text-n-orange-dark",
     iconBg: "bg-n-orange/25",
-    description: "Marketing is organized into four subdepartments. Members can focus on one area or contribute across all four.",
+    description: "Four subdepartments, split between work for the small businesses we take on as clients and work that keeps Novus running. Focus on one area or contribute across all four.",
     subdepartments: MARKETING_SUBTRACKS,
     skills: [
       "Experience with social media or content creation",
@@ -472,7 +480,7 @@ export const joinFaqs = [
   },
   {
     q: "How do Marketing subdepartments work?",
-    a: "Marketing has four focus areas: Novus Social Media & Branding, Grants & Funding, Novus Ambassadors, and Small Business Outreach. Members can focus on one area or contribute across all four, depending on their interests and team needs.",
+    a: "Marketing has four focus areas, split by who the work is for. Small Business Outreach and Novus Social Media & Branding serve the small businesses we take on as clients. Grants & Funding and Novus Ambassadors support Novus itself — funding the organization and recruiting the next group of students. Members can focus on one area or contribute across all four.",
   },
   {
     q: "Can I choose my track?",
