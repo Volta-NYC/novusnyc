@@ -1918,40 +1918,50 @@ export async function updatePod(id: string, patch: Partial<Pod>): Promise<void> 
   await writeAuditLog({ action: "update", collection: "pods", recordId: id, details: { fields: Object.keys(patch) } });
 }
 
-export async function setPodMembers(
-  podId: string,
-  members: { memberId: string; role: PodRole }[],
+// Single-row membership edits. One click in the UI should be one write, not a
+// diff of the whole roster.
+export async function addPodMember(
+  podId: string, memberId: string, role: PodRole = "member",
 ): Promise<void> {
-  const { data: existing } = await supabase.from("pod_members")
-    .select("*").eq("pod_id", podId).is("left_at", null);
-  const rows = (existing ?? []) as Record<string, unknown>[];
-  const wanted = new Map(members.map((m) => [m.memberId, m.role]));
+  const { error } = await supabase.from("pod_members").upsert(
+    toRow({ id: genId(), podId, memberId, role, joinedAt: nowISO(), leftAt: null }),
+    { onConflict: "pod_id,member_id" },
+  );
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "pod_members", recordId: `${podId}/${memberId}`, details: { role } });
+}
 
-  // Departures keep their row with left_at set — service letters need the history.
-  const departing = rows.filter((r) => !wanted.has(String(r.member_id)));
-  if (departing.length) {
-    const { error } = await supabase.from("pod_members")
-      .update({ left_at: nowISO() })
-      .in("id", departing.map((r) => String(r.id)));
-    if (error) throw new Error(error.message);
+export async function setPodMemberRole(
+  podId: string, memberId: string, role: PodRole,
+): Promise<void> {
+  const { error } = await supabase.from("pod_members")
+    .update({ role }).eq("pod_id", podId).eq("member_id", memberId);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pod_members", recordId: `${podId}/${memberId}`, details: { role } });
+}
+
+// Someone who has attended a meeting keeps their row with left_at set, because
+// their hours are still on the service letter. Someone added by mistake and
+// removed before any meeting leaves nothing behind.
+export async function removePodMember(podId: string, memberId: string): Promise<void> {
+  const { data: meetingRows } = await supabase.from("pod_meetings").select("id").eq("pod_id", podId);
+  const meetingIds = ((meetingRows ?? []) as { id: string }[]).map((m) => m.id);
+
+  let hasHistory = false;
+  if (meetingIds.length) {
+    const { count } = await supabase.from("pod_attendance")
+      .select("id", { count: "exact", head: true })
+      .eq("member_id", memberId).in("meeting_id", meetingIds);
+    hasHistory = (count ?? 0) > 0;
   }
 
-  const current = new Map(rows.map((r) => [String(r.member_id), r]));
-  const inserts: Record<string, unknown>[] = [];
-  for (const [memberId, role] of wanted) {
-    const row = current.get(memberId);
-    if (!row) {
-      inserts.push({ id: genId(), pod_id: podId, member_id: memberId, role, joined_at: nowISO() });
-    } else if (String(row.role) !== role) {
-      const { error } = await supabase.from("pod_members").update({ role }).eq("id", String(row.id));
-      if (error) throw new Error(error.message);
-    }
-  }
-  if (inserts.length) {
-    const { error } = await supabase.from("pod_members").upsert(inserts, { onConflict: "pod_id,member_id" });
-    if (error) throw new Error(error.message);
-  }
-  await writeAuditLog({ action: "update", collection: "pod_members", recordId: podId, details: { count: members.length } });
+  const { error } = hasHistory
+    ? await supabase.from("pod_members").update({ left_at: nowISO() })
+        .eq("pod_id", podId).eq("member_id", memberId)
+    : await supabase.from("pod_members").delete()
+        .eq("pod_id", podId).eq("member_id", memberId);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "pod_members", recordId: `${podId}/${memberId}`, details: { keptHistory: hasHistory } });
 }
 
 export async function createPodMeeting(

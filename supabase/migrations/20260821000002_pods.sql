@@ -79,14 +79,10 @@ INSERT INTO pods (id, name, slug, description, sort_order) VALUES
    'Build relationships with schools, student organizations, pipeline programs, and community partners to recruit future Novus members.', 4)
 ON CONFLICT (id) DO NOTHING;
 
--- Only the old Grants pod maps cleanly. Old "Outreach" meant outreach/fundraising
--- rather than business recruitment, and Reports is retired — both are left for a
--- manual pass rather than guessed at here.
-INSERT INTO pod_members (id, pod_id, member_id, role)
-SELECT 'pm_' || substr(md5('pod_grants' || t.id), 1, 20), 'pod_grants', t.id, 'member'
-  FROM team t
- WHERE t.deleted_at IS NULL AND lower(trim(coalesce(t.pod,''))) = 'grants'
-ON CONFLICT (pod_id, member_id) DO NOTHING;
+-- No membership is seeded. The old Outreach/Grants/Reports pods were finance-only
+-- and don't map onto these four — old "Outreach" meant fundraising rather than
+-- business recruitment, and Reports is retired — so rosters are built by hand
+-- from the Roster tab rather than guessed at here.
 
 -- ── Pod-scoped authorisation ─────────────────────────────────────────────────
 -- A LIT is not a junior admin: it is full rights over its own pods and nothing

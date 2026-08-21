@@ -7,7 +7,8 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, Btn, Badge, Empty, SkeletonRows } from "@/components/members/ui";
 import {
   subscribePods, subscribePodMembers, subscribePodMeetings, subscribeTeam,
-  createPodMeeting, deletePodMeeting, updatePod, setPodMembers,
+  createPodMeeting, deletePodMeeting, updatePod,
+  addPodMember, removePodMember, setPodMemberRole,
   type Pod, type PodMember, type PodMeeting, type TeamMember, type PodRole,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -197,44 +198,32 @@ function Roster({
   nameById: Map<string, string>;
 }) {
   const [query, setQuery] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const current = useMemo(
+  const inPod = useMemo(
     () => new Map(roster.map((m) => [m.memberId, m.role as PodRole])),
     [roster],
   );
 
-  const commit = async (next: Map<string, PodRole>) => {
-    setBusy(true);
-    try {
-      await setPodMembers(pod.id, [...next].map(([memberId, role]) => ({ memberId, role })));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const toggle = async (id: string) => {
-    const next = new Map(current);
-    if (next.has(id)) next.delete(id); else next.set(id, "member");
-    await commit(next);
-  };
-
-  const setRole = async (id: string, role: PodRole) => {
-    const next = new Map(current);
-    next.set(id, role);
-    await commit(next);
+  const run = async (memberId: string, fn: () => Promise<void>) => {
+    setBusy(memberId);
+    setError(null);
+    try { await fn(); }
+    catch (err) { setError(err instanceof Error ? err.message : "That didn't save. Try again."); }
+    finally { setBusy(null); }
   };
 
   const q = query.trim().toLowerCase();
   const candidates = team
     .filter((t) => t.status !== "Alumni" && t.status !== "Inactive")
-    .filter((t) => !q || t.name.toLowerCase().includes(q))
+    .filter((t) => !q || t.name.toLowerCase().includes(q) || (t.email ?? "").toLowerCase().includes(q))
     .sort((a, b) => {
-      const aOn = current.has(a.id), bOn = current.has(b.id);
+      const aOn = inPod.has(a.id), bOn = inPod.has(b.id);
       if (aOn !== bOn) return aOn ? -1 : 1;
       return a.name.localeCompare(b.name);
     })
-    .slice(0, q ? 50 : 80);
+    .slice(0, q ? 60 : 90);
 
   return (
     <div className="max-w-2xl">
@@ -244,54 +233,78 @@ function Roster({
             <span key={m.id} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/80">
               {nameById.get(m.memberId) ?? "Unknown"}
               {m.role === "lit" && <Badge label="lit" />}
+              {canEdit && (
+                <button
+                  onClick={() => void run(m.memberId, () => removePodMember(pod.id, m.memberId))}
+                  disabled={busy === m.memberId}
+                  aria-label={`Remove ${nameById.get(m.memberId) ?? "member"} from ${pod.name}`}
+                  className="text-white/30 transition-colors hover:text-red-400"
+                >✕</button>
+              )}
             </span>
           ))}
         </div>
       )}
 
+      {error && <p role="alert" className="mb-2 text-[11px] text-red-400">{error}</p>}
+
       {canEdit ? (
         <>
           <input
             className="mb-2 w-full rounded-md border border-white/10 bg-[#0F1014] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none"
-            placeholder="Filter people…"
+            placeholder="Search everyone by name or email…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
           <div className="max-h-[26rem] overflow-y-auto rounded-md border border-white/10 bg-[#0F1014]">
             {candidates.map((t) => {
-              const role = current.get(t.id);
+              const role = inPod.get(t.id);
+              const isBusy = busy === t.id;
               return (
-                <div key={t.id} className="flex items-center gap-2 border-b border-white/5 px-2.5 py-1.5 last:border-b-0 hover:bg-white/[0.03]">
-                  <input
-                    type="checkbox"
-                    checked={!!role}
-                    disabled={busy}
-                    onChange={() => void toggle(t.id)}
-                    className="h-3.5 w-3.5 accent-[#F3E28D]"
-                  />
-                  <span className={`text-[12px] ${role ? "text-white" : "text-white/55"}`}>{t.name}</span>
+                <div
+                  key={t.id}
+                  className={`flex items-center gap-2 border-b border-white/5 px-2.5 py-1.5 last:border-b-0 hover:bg-white/[0.03] ${isBusy ? "opacity-50" : ""}`}
+                >
+                  <button
+                    onClick={() => void run(t.id, () => role
+                      ? removePodMember(pod.id, t.id)
+                      : addPodMember(pod.id, t.id, "member"))}
+                    disabled={isBusy}
+                    aria-pressed={!!role}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+                      role ? "border-[#F3E28D]/50 bg-[#F3E28D]/20 text-[#F3E28D]" : "border-white/20 text-transparent"
+                    }`}>✓</span>
+                    <span className={`truncate text-[12px] ${role ? "text-white" : "text-white/55"}`}>{t.name}</span>
+                    {(t.divisions ?? []).length > 0 && (
+                      <span className="shrink-0 text-[9px] uppercase tracking-wide text-white/25">
+                        {(t.divisions ?? []).join(" · ")}
+                      </span>
+                    )}
+                  </button>
+
                   {role && (
-                    <div className="ml-auto flex gap-1">
-                      {(["member", "lit"] as PodRole[]).map((r) => (
-                        <button
-                          key={r}
-                          disabled={busy}
-                          onClick={() => void setRole(t.id, r)}
-                          className={`rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide transition-colors ${
-                            role === r ? "bg-white/15 text-white" : "text-white/35 hover:text-white/70"
-                          }`}
-                        >
-                          {r === "lit" ? "LIT" : "Member"}
-                        </button>
-                      ))}
-                    </div>
+                    <button
+                      onClick={() => void run(t.id, () => setPodMemberRole(pod.id, t.id, role === "lit" ? "member" : "lit"))}
+                      disabled={isBusy}
+                      aria-pressed={role === "lit"}
+                      title={role === "lit" ? "Demote to member" : "Make LIT of this pod"}
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide transition-colors ${
+                        role === "lit" ? "bg-[#F3E28D]/20 text-[#F3E28D]" : "text-white/30 hover:text-white/70"
+                      }`}
+                    >LIT</button>
                   )}
                 </div>
               );
             })}
+            {candidates.length === 0 && (
+              <p className="px-2.5 py-3 text-[11px] text-white/30">No one matches.</p>
+            )}
           </div>
           <p className="mt-2 text-[10px] text-white/25">
-            A pod can have more than one LIT. Removing someone keeps their past attendance and hours.
+            Click a name to add or remove. Click LIT to give or take pod-leader access — a pod can have
+            more than one. Removing someone who has attended a meeting keeps their hours.
           </p>
         </>
       ) : (

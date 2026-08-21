@@ -1338,6 +1338,7 @@ export default function TeamPage() {
         <MemberDrawer
           member={team.find((m) => m.id === drawerMember.id) ?? drawerMember}
           reviewerLabel={user?.email || user?.id || "admin"}
+          canEdit={canEdit}
           onClose={() => setDrawerMember(null)}
         />
       )}

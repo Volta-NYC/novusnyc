@@ -4,15 +4,19 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   subscribeMemberStrikes, subscribeInfractions, subscribePods, subscribePodMembers,
   deleteMemberStrike, clearMemberStrikes, createMemberStrike,
-  fetchMemberHours, createHoursAdjustment,
+  fetchMemberHours, createHoursAdjustment, updateTeamMember,
   type Infraction, type MemberStrike, type TeamMember,
   type Pod, type PodMember, type HoursEntry,
 } from "@/lib/members/storage";
-import { Badge, Btn, Select, useConfirm } from "@/components/members/ui";
+import { Btn, Select, useConfirm } from "@/components/members/ui";
+import PodPicker from "@/components/members/PodPicker";
+
+const TRACKS = ["Tech", "Marketing", "Finance"] as const;
 
 interface Props {
   member: TeamMember | null;
   reviewerLabel: string;
+  canEdit?: boolean;
   onClose: () => void;
 }
 
@@ -23,7 +27,7 @@ const SOURCE_LABEL: Record<HoursEntry["source"], string> = {
   adjustment: "Adjustments",
 };
 
-export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) {
+export default function MemberDrawer({ member, reviewerLabel, canEdit = false, onClose }: Props) {
   const [strikes, setStrikes]       = useState<MemberStrike[]>([]);
   const [infractions, setInfractions] = useState<Infraction[]>([]);
   const [pods, setPods]             = useState<Pod[]>([]);
@@ -76,13 +80,10 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
     [memberStrikes],
   );
 
-  const myPods = useMemo(() => {
-    if (!memberId) return [];
-    return podMembers
-      .filter((m) => m.memberId === memberId && !m.leftAt)
-      .map((m) => ({ pod: pods.find((p) => p.id === m.podId), role: m.role }))
-      .filter((x): x is { pod: Pod; role: "lit" | "member" } => !!x.pod);
-  }, [podMembers, pods, memberId]);
+  const myPodRows = useMemo(
+    () => (memberId ? podMembers.filter((m) => m.memberId === memberId && !m.leftAt) : []),
+    [podMembers, memberId],
+  );
 
   const bySource = useMemo(() => {
     const m = new Map<HoursEntry["source"], number>();
@@ -216,21 +217,46 @@ export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) 
             )}
           </div>
 
+          {/* Tracks */}
+          <div className="mb-5">
+            <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Track</p>
+            <div className="flex flex-wrap gap-1.5">
+              {TRACKS.map((track) => {
+                const on = (member.divisions ?? []).includes(track);
+                return (
+                  <button
+                    key={track}
+                    type="button"
+                    disabled={!canEdit}
+                    aria-pressed={on}
+                    onClick={() => {
+                      const current = member.divisions ?? [];
+                      void updateTeamMember(member.id, {
+                        divisions: on ? current.filter((d) => d !== track) : [...current, track],
+                      });
+                    }}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors disabled:cursor-not-allowed ${
+                      on
+                        ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
+                        : "border-white/12 bg-white/[0.03] text-white/55 hover:text-white/85"
+                    }`}
+                  >
+                    {track}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Pods */}
           <div className="mb-5">
             <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Pods</p>
-            {myPods.length === 0 ? (
-              <p className="text-[11px] text-white/25">Not in a pod.</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {myPods.map(({ pod, role }) => (
-                  <span key={pod.id} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/80">
-                    {pod.name}
-                    {role === "lit" && <Badge label="lit" />}
-                  </span>
-                ))}
-              </div>
-            )}
+            <PodPicker
+              pods={pods}
+              memberships={myPodRows}
+              memberId={member.id}
+              disabled={!canEdit}
+            />
           </div>
 
           {/* Infractions */}
