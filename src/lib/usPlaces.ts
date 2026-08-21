@@ -117,10 +117,11 @@ const CITIES: Record<string, string[]> = {
   NJ: ["Elizabeth", "Jersey City", "Newark", "Paterson", "Trenton"],
   NM: ["Albuquerque", "Las Cruces", "Rio Rancho"],
   NV: ["Enterprise", "Henderson", "Las Vegas", "North Las Vegas", "Paradise", "Reno", "Spring Valley", "Sunrise Manor"],
-  // The five boroughs, not "New York City": offering both would leave an
-  // applicant guessing whether the latter means Manhattan or anywhere in the
-  // city, and split the answers unpredictably.
-  NY: ["Albany", "Bronx", "Brooklyn", "Buffalo", "Manhattan", "New Rochelle", "Queens", "Rochester", "Staten Island", "Syracuse", "Yonkers"],
+  // "New York City", not the five boroughs. The borough only ever mattered for
+  // a handful of people and was never used to route work — meanwhile it split
+  // one city across five options, so the same person could be recorded five
+  // ways. One entry keeps the answers comparable.
+  NY: ["Albany", "Buffalo", "New Rochelle", "New York City", "Rochester", "Syracuse", "Yonkers"],
   OH: ["Akron", "Cincinnati", "Cleveland", "Columbus", "Dayton", "Parma", "Toledo"],
   OK: ["Broken Arrow", "Norman", "Oklahoma City", "Tulsa"],
   OR: ["Bend", "Eugene", "Gresham", "Hillsboro", "Portland", "Salem"],
@@ -161,7 +162,7 @@ const CITIES: Record<string, string[]> = {
  */
 const CITY_PRIORITY: Record<string, string[]> = {
   // Chapters
-  NY: ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"],
+  NY: ["New York City"],
   MA: ["Boston"],
   IL: ["Chicago"],
   CA: ["Los Angeles", "San Francisco", "San Diego", "San Jose"],
