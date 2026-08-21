@@ -12,6 +12,7 @@ import {
   type Pod, type PodMember, type PodMeeting, type TeamMember, type PodRole,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { isInactiveMember } from "@/lib/members/roles";
 import AttendanceGrid from "./AttendanceGrid";
 import PodAssignments from "./PodAssignments";
 
@@ -216,7 +217,7 @@ function Roster({
 
   const q = query.trim().toLowerCase();
   const candidates = team
-    .filter((t) => t.status !== "Alumni" && t.status !== "Inactive")
+    .filter((t) => !isInactiveMember(t.status))
     .filter((t) => !q || t.name.toLowerCase().includes(q) || (t.email ?? "").toLowerCase().includes(q))
     .sort((a, b) => {
       const aOn = inPod.has(a.id), bOn = inPod.has(b.id);

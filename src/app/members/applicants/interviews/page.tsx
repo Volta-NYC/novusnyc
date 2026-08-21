@@ -381,6 +381,7 @@ function InterviewsContent() {
 
   const [interviewerSearch, setInterviewerSearch] = useState("");
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   const canAccessInterviews = authRole === "owner" || canInterview;
   const canDeleteInterviews = authRole === "owner";
@@ -1688,11 +1689,16 @@ function InterviewsContent() {
     setTogglingId(member.id);
     try {
       const token = await getAuthToken();
-      await fetch("/api/members/admin/toggle-interviewer", {
+      const res = await fetch("/api/members/admin/toggle-interviewer", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ memberId: member.id, enabled: !member.canInterview }),
       });
+      if (!res.ok) {
+        setToggleError(`Could not change interviewer access for ${member.name}.`);
+      } else {
+        setToggleError(null);
+      }
     } finally {
       setTogglingId(null);
     }
@@ -2376,6 +2382,11 @@ function InterviewsContent() {
               placeholder="Search by name or email"
               className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#F6B78D]"
             />
+            {toggleError && (
+              <p role="alert" className="mt-2 rounded-lg border border-red-400/25 bg-red-400/10 px-3 py-2 text-[12px] text-red-300">
+                {toggleError}
+              </p>
+            )}
             <div className="divide-y divide-white/5 max-h-72 overflow-y-auto">
               {activeMembers.length === 0 && (
                 <p className="text-white/25 text-sm text-center py-4">No members found.</p>

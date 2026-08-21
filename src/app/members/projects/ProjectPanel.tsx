@@ -7,6 +7,7 @@ import {
   type Business, type TeamMember, type TechStatus, type TechPriority,
 } from "@/lib/members/storage";
 import { formatPhone } from "@/lib/format";
+import { isInactiveMember } from "@/lib/members/roles";
 
 // Everything about one project, beside the list rather than over it — a modal
 // would hide the row you clicked and the ones around it.
@@ -36,7 +37,7 @@ export default function ProjectPanel({
   const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
 
   const techTeam = useMemo(() => {
-    const active = team.filter((t) => t.status !== "Alumni" && t.status !== "Inactive");
+    const active = team.filter((t) => !isInactiveMember(t.status));
     const q = memberQuery.trim().toLowerCase();
     const pool = q ? active.filter((t) => t.name.toLowerCase().includes(q)) : active;
     return [...pool].sort((a, b) => {

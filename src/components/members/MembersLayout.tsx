@@ -11,6 +11,7 @@ import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
 import { supabase } from "@/lib/supabaseClient";
 import { sora } from "@/lib/fonts";
 import { Modal } from "@/components/members/ui";
+import { EMAIL } from "@/lib/mail";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -292,6 +293,30 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Marking a member inactive used to be cosmetic — a red dot and exclusion from
+  // mass email — while they kept full portal access. Owners and admins are never
+  // locked out, so an accidental self-deactivation stays recoverable.
+  if (userProfile && !userProfile.active && authRole === "member") {
+    return (
+      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <h1 className="font-display text-lg font-semibold text-white">Your access is paused</h1>
+          <p className="mt-2 text-sm leading-relaxed text-white/45">
+            Your Novus membership is marked inactive, so the portal is closed for now.
+            If that&apos;s not right, email{" "}
+            <a href={`mailto:${EMAIL.info}`} className="text-[#F6B78D] hover:underline">{EMAIL.info}</a>.
+          </p>
+          <button
+            onClick={() => void signOut()}
+            className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 transition-colors hover:border-white/35 hover:text-white"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     );
   }

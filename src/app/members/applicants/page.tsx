@@ -18,6 +18,7 @@ import {
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { gradeToClassOf } from "@/lib/grades";
+import { DEFAULT_MEMBER_ROLE } from "@/lib/members/roles";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "New",
@@ -443,7 +444,9 @@ export default function ApplicantsPage() {
       status: "Accepted",
       finalDecisionRole: role,
     });
-    await fetch("/api/members/applicants/promote", {
+    // A failed promotion used to be invisible: the status flipped to Accepted
+    // and the toast claimed the member was added, while nothing was written.
+    const promoteRes = await fetch("/api/members/applicants/promote", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -456,10 +459,18 @@ export default function ApplicantsPage() {
         grade: gradeToClassOf(app.grade),
         role,
         tracksSelected: app.tracksSelected,
+        applicationId: app.id,
       }),
     });
+    if (!promoteRes.ok) {
+      const { error } = await promoteRes.json().catch(() => ({})) as { error?: string };
+      throw new Error(error === "missing_fields"
+        ? `${app.fullName} needs a name and email before they can be added to the directory.`
+        : `Could not add ${app.fullName} to the member directory.`);
+    }
+    const promoted = await promoteRes.json() as { action?: string };
     if (shouldEmail) {
-      await fetch("/api/members/applicants/decision-email", {
+      const emailRes = await fetch("/api/members/applicants/decision-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -471,19 +482,26 @@ export default function ApplicantsPage() {
           decision: "Accepted",
         }),
       });
+      if (!emailRes.ok) {
+        // The member exists either way; say so rather than implying a rollback.
+        throw new Error(`${app.fullName} was added, but the acceptance email didn't send.`);
+      }
     }
+    return promoted.action ?? "updated";
   };
 
   const handleAcceptFromModal = async () => {
     if (!acceptModalApp) return;
     setBulkPromoting(true);
     try {
-      await promoteApplicant(acceptModalApp, acceptSendEmail, acceptRole);
-      setStatusMessage(`Accepted and added ${acceptModalApp.fullName} to member directory.`);
+      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptRole);
+      setStatusMessage(action === "created"
+        ? `Accepted ${acceptModalApp.fullName} and added them to the member directory.`
+        : `Accepted ${acceptModalApp.fullName}. They were already in the directory, so their record was updated.`);
       await fetchApplicantsData();
       setAcceptModalApp(null);
-    } catch {
-      setStatusMessage(`Could not promote ${acceptModalApp.fullName}.`);
+    } catch (err) {
+      setStatusMessage(err instanceof Error ? err.message : `Could not accept ${acceptModalApp.fullName}.`);
     } finally {
       setBulkPromoting(false);
     }
@@ -502,7 +520,7 @@ export default function ApplicantsPage() {
       for (const app of selectedApps) {
         try {
           // eslint-disable-next-line no-await-in-loop
-          await promoteApplicant(app, true, "Analyst");
+          await promoteApplicant(app, true, DEFAULT_MEMBER_ROLE);
           ok += 1;
         } catch {
           failed += 1;

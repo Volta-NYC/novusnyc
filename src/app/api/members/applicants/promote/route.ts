@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
-import { dbRead, dbPatch, dbPush } from "@/lib/supabaseAdmin";
-import {
-  pickPrimaryTrack,
-  suggestTeamForTrack,
-  trackToDivisions,
-} from "@/lib/server/memberPlacement";
-import { normalizeTeamPod } from "@/lib/teamPod";
+import { promoteApplicantToMember } from "@/lib/server/promoteMember";
+import { DEFAULT_MEMBER_ROLE } from "@/lib/members/roles";
 
 type PromoteBody = {
   fullName?: string;
@@ -15,96 +10,33 @@ type PromoteBody = {
   grade?: string;
   role?: string;
   tracksSelected?: string;
+  applicationId?: string;
 };
-
-function normalize(value: string): string {
-  return value.trim().toLowerCase();
-}
 
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = (await req.json().catch(() => ({}))) as PromoteBody;
-  const fullName = (body.fullName ?? "").trim();
-  const email = normalize(body.email ?? "");
-  const schoolName = (body.schoolName ?? "").trim();
-  const grade = (body.grade ?? "").trim();
-  const role = (body.role ?? "").trim() || "Member";
-  const track = pickPrimaryTrack(body.tracksSelected ?? "");
 
-  if (!fullName || !email) {
-    return NextResponse.json({ error: "missing_fields" }, { status: 400 });
+  try {
+    const result = await promoteApplicantToMember({
+      fullName: body.fullName ?? "",
+      email: body.email ?? "",
+      schoolName: body.schoolName,
+      grade: body.grade,
+      tracksSelected: body.tracksSelected,
+      role: (body.role ?? "").trim() || DEFAULT_MEMBER_ROLE,
+      source: "Added from accepted application",
+      applicationId: body.applicationId,
+      decidedBy: verified.caller.email ?? "",
+    });
+    return NextResponse.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "promote_failed";
+    return NextResponse.json(
+      { error: message },
+      { status: message === "missing_fields" ? 400 : 500 },
+    );
   }
-
-  const teamData = await dbRead("team");
-  const team = (teamData ?? {}) as Record<string, Record<string, unknown>>;
-  const suggestedPod = suggestTeamForTrack(track, team);
-  let targetId = "";
-
-  for (const [id, raw] of Object.entries(team)) {
-    const primary = normalize(String(raw.email ?? ""));
-    const secondary = normalize(String(raw.alternateEmail ?? ""));
-    if (email && (primary === email || secondary === email)) {
-      targetId = id;
-      break;
-    }
-  }
-
-  if (!targetId) {
-    for (const [id, raw] of Object.entries(team)) {
-      const name = normalize(String(raw.name ?? ""));
-      if (name && name === normalize(fullName)) {
-        targetId = id;
-        break;
-      }
-    }
-  }
-
-  const nowIso = new Date().toISOString();
-  if (targetId) {
-    const existing = team[targetId] ?? {};
-    const patch: Record<string, unknown> = {};
-    const existingPod = normalizeTeamPod(existing.pod);
-    if (existingPod !== String(existing.pod ?? "").trim()) patch.pod = existingPod;
-    if (!String(existing.name ?? "").trim()) patch.name = fullName;
-    if (!String(existing.email ?? "").trim()) patch.email = email;
-    else if (
-      normalize(String(existing.email ?? "")) !== email
-      && !String(existing.alternateEmail ?? "").trim()
-    ) {
-      patch.alternateEmail = email;
-    }
-    if (!String(existing.school ?? "").trim() && schoolName) patch.school = schoolName;
-    if (!String(existing.grade ?? "").trim() && grade) patch.grade = grade;
-    if (!String(existing.acceptedDate ?? "").trim()) patch.acceptedDate = nowIso.slice(0, 10);
-    if (track !== "Other") {
-      patch.divisions = trackToDivisions(track);
-      if (!existingPod && suggestedPod) patch.pod = normalizeTeamPod(suggestedPod);
-    }
-    patch.role = role;
-    if (!String(existing.notes ?? "").trim()) patch.notes = "Synced from accepted applicant";
-    if (Object.keys(patch).length > 0) await dbPatch(`team/${targetId}`, patch);
-    return NextResponse.json({ success: true, action: "updated", memberId: targetId });
-  }
-
-  const memberId = await dbPush("team", {
-    name: fullName,
-    school: schoolName,
-    grade,
-    divisions: trackToDivisions(track),
-    pod: normalizeTeamPod(suggestedPod),
-    role,
-    slackHandle: "",
-    email,
-    alternateEmail: "",
-    status: "Active",
-    skills: [],
-    joinDate: nowIso.slice(0, 10),
-    acceptedDate: nowIso.slice(0, 10),
-    notes: "Synced from accepted applicant",
-    createdAt: nowIso,
-  });
-
-  return NextResponse.json({ success: true, action: "created", memberId });
 }

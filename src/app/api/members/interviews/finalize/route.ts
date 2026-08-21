@@ -8,11 +8,7 @@ import {
 } from "@/lib/server/smtp";
 import { buildConfirmedAccountAcceptanceTemplate } from "@/lib/server/applicantEmails";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import {
-  pickPrimaryTrack,
-  suggestTeamForTrack,
-  trackToDivisions,
-} from "@/lib/server/memberPlacement";
+import { promoteApplicantToMember } from "@/lib/server/promoteMember";
 
 type FinalizeBody = {
   slotIds?: string[];
@@ -94,82 +90,6 @@ async function sendAcceptanceEmail(input: {
       data: { full_name: input.applicantName },
     });
   }
-}
-
-async function upsertTeamMember(params: {
-  idToken: string;
-  fullName: string;
-  email: string;
-  schoolName?: string;
-  grade?: string;
-  tracksSelected?: string;
-  role: string;
-}) {
-  const teamData = await dbRead("team");
-  const team = (teamData ?? {}) as Record<string, Record<string, unknown>>;
-  const emailKey = normalize(params.email);
-  const nameKey = normalize(params.fullName);
-  const track = pickPrimaryTrack(params.tracksSelected ?? "");
-  const suggestedPod = suggestTeamForTrack(track, team);
-  let targetId = "";
-
-  for (const [id, row] of Object.entries(team)) {
-    const primary = normalize(row.email);
-    const secondary = normalize(row.alternateEmail);
-    if (emailKey && (primary === emailKey || secondary === emailKey)) {
-      targetId = id;
-      break;
-    }
-  }
-  if (!targetId) {
-    for (const [id, row] of Object.entries(team)) {
-      if (normalize(row.name) === nameKey) {
-        targetId = id;
-        break;
-      }
-    }
-  }
-
-  const nowIso = new Date().toISOString();
-  if (targetId) {
-    const row = team[targetId] ?? {};
-    const patch: Record<string, unknown> = {
-      updatedAt: nowIso,
-    };
-    if (!String(row.name ?? "").trim()) patch.name = params.fullName;
-    if (!String(row.email ?? "").trim()) patch.email = emailKey;
-    else if (normalize(row.email) !== emailKey && !String(row.alternateEmail ?? "").trim()) patch.alternateEmail = emailKey;
-    if (!String(row.school ?? "").trim() && params.schoolName) patch.school = params.schoolName;
-    if (!String(row.grade ?? "").trim() && params.grade) patch.grade = params.grade;
-    if (!String(row.acceptedDate ?? "").trim()) patch.acceptedDate = nowIso.slice(0, 10);
-    if (track !== "Other") {
-      patch.divisions = trackToDivisions(track);
-      if (!String(row.pod ?? "").trim() && suggestedPod) patch.pod = suggestedPod;
-    }
-    patch.role = params.role;
-    await dbPatch(`team/${targetId}`, patch);
-    return targetId;
-  }
-
-  const newId = await dbPush("team", {
-    name: params.fullName,
-    school: params.schoolName ?? "",
-    grade: params.grade ?? "",
-    divisions: trackToDivisions(track),
-    pod: suggestedPod,
-    role: params.role,
-    slackHandle: "",
-    email: emailKey,
-    alternateEmail: "",
-    status: "Active",
-    skills: [],
-    joinDate: nowIso.slice(0, 10),
-    acceptedDate: nowIso.slice(0, 10),
-    notes: "Synced from interviewed applicant",
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  });
-  return newId;
 }
 
 export async function POST(req: NextRequest) {
@@ -272,14 +192,16 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date().toISOString(),
     });
 
-    await upsertTeamMember({
-      idToken: verified.caller.idToken,
+    await promoteApplicantToMember({
       fullName,
       email,
       schoolName,
       grade,
       tracksSelected: tracks,
       role: teamRole,
+      source: "Added from completed interview",
+      applicationId: appId,
+      decidedBy: verified.caller.email ?? "",
     });
 
     if (sendEmail) {

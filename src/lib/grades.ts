@@ -12,23 +12,33 @@ export const CLASS_GRADE_OPTIONS = [
   "Class of 2030",
 ] as const;
 
-const GRADE_LABEL_TO_CLASS: Record<string, string> = {
-  freshman: "Class of 2029",
-  sophomore: "Class of 2028",
-  junior: "Class of 2027",
-  senior: "Class of 2026",
-  "high school freshman": "Class of 2029",
-  "high school sophomore": "Class of 2028",
-  "high school junior": "Class of 2027",
-  "high school senior": "Class of 2026",
-  "9": "Class of 2029",
-  "10": "Class of 2028",
-  "11": "Class of 2027",
-  "12": "Class of 2026",
+// A grade label only means a graduation year relative to the school year it was
+// given in, so derive it rather than pinning it. A US school year starting in
+// August means a senior in autumn 2026 graduates in 2027.
+function graduationYearFor(yearsRemaining: number, now = new Date()): number {
+  const schoolYearEnd = now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear();
+  return schoolYearEnd + yearsRemaining;
+}
+
+const YEARS_REMAINING: Record<string, number> = {
+  freshman: 3,
+  sophomore: 2,
+  junior: 1,
+  senior: 0,
+  "high school freshman": 3,
+  "high school sophomore": 2,
+  "high school junior": 1,
+  "high school senior": 0,
+  "9": 3,
+  "10": 2,
+  "11": 1,
+  "12": 0,
 };
 
 export function gradeToClassOf(value: string | null | undefined): string {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
-  return GRADE_LABEL_TO_CLASS[raw.toLowerCase()] ?? raw;
+  const remaining = YEARS_REMAINING[raw.toLowerCase()];
+  if (remaining === undefined) return raw;
+  return `Class of ${graduationYearFor(remaining)}`;
 }

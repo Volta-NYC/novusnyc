@@ -5,7 +5,6 @@
 // channel so the UI updates automatically when the database changes.
 
 import { supabase } from "@/lib/supabaseClient";
-import { normalizeTeamPod } from "@/lib/teamPod";
 
 // ── DATA TYPES ────────────────────────────────────────────────────────────────
 
@@ -175,7 +174,6 @@ export interface TeamMember {
   grade?: string;
   acceptedDate?: string;
   divisions: string[];    // may be undefined on legacy rows
-  pod: string;
   // Role label as captured at acceptance (e.g. "Analyst", "Senior Analyst",
   // "Associate", "Senior Associate", "Board") — kept as a free-form string so
   // legacy values from earlier role taxonomies still display verbatim.
@@ -1037,7 +1035,7 @@ export async function hardDeleteBusiness(id: string): Promise<void> {
 
 export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt">): Promise<void> {
   const id = genId();
-  const row = toRow({ ...data, id, pod: normalizeTeamPod(data.pod), createdAt: nowISO() });
+  const row = toRow({ ...data, id, createdAt: nowISO(), updatedAt: nowISO() });
   const { error: teamInsertError } = await supabase.from("team").insert(row);
   if (teamInsertError) throw new Error(teamInsertError.message);
   await writeAuditLog({ action: "create", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
@@ -1066,11 +1064,8 @@ export async function updateApplicationRecord(
 }
 
 export async function updateTeamMember(id: string, data: Partial<TeamMember>): Promise<void> {
-  const patch = { ...data };
-  if (Object.prototype.hasOwnProperty.call(patch, "pod")) {
-    patch.pod = normalizeTeamPod(patch.pod);
-  }
-  const { error: teamUpdateError } = await supabase.from("team").update(toRow(patch as Record<string, unknown>)).eq("id", id);
+  const { error: teamUpdateError } = await supabase.from("team")
+    .update(toRow({ ...data, updatedAt: nowISO() } as Record<string, unknown>)).eq("id", id);
   if (teamUpdateError) throw new Error(teamUpdateError.message);
   await writeAuditLog({ action: "update", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
 }

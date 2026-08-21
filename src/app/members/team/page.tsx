@@ -1,7 +1,7 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, useConfirm,
@@ -18,10 +18,10 @@ import {
 } from "@/lib/members/storage";
 import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
+import { MEMBER_ROLES, ROLE_SORT_ORDER, DEFAULT_MEMBER_ROLE, isInactiveMember, type MemberRole } from "@/lib/members/roles";
 import { CLASS_GRADE_OPTIONS, gradeToClassOf } from "@/lib/grades";
 import MemberDrawer from "@/components/members/MemberDrawer";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
-import { EMAIL } from "@/lib/mail";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ import { EMAIL } from "@/lib/mail";
 const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
   grade: "",
   acceptedDate: "",
-  name: "", school: "", divisions: [], pod: "", role: "Analyst", slackHandle: "",
+  name: "", school: "", divisions: [], role: DEFAULT_MEMBER_ROLE, slackHandle: "",
   email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "", notes: "",
 };
 
@@ -142,10 +142,8 @@ const ADMIN_COLS = [
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
 
-// Roles offered in the inline role-edit popover, ordered seniority-high to seniority-low
-// so the dropdown reads top-down from most senior. Board is an internal designation for leadership.
-const ROLE_OPTIONS = ["Board", "Senior Associate", "Associate", "Senior Analyst", "Analyst"] as const;
-type RoleOption = (typeof ROLE_OPTIONS)[number];
+const ROLE_OPTIONS = MEMBER_ROLES;
+type RoleOption = MemberRole;
 
 // Display the role exactly as stored, so legacy entries (e.g. "Project Lead",
 // "Member") still show up faithfully even though they aren't selectable in the popover.
@@ -154,40 +152,9 @@ function displayRoleValue(value: unknown): string {
   return raw || "—";
 }
 
-const ROLE_SORT_ORDER: Record<string, number> = {
-  Board: 0,
-  "Senior Associate": 1,
-  Associate: 2,
-  "Senior Analyst": 3,
-  Analyst: 4,
-};
-
 function roleSortKey(value: unknown): number {
   const raw = String(value ?? "").trim();
   return raw in ROLE_SORT_ORDER ? ROLE_SORT_ORDER[raw] : 99;
-}
-
-// Members who should hold the Board role regardless of what they were originally
-// accepted with. Compared loosely against name + email so casing/spacing in
-// stored data doesn't cause a miss.
-const BOARD_MEMBERS: Array<{ name: string; emails: string[] }> = [
-  { name: "Ethan Zhang", emails: [EMAIL.ethan] },
-  { name: "Andrew Chin", emails: [] },
-  { name: "Tahmid Islam", emails: [] },
-  { name: "Ellie Mak", emails: [] },
-  { name: "Joseph Long", emails: [] },
-];
-
-function isBoardMember(member: TeamMember): boolean {
-  const memberName = String(member.name ?? "").trim().toLowerCase();
-  const memberEmails = [member.email, member.alternateEmail]
-    .map((value) => String(value ?? "").trim().toLowerCase())
-    .filter(Boolean);
-  return BOARD_MEMBERS.some((entry) => {
-    if (entry.name.toLowerCase() === memberName) return true;
-    if (entry.emails.length === 0) return false;
-    return entry.emails.some((emailMatch) => memberEmails.includes(emailMatch.toLowerCase()));
-  });
 }
 
 function normalizeText(v: string): string {
@@ -222,7 +189,6 @@ export default function TeamPage() {
   const [showOnlyInactive, setShowOnlyInactive] = useState(false);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
-  const boardMigrationRef = useRef(false);
   // Hours + pods drive the member row; credits were retired.
   const [creditStrikes, setCreditStrikes] = useState<MemberStrike[]>([]);
   const [hoursTotals, setHoursTotals] = useState<HoursTotals[]>([]);
@@ -301,23 +267,6 @@ export default function TeamPage() {
     await updateTeamMember(member.id, { role: nextRole });
   };
 
-  // One-time backfill: stamp the Board role onto the named leadership members
-  // whose stored role hasn't already been set to Board. Runs once per session
-  // for admins so old "Member"/"Project Lead" entries get corrected.
-  useEffect(() => {
-    if (boardMigrationRef.current) return;
-    if (!canEdit || team.length === 0) return;
-    boardMigrationRef.current = true;
-    void (async () => {
-      for (const member of team) {
-        if (!isBoardMember(member)) continue;
-        if (String(member.role ?? "").trim() === "Board") continue;
-        // eslint-disable-next-line no-await-in-loop
-        await updateTeamMember(member.id, { role: "Board" });
-      }
-    })();
-  }, [team, canEdit]);
-
   const copyText = async (value: string) => {
     const safe = value.trim();
     if (!safe) return;
@@ -348,7 +297,6 @@ export default function TeamPage() {
       grade:       gradeToClassOf(member.grade ?? ""),
       // Guard against undefined arrays on legacy rows.
       divisions:   member.divisions ?? [],
-      pod:         "",
       role:        member.role,
       slackHandle: member.slackHandle,
       email:       member.email,
@@ -368,9 +316,9 @@ export default function TeamPage() {
     if (!form.name.trim()) return;
     if (editingMember) {
       setTeam((prev) => prev.map((m) => m.id === editingMember.id ? { ...m, ...(form as Partial<TeamMember>) } : m));
-      await updateTeamMember(editingMember.id, { ...(form as Partial<TeamMember>), pod: "" });
+      await updateTeamMember(editingMember.id, form as Partial<TeamMember>);
     } else {
-      await createTeamMember({ ...(form as Omit<TeamMember, "id" | "createdAt">), pod: "" });
+      await createTeamMember(form as Omit<TeamMember, "id" | "createdAt">);
     }
     setModal(null);
   };
@@ -382,7 +330,7 @@ export default function TeamPage() {
         await deleteTeamMember(editingMember.id);
         setModal(null);
       },
-      `Delete ${editingMember.name}? This permanently removes them from the member directory.`
+      `Remove ${editingMember.name} from the directory? Their hours and pod history are kept, and an owner can restore the record from the database if this was a mistake.`
     );
   };
 
@@ -452,13 +400,12 @@ export default function TeamPage() {
   };
 
   const filtered = team.filter(member => {
-    const isInactive = normalizeKey(member.status ?? "") === "inactive";
-    const isReserve = ["reserve", "alumni", "on leave"].includes(normalizeKey(member.status ?? ""));
-    const isInactiveOrReserve = isInactive || isReserve;
+    const isInactive = isInactiveMember(member.status);
+
     if (showOnlyInactive) {
-      if (!isInactiveOrReserve) return false;
+      if (!isInactive) return false;
     } else if (hideInactive) {
-      if (isInactiveOrReserve) return false;
+      if (isInactive) return false;
     }
     if (!search) return true;
     const q = search.toLowerCase();
@@ -786,14 +733,24 @@ export default function TeamPage() {
             <Btn
               variant="secondary"
               onClick={() => {
-                const csv = toCsv(filtered, [
+                // Pods live in their own table now, so flatten them onto the
+                // row rather than exporting a column the member record lacks.
+                const exportRows = filtered.map((m) => ({
+                  ...m,
+                  pods: (podsByMemberId.get(m.id) ?? [])
+                    .map((p) => (p.lit ? `${p.name} (LIT)` : p.name))
+                    .join("; "),
+                  hours: Number(hoursByMemberId.get(m.id)?.totalHours ?? 0).toFixed(1),
+                }));
+                const csv = toCsv(exportRows, [
                   { key: "name", label: "Name" },
                   { key: "email", label: "Email" },
                   { key: "school", label: "School" },
                   { key: "grade", label: "Grade" },
                   { key: "role", label: "Role" },
                   { key: "status", label: "Status" },
-                  { key: "pod", label: "Pod" },
+                  { key: "pods", label: "Pods" },
+                  { key: "hours", label: "Hours" },
                   { key: "joinDate", label: "Join Date" },
                   { key: "slackHandle", label: "Slack" },
                 ]);
