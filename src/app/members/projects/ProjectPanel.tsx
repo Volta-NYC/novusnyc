@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Btn } from "@/components/members/ui";
 import {
-  updateBusiness, TECH_STATUSES, TECH_PRIORITIES,
-  type Business, type TeamMember, type TechStatus, type TechPriority,
+  updateBusiness, subscribeChapters, TECH_STATUSES, TECH_PRIORITIES,
+  type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { formatPhone } from "@/lib/format";
 import { isInactiveMember } from "@/lib/members/roles";
@@ -25,6 +25,9 @@ export default function ProjectPanel({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [memberQuery, setMemberQuery] = useState("");
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+
+  useEffect(() => subscribeChapters(setChapters), []);
 
   useEffect(() => { setDraft(business); setSaved(false); }, [business]);
 
@@ -53,6 +56,7 @@ export default function ProjectPanel({
     const keys: (keyof Business)[] = [
       "notes", "clientUrl", "previewUrl", "liveUrl", "assignees", "techPriority",
       "hoursLogged", "ownerName", "ownerEmail", "phone", "address", "neighborhood", "targetDate",
+      "chapterId",
     ];
     return keys.some((k) => JSON.stringify(draft[k] ?? "") !== JSON.stringify(business[k] ?? ""));
   }, [draft, business]);
@@ -74,6 +78,7 @@ export default function ProjectPanel({
         address: draft.address,
         neighborhood: draft.neighborhood,
         targetDate: draft.targetDate || undefined,
+        chapterId: draft.chapterId,
         lastTouchedAt: new Date().toISOString(),
       });
       setSaved(true);
@@ -166,6 +171,29 @@ export default function ProjectPanel({
               </div>
             )}
           </div>
+
+          {/* Chapter — the market this client belongs to */}
+          {chapters.length > 1 && (
+            <div className="mb-5">
+              <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Market</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((c) => (
+                  <button
+                    key={c.id}
+                    disabled={!canEdit}
+                    onClick={() => setDraft((d) => ({ ...d, chapterId: c.id }))}
+                    className={`rounded-md border px-2 py-1 text-[11px] transition-colors disabled:opacity-50 ${
+                      (draft.chapterId ?? "chapter_ny") === c.id
+                        ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
+                        : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/25 hover:text-white/85"
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Links */}
           <div className="mb-5 space-y-2.5">

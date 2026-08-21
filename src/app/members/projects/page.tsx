@@ -7,9 +7,9 @@ import {
   PageHeader, SearchBar, Badge, Btn, Empty, SkeletonRows,
 } from "@/components/members/ui";
 import {
-  subscribeBusinesses, subscribeTeam, updateBusiness, createBusiness,
+  subscribeBusinesses, subscribeTeam, subscribeChapters, updateBusiness, createBusiness,
   TECH_STATUSES, TECH_PIPELINE,
-  type Business, type TeamMember, type TechStatus,
+  type Business, type TeamMember, type TechStatus, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import ProjectPanel from "./ProjectPanel";
@@ -44,6 +44,10 @@ export default function ProjectsPage() {
 
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
   const [team, setTeam]             = useState<TeamMember[]>([]);
+  const [chapters, setChapters]     = useState<Chapter[]>([]);
+  // Which market's clients we're looking at. Tech work is remote, but the
+  // clients themselves are firmly in one city or the other.
+  const [chapterId, setChapterId]   = useState<string | null>(null);
   const [view, setView]             = useState<ViewKey>("all");
   const [search, setSearch]         = useState("");
   const [openId, setOpenId]         = useState<string | null>(null);
@@ -52,6 +56,7 @@ export default function ProjectsPage() {
 
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeChapters(setChapters), []);
 
   const myId = userProfile?.id ?? null;
 
@@ -65,6 +70,7 @@ export default function ProjectsPage() {
     if (!businesses) return [];
     const q = search.trim().toLowerCase();
     let list = businesses.filter((b) => !b.archived);
+    if (chapterId) list = list.filter((b) => (b.chapterId ?? "chapter_ny") === chapterId);
 
     switch (view) {
       case "domains": list = list.filter((b) => !!b.liveUrl); break;
@@ -95,17 +101,18 @@ export default function ProjectsPage() {
     return [...list].sort((a, b) =>
       (b.lastTouchedAt ?? b.updatedAt ?? "").localeCompare(a.lastTouchedAt ?? a.updatedAt ?? "")
       || a.name.localeCompare(b.name));
-  }, [businesses, view, search, myId, nameById, statusFilter]);
+  }, [businesses, view, search, myId, nameById, statusFilter, chapterId]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const s of TECH_STATUSES) c[s] = 0;
     for (const b of businesses ?? []) {
       if (b.archived || isLead(b)) continue;
+      if (chapterId && (b.chapterId ?? "chapter_ny") !== chapterId) continue;
       c[b.techStatus ?? "Backlog"] = (c[b.techStatus ?? "Backlog"] ?? 0) + 1;
     }
     return c;
-  }, [businesses]);
+  }, [businesses, chapterId]);
 
   const open = businesses?.find((b) => b.id === openId) ?? null;
 
@@ -132,6 +139,7 @@ export default function ProjectsPage() {
       alternatePhone: "", address: "", website: "", projectStatus: "Upcoming",
       teamLead: "", firstContactDate: "", notes: "",
       techStatus: "Backlog", techPriority: "Medium", assignees: [], hoursLogged: 0,
+      chapterId: chapterId ?? chapters.find((c) => c.slug === "new-york")?.id,
       lastTouchedAt: new Date().toISOString(),
     } as Omit<Business, "id" | "createdAt" | "updatedAt">);
   };
@@ -164,6 +172,31 @@ export default function ProjectsPage() {
           </button>
         ))}
       </div>
+
+      {chapters.length > 1 && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-[10px] uppercase tracking-wide text-white/35">Clients in</span>
+          {[{ id: null, name: "All" }, ...[...chapters].sort((a, b) => a.sortOrder - b.sortOrder)].map((c) => {
+            const count = c.id === null
+              ? (businesses ?? []).filter((b) => !b.archived && !isLead(b)).length
+              : (businesses ?? []).filter((b) => !b.archived && !isLead(b) && (b.chapterId ?? "chapter_ny") === c.id).length;
+            return (
+              <button
+                key={c.id ?? "all"}
+                onClick={() => setChapterId(c.id)}
+                className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+                  chapterId === c.id
+                    ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
+                    : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white/85"
+                }`}
+              >
+                {c.name}
+                <span className="ml-1.5 font-mono tabular-nums text-white/35">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {VIEWS.map((v) => (

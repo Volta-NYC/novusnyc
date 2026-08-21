@@ -5,8 +5,8 @@ import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, SkeletonRows, Badge } from "@/components/members/ui";
 import {
-  subscribePods, subscribePodMembers, subscribePodMeetings, subscribeTeam,
-  type Pod, type PodMember, type PodMeeting, type TeamMember,
+  subscribePods, subscribePodMembers, subscribePodMeetings, subscribeTeam, subscribeChapters,
+  type Pod, type PodMember, type PodMeeting, type TeamMember, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -22,11 +22,13 @@ export default function PodsPage() {
   const [members, setMembers]   = useState<PodMember[]>([]);
   const [meetings, setMeetings] = useState<PodMeeting[]>([]);
   const [team, setTeam]         = useState<TeamMember[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
 
   useEffect(() => subscribePods(setPods), []);
   useEffect(() => subscribePodMembers(setMembers), []);
   useEffect(() => subscribePodMeetings(setMeetings), []);
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeChapters(setChapters), []);
 
   const nameById = useMemo(() => new Map(team.map((t) => [t.id, t.name])), [team]);
   const myId = userProfile?.id ?? null;
@@ -74,8 +76,19 @@ export default function PodsPage() {
       ) : visible.length === 0 ? (
         <p className="py-16 text-center text-sm text-white/30">You&apos;re not in a pod yet.</p>
       ) : (
+        [...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((chapter) => {
+        const inChapter = visible.filter((v) => v.pod.chapterId === chapter.id);
+        if (inChapter.length === 0) return null;
+        return (
+        <div key={chapter.id} className="mb-6">
+        <div className="mb-2 flex items-baseline gap-2">
+          <h2 className="text-[11px] uppercase tracking-wide text-white/45">{chapter.name}</h2>
+          {chapter.status === "Launching" && (
+            <span className="text-[10px] text-[#F3E28D]/70">launching</span>
+          )}
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {visible.map(({ pod, size, lits, last, overdue, iLead }) => (
+          {inChapter.map(({ pod, size, lits, last, overdue, iLead }) => (
             <Link
               key={pod.id}
               href={`/members/pods/${pod.slug}`}
@@ -117,6 +130,9 @@ export default function PodsPage() {
             </Link>
           ))}
         </div>
+        </div>
+        );
+        })
       )}
     </MembersLayout>
   );

@@ -1,5 +1,6 @@
 // ── Role ladder ──────────────────────────────────────────────────────────────
-// Board · Developer (tech) · Team Lead (marketing & finance) · Member.
+// Board · Chapter President / VP · Developer (tech) or Team Lead (marketing &
+// finance) · LIT · Member.
 //
 // LIT is not in this list on purpose. Leading a pod is recorded once, in
 // pod_members.role, and the LIT tier is derived from that — so a member can
@@ -8,9 +9,11 @@
 // Rename freely: these strings are the single source for every dropdown, sort
 // and export. Nothing infers a role from a person's name.
 export const MEMBER_ROLES = [
-  "Board",       // org-wide leadership
-  "Developer",   // tech leadership
-  "Team Lead",   // marketing & finance leadership
+  "Board",              // org-wide: founders and executive directors
+  "Chapter President",  // top of a chapter
+  "Chapter VP",
+  "Developer",          // tech leadership
+  "Team Lead",          // marketing & finance leadership
   "Member",
 ] as const;
 
@@ -19,7 +22,12 @@ export type MemberRole = (typeof MEMBER_ROLES)[number];
 export const DEFAULT_MEMBER_ROLE: MemberRole = "Member";
 
 // Roles that sit above the rank-and-file, whatever they're called.
-export const LEADERSHIP_ROLES: readonly MemberRole[] = ["Board", "Developer", "Team Lead"];
+export const LEADERSHIP_ROLES: readonly MemberRole[] =
+  ["Board", "Chapter President", "Chapter VP", "Developer", "Team Lead"];
+
+// New York is run by the founders, so it has no President — the Board fills
+// that seat. Every other chapter gets its own.
+export const CHAPTER_EXEC_ROLES: readonly MemberRole[] = ["Chapter President", "Chapter VP"];
 
 export const ROLE_SORT_ORDER: Record<string, number> =
   Object.fromEntries(MEMBER_ROLES.map((role, i) => [role, i]));
@@ -27,20 +35,23 @@ export const ROLE_SORT_ORDER: Record<string, number> =
 // ── Display tiers ────────────────────────────────────────────────────────────
 // What the directory groups by. LIT sits between leadership and members and is
 // computed from pod leadership rather than stored.
-export type MemberTier = "board" | "leadership" | "lit" | "member";
+export type MemberTier = "board" | "chapter-exec" | "leadership" | "lit" | "member";
 
 export const TIER_LABEL: Record<MemberTier, string> = {
-  board:      "Board",
-  leadership: "Leadership",
-  lit:        "LIT",
-  member:     "Members",
+  board:          "Board",
+  "chapter-exec": "Chapter exec",
+  leadership:     "Leadership",
+  lit:            "LIT",
+  member:         "Members",
 };
 
-export const TIER_ORDER: MemberTier[] = ["board", "leadership", "lit", "member"];
+export const TIER_ORDER: MemberTier[] =
+  ["board", "chapter-exec", "leadership", "lit", "member"];
 
 export function memberTier(role: unknown, podsLed: number): MemberTier {
-  const value = String(role ?? "").trim();
+  const value = String(role ?? "").trim() as MemberRole;
   if (value === "Board") return "board";
+  if (CHAPTER_EXEC_ROLES.includes(value)) return "chapter-exec";
   if (value === "Developer" || value === "Team Lead") return "leadership";
   if (podsLed > 0) return "lit";
   return "member";

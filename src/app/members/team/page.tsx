@@ -143,7 +143,8 @@ const ADMIN_COLS = [
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: 5   as number | null },
-  { key: "rank",           label: "Rank",            width: 96,  sortCol: 4  as number | null },
+  { key: "rank",           label: "Rank",            width: 116, sortCol: 4  as number | null },
+  { key: "home",           label: "Based in",        width: 130, sortCol: null },
   { key: "work",           label: "Work",            width: 190, sortCol: 6  as number | null },
   { key: "pods",           label: "Pods",            width: 150, sortCol: null },
   { key: "strikes",        label: "Standing",        width: 96,  sortCol: null },
@@ -768,6 +769,8 @@ export default function TeamPage() {
                   { key: "grade", label: "Grade" },
                   { key: "role", label: "Role" },
                   { key: "rank", label: "Rank" },
+                  { key: "homeCity", label: "Home City" },
+                  { key: "homeState", label: "Home State" },
                   { key: "status", label: "Status" },
                   { key: "pods", label: "Pods" },
                   { key: "work", label: "Work Score" },
@@ -1092,6 +1095,20 @@ export default function TeamPage() {
                                       : "border-sky-400/35 bg-sky-400/10 text-sky-300"
                                   }`}>
                                     {tier === "leadership" ? member.role : TIER_LABEL[tier]}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          );
+                          case "home": return (
+                            <td key="home" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                              {(() => {
+                                const city = (member.homeCity ?? "").trim();
+                                const st   = (member.homeState ?? "").trim();
+                                if (!city && !st) return <span className="text-white/25">—</span>;
+                                return (
+                                  <span className="text-[11px] text-white/60">
+                                    {city ? `${city}, ${st}` : st}
                                   </span>
                                 );
                               })()}

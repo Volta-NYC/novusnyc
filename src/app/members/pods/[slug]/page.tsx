@@ -6,10 +6,10 @@ import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, Btn, Badge, Empty, SkeletonRows } from "@/components/members/ui";
 import {
-  subscribePods, subscribePodMembers, subscribePodMeetings, subscribeTeam,
+  subscribePods, subscribePodMembers, subscribePodMeetings, subscribeTeam, subscribeChapters,
   createPodMeeting, deletePodMeeting, updatePod,
   addPodMember, removePodMember, setPodMemberRole,
-  type Pod, type PodMember, type PodMeeting, type TeamMember, type PodRole,
+  type Pod, type PodMember, type PodMeeting, type TeamMember, type PodRole, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { isInactiveMember } from "@/lib/members/roles";
@@ -28,6 +28,7 @@ export default function PodDetailPage() {
   const [members, setMembers]   = useState<PodMember[]>([]);
   const [meetings, setMeetings] = useState<PodMeeting[]>([]);
   const [team, setTeam]         = useState<TeamMember[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [tab, setTab]           = useState<Tab>("meetings");
   const [openMeeting, setOpenMeeting] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export default function PodDetailPage() {
   useEffect(() => subscribePodMembers(setMembers), []);
   useEffect(() => subscribePodMeetings(setMeetings), []);
   useEffect(() => subscribeTeam(setTeam), []);
+  useEffect(() => subscribeChapters(setChapters), []);
 
   const pod = useMemo(() => (pods ?? []).find((p) => p.slug === slug) ?? null, [pods, slug]);
   const myId = userProfile?.id ?? null;
@@ -101,7 +103,10 @@ export default function PodDetailPage() {
       </div>
       <PageHeader
         title={pod.name}
-        subtitle={lits.length ? `Led by ${lits.join(", ")}` : "No LIT assigned yet"}
+        subtitle={[
+          chapters.find((c) => c.id === pod.chapterId)?.name,
+          lits.length ? `led by ${lits.join(", ")}` : "no LIT assigned yet",
+        ].filter(Boolean).join(" · ")}
         action={canRun && tab === "meetings"
           ? <Btn variant="primary" onClick={addMeeting}>+ New meeting</Btn>
           : undefined}

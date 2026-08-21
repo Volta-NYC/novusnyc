@@ -76,6 +76,7 @@ export interface Business {
   // ── Tech project tracker ──────────────────────────────────────────────────
   // Three URLs because two columns previously carried three meanings between
   // them, and launching a site overwrote its preview link.
+  chapterId?: string;     // which market this client belongs to
   clientUrl?: string;     // what the business had before Novus
   previewUrl?: string;    // the Vercel deploy
   liveUrl?: string;       // launched on its own domain — the "real domains" list
@@ -174,10 +175,16 @@ export interface TeamMember {
   grade?: string;
   acceptedDate?: string;
   divisions: string[];    // may be undefined on legacy rows
-  // Role label as captured at acceptance (e.g. "Analyst", "Senior Analyst",
-  // "Associate", "Senior Associate", "Board") — kept as a free-form string so
-  // legacy values from earlier role taxonomies still display verbatim.
+  // Rank on the ladder in roles.ts. Free-form so any legacy value still shows
+  // verbatim rather than vanishing from the directory.
   role: string;
+  // Where the member actually lives. Information only — it is NOT their
+  // chapter, since remote members routinely work on another city's clients.
+  homeCity?: string;
+  homeState?: string;
+  // Which market they were recruited into. Blank means New York, so this is
+  // set only for a recruit in a new chapter who has no pod or client yet.
+  chapterId?: string;
   slackHandle: string;
   email: string;
   alternateEmail?: string;
@@ -1862,8 +1869,24 @@ export async function createMemberAcknowledgment(data: Omit<MemberAcknowledgment
 // work across all four", and a member can lead one pod while sitting in another.
 // ═════════════════════════════════════════════════════════════════════════════
 
+// A chapter is a market — the city whose small businesses we take on as
+// clients. Members are mostly remote and are not confined to one.
+export interface Chapter {
+  id: string;
+  name: string;
+  slug: string;
+  city: string;
+  state: string;
+  status: "Active" | "Launching" | "Archived";
+  siteUrl: string;
+  sortOrder: number;
+}
+
+export const subscribeChapters = makeSubscriber<Chapter>("chapters");
+
 export interface Pod {
   id: string;
+  chapterId: string;
   name: string;
   slug: string;
   description: string;
