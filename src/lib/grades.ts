@@ -16,7 +16,7 @@ export const CLASS_GRADE_OPTIONS = [
 // given in, so derive it rather than pinning it. A US school year starting in
 // August means a senior in autumn 2026 graduates in 2027.
 function graduationYearFor(yearsRemaining: number, now = new Date()): number {
-  const schoolYearEnd = now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear();
+  const schoolYearEnd = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();  // getMonth() is 0-based: 7 is August
   return schoolYearEnd + yearsRemaining;
 }
 

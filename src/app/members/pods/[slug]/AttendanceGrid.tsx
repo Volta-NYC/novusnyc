@@ -6,11 +6,11 @@ import {
   fetchAttendance, saveAttendance, updatePodMeeting,
   subscribeInfractions, subscribeMemberStrikes, createMemberStrike,
   ATTENDANCE_STATUSES,
-  type Pod, type PodMeeting, type PodMember, type AttendanceStatus,
+  type Pod, type PodMeeting, type PodMember, type PodRole, type PodAttendance, type AttendanceStatus,
   type Infraction, type MemberStrike,
 } from "@/lib/members/storage";
 
-type Cell = { status: AttendanceStatus; tasksDone: number; note: string; hours: number | null };
+type Cell = { status: AttendanceStatus | null; tasksDone: number; note: string; hours: number | null };
 
 const STATUS_STYLE: Record<AttendanceStatus, string> = {
   Present:   "bg-green-500/20 text-green-300 border-green-500/30",
@@ -91,36 +91,61 @@ export default function AttendanceGrid({
     [canEdit, roster, myId],
   );
 
+  // Whoever was marked for this meeting stays on it even if they have since
+  // left the pod, and a later joiner does not retroactively appear on a meeting
+  // they were not at. Only the union is offered a row.
+  const [marked, setMarked] = useState<PodAttendance[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+
   useEffect(() => {
     let live = true;
-    void fetchAttendance(meeting.id).then((existing) => {
-      if (!live) return;
-      const byMember = new Map(existing.map((e) => [e.memberId, e]));
-      const next: Record<string, Cell> = {};
-      for (const m of visibleRoster) {
-        const found = byMember.get(m.memberId);
-        next[m.memberId] = found
-          ? { status: found.status, tasksDone: found.tasksDone, note: found.note ?? "", hours: found.hours ?? null }
-          : { status: "Present", tasksDone: 0, note: "", hours: null };
-      }
-      setCells(next);
-    });
+    setMarked(null);
+    setLoadFailed(false);
+    fetchAttendance(meeting.id)
+      .then((existing) => { if (live) setMarked(existing); })
+      .catch(() => { if (live) setLoadFailed(true); });
     return () => { live = false; };
-  }, [meeting.id, visibleRoster]);
+  }, [meeting.id]);
+
+  const gridRoster = useMemo(() => {
+    if (!marked) return visibleRoster;
+    const seen = new Set(visibleRoster.map((m) => m.memberId));
+    const departed = marked
+      .filter((a) => !seen.has(a.memberId))
+      .map((a) => ({ memberId: a.memberId, role: "member" as PodRole, podId: meeting.podId }));
+    return [...visibleRoster, ...(canEdit ? departed : [])];
+  }, [visibleRoster, marked, canEdit, meeting.podId]);
+
+  useEffect(() => {
+    if (!marked) return;
+    const byMember = new Map(marked.map((e) => [e.memberId, e]));
+    const next: Record<string, Cell> = {};
+    for (const m of gridRoster) {
+      const found = byMember.get(m.memberId);
+      // An unmarked row on an already-marked meeting is genuinely unknown, so
+      // it starts blank; only a fresh sheet prefills Present.
+      next[m.memberId] = found
+        ? { status: found.status, tasksDone: found.tasksDone, note: found.note ?? "", hours: found.hours ?? null }
+        : marked.length > 0
+          ? { status: null, tasksDone: 0, note: "", hours: null }
+          : { status: "Present", tasksDone: 0, note: "", hours: null };
+    }
+    setCells(next);
+  }, [marked, gridRoster]);
 
   const totals = useMemo(() => {
     const t = { Present: 0, Excused: 0, Unexcused: 0, tasks: 0, hours: 0 };
     if (!cells) return t;
     const meetingHours = Number(hours) || 0;
-    for (const m of visibleRoster) {
+    for (const m of gridRoster) {
       const c = cells[m.memberId];
-      if (!c) continue;
+      if (!c || !c.status) continue;
       t[c.status] += 1;
       t.tasks += c.tasksDone;
       if (c.status !== "Unexcused") t.hours += c.hours ?? meetingHours;
     }
     return t;
-  }, [cells, visibleRoster, hours]);
+  }, [cells, gridRoster, hours]);
 
   const set = (memberId: string, patch: Partial<Cell>) =>
     setCells((prev) => (prev ? { ...prev, [memberId]: { ...prev[memberId], ...patch } } : prev));
@@ -132,15 +157,21 @@ export default function AttendanceGrid({
       if (Number(hours) !== meeting.hours || title !== meeting.title) {
         await updatePodMeeting(meeting.id, { hours: Number(hours) || 0, title });
       }
+      // Only rows somebody actually marked are written. Defaulting an unset
+      // row to Present would certify hours for a meeting nobody recorded.
       await saveAttendance(
         meeting.id,
-        visibleRoster.map((m) => ({
-          memberId: m.memberId,
-          status: cells[m.memberId]?.status ?? "Present",
-          tasksDone: cells[m.memberId]?.tasksDone ?? 0,
-          hours: cells[m.memberId]?.hours ?? null,
-          note: cells[m.memberId]?.note ?? "",
-        })),
+        gridRoster.flatMap((m) => {
+          const c = cells[m.memberId];
+          if (!c?.status) return [];
+          return [{
+            memberId: m.memberId,
+            status: c.status,
+            tasksDone: c.tasksDone,
+            hours: c.hours,
+            note: c.note,
+          }];
+        }),
       );
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
@@ -152,11 +183,30 @@ export default function AttendanceGrid({
   const markAll = (status: AttendanceStatus) => {
     if (!cells) return;
     const next = { ...cells };
-    for (const m of visibleRoster) next[m.memberId] = { ...next[m.memberId], status };
+    for (const m of gridRoster) next[m.memberId] = { ...next[m.memberId], status };
     setCells(next);
   };
 
-  if (visibleRoster.length === 0) {
+  if (loadFailed) {
+    return (
+      <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-6 text-center">
+        <p className="text-sm text-red-300">Attendance for this meeting could not be loaded.</p>
+        <p className="mt-1 text-[11px] text-white/45">
+          Nothing has been changed. Reload before marking anyone, so an existing sheet isn&apos;t overwritten.
+        </p>
+      </div>
+    );
+  }
+
+  if (!marked) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-[#111418] p-6 text-center">
+        <p className="text-sm text-white/40">Loading attendance…</p>
+      </div>
+    );
+  }
+
+  if (gridRoster.length === 0) {
     return (
       <div className="rounded-lg border border-white/10 bg-[#111418] p-6 text-center">
         <p className="text-sm text-white/40">
@@ -237,7 +287,7 @@ export default function AttendanceGrid({
               </tr>
             </thead>
             <tbody>
-              {visibleRoster.map((m) => {
+              {gridRoster.map((m) => {
                 const c = cells[m.memberId];
                 if (!c) return null;
                 return (

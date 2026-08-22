@@ -26,9 +26,10 @@ export async function sendAutomationEmail(
   const to = [...new Set(recipients.map((r) => (r ?? "").trim()).filter(Boolean))];
   if (to.length === 0) return { sent: 0, skipped: 0, reason: "no_recipients" };
 
+  // portalLink last: it is the one link in the message and must stay ours.
   const rendered = await renderAutomationEmail(automationId, {
-    portalLink: `${SITE_URL}/members`,
     ...variables,
+    portalLink: `${SITE_URL}/members`,
   });
   if (!rendered) return { sent: 0, skipped: to.length, reason: "automation_disabled" };
 

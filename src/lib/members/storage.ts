@@ -1830,25 +1830,8 @@ export async function createMemberStrike(data: Omit<MemberStrike, "id" | "issued
   await writeAuditLog({ action: "create", collection: "memberStrikes", recordId: id, details: { memberId: data.memberId, infractionId: data.infractionId, points: data.points, source: data.source } });
 
   // Tell them, with their running total — a points tally nobody sees can't
-  // change anyone's behaviour.
-  const { data: totals } = await supabase.from("member_contributions")
-    .select("infraction_points").eq("member_id", data.memberId).maybeSingle();
-  const settings = await getSiteSettings();
-  const points = Number((totals as { infraction_points?: number } | null)?.infraction_points ?? data.points);
-  const t = settings.infractionThresholds;
-  const standing = points >= t.review ? "your standing needs review"
-    : points >= t.warning ? "this is a formal warning"
-    : points >= t.notice ? "consider this a notice"
-    : "no further action for now";
-  const people = await emailsForMemberIds([data.memberId]);
-  await notify("infraction_issued", people.map((p) => p.email), {
-    memberName: people[0]?.name.split(" ")[0] ?? "there",
-    infractionName: data.infractionName,
-    points: String(data.points),
-    notePart: data.note ? data.note : "No further detail was recorded.",
-    totalPoints: String(points),
-    standing,
-  });
+  // change anyone's behaviour. The total and standing are computed server-side.
+  await notify("infraction_issued", { strikeId: id });
   return id;
 }
 
@@ -2103,7 +2086,8 @@ export async function deletePodMeeting(id: string): Promise<void> {
 }
 
 export async function fetchAttendance(meetingId: string): Promise<PodAttendance[]> {
-  const { data } = await supabase.from("pod_attendance").select("*").eq("meeting_id", meetingId);
+  const { data, error } = await supabase.from("pod_attendance").select("*").eq("meeting_id", meetingId);
+  if (error) throw new Error(error.message);
   return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<PodAttendance>(r));
 }
 
@@ -2211,13 +2195,12 @@ export async function createHoursAdjustment(
 // Fire an event-driven automation. Failure is deliberately swallowed: the
 // action that triggered it has already happened, and an unsent notification
 // must not make it look like the action failed.
+// Names the record the notification is about. The server resolves recipients
+// and message content from it — the client never supplies either.
 async function notify(
   automationId: string,
-  to: string[],
-  variables: Record<string, string>,
+  subject: Record<string, unknown>,
 ): Promise<void> {
-  const recipients = to.filter(Boolean);
-  if (recipients.length === 0) return;
   try {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -2225,20 +2208,11 @@ async function notify(
     await fetch("/api/members/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ automationId, to: recipients, variables }),
+      body: JSON.stringify({ automationId, subject }),
     });
   } catch {
     // no-op
   }
-}
-
-async function emailsForMemberIds(ids: string[]): Promise<{ email: string; name: string }[]> {
-  if (ids.length === 0) return [];
-  const { data } = await supabase.from("team").select("id, name, email")
-    .in("id", ids).is("deleted_at", null);
-  return ((data ?? []) as Record<string, unknown>[])
-    .map((r) => ({ email: String(r.email ?? ""), name: String(r.name ?? "") }))
-    .filter((r) => !!r.email);
 }
 
 // ── Tech project notifications ───────────────────────────────────────────────
@@ -2246,30 +2220,12 @@ async function emailsForMemberIds(ids: string[]): Promise<{ email: string; name:
 export async function notifyProjectAssigned(
   business: Business, newAssigneeIds: string[],
 ): Promise<void> {
-  const people = await emailsForMemberIds(newAssigneeIds);
-  const contact = [business.ownerName, business.ownerEmail, business.phone]
-    .map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ");
-  await notify("project_assigned", people.map((p) => p.email), {
-    memberName: people.length === 1 ? people[0].name.split(" ")[0] : "there",
-    businessName: business.name,
-    neighborhoodPart: business.neighborhood ? ` in ${business.neighborhood}` : "",
-    contactPart: contact || "No contact details on file yet.",
-  });
+  await notify("project_assigned", { businessId: business.id, memberIds: newAssigneeIds });
 }
 
 export async function notifyDraftReady(business: Business): Promise<void> {
   // Goes to whoever can act on it: the leads, not the whole directory.
-  const { data } = await supabase.from("team").select("name, email, role")
-    .in("role", ["Board", "Developer"]).is("deleted_at", null);
-  const leads = ((data ?? []) as Record<string, unknown>[])
-    .map((r) => String(r.email ?? "")).filter(Boolean);
-  const assignees = await emailsForMemberIds(business.assignees ?? []);
-  await notify("project_draft_ready", leads, {
-    leadName: "there",
-    businessName: business.name,
-    assigneeNames: assignees.map((a) => a.name).join(", ") || "the team",
-    previewUrl: business.previewUrl ?? business.liveUrl ?? "",
-  });
+  await notify("project_draft_ready", { businessId: business.id });
 }
 
 // ── Pod assignments ──────────────────────────────────────────────────────────
@@ -2305,14 +2261,7 @@ export async function createPodAssignment(
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { podId: data.podId, title: data.title } });
 
-  const { data: pod } = await supabase.from("pods").select("name").eq("id", data.podId).maybeSingle();
-  const people = await emailsForMemberIds(data.assignedMemberIds);
-  await notify("pod_task_assigned", people.map((p) => p.email), {
-    memberName: people.length === 1 ? people[0].name.split(" ")[0] : "there",
-    taskTitle: data.title,
-    podName: String((pod as { name?: string } | null)?.name ?? "your pod"),
-    dueDatePart: data.dueDate ? `Due ${data.dueDate}` : "No deadline set",
-  });
+  await notify("pod_task_assigned", { assignmentId: id });
 }
 
 export async function updatePodAssignment(id: string, patch: Partial<PodAssignment>): Promise<void> {

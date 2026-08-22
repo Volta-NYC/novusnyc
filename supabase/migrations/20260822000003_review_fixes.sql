@@ -1,0 +1,17 @@
+-- Review fixes, applied live in this order.
+--
+-- 1. Excused absences no longer earn meeting hours. These hours are certified
+--    to schools, so "not held against you" must not mean "credited as served".
+-- 2. Role functions require a live membership. They resolved against team
+--    without checking deleted_at or status, and my_auth_role() fell back to
+--    'member' for a login with no membership at all — so a deactivated or
+--    removed person kept read access. 'none' is granted by no policy.
+--
+-- Before tightening the fallback, four auth users whose team row had a null
+-- auth_uid were linked by email; without that they would have lost access,
+-- since the loose fallback was the only thing letting them in.
+
+-- The bodies live in the applied migrations of the same date; this file records
+-- the change set. See 20260822000003 in the remote migration history for the
+-- exact definitions of member_hours_ledger, my_auth_role, my_team_id,
+-- my_led_pods, my_pods and is_tech_lead.

@@ -59,7 +59,7 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     message ? `Message: ${message}` : "",
   ].filter(Boolean);
 
-  await sb.from("businesses").insert({
+  const { error: leadInsertError } = await sb.from("businesses").insert({
     id: crypto.randomUUID(),
     name: businessName,
     bid_id: "",
@@ -90,6 +90,10 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     created_at: timestamp,
     updated_at: timestamp,
   });
+
+  // A lead that failed to store must not be reported to the business owner as
+  // received — they would never follow up, and neither would we.
+  if (leadInsertError) throw new Error(leadInsertError.message);
 }
 
 // Chapters are rows, not constants: read the first one rather than hardcoding
@@ -314,7 +318,8 @@ export async function POST(request: Request) {
   if (formType === "contact") {
     try {
       await upsertBusinessLeadFromContactForm(data);
-    } catch {
+    } catch (err) {
+      console.error("contact_db_write_failed", err);
       dbWriteFailed = true;
     }
   }
