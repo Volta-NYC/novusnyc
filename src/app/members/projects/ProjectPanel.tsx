@@ -39,17 +39,25 @@ export default function ProjectPanel({
 
   const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
 
+  // Who is on this project is what the panel is for, so they are always
+  // listed. The rest of the directory only appears once you search for it —
+  // dumping sixty names to pick one or two is scrolling, not choosing.
   const techTeam = useMemo(() => {
     const active = team.filter((t) => !isInactiveMember(t.status));
     const q = memberQuery.trim().toLowerCase();
-    const pool = q ? active.filter((t) => t.name.toLowerCase().includes(q)) : active;
-    return [...pool].sort((a, b) => {
-      const aOn = assignees.includes(a.id), bOn = assignees.includes(b.id);
-      if (aOn !== bOn) return aOn ? -1 : 1;
-      const aTech = (a.divisions ?? []).includes("Tech"), bTech = (b.divisions ?? []).includes("Tech");
-      if (aTech !== bTech) return aTech ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    }).slice(0, q ? 40 : 60);
+    const on = active.filter((t) => assignees.includes(t.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (!q) return on;
+    const off = active
+      .filter((t) => !assignees.includes(t.id))
+      .filter((t) => t.name.toLowerCase().includes(q) || (t.email ?? "").toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aTech = (a.divisions ?? []).includes("Tech"), bTech = (b.divisions ?? []).includes("Tech");
+        if (aTech !== bTech) return aTech ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 25);
+    return [...on, ...off];
   }, [team, assignees, memberQuery]);
 
   const dirty = useMemo(() => {
@@ -260,7 +268,11 @@ export default function ProjectPanel({
                 );
               })}
               {techTeam.length === 0 && (
-                <p className="px-2.5 py-3 text-[11px] text-white/30">No one matches.</p>
+                <p className="px-2.5 py-3 text-[11px] text-white/30">
+                  {memberQuery.trim()
+                    ? `No active member matches “${memberQuery.trim()}”.`
+                    : "Nobody assigned yet — search above to add someone."}
+                </p>
               )}
             </div>
           </div>

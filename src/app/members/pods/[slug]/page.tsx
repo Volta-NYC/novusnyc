@@ -221,16 +221,18 @@ function Roster({
     finally { setBusy(null); }
   };
 
+  // The roster itself is already listed above as chips, so this list exists to
+  // add someone. It shows results for a search rather than ninety names.
   const q = query.trim().toLowerCase();
-  const candidates = team
+  const candidates = !q ? [] : team
     .filter((t) => !isInactiveMember(t.status))
-    .filter((t) => !q || t.name.toLowerCase().includes(q) || (t.email ?? "").toLowerCase().includes(q))
+    .filter((t) => t.name.toLowerCase().includes(q) || (t.email ?? "").toLowerCase().includes(q))
     .sort((a, b) => {
       const aOn = inPod.has(a.id), bOn = inPod.has(b.id);
       if (aOn !== bOn) return aOn ? -1 : 1;
       return a.name.localeCompare(b.name);
     })
-    .slice(0, q ? 60 : 90);
+    .slice(0, 25);
 
   return (
     <div className="max-w-2xl">
@@ -306,7 +308,10 @@ function Roster({
               );
             })}
             {candidates.length === 0 && (
-              <p className="px-2.5 py-3 text-[11px] text-white/30">No one matches.</p>
+              <p className="px-2.5 py-3 text-[11px] text-white/30">
+                {q ? `No active member matches “${query.trim()}”.`
+                   : "Search for someone by name or email to add them."}
+              </p>
             )}
           </div>
           <p className="mt-2 text-[10px] text-white/25">

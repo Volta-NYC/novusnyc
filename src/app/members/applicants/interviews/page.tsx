@@ -2364,58 +2364,112 @@ function InterviewsContent() {
 
       {canDeleteInterviews && (() => {
         const query = interviewerSearch.trim().toLowerCase();
-        const activeMembers = teamMembers
-          .filter((m) => m.status === "Active")
-          .filter((m) => !query || m.name.toLowerCase().includes(query) || m.email.toLowerCase().includes(query));
+        const active = teamMembers.filter((m) => m.status === "Active");
+        // Who already has access is the question this panel exists to answer,
+        // so it is answered first. The rest of the directory is only ever a
+        // search target — rendering all of it made one grantee take 270 rows
+        // of scrolling to find.
+        const granted = active
+          .filter((m) => m.canInterview)
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const matches = query
+          ? active
+              .filter((m) => !m.canInterview)
+              .filter((m) => m.name.toLowerCase().includes(query) || m.email.toLowerCase().includes(query))
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .slice(0, 20)
+          : [];
+
+        const Toggle = ({ member }: { member: TeamMember }) => (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={Boolean(member.canInterview)}
+            aria-label={`Interviewer access for ${member.name}`}
+            onClick={() => void toggleInterviewer(member)}
+            disabled={togglingId === member.id}
+            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+              member.canInterview ? "bg-[#F6B78D]" : "bg-white/15"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                member.canInterview ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </button>
+        );
+
         return (
-          <div className="mt-8 bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
+          <div className="mt-8 bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-4">
             <div>
-              <p className="text-white/85 text-sm font-semibold">Interviewer Access</p>
+              <p className="text-white/85 text-sm font-semibold">
+                Interviewer Access
+                <span className="ml-2 font-normal text-white/40">
+                  {granted.length === 0
+                    ? "no one yet"
+                    : `${granted.length} ${granted.length === 1 ? "member" : "members"}`}
+                </span>
+              </p>
               <p className="text-white/40 text-xs mt-1 font-body">
-                Members with interviewer access can view scheduled interviews, submit evaluations, and mark no-shows.
+                They can view scheduled interviews, submit evaluations, and mark no-shows.
               </p>
             </div>
-            <input
-              aria-label="Search interviewer access by name or email"
-              value={interviewerSearch}
-              onChange={(e) => setInterviewerSearch(e.target.value)}
-              placeholder="Search by name or email"
-              className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#F6B78D]"
-            />
+
             {toggleError && (
-              <p role="alert" className="mt-2 rounded-lg border border-red-400/25 bg-red-400/10 px-3 py-2 text-[12px] text-red-300">
+              <p role="alert" className="rounded-lg border border-red-400/25 bg-red-400/10 px-3 py-2 text-[12px] text-red-300">
                 {toggleError}
               </p>
             )}
-            <div className="divide-y divide-white/5 max-h-72 overflow-y-auto">
-              {activeMembers.length === 0 && (
-                <p className="text-white/25 text-sm text-center py-4">No members found.</p>
-              )}
-              {activeMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <div>
-                    <p className="text-sm text-white/85">{member.name}</p>
-                    <p className="text-[11px] text-white/35 font-body">{member.role} · {member.email}</p>
+
+            {granted.length > 0 && (
+              <div className="divide-y divide-white/5 rounded-lg border border-white/10 bg-black/20">
+                {granted.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-sm text-white/85 truncate">{member.name}</p>
+                      <p className="text-[11px] text-white/35 font-body truncate">{member.role} · {member.email}</p>
+                    </div>
+                    <Toggle member={member} />
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={Boolean(member.canInterview)}
-                    aria-label={`Interviewer access for ${member.name}`}
-                    onClick={() => void toggleInterviewer(member)}
-                    disabled={togglingId === member.id}
-                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
-                      member.canInterview ? "bg-[#F6B78D]" : "bg-white/15"
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                        member.canInterview ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <input
+                aria-label="Search members to give interviewer access"
+                value={interviewerSearch}
+                onChange={(e) => setInterviewerSearch(e.target.value)}
+                placeholder="Search by name or email to give someone access"
+                className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-[#F6B78D]"
+              />
+
+              {query && (
+                <div className="mt-2 divide-y divide-white/5 rounded-lg border border-white/10 max-h-64 overflow-y-auto">
+                  {matches.length === 0 ? (
+                    <p className="text-white/25 text-sm text-center py-4">
+                      No active member matches “{interviewerSearch.trim()}”.
+                    </p>
+                  ) : (
+                    matches.map((member) => (
+                      <div key={member.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                        <div className="min-w-0">
+                          <p className="text-sm text-white/85 truncate">{member.name}</p>
+                          <p className="text-[11px] text-white/35 font-body truncate">{member.role} · {member.email}</p>
+                        </div>
+                        <Toggle member={member} />
+                      </div>
+                    ))
+                  )}
                 </div>
-              ))}
+              )}
+
+              {!query && (
+                <p className="mt-2 text-[11px] text-white/25">
+                  {active.length} active members. Search to find someone rather than scrolling the whole directory.
+                </p>
+              )}
             </div>
           </div>
         );
