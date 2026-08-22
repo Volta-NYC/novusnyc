@@ -25,7 +25,7 @@ export default function PodDetailPage() {
   const isAdmin = authRole === "owner" || authRole === "admin";
 
   const [pods, setPods]         = useState<Pod[] | null>(null);
-  const [members, setMembers]   = useState<PodMember[]>([]);
+  const [members, setMembers]   = useState<PodMember[] | null>(null);
   const [meetings, setMeetings] = useState<PodMeeting[]>([]);
   const [team, setTeam]         = useState<TeamMember[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -42,7 +42,7 @@ export default function PodDetailPage() {
   const myId = userProfile?.id ?? null;
 
   const roster = useMemo(
-    () => members.filter((m) => m.podId === pod?.id && !m.leftAt),
+    () => (members ?? []).filter((m) => m.podId === pod?.id && !m.leftAt),
     [members, pod],
   );
   const isLit = !!myId && roster.some((m) => m.memberId === myId && m.role === "lit");
@@ -74,7 +74,7 @@ export default function PodDetailPage() {
     setOpenMeeting(id);
   };
 
-  if (loading || pods === null) {
+  if (loading || pods === null || members === null) {
     return <MembersLayout><div className="p-2"><SkeletonRows rows={6} cols={4} /></div></MembersLayout>;
   }
 
@@ -82,6 +82,20 @@ export default function PodDetailPage() {
     return (
       <MembersLayout>
         <Empty message="No pod at that address." action={<Link href="/members/pods" className="text-[#F3E28D] text-sm">Back to pods</Link>} />
+      </MembersLayout>
+    );
+  }
+
+  // Pods are readable by anyone signed in, so the address of a pod you are not
+  // in is guessable. Nothing secret sits behind it, but a page whose meetings
+  // and tasks are all empty reads as broken rather than as not-yours.
+  if (!isAdmin && !roster.some((m) => m.memberId === myId)) {
+    return (
+      <MembersLayout>
+        <Empty
+          message={`You're not in ${pod.name}.`}
+          action={<Link href="/members/pods" className="text-[#F3E28D] text-sm">Back to your pods</Link>}
+        />
       </MembersLayout>
     );
   }

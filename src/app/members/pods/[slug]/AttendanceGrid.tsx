@@ -83,13 +83,21 @@ export default function AttendanceGrid({
     }
   };
 
+  // Row-level security returns only a member's own attendance, so filling the
+  // rest of the roster with a Present default would show them a pod that was
+  // never marked. Whoever can't edit sees their own row and nothing more.
+  const visibleRoster = useMemo(
+    () => (canEdit ? roster : roster.filter((m) => m.memberId === myId)),
+    [canEdit, roster, myId],
+  );
+
   useEffect(() => {
     let live = true;
     void fetchAttendance(meeting.id).then((existing) => {
       if (!live) return;
       const byMember = new Map(existing.map((e) => [e.memberId, e]));
       const next: Record<string, Cell> = {};
-      for (const m of roster) {
+      for (const m of visibleRoster) {
         const found = byMember.get(m.memberId);
         next[m.memberId] = found
           ? { status: found.status, tasksDone: found.tasksDone, note: found.note ?? "", hours: found.hours ?? null }
@@ -98,13 +106,13 @@ export default function AttendanceGrid({
       setCells(next);
     });
     return () => { live = false; };
-  }, [meeting.id, roster]);
+  }, [meeting.id, visibleRoster]);
 
   const totals = useMemo(() => {
     const t = { Present: 0, Excused: 0, Unexcused: 0, tasks: 0, hours: 0 };
     if (!cells) return t;
     const meetingHours = Number(hours) || 0;
-    for (const m of roster) {
+    for (const m of visibleRoster) {
       const c = cells[m.memberId];
       if (!c) continue;
       t[c.status] += 1;
@@ -112,7 +120,7 @@ export default function AttendanceGrid({
       if (c.status !== "Unexcused") t.hours += c.hours ?? meetingHours;
     }
     return t;
-  }, [cells, roster, hours]);
+  }, [cells, visibleRoster, hours]);
 
   const set = (memberId: string, patch: Partial<Cell>) =>
     setCells((prev) => (prev ? { ...prev, [memberId]: { ...prev[memberId], ...patch } } : prev));
@@ -126,7 +134,7 @@ export default function AttendanceGrid({
       }
       await saveAttendance(
         meeting.id,
-        roster.map((m) => ({
+        visibleRoster.map((m) => ({
           memberId: m.memberId,
           status: cells[m.memberId]?.status ?? "Present",
           tasksDone: cells[m.memberId]?.tasksDone ?? 0,
@@ -144,14 +152,16 @@ export default function AttendanceGrid({
   const markAll = (status: AttendanceStatus) => {
     if (!cells) return;
     const next = { ...cells };
-    for (const m of roster) next[m.memberId] = { ...next[m.memberId], status };
+    for (const m of visibleRoster) next[m.memberId] = { ...next[m.memberId], status };
     setCells(next);
   };
 
-  if (roster.length === 0) {
+  if (visibleRoster.length === 0) {
     return (
       <div className="rounded-lg border border-white/10 bg-[#111418] p-6 text-center">
-        <p className="text-sm text-white/40">Add people to the roster before taking attendance.</p>
+        <p className="text-sm text-white/40">
+          {canEdit ? "Add people to the roster before taking attendance." : "You weren't on the roster for this meeting."}
+        </p>
       </div>
     );
   }
@@ -203,7 +213,7 @@ export default function AttendanceGrid({
           </div>
         )}
 
-        <div className="ml-auto flex items-center gap-3 pb-0.5 text-[11px]">
+        <div className={`ml-auto items-center gap-3 pb-0.5 text-[11px] ${canEdit ? "flex" : "hidden"}`}>
           <span className="text-green-400">{totals.Present} present</span>
           {totals.Excused > 0 && <span className="text-yellow-300">{totals.Excused} excused</span>}
           {totals.Unexcused > 0 && <span className="text-red-400">{totals.Unexcused} unexcused</span>}
@@ -227,7 +237,7 @@ export default function AttendanceGrid({
               </tr>
             </thead>
             <tbody>
-              {roster.map((m) => {
+              {visibleRoster.map((m) => {
                 const c = cells[m.memberId];
                 if (!c) return null;
                 return (
