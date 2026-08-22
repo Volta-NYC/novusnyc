@@ -37,18 +37,18 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/members/projects",
-    label: "Projects",
+    label: "Tech Projects",
     activeMatchRoots: ["/members/projects"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
   },
   {
     href: "/members/orgs",
-    label: "Organizations",
+    label: "Partner Orgs",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/><path d="M10 21v-4h4v4"/></svg>,
   },
   {
     href: "/members/pods",
-    label: "Pods",
+    label: "Marketing & Finance",
     activeMatchRoots: ["/members/pods"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="7" r="2.5"/><path d="M2 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><path d="M17 13a4 4 0 0 1 4 4v1"/></svg>,
   },
@@ -130,7 +130,7 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
     return [
       "/members/projects",
       "/members/overview",
-      "/members/assignments",
+      "/members/pods",
       "/members/orgs",
       "/members/team",
       "/members/applicants",
@@ -142,11 +142,12 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
     return [
       "/members/overview",
       "/members/projects",
-      "/members/assignments",
+      "/members/pods",
+      "/members/team",
       "/members/email",
     ];
   }
-  return ["/members/work", "/members/me", "/members/handbook", "/members/work/catalog", "/members/settings"];
+  return ["/members/work", "/members/me", "/members/pods", "/members/handbook", "/members/settings"];
 }
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
@@ -181,9 +182,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   // Reverts on unmount so navigating back to the public site restores the dark bg.
   useEffect(() => {
     if (loading) return;
-    const isLight = authRole === "member";
-    document.body.style.backgroundColor = isLight ? "#F5F6F8" : "#0D0F14";
-    localStorage.setItem("novus-portal-theme", isLight ? "light" : "dark");
+    document.body.style.backgroundColor = "#F4F5F7";
+    localStorage.setItem("novus-portal-theme", "light");
     return () => { document.body.style.backgroundColor = ""; };
   }, [authRole, loading]);
 
@@ -291,7 +291,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin" />
       </div>
     );
@@ -328,7 +328,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     "Member";
   const initials = getInitials(memberDisplayName);
 
-  const lightTheme = authRole === "member";
+  const lightTheme = true;
   const tone = lightTheme
     ? {
         page: "bg-[#F5F6F8]",

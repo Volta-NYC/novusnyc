@@ -2288,3 +2288,78 @@ summary:focus-visible {
   overflow-x: auto;
   margin-bottom: 0.75rem;
 }
+/* ── Portal light theme ────────────────────────────────────────
+   The portal was authored dark: ~1,250 literal utility classes across twenty
+   files. Remapping them here flips the theme without editing component logic,
+   so a mistake shows up as a colour rather than a broken page. */
+.members-portal-light { color-scheme: light; }
+.members-portal-light .bg-\[\#0F1014\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#10131A\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#111418\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#11141A\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#11151D\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#12141B\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#12151B\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#13151A\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#13161D\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#141821\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#151920\] { background-color: #F7F8FA !important; }
+.members-portal-light .bg-\[\#1A1D25\] { background-color: #F7F8FA !important; }
+.members-portal-light .bg-\[\#1C1F26\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-white\/10 { background-color: rgba(0,0,0,0.077) !important; }
+.members-portal-light .bg-white\/12 { background-color: rgba(0,0,0,0.099) !important; }
+.members-portal-light .bg-white\/15 { background-color: rgba(0,0,0,0.121) !important; }
+.members-portal-light .bg-white\/25 { background-color: rgba(0,0,0,0.187) !important; }
+.members-portal-light .bg-white\/5 { background-color: rgba(0,0,0,0.05) !important; }
+.members-portal-light .bg-white\/6 { background-color: rgba(0,0,0,0.055) !important; }
+.members-portal-light .bg-white\/8 { background-color: rgba(0,0,0,0.066) !important; }
+.members-portal-light .bg-white\/\[0\.02\] { background-color: rgba(0,0,0,0.028) !important; }
+.members-portal-light .bg-white\/\[0\.03\] { background-color: rgba(0,0,0,0.033) !important; }
+.members-portal-light .bg-white\/\[0\.04\] { background-color: rgba(0,0,0,0.039) !important; }
+.members-portal-light .bg-white\/\[0\.05\] { background-color: rgba(0,0,0,0.044) !important; }
+.members-portal-light .bg-white\/\[0\.06\] { background-color: rgba(0,0,0,0.05) !important; }
+.members-portal-light .border-white\/10 { border-color: rgba(0,0,0,0.11) !important; }
+.members-portal-light .border-white\/12 { border-color: rgba(0,0,0,0.12) !important; }
+.members-portal-light .border-white\/15 { border-color: rgba(0,0,0,0.14) !important; }
+.members-portal-light .border-white\/20 { border-color: rgba(0,0,0,0.16) !important; }
+.members-portal-light .border-white\/25 { border-color: rgba(0,0,0,0.18) !important; }
+.members-portal-light .border-white\/30 { border-color: rgba(0,0,0,0.38) !important; }
+.members-portal-light .border-white\/35 { border-color: rgba(0,0,0,0.22) !important; }
+.members-portal-light .border-white\/5 { border-color: rgba(0,0,0,0.07) !important; }
+.members-portal-light .border-white\/50 { border-color: rgba(0,0,0,0.5) !important; }
+.members-portal-light .border-white\/6 { border-color: rgba(0,0,0,0.08) !important; }
+.members-portal-light .border-white\/8 { border-color: rgba(0,0,0,0.09) !important; }
+.members-portal-light .divide-white\/5 > * + * { border-color: rgba(0,0,0,0.07) !important; }
+.members-portal-light .divide-white\/6 > * + * { border-color: rgba(0,0,0,0.08) !important; }
+.members-portal-light .placeholder-white\/20::placeholder { color: rgba(0,0,0,0.28) !important; }
+.members-portal-light .placeholder-white\/25::placeholder { color: rgba(0,0,0,0.34) !important; }
+.members-portal-light .placeholder-white\/30::placeholder { color: rgba(0,0,0,0.38) !important; }
+.members-portal-light .placeholder-white\/50::placeholder { color: rgba(0,0,0,0.5) !important; }
+.members-portal-light .ring-white\/35 { --tw-ring-color: rgba(0,0,0,0.22) !important; }
+.members-portal-light .text-white\/20 { color: rgba(0,0,0,0.28) !important; }
+.members-portal-light .text-white\/25 { color: rgba(0,0,0,0.34) !important; }
+.members-portal-light .text-white\/30 { color: rgba(0,0,0,0.38) !important; }
+.members-portal-light .text-white\/35 { color: rgba(0,0,0,0.42) !important; }
+.members-portal-light .text-white\/40 { color: rgba(0,0,0,0.45) !important; }
+.members-portal-light .text-white\/45 { color: rgba(0,0,0,0.48) !important; }
+.members-portal-light .text-white\/50 { color: rgba(0,0,0,0.5) !important; }
+.members-portal-light .text-white\/55 { color: rgba(0,0,0,0.55) !important; }
+.members-portal-light .text-white\/60 { color: rgba(0,0,0,0.58) !important; }
+.members-portal-light .text-white\/65 { color: rgba(0,0,0,0.62) !important; }
+.members-portal-light .text-white\/70 { color: rgba(0,0,0,0.68) !important; }
+.members-portal-light .text-white\/75 { color: rgba(0,0,0,0.72) !important; }
+.members-portal-light .text-white\/80 { color: rgba(0,0,0,0.78) !important; }
+.members-portal-light .text-white\/85 { color: rgba(0,0,0,0.8) !important; }
+.members-portal-light .text-white\/90 { color: rgba(0,0,0,0.85) !important; }
+.members-portal-light .text-white { color: rgba(0,0,0,0.88) !important; }
+.members-portal-light input, .members-portal-light textarea, .members-portal-light select {
+  background-color: #FFFFFF !important; color: rgba(0,0,0,0.88) !important;
+  border-color: rgba(0,0,0,0.18) !important;
+}
+.members-portal-light input::placeholder, .members-portal-light textarea::placeholder {
+  color: rgba(0,0,0,0.38) !important;
+}
+/* Panels sit on a tinted page, so they need an edge rather than a glow. */
+.members-portal-light .shadow-2xl, .members-portal-light .shadow-xl {
+  box-shadow: 0 1px 2px rgba(16,18,24,.06), 0 8px 28px rgba(16,18,24,.08) !important;
+}

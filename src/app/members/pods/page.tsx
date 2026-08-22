@@ -65,7 +65,7 @@ export default function PodsPage() {
   return (
     <MembersLayout>
       <PageHeader
-        title="Pods"
+        title="Marketing & Finance"
       />
 
       {pods === null ? (

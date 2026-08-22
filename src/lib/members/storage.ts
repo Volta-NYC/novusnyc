@@ -18,6 +18,7 @@ export interface BIDContact {
 
 export interface BID {
   id: string;
+  chapterId?: string;   // which market this partner belongs to
   name: string;
   status: "Active Partner" | "In Conversation" | "Outreach" | "Paused" | "Dead";
   contacts?: BIDContact[];

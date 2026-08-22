@@ -440,7 +440,7 @@ export default function TeamPage() {
     return map;
   }, [applications]);
 
-  // Status dot rank: green=0 (on pace) through gray=4 (inactive/reserve).
+  // Status dot rank: green=0 (most recent activity) through gray=4 (none).
   const DOT_RANK: Record<string, number> = {
     "bg-emerald-400": 0,
     "bg-yellow-400": 1,
@@ -667,14 +667,6 @@ export default function TeamPage() {
   }, [businesses, globalCodeMaps]);
 
 
-  const sorted = [...filtered].sort((a, b) => {
-    for (const rule of sortRules) {
-      const cmp = compareMemberByCol(a, b, rule.col);
-      if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
-    }
-    return 0;
-  });
-
   const workByMemberId = useMemo(
     () => new Map(contributions.map((c) => [c.memberId, c])),
     [contributions],
@@ -714,6 +706,14 @@ export default function TeamPage() {
     if (days <= 90) return { colorClass: "bg-orange-400", label: `${hrs}h · quiet for ${days}d` };
     return { colorClass: "bg-red-500", label: `${hrs}h · nothing for ${days}d` };
   };
+
+  const sorted = [...filtered].sort((a, b) => {
+    for (const rule of sortRules) {
+      const cmp = compareMemberByCol(a, b, rule.col);
+      if (cmp !== 0) return rule.dir === "asc" ? cmp : -cmp;
+    }
+    return 0;
+  });
 
   const assignmentQuickViewRestTeam = useMemo(() => {
     if (!assignmentQuickView) return [];
@@ -865,11 +865,11 @@ export default function TeamPage() {
         )}
       </div>
       <div className="flex flex-wrap items-center gap-3 mb-4 text-[10px] text-white/55">
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> On pace</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> 1 check-in behind</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> 2–3 behind</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> 4+ behind / no activity</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Active this month</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Within 6 weeks</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> Within 3 months</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> Longer than that</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Nothing recorded</span>
       </div>
       {/* Team member list */}
       {isMemberRestricted ? (

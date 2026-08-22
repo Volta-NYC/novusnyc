@@ -8,8 +8,8 @@ import {
   Empty, StatCard, useConfirm,
 } from "@/components/members/ui";
 import {
-  subscribeBIDs, createBID, updateBID, deleteBID,
-  type BID, type BIDContact,
+  subscribeBIDs, createBID, updateBID, deleteBID, subscribeChapters,
+  type BID, type BIDContact, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 
@@ -68,6 +68,8 @@ const BID_ALL_COLS = [
 
 export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
+  const [chapters, setChapters]       = useState<Chapter[]>([]);
+  const [chapterId, setChapterId]     = useState<string | null>(null);
   const [search, setSearch]           = useState("");
   const [viewMode, setViewMode]       = useState<BidViewMode>("cards");
   const [hiddenBidCols, setHiddenBidCols] = useState<Set<string>>(new Set());
@@ -83,6 +85,7 @@ export default function BIDTrackerPage() {
 
   // Subscribe to real-time BID updates; unsubscribe on unmount.
   useEffect(() => subscribeBIDs(setBids), []);
+  useEffect(() => subscribeChapters(setChapters), []);
 
   // Generic field updater used by all form inputs.
   const setField = (key: string, value: unknown) =>
@@ -228,13 +231,17 @@ export default function BIDTrackerPage() {
     });
   };
 
-  const filtered = bids.filter(matchesSearch);
+  const defaultChapterId = [...chapters].sort((a, b) => a.sortOrder - b.sortOrder)[0]?.id ?? null;
+  const filtered = bids
+    .filter((b) => !chapterId || (b.chapterId ?? defaultChapterId) === chapterId)
+    .filter(matchesSearch);
   const sorted = sortBids(filtered);
 
+  const inChapter = bids.filter((b) => !chapterId || (b.chapterId ?? defaultChapterId) === chapterId);
   const stats = {
-    total:    bids.length,
-    active:   bids.filter(b => b.status === "Active Partner").length,
-    pipeline: bids.filter(b => ["Outreach", "In Conversation"].includes(b.status)).length,
+    total:    inChapter.length,
+    active:   inChapter.filter(b => b.status === "Active Partner").length,
+    pipeline: inChapter.filter(b => ["Outreach", "In Conversation"].includes(b.status)).length,
   };
 
   return (
@@ -245,6 +252,31 @@ export default function BIDTrackerPage() {
         title="Partner Organizations"
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Partner</Btn> : undefined}
       />
+
+      {chapters.length > 1 && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          {[{ id: null as string | null, name: "All" },
+            ...[...chapters].sort((a, b) => a.sortOrder - b.sortOrder)].map((c) => {
+            const n = c.id === null
+              ? bids.length
+              : bids.filter((b) => (b.chapterId ?? defaultChapterId) === c.id).length;
+            return (
+              <button
+                key={c.id ?? "all"}
+                onClick={() => setChapterId(c.id)}
+                className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+                  chapterId === c.id
+                    ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
+                    : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white/85"
+                }`}
+              >
+                {c.name}
+                <span className="ml-1.5 font-mono tabular-nums text-white/35">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">

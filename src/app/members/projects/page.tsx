@@ -52,6 +52,8 @@ export default function ProjectsPage() {
   const [search, setSearch]         = useState("");
   const [openId, setOpenId]         = useState<string | null>(null);
   const [blocked, setBlocked]       = useState<string | null>(null);
+  const [quickAdd, setQuickAdd]     = useState("");
+  const [adding, setAdding]         = useState(false);
   const [statusFilter, setStatusFilter] = useState<TechStatus | null>(null);
 
   useEffect(() => subscribeBusinesses(setBusinesses), []);
@@ -124,11 +126,13 @@ export default function ProjectsPage() {
     // The gate that keeps the list honest: a status that claims a URL exists
     // can't be set until it does.
     if (status === "Draft Ready" && !b.previewUrl) {
-      setBlocked("Draft Ready needs a preview URL — add one below first.");
+      setBlocked("Draft Ready needs a preview link.");
+      setOpenId(b.id);
       return;
     }
     if (status === "Live" && !b.liveUrl) {
-      setBlocked("Live means its own domain. Add the live URL first; if it's still on Vercel it's Draft Ready or With Client.");
+      setBlocked("Live needs its own domain. Still on Vercel? That's Draft Ready or With Client.");
+      setOpenId(b.id);
       return;
     }
     setBlocked(null);
@@ -136,17 +140,62 @@ export default function ProjectsPage() {
     if (status === "Draft Ready") void notifyDraftReady(b);
   };
 
+  // One field. Paste a link or type a name — the doc this replaces was a list
+  // of pasted links, so pasting one has to be the whole interaction.
   const addProject = async () => {
-    const name = window.prompt("Business name")?.trim();
-    if (!name) return;
-    await createBusiness({
-      name, ownerName: "", ownerEmail: "", ownerAlternateEmail: "", phone: "",
-      alternatePhone: "", address: "", website: "", projectStatus: "Upcoming",
-      teamLead: "", firstContactDate: "", notes: "",
-      techStatus: "Backlog", techPriority: "Medium", assignees: [], hoursLogged: 0,
-      chapterId: chapterId ?? defaultChapterId ?? undefined,
-      lastTouchedAt: new Date().toISOString(),
-    } as Omit<Business, "id" | "createdAt" | "updatedAt">);
+    const raw = quickAdd.trim();
+    if (!raw || adding) return;
+
+    const looksLikeUrl = /^(https?:\/\/|www\.)|\.[a-z]{2,}(\/|$)/i.test(raw);
+    let name = raw;
+    let previewUrl: string | undefined;
+    let liveUrl: string | undefined;
+    let techStatus: TechStatus = "Backlog";
+
+    if (looksLikeUrl) {
+      const url = raw.startsWith("http") ? raw : `https://${raw}`;
+      let host = url;
+      try { host = new URL(url).host; } catch { /* keep the raw string */ }
+      const bare = host.replace(/^www\./, "");
+      if (bare.endsWith(".vercel.app")) {
+        previewUrl = url;
+        techStatus = "Draft Ready";
+        name = bare.replace(/\.vercel\.app$/, "");
+      } else {
+        liveUrl = url;
+        techStatus = "Live";
+        name = bare.replace(/\.[a-z.]+$/i, "");
+      }
+      name = name.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
+    }
+
+    // Adding the same site twice is the easy mistake here; open the existing
+    // one instead of making a second row.
+    const existing = (businesses ?? []).find((b) =>
+      (previewUrl && b.previewUrl === previewUrl) ||
+      (liveUrl && b.liveUrl === liveUrl) ||
+      b.name.trim().toLowerCase() === name.toLowerCase());
+    if (existing) {
+      setQuickAdd("");
+      setOpenId(existing.id);
+      return;
+    }
+
+    setAdding(true);
+    try {
+      await createBusiness({
+        name, ownerName: "", ownerEmail: "", ownerAlternateEmail: "", phone: "",
+        alternatePhone: "", address: "", website: "", projectStatus: "Upcoming",
+        teamLead: "", firstContactDate: "", notes: "",
+        techStatus, techPriority: "Medium", assignees: [], hoursLogged: 0,
+        previewUrl, liveUrl,
+        chapterId: chapterId ?? defaultChapterId ?? undefined,
+        lastTouchedAt: new Date().toISOString(),
+      } as Omit<Business, "id" | "createdAt" | "updatedAt">);
+      setQuickAdd("");
+    } finally {
+      setAdding(false);
+    }
   };
 
   if (loading) return <MembersLayout><div className="p-6" /></MembersLayout>;
@@ -154,8 +203,7 @@ export default function ProjectsPage() {
   return (
     <MembersLayout>
       <PageHeader
-        title="Projects"
-        action={canEdit ? <Btn variant="primary" onClick={addProject}>+ New Project</Btn> : undefined}
+        title="Tech Projects"
       />
       <SectionTabs tabs={PROJECT_GROUP_TABS} />
 
@@ -199,6 +247,22 @@ export default function ProjectsPage() {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {canEdit && (
+        <div className="mb-3 flex items-center gap-2">
+          <input
+            value={quickAdd}
+            onChange={(e) => setQuickAdd(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addProject(); } }}
+            placeholder="Paste a Vercel link or type a business name, then press Enter"
+            aria-label="Add a website"
+            className="flex-1 rounded-lg border border-white/15 bg-[#0F1014] px-3 py-2 text-[13px] text-white/90 placeholder:text-white/35 focus:border-[#F3E28D]/50 focus:outline-none"
+          />
+          <Btn variant="primary" onClick={() => void addProject()} disabled={!quickAdd.trim() || adding}>
+            {adding ? "Adding…" : "Add"}
+          </Btn>
         </div>
       )}
 
@@ -257,9 +321,22 @@ export default function ProjectsPage() {
                         <div className="text-[10px] text-white/35">{b.neighborhood}</div>
                       )}
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
-                        <Badge label={b.techStatus ?? "Backlog"} />
+                        {canEdit ? (
+                          // Changing status is the most frequent edit there is,
+                          // so it happens on the row rather than two clicks deep.
+                          <select
+                            value={b.techStatus ?? "Backlog"}
+                            onChange={(e) => void setStatus(b, e.target.value as TechStatus)}
+                            aria-label={`Status for ${b.name}`}
+                            className="cursor-pointer rounded border border-white/10 bg-transparent px-1.5 py-0.5 text-[11px] text-white/80 focus:border-[#F3E28D]/50 focus:outline-none"
+                          >
+                            {TECH_STATUSES.map((st) => <option key={st} value={st}>{st}</option>)}
+                          </select>
+                        ) : (
+                          <Badge label={b.techStatus ?? "Backlog"} />
+                        )}
                         {b.techStatus === "Backlog" && b.techPriority && b.techPriority !== "Medium" && (
                           <Badge label={b.techPriority} />
                         )}

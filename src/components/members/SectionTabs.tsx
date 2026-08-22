@@ -75,7 +75,7 @@ export default function SectionTabs({
 }
 
 export const PROJECT_GROUP_TABS: SectionTab[] = [
-  { href: "/members/projects", label: "Tracker", exact: true },
+  { href: "/members/projects", label: "Websites", exact: true },
   { href: "/members/projects/showcase", label: "Public Showcase" },
 ];
 
