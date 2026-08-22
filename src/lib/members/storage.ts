@@ -75,7 +75,6 @@ export interface Business {
   neighborhood?: string;
   lat?: number;
   lng?: number;
-  website: string;
   // ── Tech project tracker ──────────────────────────────────────────────────
   // Three URLs because two columns previously carried three meanings between
   // them, and launching a site overwrote its preview link.
@@ -99,15 +98,12 @@ export interface Business {
     | "Active"
     | "On Hold"
     | "Complete";
-  teamLead: string;
   languages?: string[];        // legacy field
   firstContactDate: string;
   notes: string;
   createdAt: string;
   updatedAt: string;
   // Project-level fields (merged from Projects tab)
-  division?: "Tech" | "Marketing" | "Finance";
-  teamMembers?: string[];     // may be undefined on legacy rows
   githubUrl?: string;         // legacy field
   driveFolderUrl?: string;    // legacy field
   clientNotes?: string;       // legacy field
@@ -162,8 +158,7 @@ export interface Business {
   projectTracks?: Array<"Tech" | "Marketing" | "Finance">;
   trackProjects?: Partial<Record<"Tech" | "Marketing" | "Finance", {
     projectStatus?: "Ongoing" | "Upcoming" | "Completed" | "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete" | "In Development" | "Awaiting Client" | "Awaiting Deployment" | "In Planning" | "Consistent Posts" | "In Progress";
-    teamMembers?: string[];
-    deadlines?: Array<{
+      deadlines?: Array<{
       label?: string;
       date?: string;
     }>;

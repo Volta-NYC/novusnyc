@@ -147,28 +147,16 @@ export function getMemberCodes(
   // Business projects
   for (const business of businesses) {
     const tracks = getBusinessTracks(business);
-    if (tracks.length === 0) {
-      // Legacy: check teamMembers or teamLead
-      const legacyMembers = [
-        ...(business.teamMembers ?? []).map((n) => n.trim().replace(/\s+/g, " ").toLowerCase()),
-        (business.teamLead ?? "").trim().replace(/\s+/g, " ").toLowerCase(),
-      ].filter(Boolean);
-      if (legacyMembers.some((n) => n === normName || n.includes(normName) || normName.includes(n))) {
-        const codeEntry = globalCodes.allCodes.find((c) => c.entityKey === business.id);
+    const trackProjects = (business.trackProjects ?? {}) as Record<string, { teamMembers?: string[] }>;
+    for (const { track } of tracks) {
+      const members = (trackProjects[track]?.teamMembers ?? []).map((n: string) => {
+        // Strip decorated email "(email)" from names
+        return n.replace(/\s*\([^()]*\)\s*$/, "").trim().replace(/\s+/g, " ").toLowerCase();
+      });
+      if (members.some((n) => n === normName || n.includes(normName) || normName.includes(n))) {
+        const key = `${business.id}-${track}`;
+        const codeEntry = globalCodes.allCodes.find((c) => c.entityKey === key);
         if (codeEntry) addCode(codeEntry);
-      }
-    } else {
-      const trackProjects = (business.trackProjects ?? {}) as Record<string, { teamMembers?: string[] }>;
-      for (const { track } of tracks) {
-        const members = (trackProjects[track]?.teamMembers ?? []).map((n: string) => {
-          // Strip decorated email "(email)" from names
-          return n.replace(/\s*\([^()]*\)\s*$/, "").trim().replace(/\s+/g, " ").toLowerCase();
-        });
-        if (members.some((n) => n === normName || n.includes(normName) || normName.includes(n))) {
-          const key = `${business.id}-${track}`;
-          const codeEntry = globalCodes.allCodes.find((c) => c.entityKey === key);
-          if (codeEntry) addCode(codeEntry);
-        }
       }
     }
   }

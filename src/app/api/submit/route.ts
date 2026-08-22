@@ -70,7 +70,6 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     alternate_phone: "",
     address: "",
     neighborhood,
-    website: "",
     project_status: "Upcoming",
     tech_status: "Backlog",
     // The market this lead belongs to. Falls back to the first chapter rather
@@ -79,7 +78,6 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     // Services are stored on the record as well as in the note, so the intake
     // answer is queryable instead of only readable.
     active_services: splitCsvToList(services),
-    team_lead: "",
     first_contact_date: timestamp.slice(0, 10),
     notes: notesParts.join("\n"),
     sort_index: now,

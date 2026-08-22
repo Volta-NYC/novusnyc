@@ -364,13 +364,10 @@ const BLANK_FORM: Omit<Business, "id" | "createdAt" | "updatedAt"> = {
   alternatePhone: "",
   address: "",
   neighborhood: "",
-  website: "",
+  clientUrl: "",
   firstContactDate: "",
   projectStatus: "Upcoming",
-  teamLead: "",
   notes: "",
-  division: "Tech",
-  teamMembers: [],
   projectTracks: [],
   trackProjects: {},
   showcaseEnabled: false,
@@ -457,7 +454,6 @@ function BusinessesPageInner() {
   const [promoteModalStatuses, setPromoteModalStatuses] = useState<Partial<Record<TrackDivision, string>>>({});
   const [promoteBusy, setPromoteBusy] = useState(false);
   const normalizedLegacyColorsRef = useRef(false);
-  const normalizedLegacyTracksRef = useRef(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [showcaseServiceOptions, setShowcaseServiceOptions] = useState<string[]>(["Website", "SEO", "Social Media", "Graphic Design", "Grants"]);
@@ -534,54 +530,6 @@ function BusinessesPageInner() {
     })();
   }, [businesses, canEdit]);
 
-  useEffect(() => {
-    if (normalizedLegacyTracksRef.current) return;
-    if (!canEdit || businesses.length === 0) return;
-    normalizedLegacyTracksRef.current = true;
-
-    void (async () => {
-      for (const business of businesses) {
-        const normalized = normalizeTrackProjectsFromBusiness(business);
-        const hasLegacyShape = !Array.isArray(business.projectTracks) || !business.trackProjects;
-        const existingTracks = (Array.isArray(business.projectTracks) ? business.projectTracks : []).join("|");
-        const normalizedTracks = normalized.projectTracks.join("|");
-        const shouldWrite = hasLegacyShape || existingTracks !== normalizedTracks;
-        if (!shouldWrite) continue;
-
-        const primaryTrack = normalized.projectTracks[0] ?? "Tech";
-        // Legacy migration: any existing assignment is normalized into Tech unless already explicit.
-        const techMembers = (business.teamMembers ?? []).map((name) => String(name ?? "").trim()).filter(Boolean);
-        const nextTrackProjects: TrackProjectMap = {
-          ...normalized.trackProjects,
-          ...(techMembers.length > 0 ? {
-            Tech: {
-              projectStatus: normalized.trackProjects.Tech?.projectStatus ?? "Upcoming",
-              teamMembers: techMembers,
-              deadlines: normalized.trackProjects.Tech?.deadlines ?? [...TRACK_DEADLINE_DEFAULT],
-              notes: normalized.trackProjects.Tech?.notes ?? String(business.notes ?? "").trim(),
-            },
-          } : {}),
-        };
-        const nextTracks = Array.from(new Set([
-          ...(normalized.projectTracks.length > 0 ? normalized.projectTracks : [primaryTrack]),
-          ...(techMembers.length > 0 ? ["Tech"] as TrackDivision[] : []),
-        ]));
-        const overallStatus = deriveOverallStatus(nextTrackProjects, nextTracks);
-        const primaryDivision = derivePrimaryDivision(nextTracks);
-        const flattenedTeamMembers = TRACK_ORDER.flatMap((track) => nextTrackProjects[track]?.teamMembers ?? []);
-
-        // eslint-disable-next-line no-await-in-loop
-        await updateBusiness(business.id, {
-          projectTracks: nextTracks,
-          trackProjects: nextTrackProjects,
-          projectStatus: overallStatus,
-          division: primaryDivision,
-          teamMembers: flattenedTeamMembers,
-          notes: nextTrackProjects[primaryDivision]?.notes ?? "",
-        });
-      }
-    })();
-  }, [businesses, canEdit]);
 
   // One-time migration: strip borough suffix ("Park Slope, Brooklyn" → "Park Slope").
   const trimmedNeighborhoodRef = useRef(false);
@@ -651,14 +599,11 @@ function BusinessesPageInner() {
       ownerName: b.ownerName,
       ownerEmail: b.ownerEmail,
       ownerAlternateEmail: b.ownerAlternateEmail ?? "",
-      phone: b.phone, alternatePhone: b.alternatePhone ?? "", address: b.address, website: b.website,
+      phone: b.phone, alternatePhone: b.alternatePhone ?? "", address: b.address, clientUrl: b.clientUrl ?? "",
       neighborhood: b.neighborhood ?? b.showcaseNeighborhood ?? "",
       firstContactDate: b.firstContactDate ?? "",
       projectStatus: overallStatus,
-      teamLead: b.teamLead ?? "",
       notes: normalized.trackProjects[primaryDivision]?.notes ?? "",
-      division: primaryDivision,
-      teamMembers: TRACK_ORDER.flatMap((track) => normalized.trackProjects[track]?.teamMembers ?? []),
       projectTracks: normalized.projectTracks,
       trackProjects: normalized.trackProjects,
       showcaseEnabled: !!b.showcaseEnabled,
@@ -782,7 +727,6 @@ function BusinessesPageInner() {
       ? deriveOverallStatus(nextTrackProjects, selectedTracks)
       : (normalizeProjectStatus(form.projectStatus) as ProjectStatusValue);
     const primaryDivision = derivePrimaryDivision(selectedTracks);
-    const flattenedTeamMembers = TRACK_ORDER.flatMap((track) => nextTrackProjects[track]?.teamMembers ?? []);
     const primaryNotes = nextTrackProjects[primaryDivision]?.notes ?? "";
 
     const showcaseEnabled = !!form.showcaseEnabled;
@@ -806,10 +750,8 @@ function BusinessesPageInner() {
       alternatePhone: (form.alternatePhone ?? "").trim(),
       address: form.address.trim(),
       neighborhood,
-      website: form.website.trim(),
+      clientUrl: (form.clientUrl ?? "").trim(),
       projectStatus: overallStatus,
-      teamMembers: flattenedTeamMembers,
-      division: primaryDivision,
       notes: primaryNotes,
       projectTracks: selectedTracks,
       trackProjects: nextTrackProjects,
@@ -822,10 +764,11 @@ function BusinessesPageInner() {
     if (showcaseEnabled) {
       payload.showcaseFeaturedOnHome = !!form.showcaseFeaturedOnHome;
       payload.showcaseType = DIVISION_PUBLIC_LABEL[primaryDivision] ?? "Digital & Tech";
-      payload.showcaseNeighborhood = neighborhood;
-      payload.showcaseServices = showcaseServices;
+      // Curation writes the record's own fields now — the public site reads
+      // those, so a separately-maintained copy would only drift.
+      payload.activeServices = showcaseServices;
       payload.showcaseDescription = (form.showcaseDescription ?? "").trim();
-      payload.showcaseUrl = (form.showcaseUrl ?? "").trim();
+      payload.liveUrl = (form.showcaseUrl ?? "").trim();
       payload.showcaseImageUrl = (form.showcaseImageUrl ?? "").trim();
       payload.showcaseImageData = showcaseImageData;
     } else {
@@ -839,20 +782,8 @@ function BusinessesPageInner() {
         await updateBusiness(editingBusiness.id, {
           ...payload,
           ...(wasDiscovery && nowHasTracks ? { intakeSource: null as unknown as Business["intakeSource"] } : {}),
-          activeServices: null as unknown as string[],
-          languages: null as unknown as string[],
-          githubUrl: null as unknown as string,
-          driveFolderUrl: null as unknown as string,
-          clientNotes: null as unknown as string,
-          firstContactDate: null as unknown as string,
-          teamLead: null as unknown as string,
-          showcaseName: null as unknown as string,
           showcaseType: showcaseEnabled ? payload.showcaseType : (null as unknown as string),
-          showcaseNeighborhood: showcaseEnabled ? payload.showcaseNeighborhood : (null as unknown as string),
-          showcaseServices: showcaseEnabled ? payload.showcaseServices : (null as unknown as string[]),
-          showcaseStatus: null as unknown as Business["showcaseStatus"],
           showcaseDescription: showcaseEnabled ? payload.showcaseDescription : (null as unknown as string),
-          showcaseUrl: showcaseEnabled ? payload.showcaseUrl : (null as unknown as string),
           showcaseImageUrl: showcaseEnabled ? payload.showcaseImageUrl : (null as unknown as string),
           showcaseImageData: showcaseEnabled ? payload.showcaseImageData : (null as unknown as string),
         });
@@ -925,13 +856,11 @@ function BusinessesPageInner() {
       };
     }
     const overallStatus = deriveOverallStatus(nextTrackProjects, tracks);
-    const primaryDivision = derivePrimaryDivision(tracks);
     try {
       await updateBusiness(promoteModal.id, {
         projectTracks: tracks,
         trackProjects: nextTrackProjects,
         projectStatus: overallStatus,
-        division: primaryDivision,
         intakeSource: null as unknown as Business["intakeSource"],
       });
       setPromoteModal(null);
@@ -1970,9 +1899,9 @@ function BusinessesPageInner() {
                     { key: "referredBy", label: "Referred By" },
                     { key: "servicesRequested", label: "Services Requested" },
                     { key: "projectStatus", label: "Status" },
-                    { key: "teamLead", label: "Team Lead" },
                     { key: "firstContactDate", label: "First Contact" },
-                    { key: "website", label: "Website" },
+                    { key: "clientUrl", label: "Client Website" },
+                    { key: "liveUrl", label: "Live URL" },
                   ]);
                   downloadCsv(dateStampedFilename(`businesses-${activeTab}`), csv);
                 }}
@@ -2556,7 +2485,7 @@ function BusinessesPageInner() {
             </div>
           )}
           <Field label="Website">
-            <Input value={form.website} onChange={e => setField("website", e.target.value)} placeholder="https://" />
+            <Input value={form.clientUrl ?? ""} onChange={e => setField("clientUrl", e.target.value)} placeholder="https://" />
           </Field>
           <div className="lg:col-span-2">
             <Field label="Address">

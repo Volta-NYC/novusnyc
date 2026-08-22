@@ -65,8 +65,6 @@ export interface PublicLiveStats {
   totalBusinesses: number;
   websiteProjects: number;   // W# count
   marketingProjects: number; // M# count
-  caseStudies: number;       // C# count
-  educationalReports: number;// R# count
   bidPartners: number;
 }
 
@@ -216,6 +214,10 @@ function defaultShowcaseColor(): PublicShowcaseColor {
 
 function mapBusinessStatusToShowcase(value: unknown): PublicShowcaseStatus {
   const key = asText(value);
+  // Tech statuses first — this is what the tracker actually writes now.
+  if (key === "Live") return "Completed";
+  if (key === "Assigned" || key === "Draft Ready" || key === "With Client") return "Ongoing";
+  if (key === "Backlog" || key === "On Hold" || key === "Dropped") return "Upcoming";
   if (key === "Completed" || key === "Complete") return "Completed";
   if (
     key === "Ongoing" || 
@@ -239,13 +241,28 @@ function defaultServicesFromDivision(value: unknown): string[] {
 }
 
 function inferDivision(value: unknown, row: Record<string, unknown>): "Tech" | "Marketing" | "Finance" {
+  // project_tracks is canonical; `division` is a denormalised copy on its way out.
+  const tracks = asStringArray(row.projectTracks);
+  for (const candidate of ["Tech", "Marketing", "Finance"] as const) {
+    if (tracks.includes(candidate)) return candidate;
+  }
+
   const direct = asText(value);
   if (direct === "Tech" || direct === "Marketing" || direct === "Finance") return direct;
 
-  const services = asStringArray(row.showcaseServices).map((item) => item.toLowerCase());
+  const services = resolveServices(row).map((item) => item.toLowerCase());
   if (services.some((item) => item.includes("grant") || item.includes("finance") || item.includes("ops"))) return "Finance";
   if (services.some((item) => item.includes("social") || item.includes("content") || item.includes("brand"))) return "Marketing";
   return "Tech";
+}
+
+// Curated showcase services were never migrated onto the record's own service
+// list, so read the canonical field first and keep the legacy one as a fallback
+// until it is dropped.
+function resolveServices(row: Record<string, unknown>): string[] {
+  const active = asStringArray(row.activeServices);
+  if (active.length > 0) return active;
+  return asStringArray(row.showcaseServices);
 }
 
 function divisionLabel(value: "Tech" | "Marketing" | "Finance"): string {
@@ -454,9 +471,9 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
     const division = inferDivision(row.division, row);
     const type = divisionLabel(division);
     const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
-    const services = asStringArray(row.showcaseServices);
+    const services = resolveServices(row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
-    const status = mapBusinessStatusToShowcase(row.projectStatus);
+    const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
     const desc = normalizeDescription(row.showcaseDescription);
     // Read the tracker's own fields first so the public link follows the project
     // rather than a separately-maintained copy. A launched domain wins over a
@@ -517,11 +534,11 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
     const name = asText(row.showcaseName) || asText(row.name);
     if (!name) continue;
 
-    const status = mapBusinessStatusToShowcase(row.projectStatus);
+    const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
     if (status === "Upcoming") continue;
 
     totalProjects++;
-    const services = asStringArray(row.showcaseServices);
+    const services = resolveServices(row);
     const division = inferDivision(row.division, row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
 
@@ -536,13 +553,12 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
 }
 
 export async function getPublicLiveStats(): Promise<PublicLiveStats> {
-  const ZERO: PublicLiveStats = { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, caseStudies: 0, educationalReports: 0, bidPartners: 0 };
+  const ZERO: PublicLiveStats = { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, bidPartners: 0 };
   let sb;
   try { sb = getSupabaseAdmin(); } catch { return ZERO; }
 
-  const [businessRows, { data: financeRows }, { data: bidsRows }] = await Promise.all([
+  const [businessRows, { data: bidsRows }] = await Promise.all([
     fetchBusinesses(),
-    sb.from("finance_assignments").select("type"),
     sb.from("bids").select("id").eq("status", "Active Partner"),
   ]);
 
@@ -593,17 +609,10 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
     }
   }
 
-  let caseStudies = 0;
-  let educationalReports = 0;
-  for (const row of financeRows ?? []) {
-    const r = row as Record<string, unknown>;
-    if (r.type === "Case Study") caseStudies++;
-    else if (r.type === "Report") educationalReports++;
-  }
 
   const bidPartners = bidsRows?.length ?? 0;
 
-  return { totalBusinesses, websiteProjects: wCount, marketingProjects: mCount, caseStudies, educationalReports, bidPartners };
+  return { totalBusinesses, websiteProjects: wCount, marketingProjects: mCount, bidPartners };
 }
 
 export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
@@ -626,9 +635,9 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
     const division = inferDivision(row.division, row);
     const type = divisionLabel(division);
     const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
-    const services = asStringArray(row.showcaseServices);
+    const services = resolveServices(row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
-    const status = mapBusinessStatusToShowcase(row.projectStatus);
+    const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
     // Read the tracker's own fields first so the public link follows the project
     // rather than a separately-maintained copy. A launched domain wins over a
     // preview; showcaseUrl remains only as a fallback for un-migrated rows.

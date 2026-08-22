@@ -502,10 +502,6 @@ export default function TeamPage() {
 
     for (const business of businesses) {
       const status = String(business.projectStatus ?? "").trim() || "—";
-      const legacyAssignedNames = [...(business.teamMembers ?? []), business.teamLead ?? ""]
-        .map((name) => String(name ?? "").trim())
-        .filter(Boolean)
-        .filter((name, index, arr) => arr.indexOf(name) === index);
       const trackProjects = business.trackProjects ?? {};
       const requestedTracks = Array.isArray(business.projectTracks)
         ? business.projectTracks.map((track) => String(track ?? "").trim()).filter(Boolean)
@@ -514,29 +510,8 @@ export default function TeamPage() {
       const allTracks = Array.from(new Set([...requestedTracks, ...explicitTracks]));
       const trackOrder: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
       const hasTrackSpecificAssignments = allTracks.length > 0;
-      const hasAnyExplicitTrackTeamMembers = trackOrder.some((track) => {
-        if (!allTracks.includes(track)) return false;
-        const info = (trackProjects as Record<string, unknown>)[track];
-        if (!info || typeof info !== "object") return false;
-        const raw = (info as { teamMembers?: unknown }).teamMembers;
-        return Array.isArray(raw);
-      });
 
-      if (!hasTrackSpecificAssignments) {
-        const entry: Omit<MemberAssignmentLink, "code"> = {
-          id: business.id,
-          kind: "Business Project",
-          title: business.name || "Untitled Project",
-          topic: "Website project",
-          teamNames: legacyAssignedNames,
-          codePrefix: "W",
-          status,
-          deadline: "—",
-          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
-        };
-        for (const memberName of legacyAssignedNames) pushForMemberName(memberName, entry);
-        continue;
-      }
+      if (!hasTrackSpecificAssignments) continue;
 
       for (const track of trackOrder) {
         if (!allTracks.includes(track)) continue;
@@ -547,8 +522,7 @@ export default function TeamPage() {
         const trackMembers = Array.isArray(rawMembers)
           ? rawMembers.map((name) => String(name ?? "").trim()).filter(Boolean)
           : [];
-        const fallbackMembers = hasAnyExplicitTrackTeamMembers ? [] : legacyAssignedNames;
-        const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : fallbackMembers));
+        const assignedNames = Array.from(new Set(trackMembers));
         if (assignedNames.length === 0) continue;
         const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : track === "Finance" ? "F" : "W";
         const topic =

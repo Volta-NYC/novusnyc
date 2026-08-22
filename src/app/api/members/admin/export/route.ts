@@ -8,8 +8,6 @@ const EXPORT_SECTIONS = [
   { key: "userProfiles",          label: "User Profiles",           table: "user_profiles" },
   { key: "businesses",            label: "Businesses",              table: "businesses" },
   { key: "assignments",           label: "Assignments",             table: "assignments" },
-  { key: "assignmentCatalog",     label: "Assignment Catalog",      table: "assignment_catalog" },
-  { key: "assignmentTemplates",   label: "Assignment Templates",    table: "assignment_templates" },
   { key: "applicants",            label: "Applicants",              table: "applications" },
   { key: "bids",                  label: "BID Directory",           table: "bids" },
   { key: "memberStrikes",         label: "Member Strikes",          table: "member_strikes" },
@@ -17,6 +15,16 @@ const EXPORT_SECTIONS = [
   { key: "calendarEvents",        label: "Calendar Events",         table: "calendar_events" },
   { key: "handbookPages",         label: "Handbook Pages",          table: "handbook_pages" },
   { key: "auditLogs",             label: "Audit Logs",              table: "audit_logs" },
+  // The pod/hours system is where the work is recorded now, so a "full" export
+  // that omitted it was not a full export.
+  { key: "chapters",              label: "Chapters",                table: "chapters" },
+  { key: "pods",                  label: "Pods",                    table: "pods" },
+  { key: "podMembers",            label: "Pod Memberships",         table: "pod_members" },
+  { key: "podMeetings",           label: "Pod Meetings",            table: "pod_meetings" },
+  { key: "podAttendance",         label: "Pod Attendance",          table: "pod_attendance" },
+  { key: "hoursAdjustments",      label: "Hours Adjustments",       table: "hours_adjustments" },
+  { key: "infractions",           label: "Infractions",             table: "infractions" },
+  { key: "automationConfigs",     label: "Automation Config",       table: "automation_configs" },
 ] as const;
 
 type ExportKey = (typeof EXPORT_SECTIONS)[number]["key"];
