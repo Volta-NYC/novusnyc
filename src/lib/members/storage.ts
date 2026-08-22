@@ -185,6 +185,7 @@ export interface TeamMember {
   // Which market they were recruited into. Blank means New York, so this is
   // set only for a recruit in a new chapter who has no pod or client yet.
   chapterId?: string;
+  deletedAt?: string | null;
   slackHandle: string;
   email: string;
   alternateEmail?: string;
@@ -1075,6 +1076,23 @@ export async function updateTeamMember(id: string, data: Partial<TeamMember>): P
     .update(toRow({ ...data, updatedAt: nowISO() } as Record<string, unknown>)).eq("id", id);
   if (teamUpdateError) throw new Error(teamUpdateError.message);
   await writeAuditLog({ action: "update", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
+}
+
+// Removal is a soft delete, so a mistake is recoverable — but nothing surfaced
+// the removed rows, which made it recoverable only from the database.
+export async function fetchDeletedTeamMembers(): Promise<TeamMember[]> {
+  const { data } = await supabase.from("team").select("*")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false })
+    .limit(50);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<TeamMember>(r));
+}
+
+export async function restoreTeamMember(id: string): Promise<void> {
+  const { error } = await supabase.from("team")
+    .update({ deleted_at: null, updated_at: nowISO() }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "team", recordId: id, details: { restored: true } });
 }
 
 export async function deleteTeamMember(id: string): Promise<void> {
