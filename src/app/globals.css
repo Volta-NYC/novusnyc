@@ -2483,3 +2483,30 @@ summary:focus-visible {
 @media (min-width: 1024px) {
   .members-portal .members-sidebar[data-closed="true"] { visibility: visible; }
 }
+
+/* The blanket `.members-portal-light input` rule below paints every input white,
+   including a checked checkbox — so a ticked box looked exactly like an empty
+   one and there was no way to see what you had selected. The checked state is
+   restored here, after that rule, at equal specificity plus !important. */
+.members-portal-light .members-checkbox {
+  background: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.28) !important;
+}
+.members-portal-light .members-checkbox:checked {
+  background: rgb(var(--color-orange)) !important;
+  border-color: rgb(var(--color-orange)) !important;
+}
+
+/* Icon-only controls inherited white-on-white and vanished on light surfaces. */
+.members-portal-light .members-icon-btn {
+  color: rgba(0, 0, 0, 0.62) !important;
+  border-color: rgba(0, 0, 0, 0.16) !important;
+}
+.members-portal-light .members-icon-btn:hover {
+  color: rgba(0, 0, 0, 0.88) !important;
+  border-color: rgba(0, 0, 0, 0.34) !important;
+}
+.members-portal-light .members-icon-btn-danger {
+  color: #b91c1c !important;
+  border-color: rgba(185, 28, 28, 0.32) !important;
+}
