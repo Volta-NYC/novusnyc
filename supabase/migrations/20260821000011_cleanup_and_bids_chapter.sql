@@ -23,4 +23,20 @@ UPDATE applications a
    AND (SELECT count(*) FROM team y
          WHERE y.deleted_at IS NULL AND lower(trim(y.name)) = lower(trim(a.full_name))) = 1;
 
+-- 4. An application can be blank where its member record is not: Emily Liu gave
+--    no location on the form, but her member record carries Brooklyn Technical
+--    High School and New York City. Fill the application from the member.
+UPDATE applications a
+   SET city  = t.home_city,
+       state = t.home_state,
+       school_name = coalesce(nullif(a.school_name,''), t.school)
+  FROM team t
+ WHERE t.id = a.member_id
+   AND t.deleted_at IS NULL
+   AND a.state IS NULL
+   AND t.home_state IS NOT NULL;
+
+-- 5. Chelsey Gebologlu removed: accepted in February, never became a member,
+--    and based in Kent, Washington.
+
 NOTIFY pgrst, 'reload schema';
