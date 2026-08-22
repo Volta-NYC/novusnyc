@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Btn } from "@/components/members/ui";
 import {
-  updateBusiness, subscribeChapters, TECH_STATUSES, TECH_PRIORITIES,
+  updateBusiness, subscribeChapters, notifyProjectAssigned, TECH_STATUSES, TECH_PRIORITIES,
   type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { formatPhone } from "@/lib/format";
@@ -89,6 +89,10 @@ export default function ProjectPanel({
         chapterId: draft.chapterId,
         lastTouchedAt: new Date().toISOString(),
       });
+      // Only the people newly added hear about it; the ones already on the
+      // project don't need telling again every time the notes change.
+      const added = (draft.assignees ?? []).filter((id) => !(business.assignees ?? []).includes(id));
+      if (added.length > 0) void notifyProjectAssigned({ ...business, ...draft }, added);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1800);
     } finally {

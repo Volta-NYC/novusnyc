@@ -8,6 +8,7 @@ import {
 } from "@/components/members/ui";
 import {
   subscribeBusinesses, subscribeTeam, subscribeChapters, updateBusiness, createBusiness,
+  notifyDraftReady,
   TECH_STATUSES, TECH_PIPELINE,
   type Business, type TeamMember, type TechStatus, type Chapter,
 } from "@/lib/members/storage";
@@ -129,6 +130,7 @@ export default function ProjectsPage() {
     }
     setBlocked(null);
     await updateBusiness(b.id, { techStatus: status, lastTouchedAt: new Date().toISOString() });
+    if (status === "Draft Ready") void notifyDraftReady(b);
   };
 
   const addProject = async () => {
