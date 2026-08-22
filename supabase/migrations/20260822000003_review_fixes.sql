@@ -15,3 +15,13 @@
 -- the change set. See 20260822000003 in the remote migration history for the
 -- exact definitions of member_hours_ledger, my_auth_role, my_team_id,
 -- my_led_pods, my_pods and is_tech_lead.
+
+-- 3. businesses_protect_admin_columns trigger: RLS grants rows, not columns, so
+--    the tech-lead UPDATE policy also exposed showcase_enabled,
+--    showcase_featured_on_home, archived and deleted_at. The trigger pins those
+--    back to their stored values for a caller whose only claim is is_tech_lead().
+--
+-- NOTE: local migration filenames and the applied remote history have diverged
+-- (local 20260821000001..., remote 20260821170536...). Reconciling them into one
+-- replayable baseline is tracked separately and must happen before any fresh
+-- environment is built from this directory.
