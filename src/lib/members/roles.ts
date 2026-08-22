@@ -19,6 +19,14 @@ export const MEMBER_ROLES = [
 
 export type MemberRole = (typeof MEMBER_ROLES)[number];
 
+// Tech leadership runs the project tracker. That is the one capability a roster
+// title carries on its own — everything else still comes from auth_role.
+export const TECH_LEAD_ROLE: MemberRole = "Developer";
+
+export function isTechLeadRole(role: unknown): boolean {
+  return String(role ?? "").trim() === TECH_LEAD_ROLE;
+}
+
 export const DEFAULT_MEMBER_ROLE: MemberRole = "Member";
 
 // Roles that sit above the rank-and-file, whatever they're called.
@@ -52,7 +60,7 @@ export function memberTier(role: unknown, podsLed: number): MemberTier {
   const value = String(role ?? "").trim() as MemberRole;
   if (value === "Board") return "board";
   if (CHAPTER_EXEC_ROLES.includes(value)) return "chapter-exec";
-  if (value === "Developer" || value === "Team Lead") return "leadership";
+  if (value === TECH_LEAD_ROLE || value === "Team Lead") return "leadership";
   if (podsLed > 0) return "lit";
   return "member";
 }

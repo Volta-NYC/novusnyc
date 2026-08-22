@@ -119,13 +119,21 @@ function getDefaultMembersPath(_role: AuthRole | null): string {
   return "/members/overview";
 }
 
-function getNavItemsForRole(role: AuthRole | null): NavItem[] {
+const TECH_PROJECTS_ITEM = OWNER_NAV_ITEMS.find((i) => i.href === "/members/projects")!;
+
+// Tech leadership is a member everywhere except the project tracker, so it gets
+// the member nav with that one page added rather than a tier of its own.
+function getNavItemsForRole(role: AuthRole | null, isTechLead: boolean): NavItem[] {
   if (role === "owner") return OWNER_NAV_ITEMS;
   if (role === "admin") return ADMIN_NAV_ITEMS;
+  if (isTechLead) {
+    const [overview, ...rest] = MEMBER_NAV_ITEMS;
+    return [overview, TECH_PROJECTS_ITEM, ...rest];
+  }
   return MEMBER_NAV_ITEMS;
 }
 
-function getAllowedRootsForRole(role: AuthRole | null): string[] {
+function getAllowedRootsForRole(role: AuthRole | null, isTechLead: boolean): string[] {
   if (role === "owner") {
     return [
       "/members/projects",
@@ -147,8 +155,13 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
       "/members/email",
     ];
   }
-  return ["/members/work", "/members/me", "/members/pods", "/members/handbook", "/members/settings"];
+  const base = ["/members/work", "/members/me", "/members/pods", "/members/handbook", "/members/settings"];
+  return isTechLead ? [...base, "/members/projects"] : base;
 }
+
+// The tracker is theirs; the showcase publishes to the public site, which stays
+// with admins.
+const TECH_LEAD_DENIED = ["/members/projects/showcase"];
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
   return allowedRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
@@ -162,7 +175,7 @@ let _ackSessionDone = false;
 // ── INNER LAYOUT ──────────────────────────────────────────────────────────────
 
 function MembersLayoutInner({ children }: { children: ReactNode }) {
-  const { user, userProfile, authRole, loading } = useAuth();
+  const { user, userProfile, authRole, isTechLead, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false);
@@ -255,15 +268,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     }
   };
 
-  const visibleNavItems = getNavItemsForRole(authRole);
+  const visibleNavItems = getNavItemsForRole(authRole, isTechLead);
 
   useEffect(() => {
     if (loading || !user) return;
-    const allowedRoots = getAllowedRootsForRole(authRole);
-    if (!isAllowedPath(pathname, allowedRoots)) {
+    const allowedRoots = getAllowedRootsForRole(authRole, isTechLead);
+    const denied = authRole === "member" && isTechLead && isAllowedPath(pathname, TECH_LEAD_DENIED);
+    if (denied || !isAllowedPath(pathname, allowedRoots)) {
       router.replace(getDefaultMembersPath(authRole));
     }
-  }, [authRole, loading, pathname, router, user]);
+  }, [authRole, isTechLead, loading, pathname, router, user]);
 
   const handleSignOut = async () => {
     await signOut();

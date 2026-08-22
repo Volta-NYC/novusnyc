@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { type User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import { type AuthRole } from "@/lib/members/storage";
+import { isTechLeadRole } from "@/lib/members/roles";
 
 function normalizeAuthRole(value: unknown): AuthRole {
   const raw = String(value ?? "").trim();
@@ -25,6 +26,7 @@ export interface UserProfile {
   email: string;
   name: string;
   authRole: AuthRole;
+  memberRole: string;
   canInterview: boolean;
   active: boolean;
 }
@@ -34,6 +36,9 @@ interface AuthContextValue {
   userProfile: UserProfile | null;
   authRole: AuthRole | null;
   canInterview: boolean;
+  // Tech leadership is a roster title, not a portal role: it opens the project
+  // tracker and nothing else. Kept derived so the two never drift.
+  isTechLead: boolean;
   loading: boolean;
 }
 
@@ -42,6 +47,7 @@ const AuthContext = createContext<AuthContextValue>({
   userProfile: null,
   authRole: null,
   canInterview: false,
+  isTechLead: false,
   loading: true,
 });
 
@@ -86,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email:        String(row.email ?? user.email ?? ""),
         name:         String(row.name ?? ""),
         authRole,
+        memberRole:   String(row.role ?? ""),
         canInterview,
         active:       String(row.status ?? "Active").toLowerCase() !== "inactive",
       };
@@ -128,7 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, authRole: userProfile?.authRole ?? null, canInterview: userProfile?.canInterview ?? false, loading }}>
+    <AuthContext.Provider value={{
+      user,
+      userProfile,
+      authRole: userProfile?.authRole ?? null,
+      canInterview: userProfile?.canInterview ?? false,
+      isTechLead: isTechLeadRole(userProfile?.memberRole),
+      loading,
+    }}>
       {children}
     </AuthContext.Provider>
   );

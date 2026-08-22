@@ -60,8 +60,9 @@ function hostOf(url: string): string {
 }
 
 export default function ProjectsPage() {
-  const { authRole, loading } = useAuth();
-  const canEdit = authRole === "owner" || authRole === "admin";
+  const { authRole, isTechLead, loading } = useAuth();
+  const canEdit = authRole === "owner" || authRole === "admin" || isTechLead;
+  const canPublish = authRole === "owner" || authRole === "admin";
 
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
   const [team, setTeam]             = useState<TeamMember[]>([]);
@@ -226,7 +227,7 @@ export default function ProjectsPage() {
       <PageHeader
         title="Tech Projects"
       />
-      <SectionTabs tabs={PROJECT_GROUP_TABS} />
+      <SectionTabs tabs={PROJECT_GROUP_TABS.filter((t) => canPublish || t.href === "/members/projects")} />
 
       {/* The pipeline doubles as the filter, so each tier carries its own
           colour — a row of plain numbers gave no sign it could be clicked. */}
