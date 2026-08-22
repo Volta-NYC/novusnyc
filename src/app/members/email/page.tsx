@@ -22,6 +22,7 @@ import {
 } from "@/lib/members/storage";
 import { computeGlobalCodes, getMemberCodes, type AssignmentCode } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
+import TrackAvatar, { getMemberTrack, TRACK_SORT_ORDER } from "@/components/members/TrackAvatar";
 import { gradeToClassOf } from "@/lib/grades";
 import { EMAIL } from "@/lib/mail";
 
@@ -69,7 +70,6 @@ const EMAIL_PLACEHOLDERS = [
 ] as const;
 
 type DeliveryMode = "to" | "cc" | "bcc";
-type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
 const DEFAULT_EMAIL_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 1, dir: "asc" },
@@ -104,74 +104,8 @@ function roleSortKey(role: string | undefined | null): number {
   }
 }
 
-const TRACK_SORT_ORDER: Record<TrackKey, number> = {
-  Tech: 0,
-  Marketing: 1,
-  Finance: 2,
-  Other: 3,
-  "—": 4,
-};
-
 function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function getMemberTrack(member: TeamMember): TrackKey {
-  const divisions = member.divisions ?? [];
-  if (divisions.includes("Tech")) return "Tech";
-  if (divisions.includes("Marketing")) return "Marketing";
-  if (divisions.includes("Finance")) return "Finance";
-  if (divisions.includes("Other") || divisions.includes("Outreach")) return "Other";
-  return "—";
-}
-
-function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
-  switch (track) {
-    case "Tech":
-      return { bg: "#DBEAFE", text: "#1E3A8A" };
-    case "Marketing":
-      return { bg: "#FEF3C7", text: "#92400E" };
-    case "Finance":
-      return { bg: "#DCFCE7", text: "#166534" };
-    case "Other":
-      return { bg: "#F3F4F6", text: "#374151" };
-    default:
-      return { bg: "rgba(246,183,141,0.15)", text: "#F6B78D" };
-  }
-}
-
-function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
-  if (track === "Tech") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M8 8L3 12L8 16" />
-        <path d="M16 8L21 12L16 16" />
-      </svg>
-    );
-  }
-  if (track === "Marketing") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 20l4.5-1.2L19 8.3a1.6 1.6 0 0 0 0-2.2l-1.1-1.1a1.6 1.6 0 0 0-2.2 0L5.2 15.5L4 20z" />
-        <path d="M13.5 6.5l4 4" />
-      </svg>
-    );
-  }
-  if (track === "Finance") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 19h16" />
-        <path d="M7 16v-4" />
-        <path d="M12 16V9" />
-        <path d="M17 16v-10" />
-      </svg>
-    );
-  }
-  return (
-    <span className="text-[11px] font-semibold leading-none" style={{ color }} aria-hidden="true">
-      –
-    </span>
-  );
 }
 
 function isInactiveMember(member: TeamMember): boolean {
@@ -732,7 +666,6 @@ export default function MemberEmailPage() {
                 <tbody className="divide-y divide-white/5">
                   {selectedMembers.map((member) => {
                     const track = getMemberTrack(member);
-                    const avatar = getTrackAvatarStyles(track);
                     const indicator = getMemberIndicator(member);
                     const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
                     return (
@@ -753,9 +686,7 @@ export default function MemberEmailPage() {
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
                           <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                              <TrackAvatarIcon track={track} color={avatar.text} />
-                            </span>
+                            <TrackAvatar track={track} />
                             <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
                           </span>
                         </td>
@@ -902,7 +833,6 @@ export default function MemberEmailPage() {
                     const inactive = isInactiveMember(member);
                     const indicator = getMemberIndicator(member);
                     const track = getMemberTrack(member);
-                    const avatar = getTrackAvatarStyles(track);
                     return (
                       <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#F6B78D]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
                         <td className="px-3 py-2">
@@ -922,9 +852,7 @@ export default function MemberEmailPage() {
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
                           <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                              <TrackAvatarIcon track={track} color={avatar.text} />
-                            </span>
+                            <TrackAvatar track={track} />
                             <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
                           </span>
                           {inactive && <span className="text-white/35 ml-2">(inactive)</span>}

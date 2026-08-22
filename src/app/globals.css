@@ -2306,6 +2306,14 @@ summary:focus-visible {
 .members-portal-light .bg-\[\#151920\] { background-color: #F7F8FA !important; }
 .members-portal-light .bg-\[\#1A1D25\] { background-color: #F7F8FA !important; }
 .members-portal-light .bg-\[\#1C1F26\] { background-color: #FFFFFF !important; }
+
+/* The table shell paints from --color-portal-panel rather than a literal, so it
+   was the one surface the hex remaps above never reached: rows are transparent,
+   which left them sitting on the dark slab while their header went white. */
+.members-portal-light .members-table-shell {
+  background: #FFFFFF !important;
+  border-color: rgba(0,0,0,.10) !important;
+}
 .members-portal-light .bg-white\/10 { background-color: rgba(0,0,0,0.077) !important; }
 .members-portal-light .bg-white\/12 { background-color: rgba(0,0,0,0.099) !important; }
 .members-portal-light .bg-white\/15 { background-color: rgba(0,0,0,0.121) !important; }
