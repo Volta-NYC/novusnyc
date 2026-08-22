@@ -2336,21 +2336,21 @@ summary:focus-visible {
 .members-portal-light .placeholder-white\/30::placeholder { color: rgba(0,0,0,0.38) !important; }
 .members-portal-light .placeholder-white\/50::placeholder { color: rgba(0,0,0,0.5) !important; }
 .members-portal-light .ring-white\/35 { --tw-ring-color: rgba(0,0,0,0.22) !important; }
-.members-portal-light .text-white\/20 { color: rgba(0,0,0,0.28) !important; }
-.members-portal-light .text-white\/25 { color: rgba(0,0,0,0.34) !important; }
-.members-portal-light .text-white\/30 { color: rgba(0,0,0,0.38) !important; }
-.members-portal-light .text-white\/35 { color: rgba(0,0,0,0.42) !important; }
-.members-portal-light .text-white\/40 { color: rgba(0,0,0,0.45) !important; }
-.members-portal-light .text-white\/45 { color: rgba(0,0,0,0.48) !important; }
-.members-portal-light .text-white\/50 { color: rgba(0,0,0,0.5) !important; }
-.members-portal-light .text-white\/55 { color: rgba(0,0,0,0.55) !important; }
-.members-portal-light .text-white\/60 { color: rgba(0,0,0,0.58) !important; }
-.members-portal-light .text-white\/65 { color: rgba(0,0,0,0.62) !important; }
-.members-portal-light .text-white\/70 { color: rgba(0,0,0,0.68) !important; }
-.members-portal-light .text-white\/75 { color: rgba(0,0,0,0.72) !important; }
-.members-portal-light .text-white\/80 { color: rgba(0,0,0,0.78) !important; }
-.members-portal-light .text-white\/85 { color: rgba(0,0,0,0.8) !important; }
-.members-portal-light .text-white\/90 { color: rgba(0,0,0,0.85) !important; }
+.members-portal-light .text-white\/20 { color: rgba(0,0,0,0.55) !important; }
+.members-portal-light .text-white\/25 { color: rgba(0,0,0,0.555) !important; }
+.members-portal-light .text-white\/30 { color: rgba(0,0,0,0.56) !important; }
+.members-portal-light .text-white\/35 { color: rgba(0,0,0,0.57) !important; }
+.members-portal-light .text-white\/40 { color: rgba(0,0,0,0.56) !important; }
+.members-portal-light .text-white\/45 { color: rgba(0,0,0,0.58) !important; }
+.members-portal-light .text-white\/50 { color: rgba(0,0,0,0.6) !important; }
+.members-portal-light .text-white\/55 { color: rgba(0,0,0,0.62) !important; }
+.members-portal-light .text-white\/60 { color: rgba(0,0,0,0.64) !important; }
+.members-portal-light .text-white\/65 { color: rgba(0,0,0,0.68) !important; }
+.members-portal-light .text-white\/70 { color: rgba(0,0,0,0.72) !important; }
+.members-portal-light .text-white\/75 { color: rgba(0,0,0,0.76) !important; }
+.members-portal-light .text-white\/80 { color: rgba(0,0,0,0.8) !important; }
+.members-portal-light .text-white\/85 { color: rgba(0,0,0,0.84) !important; }
+.members-portal-light .text-white\/90 { color: rgba(0,0,0,0.88) !important; }
 .members-portal-light .text-white { color: rgba(0,0,0,0.88) !important; }
 .members-portal-light input, .members-portal-light textarea, .members-portal-light select {
   background-color: #FFFFFF !important; color: rgba(0,0,0,0.88) !important;
@@ -2363,3 +2363,75 @@ summary:focus-visible {
 .members-portal-light .shadow-2xl, .members-portal-light .shadow-xl {
   box-shadow: 0 1px 2px rgba(16,18,24,.06), 0 8px 28px rgba(16,18,24,.08) !important;
 }
+
+/* Colored text was tuned against a dark ground: text-green-400 on white
+   measures about 1.8:1. Anything at 500 or lighter is pulled to its
+   700-level, which clears 4.5:1 on the light surfaces. 600 and 700 are
+   already dark enough and are left alone. */
+.members-portal-light .text-amber-200 { color: #b45309 !important; }
+.members-portal-light .text-amber-400 { color: #b45309 !important; }
+.members-portal-light .text-blue-200 { color: #1d4ed8 !important; }
+.members-portal-light .text-blue-300 { color: #1d4ed8 !important; }
+.members-portal-light .text-blue-400 { color: #1d4ed8 !important; }
+.members-portal-light .text-cyan-300 { color: #0e7490 !important; }
+.members-portal-light .text-cyan-400 { color: #0e7490 !important; }
+.members-portal-light .text-emerald-200 { color: #047857 !important; }
+.members-portal-light .text-emerald-300 { color: #047857 !important; }
+.members-portal-light .text-emerald-400 { color: #047857 !important; }
+.members-portal-light .text-gray-300 { color: #374151 !important; }
+.members-portal-light .text-gray-400 { color: #374151 !important; }
+.members-portal-light .text-gray-500 { color: #374151 !important; }
+.members-portal-light .text-green-300 { color: #15803d !important; }
+.members-portal-light .text-green-400 { color: #15803d !important; }
+.members-portal-light .text-indigo-300 { color: #4338ca !important; }
+.members-portal-light .text-indigo-400 { color: #4338ca !important; }
+.members-portal-light .text-orange-400 { color: #c2410c !important; }
+.members-portal-light .text-purple-200 { color: #7e22ce !important; }
+.members-portal-light .text-purple-300 { color: #7e22ce !important; }
+.members-portal-light .text-purple-400 { color: #7e22ce !important; }
+.members-portal-light .text-red-200 { color: #b91c1c !important; }
+.members-portal-light .text-red-300 { color: #b91c1c !important; }
+.members-portal-light .text-red-400 { color: #b91c1c !important; }
+.members-portal-light .text-red-500 { color: #b91c1c !important; }
+.members-portal-light .text-sky-300 { color: #0369a1 !important; }
+.members-portal-light .text-violet-300 { color: #6d28d9 !important; }
+.members-portal-light .text-yellow-200 { color: #a16207 !important; }
+.members-portal-light .text-yellow-300 { color: #a16207 !important; }
+.members-portal-light .text-yellow-400 { color: #a16207 !important; }
+
+/* ── Portal tables and controls ──────────────────────────────────────────────
+   Row separators on a light ground need real contrast; the dark theme's
+   white/5 hairlines disappear entirely. Padding and truncation are set here
+   rather than per-table so every list in the portal behaves the same way. */
+.members-portal-light table th {
+  border-bottom-color: rgba(0,0,0,.16) !important;
+  background-color: #F2F3F5 !important;
+  color: rgba(0,0,0,.55) !important;
+}
+.members-portal-light table td { border-bottom-color: rgba(0,0,0,.09) !important; }
+.members-portal-light table tbody tr:hover { background-color: rgba(0,0,0,.035) !important; }
+.members-portal-light table th,
+.members-portal-light table td { padding-top: .5rem; padding-bottom: .5rem; }
+
+/* A select styled as a pill still draws the platform arrow at its own metrics,
+   which is what made the status cells look cramped on one side. */
+.members-portal-light select,
+.members-portal .members-status-select {
+  background-image: none;
+  text-overflow: ellipsis;
+}
+.members-portal select:not([multiple]) {
+  padding-right: 1.75rem;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23666' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6.5 8 10.5 12 6.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .5rem center;
+  background-size: .85rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* The status pill supplies its own chevron spacing, so it opts out. */
+.members-portal .members-status-select select { padding-right: 1.1rem; background-size: .7rem; }
+
+/* Long values truncate rather than reflow a row to two lines. */
+.members-portal-light td .truncate,
+.members-portal-light th .truncate { max-width: 100%; }

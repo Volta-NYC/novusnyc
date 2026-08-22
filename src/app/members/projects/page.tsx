@@ -29,6 +29,29 @@ const VIEWS: { key: ViewKey; label: string }[] = [
 
 const PRIORITY_RANK: Record<string, number> = { High: 0, Medium: 1, Maybe: 2 };
 
+// Colour belongs to the status, not to whichever URL happens to exist.
+const STATUS_TINT: Record<TechStatus, string> = {
+  Backlog:       "border-white/15 bg-white/[0.03] text-white/60",
+  Assigned:      "border-indigo-500/30 bg-indigo-500/10 text-indigo-300",
+  Building:      "border-blue-400/30 bg-blue-400/10 text-blue-300",
+  "Draft Ready": "border-yellow-400/35 bg-yellow-400/10 text-yellow-300",
+  "With Client": "border-purple-400/30 bg-purple-400/10 text-purple-300",
+  Live:          "border-green-500/35 bg-green-500/10 text-green-400",
+  "On Hold":     "border-orange-500/30 bg-orange-500/10 text-orange-400",
+  Dropped:       "border-red-500/25 bg-red-500/8 text-red-400",
+};
+
+const STATUS_DOT: Record<TechStatus, string> = {
+  Backlog:       "bg-white/30",
+  Assigned:      "bg-indigo-400",
+  Building:      "bg-blue-400",
+  "Draft Ready": "bg-yellow-400",
+  "With Client": "bg-purple-400",
+  Live:          "bg-green-500",
+  "On Hold":     "bg-orange-400",
+  Dropped:       "bg-red-500",
+};
+
 function isLead(b: Business): boolean {
   return b.intakeSource === "website_form" || b.intakeSource === "discovery";
 }
@@ -290,14 +313,18 @@ export default function ProjectsPage() {
       ) : rows.length === 0 ? (
         <Empty message={`Nothing in ${VIEWS.find((v) => v.key === view)?.label}.`} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-white/10">
-          <table className="w-full min-w-[860px] border-collapse">
+        <div className="overflow-x-auto rounded-lg border border-white/15">
+          <table className="w-full min-w-[880px] table-fixed border-collapse">
+            <colgroup>
+              <col className="w-[22%]" /><col className="w-[13%]" /><col className="w-[16%]" />
+              <col className="w-[20%]" /><col /><col className="w-[64px]" />
+            </colgroup>
             <thead>
-              <tr className="bg-white/[0.03]">
-                {["Business", "Status", "Assigned to", "Links", "Note", ""].map((h, i) => (
+              <tr className="bg-white/[0.04]">
+                {["Business", "Status", "Assigned to", "Links", "Note", "Updated"].map((h) => (
                   <th
-                    key={h + i}
-                    className="border-b border-white/10 px-3 py-2 text-left text-[10px] uppercase tracking-wide text-white/45"
+                    key={h}
+                    className="border-b border-white/15 px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45"
                   >
                     {h}
                   </th>
@@ -307,33 +334,39 @@ export default function ProjectsPage() {
             <tbody>
               {rows.map((b) => {
                 const assigned = (b.assignees ?? []).map((id) => nameById.get(id) ?? id);
+                // Show the real address either way. Which link exists is not the
+                // same fact as what status the project is in, and colouring the
+                // URL by it made the two look like one thing.
+                const primary = b.liveUrl || b.previewUrl || "";
                 return (
                   <tr
                     key={b.id}
                     onClick={() => setOpenId(b.id)}
-                    className={`h-9 cursor-pointer border-b border-white/5 transition-colors hover:bg-white/[0.04] ${
-                      openId === b.id ? "bg-white/[0.06]" : ""
+                    className={`cursor-pointer border-b border-white/10 align-middle transition-colors last:border-b-0 hover:bg-white/[0.05] ${
+                      openId === b.id ? "bg-white/[0.07]" : ""
                     }`}
                   >
-                    <td className="px-3 py-1.5">
-                      <div className="text-[12px] font-medium text-white/90">{b.name}</div>
+                    <td className="px-3 py-2">
+                      <div className="truncate text-[12px] font-medium text-white/90" title={b.name}>{b.name}</div>
                       {b.neighborhood && (
-                        <div className="text-[10px] text-white/35">{b.neighborhood}</div>
+                        <div className="truncate text-[10px] text-white/35">{b.neighborhood}</div>
                       )}
                     </td>
-                    <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
+
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
                         {canEdit ? (
-                          // Changing status is the most frequent edit there is,
-                          // so it happens on the row rather than two clicks deep.
-                          <select
-                            value={b.techStatus ?? "Backlog"}
-                            onChange={(e) => void setStatus(b, e.target.value as TechStatus)}
-                            aria-label={`Status for ${b.name}`}
-                            className="cursor-pointer rounded border border-white/10 bg-transparent px-1.5 py-0.5 text-[11px] text-white/80 focus:border-[#F3E28D]/50 focus:outline-none"
-                          >
-                            {TECH_STATUSES.map((st) => <option key={st} value={st}>{st}</option>)}
-                          </select>
+                          <span className={`members-status-select inline-flex items-center gap-1.5 rounded-md border px-2 py-1 ${STATUS_TINT[b.techStatus ?? "Backlog"]}`}>
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[b.techStatus ?? "Backlog"]}`} />
+                            <select
+                              value={b.techStatus ?? "Backlog"}
+                              onChange={(e) => void setStatus(b, e.target.value as TechStatus)}
+                              aria-label={`Status for ${b.name}`}
+                              className="cursor-pointer border-0 bg-transparent text-[11px] leading-none text-current focus:outline-none"
+                            >
+                              {TECH_STATUSES.map((st) => <option key={st} value={st}>{st}</option>)}
+                            </select>
+                          </span>
                         ) : (
                           <Badge label={b.techStatus ?? "Backlog"} />
                         )}
@@ -342,29 +375,37 @@ export default function ProjectsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-1.5 text-[11px] text-white/70">
-                      {assigned.length ? assigned.join(", ") : <span className="text-white/25">—</span>}
-                    </td>
-                    <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-2 text-[11px]">
-                        {b.liveUrl && (
-                          <a href={b.liveUrl} target="_blank" rel="noopener noreferrer"
-                             className="text-green-400 hover:underline">{hostOf(b.liveUrl)}</a>
-                        )}
-                        {!b.liveUrl && b.previewUrl && (
-                          <a href={b.previewUrl} target="_blank" rel="noopener noreferrer"
-                             className="text-yellow-300/80 hover:underline">preview</a>
-                        )}
-                        {!b.liveUrl && !b.previewUrl && <span className="text-white/25">—</span>}
+
+                    <td className="px-3 py-2">
+                      <div className="truncate text-[11px] text-white/70" title={assigned.join(", ")}>
+                        {assigned.length ? assigned.join(", ") : <span className="text-white/25">—</span>}
                       </div>
                     </td>
-                    <td className="max-w-[240px] px-3 py-1.5">
-                      <div className="truncate text-[11px] text-white/45">
+
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {primary ? (
+                        <a
+                          href={primary}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={primary}
+                          className="block truncate text-[11px] text-blue-400 hover:underline"
+                        >
+                          {hostOf(primary)}
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-white/25">—</span>
+                      )}
+                    </td>
+
+                    <td className="px-3 py-2">
+                      <div className="truncate text-[11px] text-white/45" title={(b.notes ?? "").replace(/\n/g, " ")}>
                         {(b.notes ?? "").split("\n")[0] || <span className="text-white/20">—</span>}
                       </div>
                     </td>
-                    <td className="px-3 py-1.5 text-right">
-                      <span className="text-[10px] text-white/25">
+
+                    <td className="px-3 py-2 text-right">
+                      <span className="whitespace-nowrap font-mono text-[10px] tabular-nums text-white/30">
                         {(b.lastTouchedAt ?? b.updatedAt ?? "").slice(5, 10)}
                       </span>
                     </td>
