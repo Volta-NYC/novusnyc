@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
-import { PageHeader, Badge, Empty, SkeletonRows } from "@/components/members/ui";
+import { PageHeader, Badge, Empty, SkeletonRows, LoadError } from "@/components/members/ui";
 import {
   subscribePods, subscribePodMembers, subscribePodAssignments,
   completePodAssignment, fetchMemberHours, subscribeBusinesses,
@@ -25,12 +25,16 @@ export default function MyWorkPage() {
   const [pods, setPods]               = useState<Pod[]>([]);
   const [podMembers, setPodMembers]   = useState<PodMember[]>([]);
   const [assignments, setAssignments] = useState<PodAssignment[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [hours, setHours]             = useState<HoursEntry[] | null>(null);
 
   useEffect(() => subscribePods(setPods), []);
   useEffect(() => subscribePodMembers(setPodMembers), []);
-  useEffect(() => subscribePodAssignments(setAssignments), []);
+  useEffect(() => subscribePodAssignments((rows, state) => {
+    setAssignments(rows);
+    setLoadError(state.error);
+  }), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
 
   useEffect(() => {
@@ -120,7 +124,9 @@ export default function MyWorkPage() {
 
       {/* Tasks */}
       <h2 className="mb-2 text-[11px] uppercase tracking-wide text-white/40">Assignments</h2>
-      {assignments === null ? (
+      {loadError ? (
+        <LoadError message={loadError} onRetry={() => window.location.reload()} />
+      ) : assignments === null ? (
         <SkeletonRows rows={3} cols={3} />
       ) : myTasks.length === 0 ? (
         <Empty message="Nothing assigned to you right now." />

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
-import { PageHeader, SkeletonRows, Badge } from "@/components/members/ui";
+import { PageHeader, SkeletonRows, Badge, LoadError } from "@/components/members/ui";
 import {
   subscribePods, subscribePodMembers, subscribePodMeetings, subscribeTeam, subscribeChapters,
   type Pod, type PodMember, type PodMeeting, type TeamMember, type Chapter,
@@ -19,12 +19,16 @@ export default function PodsPage() {
   const isAdmin = authRole === "owner" || authRole === "admin";
 
   const [pods, setPods]         = useState<Pod[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [members, setMembers]   = useState<PodMember[]>([]);
   const [meetings, setMeetings] = useState<PodMeeting[]>([]);
   const [team, setTeam]         = useState<TeamMember[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
-  useEffect(() => subscribePods(setPods), []);
+  useEffect(() => subscribePods((rows, state) => {
+    setPods(rows);
+    setLoadError(state.error);
+  }), []);
   useEffect(() => subscribePodMembers(setMembers), []);
   useEffect(() => subscribePodMeetings(setMeetings), []);
   useEffect(() => subscribeTeam(setTeam), []);
@@ -68,7 +72,9 @@ export default function PodsPage() {
         title="Marketing & Finance"
       />
 
-      {pods === null ? (
+      {loadError ? (
+        <LoadError message={loadError} onRetry={() => window.location.reload()} />
+      ) : pods === null ? (
         <SkeletonRows rows={4} cols={3} />
       ) : visible.length === 0 ? (
         <p className="py-16 text-center text-sm text-white/30">You&apos;re not in a pod yet.</p>

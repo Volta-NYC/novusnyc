@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
-import { PageHeader, Badge } from "@/components/members/ui";
+import { PageHeader, Badge, LoadError } from "@/components/members/ui";
 import {
   subscribeBusinesses, subscribeTeam, subscribePods, subscribePodMembers,
   subscribePodMeetings, subscribePodAssignments, fetchHoursTotals,
@@ -24,10 +24,22 @@ export default function AdminDashboard() {
   const [meetings, setMeetings]       = useState<PodMeeting[]>([]);
   const [assignments, setAssignments] = useState<PodAssignment[]>([]);
   const [hours, setHours]             = useState<HoursTotals[]>([]);
+  // Every headline here is a count. If a query failed, the honest thing is to
+  // say so — a dashboard reading 0 across the board looks like a quiet week.
+  const [loadError, setLoadError]     = useState<string | null>(null);
 
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeTeam(setTeam), []);
-  useEffect(() => subscribePods(setPods), []);
+  useEffect(() => subscribeBusinesses((rows, state) => {
+    setBusinesses(rows);
+    if (state.error) setLoadError(state.error);
+  }), []);
+  useEffect(() => subscribeTeam((rows, state) => {
+    setTeam(rows);
+    if (state.error) setLoadError(state.error);
+  }), []);
+  useEffect(() => subscribePods((rows, state) => {
+    setPods(rows);
+    if (state.error) setLoadError(state.error);
+  }), []);
   useEffect(() => subscribePodMembers(setPodMembers), []);
   useEffect(() => subscribePodMeetings(setMeetings), []);
   useEffect(() => subscribePodAssignments(setAssignments), []);
@@ -106,6 +118,12 @@ export default function AdminDashboard() {
   return (
     <MembersLayout>
       <PageHeader title="Dashboard" />
+
+      {loadError && (
+        <div className="mb-4">
+          <LoadError message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
 
       {/* Headline numbers */}
       <div className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/10 bg-white/10 sm:grid-cols-4">

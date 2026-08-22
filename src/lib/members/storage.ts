@@ -604,12 +604,22 @@ function toRow(obj: Record<string, unknown>): Record<string, unknown> {
 // 1. Fetches the full table immediately and calls callback.
 // 2. Opens a Supabase postgres_changes channel; re-fetches on any row change.
 // 3. Returns an unsubscribe function that removes the channel.
+// A failed query used to be delivered as an empty array, so an outage rendered
+// as "0 projects" or "no members" — a wrong answer stated confidently. The
+// second callback argument carries load state; callers that ignore it behave
+// exactly as before, and the rows already on screen are kept rather than blanked.
+export type LoadState = { error: string | null };
+
+export type SubscribeCallback<T> = (items: T[], state: LoadState) => void;
+
+const OK: LoadState = { error: null };
+
 function makeSubscriber<T extends { id: string }>(
   table: string,
   transform?: (row: Record<string, unknown>) => T,
   options?: { excludeSoftDeleted?: boolean },
 ) {
-  return (callback: (items: T[]) => void): (() => void) => {
+  return (callback: SubscribeCallback<T>): (() => void) => {
     let current: T[] = [];
     const applyRow = (row: Record<string, unknown>): T =>
       transform ? transform(row) : fromRow<T>(row);
@@ -618,9 +628,9 @@ function makeSubscriber<T extends { id: string }>(
       let query = supabase.from(table).select("*");
       if (options?.excludeSoftDeleted) query = query.is("deleted_at", null);
       return query.then(({ data, error }) => {
-        if (error || !data) { callback([]); return; }
-        current = (data as Record<string, unknown>[]).map(applyRow);
-        callback(current);
+        if (error) { callback(current, { error: error.message }); return; }
+        current = ((data ?? []) as Record<string, unknown>[]).map(applyRow);
+        callback(current, OK);
       });
     };
 
@@ -644,7 +654,7 @@ function makeSubscriber<T extends { id: string }>(
         } else if (p.eventType === "DELETE") {
           current = current.filter((x) => x.id !== p.old.id);
         }
-        callback(current);
+        callback(current, OK);
       })
       .subscribe();
 
@@ -887,11 +897,12 @@ export const subscribeMemberStrikes =
 export const subscribeAuditLogs =
   makeSubscriber<AuditLogEntry>("audit_logs", (r) => fromRow<AuditLogEntry>(r));
 
-export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
+export function subscribeApplications(callback: SubscribeCallback<ApplicationRecord>): (() => void) {
   const fetchAll = () =>
     supabase.from("applications").select("*").then(({ data, error }) => {
-      if (error || !data) { callback([]); return; }
-      callback((data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r))));
+      if (error) { callback([], { error: error.message }); return; }
+      callback(((data ?? []) as Record<string, unknown>[])
+        .map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r))), OK);
     });
 
   void fetchAll();
@@ -1143,14 +1154,14 @@ export async function deleteProject(id: string): Promise<void> {
 
 // ── UserProfiles (admin only) ─────────────────────────────────────────────────
 
-export function subscribeUserProfiles(callback: (items: UserProfile[]) => void): (() => void) {
+export function subscribeUserProfiles(callback: SubscribeCallback<UserProfile>): (() => void) {
   const fetchAll = () =>
     supabase.from("user_profiles").select("*").then(({ data, error }) => {
-      if (error || !data) { callback([]); return; }
-      callback((data as Record<string, unknown>[]).map((r) => ({
+      if (error) { callback([], { error: error.message }); return; }
+      callback(((data ?? []) as Record<string, unknown>[]).map((r) => ({
         ...fromRow<UserProfile>(r),
         authRole: normalizeAuthRoleValue((r.auth_role)),
-      })));
+      })), OK);
     });
 
   void fetchAll();
@@ -2242,9 +2253,9 @@ export interface PodAssignment {
   createdAt?: string;
 }
 
-export function subscribePodAssignments(callback: (items: PodAssignment[]) => void): () => void {
-  return makeSubscriber<PodAssignment>("assignments")((rows) =>
-    callback(rows.filter((r) => !!r.podId)));
+export function subscribePodAssignments(callback: SubscribeCallback<PodAssignment>): () => void {
+  return makeSubscriber<PodAssignment>("assignments")((rows, state) =>
+    callback(rows.filter((r) => !!r.podId), state));
 }
 
 export async function createPodAssignment(

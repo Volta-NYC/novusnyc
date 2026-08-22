@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  PageHeader, SearchBar, Badge, Btn, Empty, SkeletonRows,
+  PageHeader, SearchBar, Badge, Btn, Empty, SkeletonRows, LoadError,
 } from "@/components/members/ui";
 import {
   subscribeBusinesses, subscribeTeam, subscribeChapters, updateBusiness, createBusiness,
@@ -65,6 +65,7 @@ export default function ProjectsPage() {
   const canPublish = authRole === "owner" || authRole === "admin";
 
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [team, setTeam]             = useState<TeamMember[]>([]);
   const [chapters, setChapters]     = useState<Chapter[]>([]);
   // Which market's clients we're looking at. Tech work is remote, but the
@@ -78,7 +79,10 @@ export default function ProjectsPage() {
   const [adding, setAdding]         = useState(false);
   const [statusFilter, setStatusFilter] = useState<Set<TechStatus>>(new Set());
 
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
+  useEffect(() => subscribeBusinesses((rows, state) => {
+    setBusinesses(rows);
+    setLoadError(state.error);
+  }), []);
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeChapters(setChapters), []);
 
@@ -323,7 +327,9 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {businesses === null ? (
+      {loadError ? (
+        <LoadError message={loadError} onRetry={() => window.location.reload()} />
+      ) : businesses === null ? (
         <SkeletonRows rows={12} cols={5} />
       ) : rows.length === 0 ? (
         <Empty message={`Nothing in ${VIEWS.find((v) => v.key === view)?.label}.`} />

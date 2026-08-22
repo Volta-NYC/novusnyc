@@ -4,7 +4,7 @@ import { getAuthToken } from "@/lib/members/supabaseAuth";
 import { Fragment, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, useConfirm,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, LoadError, useConfirm,
   ViewPanel, ViewSection, SortPanel, type SortRule,
 } from "@/components/members/ui";
 import Combobox from "@/components/Combobox";
@@ -179,7 +179,12 @@ export default function TeamPage() {
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   const [teamLoaded, setTeamLoaded] = useState(false);
-  useEffect(() => subscribeTeam((items) => { setTeam(items); setTeamLoaded(true); }), []);
+  const [teamLoadError, setTeamLoadError] = useState<string | null>(null);
+  useEffect(() => subscribeTeam((items, state) => {
+    setTeam(items);
+    setTeamLoaded(true);
+    setTeamLoadError(state.error);
+  }), []);
 
   // Real-time subscriptions for all supporting data — automatic updates when database changes.
   useEffect(() => {
@@ -1121,7 +1126,11 @@ export default function TeamPage() {
           </div>
         );
       })()}
-      {!teamLoaded ? (
+      {teamLoadError ? (
+        <div className="mt-4">
+          <LoadError message={teamLoadError} onRetry={() => window.location.reload()} />
+        </div>
+      ) : !teamLoaded ? (
         <div className="mt-4"><SkeletonRows rows={8} cols={6} /></div>
       ) : filtered.length === 0 ? (
         <Empty

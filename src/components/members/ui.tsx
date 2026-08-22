@@ -751,6 +751,30 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
   );
 }
 
+// Nothing loaded, and we know why. Distinct from Empty on purpose: "no results"
+// and "the query failed" look identical to a reader otherwise, and one of them
+// is a number they should not trust.
+export function LoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-6 text-center">
+      <p className="text-sm text-red-300">Couldn&apos;t load this.</p>
+      <p className="mt-1 text-[11px] text-white/45">
+        Nothing here is up to date — don&apos;t read the numbers as zero.
+      </p>
+      <p className="mt-2 font-mono text-[10px] text-white/30">{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-3 rounded-md border border-white/15 px-3 py-1 text-[11px] text-white/70 transition-colors hover:border-white/35 hover:text-white/90"
+        >
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── CONFIRM DELETE DIALOG ─────────────────────────────────────────────────────
 // Returns an `ask` function to trigger the dialog and a `Dialog` component to render it.
 // Usage: const { ask, Dialog } = useConfirm();
