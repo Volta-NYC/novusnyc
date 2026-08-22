@@ -198,9 +198,20 @@ npx supabase db query --linked "SELECT ..."
 
 ```
 owner  → Founder / Board — full portal access + admin panel
-admin  → Senior Associates — elevated: projects, assignments, overview
-member → Standard member — work marketplace, handbook, own profile
+admin  → Senior Associates — elevated: projects, pods, team, email, overview
+member → Standard member — own work, own pods, handbook, own profile
 ```
+
+Two capabilities are derived rather than stored in `auth_role`:
+
+- **Tech leadership** — `team.role = 'Developer'`. Opens `/members/projects` with
+  full edit, and nothing else. Enforced in the database by `is_tech_lead()`.
+- **LIT** — a `pod_members` row with `role = 'lit'`. Grants meetings, attendance
+  and the task board *for that pod only*, via `my_led_pods()`. It is earned by
+  leading a pod, never assigned as a role, and never converts to or from
+  leadership.
+
+Both leave `auth_role` at `member`.
 
 Role is stored in `user_profiles.auth_role` and in the JWT `app_metadata.auth_role`. Read via `useAuth()` → `authRole`.
 
@@ -218,10 +229,11 @@ const { user, userProfile, authRole, loading } = useAuth();
 
 | Route group | owner | admin | member |
 |---|---|---|---|
-| `/members/overview` | ✓ AdminCycleOverview | ✓ AdminCycleOverview | ✓ MemberOverview |
-| `/members/projects` | ✓ full edit | ✓ full edit | ✗ redirected |
-| `/members/assignments/*` | ✓ full edit | ✓ full edit | ✗ redirected |
-| `/members/bids` | ✓ full edit | ✗ redirected | ✗ redirected |
+| `/members/overview` | ✓ AdminDashboard | ✓ AdminDashboard | ✗ → `/members/me` |
+| `/members/projects` | ✓ full edit | ✓ full edit | ✓ only if tech leadership |
+| `/members/projects/showcase` | ✓ | ✓ | ✗ redirected (publishes to the public site) |
+| `/members/pods` | ✓ all pods | ✓ all pods | ✓ own pods only |
+| `/members/orgs` | ✓ full edit | ✗ redirected | ✗ redirected |
 | `/members/team` | ✓ full edit | ✗ redirected | ✗ redirected |
 | `/members/applicants` | ✓ full edit | ✗ redirected | ✗ redirected |
 | `/members/email` | ✓ | ✗ redirected | ✗ redirected |
@@ -229,6 +241,24 @@ const { user, userProfile, authRole, loading } = useAuth();
 | `/members/work` | ✗ redirected | ✗ redirected | ✓ |
 | `/members/me` | ✗ redirected | ✗ redirected | ✓ |
 | `/members/handbook` | ✗ redirected | ✗ redirected | ✓ |
+
+### Removed routes
+
+These were deleted when the assignment marketplace became Pods and Tech
+Projects. Each 308s in `next.config.mjs` — old bookmarks and links in
+already-sent email still point at them, and a 404 inside the portal reads as
+lost access rather than a moved page.
+
+| Removed | Now |
+|---|---|
+| `/members/assignments`, `/members/assignments/*` | `/members/pods` |
+| `/members/finance-assignments` | `/members/pods` |
+| `/members/work/catalog`, `/members/work/:id` | `/members/work` |
+| `/members/projects/discovery` | `/members/projects?view=leads` |
+
+The tracker's view is addressable — `?view=` accepts any key in `VIEWS`
+(`all`, `domains`, `backlog`, `leads`, `hold`) — so a filtered list can be
+linked to directly.
 
 Redirects are enforced by `MembersLayout` via `getAllowedRootsForRole()`. Pages should **not** duplicate the top-level redirect — they may add a local guard only to render a loading state while auth resolves.
 
@@ -260,7 +290,11 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 
 ### Performance
 
-- Heavy portal pages (team, applicants, assignments) subscribe to multiple tables; subscriptions are opened in parallel with a combined cleanup function.
+- Heavy portal pages (team, applicants, projects) subscribe to multiple tables; subscriptions are opened in parallel with a combined cleanup function.
+- `subscribe*` callbacks take a second argument, `{ error }`. A failed query
+  delivers the rows already held plus the error — never an empty array, because
+  "the query failed" and "there are none" must not render identically. Pages
+  show `<LoadError />` for the first and `<Empty />` for the second.
 - Do not subscribe to data the page doesn't display — fetch only what you need.
 - Public pages with expensive DB reads use ISR (`revalidate`) and can be refreshed via `POST /api/members/admin/revalidate`.
 

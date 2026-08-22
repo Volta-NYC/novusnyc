@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
@@ -59,7 +60,17 @@ function hostOf(url: string): string {
   catch { return url.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, ""); }
 }
 
+// Wrapped so the tracker can read ?view= without opting the whole route out of
+// static rendering.
 export default function ProjectsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProjectsPageInner />
+    </Suspense>
+  );
+}
+
+function ProjectsPageInner() {
   const { authRole, isTechLead, loading } = useAuth();
   const canEdit = authRole === "owner" || authRole === "admin" || isTechLead;
   const canPublish = authRole === "owner" || authRole === "admin";
@@ -71,7 +82,13 @@ export default function ProjectsPage() {
   // Which market's clients we're looking at. Tech work is remote, but the
   // clients themselves are firmly in one city or the other.
   const [chapterId, setChapterId]   = useState<string | null>(null);
-  const [view, setView]             = useState<ViewKey>("all");
+  // The view is addressable, so /members/projects?view=leads is linkable and the
+  // retired /members/projects/discovery route has somewhere real to land.
+  const searchParams = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const [view, setView]             = useState<ViewKey>(
+    VIEWS.some((v) => v.key === requestedView) ? (requestedView as ViewKey) : "all",
+  );
   const [search, setSearch]         = useState("");
   const [openId, setOpenId]         = useState<string | null>(null);
   const [blocked, setBlocked]       = useState<string | null>(null);

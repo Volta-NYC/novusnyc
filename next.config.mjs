@@ -103,6 +103,17 @@ const nextConfig = {
       "novus-nyc.vercel.app",
     ];
     return [
+      // Portal routes removed when the assignment marketplace became Pods and
+      // Tech Projects. Old bookmarks and links in already-sent email still point
+      // here, and a 404 inside the portal reads as "my access broke".
+      { source: "/members/assignments",           destination: "/members/pods",   permanent: true },
+      { source: "/members/assignments/:path*",    destination: "/members/pods",   permanent: true },
+      { source: "/members/finance-assignments",   destination: "/members/pods",   permanent: true },
+      { source: "/members/work/catalog",          destination: "/members/work",   permanent: true },
+      { source: "/members/work/:id",              destination: "/members/work",   permanent: true },
+      // Discovery was a separate page; it is now a view on the tracker.
+      { source: "/members/projects/discovery",    destination: "/members/projects?view=leads", permanent: true },
+
       // Legacy paths. These were previously stub pages calling Next's
       // redirect(), which emits 307 Temporary — that tells Google to keep the
       // old URL indexed and withholds the consolidation. Handled here instead so
