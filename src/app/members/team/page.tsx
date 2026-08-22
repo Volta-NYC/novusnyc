@@ -1,7 +1,7 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useState, useEffect, useMemo } from "react";
+import { Fragment, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, useConfirm,
@@ -1359,15 +1359,35 @@ export default function TeamPage() {
             {ROLE_OPTIONS.map((roleOption) => {
               const isActive = String(member.role ?? "").trim() === roleOption;
               return (
-                <button
-                  key={roleOption}
-                  type="button"
-                  onClick={() => void handleQuickRoleChange(member, roleOption)}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#F6B78D]" : "text-white/70"}`}
-                >
-                  <span className="w-3 flex-shrink-0 text-[#F6B78D]">{isActive ? "✓" : ""}</span>
-                  {roleOption}
-                </button>
+                <Fragment key={roleOption}>
+                  <button
+                    type="button"
+                    onClick={() => void handleQuickRoleChange(member, roleOption)}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#F6B78D]" : "text-white/70"}`}
+                  >
+                    <span className="w-3 flex-shrink-0 text-[#F6B78D]">{isActive ? "✓" : ""}</span>
+                    {roleOption}
+                  </button>
+
+                  {/* LIT sits in the ladder here, but it is earned by leading a
+                      pod rather than assigned — shown so the list reads complete,
+                      disabled so nobody sets a badge that grants nothing. */}
+                  {roleOption === "Team Lead" && (
+                    <div
+                      aria-disabled="true"
+                      title={leadsAPod(member)
+                        ? `${member.name} leads a pod, which is what makes them a LIT. Change it on the pod's roster.`
+                        : "LIT comes from leading a pod, not from this list. Add them as LIT on a pod's roster and the badge follows."}
+                      className={`w-full px-3 py-2 text-xs flex items-center gap-2 cursor-not-allowed ${
+                        leadsAPod(member) ? "text-sky-300" : "text-white/25"
+                      }`}
+                    >
+                      <span className="w-3 flex-shrink-0">{leadsAPod(member) ? "✓" : ""}</span>
+                      LIT
+                      <span className="ml-auto text-[9px] uppercase tracking-wide text-white/30">via pod</span>
+                    </div>
+                  )}
+                </Fragment>
               );
             })}
           </div>
