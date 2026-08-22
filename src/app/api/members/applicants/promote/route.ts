@@ -11,6 +11,7 @@ type PromoteBody = {
   role?: string;
   tracksSelected?: string;
   applicationId?: string;
+  markAccepted?: boolean;
 };
 
 export async function POST(req: NextRequest) {
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest) {
       source: "Added from accepted application",
       applicationId: body.applicationId,
       decidedBy: verified.caller.email ?? "",
+      markAcceptedRole: body.markAccepted
+        ? ((body.role ?? "").trim() || DEFAULT_MEMBER_ROLE)
+        : undefined,
     });
     return NextResponse.json({ success: true, ...result });
   } catch (err) {

@@ -47,15 +47,33 @@ export function namesLikelyMatch(aRaw: unknown, bRaw: unknown): boolean {
   return overlap >= 2;
 }
 
+// Same tokens, ignoring order and punctuation. No containment, no partial
+// overlap — used where a wrong match merges two people's records.
+export function namesMatchExactly(aRaw: unknown, bRaw: unknown): boolean {
+  const tokens = (v: unknown) => {
+    const t = normalizeKey(v).replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+    return t.length > 0 ? [...new Set(t)].sort().join(" ") : "";
+  };
+  const left = tokens(aRaw);
+  const right = tokens(bRaw);
+  return !!left && left === right;
+}
+
 /**
  * Find the one record that is this person, preferring email over name.
  * Name-only matches are returned separately so a caller creating records can
  * refuse to act on a guess.
  */
+/**
+ * `strictNames` is for callers that would merge two people on a bad guess.
+ * It requires the same set of name tokens rather than the fuzzy containment
+ * used for search — "Ann Lee" must not resolve to "Ann Leeson".
+ */
 export function findPersonMatch<T>(
   candidates: T[],
   person: { email?: unknown; name?: unknown },
   read: (item: T) => { email?: unknown; alternateEmail?: unknown; name?: unknown },
+  opts: { strictNames?: boolean } = {},
 ): { match: T | null; matchedOn: "email" | "name" | null } {
   const email = canonicalEmail(person.email);
 
@@ -70,7 +88,8 @@ export function findPersonMatch<T>(
 
   const name = normalizeKey(person.name);
   if (name) {
-    const byName = candidates.filter((item) => namesLikelyMatch(read(item).name, name));
+    const matcher = opts.strictNames ? namesMatchExactly : namesLikelyMatch;
+    const byName = candidates.filter((item) => matcher(read(item).name, name));
     // An ambiguous name is worse than no match — it would merge two people.
     if (byName.length === 1) return { match: byName[0], matchedOn: "name" };
   }

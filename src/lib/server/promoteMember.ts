@@ -32,6 +32,10 @@ export async function promoteApplicantToMember(params: {
   source: string;          // what triggered this, for the member's notes
   applicationId?: string;  // stamps the durable applicant → member link
   decidedBy?: string;
+  // Set only by the accept flow. Stamped here, after the member write, so a
+  // failed promotion can never leave an application marked Accepted with no
+  // member behind it.
+  markAcceptedRole?: string;
 }): Promise<PromoteResult> {
   const fullName = String(params.fullName ?? "").trim();
   const email = canonicalEmail(params.email);
@@ -45,7 +49,19 @@ export async function promoteApplicantToMember(params: {
     entries,
     { email: params.email, name: fullName },
     ([, row]) => ({ email: row.email, alternateEmail: row.alternateEmail, name: row.name }),
+    // Promotion merges records, so a fuzzy name match here would fuse two
+    // different people into one member.
+    { strictNames: true },
   );
+
+  // The application already knows where this person is; not carrying it over
+  // left every promoted member with a blank location and no chapter.
+  const application = params.applicationId
+    ? ((await dbRead(`applications/${params.applicationId}`)) as Record<string, unknown> | null)
+    : null;
+  const appCity     = String(application?.city ?? "").trim();
+  const appState    = String(application?.state ?? "").trim();
+  const appChapter  = String(application?.chapterId ?? application?.chapter_id ?? "").trim();
 
   const track = pickPrimaryTrack(params.tracksSelected ?? "");
   const nowIso = new Date().toISOString();
@@ -81,11 +97,15 @@ export async function promoteApplicantToMember(params: {
     // Reactivate rather than leave a returning member marked inactive.
     if (normalizeKey(existing.status) === "inactive") patch.status = "Active";
 
+    if (isBlank(existing.homeCity) && appCity) patch.homeCity = appCity;
+    if (isBlank(existing.homeState) && appState) patch.homeState = appState;
+    if (isBlank(existing.chapterId) && appChapter) patch.chapterId = appChapter;
+
     if (Object.keys(patch).length > 0) {
       patch.updatedAt = nowIso;
       await dbPatch(`team/${targetId}`, patch);
     }
-    await linkApplication(params.applicationId, targetId, params.decidedBy);
+    await linkApplication(params.applicationId, targetId, params.decidedBy, params.markAcceptedRole);
     return {
       memberId: targetId,
       action: "updated",
@@ -108,27 +128,38 @@ export async function promoteApplicantToMember(params: {
     joinDate: today,
     acceptedDate: today,
     notes: params.source,
+    homeCity: appCity,
+    homeState: appState,
+    ...(appChapter ? { chapterId: appChapter } : {}),
     createdAt: nowIso,
     updatedAt: nowIso,
   });
 
-  await linkApplication(params.applicationId, memberId, params.decidedBy);
+  await linkApplication(params.applicationId, memberId, params.decidedBy, params.markAcceptedRole);
   return { memberId, action: "created", matchedOn: null, changedFields: ["created"] };
 }
 
 // Record which member this application became, so nothing has to re-guess the
-// match later. A failure here must not undo the promotion itself.
+// match later, and stamp the decision in the same write.
+//
+// This runs only once the member row is confirmed, which is the whole point of
+// its position: the caller no longer marks the application Accepted up front,
+// so the "accepted applicant with no member record" state cannot occur. A
+// failure here leaves a real member and an un-stamped application — visible and
+// re-runnable, which the reverse never was.
 async function linkApplication(
-  applicationId: string | undefined, memberId: string, decidedBy?: string,
+  applicationId: string | undefined,
+  memberId: string,
+  decidedBy?: string,
+  markAcceptedRole?: string,
 ): Promise<void> {
   if (!applicationId) return;
-  try {
-    await dbPatch(`applications/${applicationId}`, {
-      memberId,
-      decidedAt: new Date().toISOString(),
-      decidedBy: decidedBy ?? "",
-    });
-  } catch {
-    // The member exists; an unset link is recoverable, a failed accept is not.
-  }
+  await dbPatch(`applications/${applicationId}`, {
+    memberId,
+    decidedAt: new Date().toISOString(),
+    decidedBy: decidedBy ?? "",
+    ...(markAcceptedRole
+      ? { status: "Accepted", finalDecisionRole: markAcceptedRole }
+      : {}),
+  });
 }

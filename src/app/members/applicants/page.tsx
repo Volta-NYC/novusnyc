@@ -447,12 +447,9 @@ export default function ApplicantsPage() {
   const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, role: string) => {
     if (!user) throw new Error("not_authenticated");
     const token = await getAuthToken();
-    await updateApplicantServer(app.id, {
-      status: "Accepted",
-      finalDecisionRole: role,
-    });
-    // A failed promotion used to be invisible: the status flipped to Accepted
-    // and the toast claimed the member was added, while nothing was written.
+    // The Accepted stamp is applied by the promote endpoint once the member row
+    // exists. Flipping it here first meant a failed promotion left an accepted
+    // applicant with nothing in the directory.
     const promoteRes = await fetch("/api/members/applicants/promote", {
       method: "POST",
       headers: {
@@ -467,6 +464,7 @@ export default function ApplicantsPage() {
         role,
         tracksSelected: app.tracksSelected,
         applicationId: app.id,
+        markAccepted: true,
       }),
     });
     if (!promoteRes.ok) {
