@@ -33,7 +33,6 @@ const PRIORITY_RANK: Record<string, number> = { High: 0, Medium: 1, Maybe: 2 };
 const STATUS_TINT: Record<TechStatus, string> = {
   Backlog:       "border-white/15 bg-white/[0.03] text-white/60",
   Assigned:      "border-indigo-500/30 bg-indigo-500/10 text-indigo-300",
-  Building:      "border-blue-400/30 bg-blue-400/10 text-blue-300",
   "Draft Ready": "border-yellow-400/35 bg-yellow-400/10 text-yellow-300",
   "With Client": "border-purple-400/30 bg-purple-400/10 text-purple-300",
   Live:          "border-green-500/35 bg-green-500/10 text-green-400",
@@ -44,7 +43,6 @@ const STATUS_TINT: Record<TechStatus, string> = {
 const STATUS_DOT: Record<TechStatus, string> = {
   Backlog:       "bg-white/30",
   Assigned:      "bg-indigo-400",
-  Building:      "bg-blue-400",
   "Draft Ready": "bg-yellow-400",
   "With Client": "bg-purple-400",
   Live:          "bg-green-500",
@@ -77,7 +75,7 @@ export default function ProjectsPage() {
   const [blocked, setBlocked]       = useState<string | null>(null);
   const [quickAdd, setQuickAdd]     = useState("");
   const [adding, setAdding]         = useState(false);
-  const [statusFilter, setStatusFilter] = useState<TechStatus | null>(null);
+  const [statusFilter, setStatusFilter] = useState<Set<TechStatus>>(new Set());
 
   useEffect(() => subscribeBusinesses(setBusinesses), []);
   useEffect(() => subscribeTeam(setTeam), []);
@@ -110,7 +108,7 @@ export default function ProjectsPage() {
       default:        list = list.filter((b) => !isLead(b));
     }
 
-    if (statusFilter) list = list.filter((b) => (b.techStatus ?? "Backlog") === statusFilter);
+    if (statusFilter.size > 0) list = list.filter((b) => statusFilter.has(b.techStatus ?? "Backlog"));
 
     if (q) {
       list = list.filter((b) =>
@@ -230,22 +228,38 @@ export default function ProjectsPage() {
       />
       <SectionTabs tabs={PROJECT_GROUP_TABS} />
 
-      {/* Pipeline counts — the whole board in one line */}
-      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
-        {TECH_PIPELINE.map((s) => (
+      {/* The pipeline doubles as the filter, so each tier carries its own
+          colour — a row of plain numbers gave no sign it could be clicked. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 px-1">
+        {TECH_PIPELINE.map((st) => {
+          const on = statusFilter.has(st);
+          return (
+            <button
+              key={st}
+              aria-pressed={on}
+              onClick={() => setStatusFilter((prev) => {
+                const next = new Set(prev);
+                if (next.has(st)) next.delete(st); else next.add(st);
+                return next;
+              })}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors ${STATUS_TINT[st]} ${
+                on ? "ring-2 ring-offset-1 ring-current/40" : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[st]}`} />
+              <span className="font-mono text-[12px] font-semibold tabular-nums">{counts[st] ?? 0}</span>
+              <span>{st}</span>
+            </button>
+          );
+        })}
+        {statusFilter.size > 0 && (
           <button
-            key={s}
-            onClick={() => { setView("all"); setStatusFilter(statusFilter === s ? null : s); }}
-            className="group flex items-baseline gap-1.5 text-left"
+            onClick={() => setStatusFilter(new Set())}
+            className="text-[11px] text-white/45 underline decoration-white/20 hover:text-white/75"
           >
-            <span className={`font-mono text-[15px] font-semibold tabular-nums ${
-              statusFilter === s ? "text-[#F3E28D]" : "text-white/85 group-hover:text-white"}`}>
-              {counts[s] ?? 0}
-            </span>
-            <span className={`text-[11px] ${
-              statusFilter === s ? "text-[#F3E28D]" : "text-white/45 group-hover:text-white/70"}`}>{s}</span>
+            Clear
           </button>
-        ))}
+        )}
       </div>
 
       {chapters.length > 1 && (
@@ -293,7 +307,7 @@ export default function ProjectsPage() {
         {VIEWS.map((v) => (
           <button
             key={v.key}
-            onClick={() => { setView(v.key); setStatusFilter(null); }}
+            onClick={() => { setView(v.key); setStatusFilter(new Set()); }}
             className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
               view === v.key
                 ? "border-[#F3E28D]/40 bg-[#F3E28D]/15 text-[#F3E28D]"

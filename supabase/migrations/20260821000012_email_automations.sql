@@ -129,3 +129,8 @@ ALTER TABLE assignments
   ADD COLUMN IF NOT EXISTS due_reminder_sent_at timestamptz;
 
 NOTIFY pgrst, 'reload schema';
+
+-- "Building" said the same thing as "Assigned" and no project ever used it.
+-- Anything on it falls back to Assigned rather than a status the UI no longer
+-- offers; member_contributions counts it under projects_active either way.
+UPDATE businesses SET tech_status = 'Assigned' WHERE tech_status = 'Building';

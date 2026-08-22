@@ -34,7 +34,6 @@ const BADGE_COLORS: Record<string, string> = {
   // tech project pipeline
   Backlog:             "bg-gray-500/15 text-gray-400 border-gray-500/20",
   Assigned:            "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
-  Building:            "bg-blue-400/15 text-blue-300 border-blue-400/20",
   "Draft Ready":       "bg-yellow-400/15 text-yellow-300 border-yellow-400/20",
   "With Client":       "bg-purple-400/15 text-purple-300 border-purple-400/20",
   Live:                "bg-green-500/15 text-green-400 border-green-500/20",

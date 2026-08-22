@@ -48,13 +48,15 @@ export interface BID {
 
 // Tech pipeline. Draft Ready requires previewUrl and Live requires liveUrl —
 // enforced at the transition so the list stays honest without anyone policing it.
+// No "Building" tier: it said the same thing as Assigned, and nothing ever
+// used it.
 export const TECH_STATUSES = [
-  "Backlog", "Assigned", "Building", "Draft Ready", "With Client", "Live", "On Hold", "Dropped",
+  "Backlog", "Assigned", "Draft Ready", "With Client", "Live", "On Hold", "Dropped",
 ] as const;
 export type TechStatus = (typeof TECH_STATUSES)[number];
 
 export const TECH_PIPELINE: TechStatus[] = [
-  "Backlog", "Assigned", "Building", "Draft Ready", "With Client", "Live",
+  "Backlog", "Assigned", "Draft Ready", "With Client", "Live",
 ];
 
 export const TECH_PRIORITIES = ["High", "Medium", "Maybe"] as const;
