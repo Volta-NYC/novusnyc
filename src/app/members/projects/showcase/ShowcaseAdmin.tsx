@@ -1449,7 +1449,7 @@ function BusinessesPageInner() {
           }
         }}
       >
-        <td className="px-3 py-0 h-9 align-middle">
+        <td className="px-3 py-0 h-8 align-middle">
           {derivedTracks.length > 0 ? (
             <div className="flex items-center gap-1.5">
               {derivedTracks.map((t) => (
@@ -1458,7 +1458,7 @@ function BusinessesPageInner() {
             </div>
           ) : <span className="text-white/20">·</span>}
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/90 align-middle overflow-hidden">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-medium truncate" title={b.name}>{b.name}</span>
             {b.archived && (
@@ -1466,13 +1466,13 @@ function BusinessesPageInner() {
             )}
           </div>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/60 align-middle overflow-hidden">
           <span className="block truncate" title={neighborhood || ""}>{neighborhood || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/75 align-middle overflow-hidden">
           <span className="block truncate" title={b.ownerName || ""}>{b.ownerName || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] align-middle overflow-hidden">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
@@ -1502,7 +1502,7 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/60 align-middle overflow-hidden">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.phone ? (
@@ -1518,22 +1518,22 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 align-middle overflow-hidden">
           {renderTrackStatusCell(b, "Tech")}
         </td>
-        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 align-middle overflow-hidden">
           {renderTrackStatusCell(b, "Marketing")}
         </td>
-        <td className="px-3 py-0 h-9 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 align-middle overflow-hidden">
           {renderTrackStatusCell(b, "Finance")}
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/55 align-middle overflow-hidden">
           <span className="block truncate" title={b.referredBy || ""}>{b.referredBy || <span className="text-white/25">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/55 align-middle overflow-hidden">
           <span className="block truncate" title={servicesRequested}>{servicesRequested || <span className="text-white/25">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 align-middle">
+        <td className="px-3 py-0 h-8 align-middle">
           {canEdit && (
             <div className="members-row-actions">
               <span title={resolveProjectRecipients(b).emails.length === 0 ? "No assigned members to email" : undefined}>
@@ -1581,16 +1581,16 @@ function BusinessesPageInner() {
           }
         }}
       >
-        <td className="px-3 py-0 h-9 text-[11px] text-white/90 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/90 align-middle overflow-hidden">
           <span className="font-medium truncate block" title={b.name}>{b.name}</span>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/60 align-middle overflow-hidden">
           <span className="block truncate" title={neighborhood || ""}>{neighborhood || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/75 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/75 align-middle overflow-hidden">
           <span className="block truncate" title={b.ownerName || ""}>{b.ownerName || <span className="text-white/30">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] align-middle overflow-hidden">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.ownerEmail ? (
@@ -1620,7 +1620,7 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/60 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/60 align-middle overflow-hidden">
           {isMemberRestricted ? (
             <span className="text-white/40">—</span>
           ) : b.phone ? (
@@ -1636,7 +1636,7 @@ function BusinessesPageInner() {
             <span className="text-white/30">—</span>
           )}
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] align-middle">
+        <td className="px-3 py-0 h-8 text-[11px] align-middle">
           {fromWebsite ? (
             <span className="text-white/65">Website form</span>
           ) : fromDiscovery ? (
@@ -1645,7 +1645,7 @@ function BusinessesPageInner() {
             <span className="text-white/30">In-person</span>
           )}
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] align-middle">
+        <td className="px-3 py-0 h-8 text-[11px] align-middle">
           {fromWebsite || fromDiscovery ? (
             <span className="text-white/50">{b.createdAt ? new Date(b.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-white/25">—</span>}</span>
           ) : (
@@ -1660,13 +1660,13 @@ function BusinessesPageInner() {
             />
           )}
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/55 align-middle overflow-hidden">
           <span className="block truncate" title={b.referredBy || ""}>{b.referredBy || <span className="text-white/25">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 text-[11px] text-white/55 align-middle overflow-hidden">
+        <td className="px-3 py-0 h-8 text-[11px] text-white/55 align-middle overflow-hidden">
           <span className="block truncate" title={servicesRequested}>{servicesRequested || <span className="text-white/25">—</span>}</span>
         </td>
-        <td className="px-3 py-0 h-9 align-middle">
+        <td className="px-3 py-0 h-8 align-middle">
           {canEdit && (
             <div className="members-row-actions">
               {(fromDiscovery || fromWebsite) && (

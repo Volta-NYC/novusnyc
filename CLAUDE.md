@@ -123,7 +123,12 @@ npm start          # serve the production build locally
 - Primary action color: `n-yellow` (`#F3E28D`). Text on yellow: `n-ink` (`#2D282E`) — 11.05:1, AAA.
 - Use `Btn`, `Modal`, `Field`, `Input`, `Select` from `ui.tsx` — never raw `<button>` / `<input>` in portal pages.
 - `Btn` variants: `primary` (green fill), `secondary` (white/8 glass), `ghost` (text only), `danger` (red tint).
-- Row heights in tables: `h-9`. Text sizes: header labels `text-[10px] uppercase tracking-wide`, cell content `text-[11px]`.
+- Table rhythm is set centrally in `globals.css`, not per cell: data rows are 32px
+  (`.members-grid-table tbody td`), headers 28px (`table thead th`), horizontal
+  padding `px-3`. Don't add `py-*`/`h-*` to table cells to change row height —
+  change the scale. Roomier list tables (email templates, automations) opt out by
+  not carrying `members-grid-table`. Text sizes: header labels `text-[10px]
+  uppercase tracking-wide`, cell content `text-[11px]`.
 - Status/badge pattern: use `<Badge label={value} />` from `ui.tsx`. Colors are defined in `BADGE_COLORS` in `ui.tsx`. Add new status values there when introducing new statuses.
 - Empty cells (no data): `<span className="text-white/25">—</span>`.
 

@@ -424,17 +424,17 @@ export default function BIDTrackerPage() {
                   <tr key={bid.id} className="border-b border-white/5 hover:bg-white/[0.025]">
                     {visCols.map((col) => {
                       switch (col.key) {
-                        case "name": return <td key="name" className="px-3 py-0 h-9 text-white/90 align-middle overflow-hidden"><span className="block truncate" title={bid.name}>{bid.name}</span></td>;
-                        case "status": return <td key="status" className="px-3 py-0 h-9 align-middle"><Badge label={normalizeBidStatus(bid.status)} /></td>;
+                        case "name": return <td key="name" className="px-3 py-0 h-8 text-white/90 align-middle overflow-hidden"><span className="block truncate" title={bid.name}>{bid.name}</span></td>;
+                        case "status": return <td key="status" className="px-3 py-0 h-8 align-middle"><Badge label={normalizeBidStatus(bid.status)} /></td>;
                         case "borough": return (
-                          <td key="borough" className="px-3 py-0 h-9 text-white/60 align-middle overflow-hidden">
+                          <td key="borough" className="px-3 py-0 h-8 text-white/60 align-middle overflow-hidden">
                             <span className="block truncate" title={bid.borough || "—"}>
                               {bid.borough || "—"}
                             </span>
                           </td>
                         );
                         case "contact": return (
-                          <td key="contact" className="px-3 py-0 h-9 text-white/55 align-middle overflow-hidden">
+                          <td key="contact" className="px-3 py-0 h-8 text-white/55 align-middle overflow-hidden">
                             {(() => {
                               const primary = bid.contacts?.[0];
                               const name  = primary?.name  || bid.contactName || "";
@@ -447,14 +447,14 @@ export default function BIDTrackerPage() {
                           </td>
                         );
                         case "nextAction": return (
-                          <td key="nextAction" className="px-3 py-0 h-9 text-white/55 align-middle overflow-hidden">
+                          <td key="nextAction" className="px-3 py-0 h-8 text-white/55 align-middle overflow-hidden">
                             <span className="block truncate" title={bid.nextAction || bid.notes || "—"}>
                               {bid.nextAction || bid.notes || "—"}
                             </span>
                           </td>
                         );
                         case "actions": return (
-                          <td key="actions" className="px-3 py-0 h-9 align-middle">
+                          <td key="actions" className="px-3 py-0 h-8 align-middle">
                             <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
                           </td>
                         );

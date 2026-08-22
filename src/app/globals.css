@@ -2418,8 +2418,24 @@ summary:focus-visible {
 }
 .members-portal-light table td { border-bottom-color: rgba(0,0,0,.09) !important; }
 .members-portal-light table tbody tr:hover { background-color: rgba(0,0,0,.035) !important; }
-.members-portal-light table th,
-.members-portal-light table td { padding-top: .5rem; padding-bottom: .5rem; }
+/* ── Table rhythm ────────────────────────────────────────────────────────────
+   One scale for every dense portal table. 32px data rows clear the 20px track
+   avatar with 6px either side and sit comfortably under 11px text; a 28px
+   header keeps the label row visibly lighter than the data it labels. Roomier
+   tables (email templates, automations) opt out by not carrying
+   members-grid-table, and colSpan empty states keep their own padding. */
+.members-portal table thead th {
+  height: 1.75rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+.members-portal .members-grid-table tbody td:not([colspan]) {
+  height: 2rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
 
 /* A select styled as a pill still draws the platform arrow at its own metrics,
    which is what made the status cells look cramped on one side. */
@@ -2427,6 +2443,15 @@ summary:focus-visible {
 .members-portal .members-status-select {
   background-image: none;
   text-overflow: ellipsis;
+}
+
+/* The status control is a select inside a tinted pill, so it has to stay
+   transparent and inherit the pill's colour — the blanket rule above paints
+   every other select white, which read as a white slab over the tint. */
+.members-portal-light .members-status-select select {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: inherit !important;
 }
 .members-portal select:not([multiple]) {
   padding-right: 1.75rem;

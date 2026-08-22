@@ -1252,7 +1252,7 @@ function AuditLogTab() {
               </div>
             )}
             <p className="text-[10px] text-white/25 pt-1">
-              Note: the audit log records what was written, not the previous state — point-in-time undo requires storing before-snapshots, which is a planned schema improvement.
+              The log records what was written, not what it replaced — there is no undo.
             </p>
           </div>
         </Modal>

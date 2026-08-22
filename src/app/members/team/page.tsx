@@ -22,9 +22,9 @@ import { useAuth } from "@/lib/members/authContext";
 import TrackAvatar, { getMemberTrack, TRACK_SORT_ORDER, type TrackKey } from "@/components/members/TrackAvatar";
 import {
   MEMBER_ROLES, DEFAULT_MEMBER_ROLE, isInactiveMember,
-  TIER_ORDER, TIER_LABEL, memberTier, infractionStanding, STANDING_LABEL,
+  TIER_ORDER, memberTier, infractionStanding, STANDING_LABEL,
   STANDING_STYLE, DEFAULT_INFRACTION_THRESHOLDS, WORK_SCORE_EXPLAINER,
-  type MemberRole,
+  type MemberRole, type MemberTier,
 } from "@/lib/members/roles";
 import { CLASS_GRADE_OPTIONS, gradeToClassOf } from "@/lib/grades";
 import MemberDrawer from "@/components/members/MemberDrawer";
@@ -63,12 +63,23 @@ const DEFAULT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 2, dir: "asc" },
 ];
 
+// Colour by the stored title only — leading a pod is a separate fact and gets
+// its own chip, so a Developer who runs a pod shows both instead of one
+// overwriting the other.
+const ROLE_CHIP: Record<MemberTier, string> = {
+  board:          "border-amber-400/40 bg-amber-400/10 text-amber-400",
+  "chapter-exec": "border-orange-400/40 bg-orange-400/10 text-orange-400",
+  leadership:     "border-violet-400/35 bg-violet-400/10 text-violet-300",
+  lit:            "border-sky-400/35 bg-sky-400/10 text-sky-300",
+  member:         "border-white/15 bg-[#11141A] text-white/80",
+};
+
 const SORT_OPTIONS = [
   { value: 0, label: "Status" },
   { value: 1, label: "Track" },
   { value: 2, label: "Name" },
   { value: 3, label: "School" },
-  { value: 4, label: "Rank" },
+  { value: 4, label: "Role" },
   { value: 5, label: "Date Accepted" },
   { value: 6, label: "Work" },
   { value: 7, label: "Hours" },
@@ -82,7 +93,6 @@ const ADMIN_COLS = [
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: 5   as number | null },
-  { key: "rank",           label: "Rank",            width: 116, sortCol: 4  as number | null },
   { key: "home",           label: "Based in",        width: 130, sortCol: null },
   { key: "work",           label: "Work",            width: 190, sortCol: 6  as number | null },
   { key: "pods",           label: "Pods",            width: 150, sortCol: null },
@@ -615,6 +625,9 @@ export default function TeamPage() {
   const tierOf = (member: TeamMember) =>
     memberTier(member.role, workByMemberId.get(member.id)?.podsLed ?? 0);
 
+  const roleTierOf = (member: TeamMember) => memberTier(member.role, 0);
+  const leadsAPod = (member: TeamMember) => (workByMemberId.get(member.id)?.podsLed ?? 0) > 0;
+
   const podsByMemberId = useMemo(() => {
     const map = new Map<string, { name: string; lit: boolean }[]>();
     for (const pm of podMembers) {
@@ -702,7 +715,6 @@ export default function TeamPage() {
                     .map((p) => (p.lit ? `${p.name} (LIT)` : p.name))
                     .join("; "),
                   hours: Number(workByMemberId.get(m.id)?.hoursTotal ?? 0).toFixed(1),
-                  rank: TIER_LABEL[tierOf(m)],
                   work: Number(workByMemberId.get(m.id)?.workScore ?? 0).toFixed(0),
                   sitesShipped: workByMemberId.get(m.id)?.projectsLive ?? 0,
                   tasksDone: workByMemberId.get(m.id)?.tasksDone ?? 0,
@@ -714,7 +726,6 @@ export default function TeamPage() {
                   { key: "school", label: "School" },
                   { key: "grade", label: "Grade" },
                   { key: "role", label: "Role" },
-                  { key: "rank", label: "Rank" },
                   { key: "homeCity", label: "Home City" },
                   { key: "homeState", label: "Home State" },
                   { key: "status", label: "Status" },
@@ -827,7 +838,7 @@ export default function TeamPage() {
                 const indicator = getMemberIndicator(member);
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors">
-                    <td className="px-2 py-0 h-9 align-middle overflow-hidden">
+                    <td className="px-2 py-0 h-8 align-middle overflow-hidden">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
@@ -840,13 +851,13 @@ export default function TeamPage() {
                         <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 44)}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                    <td className="px-2 py-0 h-8 align-middle overflow-hidden whitespace-nowrap">
                       <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 64) : "—"}</span>
                     </td>
-                    <td className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                    <td className="px-2 py-0 h-8 align-middle whitespace-nowrap">
                       <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
                     </td>
-                    <td className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                    <td className="px-2 py-0 h-8 align-middle whitespace-nowrap">
                       <span className="text-white/60">{displayRoleValue(member.role)}</span>
                     </td>
                   </tr>
@@ -926,7 +937,7 @@ export default function TeamPage() {
                       {visCols.map((col) => {
                         switch (col.key) {
                           case "name": return (
-                            <td key="name" className="px-3 py-0 h-9 align-middle overflow-hidden">
+                            <td key="name" className="px-3 py-0 h-8 align-middle overflow-hidden">
                               <div className="flex items-center gap-2 min-w-0">
                                 <button
                                   type="button"
@@ -941,7 +952,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "email": return (
-                            <td key="email" className="px-3 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                            <td key="email" className="px-3 py-0 h-8 align-middle overflow-hidden whitespace-nowrap">
                               <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
                                 {member.email || member.alternateEmail ? (
                                   <a
@@ -967,43 +978,52 @@ export default function TeamPage() {
                             </td>
                           );
                           case "school": return (
-                            <td key="school" className="px-3 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                            <td key="school" className="px-3 py-0 h-8 align-middle overflow-hidden whitespace-nowrap">
                               <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 72) : "—"}</span>
                             </td>
                           );
                           case "hsClass": return (
-                            <td key="hsClass" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="hsClass" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
                             </td>
                           );
                           case "role": return (
-                            <td key="role" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
-                              {canEdit ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (openRolePopoverId === member.id) {
-                                      setOpenRolePopoverId(null);
-                                      setPopoverPos(null);
-                                    } else {
-                                      const r = e.currentTarget.getBoundingClientRect();
-                                      setPopoverPos({ top: r.bottom + 4, left: r.left });
-                                      setOpenRolePopoverId(member.id);
-                                    }
-                                  }}
-                                  className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#F6B78D]/45 hover:bg-[#F6B78D]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
-                                  title="Click to change role"
-                                >
-                                  {displayRoleValue(member.role)}
-                                </button>
-                              ) : (
-                                <span className="text-white/50">{displayRoleValue(member.role)}</span>
-                              )}
+                            <td key="role" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1">
+                                {canEdit ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (openRolePopoverId === member.id) {
+                                        setOpenRolePopoverId(null);
+                                        setPopoverPos(null);
+                                      } else {
+                                        const r = e.currentTarget.getBoundingClientRect();
+                                        setPopoverPos({ top: r.bottom + 4, left: r.left });
+                                        setOpenRolePopoverId(member.id);
+                                      }
+                                    }}
+                                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:brightness-110 ${ROLE_CHIP[roleTierOf(member)]}`}
+                                    title="Click to change role"
+                                  >
+                                    {displayRoleValue(member.role)}
+                                  </button>
+                                ) : (
+                                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${ROLE_CHIP[roleTierOf(member)]}`}>
+                                    {displayRoleValue(member.role)}
+                                  </span>
+                                )}
+                                {leadsAPod(member) && (
+                                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${ROLE_CHIP.lit}`} title="Leads a pod">
+                                    LIT
+                                  </span>
+                                )}
+                              </span>
                             </td>
                           );
                           case "resume": return (
-                            <td key="resume" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="resume" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               {(() => {
                                 const emailKey = normalizeKey(member.email ?? "");
                                 const altEmailKey = normalizeKey(member.alternateEmail ?? "");
@@ -1017,31 +1037,12 @@ export default function TeamPage() {
                             </td>
                           );
                           case "acceptedDate": return (
-                            <td key="acceptedDate" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="acceptedDate" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               <span className="text-white/50">{member.acceptedDate || "—"}</span>
                             </td>
                           );
-                          case "rank": return (
-                            <td key="rank" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
-                              {(() => {
-                                const tier = tierOf(member);
-                                if (tier === "member") {
-                                  return <span className="text-[11px] text-white/45">{member.role || "Member"}</span>;
-                                }
-                                return (
-                                  <span className={`members-chip ${
-                                    tier === "board" ? "border-[#F3E28D]/40 bg-[#F3E28D]/12 text-[#F3E28D]"
-                                      : tier === "leadership" ? "border-violet-400/35 bg-violet-400/10 text-violet-300"
-                                      : "border-sky-400/35 bg-sky-400/10 text-sky-300"
-                                  }`}>
-                                    {tier === "leadership" ? member.role : TIER_LABEL[tier]}
-                                  </span>
-                                );
-                              })()}
-                            </td>
-                          );
                           case "home": return (
-                            <td key="home" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="home" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               {(() => {
                                 const city = (member.homeCity ?? "").trim();
                                 const st   = (member.homeState ?? "").trim();
@@ -1055,7 +1056,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "work": return (
-                            <td key="work" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="work" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               {(() => {
                                 const w = workByMemberId.get(member.id);
                                 if (!w || w.noRecordedWork) return <span className="text-white/25">—</span>;
@@ -1077,7 +1078,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "pods": return (
-                            <td key="pods" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="pods" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               {(() => {
                                 const list = podsByMemberId.get(member.id) ?? [];
                                 if (list.length === 0) return <span className="text-white/25">—</span>;
@@ -1093,7 +1094,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "strikes": return (
-                            <td key="strikes" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="strikes" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               {(() => {
                                 const points = workByMemberId.get(member.id)?.infractionPoints ?? 0;
                                 const standing = infractionStanding(points, thresholds);
@@ -1112,7 +1113,7 @@ export default function TeamPage() {
                             </td>
                           );
                           case "actions": return (
-                            <td key="actions" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="actions" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               <div className="members-row-actions">
                                 {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
                                 {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
@@ -1179,9 +1180,6 @@ export default function TeamPage() {
                 <p className="text-xs text-white/60 mt-1">{assignmentQuickViewRestTeam.join(", ")}</p>
               )}
             </div>
-            <p className="text-[11px] text-white/45">
-              Click the assignment again to open the full project popup.
-            </p>
           </div>
         )}
         <div className="flex justify-end mt-4 pt-3 border-t border-white/8">

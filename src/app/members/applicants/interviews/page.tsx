@@ -1937,9 +1937,6 @@ function InterviewsContent() {
           )}
           {pastBookedSlots.length > 0 && (
             <>
-              <div className="bg-purple-500/10 border border-purple-400/20 rounded-xl px-4 py-2.5 text-[11px] text-purple-200/80 font-body">
-                <span className="font-semibold text-purple-200">Tip:</span> Click the number in the <span className="font-semibold">Evals</span> column to read evaluation notes. Evaluation data is also visible in <span className="font-semibold">/members/applicants</span> under the Evals column.
-              </div>
             <div className="members-table-shell">
               <table className="members-grid-table w-full min-w-[1280px] table-fixed text-[11px] leading-4 [&_td]:overflow-hidden">
                 <thead className="bg-[#0F1014]">
