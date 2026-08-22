@@ -166,6 +166,8 @@ export interface Business {
   }>>;
 }
 
+// notes lives in member_notes now — owner/admin only. It was readable by every
+// member here.
 export interface TeamMember {
   id: string;
   name: string;
@@ -192,7 +194,6 @@ export interface TeamMember {
   status: "Active" | "On Leave" | "Alumni" | "Inactive" | "Reserve";
   skills: string[];       // may be undefined on legacy rows
   joinDate: string;
-  notes: string;
   createdAt: string;
   // Automation bookkeeping — populated by the cycle sweep so warnings/strikes
   // are issued at most once per cycle per member, and biweekly check-ins fire

@@ -37,7 +37,7 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
   grade: "",
   acceptedDate: "",
   name: "", school: "", divisions: [], role: DEFAULT_MEMBER_ROLE, slackHandle: "",
-  email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "", notes: "",
+  email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "",
 };
 
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
@@ -269,7 +269,6 @@ export default function TeamPage() {
       skills:      member.skills ?? [],
       joinDate:    member.joinDate,
       acceptedDate: member.acceptedDate ?? "",
-      notes:       member.notes,
     });
     setEditingMember(member);
     setShowAlternateEmail(!!(member.alternateEmail ?? "").trim());

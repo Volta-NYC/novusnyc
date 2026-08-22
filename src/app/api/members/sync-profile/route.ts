@@ -49,8 +49,9 @@ export async function POST(req: NextRequest) {
     if (!target.email) patch.email = email;
     if (!target.join_date) patch.join_date = nowIso.split("T")[0];
     if (Object.keys(patch).length > 0) {
-      if (!target.notes) patch.notes = "Synced from signup";
       await sb.from("team").update(patch).eq("id", targetId);
+      await sb.from("member_notes")
+        .upsert({ member_id: targetId, note: "Synced from signup" }, { onConflict: "member_id" });
     }
   } else {
     const newId = crypto.randomUUID();
@@ -68,9 +69,9 @@ export async function POST(req: NextRequest) {
       status: "Active",
       skills: [],
       join_date: nowIso.split("T")[0],
-      notes: "Synced from signup",
       created_at: nowIso,
     });
+    await sb.from("member_notes").insert({ member_id: newId, note: "Synced from signup" });
   }
 
   return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { dbRead, dbPatch, dbPush } from "@/lib/supabaseAdmin";
+import { dbRead, dbPatch, dbPush, getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { pickPrimaryTrack, trackToDivisions } from "@/lib/server/memberPlacement";
 import { canonicalEmail, findPersonMatch, normalizeKey } from "@/lib/identity";
 
@@ -127,13 +127,17 @@ export async function promoteApplicantToMember(params: {
     skills: [],
     joinDate: today,
     acceptedDate: today,
-    notes: params.source,
     homeCity: appCity,
     homeState: appState,
     ...(appChapter ? { chapterId: appChapter } : {}),
     createdAt: nowIso,
     updatedAt: nowIso,
   });
+
+  // Provenance lives in member_notes, which only owners and admins can read.
+  await getSupabaseAdmin().from("member_notes")
+    .upsert({ member_id: memberId, note: params.source, updated_at: nowIso },
+            { onConflict: "member_id" });
 
   await linkApplication(params.applicationId, memberId, params.decidedBy, params.markAcceptedRole);
   return { memberId, action: "created", matchedOn: null, changedFields: ["created"] };
