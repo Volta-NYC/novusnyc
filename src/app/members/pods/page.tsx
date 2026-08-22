@@ -89,7 +89,7 @@ export default function PodsPage() {
             <Link
               key={pod.id}
               href={`/members/pods/${pod.slug}`}
-              className="group flex flex-col gap-3 rounded-lg border border-white/10 bg-[#111418] p-4 transition-colors hover:border-white/25"
+              className="group flex flex-col gap-2.5 rounded-lg border border-white/10 bg-[#111418] p-4 transition-colors hover:border-white/25"
             >
               <div className="flex items-start justify-between gap-3">
                 <h2 className="font-semibold leading-snug text-white group-hover:text-[#F3E28D]">
@@ -98,40 +98,26 @@ export default function PodsPage() {
                 {iLead && <Badge label="lit" />}
               </div>
 
-              <span className={`-mt-1.5 w-fit rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide ${
-                pod.serves === "clients"
-                  ? "border-[#F6B78D]/35 bg-[#F6B78D]/10 text-[#F6B78D]"
-                  : "border-[#BEA2BA]/35 bg-[#BEA2BA]/10 text-[#BEA2BA]"
-              }`}>
-                {pod.serves === "clients" ? "For our clients" : "For Novus itself"}
-              </span>
-
-              <p className="line-clamp-2 text-[11px] leading-relaxed text-white/40">
-                {pod.description}
+              <p className="text-[11px] text-white/45">
+                {lits.length > 0
+                  ? `Led by ${lits.join(", ")}`
+                  : <span className="text-red-400">No LIT assigned</span>}
               </p>
 
-              <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
-                <span className="text-white/60">
-                  <span className="font-mono tabular-nums text-white/85">{size}</span> member{size === 1 ? "" : "s"}
-                </span>
-                <span className="text-white/40">
-                  every {pod.cadenceDays}d · {pod.defaultMeetingHours}h
+              <div className="mt-auto flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[11px]">
+                <span>
+                  <span className="font-mono text-[13px] font-semibold tabular-nums text-white/85">{size}</span>
+                  <span className="ml-1 text-white/45">member{size === 1 ? "" : "s"}</span>
                 </span>
                 {last ? (
-                  <span className={overdue ? "text-yellow-300/90" : "text-white/40"}>
-                    last met {last.meetsOn}
-                    {overdue ? ` · ${daysAgo(last.meetsOn)}d ago` : ""}
+                  <span className={overdue ? "text-yellow-300" : "text-white/45"}>
+                    met {daysAgo(last.meetsOn)}d ago
                   </span>
                 ) : (
-                  <span className="text-yellow-300/90">no meetings yet</span>
+                  <span className="text-white/45">no meetings yet</span>
                 )}
+                <span className="text-white/35">every {pod.cadenceDays}d · {pod.defaultMeetingHours}h</span>
               </div>
-
-              {lits.length > 0 && (
-                <p className="text-[10px] uppercase tracking-wide text-white/30">
-                  Led by {lits.join(", ")}
-                </p>
-              )}
             </Link>
           ))}
         </div>
