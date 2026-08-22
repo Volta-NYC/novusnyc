@@ -1,33 +1,11 @@
--- Role ladder, contribution tracking, and infraction calibration.
-
--- ── 1. Role ladder ───────────────────────────────────────────────────────────
--- Board · Developer (tech) · Team Lead (marketing & finance) · Member.
---
--- LIT is deliberately NOT a value here. Leading a pod is recorded once, in
--- pod_members.role, and the LIT tier is derived from it. Storing it in both
--- places is how you get a member badged LIT who leads nothing.
---
--- Old ladder: Board · Senior Associate · Associate · Senior Analyst · Analyst
--- (plus a stray "Member" on 18 rows). Everything below Senior Associate was a
--- seniority label with no permission attached, so it collapses to Member.
-
 UPDATE team SET role = 'Team Lead', updated_at = now()
- WHERE deleted_at IS NULL AND role = 'Senior Associate'
-   AND NOT ('Tech' = ANY(divisions));
+ WHERE deleted_at IS NULL AND role = 'Senior Associate' AND NOT ('Tech' = ANY(divisions));
 
 UPDATE team SET role = 'Developer', updated_at = now()
- WHERE deleted_at IS NULL AND role = 'Senior Associate'
-   AND 'Tech' = ANY(divisions);
+ WHERE deleted_at IS NULL AND role = 'Senior Associate' AND 'Tech' = ANY(divisions);
 
 UPDATE team SET role = 'Member', updated_at = now()
  WHERE deleted_at IS NULL AND role IN ('Associate', 'Senior Analyst', 'Analyst');
-
--- ── 2. Contribution tracking ─────────────────────────────────────────────────
--- One row per member covering every kind of work they can do, so nothing is
--- counted twice and nothing falls through. Tech members log few hours and
--- marketing members ship no websites, so a single number can't be honest on its
--- own — the components stay visible and work_score is a transparent weighting
--- of them, not a currency.
 
 CREATE OR REPLACE VIEW member_contributions AS
 WITH hours AS (
@@ -103,9 +81,6 @@ SELECT
   coalesce(pd.pods_joined, 0)                   AS pods_joined,
   coalesce(st.infraction_points, 0)             AS infraction_points,
   coalesce(st.infraction_count, 0)              AS infraction_count,
-  -- Weighted so a shipped website doesn't read the same as showing up once.
-  -- Deliberately visible in the UI: the last invented number, credits, failed
-  -- partly because nobody could see how it was computed.
   ( coalesce(pr.projects_live, 0)   * 10
   + coalesce(pr.projects_active, 0) * 3
   + coalesce(tk.tasks_done, 0)      * 2
@@ -133,11 +108,6 @@ WHERE t.deleted_at IS NULL;
 
 GRANT SELECT ON member_contributions TO authenticated, service_role;
 
--- ── 3. Infractions ───────────────────────────────────────────────────────────
--- The catalogue was written for the retired marketplace: every entry was about
--- reports, pull requests or claimed assignments, and there was nothing at all
--- for the thing that actually gets tracked every fortnight — attendance.
-
 UPDATE infractions
    SET name = 'Missed an assigned task',
        description = 'Did not finish a task they were assigned, by the deadline.',
@@ -156,15 +126,7 @@ SELECT gen_random_uuid()::text, v.name, v.description, v.points, now(), now()
   ) AS v(name, description, points)
  WHERE NOT EXISTS (SELECT 1 FROM infractions i WHERE lower(i.name) = lower(v.name));
 
--- Thresholds so points mean something. They previously lived on the cycle
--- record, which is gone, leaving points that accumulated with no consequence.
 UPDATE site_settings
    SET permissions = coalesce(permissions, '{}'::jsonb) || jsonb_build_object(
-         'infractionThresholds', jsonb_build_object(
-           'notice',   3,
-           'warning',  6,
-           'review',   10
-         ))
+         'infractionThresholds', jsonb_build_object('notice', 3, 'warning', 6, 'review', 10))
  WHERE id = (SELECT id FROM site_settings LIMIT 1);
-
-NOTIFY pgrst, 'reload schema';

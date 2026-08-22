@@ -20,4 +20,5 @@ CREATE TABLE IF NOT EXISTS member_acknowledgments (
 );
 
 ALTER TABLE assignment_catalog ADD COLUMN IF NOT EXISTS credits_max INTEGER;
+
 ALTER TABLE assignment_catalog ADD COLUMN IF NOT EXISTS credits_note TEXT;

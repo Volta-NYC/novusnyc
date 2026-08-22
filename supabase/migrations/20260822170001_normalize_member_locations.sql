@@ -1,3 +1,6 @@
+-- Location normalisation was applied directly rather than as a migration, so it
+-- existed in production but not in this history. Recorded here so a replay
+-- reproduces it. Every statement is a targeted UPDATE and is safe to re-run.
 -- Normalise every member and applicant location into two clean fields.
 --
 -- Applications have always had `city` and `state` columns, but the form used to

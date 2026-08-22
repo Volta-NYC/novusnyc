@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS site_settings (
   -- Members-portal announcement banner
   portal_banner_enabled    boolean NOT NULL DEFAULT false,
   portal_banner_message    text    NOT NULL DEFAULT '',
-  portal_banner_bg         text    NOT NULL DEFAULT '#F6B78D',
+  portal_banner_bg         text    NOT NULL DEFAULT '#85CC17',
   portal_banner_text       text    NOT NULL DEFAULT '#0D0D0D',
   -- Role display labels (keys stay as enum values; these are display-only overrides)
   role_labels              jsonb   NOT NULL DEFAULT '{"Analyst":"Analyst","Senior Analyst":"Senior Analyst","Associate":"Associate","Reserve":"Reserve"}'::jsonb,
@@ -27,7 +27,9 @@ INSERT INTO site_settings (id) VALUES ('singleton') ON CONFLICT DO NOTHING;
 
 -- Anyone can read settings (needed for public banner + apply page).
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "site_settings_public_read" ON site_settings FOR SELECT USING (true);
+
 CREATE POLICY "site_settings_owner_write" ON site_settings FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM user_profiles

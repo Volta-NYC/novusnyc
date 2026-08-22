@@ -1,10 +1,3 @@
--- Tech leadership (team.role = 'Developer') runs the project tracker.
---
--- This is the one capability a roster title carries on its own. It is
--- deliberately not auth_role = 'admin': that would also hand over applicants,
--- the member database and email. Reading businesses was already open to any
--- member; what was missing was the write.
-
 CREATE OR REPLACE FUNCTION public.is_tech_lead()
 RETURNS boolean
 LANGUAGE sql

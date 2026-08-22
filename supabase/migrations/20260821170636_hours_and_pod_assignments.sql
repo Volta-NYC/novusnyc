@@ -1,25 +1,16 @@
--- Hours replace credits.
---
--- Credits were an invented currency (5 credits = 1 hour) with no meaning outside
--- Novus. Hours are what gets certified on a service letter, so they become the
--- unit. The ledger is a VIEW over the places work is already recorded rather
--- than a denormalised total that has to be kept in sync.
-
--- ── Assignments become pod-scoped and push-based ─────────────────────────────
 ALTER TABLE assignments
   ADD COLUMN IF NOT EXISTS pod_id       text REFERENCES pods(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS due_date     date,
-  ADD COLUMN IF NOT EXISTS hours        numeric(5,2),  -- NULL = inherit pods.default_task_hours
+  ADD COLUMN IF NOT EXISTS hours        numeric(5,2),
   ADD COLUMN IF NOT EXISTS completed_at timestamptz,
   ADD COLUMN IF NOT EXISTS completed_by text;
 
 CREATE INDEX IF NOT EXISTS assignments_pod_idx ON assignments (pod_id, due_date);
 
--- ── Manual corrections ───────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS hours_adjustments (
   id          text PRIMARY KEY,
   member_id   text NOT NULL,
-  hours       numeric(6,2) NOT NULL,     -- signed: negative to claw back
+  hours       numeric(6,2) NOT NULL,
   reason      text NOT NULL DEFAULT '',
   occurred_on date NOT NULL DEFAULT current_date,
   created_by  text,
@@ -28,11 +19,7 @@ CREATE TABLE IF NOT EXISTS hours_adjustments (
 
 CREATE INDEX IF NOT EXISTS hours_adjustments_member_idx ON hours_adjustments (member_id);
 
--- ── The ledger ───────────────────────────────────────────────────────────────
--- One row per hour-earning event, from every source. A service letter is a
--- filter on this by member and date range.
 CREATE OR REPLACE VIEW member_hours_ledger AS
-  -- Pod meetings: showing up earns the meeting's hours unless the cell overrides.
   SELECT
     a.member_id,
     'meeting'::text                        AS source,
@@ -47,7 +34,6 @@ CREATE OR REPLACE VIEW member_hours_ledger AS
 
   UNION ALL
 
-  -- Pod assignments: completing one earns its hours, or the pod's default.
   SELECT
     unnest(asg.assigned_member_ids)        AS member_id,
     'task'::text                           AS source,
@@ -62,9 +48,6 @@ CREATE OR REPLACE VIEW member_hours_ledger AS
 
   UNION ALL
 
-  -- Tech projects: hours are entered by hand by Tahmid or a tech lead. Tech is
-  -- judged on shipped websites rather than logged time, so this stays optional
-  -- and is split evenly across whoever built it.
   SELECT
     unnest(b.assignees)                    AS member_id,
     'project'::text                        AS source,

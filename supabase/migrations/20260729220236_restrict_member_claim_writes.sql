@@ -1,19 +1,3 @@
--- Fix a regression in 20260729000001: it closed rejected claims to their owner.
---
--- That migration treated 'rejected' like 'Approved' — both terminal, neither
--- editable by the member. But rejection is not terminal here. canSubmit in
--- members/work/[id] deliberately includes 'rejected', because the whole point of
--- a rejection is that the member fixes the deliverable and submits again. The
--- guard therefore blocked the resubmit path it was never meant to touch.
---
--- 'Approved' stays closed: the portal never submits from an Approved claim, and
--- a repeatable assignment opens a second claim rather than reopening the first.
---
--- Everything else is unchanged from 20260729000001. Resubmission is already safe
--- without the status gate: rejected_at and reject_reason are in the immutable
--- column set below, so a member can replace their deliverable but cannot erase
--- the rejection that prompted it.
-
 CREATE OR REPLACE FUNCTION enforce_member_claim_integrity()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -71,10 +55,9 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- An approved claim is closed to its owner. A rejected one is not: the member
-  -- is expected to fix the deliverable and submit again.
-  IF OLD.status = 'Approved' THEN
-    RAISE EXCEPTION 'This submission has already been approved and can no longer be edited.'
+  -- A claim that has already been decided is closed to its owner.
+  IF OLD.status IN ('Approved', 'rejected') THEN
+    RAISE EXCEPTION 'This submission has already been reviewed and can no longer be edited.'
       USING ERRCODE = 'check_violation';
   END IF;
 
@@ -120,5 +103,16 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- Trigger-only entry point. It must not be reachable as an RPC by the roles it
+-- exists to constrain.
+REVOKE ALL ON FUNCTION enforce_member_claim_integrity() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_enforce_member_claim_integrity ON assignment_claims;
+
+CREATE TRIGGER trg_enforce_member_claim_integrity
+  BEFORE INSERT OR UPDATE ON assignment_claims
+  FOR EACH ROW
+  EXECUTE FUNCTION enforce_member_claim_integrity();
 
 NOTIFY pgrst, 'reload schema';

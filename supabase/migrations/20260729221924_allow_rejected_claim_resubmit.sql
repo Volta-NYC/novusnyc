@@ -1,32 +1,3 @@
--- Stop members from writing their own credit ledger.
---
--- assignment_claims is written straight from the browser (storage.ts), so RLS is
--- the only gate on it. assignment_claims_member_update_own constrained which
--- ROWS a member could touch but not which COLUMNS, and the table carries status,
--- credits_awarded, total_credits_earned and the approved_by/approved_at reviewer
--- fields. Any member could therefore approve their own claim and award
--- themselves arbitrary credits, which cycleCompute() sums into cycle standing
--- and which the demerit automation reads. assignment_claims_member_insert_own
--- had the same hole: nothing stopped a member inserting a pre-approved claim.
---
--- Column-level GRANTs cannot express the rule, because owners and admins
--- legitimately write every one of these columns through the review queue. RLS
--- policies cannot express it either, since WITH CHECK sees only the new row and
--- has no way to compare it against the old one. A trigger is the only place the
--- rule fits.
---
--- The one case where a member may legitimately approve themselves is an
--- assignment with requires_approval = false, where the portal auto-approves on
--- submit and awards exactly assignments.credits. That path stays open, pinned to
--- that exact amount so it cannot be inflated.
---
--- SECURITY DEFINER is required, not incidental: the assignments lookup below has
--- to see the assignment regardless of RLS. assignments_member_select_open only
--- exposes assignments whose status is 'open', so under invoker rights the lookup
--- would come back empty the moment an assignment moved to Active or Under
--- Review, and every legitimate submission would be rejected. This is the same
--- trap that made the original capacity guard undercount.
-
 CREATE OR REPLACE FUNCTION enforce_member_claim_integrity()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -84,9 +55,10 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- A claim that has already been decided is closed to its owner.
-  IF OLD.status IN ('Approved', 'rejected') THEN
-    RAISE EXCEPTION 'This submission has already been reviewed and can no longer be edited.'
+  -- An approved claim is closed to its owner. A rejected one is not: the member
+  -- is expected to fix the deliverable and submit again.
+  IF OLD.status = 'Approved' THEN
+    RAISE EXCEPTION 'This submission has already been approved and can no longer be edited.'
       USING ERRCODE = 'check_violation';
   END IF;
 
@@ -132,16 +104,5 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
--- Trigger-only entry point. It must not be reachable as an RPC by the roles it
--- exists to constrain.
-REVOKE ALL ON FUNCTION enforce_member_claim_integrity() FROM PUBLIC, anon, authenticated;
-
-DROP TRIGGER IF EXISTS trg_enforce_member_claim_integrity ON assignment_claims;
-
-CREATE TRIGGER trg_enforce_member_claim_integrity
-  BEFORE INSERT OR UPDATE ON assignment_claims
-  FOR EACH ROW
-  EXECUTE FUNCTION enforce_member_claim_integrity();
 
 NOTIFY pgrst, 'reload schema';

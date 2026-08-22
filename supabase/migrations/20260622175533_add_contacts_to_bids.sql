@@ -1,0 +1,2 @@
+
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS contacts JSONB DEFAULT '[]'::jsonb;

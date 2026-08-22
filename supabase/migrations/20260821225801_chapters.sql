@@ -36,6 +36,7 @@ ALTER TABLE pods ALTER COLUMN chapter_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS businesses_chapter_idx ON businesses (chapter_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS pods_chapter_idx       ON pods (chapter_id);
 
+-- A pod name is only unique within its chapter: Chicago gets its own Grants pod.
 ALTER TABLE pods DROP CONSTRAINT IF EXISTS pods_slug_key;
 CREATE UNIQUE INDEX IF NOT EXISTS pods_chapter_slug_idx ON pods (chapter_id, slug);
 
@@ -48,17 +49,6 @@ SELECT replace(p.id, 'pod_', 'pod_chi_'), p.name, p.slug, p.description, p.caden
  WHERE p.chapter_id = 'chapter_ny'
 ON CONFLICT (id) DO NOTHING;
 
--- Two chapters both have a Grants & Funding pod, so a bare slug no longer
--- identifies one. Qualify every slug with its chapter — including New York, so
--- there is no default case to forget about later.
-UPDATE pods p
-   SET slug = c.slug || '-' || regexp_replace(p.slug, '^(new-york|chicago)-', '')
-  FROM chapters c
- WHERE c.id = p.chapter_id
-   AND p.slug NOT LIKE c.slug || '-%';
-
-CREATE UNIQUE INDEX IF NOT EXISTS pods_slug_unique_idx ON pods (slug);
-
 -- ── The member's own city — information, not an assignment ───────────────────
 -- Recorded so we can tell when a market is worth opening. Austin has six people;
 -- that is the kind of signal this answers. It is NOT the member's chapter.
@@ -70,10 +60,6 @@ ALTER TABLE team
   ADD COLUMN IF NOT EXISTS chapter_id text REFERENCES chapters(id);
 
 CREATE INDEX IF NOT EXISTS team_home_state_idx ON team (home_state) WHERE deleted_at IS NULL;
-
--- home_city / home_state were backfilled from what each member declared on their
--- application, falling back to an unambiguous school. Three members had neither
--- and were deliberately left blank rather than guessed at.
 
 ALTER TABLE chapters ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS chapters_read  ON chapters;

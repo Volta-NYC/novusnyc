@@ -10,4 +10,5 @@
 -- =============================================================================
 
 DROP TABLE IF EXISTS assignment_catalog;
+
 DROP TABLE IF EXISTS inquiries;
