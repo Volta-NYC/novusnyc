@@ -39,4 +39,15 @@ UPDATE applications a
 -- 5. Chelsey Gebologlu removed: accepted in February, never became a member,
 --    and based in Kent, Washington.
 
+-- 6. Nine duplicate applications removed — reapplications from people who had
+--    already joined, which sat in the queue permanently because they would
+--    never be decided. Three carried something their accepted application
+--    lacked, merged up first so nothing was lost: a resume (Carrie Liao), a
+--    city (Joanna Wang), and a school name where the accepted row held the
+--    applicant's own name instead (Siddharth Karthik Nithya).
+--
+-- 7. Two members had their own name in the school field on both their member
+--    and application records, so there was no correct value to recover. Cleared
+--    rather than guessed at; their locations came from the city field.
+
 NOTIFY pgrst, 'reload schema';
