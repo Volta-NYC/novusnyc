@@ -66,9 +66,6 @@ export default function PodsPage() {
     <MembersLayout>
       <PageHeader
         title="Pods"
-        subtitle={isAdmin
-          ? "Marketing and finance. Each pod runs its own meetings and assignments."
-          : "The pods you're part of."}
       />
 
       {pods === null ? (

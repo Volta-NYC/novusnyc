@@ -220,7 +220,7 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
                   Add adjustment
                 </Btn>
                 <p className="text-[10px] text-white/25">
-                  Use a negative number to claw hours back. Adjustments are logged and show in the member&apos;s history.
+                  Negative subtracts. Every adjustment is logged.
                 </p>
               </div>
             )}

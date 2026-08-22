@@ -17,15 +17,14 @@ import ProjectPanel from "./ProjectPanel";
 
 // The doc's tabs, as filters over one list. Each is a question the tech team
 // actually asks: what's live, what needs assigning, what's mine.
-type ViewKey = "all" | "domains" | "backlog" | "mine" | "leads" | "hold";
+type ViewKey = "all" | "domains" | "backlog" | "leads" | "hold";
 
-const VIEWS: { key: ViewKey; label: string; hint: string }[] = [
-  { key: "all",     label: "All",          hint: "Every project, most recently touched first" },
-  { key: "domains", label: "Real Domains", hint: "Launched on their own domain" },
-  { key: "backlog", label: "Backlog",      hint: "Not yet assigned, by priority" },
-  { key: "mine",    label: "Mine",         hint: "Assigned to you" },
-  { key: "leads",   label: "Leads",        hint: "Intake that hasn't entered the pipeline" },
-  { key: "hold",    label: "On Hold",      hint: "Paused or dropped" },
+const VIEWS: { key: ViewKey; label: string }[] = [
+  { key: "all",     label: "All" },
+  { key: "domains", label: "Real Domains" },
+  { key: "backlog", label: "Backlog" },
+  { key: "leads",   label: "Leads" },
+  { key: "hold",    label: "On Hold" },
 ];
 
 const PRIORITY_RANK: Record<string, number> = { High: 0, Medium: 1, Maybe: 2 };
@@ -40,7 +39,7 @@ function hostOf(url: string): string {
 }
 
 export default function ProjectsPage() {
-  const { authRole, userProfile, loading } = useAuth();
+  const { authRole, loading } = useAuth();
   const canEdit = authRole === "owner" || authRole === "admin";
 
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
@@ -59,7 +58,6 @@ export default function ProjectsPage() {
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeChapters(setChapters), []);
 
-  const myId = userProfile?.id ?? null;
 
   const nameById = useMemo(() => {
     const m = new Map<string, string>();
@@ -67,16 +65,21 @@ export default function ProjectsPage() {
     return m;
   }, [team]);
 
+  // Never name a chapter id in code: the default is whichever chapter sorts
+  // first, so renaming or reordering them doesn't silently break the filter.
+  const defaultChapterId = useMemo(
+    () => [...chapters].sort((a, b) => a.sortOrder - b.sortOrder)[0]?.id ?? null,
+    [chapters],
+  );
   const rows = useMemo(() => {
     if (!businesses) return [];
     const q = search.trim().toLowerCase();
     let list = businesses.filter((b) => !b.archived);
-    if (chapterId) list = list.filter((b) => (b.chapterId ?? "chapter_ny") === chapterId);
+    if (chapterId) list = list.filter((b) => (b.chapterId ?? defaultChapterId) === chapterId);
 
     switch (view) {
       case "domains": list = list.filter((b) => !!b.liveUrl); break;
       case "backlog": list = list.filter((b) => b.techStatus === "Backlog" && !isLead(b)); break;
-      case "mine":    list = list.filter((b) => !!myId && (b.assignees ?? []).includes(myId)); break;
       case "leads":   list = list.filter(isLead); break;
       case "hold":    list = list.filter((b) => b.techStatus === "On Hold" || b.techStatus === "Dropped"); break;
       default:        list = list.filter((b) => !isLead(b));
@@ -102,18 +105,18 @@ export default function ProjectsPage() {
     return [...list].sort((a, b) =>
       (b.lastTouchedAt ?? b.updatedAt ?? "").localeCompare(a.lastTouchedAt ?? a.updatedAt ?? "")
       || a.name.localeCompare(b.name));
-  }, [businesses, view, search, myId, nameById, statusFilter, chapterId]);
+  }, [businesses, view, search, nameById, statusFilter, chapterId, defaultChapterId]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const s of TECH_STATUSES) c[s] = 0;
     for (const b of businesses ?? []) {
       if (b.archived || isLead(b)) continue;
-      if (chapterId && (b.chapterId ?? "chapter_ny") !== chapterId) continue;
+      if (chapterId && (b.chapterId ?? defaultChapterId) !== chapterId) continue;
       c[b.techStatus ?? "Backlog"] = (c[b.techStatus ?? "Backlog"] ?? 0) + 1;
     }
     return c;
-  }, [businesses, chapterId]);
+  }, [businesses, chapterId, defaultChapterId]);
 
   const open = businesses?.find((b) => b.id === openId) ?? null;
 
@@ -141,7 +144,7 @@ export default function ProjectsPage() {
       alternatePhone: "", address: "", website: "", projectStatus: "Upcoming",
       teamLead: "", firstContactDate: "", notes: "",
       techStatus: "Backlog", techPriority: "Medium", assignees: [], hoursLogged: 0,
-      chapterId: chapterId ?? chapters.find((c) => c.slug === "new-york")?.id,
+      chapterId: chapterId ?? defaultChapterId ?? undefined,
       lastTouchedAt: new Date().toISOString(),
     } as Omit<Business, "id" | "createdAt" | "updatedAt">);
   };
@@ -152,7 +155,6 @@ export default function ProjectsPage() {
     <MembersLayout>
       <PageHeader
         title="Projects"
-        subtitle="Every website Novus has built or agreed to build."
         action={canEdit ? <Btn variant="primary" onClick={addProject}>+ New Project</Btn> : undefined}
       />
       <SectionTabs tabs={PROJECT_GROUP_TABS} />
@@ -181,7 +183,7 @@ export default function ProjectsPage() {
           {[{ id: null, name: "All" }, ...[...chapters].sort((a, b) => a.sortOrder - b.sortOrder)].map((c) => {
             const count = c.id === null
               ? (businesses ?? []).filter((b) => !b.archived && !isLead(b)).length
-              : (businesses ?? []).filter((b) => !b.archived && !isLead(b) && (b.chapterId ?? "chapter_ny") === c.id).length;
+              : (businesses ?? []).filter((b) => !b.archived && !isLead(b) && (b.chapterId ?? defaultChapterId) === c.id).length;
             return (
               <button
                 key={c.id ?? "all"}
@@ -204,7 +206,6 @@ export default function ProjectsPage() {
         {VIEWS.map((v) => (
           <button
             key={v.key}
-            title={v.hint}
             onClick={() => { setView(v.key); setStatusFilter(null); }}
             className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
               view === v.key

@@ -38,6 +38,10 @@ export default function ProjectPanel({
   }, [onClose]);
 
   const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
+  const sortedChapters = useMemo(
+    () => [...chapters].sort((a, b) => a.sortOrder - b.sortOrder),
+    [chapters],
+  );
 
   // Who is on this project is what the panel is for, so they are always
   // listed. The rest of the directory only appears once you search for it —
@@ -189,13 +193,13 @@ export default function ProjectPanel({
             <div className="mb-5">
               <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Market</p>
               <div className="flex flex-wrap gap-1.5">
-                {[...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((c) => (
+                {sortedChapters.map((c) => (
                   <button
                     key={c.id}
                     disabled={!canEdit}
                     onClick={() => setDraft((d) => ({ ...d, chapterId: c.id }))}
                     className={`rounded-md border px-2 py-1 text-[11px] transition-colors disabled:opacity-50 ${
-                      (draft.chapterId ?? "chapter_ny") === c.id
+                      (draft.chapterId ?? sortedChapters[0]?.id) === c.id
                         ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
                         : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/25 hover:text-white/85"
                     }`}
@@ -311,7 +315,7 @@ export default function ProjectPanel({
             </div>
           </div>
           <p className="-mt-4 mb-5 text-[10px] leading-relaxed text-white/25">
-            Hours are optional for tech and split evenly across everyone assigned.
+            Split evenly across everyone assigned.
           </p>
 
           {/* Notes */}

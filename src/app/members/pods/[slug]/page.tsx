@@ -315,8 +315,7 @@ function Roster({
             )}
           </div>
           <p className="mt-2 text-[10px] text-white/25">
-            Click a name to add or remove. Click LIT to give or take pod-leader access — a pod can have
-            more than one. Removing someone who has attended a meeting keeps their hours.
+            Removing someone who has attended a meeting keeps their hours.
           </p>
         </>
       ) : (
@@ -354,14 +353,13 @@ function Settings({ pod }: { pod: Pod }) {
   return (
     <div className="max-w-lg space-y-4">
       <p className="text-[11px] leading-relaxed text-white/40">
-        These are prefills, not rules. A meeting or a task can still be given its own
-        hours — this is just the number that shows up already filled in.
+        Prefills — any meeting or task can override its own hours.
       </p>
 
       {([
-        ["Meets every", cadence, setCadence, "days", "How often this pod runs a call."],
-        ["Default meeting", meetingH, setMeetingH, "hours", "Credited to everyone marked Present or Excused."],
-        ["Default task", taskH, setTaskH, "hours", "Credited when an assignment is marked done."],
+        ["Meets every", cadence, setCadence, "days", ""],
+        ["Default meeting", meetingH, setMeetingH, "hours", "Earned by everyone marked Present or Excused."],
+        ["Default task", taskH, setTaskH, "hours", "Earned when the task is marked done."],
       ] as const).map(([label, value, setter, unit, hint]) => (
         <div key={label} className="flex items-start gap-3">
           <div>
@@ -376,7 +374,7 @@ function Settings({ pod }: { pod: Pod }) {
               <span className="text-[11px] text-white/35">{unit}</span>
             </div>
           </div>
-          <p className="mt-6 flex-1 text-[10px] leading-relaxed text-white/25">{hint}</p>
+          {hint && <p className="mt-6 flex-1 text-[10px] leading-relaxed text-white/25">{hint}</p>}
         </div>
       ))}
 

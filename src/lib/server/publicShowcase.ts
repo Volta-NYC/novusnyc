@@ -733,18 +733,31 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
 }
 
 
-const DEFAULT_CHAPTERS = ["New York", "Boston", "Chicago", "California", "Michigan"];
+// Only used if the chapters table can't be read at all — the apply form must
+// still render something rather than an empty dropdown.
+const DEFAULT_CHAPTERS = ["New York"];
 
 export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string; chapters: string[] }> {
   const fallback = { paused: false, message: "", chapters: DEFAULT_CHAPTERS };
   let sb;
   try { sb = getSupabaseAdmin(); } catch { return fallback; }
-  const { data } = await sb.from("site_settings").select("applications_paused, applications_paused_msg, chapters").eq("id", "singleton").maybeSingle();
-  if (!data) return fallback;
-  const r = data as Record<string, unknown>;
+
+  // Chapters come from the chapters table, not the old site_settings text
+  // array. Two lists meant the apply form offered five cities while the portal
+  // knew about two.
+  const [{ data }, { data: chapterRows }] = await Promise.all([
+    sb.from("site_settings").select("applications_paused, applications_paused_msg").eq("id", "singleton").maybeSingle(),
+    sb.from("chapters").select("name, status, sort_order").neq("status", "Archived").order("sort_order"),
+  ]);
+
+  const chapters = (chapterRows ?? [])
+    .map((c) => String((c as { name?: string }).name ?? "").trim())
+    .filter(Boolean);
+
+  const r = (data ?? {}) as Record<string, unknown>;
   return {
     paused: Boolean(r.applications_paused ?? false),
     message: String(r.applications_paused_msg ?? "Applications are currently paused. Check back soon."),
-    chapters: Array.isArray(r.chapters) && r.chapters.length > 0 ? (r.chapters as string[]) : DEFAULT_CHAPTERS,
+    chapters: chapters.length > 0 ? chapters : DEFAULT_CHAPTERS,
   };
 }

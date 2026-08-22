@@ -1403,9 +1403,6 @@ export default function TeamPage() {
               ))}
             </div>
           )}
-          <p className="mt-1.5 text-[10px] text-white/25">
-            Removing a member hides them; their hours and pod history are kept and come back with them.
-          </p>
         </div>
       )}
 

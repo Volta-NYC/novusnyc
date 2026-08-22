@@ -171,9 +171,7 @@ export default function AutomationsPage() {
         <div className="min-w-0 flex-1">
           <p className="text-[12px] text-white/75">Scheduled automations</p>
           <p className="mt-0.5 text-[11px] leading-relaxed text-white/40">
-            Meeting reminders, the attendance nudge and deadline reminders run once a day.
-            Each send is stamped on the record that caused it, so running this by hand never
-            sends anything twice.
+            Runs once a day. Sends are recorded, so running it by hand won&apos;t repeat any.
           </p>
         </div>
         <Btn variant="secondary" onClick={() => void runSweep()} disabled={sweeping}>

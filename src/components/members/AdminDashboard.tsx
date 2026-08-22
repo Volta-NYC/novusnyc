@@ -105,7 +105,7 @@ export default function AdminDashboard() {
 
   return (
     <MembersLayout>
-      <PageHeader title="Dashboard" subtitle="Where things stand across projects, pods and hours." />
+      <PageHeader title="Dashboard" />
 
       {/* Headline numbers */}
       <div className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/10 bg-white/10 sm:grid-cols-4">
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
       </Link>
 
       {/* Pod health */}
-      <h2 className="mb-2 text-[11px] uppercase tracking-wide text-white/40">Pod health</h2>
+      <h2 className="mb-2 text-[11px] uppercase tracking-wide text-white/40">Pods</h2>
       <div className="mb-6 grid gap-2 sm:grid-cols-2">
         {podHealth.map(({ pod, size, lits, last, since, openTasks, overdue, state }) => (
           <Link

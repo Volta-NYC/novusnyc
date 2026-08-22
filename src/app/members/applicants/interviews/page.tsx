@@ -2467,7 +2467,7 @@ function InterviewsContent() {
 
               {!query && (
                 <p className="mt-2 text-[11px] text-white/25">
-                  {active.length} active members. Search to find someone rather than scrolling the whole directory.
+                  {active.length} active members.
                 </p>
               )}
             </div>

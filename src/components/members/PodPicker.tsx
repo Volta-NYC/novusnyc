@@ -105,11 +105,6 @@ export default function PodPicker({
       {error && (
         <p role="alert" className="text-[10px] text-red-400">{error}</p>
       )}
-      {!disabled && !compact && (
-        <p className="text-[10px] text-white/25">
-          Click a pod to add or remove. Click LIT to give or take pod-leader access.
-        </p>
-      )}
     </div>
   );
 }

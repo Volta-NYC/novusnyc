@@ -10,6 +10,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   getHandbookPage, upsertHandbookPage, type HandbookPage,
   getSiteSettings, updateSiteSettings, type SiteSettings,
+  subscribeChapters, updateChapter, createChapter, type Chapter,
   subscribeInfractions, createInfraction, updateInfraction, deleteInfraction,
   subscribeBusinesses, type Business,
   type Infraction,
@@ -204,8 +205,10 @@ function ApplicationsTab() {
   const [status, setStatus] = useState("");
   const [paused, setPaused] = useState(false);
   const [message, setMessage] = useState("");
-  const [chapters, setChapters] = useState<string[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [newChapter, setNewChapter] = useState("");
+  const [newChapterCity, setNewChapterCity] = useState("");
+  const [newChapterState, setNewChapterState] = useState("");
   const [savingChapters, setSavingChapters] = useState(false);
   const [chapterStatus, setChapterStatus] = useState("");
 
@@ -213,44 +216,53 @@ function ApplicationsTab() {
     getSiteSettings().then((s) => {
       setPaused(s.applicationsPaused);
       setMessage(s.applicationsPausedMsg);
-      setChapters(s.chapters);
       setLoading(false);
     });
   }, []);
 
-  /**
-   * Persist immediately rather than staging edits behind a Save button.
-   * "Add" reads as committing, so a separate save step is a reliable way to
-   * lose a change without noticing.
-   */
-  const commitChapters = async (next: string[]) => {
-    // The field is required on /apply, so an empty list would leave applicants
-    // with a dropdown they cannot satisfy.
-    const cleaned = next.map((c) => c.trim()).filter(Boolean);
-    if (cleaned.length === 0) {
-      setChapterStatus("Keep at least one chapter.");
-      return;
-    }
-    const previous = chapters;
-    setChapters(cleaned);
+  useEffect(() => subscribeChapters(setChapters), []);
+
+  const renameChapter = async (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
     setSavingChapters(true);
     setChapterStatus("");
     try {
-      await updateSiteSettings({ chapters: cleaned });
+      await updateChapter(id, { name: trimmed });
       setChapterStatus("Saved.");
     } catch {
-      setChapters(previous);
       setChapterStatus("Save failed. Nothing changed.");
     } finally {
       setSavingChapters(false);
     }
   };
 
-  const addChapter = () => {
+  const setChapterStatusValue = async (id: string, status: Chapter["status"]) => {
+    setSavingChapters(true);
+    try {
+      await updateChapter(id, { status });
+      setChapterStatus("Saved.");
+    } catch {
+      setChapterStatus("Save failed. Nothing changed.");
+    } finally {
+      setSavingChapters(false);
+    }
+  };
+
+  const addChapter = async () => {
     const trimmed = newChapter.trim();
-    if (!trimmed || chapters.includes(trimmed)) return;
-    setNewChapter("");
-    void commitChapters([...chapters, trimmed]);
+    if (!trimmed) return;
+    setSavingChapters(true);
+    setChapterStatus("");
+    try {
+      await createChapter(trimmed, newChapterCity, newChapterState);
+      setNewChapter(""); setNewChapterCity(""); setNewChapterState("");
+      setChapterStatus("Added.");
+    } catch (err) {
+      setChapterStatus(err instanceof Error ? err.message : "Could not add that chapter.");
+    } finally {
+      setSavingChapters(false);
+    }
   };
 
   const save = async () => {
@@ -293,46 +305,66 @@ function ApplicationsTab() {
         <StatusMsg msg={status} />
       </Card>
 
-      <Card title="Chapters" subtitle="Options in the Chapter dropdown on /apply. Shown in this order.">
+      <Card title="Chapters" subtitle="Cities we take on clients in. Also the options on /apply.">
         <div className="space-y-3">
           {chapters.length === 0 && (
-            <p className="text-[11px] text-white/40">No chapters yet. Add one below.</p>
+            <p className="text-[11px] text-white/40">No chapters yet.</p>
           )}
-          {chapters.map((chapter, i) => (
-            <div key={i} className="flex items-center gap-2">
+          {[...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((chapter) => (
+            <div key={chapter.id} className="flex flex-wrap items-center gap-2">
               <Input
-                value={chapter}
+                defaultValue={chapter.name}
                 disabled={savingChapters}
-                onChange={(e) => setChapters((prev) => prev.map((c, idx) => (idx === i ? e.target.value : c)))}
                 onBlur={(e) => {
                   const edited = e.target.value.trim();
-                  if (edited && edited !== chapter) {
-                    void commitChapters(chapters.map((c, idx) => (idx === i ? edited : c)));
-                  }
+                  if (edited && edited !== chapter.name) void renameChapter(chapter.id, edited);
                 }}
               />
-              <Btn
-                variant="ghost"
-                onClick={() => void commitChapters(chapters.filter((_, idx) => idx !== i))}
-                disabled={chapters.length === 1 || savingChapters}
-              >
-                Remove
-              </Btn>
+              <span className="text-[11px] text-white/35">
+                {[chapter.city, chapter.state].filter(Boolean).join(", ") || "—"}
+              </span>
+              <div className="ml-auto flex gap-1">
+                {(["Active", "Launching", "Archived"] as const).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    disabled={savingChapters}
+                    onClick={() => void setChapterStatusValue(chapter.id, st)}
+                    className={`rounded px-2 py-0.5 text-[10px] uppercase tracking-wide transition-colors disabled:opacity-50 ${
+                      chapter.status === st
+                        ? "bg-[#F3E28D]/20 text-[#F3E28D]"
+                        : "text-white/35 hover:text-white/70"
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
             </div>
           ))}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Input
               value={newChapter}
               disabled={savingChapters}
               onChange={(e) => setNewChapter(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addChapter(); } }}
-              placeholder="Add a chapter"
+              placeholder="Chapter name"
             />
-            <Btn variant="secondary" onClick={addChapter} disabled={!newChapter.trim() || savingChapters}>
+            <Input
+              value={newChapterCity}
+              disabled={savingChapters}
+              onChange={(e) => setNewChapterCity(e.target.value)}
+              placeholder="City"
+            />
+            <Input
+              value={newChapterState}
+              disabled={savingChapters}
+              onChange={(e) => setNewChapterState(e.target.value)}
+              placeholder="State"
+            />
+            <Btn variant="secondary" onClick={() => void addChapter()} disabled={!newChapter.trim() || savingChapters}>
               {savingChapters ? "Saving…" : "Add"}
             </Btn>
           </div>
-          <p className="text-[11px] text-white/35">Changes save as you make them.</p>
         </div>
         <StatusMsg msg={chapterStatus} />
       </Card>

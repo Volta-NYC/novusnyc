@@ -1575,7 +1575,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   applicationsPaused:    false,
   applicationsPausedMsg: "Applications are currently paused. Check back soon.",
   services:              ["Website", "SEO", "Social Media", "Graphic Design", "Grants"],
-  chapters:              ["New York", "Boston", "Chicago", "California", "Michigan"],
+  chapters:              [],   // superseded by the chapters table
   publicBannerEnabled:   false,
   publicBannerMessage:   "",
   publicBannerBg:        "#1a1a2e",
@@ -1937,6 +1937,27 @@ export interface Chapter {
 }
 
 export const subscribeChapters = makeSubscriber<Chapter>("chapters");
+
+export async function updateChapter(id: string, patch: Partial<Chapter>): Promise<void> {
+  const { error } = await supabase.from("chapters")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "chapters", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+export async function createChapter(name: string, city: string, state: string): Promise<void> {
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (!slug) throw new Error("A chapter needs a name.");
+  const { data: existing } = await supabase.from("chapters").select("sort_order").order("sort_order", { ascending: false }).limit(1);
+  const nextOrder = Number((existing ?? [])[0]?.sort_order ?? 0) + 1;
+  const { error } = await supabase.from("chapters").insert(toRow({
+    id: `chapter_${slug.replace(/-/g, "_")}`,
+    name: name.trim(), slug, city: city.trim(), state: state.trim().toUpperCase(),
+    status: "Launching", sortOrder: nextOrder, createdAt: nowISO(), updatedAt: nowISO(),
+  }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "chapters", recordId: slug, details: { name } });
+}
 
 export interface Pod {
   id: string;
