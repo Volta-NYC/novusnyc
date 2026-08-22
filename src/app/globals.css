@@ -2510,3 +2510,46 @@ summary:focus-visible {
   color: #b91c1c !important;
   border-color: rgba(185, 28, 28, 0.32) !important;
 }
+
+/* ── Light-theme accent text ─────────────────────────────────────────────────
+   The portal's accents are pastels chosen for a dark background. On white the
+   peach reads 1.74:1 and the pale yellow 1.31:1 — effectively invisible. These
+   are arbitrary-hex classes, so the earlier named-colour remaps never caught
+   them. Each maps to a saturated shade of the same hue, per the palette rule in
+   CLAUDE.md: pastels are fills on light backgrounds, never text.
+
+   Opacity variants collapse to the solid colour deliberately — the alpha was a
+   dark-mode dimming device, and compositing it over white drops contrast back
+   below AA. */
+.members-portal-light .text-\[\#F6B78D\] { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/55 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/70 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/75 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/80 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F3E28D\] { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/55 { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/70 { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/75 { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/80 { color: #a16207 !important; }
+.members-portal-light .text-\[\#9B9B95\] { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/55 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/70 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/75 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/80 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#6DB8FF\] { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/55 { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/70 { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/75 { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/80 { color: #1d4ed8 !important; }
+
+/* A focus ring must clear 3:1 against its background (WCAG 1.4.11). At 45%
+   opacity the peach border reaches 1.93:1, so focus is solid in light mode. */
+.members-portal-light .focus\:border-\[\#F6B78D\]:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/40:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/45:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/50:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/60:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F3E28D\]\/40:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F3E28D\]\/50:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus-visible\:ring-\[\#F6B78D\]\/60:focus-visible { --tw-ring-color: #8B5E48 !important; }
+.members-portal-light .focus-visible\:ring-\[\#F6B78D\]\/70:focus-visible { --tw-ring-color: #8B5E48 !important; }
