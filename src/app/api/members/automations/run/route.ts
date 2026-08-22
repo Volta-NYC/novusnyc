@@ -24,6 +24,55 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
 
+// Claim recipients before sending. The unique key on
+// (automation_id, subject_key, recipient) means a second sweep — or a second
+// cron firing — inserts nothing and therefore sends nothing.
+async function claimRecipients(
+  automationId: string, subjectKey: string, recipients: string[],
+): Promise<string[]> {
+  if (recipients.length === 0) return [];
+  const sb = getSupabaseAdmin();
+  const rows = [...new Set(recipients)].map((recipient) => ({
+    id: `${automationId}:${subjectKey}:${recipient}`,
+    automation_id: automationId,
+    subject_key: subjectKey,
+    recipient,
+  }));
+  const { data, error } = await sb.from("automation_deliveries")
+    .upsert(rows, { onConflict: "automation_id,subject_key,recipient", ignoreDuplicates: true })
+    .select("recipient");
+  if (error) return [];
+  return ((data ?? []) as { recipient: string }[]).map((r) => r.recipient);
+}
+
+// A claim that never turned into a delivery must not suppress the next attempt.
+async function releaseClaims(
+  automationId: string, subjectKey: string, recipients: string[],
+): Promise<void> {
+  if (recipients.length === 0) return;
+  const sb = getSupabaseAdmin();
+  await sb.from("automation_deliveries").delete()
+    .eq("automation_id", automationId).eq("subject_key", subjectKey)
+    .in("recipient", recipients);
+}
+
+// One recipient at a time, so a bad address costs only its own claim.
+async function sendClaimed(
+  automationId: string,
+  subjectKey: string,
+  recipients: string[],
+  variables: Record<string, string>,
+): Promise<number> {
+  const claimed = await claimRecipients(automationId, subjectKey, recipients);
+  let sent = 0;
+  for (const address of claimed) {
+    const r = await sendAutomationEmail(automationId, [address], variables);
+    if (r.sent > 0) sent += 1;
+    else await releaseClaims(automationId, subjectKey, [address]);
+  }
+  return sent;
+}
+
 async function runSweep(viaCron: boolean) {
   const sb = getSupabaseAdmin();
   const today = new Date();
@@ -54,10 +103,13 @@ async function runSweep(viaCron: boolean) {
 
   // ── Meeting tomorrow ───────────────────────────────────────────────────────
   {
-    const target = new Date(today); target.setDate(target.getDate() + 1);
+    // Everything from today through tomorrow that hasn't been sent yet. A
+    // missed cron run used to lose that day's reminders permanently; now the
+    // next run still catches them, and the ledger stops anyone being told twice.
+    const ahead = new Date(today); ahead.setDate(ahead.getDate() + 1);
     const { data: meetings } = await sb.from("pod_meetings")
-      .select("id, pod_id, meets_on, title, reminder_sent_at")
-      .eq("meets_on", iso(target)).is("reminder_sent_at", null);
+      .select("id, pod_id, meets_on, title")
+      .gte("meets_on", iso(today)).lte("meets_on", iso(ahead));
 
     let sent = 0;
     for (const m of meetings ?? []) {
@@ -65,15 +117,15 @@ async function runSweep(viaCron: boolean) {
       if (!pod || pod.status === "Archived") continue;
       const to = emailsFor(String(m.pod_id));
       if (to.length === 0) continue;
-      const r = await sendAutomationEmail("pod_meeting_reminder", to, {
+      const n = await sendClaimed("pod_meeting_reminder", String(m.id), to, {
         memberName: "there",
         podName: String(pod.name),
         meetingDate: fmtDate(String(m.meets_on)),
         meetingTitle: String(m.title ?? "") || `${pod.name} meeting`,
         portalLink: `${SITE_URL}/members/pods/${pod.slug}`,
       });
-      sent += r.sent;
-      if (r.sent > 0) {
+      sent += n;
+      if (n > 0) {
         await sb.from("pod_meetings").update({ reminder_sent_at: new Date().toISOString() }).eq("id", m.id);
       }
     }
@@ -82,10 +134,13 @@ async function runSweep(viaCron: boolean) {
 
   // ── Attendance still unfilled a day later ──────────────────────────────────
   {
-    const target = new Date(today); target.setDate(target.getDate() - 1);
+    // A week back, so an unfilled sheet keeps surfacing rather than being
+    // asked about exactly once, the day after, and then forgotten.
+    const from = new Date(today); from.setDate(from.getDate() - 7);
+    const until = new Date(today); until.setDate(until.getDate() - 1);
     const { data: meetings } = await sb.from("pod_meetings")
-      .select("id, pod_id, meets_on, nudge_sent_at")
-      .eq("meets_on", iso(target)).is("nudge_sent_at", null);
+      .select("id, pod_id, meets_on")
+      .gte("meets_on", iso(from)).lte("meets_on", iso(until));
 
     let sent = 0;
     for (const m of meetings ?? []) {
@@ -97,14 +152,14 @@ async function runSweep(viaCron: boolean) {
 
       const lits = emailsFor(String(m.pod_id), "lit");
       if (lits.length === 0) continue;
-      const r = await sendAutomationEmail("pod_attendance_missing", lits, {
+      const n = await sendClaimed("pod_attendance_missing", String(m.id), lits, {
         litName: "there",
         podName: String(pod.name),
         meetingDate: fmtDate(String(m.meets_on)),
         portalLink: `${SITE_URL}/members/pods/${pod.slug}`,
       });
-      sent += r.sent;
-      if (r.sent > 0) {
+      sent += n;
+      if (n > 0) {
         await sb.from("pod_meetings").update({ nudge_sent_at: new Date().toISOString() }).eq("id", m.id);
       }
     }
@@ -113,10 +168,12 @@ async function runSweep(viaCron: boolean) {
 
   // ── Task due in two days ───────────────────────────────────────────────────
   {
-    const target = new Date(today); target.setDate(target.getDate() + 2);
+    // Anything due within the next two days that is still open.
+    const ahead = new Date(today); ahead.setDate(ahead.getDate() + 2);
     const { data: tasks } = await sb.from("assignments")
-      .select("id, pod_id, title, due_date, assigned_member_ids, completed_at, due_reminder_sent_at")
-      .eq("due_date", iso(target)).is("completed_at", null).is("due_reminder_sent_at", null)
+      .select("id, pod_id, title, due_date, assigned_member_ids, completed_at")
+      .gte("due_date", iso(today)).lte("due_date", iso(ahead))
+      .is("completed_at", null).is("deleted_at", null)
       .not("pod_id", "is", null);
 
     let sent = 0;
@@ -126,15 +183,15 @@ async function runSweep(viaCron: boolean) {
       const to = ids.map((id) => memberById.get(id))
         .filter(Boolean).map((m) => String((m as { email?: string }).email ?? "")).filter(Boolean);
       if (to.length === 0) continue;
-      const r = await sendAutomationEmail("pod_task_due_soon", to, {
+      const n = await sendClaimed("pod_task_due_soon", String(t.id), to, {
         memberName: "there",
         taskTitle: String(t.title ?? "Your task"),
         podName: pod ? String(pod.name) : "your pod",
         dueDate: fmtDate(String(t.due_date)),
         portalLink: `${SITE_URL}/members/work`,
       });
-      sent += r.sent;
-      if (r.sent > 0) {
+      sent += n;
+      if (n > 0) {
         await sb.from("assignments").update({ due_reminder_sent_at: new Date().toISOString() }).eq("id", t.id);
       }
     }

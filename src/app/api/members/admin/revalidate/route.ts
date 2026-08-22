@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifyCaller } from "@/lib/server/adminApi";
 
-const PUBLIC_PATHS = ["/", "/showcase", "/about", "/join"];
+// Every statically-generated public page that reads the database. /apply was
+// missing, so pausing applications or changing chapters stayed invisible until
+// the next deploy.
+const PUBLIC_PATHS = ["/", "/showcase", "/about", "/apply", "/join"];
 
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);

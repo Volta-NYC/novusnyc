@@ -744,6 +744,9 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
 
 // Only used if the chapters table can't be read at all — the apply form must
 // still render something rather than an empty dropdown.
+// Only used when the chapters table cannot be read at all. An empty result is
+// a real answer — every chapter archived means the form should offer none, not
+// quietly resurrect New York.
 const DEFAULT_CHAPTERS = ["New York"];
 
 export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string; chapters: string[] }> {
@@ -754,7 +757,7 @@ export async function getApplicationsStatus(): Promise<{ paused: boolean; messag
   // Chapters come from the chapters table, not the old site_settings text
   // array. Two lists meant the apply form offered five cities while the portal
   // knew about two.
-  const [{ data }, { data: chapterRows }] = await Promise.all([
+  const [{ data }, { data: chapterRows, error: chapterError }] = await Promise.all([
     sb.from("site_settings").select("applications_paused, applications_paused_msg").eq("id", "singleton").maybeSingle(),
     sb.from("chapters").select("name, status, sort_order").neq("status", "Archived").order("sort_order"),
   ]);
@@ -764,9 +767,12 @@ export async function getApplicationsStatus(): Promise<{ paused: boolean; messag
     .filter(Boolean);
 
   const r = (data ?? {}) as Record<string, unknown>;
+  const paused = Boolean(r.applications_paused ?? false);
   return {
-    paused: Boolean(r.applications_paused ?? false),
+    // No readable chapter means nowhere to apply to, so the form closes rather
+    // than inventing a location.
+    paused: paused || (!chapterError && chapters.length === 0),
     message: String(r.applications_paused_msg ?? "Applications are currently paused. Check back soon."),
-    chapters: chapters.length > 0 ? chapters : DEFAULT_CHAPTERS,
+    chapters: chapterError ? DEFAULT_CHAPTERS : chapters,
   };
 }

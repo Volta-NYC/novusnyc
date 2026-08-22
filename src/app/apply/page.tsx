@@ -3,6 +3,11 @@ import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationForm from "@/components/ApplicationForm";
 import { getApplicationsStatus } from "@/lib/server/publicShowcase";
 
+// The pause switch and the chapter list live in the database, so this page
+// cannot be built once and cached forever. Five minutes bounds how stale it can
+// get; the admin revalidate hook makes an intentional change immediate.
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Apply to Join as a Student Volunteer",
   description:

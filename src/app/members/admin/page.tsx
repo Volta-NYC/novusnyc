@@ -270,7 +270,16 @@ function ApplicationsTab() {
     setStatus("");
     try {
       await updateSiteSettings({ applicationsPaused: paused, applicationsPausedMsg: message });
-      setStatus("Saved.");
+      // /apply is statically generated, so the switch means nothing to a visitor
+      // until the page is rebuilt.
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/admin/revalidate", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setStatus(res.ok
+        ? "Saved and the public page was refreshed."
+        : "Saved, but the public page didn't refresh — use Refresh public pages.");
     } catch {
       setStatus("Save failed. Try again.");
     } finally {
