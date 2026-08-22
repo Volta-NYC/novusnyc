@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Badge, Btn } from "@/components/members/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Badge, Btn, useDialogBehavior } from "@/components/members/ui";
 import {
   updateBusiness, subscribeChapters, notifyProjectAssigned, TECH_STATUSES, TECH_PRIORITIES,
   type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
@@ -31,11 +31,8 @@ export default function ProjectPanel({
 
   useEffect(() => { setDraft(business); setSaved(false); }, [business]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const panelRef = useRef<HTMLElement>(null);
+  useDialogBehavior(true, onClose, panelRef);
 
   const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
   const sortedChapters = useMemo(
@@ -121,7 +118,10 @@ export default function ProjectPanel({
         aria-hidden="true"
       />
       <aside
+        ref={panelRef}
         role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
         aria-label={`${business.name} details`}
         className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[480px] flex-col border-l border-white/10 bg-[#13161D] shadow-2xl"
       >

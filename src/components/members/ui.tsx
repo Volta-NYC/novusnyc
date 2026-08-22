@@ -84,6 +84,66 @@ export function Badge({ label }: { label: string }) {
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 
+const FOCUSABLE =
+  'a[href],button:not([disabled]),input:not([type="hidden"]):not([disabled]),' +
+  'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+/**
+ * Dialog keyboard behaviour: Escape to close, Tab kept inside, focus moved in
+ * on open and returned to the trigger on close.
+ *
+ * Extracted from Modal because the project and member drawers are dialogs too
+ * and had none of it — Tab walked straight out into the page behind them.
+ */
+export function useDialogBehavior(
+  open: boolean,
+  onClose: () => void,
+  ref: React.RefObject<HTMLElement | null>,
+  opts: { dismissible?: boolean } = {},
+) {
+  const dismissible = opts.dismissible !== false;
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && dismissible) { onCloseRef.current(); return; }
+      if (e.key !== "Tab" || !ref.current) return;
+      const focusable = Array.from(ref.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (focusable.length === 0) { e.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else if (document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    const timer = setTimeout(() => {
+      const root = ref.current;
+      if (!root) return;
+      if (root.contains(document.activeElement)) return;
+      const field = root.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled])'
+      );
+      const fallback = root.querySelector<HTMLElement>('button:not([disabled]),[tabindex]:not([tabindex="-1"])');
+      (field ?? fallback ?? root)?.focus();
+    }, 0);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(timer);
+      previouslyFocused?.focus();
+    };
+  }, [open, dismissible, ref]);
+}
+
 export function Modal({ open, onClose, title, children, dismissible = true }: {
   open: boolean;
   onClose: () => void;
@@ -93,56 +153,20 @@ export function Modal({ open, onClose, title, children, dismissible = true }: {
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const onCloseRef = useRef(onClose);
 
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useDialogBehavior(open, onClose, dialogRef, { dismissible });
 
+  // Cmd/Ctrl+Enter submits the dialog's form — specific to Modal, which is the
+  // only dialog that wraps one.
   useEffect(() => {
     if (!open) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && dismissible) { onCloseRef.current(); return; }
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && dialogRef.current) {
-        const form = dialogRef.current.querySelector<HTMLFormElement>("form");
-        if (form) { e.preventDefault(); form.requestSubmit(); return; }
-      }
-      if (e.key !== "Tab" || !dialogRef.current) return;
-      const focusable = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-        )
-      );
-      if (focusable.length === 0) { e.preventDefault(); return; }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-      } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key !== "Enter" || !dialogRef.current) return;
+      const form = dialogRef.current.querySelector<HTMLFormElement>("form");
+      if (form) { e.preventDefault(); form.requestSubmit(); }
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [dismissible, open]);
-
-  // Auto-focus the first real form field when the modal opens. We pick the
-  // first input/textarea/select before falling back to a button so the close
-  // X (which sits earlier in the DOM) isn't what receives focus.
-  useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(() => {
-      const root = dialogRef.current;
-      if (!root) return;
-      const field = root.querySelector<HTMLElement>(
-        'input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled])'
-      );
-      const fallback = root.querySelector<HTMLElement>('button:not([disabled]),[tabindex]:not([tabindex="-1"])');
-      (field ?? fallback)?.focus();
-    }, 0);
-    return () => clearTimeout(timer);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
   if (!open) return null;

@@ -8,7 +8,7 @@ import {
   type Infraction, type MemberStrike, type TeamMember,
   type Pod, type PodMember, type HoursEntry, type ApplicationRecord,
 } from "@/lib/members/storage";
-import { Btn, Select, useConfirm } from "@/components/members/ui";
+import { Btn, Select, useConfirm, useDialogBehavior } from "@/components/members/ui";
 import PodPicker from "@/components/members/PodPicker";
 
 const TRACKS = ["Tech", "Marketing", "Finance"] as const;
@@ -73,11 +73,7 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
     return () => { live = false; };
   }, [memberId, strikes]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCloseRef.current(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  useDialogBehavior(true, onClose, drawerRef);
 
   const memberStrikes = useMemo(
     () => (memberId ? strikes.filter((s) => s.memberId === memberId) : []),
@@ -150,6 +146,8 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
       <aside
         ref={drawerRef}
         role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
         aria-labelledby={drawerTitleId}
         className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[440px] flex-col border-l border-white/10 bg-[#13161D] shadow-2xl"
       >
