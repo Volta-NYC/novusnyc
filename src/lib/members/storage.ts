@@ -1949,6 +1949,38 @@ export async function createChapter(name: string, city: string, state: string): 
   }));
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "create", collection: "chapters", recordId: slug, details: { name } });
+
+  // A chapter with no pods has nowhere to put people, and rebuilding the four
+  // subdepartments by hand invites them to drift apart between chapters. The
+  // structure is copied from the founding chapter rather than hardcoded, so
+  // renaming or adding a pod there carries forward on its own.
+  const chapterId = `chapter_${slug.replace(/-/g, "_")}`;
+  const { data: firstChapter } = await supabase.from("chapters")
+    .select("id, slug").neq("id", chapterId).order("sort_order").limit(1);
+  const templateChapter = (firstChapter ?? [])[0] as { id?: string; slug?: string } | undefined;
+  if (!templateChapter?.id) return;
+
+  const { data: templatePods } = await supabase.from("pods")
+    .select("*").eq("chapter_id", templateChapter.id).neq("status", "Archived").order("sort_order");
+
+  const rows = ((templatePods ?? []) as Record<string, unknown>[]).map((pod) => {
+    const podSlug = String(pod.slug ?? "");
+    const bare = templateChapter.slug && podSlug.startsWith(`${templateChapter.slug}-`)
+      ? podSlug.slice(templateChapter.slug.length + 1)
+      : podSlug;
+    return {
+      ...pod,
+      id: genId(),
+      chapter_id: chapterId,
+      slug: `${slug}-${bare}`,
+      created_at: nowISO(),
+      updated_at: nowISO(),
+    };
+  });
+  if (rows.length === 0) return;
+
+  const { error: podError } = await supabase.from("pods").insert(rows);
+  if (podError) throw new Error(`Chapter created, but its pods were not: ${podError.message}`);
 }
 
 export interface Pod {

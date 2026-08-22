@@ -189,6 +189,10 @@ export default function BIDTrackerPage() {
         ...legacySync,
         status: normalizeBidStatus(form.status),
         ...geocodePatch,
+        // Created while looking at a chapter, so it belongs to that chapter.
+        // Without this a Chicago partner saved with no chapter and the list,
+        // which falls back to the first one, filed it under New York.
+        chapterId: chapterId ?? defaultChapterId ?? null,
         sortIndex: nextSortIndex(bids),
       } as Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline">);
     }
