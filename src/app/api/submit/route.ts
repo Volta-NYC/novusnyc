@@ -72,11 +72,16 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     neighborhood,
     website: "",
     project_status: "Upcoming",
+    tech_status: "Backlog",
+    // The market this lead belongs to. Falls back to the first chapter rather
+    // than naming an id, so a new chapter never needs a code change here.
+    chapter_id: await defaultChapterId(sb),
+    // Services are stored on the record as well as in the note, so the intake
+    // answer is queryable instead of only readable.
+    active_services: splitCsvToList(services),
     team_lead: "",
     first_contact_date: timestamp.slice(0, 10),
     notes: notesParts.join("\n"),
-    division: "Marketing",
-    team_members: [],
     sort_index: now,
     referred_by: referredBy,
     intake_source: "website_form",
@@ -85,6 +90,16 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
     created_at: timestamp,
     updated_at: timestamp,
   });
+}
+
+// Chapters are rows, not constants: read the first one rather than hardcoding
+// an id that a rename would break.
+async function defaultChapterId(
+  sb: ReturnType<typeof getSupabaseAdmin>,
+): Promise<string | null> {
+  const { data } = await sb.from("chapters").select("id")
+    .neq("status", "Archived").order("sort_order").limit(1);
+  return (data ?? [])[0]?.id ?? null;
 }
 
 function splitToCsv(values: unknown): string {
@@ -109,6 +124,15 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
   const fullName = asText(data["Full Name"]);
   const email = asText(data.Email).toLowerCase();
   if (!fullName || !email) return;
+
+  // The contact form has guarded against accidental doubles since it was
+  // written; this one never did, so a double-click or a retry on a flaky
+  // connection filed the same application twice. A day-long window catches
+  // that without blocking someone genuinely reapplying weeks later.
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: recent } = await sb.from("applications")
+    .select("id").eq("email", email).gte("created_at", dayAgo).limit(1);
+  if ((recent ?? []).length > 0) return;
 
   const schoolName = asText(data["School Name"]) || asText(data.Education);
   const cityState = asText(data["City, State"]) || asText(data.City);
