@@ -4,9 +4,9 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   subscribeMemberStrikes, subscribeInfractions, subscribePods, subscribePodMembers,
   deleteMemberStrike, clearMemberStrikes, createMemberStrike,
-  fetchMemberHours, createHoursAdjustment, updateTeamMember,
+  fetchMemberHours, createHoursAdjustment, updateTeamMember, fetchApplicationForMember,
   type Infraction, type MemberStrike, type TeamMember,
-  type Pod, type PodMember, type HoursEntry,
+  type Pod, type PodMember, type HoursEntry, type ApplicationRecord,
 } from "@/lib/members/storage";
 import { Btn, Select, useConfirm } from "@/components/members/ui";
 import PodPicker from "@/components/members/PodPicker";
@@ -33,6 +33,8 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
   const [pods, setPods]             = useState<Pod[]>([]);
   const [podMembers, setPodMembers] = useState<PodMember[]>([]);
   const [hours, setHours]           = useState<HoursEntry[] | null>(null);
+  const [application, setApplication] = useState<ApplicationRecord | null>(null);
+  const [showApplication, setShowApplication] = useState(false);
 
   const [issueOpen, setIssueOpen] = useState(false);
   const [issueInfractionId, setIssueInfractionId] = useState("");
@@ -56,6 +58,13 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
   useEffect(() => subscribeInfractions(setInfractions), []);
   useEffect(() => subscribePods(setPods), []);
   useEffect(() => subscribePodMembers(setPodMembers), []);
+
+  useEffect(() => {
+    if (!memberId) { setApplication(null); return; }
+    let live = true;
+    void fetchApplicationForMember(memberId).then((a) => { if (live) setApplication(a); });
+    return () => { live = false; };
+  }, [memberId]);
 
   useEffect(() => {
     if (!memberId) { setHours(null); return; }
@@ -350,6 +359,77 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
               </div>
             )}
           </div>
+
+          {/* Application */}
+          {application && (
+            <div className="mb-5">
+              <div className="mb-2 flex items-baseline justify-between">
+                <p className="text-[10px] uppercase tracking-wide text-white/40">Application</p>
+                <button
+                  onClick={() => setShowApplication((v) => !v)}
+                  className="text-[10px] text-white/35 transition-colors hover:text-white/70"
+                >
+                  {showApplication ? "Hide" : "Show"}
+                </button>
+              </div>
+              <p className="text-[11px] text-white/45">
+                Applied {String(application.createdAt ?? "").slice(0, 10)}
+                {application.tracksSelected ? ` · ${application.tracksSelected}` : ""}
+              </p>
+
+              {showApplication && (
+                <div className="mt-2 space-y-2.5 rounded-md border border-white/10 bg-[#0F1014] p-3">
+                  {([
+                    ["School", application.schoolName],
+                    ["Grade", application.grade],
+                    ["From", [application.city, application.state].filter(Boolean).join(", ")],
+                    ["Track", application.tracksSelected],
+                    ["Focus", application.marketingSubtrack],
+                    ["Heard via", [application.referral, application.referralName].filter(Boolean).join(" — ")],
+                    ["Tools", application.toolsSoftware],
+                  ] as const).map(([label, value]) =>
+                    value ? (
+                      <div key={label} className="flex gap-2">
+                        <span className="w-20 shrink-0 text-[10px] uppercase tracking-wide text-white/35">{label}</span>
+                        <span className="text-[11px] leading-relaxed text-white/75">{value}</span>
+                      </div>
+                    ) : null,
+                  )}
+
+                  {application.accomplishment && (
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-white/35">In their words</p>
+                      <p className="text-[11px] leading-relaxed text-white/70">{application.accomplishment}</p>
+                    </div>
+                  )}
+
+                  {application.resumeUrl && (
+                    <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer"
+                       className="inline-block text-[11px] text-[#F3E28D]/80 hover:underline">
+                      Résumé ↗
+                    </a>
+                  )}
+
+                  {application.interviewEvaluations && Object.keys(application.interviewEvaluations).length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-white/35">Interview</p>
+                      {Object.values(application.interviewEvaluations).map((ev, i) => (
+                        <div key={i} className="mb-1.5">
+                          <p className="text-[11px] text-white/75">
+                            {ev.rating ?? "No rating"}
+                            {ev.interviewerName ? ` · ${ev.interviewerName}` : ""}
+                          </p>
+                          {ev.comments && (
+                            <p className="text-[10px] leading-relaxed text-white/45">{ev.comments}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* History */}
           {hours && hours.length > 0 && (

@@ -249,6 +249,10 @@ export interface ApplicationRecord {
     slotId?: string;
   }>;
   finalDecisionRole?: string;
+  memberId?: string | null;   // the member this application became
+  decidedAt?: string | null;
+  decidedBy?: string | null;
+  city?: string;
   source?: "website_form" | "csv_import" | "manual" | "legacy_sheet_import";
   sourceTimestampRaw?: string;
   createdAt: string;
@@ -1080,6 +1084,17 @@ export async function updateTeamMember(id: string, data: Partial<TeamMember>): P
 
 // Removal is a soft delete, so a mistake is recoverable — but nothing surfaced
 // the removed rows, which made it recoverable only from the database.
+// An accepted application is history about a member, so it belongs on their
+// record rather than in a separate tab you have to go and find.
+export async function fetchApplicationForMember(memberId: string): Promise<ApplicationRecord | null> {
+  const { data } = await supabase.from("applications").select("*")
+    .eq("member_id", memberId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const row = (data ?? [])[0] as Record<string, unknown> | undefined;
+  return row ? fromRow<ApplicationRecord>(row) : null;
+}
+
 export async function fetchDeletedTeamMembers(): Promise<TeamMember[]> {
   const { data } = await supabase.from("team").select("*")
     .not("deleted_at", "is", null)

@@ -2,6 +2,7 @@
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
@@ -301,7 +302,14 @@ export default function ApplicantsPage() {
 
   const totalApplicantsCount = applications.length;
   const acceptedApplicantsCount = applications.filter((app) => normalize(app.status) === "accepted").length;
-  const newApplicantsCount = applications.filter((app) => normalize(app.status) === "new").length;
+  // Someone who reapplied after already joining is not awaiting anything, so
+  // counting them as pending overstates the queue.
+  const awaitingDecisionCount = applications.filter(
+    (app) => normalize(app.status) !== "accepted" && !app.memberId,
+  ).length;
+  const alreadyMemberCount = applications.filter(
+    (app) => normalize(app.status) !== "accepted" && !!app.memberId,
+  ).length;
 
   const uninvitedApplicantIds = useMemo(
     () =>
@@ -677,11 +685,21 @@ export default function ApplicantsPage() {
       <PageHeader
         title="Applicants"
       />
-      <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
-        <span>Total: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
+      <div className="flex flex-wrap items-center gap-4 mb-1 text-[11px] text-white/55">
+        <span>Total applications: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
         <span>Accepted: <span className="text-emerald-300 font-semibold">{acceptedApplicantsCount}</span></span>
-        <span>New: <span className="text-sky-300 font-semibold">{newApplicantsCount}</span></span>
+        <span>Awaiting a decision: <span className="text-sky-300 font-semibold">{awaitingDecisionCount}</span></span>
+        {alreadyMemberCount > 0 && (
+          <span className="text-white/35">{alreadyMemberCount} reapplied after joining</span>
+        )}
       </div>
+      <p className="mb-3 text-[11px] text-white/30">
+        This page is the intake queue. Once someone is accepted, their application —
+        school, track, résumé and interview notes — lives on their record in{" "}
+        <Link href="/members/team" className="text-white/50 underline decoration-white/20 hover:text-white/80">
+          Members
+        </Link>.
+      </p>
       <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
 
       {canEdit && (
