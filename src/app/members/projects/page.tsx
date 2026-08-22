@@ -362,8 +362,20 @@ export default function ProjectsPage() {
                 return (
                   <tr
                     key={b.id}
+                    // The row is the control that opens the project, so it has
+                    // to answer the keyboard the way a button does.
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open ${b.name}`}
                     onClick={() => setOpenId(b.id)}
-                    className={`cursor-pointer border-b border-white/10 align-middle transition-colors last:border-b-0 hover:bg-white/[0.05] ${
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setOpenId(b.id);
+                      }
+                    }}
+                    className={`cursor-pointer border-b border-white/10 align-middle transition-colors last:border-b-0 hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#F6B78D]/70 ${
                       openId === b.id ? "bg-white/[0.07]" : ""
                     }`}
                   >

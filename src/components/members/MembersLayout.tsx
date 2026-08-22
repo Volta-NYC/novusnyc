@@ -440,7 +440,11 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full ${sidebarW} ${tone.sidebar} z-30 flex flex-col transition-[width,transform] duration-200 ease-in-out overflow-hidden ${
+        // Translated offscreen is still focusable: Tab used to walk into a
+        // sidebar the reader could not see. data-closed drives visibility, which
+        // does remove it from the tab order, delayed so the slide still plays.
+        data-closed={!sidebarOpen}
+        className={`members-sidebar fixed left-0 top-0 h-full ${sidebarW} ${tone.sidebar} z-30 flex flex-col transition-[width,transform] duration-200 ease-in-out overflow-hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
