@@ -31,6 +31,12 @@ const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
   data:     "/members/admin/data",
 };
 
+const CHAPTER_STATUS_HELP: Record<Chapter["status"], string> = {
+  Active: "Visible on the application form as an active Novus market.",
+  Launching: "Visible on the application form while the chapter is being set up.",
+  Archived: "Hidden from the application form; existing records stay intact.",
+};
+
 function getAdminTab(pathname: string): AdminTab {
   if (pathname.startsWith("/members/admin/frontend") ||
       pathname.startsWith("/members/admin/applications") ||
@@ -352,13 +358,11 @@ function ApplicationsTab() {
 
   useEffect(() => subscribeChapters(setChapters), []);
 
-  const renameChapter = async (id: string, name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
+  const saveChapter = async (id: string, patch: Partial<Chapter>) => {
     setSavingChapters(true);
     setChapterStatus("");
     try {
-      await updateChapter(id, { name: trimmed });
+      await updateChapter(id, patch);
       setChapterStatus("Saved.");
     } catch {
       setChapterStatus("Save failed. Nothing changed.");
@@ -381,11 +385,13 @@ function ApplicationsTab() {
 
   const addChapter = async () => {
     const trimmed = newChapter.trim();
-    if (!trimmed) return;
+    const city = newChapterCity.trim();
+    const state = newChapterState.trim();
+    if (!trimmed || !city || !state) return;
     setSavingChapters(true);
     setChapterStatus("");
     try {
-      await createChapter(trimmed, newChapterCity, newChapterState);
+      await createChapter(trimmed, city, state);
       setNewChapter(""); setNewChapterCity(""); setNewChapterState("");
       setChapterStatus("Added.");
     } catch (err) {
@@ -420,7 +426,7 @@ function ApplicationsTab() {
   if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
 
   return (
-    <div className="max-w-lg space-y-4">
+    <div className="max-w-2xl space-y-4">
       <Card title="Application Status" subtitle="Control whether the public /apply page accepts new submissions.">
         {settingsLoadFailed ? (
           <LoadError message="Application settings could not load. The open/closed control is disabled so it cannot overwrite the live value." />
@@ -446,65 +452,106 @@ function ApplicationsTab() {
         <StatusMsg msg={status} />
       </Card>
 
-      <Card title="Chapters" subtitle="Markets where Novus is active or launching. Active and launching chapters appear on /apply.">
-        <div className="space-y-3">
+      <Card title="Chapters" subtitle="Choose which markets appear on the public application form. Changes save when you leave a field or choose a status.">
+        <div className="space-y-4">
           {chapters.length === 0 && (
             <p className="text-[11px] text-white/40">No chapters yet.</p>
           )}
           {[...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((chapter) => (
-            <div key={chapter.id} className="flex flex-wrap items-center gap-2">
-              <Input
-                defaultValue={chapter.name}
-                disabled={savingChapters}
-                onBlur={(e) => {
-                  const edited = e.target.value.trim();
-                  if (edited && edited !== chapter.name) void renameChapter(chapter.id, edited);
-                }}
-              />
-              <span className="text-[11px] text-white/35">
-                {[chapter.city, chapter.state].filter(Boolean).join(", ") || "—"}
-              </span>
-              <div className="ml-auto flex gap-1">
-                {(["Active", "Launching", "Archived"] as const).map((st) => (
-                  <button
-                    key={st}
-                    type="button"
+            <div key={chapter.id} className="rounded-xl border border-white/10 bg-white/[0.025] p-4 space-y-3">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_90px]">
+                <Field label="Chapter name">
+                  <Input
+                    defaultValue={chapter.name}
                     disabled={savingChapters}
-                    onClick={() => void setChapterStatusValue(chapter.id, st)}
-                    className={`rounded px-2 py-0.5 text-[10px] uppercase tracking-wide transition-colors disabled:opacity-50 ${
-                      chapter.status === st
-                        ? "bg-[#F3E28D]/20 text-[#F3E28D]"
-                        : "text-white/35 hover:text-white/70"
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
+                    onBlur={(e) => {
+                      const name = e.target.value.trim();
+                      if (name && name !== chapter.name) void saveChapter(chapter.id, { name });
+                    }}
+                  />
+                </Field>
+                <Field label="City">
+                  <Input
+                    defaultValue={chapter.city}
+                    disabled={savingChapters}
+                    onBlur={(e) => {
+                      const city = e.target.value.trim();
+                      if (city !== chapter.city) void saveChapter(chapter.id, { city });
+                    }}
+                  />
+                </Field>
+                <Field label="State">
+                  <Input
+                    defaultValue={chapter.state}
+                    maxLength={2}
+                    disabled={savingChapters}
+                    onBlur={(e) => {
+                      const state = e.target.value.trim().toUpperCase();
+                      e.currentTarget.value = state;
+                      if (state !== chapter.state) void saveChapter(chapter.id, { state });
+                    }}
+                  />
+                </Field>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/60">Application visibility</p>
+                <div className="flex flex-wrap gap-2" role="group" aria-label={`${chapter.name} application visibility`}>
+                  {(["Active", "Launching", "Archived"] as const).map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      aria-pressed={chapter.status === st}
+                      disabled={savingChapters}
+                      onClick={() => void setChapterStatusValue(chapter.id, st)}
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                        chapter.status === st
+                          ? "border-[#F3E28D]/40 bg-[#F3E28D]/20 text-[#F3E28D]"
+                          : "border-white/10 text-white/50 hover:border-white/25 hover:text-white/80"
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-white/40">{CHAPTER_STATUS_HELP[chapter.status]}</p>
               </div>
             </div>
           ))}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <Input
-              value={newChapter}
-              disabled={savingChapters}
-              onChange={(e) => setNewChapter(e.target.value)}
-              placeholder="Chapter name"
-            />
-            <Input
-              value={newChapterCity}
-              disabled={savingChapters}
-              onChange={(e) => setNewChapterCity(e.target.value)}
-              placeholder="City"
-            />
-            <Input
-              value={newChapterState}
-              disabled={savingChapters}
-              onChange={(e) => setNewChapterState(e.target.value)}
-              placeholder="State"
-            />
-            <Btn variant="secondary" onClick={() => void addChapter()} disabled={!newChapter.trim() || savingChapters}>
-              {savingChapters ? "Saving…" : "Add"}
-            </Btn>
+          <div className="rounded-xl border border-dashed border-white/15 p-4">
+            <h3 className="font-semibold text-white">Add a chapter</h3>
+            <p className="mt-1 text-sm text-white/40">Creates the chapter and copies Novus’s current pod structure for that market.</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_90px]">
+              <Field label="Chapter name" required>
+                <Input
+                  value={newChapter}
+                  disabled={savingChapters}
+                  onChange={(e) => setNewChapter(e.target.value)}
+                  placeholder="e.g. Boston"
+                />
+              </Field>
+              <Field label="City" required>
+                <Input
+                  value={newChapterCity}
+                  disabled={savingChapters}
+                  onChange={(e) => setNewChapterCity(e.target.value)}
+                  placeholder="e.g. Boston"
+                />
+              </Field>
+              <Field label="State" required>
+                <Input
+                  value={newChapterState}
+                  maxLength={2}
+                  disabled={savingChapters}
+                  onChange={(e) => setNewChapterState(e.target.value.toUpperCase())}
+                  placeholder="MA"
+                />
+              </Field>
+            </div>
+            <div className="mt-3">
+              <Btn variant="secondary" onClick={() => void addChapter()} disabled={!newChapter.trim() || !newChapterCity.trim() || !newChapterState.trim() || savingChapters}>
+                {savingChapters ? "Creating…" : "Create chapter"}
+              </Btn>
+            </div>
           </div>
         </div>
         <StatusMsg msg={chapterStatus} />
