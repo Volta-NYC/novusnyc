@@ -27,7 +27,7 @@ export default async function Apply() {
       <section id="application-details" className="section-flush-bottom public-surface public-surface-lavender bg-n-bg pt-32 pb-0">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <div className="grid md:grid-cols-5 gap-12 items-start pb-12">
+            <div className="grid md:grid-cols-5 gap-12 lg:gap-16 items-start pb-16">
               {/* Left: what to expect */}
               <div className="md:col-span-2 md:pt-2">
                 <p className="mb-4 font-body text-xs font-bold uppercase tracking-[0.2em] text-n-orange sm:text-sm">
