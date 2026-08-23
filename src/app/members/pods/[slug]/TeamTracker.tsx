@@ -170,19 +170,22 @@ export default function TeamTracker({
   };
 
   const summaryByMember = useMemo(() => {
-    const result = new Map<string, { present: number; marked: number; approvedWork: number; unexcused: number; meetingHours: number }>();
+    const result = new Map<string, { attendanceCredit: number; marked: number; approvedWork: number; unexcused: number; meetingHours: number }>();
     const meetingById = new Map(meetings.map((meeting) => [meeting.id, meeting]));
     for (const member of roster) {
       const rows = (attendance ?? []).filter((row) => row.memberId === member.memberId);
       const present = rows.filter((row) => row.status === "Present").length;
+      const late = rows.filter((row) => row.status === "Late").length;
       const unexcused = rows.filter((row) => row.status === "Unexcused").length;
       const meetingHours = rows.reduce((total, row) => {
         const meeting = meetingById.get(row.meetingId);
-        if (row.status !== "Present" || !meeting?.attendanceFinalizedAt) return total;
-        return total + (row.hours ?? meeting.hours);
+        if (!meeting?.attendanceFinalizedAt) return total;
+        if (row.status === "Present") return total + (row.hours ?? meeting.hours);
+        if (row.status === "Late") return total + (row.hours ?? meeting.hours / 2);
+        return total;
       }, 0);
       const approvedWork = assignments.filter((assignment) => assignment.status === "Done" && assignment.assignedMemberIds.includes(member.memberId)).length;
-      result.set(member.memberId, { present, marked: rows.length, approvedWork, unexcused, meetingHours });
+      result.set(member.memberId, { attendanceCredit: present + late * 0.5, marked: rows.length, approvedWork, unexcused, meetingHours });
     }
     return result;
   }, [assignments, attendance, meetings, roster]);
@@ -258,7 +261,7 @@ export default function TeamTracker({
               </thead>
               <tbody>
                 {visibleRoster.map((member) => {
-                  const summary = summaryByMember.get(member.memberId) ?? { present: 0, marked: 0, approvedWork: 0, unexcused: 0, meetingHours: 0 };
+                  const summary = summaryByMember.get(member.memberId) ?? { attendanceCredit: 0, marked: 0, approvedWork: 0, unexcused: 0, meetingHours: 0 };
                   return (
                     <tr key={member.id}>
                       <td className="sticky left-0 z-20 border-r border-white/10 bg-[#15181F] px-3">
@@ -269,7 +272,7 @@ export default function TeamTracker({
                         </div>
                       </td>
                       <td className="border-r border-white/10 px-3 text-center font-mono text-[11px] tabular-nums text-white/70">
-                        {summary.marked ? `${Math.round((summary.present / summary.marked) * 100)}%` : "—"}
+                        {summary.marked ? `${Math.round((summary.attendanceCredit / summary.marked) * 100)}%` : "—"}
                       </td>
                       <td className="border-r border-white/10 px-3 text-center font-mono text-[11px] tabular-nums text-white/70">{summary.meetingHours.toFixed(1)}</td>
                       <td className="border-r border-white/10 px-3 text-center font-mono text-[11px] tabular-nums text-white/70">{summary.approvedWork}</td>

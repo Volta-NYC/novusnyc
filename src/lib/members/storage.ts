@@ -1540,7 +1540,7 @@ export interface PodMeeting {
   attendanceFinalizedBy?: string | null;
 }
 
-export const ATTENDANCE_STATUSES = ["Present", "Excused", "Unexcused"] as const;
+export const ATTENDANCE_STATUSES = ["Present", "Late", "Excused", "Unexcused"] as const;
 export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
 
 export interface PodAttendance {

@@ -41,9 +41,11 @@ const BADGE_COLORS: Record<string, string> = {
   Maybe:               "bg-gray-500/15 text-gray-400 border-gray-500/20",
   // pod attendance
   Present:             "bg-green-500/15 text-green-400 border-green-500/20",
+  Late:                "bg-orange-500/15 text-orange-400 border-orange-500/20",
   Excused:             "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
   Unexcused:           "bg-red-500/15 text-red-400 border-red-500/20",
   lit:                 "bg-sky-400/10 text-sky-300 border-sky-400/35",
+  LIT:                 "bg-sky-400/10 text-sky-300 border-sky-400/35",
   Open:                "bg-gray-500/15 text-gray-300 border-gray-500/20",
   Blocked:             "bg-red-500/15 text-red-400 border-red-500/20",
   Rejected:            "bg-red-500/15 text-red-400 border-red-500/20",

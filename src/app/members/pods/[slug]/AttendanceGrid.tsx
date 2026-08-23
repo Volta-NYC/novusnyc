@@ -13,6 +13,7 @@ type Cell = { status: AttendanceStatus | null; tasksDone: number; note: string; 
 
 const STATUS_STYLE: Record<AttendanceStatus, string> = {
   Present:   "bg-green-500/20 text-green-300 border-green-500/30",
+  Late:      "bg-orange-500/20 text-orange-400 border-orange-500/30",
   Excused:   "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
   Unexcused: "bg-red-500/20 text-red-300 border-red-500/30",
 };
@@ -134,7 +135,7 @@ export default function AttendanceGrid({
   }, [marked, gridRoster]);
 
   const totals = useMemo(() => {
-    const t = { Present: 0, Excused: 0, Unexcused: 0, tasks: 0, hours: 0 };
+    const t = { Present: 0, Late: 0, Excused: 0, Unexcused: 0, tasks: 0, hours: 0 };
     if (!cells) return t;
     const meetingHours = Number(hours) || 0;
     for (const m of gridRoster) {
@@ -143,6 +144,7 @@ export default function AttendanceGrid({
       t[c.status] += 1;
       t.tasks += c.tasksDone;
       if (c.status === "Present") t.hours += c.hours ?? meetingHours;
+      if (c.status === "Late") t.hours += c.hours ?? meetingHours / 2;
     }
     return t;
   }, [cells, gridRoster, hours]);
@@ -281,6 +283,7 @@ export default function AttendanceGrid({
 
         <div className={`ml-auto items-center gap-3 pb-0.5 text-[11px] ${canEdit ? "flex" : "hidden"}`}>
           <span className="text-green-400">{totals.Present} present</span>
+          {totals.Late > 0 && <span className="text-orange-400">{totals.Late} late</span>}
           {totals.Excused > 0 && <span className="text-yellow-300">{totals.Excused} excused</span>}
           {totals.Unexcused > 0 && <span className="text-red-400">{totals.Unexcused} unexcused</span>}
           <span className="text-white/40">{totals.tasks} tasks</span>
@@ -289,9 +292,10 @@ export default function AttendanceGrid({
       </div>
 
       {canEdit && (
-        <div className="grid grid-cols-2 gap-px border-b border-white/10 bg-white/10 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-px border-b border-white/10 bg-white/10 sm:grid-cols-6">
           {([
             ["Present", totals.Present, "text-green-400"],
+            ["Late", totals.Late, "text-orange-400"],
             ["Excused", totals.Excused, "text-yellow-300"],
             ["Unexcused", totals.Unexcused, "text-red-400"],
             ["Work completed", totals.tasks, "text-sky-300"],
