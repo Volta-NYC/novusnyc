@@ -23,7 +23,9 @@ import {
   type Pod,
   type PodContentItem,
   type PodMember,
+  type TeamMember,
 } from "@/lib/members/storage";
+import { isInactiveMember } from "@/lib/members/roles";
 
 type Draft = {
   title: string;
@@ -82,11 +84,13 @@ function url(value: string): string {
 export default function ContentPipeline({
   pod,
   roster,
+  team,
   nameById,
   canEdit,
 }: {
   pod: Pod;
   roster: PodMember[];
+  team: TeamMember[];
   nameById: Map<string, string>;
   canEdit: boolean;
 }) {
@@ -98,6 +102,19 @@ export default function ContentPipeline({
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const reviewerCandidates = useMemo(() => {
+    const rosterIds = new Set(
+      roster
+        .filter((member) => !member.leftAt)
+        .map((member) => member.memberId),
+    );
+    return team.filter(
+      (member) =>
+        !isInactiveMember(member.status) &&
+        (rosterIds.has(member.id) ||
+          ["Board", "Chapter President", "Chapter VP"].includes(member.role)),
+    );
+  }, [roster, team]);
 
   useEffect(
     () =>
@@ -377,13 +394,12 @@ export default function ContentPipeline({
                 />
               </Field>
               <Field label="Reviewer">
-                <MemberSelect
+                <DirectorySelect
                   value={draft.reviewerMemberId}
                   onChange={(reviewerMemberId) =>
                     setDraft((value) => ({ ...value, reviewerMemberId }))
                   }
-                  roster={roster}
-                  nameById={nameById}
+                  members={reviewerCandidates}
                 />
               </Field>
               <Field label="Due date">
@@ -516,6 +532,29 @@ function MemberSelect({
         .map((member) => (
           <option key={member.memberId} value={member.memberId}>
             {nameById.get(member.memberId) ?? "Unknown"}
+          </option>
+        ))}
+    </Select>
+  );
+}
+
+function DirectorySelect({
+  value,
+  onChange,
+  members,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  members: TeamMember[];
+}) {
+  return (
+    <Select value={value} onChange={(event) => onChange(event.target.value)}>
+      <option value="">Unassigned</option>
+      {[...members]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((member) => (
+          <option key={member.id} value={member.id}>
+            {member.name}
           </option>
         ))}
     </Select>
