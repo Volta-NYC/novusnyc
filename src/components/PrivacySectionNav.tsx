@@ -18,6 +18,8 @@ const sections = [
 export default function PrivacySectionNav() {
   const [activeId, setActiveId] = useState(sections[0].id);
   const [pinnedPosition, setPinnedPosition] = useState<{ left: number; width: number } | null>(null);
+  // How tall the pinned card may be before it would run under the footer.
+  const [availableHeight, setAvailableHeight] = useState<number | null>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -48,7 +50,27 @@ export default function PrivacySectionNav() {
       }
 
       const bounds = anchor.getBoundingClientRect();
-      setPinnedPosition(bounds.top <= 96 ? { left: bounds.left, width: bounds.width } : null);
+      if (bounds.top > 96) {
+        setPinnedPosition(null);
+        setAvailableHeight(null);
+        return;
+      }
+
+      // A fixed element is out of flow, so nothing stops it sliding under the
+      // footer. Cap its height at whichever arrives first — the bottom of the
+      // viewport or the top of the footer — and let it go entirely once there
+      // is too little room left to be worth pinning.
+      const footerTop = document.querySelector("footer")?.getBoundingClientRect().top ?? Infinity;
+      const room = Math.min(window.innerHeight, footerTop) - 96 - 24;
+
+      if (room < 160) {
+        setPinnedPosition(null);
+        setAvailableHeight(null);
+        return;
+      }
+
+      setPinnedPosition({ left: bounds.left, width: bounds.width });
+      setAvailableHeight(room);
     };
 
     updatePinnedPosition();
@@ -65,7 +87,7 @@ export default function PrivacySectionNav() {
       <nav
         aria-label="Privacy policy sections"
         className={`max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-n-border bg-white p-5 ${pinnedPosition ? "sm:fixed sm:top-24 sm:z-30" : ""}`}
-        style={pinnedPosition ?? undefined}
+        style={pinnedPosition ? { ...pinnedPosition, maxHeight: availableHeight ?? undefined } : undefined}
       >
         <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-n-orange">On this page</p>
         <ol className="mt-4 space-y-1 font-body text-sm">
