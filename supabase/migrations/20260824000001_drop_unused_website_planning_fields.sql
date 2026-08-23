@@ -1,4 +1,4 @@
--- POST-DEPLOY ONLY: the currently deployed branch still writes both columns.
+-- Applied only after the website-tracker code stopped reading both columns.
 -- Live-data audit on 2026-08-23 found 0/138 nonzero hours_logged values and
 -- 0/138 target_date values.
 DROP TRIGGER IF EXISTS businesses_certify_hours ON public.businesses;

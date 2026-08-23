@@ -1,6 +1,6 @@
--- POST-DEPLOY ONLY: the currently deployed production application still reads
--- and writes this legacy schema. The replacement direct-scheduling code must be
--- live before this migration is moved into supabase/migrations and applied.
+-- Applied only after the replacement direct-scheduling code was live. The
+-- guard below prevents the archived legacy booking records from being dropped
+-- unless the export-and-clear step really completed.
 
 DO $guard$
 DECLARE

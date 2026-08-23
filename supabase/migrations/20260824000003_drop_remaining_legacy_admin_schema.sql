@@ -1,4 +1,4 @@
--- POST-DEPLOY ONLY: the matching application code must be live first.
+-- Applied only after the matching application code was live.
 -- Pods now own meetings/tasks, chapters come from the chapters table, and
 -- business service choices come from the canonical code list.
 
