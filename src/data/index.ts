@@ -298,24 +298,16 @@ export const teamMembers: LeadershipMember[] = [
   {
     name: "Ethan Zhang",
     role: "Founder & Director",
-    roleDetails: "Founder and Director of Novus NYC, co-leading a 400+ student organization that has built a pipeline of 80+ small businesses across all five boroughs and delivered 100+ engagements through partnerships with NYC Small Business Services, the Small Business Resource Network, and local Business Improvement Districts.",
+    roleDetails: "A Stuyvesant student who builds things — mostly software, occasionally organizations. He writes and maintains the platform Novus runs on, and is drawn to problems where a well-designed system replaces work that used to take a room full of people. Outside school he rows, runs, competes in math, and spends a fair amount of time behind a camera or a piano.",
     email: EMAIL.ethan,
     linkedin: "https://www.linkedin.com/in/ez09",
     initial: "E",
     photo: "/team/ethan.jpeg",
     school: "Stuyvesant High School",
     grade: "Class of 2027",
-    focus: "Organizational strategy, quantitative finance, technology systems, and scalable community partnerships.",
+    focus: "Organizational strategy, technology systems, and scalable community partnerships.",
     whyNovus: "I founded Novus to give ambitious students meaningful ownership while bringing practical technology, marketing, and consulting support to the small businesses that power New York's neighborhoods.",
-    interests: ["Music", "Running", "Photography", "Graphic design", "Rowing", "Classical piano"],
-    highlights: [
-      "1600 SAT",
-      "Wharton global champion",
-      "USACO Gold Division",
-      "2x AIME qualifier",
-      "U.S. Department of State NSLI-Y scholar",
-      "Best Overall Pitch at Columbia's Young Entrepreneurs Program",
-    ],
+    interests: ["Music", "Running", "Rowing", "Photography", "Competitive math"],
     experience: [
       {
         title: "Novus NYC",
