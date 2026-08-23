@@ -16,8 +16,9 @@ import AttendanceGrid from "./AttendanceGrid";
 import PodAssignments from "./PodAssignments";
 import GrantTracker from "./GrantTracker";
 import TeamTracker from "./TeamTracker";
+import OutreachTracker from "./OutreachTracker";
 
-type Tab = "tracker" | "tasks" | "schedule" | "grants" | "settings";
+type Tab = "tracker" | "tasks" | "schedule" | "grants" | "outreach" | "settings";
 
 export default function PodDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -111,12 +112,14 @@ export default function PodDetailPage() {
   const division = getPodDivision(pod.name);
   const divisionMeta = POD_DIVISION_META[division];
   const isFinancePod = division === "Finance";
+  const isOutreachPod = /outreach|ambassador/i.test(pod.name);
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "tracker", label: attendanceDue.length ? `Team tracker · ${attendanceDue.length}` : "Team tracker" },
     { key: "tasks", label: reviewAssignments.length ? `Work · ${reviewAssignments.length}` : "Work" },
     { key: "schedule", label: "Schedule" },
     ...(isFinancePod ? [{ key: "grants" as Tab, label: "Grant tracker" }] : []),
+    ...(isOutreachPod ? [{ key: "outreach" as Tab, label: "Outreach tracker" }] : []),
     ...(canRun ? [{ key: "settings" as Tab, label: "Settings" }] : []),
   ];
 
@@ -208,6 +211,8 @@ export default function PodDetailPage() {
       {tab === "schedule" && <PodSchedule meetings={podMeetings} assignments={podAssignments} pod={pod} onOpenMeeting={(id) => { setOpenMeeting(id); setTab("tracker"); }} />}
 
       {tab === "grants" && isFinancePod && <GrantTracker pod={pod} roster={roster} nameById={nameById} canEdit={canRun} />}
+
+      {tab === "outreach" && isOutreachPod && <OutreachTracker pod={pod} roster={roster} nameById={nameById} canEdit={canRun} />}
 
       {tab === "settings" && canRun && <Settings pod={pod} />}
 

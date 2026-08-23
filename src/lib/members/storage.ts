@@ -1927,3 +1927,55 @@ export async function deleteGrantOpportunity(id: string): Promise<void> {
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "delete", collection: "grant_opportunities", recordId: id });
 }
+
+export const OUTREACH_STATUSES = [
+  "Researching", "Ready to Contact", "Contacted", "Responded", "Call Scheduled", "Handed Off", "Closed",
+] as const;
+export type OutreachStatus = (typeof OUTREACH_STATUSES)[number];
+export type OutreachSubjectType = "Business" | "School" | "Partner Organization";
+
+export interface PodOutreachRecord {
+  id: string;
+  podId: string;
+  subjectType: OutreachSubjectType;
+  subjectName: string;
+  contactName: string;
+  contactEmail: string;
+  sourceUrl: string;
+  ownerMemberId?: string | null;
+  status: OutreachStatus;
+  lastContactOn?: string | null;
+  followUpOn?: string | null;
+  notes: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+}
+
+export const subscribePodOutreachRecords = makeSubscriber<PodOutreachRecord>("pod_outreach_records");
+
+export async function createPodOutreachRecord(
+  data: Omit<PodOutreachRecord, "id" | "createdAt" | "updatedAt" | "deletedAt">,
+): Promise<void> {
+  const id = genId();
+  const now = nowISO();
+  const { error } = await supabase.from("pod_outreach_records")
+    .insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "pod_outreach_records", recordId: id, details: { podId: data.podId, subjectType: data.subjectType } });
+}
+
+export async function updatePodOutreachRecord(id: string, patch: Partial<PodOutreachRecord>): Promise<void> {
+  const { error } = await supabase.from("pod_outreach_records")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pod_outreach_records", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+export async function deletePodOutreachRecord(id: string): Promise<void> {
+  const now = nowISO();
+  const { error } = await supabase.from("pod_outreach_records")
+    .update({ deleted_at: now, updated_at: now }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "pod_outreach_records", recordId: id });
+}
