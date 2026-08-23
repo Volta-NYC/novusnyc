@@ -65,3 +65,29 @@ Deadline: nearest close date: October 1, 2026 at 11:59 PM ET', '2026-08-23'::dat
 Deadline: 2026 fellows were announced on May 6, 2026', '2026-08-23'::date)
 ON CONFLICT (id) DO NOTHING;
 
+-- The workbooks sometimes use a link label rather than a URL. Keep that
+-- reference searchable in notes instead of storing an invalid value in a URL
+-- field. Bare domains are safe to normalize.
+UPDATE public.grant_opportunities
+SET url = 'https://' || url
+WHERE id LIKE 'grant_sheet_%'
+  AND url ~* '^[a-z0-9.-]+\.[a-z]{2,}(/.*)?$';
+
+UPDATE public.grant_opportunities
+SET notes = concat_ws(E'\n', nullif(notes, ''), 'Source reference: ' || url),
+    url = ''
+WHERE id LIKE 'grant_sheet_%'
+  AND url <> ''
+  AND url !~* '^https?://';
+
+-- Imported means transcribed, not independently re-verified online.
+UPDATE public.grant_opportunities
+SET verified_on = NULL
+WHERE id LIKE 'grant_sheet_%';
+
+-- The workbook lists an opening of 2026-11-03 and a closing of 2026-02-02.
+-- Preserve the discrepancy for review without presenting an impossible date.
+UPDATE public.grant_opportunities
+SET notes = concat_ws(E'\n', nullif(notes, ''), 'Source deadline was 2026-02-02; verify the next cycle.'),
+    deadline = NULL
+WHERE id = 'grant_sheet_24';
