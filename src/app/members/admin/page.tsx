@@ -527,7 +527,10 @@ function BannerEditor({
 }) {
   return (
     <Card title={title} subtitle={subtitle}>
-      <div className="space-y-4">
+      {/* A column, not space-y: the toggle and the save button are both
+          inline-flex, and margin alone lets them share a line whenever the
+          block-level fields between them are hidden. */}
+      <div className="flex flex-col items-start gap-4">
         <Toggle checked={enabled} onChange={onToggle} label={enabled ? "Banner is on" : "Banner is off"} />
 
         {enabled && (
