@@ -17,8 +17,9 @@ import PodAssignments from "./PodAssignments";
 import GrantTracker from "./GrantTracker";
 import TeamTracker from "./TeamTracker";
 import OutreachTracker from "./OutreachTracker";
+import ContentPipeline from "./ContentPipeline";
 
-type Tab = "tracker" | "tasks" | "schedule" | "grants" | "outreach" | "settings";
+type Tab = "tracker" | "tasks" | "schedule" | "grants" | "outreach" | "content" | "settings";
 
 export default function PodDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -113,6 +114,7 @@ export default function PodDetailPage() {
   const divisionMeta = POD_DIVISION_META[division];
   const isFinancePod = division === "Finance";
   const isOutreachPod = /outreach|ambassador/i.test(pod.name);
+  const isSocialPod = /social|brand/i.test(pod.name);
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "tracker", label: attendanceDue.length ? `Team tracker · ${attendanceDue.length}` : "Team tracker" },
@@ -120,6 +122,7 @@ export default function PodDetailPage() {
     { key: "schedule", label: "Schedule" },
     ...(isFinancePod ? [{ key: "grants" as Tab, label: "Grant tracker" }] : []),
     ...(isOutreachPod ? [{ key: "outreach" as Tab, label: "Outreach tracker" }] : []),
+    ...(isSocialPod ? [{ key: "content" as Tab, label: "Content pipeline" }] : []),
     ...(canRun ? [{ key: "settings" as Tab, label: "Settings" }] : []),
   ];
 
@@ -213,6 +216,8 @@ export default function PodDetailPage() {
       {tab === "grants" && isFinancePod && <GrantTracker pod={pod} roster={roster} nameById={nameById} canEdit={canRun} />}
 
       {tab === "outreach" && isOutreachPod && <OutreachTracker pod={pod} roster={roster} nameById={nameById} canEdit={canRun} />}
+
+      {tab === "content" && isSocialPod && <ContentPipeline pod={pod} roster={roster} nameById={nameById} canEdit={canRun} />}
 
       {tab === "settings" && canRun && <Settings pod={pod} />}
 

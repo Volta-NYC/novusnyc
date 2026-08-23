@@ -1979,3 +1979,51 @@ export async function deletePodOutreachRecord(id: string): Promise<void> {
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "delete", collection: "pod_outreach_records", recordId: id });
 }
+
+export const CONTENT_STATUSES = ["Idea", "Drafting", "In Review", "Approved", "Scheduled", "Posted"] as const;
+export type ContentStatus = (typeof CONTENT_STATUSES)[number];
+
+export interface PodContentItem {
+  id: string;
+  podId: string;
+  title: string;
+  platforms: string[];
+  contentType: string;
+  status: ContentStatus;
+  ownerMemberId?: string | null;
+  reviewerMemberId?: string | null;
+  dueOn?: string | null;
+  scheduledFor?: string | null;
+  canvaUrl: string;
+  publishedUrl: string;
+  caption: string;
+  notes: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+}
+
+export const subscribePodContentItems = makeSubscriber<PodContentItem>("pod_content_items");
+
+export async function createPodContentItem(
+  data: Omit<PodContentItem, "id" | "createdAt" | "updatedAt" | "deletedAt">,
+): Promise<void> {
+  const id = genId();
+  const now = nowISO();
+  const { error } = await supabase.from("pod_content_items").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "pod_content_items", recordId: id, details: { podId: data.podId } });
+}
+
+export async function updatePodContentItem(id: string, patch: Partial<PodContentItem>): Promise<void> {
+  const { error } = await supabase.from("pod_content_items").update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pod_content_items", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+export async function deletePodContentItem(id: string): Promise<void> {
+  const now = nowISO();
+  const { error } = await supabase.from("pod_content_items").update({ deleted_at: now, updated_at: now }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "pod_content_items", recordId: id });
+}
