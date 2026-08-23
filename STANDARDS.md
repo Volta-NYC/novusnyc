@@ -222,6 +222,18 @@ request review, but only owner/admin or that pod's LIT can approve `Done` and
 therefore certify task hours. Meetings may be saved before every roster row is
 marked; the attendance sheet finalizes only when every eligible member has an
 explicit status. Excused absences earn zero hours.
+
+The default pod page is a sheet-like Team tracker, not separate roster and
+attendance pages. The left Member column remains visible during horizontal
+scroll. Specialized shared records live with the pod:
+
+- Grants & Funding: `grant_opportunities`
+- Small Business Outreach and Ambassadors: `pod_outreach_records`
+- Social Media & Branding: `pod_content_items`
+
+All pod members can read the complete shared records. Only owner/admin or that
+pod's LIT may create, update, or remove them. Generic assignments remain the
+workflow for member-owned tasks and automated due-date reminders.
 The scheduled sweep emails a per-recipient certified-hours summary in January
 and July. Its delivery key includes the member and six-month period, so reruns
 and catch-up runs cannot duplicate a summary.
