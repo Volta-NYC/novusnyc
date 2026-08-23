@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- image picker previews a local data URL before it is uploaded */
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useState, useEffect } from "react";
@@ -63,6 +64,9 @@ export default function BIDTrackerPage() {
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
+  const [pendingLogo, setPendingLogo] = useState<string | null>(null);
+  const [saving, setSaving]           = useState(false);
+  const [saveError, setSaveError]     = useState<string | null>(null);
 
   const { ask, Dialog } = useConfirm();
   const { authRole, user }    = useAuth();
@@ -80,6 +84,8 @@ export default function BIDTrackerPage() {
   const openCreate = () => {
     setForm({ ...BLANK_FORM, contacts: [{ ...BLANK_CONTACT, id: crypto.randomUUID() }] });
     setEditingBID(null);
+    setPendingLogo(null);
+    setSaveError(null);
     setModal("create");
   };
 
@@ -102,7 +108,29 @@ export default function BIDTrackerPage() {
       priority:   bid.priority as BID["priority"],
     });
     setEditingBID(bid);
+    setPendingLogo(null);
+    setSaveError(null);
     setModal("edit");
+  };
+
+  const chooseLogo = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setSaveError("Choose an image file (PNG, JPG, WebP, or GIF)."); return; }
+    if (file.size > 5 * 1024 * 1024) { setSaveError("That logo is larger than 5 MB. Choose a smaller image."); return; }
+    setSaveError(null);
+    const reader = new FileReader();
+    reader.onload = () => setPendingLogo(typeof reader.result === "string" ? reader.result : null);
+    reader.readAsDataURL(file);
+  };
+
+  const uploadLogo = async (partnerId: string, dataUrl: string) => {
+    const token = await getAuthToken();
+    const response = await fetch("/api/members/upload-partner-logo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ partnerId, dataUrl }),
+    });
+    if (!response.ok) throw new Error("The logo could not be uploaded. Please try again.");
   };
 
   const addContact = () =>
@@ -141,6 +169,8 @@ export default function BIDTrackerPage() {
 
   const handleSave = async (opts?: { addAnother?: boolean }) => {
     if (!form.name.trim()) return;
+    setSaving(true);
+    try {
     const address = (form.address ?? "").trim();
     const zipCode = (form.zipCode ?? "").trim();
     const borough = (form.borough ?? "").trim();
@@ -167,10 +197,11 @@ export default function BIDTrackerPage() {
       ? { contactName: contacts[0].name, contactEmail: contacts[0].email, phone: contacts[0].phone }
       : { contactName: "", contactEmail: "", phone: "" };
 
+    let partnerId = editingBID?.id;
     if (editingBID) {
       await updateBID(editingBID.id, { ...(form as Partial<BID>), ...legacySync, status: normalizeBidStatus(form.status), ...geocodePatch });
     } else {
-      await createBID({
+      partnerId = await createBID({
         ...form,
         ...legacySync,
         status: normalizeBidStatus(form.status),
@@ -182,6 +213,7 @@ export default function BIDTrackerPage() {
         sortIndex: nextSortIndex(bids),
       } as Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline">);
     }
+    if (pendingLogo && partnerId) await uploadLogo(partnerId, pendingLogo);
 
     if (opts?.addAnother && !editingBID) {
       // Carry the borough selection over since BID tours are typically within one borough.
@@ -190,6 +222,11 @@ export default function BIDTrackerPage() {
       setModal("create");
     } else {
       setModal(null);
+    }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Changes could not be saved. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -254,14 +291,14 @@ export default function BIDTrackerPage() {
               <button
                 key={c.id ?? "all"}
                 onClick={() => setChapterId(c.id)}
-                className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-                  chapterId === c.id
-                    ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
-                    : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white/85"
+              className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+                chapterId === c.id
+                    ? "border-amber-200 bg-amber-50 text-amber-800"
+                    : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900"
                 }`}
               >
                 {c.name}
-                <span className="ml-1.5 font-mono tabular-nums text-white/35">{n}</span>
+                <span className="ml-1.5 font-mono tabular-nums text-stone-400">{n}</span>
               </button>
             );
           })}
@@ -290,13 +327,13 @@ export default function BIDTrackerPage() {
           return (
             <article
               key={bid.id}
-              className="group flex min-h-[330px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1C1F26] shadow-sm transition-shadow hover:shadow-lg"
+              className="group flex min-h-[330px] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="relative flex h-32 items-center justify-center border-b border-white/8 bg-white px-8 py-5">
-                {publicPartner ? (
+                {bid.logoUrl || publicPartner ? (
                   <Image
-                    src={publicPartner.logo}
-                    alt={`${publicPartner.name} logo`}
+                    src={bid.logoUrl || publicPartner!.logo}
+                    alt={`${bid.name} logo`}
                     fill
                     sizes="(max-width: 640px) 90vw, (max-width: 1280px) 45vw, 30vw"
                     className="object-contain p-6"
@@ -310,37 +347,37 @@ export default function BIDTrackerPage() {
               <div className="flex flex-1 flex-col p-4">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="text-[15px] font-semibold leading-snug text-white">{bid.name}</h2>
-                    <p className="mt-1 text-[11px] text-white/45">{bid.borough || "Location not recorded"}</p>
+                    <h2 className="text-[15px] font-semibold leading-snug text-stone-900">{bid.name}</h2>
+                    <p className="mt-1 text-[11px] text-stone-500">{bid.borough || "Location not recorded"}</p>
                   </div>
                   <Badge label={normalizeBidStatus(bid.status)} />
                 </div>
                 {!isMemberRestricted && (
-                  <div className="mb-4 space-y-1 text-[11px] text-white/55">
+                  <div className="mb-4 space-y-1 text-[11px] text-stone-600">
                     <p>{contactName || "No primary contact recorded"}</p>
                     {contactEmail && (
-                      <a href={`mailto:${contactEmail}`} className="block truncate text-[#F6B78D]/75 hover:underline">
+                      <a href={`mailto:${contactEmail}`} className="block truncate text-[#8B5E48] hover:underline">
                         {contactEmail}
                       </a>
                     )}
                     {bid.contacts && bid.contacts.length > 1 && (
-                      <p className="text-white/35">{bid.contacts.length - 1} additional contact{bid.contacts.length === 2 ? "" : "s"}</p>
+                      <p className="text-stone-400">{bid.contacts.length - 1} additional contact{bid.contacts.length === 2 ? "" : "s"}</p>
                     )}
                   </div>
                 )}
                 {!isMemberRestricted && (bid.nextAction || bid.notes) && (
-                  <div className="mb-4 rounded-lg border border-white/6 bg-white/4 px-3 py-2">
-                    <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/35">Next action</p>
-                    <p className="line-clamp-2 text-[11px] leading-relaxed text-white/65">{bid.nextAction || bid.notes}</p>
+                  <div className="mb-4 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+                    <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-stone-500">Next action</p>
+                    <p className="line-clamp-2 text-[11px] leading-relaxed text-stone-700">{bid.nextAction || bid.notes}</p>
                   </div>
                 )}
-                <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/8 pt-3">
+                <div className="mt-auto flex items-center justify-between gap-2 border-t border-stone-100 pt-3">
                   {publicPartner ? (
-                    <a href={publicPartner.website} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-[#F6B78D]/75 hover:underline">
+                    <a href={publicPartner.website} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-[#8B5E48] hover:underline">
                       Visit website ↗
                     </a>
                   ) : (
-                    <span className="text-[10px] text-white/30">No public logo yet</span>
+                    <span className="text-[10px] text-stone-400">No public logo yet</span>
                   )}
                   {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit details</Btn>}
                 </div>
@@ -367,17 +404,35 @@ export default function BIDTrackerPage() {
             <Field label="Status">
               <Select options={STATUSES} value={form.status} onChange={e => setField("status", e.target.value)} />
             </Field>
+            <div className="col-span-2 rounded-xl border border-stone-200 bg-stone-50 p-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white">
+                  {pendingLogo || editingBID?.logoUrl || findCommunityPartner(editingBID?.name ?? form.name)?.logo ? (
+                    <img src={pendingLogo || editingBID?.logoUrl || findCommunityPartner(editingBID?.name ?? form.name)!.logo} alt="Partner logo preview" className="h-full w-full object-contain p-1" />
+                  ) : <span className="flex h-full items-center justify-center text-[10px] font-medium text-stone-400">No logo</span>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-stone-900">Public logo</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-stone-600">Used on this card and across the public partner section on the home page.</p>
+                </div>
+                <label className="cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-semibold text-stone-700 transition hover:border-[#8B5E48] hover:text-[#8B5E48]">
+                  Replace logo
+                  <input className="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => chooseLogo(event.target.files?.[0])} />
+                </label>
+              </div>
+              <p className="mt-2 text-[11px] text-stone-500">PNG, JPG, WebP, or GIF · up to 5 MB. Changes update the public site automatically.</p>
+            </div>
             <div className="col-span-2 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wide text-white/40 font-semibold">Contacts</span>
+                <span className="text-[10px] uppercase tracking-wide text-stone-500 font-semibold">Contacts</span>
                 <Btn size="sm" variant="secondary" onClick={addContact}>+ Add Contact</Btn>
               </div>
               {(form.contacts ?? []).map((contact, i) => (
-                <div key={contact.id} className="bg-[#0F1014] border border-white/8 rounded-lg p-3 space-y-2">
+                <div key={contact.id} className="bg-stone-50 border border-stone-200 rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase tracking-wide text-white/30">{i === 0 ? "Primary Contact" : `Contact ${i + 1}`}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-stone-500">{i === 0 ? "Primary Contact" : `Contact ${i + 1}`}</span>
                     {(form.contacts ?? []).length > 1 && (
-                      <button className="text-white/30 hover:text-red-400 text-xs transition-colors" onClick={() => removeContact(contact.id)}>Remove</button>
+                      <button className="text-stone-500 hover:text-red-600 text-xs transition-colors" onClick={() => removeContact(contact.id)}>Remove</button>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -414,7 +469,7 @@ export default function BIDTrackerPage() {
 
         </div>
 
-        <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-white/8">
+        <div className="flex justify-between items-center gap-3 mt-5 pt-4 border-t border-stone-200">
           <div>
             {editingBID && (
               <Btn variant="danger" onClick={() => void handleDeleteFromEdit()}>
@@ -428,17 +483,18 @@ export default function BIDTrackerPage() {
               <Btn
                 variant="secondary"
                 onClick={() => void handleSave({ addAnother: true })}
-                disabled={!form.name.trim()}
+                disabled={!form.name.trim() || saving}
                 title="Save this partner and open a new form with the same borough"
               >
                 Save &amp; Add Another
               </Btn>
             )}
-            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim()}>
-              {editingBID ? "Save Changes" : "Create"}
+            <Btn variant="primary" onClick={() => void handleSave()} disabled={!form.name.trim() || saving}>
+              {saving ? "Saving…" : editingBID ? "Save Changes" : "Create"}
             </Btn>
           </div>
         </div>
+        {saveError && <p role="alert" className="mt-3 text-sm text-red-700">{saveError}</p>}
       </Modal>
     </MembersLayout>
   );

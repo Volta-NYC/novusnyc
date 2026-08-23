@@ -9,7 +9,7 @@ import BusinessProcessTimeline from "@/components/BusinessProcessTimeline";
 import ContactForm from "@/components/ContactForm";
 import FaqAccordion from "@/components/FaqAccordion";
 import PageHeroContent from "@/components/PageHeroContent";
-import { communityPartners } from "@/data";
+import { getPublicCommunityPartners } from "@/lib/server/publicPartners";
 import {
   GlobeIcon,
   SmartphoneIcon,
@@ -178,11 +178,10 @@ const TRUSTED_PARTNER_NAMES = new Set([
   "Staten Island Chamber of Commerce",
 ]);
 
-const TRUSTED_PARTNERS = communityPartners.filter((partner) =>
-  TRUSTED_PARTNER_NAMES.has(partner.name),
-);
-
 export default async function Partners() {
+  const trustedPartners = (await getPublicCommunityPartners()).filter((partner) =>
+    TRUSTED_PARTNER_NAMES.has(partner.name),
+  );
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -311,7 +310,7 @@ export default async function Partners() {
           </AnimatedSection>
           <AnimatedSection>
             <div className="mobile-logo-row grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
-              {TRUSTED_PARTNERS.map((partner) => (
+              {trustedPartners.map((partner) => (
                 <a
                   key={partner.name}
                   href={partner.website}

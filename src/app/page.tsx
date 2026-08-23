@@ -8,12 +8,13 @@ import HeroSection from "@/components/HeroSection";
 import HomeScrollBridge from "@/components/HomeScrollBridge";
 import HomeNetworkSection from "@/components/HomeNetworkSection";
 import { MapPinIcon } from "@/components/Icons";
-import { communityPartners, currentProjects as fallbackCurrentProjects, type CommunityPartner } from "@/data";
+import { currentProjects as fallbackCurrentProjects, type CommunityPartner } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
 import HomeProjectMasonry from "@/components/HomeProjectMasonry";
 import { getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import { getPublicStatSnapshot, PUBLISHED_IMPACT_TOTALS } from "@/lib/server/publicStats";
+import { getPublicCommunityPartners } from "@/lib/server/publicPartners";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -399,12 +400,13 @@ function PartnerMarquee({
   );
 }
 
-function CommunityPartnersSection() {
-  const partnerByName = new Map(communityPartners.map((partner) => [partner.name, partner]));
+async function CommunityPartnersSection() {
+  const partners = await getPublicCommunityPartners();
+  const partnerByName = new Map(partners.map((partner) => [partner.name, partner]));
   const flagshipPartners = FLAGSHIP_PARTNER_ORDER
     .map((name) => partnerByName.get(name))
     .filter((partner): partner is CommunityPartner => Boolean(partner));
-  const scrollingPartners = communityPartners.filter((partner) => !FLAGSHIP_PARTNER_NAMES.has(partner.name));
+  const scrollingPartners = partners.filter((partner) => !FLAGSHIP_PARTNER_NAMES.has(partner.name));
   const importantPartners = scrollingPartners.filter((partner) => partner.important);
   const neighborhoodPartners = scrollingPartners.filter((partner) => !partner.important);
 
@@ -452,7 +454,7 @@ function CommunityPartnersSection() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
 
   return (
     <div className="home-scroll-story">
@@ -472,7 +474,9 @@ export default function Home() {
         imageSrc="/brooklyn-bridge.jpg"
       />
 
-      <CommunityPartnersSection />
+      <Suspense fallback={<div className="h-72 bg-white" />}>
+        <CommunityPartnersSection />
+      </Suspense>
 
       <HomeScrollBridge
         index={1}

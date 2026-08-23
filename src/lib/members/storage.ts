@@ -28,6 +28,10 @@ export interface BID {
   borough: string;
   address?: string;
   zipCode?: string;
+  // Public logo managed in Supabase Storage. The local data catalog is only a
+  // fallback for legacy partner records that have not been migrated yet.
+  logoPath?: string;
+  logoUrl?: string;
   lat?: number;
   lng?: number;
   nextAction: string;
@@ -713,13 +717,14 @@ export function subscribeApplications(callback: SubscribeCallback<ApplicationRec
 
 // ── BIDs ──────────────────────────────────────────────────────────────────────
 
-export async function createBID(data: Omit<BID, "id" | "createdAt" | "updatedAt">): Promise<void> {
+export async function createBID(data: Omit<BID, "id" | "createdAt" | "updatedAt">): Promise<string> {
   const id = genId();
   const now = nowISO();
   const row = toRow({ ...data, id, createdAt: now, updatedAt: now });
   const { error: insertError } = await supabase.from("bids").insert(row);
   if (insertError) throw new Error(insertError.message);
   await writeAuditLog({ action: "create", collection: "bids", recordId: id, details: { fields: Object.keys(data) } });
+  return id;
 }
 
 export async function updateBID(id: string, data: Partial<BID>): Promise<void> {
