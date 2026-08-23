@@ -68,11 +68,14 @@ function StatusMsg({ msg }: { msg: string }) {
   return <div className="mt-3 bg-white/5 border border-white/8 rounded-lg px-4 py-2.5 text-white/60 text-sm font-body">{msg}</div>;
 }
 
+// The Novus palette, not generic Tailwind. Pastels are fills carrying ink text;
+// the dark option is the one place a pastel works as the text colour. Every
+// pairing clears AA (6.2:1 at worst).
 const BANNER_PRESET_COLORS = [
-  { bg: "#0D0D0D", text: "#F6B78D", label: "Black + green" },
-  { bg: "#F6B78D", text: "#0D0D0D", label: "Novus green" },
-  { bg: "#1e40af", text: "#ffffff", label: "Blue" },
-  { bg: "#7f1d1d", text: "#fee2e2", label: "Red" },
+  { bg: "#F6B78D", text: "#2D282E", label: "Peach" },
+  { bg: "#F3E28D", text: "#2D282E", label: "Yellow" },
+  { bg: "#BEA2BA", text: "#2D282E", label: "Lavender" },
+  { bg: "#231F24", text: "#F6B78D", label: "Ink" },
 ];
 
 // ── TAB: DATA ─────────────────────────────────────────────────────────────────
