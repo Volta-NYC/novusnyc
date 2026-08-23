@@ -206,7 +206,7 @@ export default function PodDetailPage() {
 
       {tab === "schedule" && <PodSchedule meetings={podMeetings} assignments={podAssignments} pod={pod} onOpenMeeting={(id) => { setOpenMeeting(id); setTab("tracker"); }} />}
 
-      {tab === "grants" && isFinancePod && <GrantTracker pod={pod} canEdit={canRun} />}
+      {tab === "grants" && isFinancePod && <GrantTracker pod={pod} roster={roster} nameById={nameById} canEdit={canRun} />}
 
       {tab === "settings" && canRun && <Settings pod={pod} />}
 

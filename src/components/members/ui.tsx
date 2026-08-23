@@ -56,6 +56,8 @@ const BADGE_COLORS: Record<string, string> = {
   "Ready to Share":    "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
   Shared:               "bg-green-500/15 text-green-400 border-green-500/20",
   Closed:               "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  "Small Businesses":  "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  Novus:                "bg-purple-500/15 text-purple-400 border-purple-500/20",
   "Form Sent":         "bg-purple-500/15 text-purple-400 border-purple-500/20",
   Dead:                "bg-red-900/30 text-red-500 border-red-900/20",
   // interview status

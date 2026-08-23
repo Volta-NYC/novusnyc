@@ -13,38 +13,50 @@ import {
   type GrantOpportunity,
   type GrantStatus,
   type Pod,
+  type PodMember,
 } from "@/lib/members/storage";
 
 type Draft = {
   name: string;
   funder: string;
+  audience: GrantOpportunity["audience"];
+  ownerMemberId: string;
   url: string;
+  opensOn: string;
   deadline: string;
   amount: string;
   geography: string;
   eligibility: string;
+  requiredMaterials: string;
   focusAreas: string;
   status: GrantStatus;
   notes: string;
+  verifiedOn: string;
 };
 
 const EMPTY_DRAFT: Draft = {
-  name: "", funder: "", url: "", deadline: "", amount: "", geography: "NYC",
-  eligibility: "", focusAreas: "", status: "Researching", notes: "",
+  name: "", funder: "", audience: "Small Businesses", ownerMemberId: "", url: "", opensOn: "",
+  deadline: "", amount: "", geography: "NYC", eligibility: "", requiredMaterials: "",
+  focusAreas: "", status: "Researching", notes: "", verifiedOn: "",
 };
 
 function toDraft(item: GrantOpportunity): Draft {
   return {
     name: item.name,
     funder: item.funder,
+    audience: item.audience,
+    ownerMemberId: item.ownerMemberId ?? "",
     url: item.url,
+    opensOn: item.opensOn ?? "",
     deadline: item.deadline ?? "",
     amount: item.amount,
     geography: item.geography,
     eligibility: item.eligibility,
+    requiredMaterials: item.requiredMaterials,
     focusAreas: item.focusAreas.join(", "),
     status: item.status,
     notes: item.notes,
+    verifiedOn: item.verifiedOn ?? "",
   };
 }
 
@@ -54,7 +66,7 @@ function normalizedUrl(value: string): string {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-export default function GrantTracker({ pod, canEdit }: { pod: Pod; canEdit: boolean }) {
+export default function GrantTracker({ pod, roster, nameById, canEdit }: { pod: Pod; roster: PodMember[]; nameById: Map<string, string>; canEdit: boolean }) {
   const [rows, setRows] = useState<GrantOpportunity[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -75,7 +87,7 @@ export default function GrantTracker({ pod, canEdit }: { pod: Pod; canEdit: bool
       .filter((row) => row.podId === pod.id && !row.deletedAt)
       .filter((row) => filter === "All" || row.status === filter)
       .filter((row) => !q || [
-        row.name, row.funder, row.amount, row.geography, row.eligibility,
+        row.name, row.funder, row.audience, row.amount, row.geography, row.eligibility, row.requiredMaterials,
         row.focusAreas.join(" "), row.notes,
       ].some((value) => value.toLowerCase().includes(q)))
       .sort((a, b) => {
@@ -106,14 +118,19 @@ export default function GrantTracker({ pod, canEdit }: { pod: Pod; canEdit: bool
       podId: pod.id,
       name: draft.name.trim(),
       funder: draft.funder.trim(),
+      audience: draft.audience,
+      ownerMemberId: draft.ownerMemberId || null,
       url: normalizedUrl(draft.url),
+      opensOn: draft.opensOn || null,
       deadline: draft.deadline || null,
       amount: draft.amount.trim(),
       geography: draft.geography.trim(),
       eligibility: draft.eligibility.trim(),
+      requiredMaterials: draft.requiredMaterials.trim(),
       focusAreas: draft.focusAreas.split(",").map((v) => v.trim()).filter(Boolean),
       status: draft.status,
       notes: draft.notes.trim(),
+      verifiedOn: draft.verifiedOn || null,
       createdBy: null,
     };
     try {
@@ -161,8 +178,8 @@ export default function GrantTracker({ pod, canEdit }: { pod: Pod; canEdit: bool
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-white/10 bg-[#15181F]">
-          <div className="hidden grid-cols-[minmax(210px,1.2fr)_minmax(140px,.8fr)_110px_120px_130px] gap-3 border-b border-white/10 bg-white/[0.025] px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 lg:grid">
-            <span>Opportunity</span><span>Fit</span><span>Amount</span><span>Deadline</span><span>Stage</span>
+          <div className="hidden grid-cols-[minmax(210px,1.2fr)_120px_150px_100px_110px_120px] gap-3 border-b border-white/10 bg-white/[0.025] px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 lg:grid">
+            <span>Opportunity</span><span>For</span><span>Owner</span><span>Amount</span><span>Deadline</span><span>Stage</span>
           </div>
           {visible.map((item) => {
             const overdue = !!item.deadline && item.deadline < new Date().toISOString().slice(0, 10) && item.status !== "Closed";
@@ -171,15 +188,14 @@ export default function GrantTracker({ pod, canEdit }: { pod: Pod; canEdit: bool
                 type="button"
                 key={item.id}
                 onClick={() => canEdit && openEdit(item)}
-                className="grid w-full gap-2 border-b border-white/7 px-4 py-3 text-left transition-colors last:border-0 hover:bg-white/[0.035] lg:grid-cols-[minmax(210px,1.2fr)_minmax(140px,.8fr)_110px_120px_130px] lg:items-center lg:gap-3"
+                className="grid w-full gap-2 border-b border-white/7 px-4 py-3 text-left transition-colors last:border-0 hover:bg-white/[0.035] lg:grid-cols-[minmax(210px,1.2fr)_120px_150px_100px_110px_120px] lg:items-center lg:gap-3"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] font-semibold text-white/90">{item.name}</span>
                   <span className="mt-0.5 block truncate text-[11px] text-white/40">{item.funder || "Funder not recorded"}</span>
                 </span>
-                <span className="text-[11px] text-white/55">
-                  {[item.geography, item.focusAreas.slice(0, 2).join(" · ")].filter(Boolean).join(" · ") || "Fit not recorded"}
-                </span>
+                <span><Badge label={item.audience} /></span>
+                <span className="truncate text-[11px] text-white/55">{item.ownerMemberId ? nameById.get(item.ownerMemberId) ?? "Unknown" : "Unassigned"}</span>
                 <span className="font-mono text-[11px] tabular-nums text-white/70">{item.amount || "—"}</span>
                 <span className={`font-mono text-[11px] tabular-nums ${overdue ? "text-red-400" : "text-white/60"}`}>
                   {item.deadline || "Rolling"}
@@ -200,6 +216,14 @@ export default function GrantTracker({ pod, canEdit }: { pod: Pod; canEdit: bool
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Opportunity" required><Input autoFocus value={draft.name} onChange={(e) => setDraft((v) => ({ ...v, name: e.target.value }))} /></Field>
             <Field label="Funder"><Input value={draft.funder} onChange={(e) => setDraft((v) => ({ ...v, funder: e.target.value }))} /></Field>
+            <Field label="Who can use it?"><Select value={draft.audience} onChange={(e) => setDraft((v) => ({ ...v, audience: e.target.value as GrantOpportunity["audience"] }))} options={["Small Businesses", "Novus"]} /></Field>
+            <Field label="Research owner">
+              <Select value={draft.ownerMemberId} onChange={(e) => setDraft((v) => ({ ...v, ownerMemberId: e.target.value }))}>
+                <option value="">Unassigned</option>
+                {roster.filter((member) => !member.leftAt).map((member) => <option key={member.memberId} value={member.memberId}>{nameById.get(member.memberId) ?? "Unknown"}</option>)}
+              </Select>
+            </Field>
+            <Field label="Opens"><Input type="date" value={draft.opensOn} onChange={(e) => setDraft((v) => ({ ...v, opensOn: e.target.value }))} /></Field>
             <Field label="Deadline"><Input type="date" value={draft.deadline} onChange={(e) => setDraft((v) => ({ ...v, deadline: e.target.value }))} /></Field>
             <Field label="Amount"><Input placeholder="$5,000–$25,000" value={draft.amount} onChange={(e) => setDraft((v) => ({ ...v, amount: e.target.value }))} /></Field>
             <Field label="Geography"><Input placeholder="NYC, Queens, nationwide…" value={draft.geography} onChange={(e) => setDraft((v) => ({ ...v, geography: e.target.value }))} /></Field>
@@ -208,6 +232,8 @@ export default function GrantTracker({ pod, canEdit }: { pod: Pod; canEdit: bool
           <Field label="Link"><Input type="url" placeholder="https://…" value={draft.url} onChange={(e) => setDraft((v) => ({ ...v, url: e.target.value }))} /></Field>
           <Field label="Focus areas"><Input placeholder="Restaurants, storefronts, women-owned…" value={draft.focusAreas} onChange={(e) => setDraft((v) => ({ ...v, focusAreas: e.target.value }))} /></Field>
           <Field label="Eligibility"><TextArea rows={3} value={draft.eligibility} onChange={(e) => setDraft((v) => ({ ...v, eligibility: e.target.value }))} /></Field>
+          <Field label="Required application materials"><TextArea rows={3} placeholder="Tax documents, narrative, budget, proof of location…" value={draft.requiredMaterials} onChange={(e) => setDraft((v) => ({ ...v, requiredMaterials: e.target.value }))} /></Field>
+          <Field label="Last verified"><Input className="sm:max-w-56" type="date" value={draft.verifiedOn} onChange={(e) => setDraft((v) => ({ ...v, verifiedOn: e.target.value }))} /></Field>
           <Field label="Notes"><TextArea rows={3} value={draft.notes} onChange={(e) => setDraft((v) => ({ ...v, notes: e.target.value }))} /></Field>
           {saveError && <p role="alert" className="text-xs text-red-400">{saveError}</p>}
           <div className="flex flex-wrap items-center gap-2">
