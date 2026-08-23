@@ -37,18 +37,13 @@ export default function SectionTabs({
   tabs: SectionTab[];
   className?: string;
 }) {
-  // MembersLayout uses the light portal theme for every role. Branching this
-  // by role made owner/admin tabs render dark controls on a light surface.
-  const lightTheme = true;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = (searchParams?.get("tab") ?? "").toLowerCase();
 
   return (
     <div className={`mb-4 overflow-x-auto pb-1 ${className}`}>
-      <div className={`inline-flex items-center gap-1 rounded-xl border p-1 min-w-max ${
-        lightTheme ? "border-black/10 bg-black/[0.04]" : "border-white/10 bg-[#12151B]"
-      }`}>
+      <div className="inline-flex min-w-max items-center gap-1 rounded-xl border border-black/10 bg-black/[0.04] p-1">
         {tabs.map((tab) => {
           const active = isTabActive(pathname, currentTab, tab);
           return (
@@ -58,12 +53,8 @@ export default function SectionTabs({
               aria-current={active ? "page" : undefined}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
                 active
-                  ? lightTheme
-                    ? "bg-[#F6B78D]/15 text-[#8B5E48] border border-[#F6B78D]/30"
-                    : "bg-[#F6B78D]/15 text-[#F3E28D] border border-[#F6B78D]/30"
-                  : lightTheme
-                    ? "text-black/55 hover:text-black/85 hover:bg-black/5 border border-transparent"
-                    : "text-white/55 hover:text-white/85 hover:bg-white/5 border border-transparent"
+                  ? "bg-[#F6B78D]/15 text-[#8B5E48] border border-[#F6B78D]/30"
+                  : "text-black/55 hover:text-black/85 hover:bg-black/5 border border-transparent"
               }`}
             >
               {tab.label}

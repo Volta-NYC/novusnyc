@@ -9,14 +9,13 @@ export default function MembersRootLayout({ children }: { children: ReactNode })
   return (
     <AuthProvider>
       {/*
-        Inline script runs before any React paint. Reads the cached portal theme
-        from localStorage and applies the matching background immediately, so
-        repeat visits see no dark flash on the light-theme member portal.
+        Inline script runs before any React paint and applies the portal's one
+        supported theme, preventing a dark flash before the light UI mounts.
         dangerouslySetInnerHTML is required for a synchronous inline script.
       */}
       <script
         dangerouslySetInnerHTML={{
-          __html: `(function(){try{var t=localStorage.getItem('novus-portal-theme');document.body.style.backgroundColor=t==='light'?'#F5F6F8':'#0D0F14';}catch(e){}})();`,
+          __html: `(function(){try{document.body.style.backgroundColor='#F5F6F8';}catch(e){}})();`,
         }}
       />
       {children}

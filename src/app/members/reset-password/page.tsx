@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
 
   if (phase === "waiting") {
     return (
-      <div className="members-auth min-h-screen bg-[#0F1014] flex items-center justify-center">
+      <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex items-center justify-center">
         <h1 className="sr-only">Reset your password</h1>
         <Spinner />
       </div>
@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
 
   if (phase === "invalid") {
     return (
-      <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+      <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-6 mx-auto" />
           <h1 className="font-display font-bold text-white text-2xl mb-3">Link Expired</h1>
@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+    <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-4" />

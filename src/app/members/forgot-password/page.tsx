@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+    <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-4" />

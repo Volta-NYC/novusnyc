@@ -611,7 +611,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           style={{ minWidth: 90 }}
         >
           {FONT_FAMILIES.map((f) => (
-            <option key={f.value} value={f.value} style={{ background: "#1C1F26" }}>
+            <option key={f.value} value={f.value}>
               {f.label}
             </option>
           ))}
@@ -624,9 +624,9 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           className="h-7 rounded bg-transparent border border-white/10 px-1.5 text-xs text-white/70 focus:outline-none focus:border-[#F6B78D]/45"
           style={{ minWidth: 64 }}
         >
-          <option value="" style={{ background: "#1C1F26" }}>Size</option>
+          <option value="">Size</option>
           {FONT_SIZES.map((s) => (
-            <option key={s} value={s} style={{ background: "#1C1F26" }}>
+            <option key={s} value={s}>
               {s}
             </option>
           ))}

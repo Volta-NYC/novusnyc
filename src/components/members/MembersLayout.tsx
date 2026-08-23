@@ -328,17 +328,17 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   // locked out, so an accidental self-deactivation stays recoverable.
   if (userProfile && !userProfile.active && authRole === "member") {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center px-6">
+      <div className="members-portal members-portal-light min-h-screen bg-[#F5F6F8] flex items-center justify-center px-6">
         <div className="max-w-sm text-center">
-          <h1 className="font-display text-lg font-semibold text-white">Your access is paused</h1>
-          <p className="mt-2 text-sm leading-relaxed text-white/45">
+          <h1 className="font-display text-lg font-semibold text-black/90">Your access is paused</h1>
+          <p className="mt-2 text-sm leading-relaxed text-black/55">
             Your Novus membership is marked inactive, so the portal is closed for now.
             If that&apos;s not right, email{" "}
             <a href={`mailto:${EMAIL.info}`} className="text-[#F6B78D] hover:underline">{EMAIL.info}</a>.
           </p>
           <button
             onClick={() => void signOut()}
-            className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 transition-colors hover:border-white/35 hover:text-white"
+            className="mt-5 rounded-lg border border-black/15 bg-white px-4 py-2 text-sm text-black/70 transition-colors hover:border-black/30 hover:text-black"
           >
             Sign out
           </button>
@@ -354,55 +354,33 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     "Member";
   const initials = getInitials(memberDisplayName);
 
-  const lightTheme = true;
-  const tone = lightTheme
-    ? {
-        page: "bg-[#F5F6F8]",
-        sidebar: "bg-white border-r border-black/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
-        sidebarLogoText: "text-[#8B5E48]",
-        sidebarSubtle: "text-black/55",
-        sidebarBorder: "border-black/8",
-        navInactive: "text-black/55 hover:text-black/85 hover:bg-black/5",
-        navActive: "bg-[#F6B78D]/15 text-[#8B5E48]",
-        navIconInactive: "text-black/35",
-        navIconActive: "text-[#8B5E48]",
-        userName: "text-black/75",
-        userRole: "text-black/35",
-        footerLink: "text-black/45 hover:text-black/70 hover:bg-black/5",
-        signOut: "text-red-600 hover:text-red-700 hover:bg-red-50",
-        mobileBar: "bg-white border-b border-black/8",
-        mobileBarText: "text-black/85",
-        mobileBarLink: "text-black/45 hover:text-black/70",
-        burgerText: "text-black/55",
-        collapseBtn: "text-black/30 hover:text-black/55 hover:bg-black/5",
-      }
-    : {
-        page: "bg-[#0F1014]",
-        sidebar: "bg-[#13151A] border-r border-white/6",
-        sidebarLogoText: "text-[#F6B78D]",
-        sidebarSubtle: "text-white",
-        sidebarBorder: "border-white/6",
-        navInactive: "text-white/45 hover:text-white/80 hover:bg-white/4",
-        navActive: "bg-[#F6B78D]/12 text-[#F6B78D]",
-        navIconInactive: "text-white/25",
-        navIconActive: "text-[#F6B78D]",
-        userName: "text-white/60",
-        userRole: "text-white/25",
-        footerLink: "text-white/30 hover:text-white/60 hover:bg-white/4",
-        signOut: "text-red-300/80 hover:text-red-200 hover:bg-red-500/10",
-        mobileBar: "bg-[#13151A] border-b border-white/6",
-        mobileBarText: "text-white",
-        mobileBarLink: "text-white/30 hover:text-white/60",
-        burgerText: "text-white/50",
-        collapseBtn: "text-white/20 hover:text-white/45 hover:bg-white/4",
-      };
+  const tone = {
+    page: "bg-[#F5F6F8]",
+    sidebar: "bg-white border-r border-black/8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+    sidebarLogoText: "text-[#8B5E48]",
+    sidebarSubtle: "text-black/55",
+    sidebarBorder: "border-black/8",
+    navInactive: "text-black/55 hover:text-black/85 hover:bg-black/5",
+    navActive: "bg-[#F6B78D]/15 text-[#8B5E48]",
+    navIconInactive: "text-black/35",
+    navIconActive: "text-[#8B5E48]",
+    userName: "text-black/75",
+    userRole: "text-black/35",
+    footerLink: "text-black/45 hover:text-black/70 hover:bg-black/5",
+    signOut: "text-red-600 hover:text-red-700 hover:bg-red-50",
+    mobileBar: "bg-white border-b border-black/8",
+    mobileBarText: "text-black/85",
+    mobileBarLink: "text-black/45 hover:text-black/70",
+    burgerText: "text-black/55",
+    collapseBtn: "text-black/30 hover:text-black/55 hover:bg-black/5",
+  };
 
   // Sidebar width classes
   const sidebarW = sidebarCollapsed ? "w-14" : "w-56";
   const contentPl = sidebarCollapsed ? "lg:pl-14" : "lg:pl-56";
 
   return (
-    <div className={`members-portal ${lightTheme ? "members-portal-light" : ""} min-h-screen ${tone.page} flex`}>
+    <div className={`members-portal members-portal-light min-h-screen ${tone.page} flex`}>
 
       {/* Handbook acknowledgment modal */}
       <Modal open={showAckModal} onClose={() => {}} title="Before you continue" dismissible={false}>
@@ -546,9 +524,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             >
               <span
                 className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 tracking-tight"
-                style={lightTheme
-                  ? { backgroundColor: "rgba(246,183,141,0.18)", color: "#8B5E48" }
-                  : { backgroundColor: "rgba(246,183,141,0.15)", color: "#F6B78D" }}
+                style={{ backgroundColor: "rgba(246,183,141,0.18)", color: "#8B5E48" }}
               >
                 {initials}
               </span>
@@ -571,10 +547,10 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             {profilePopoverOpen && (
               <div className={`absolute bottom-full mb-1 rounded-xl border shadow-xl z-50 overflow-hidden ${
                 sidebarCollapsed ? "left-full ml-2 w-48" : "left-0 right-0"
-              } ${lightTheme ? "bg-white border-black/10" : "bg-[#1C1F26] border-white/12"}`}>
-                <div className={`px-4 py-3 border-b ${lightTheme ? "border-black/8" : "border-white/8"}`}>
-                  <p className={`text-xs font-semibold font-body truncate ${lightTheme ? "text-black/80" : "text-white/85"}`}>{memberDisplayName}</p>
-                  <p className={`text-[10px] font-body truncate mt-0.5 ${lightTheme ? "text-black/40" : "text-white/40"}`}>{user?.email ?? ""}</p>
+              } bg-white border-black/10`}>
+                <div className="border-b border-black/8 px-4 py-3">
+                  <p className="truncate font-body text-xs font-semibold text-black/80">{memberDisplayName}</p>
+                  <p className="mt-0.5 truncate font-body text-[10px] text-black/40">{user?.email ?? ""}</p>
                 </div>
                 <div className="p-1">
                   {authRole === "member" && (

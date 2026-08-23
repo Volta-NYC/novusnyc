@@ -80,15 +80,15 @@
   /* Scrollbar thumb */
   --color-scrollbar:        216 202 213;
 
-  /* ─── Member Portal (Dark UI) ────────────────────────────────────
-     These dark shades are only used inside .members-portal and the
-     /members/* route. Adjust without affecting the public site.   */
-  --color-portal-panel:     28 31 38;   /* table shells, sidebars  */
-  --color-portal-input:     15 16 20;   /* input backgrounds       */
-  --color-portal-row:       18 21 27;   /* alternating table rows  */
+  /* ─── Member Portal (Light UI) ───────────────────────────────────
+     These surface tokens are scoped to the /members/* experience.
+     Adjusting them does not affect the public site.                */
+  --color-portal-panel:     255 255 255; /* table shells and panels */
+  --color-portal-input:     255 255 255; /* input backgrounds       */
+  --color-portal-row:       247 248 250; /* alternating table rows  */
 
   /* ─── Assignment Status Colors ────────────────────────────────────
-     Used on BOTH member portal (light) and admin portal (dark).
+     Used throughout the light member and admin portal.
      Each status has a Tailwind color family — use the 100/800/200
      shades for light-theme pills and adjust opacity for dark.
 
@@ -1665,8 +1665,8 @@ body:has(.home-scroll-story) footer::before {
 
 
 .members-portal .members-table-shell {
-  background: rgb(var(--color-portal-panel));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.10);
   border-radius: 0.75rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1809,15 +1809,15 @@ body:has(.home-scroll-story) footer::before {
    border-collapse:collapse and border-separate table modes. Borders on <tr>
    are ignored in the collapsed model, so the rule must target cells. */
 .members-portal table thead tr.members-header-sep > th {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.14);
 }
 
 .members-portal .members-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.10);
   border-radius: 0.75rem;
-  background: #13161D;
+  background: #FFFFFF;
 }
 
 /* Standard data table inside a members-table-wrap */
@@ -1836,10 +1836,10 @@ body:has(.home-scroll-story) footer::before {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.40);
+  color: rgba(0, 0, 0, 0.55);
   white-space: nowrap;
-  background: #0F1014;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #F2F3F5;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.14);
   text-align: left;
   vertical-align: middle;
   position: relative; /* for hide-btn positioning */
@@ -1848,8 +1848,8 @@ body:has(.home-scroll-story) footer::before {
 .members-portal .members-data-table tbody td {
   padding: 0 12px;
   height: 36px;
-  color: rgba(255, 255, 255, 0.70);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(0, 0, 0, 0.72);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1861,14 +1861,14 @@ body:has(.home-scroll-story) footer::before {
 }
 
 .members-portal .members-data-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(0, 0, 0, 0.035);
 }
 
 /* Column hide button — appears on header hover */
 .members-portal .members-col-hide-btn {
   opacity: 0;
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(0, 0, 0, 0.38);
   cursor: pointer;
   border: 0;
   background: none;
@@ -1884,7 +1884,7 @@ body:has(.home-scroll-story) footer::before {
 }
 
 .members-portal .members-col-hide-btn:hover {
-  color: rgba(255, 255, 255, 0.75) !important;
+  color: rgba(0, 0, 0, 0.75) !important;
 }
 
 /* Columns visibility panel */
@@ -1893,10 +1893,10 @@ body:has(.home-scroll-story) footer::before {
   top: calc(100% + 4px);
   right: 0;
   z-index: 60;
-  background: #1C1F26;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 0.5rem;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  box-shadow: 0 8px 24px rgba(16,18,24,0.14);
   padding: 6px;
   min-width: 180px;
 }
@@ -1909,14 +1909,14 @@ body:has(.home-scroll-story) footer::before {
   border-radius: 4px;
   cursor: pointer;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(0, 0, 0, 0.65);
   transition: background 80ms ease;
   user-select: none;
 }
 
 .members-col-panel label:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.9);
 }
 
 /* Action buttons inside table rows — always inline, never stacked */
@@ -2300,6 +2300,7 @@ summary:focus-visible {
    files. Remapping them here flips the theme without editing component logic,
    so a mistake shows up as a colour rather than a broken page. */
 .members-portal-light { color-scheme: light; }
+.members-auth.members-portal-light { background-color: #F5F6F8 !important; }
 .members-portal-light .bg-\[\#0F1014\] { background-color: #FFFFFF !important; }
 .members-portal-light .bg-\[\#10131A\] { background-color: #FFFFFF !important; }
 .members-portal-light .bg-\[\#111418\] { background-color: #FFFFFF !important; }
@@ -2310,13 +2311,13 @@ summary:focus-visible {
 .members-portal-light .bg-\[\#13151A\] { background-color: #FFFFFF !important; }
 .members-portal-light .bg-\[\#13161D\] { background-color: #FFFFFF !important; }
 .members-portal-light .bg-\[\#141821\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#15181F\] { background-color: #FFFFFF !important; }
 .members-portal-light .bg-\[\#151920\] { background-color: #F7F8FA !important; }
 .members-portal-light .bg-\[\#1A1D25\] { background-color: #F7F8FA !important; }
 .members-portal-light .bg-\[\#1C1F26\] { background-color: #FFFFFF !important; }
 
-/* The table shell paints from --color-portal-panel rather than a literal, so it
-   was the one surface the hex remaps above never reached: rows are transparent,
-   which left them sitting on the dark slab while their header went white. */
+/* Table rows are transparent, so keep the shared shell explicitly white even
+   if a legacy component still supplies the old panel token. */
 .members-portal-light .members-table-shell {
   background: #FFFFFF !important;
   border-color: rgba(0,0,0,.10) !important;

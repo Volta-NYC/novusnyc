@@ -250,7 +250,7 @@ export default function SignupPage() {
 
   if (phase === "waiting") {
     return (
-      <div className="members-auth min-h-screen bg-[#0F1014] flex items-center justify-center">
+      <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex items-center justify-center">
         <h1 className="sr-only">Set up your account</h1>
         <Spinner />
       </div>
@@ -259,7 +259,7 @@ export default function SignupPage() {
 
   if (phase === "landing" || phase === "expired") {
     return (
-      <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+      <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
           <SendLinkCard
             heading={phase === "expired" ? "Link Expired" : "Set Up Your Account"}
@@ -276,7 +276,7 @@ export default function SignupPage() {
 
   if (phase === "invalid") {
     return (
-      <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+      <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-6 mx-auto" />
           <h1 className="font-display font-bold text-white text-2xl mb-3">Invalid Link</h1>
@@ -293,7 +293,7 @@ export default function SignupPage() {
 
   // phase === "form" — valid OTP session, set password
   return (
-    <div className="members-auth min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
+    <div className="members-auth members-portal-light min-h-screen bg-[#0F1014] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Novus NYC logo" width={223} height={200} className="h-16 w-auto object-contain mb-4" />
