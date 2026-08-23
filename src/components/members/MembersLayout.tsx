@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState, ReactNode, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Wordmark from "@/components/Wordmark";
 import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
 import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
 import { supabase } from "@/lib/supabaseClient";
-import { sora } from "@/lib/fonts";
 import { Modal } from "@/components/members/ui";
 import { EMAIL } from "@/lib/mail";
 
@@ -484,7 +484,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
           {!sidebarCollapsed && (
             <>
               <div className="min-w-0 flex-1">
-                <p className={`${sora.className} font-bold ${tone.sidebarLogoText} text-sm leading-none`}>Novus</p>
+                <Wordmark className={`${tone.sidebarLogoText} text-sm leading-none`} />
                 <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
               </div>
               <button
