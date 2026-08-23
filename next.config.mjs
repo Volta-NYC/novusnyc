@@ -113,6 +113,8 @@ const nextConfig = {
       { source: "/members/work/:id",              destination: "/members/work",   permanent: true },
       // Discovery was a separate page; it is now a view on the tracker.
       { source: "/members/projects/discovery",    destination: "/members/projects?view=leads", permanent: true },
+      // Public-card settings now live inside each website's drawer.
+      { source: "/members/projects/showcase",     destination: "/members/projects", permanent: true },
 
       // Legacy paths. These were previously stub pages calling Next's
       // redirect(), which emits 307 Temporary — that tells Google to keep the

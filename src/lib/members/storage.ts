@@ -85,10 +85,8 @@ export interface Business {
   techStatus?: TechStatus;
   techPriority?: TechPriority;
   assignees?: string[];   // team member ids
-  hoursLogged?: number;   // entered by hand by a tech lead; optional by design
-  targetDate?: string;
   lastTouchedAt?: string;
-  activeServices?: string[];   // legacy field
+  activeServices?: string[];   // services shown on the public project card
   projectStatus:
     | "Ongoing"
     | "Upcoming"
@@ -115,14 +113,11 @@ export interface Business {
   // Public-site showcase configuration (optional, managed in Projects UI).
   showcaseEnabled?: boolean;
   showcaseFeaturedOnHome?: boolean;
-  showcaseName?: string;
   showcaseType?: string;
-  showcaseNeighborhood?: string;
-  showcaseServices?: string[]; // may be undefined on legacy rows
-  showcaseStatus?: "In Progress" | "Active" | "Upcoming";
   showcaseDescription?: string;
-  showcaseUrl?: string;
   showcaseImageUrl?: string;
+  showcaseSortIndex?: number;
+  homeSortIndex?: number;
   // showcaseImageData is no longer stored inline in businesses — it lives at
   // businessImages/{id}. This field is kept for reading legacy records that
   // haven't been re-saved yet. New writes go through setBusinessImage().
@@ -1002,21 +997,22 @@ export async function updateBusiness(id: string, data: Partial<Business>): Promi
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        if (token) {
-          const res = await fetch("/api/members/upload-business-image", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ businessId: id, dataUrl: showcaseImageData }),
-          });
-          if (res.ok) {
-            const { path, url } = await res.json() as { path: string; url: string };
-            (rest as Partial<Business> & Record<string, unknown>).showcaseImagePath = path;
-            (rest as Partial<Business>).showcaseImageUrl = url;
-            (rest as Partial<Business>).showcaseImageSet = true;
-          }
+        if (!token) throw new Error("Your session expired. Sign in again before uploading a card photo.");
+        const res = await fetch("/api/members/upload-business-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ businessId: id, dataUrl: showcaseImageData }),
+        });
+        if (!res.ok) {
+          const detail = await res.text();
+          throw new Error(detail || "The card photo could not be uploaded.");
         }
+        const { path, url } = await res.json() as { path: string; url: string };
+        (rest as Partial<Business> & Record<string, unknown>).showcaseImagePath = path;
+        (rest as Partial<Business>).showcaseImageUrl = url;
+        (rest as Partial<Business>).showcaseImageSet = true;
       } catch (err) {
-        console.error("Business image upload failed:", err);
+        throw new Error(err instanceof Error ? err.message : "The card photo could not be uploaded.");
       }
     } else {
       (rest as Partial<Business>).showcaseImageSet = false;
@@ -1028,6 +1024,20 @@ export async function updateBusiness(id: string, data: Partial<Business>): Promi
   const { error: bizUpdateError } = await supabase.from("businesses").update(toRow({ ...rest, updatedAt: nowISO() })).eq("id", id);
   if (bizUpdateError) throw new Error(bizUpdateError.message);
   await writeAuditLog({ action: "update", collection: "businesses", recordId: id, details: { fields: Object.keys(data) } });
+}
+
+export async function revalidatePublicPages(): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return false;
+    const response = await fetch("/api/members/admin/revalidate", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export async function deleteBusiness(id: string): Promise<void> {

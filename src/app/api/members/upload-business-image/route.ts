@@ -37,7 +37,7 @@ function mimeToExt(mime: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["owner"]);
+  const verified = await verifyCaller(req, ["owner", "admin"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = (await req.json().catch(() => ({}))) as UploadBody;
@@ -49,6 +49,12 @@ export async function POST(req: NextRequest) {
 
   const decoded = extractMimeAndBuffer(dataUrl);
   if (!decoded) return NextResponse.json({ error: "invalid_data_url" }, { status: 400 });
+  if (!new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]).has(decoded.mime)) {
+    return NextResponse.json({ error: "unsupported_image_type" }, { status: 400 });
+  }
+  if (decoded.buffer.byteLength > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "image_too_large", detail: "Card photos must be 5 MB or smaller." }, { status: 413 });
+  }
 
   const ext = mimeToExt(decoded.mime);
   const path = `${businessId}/showcase.${ext}`;

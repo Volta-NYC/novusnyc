@@ -35,6 +35,7 @@ export interface PublicShowcaseCard {
   imageUrl?: string;
   featuredOnHome: boolean;
   sortIndex?: number;
+  homeSortIndex?: number;
 }
 
 export interface PublicMapEntry {
@@ -81,6 +82,10 @@ const NYC_COORDINATE_BOUNDS = {
   minLng: -74.35,
   maxLng: -73.65,
 };
+
+export function clearPublicShowcaseCache(): void {
+  businessesCache = null;
+}
 
 async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>>> {
   const now = Date.now();
@@ -256,13 +261,10 @@ function inferDivision(value: unknown, row: Record<string, unknown>): "Tech" | "
   return "Tech";
 }
 
-// Curated showcase services were never migrated onto the record's own service
-// list, so read the canonical field first and keep the legacy one as a fallback
-// until it is dropped.
+// One canonical service list feeds both public cards and admin usage counts, so
+// those surfaces cannot drift between two copies.
 function resolveServices(row: Record<string, unknown>): string[] {
-  const active = asStringArray(row.activeServices);
-  if (active.length > 0) return active;
-  return asStringArray(row.showcaseServices);
+  return asStringArray(row.activeServices);
 }
 
 function divisionLabel(value: "Tech" | "Marketing" | "Finance"): string {
@@ -465,26 +467,29 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
   const fallbackCards: PublicShowcaseCard[] = [];
 
   for (const [id, row] of Object.entries(rows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
 
     const division = inferDivision(row.division, row);
     const type = divisionLabel(division);
-    const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
+    const neighborhood = normalizeNeighborhood(undefined, row);
     const services = resolveServices(row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
     const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
     const desc = normalizeDescription(row.showcaseDescription);
     // Read the tracker's own fields first so the public link follows the project
     // rather than a separately-maintained copy. A launched domain wins over a
-    // preview; showcaseUrl remains only as a fallback for un-migrated rows.
-    const url = asText(row.liveUrl) || asText(row.previewUrl) || asText(row.showcaseUrl);
+    // preview. There is no second public-only URL to drift out of sync.
+    const url = asText(row.liveUrl) || asText(row.previewUrl);
     const imageUrl = resolvePublicShowcaseImageUrl(id, row);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();
-    const featuredOnHome = asBool(row.showcaseFeaturedOnHome, status !== "Upcoming");
-    const sortIndex = typeof row.sortIndex === "number" ? row.sortIndex : undefined;
+    const featuredOnHome = asBool(row.showcaseFeaturedOnHome, false);
+    const sortIndex = typeof row.showcaseSortIndex === "number"
+      ? row.showcaseSortIndex
+      : (typeof row.sortIndex === "number" ? row.sortIndex : undefined);
+    const homeSortIndex = typeof row.homeSortIndex === "number" ? row.homeSortIndex : sortIndex;
 
     const card: PublicShowcaseCard = {
       id,
@@ -499,6 +504,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
       imageUrl: imageUrl || undefined,
       featuredOnHome,
       sortIndex,
+      homeSortIndex,
     };
 
     if (asBool(row.showcaseEnabled, false)) {
@@ -531,7 +537,7 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
   let financeProjects = 0;
 
   for (const [, row] of Object.entries(rows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
 
     const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
@@ -572,7 +578,7 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
   }> = [];
 
   for (const [id, row] of Object.entries(businessRows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
     totalBusinesses++;
     businesses.push({
@@ -629,24 +635,23 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   const businessesMissingCoords: Array<{ id: string; address: string; borough: string; entry: PublicMapEntry }> = [];
 
   for (const [id, row] of Object.entries(businessRows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
 
     const division = inferDivision(row.division, row);
     const type = divisionLabel(division);
-    const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
+    const neighborhood = normalizeNeighborhood(undefined, row);
     const services = resolveServices(row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
     const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
-    // Read the tracker's own fields first so the public link follows the project
-    // rather than a separately-maintained copy. A launched domain wins over a
-    // preview; showcaseUrl remains only as a fallback for un-migrated rows.
-    const url = asText(row.liveUrl) || asText(row.previewUrl) || asText(row.showcaseUrl);
+    // A launched domain wins over its Vercel preview. There is no separate
+    // public-only URL to drift out of sync with the tracker.
+    const url = asText(row.liveUrl) || asText(row.previewUrl);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();
     const address = asText(row.address);
-    const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(row.showcaseNeighborhood, row));
+    const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(undefined, row));
     const lat = asNumber(row.lat);
     const lng = asNumber(row.lng);
     const hasNycCoords = isNycCoordinate(lat ?? undefined, lng ?? undefined);

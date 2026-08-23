@@ -1,1 +1,5 @@
-export { default } from "./ShowcaseAdmin";
+import { redirect } from "next/navigation";
+
+export default function RetiredShowcaseAdminPage() {
+  redirect("/members/projects");
+}

@@ -1,9 +1,10 @@
-# Pending migrations
+# Pending post-deploy migrations
 
-No migrations are currently pending.
+`20260823000004_drop_unused_website_planning_fields.sql` removes the unused
+website `hours_logged` and `target_date` columns and retires the project-hours
+certification trigger. Apply it only after the code that stops writing those
+columns is deployed to production.
 
-The legacy tables/columns were migrated and dropped in
-`20260822180002_drop_legacy_tables_and_columns.sql`. Public impact claims are
-stored as explicit `site_settings.public_stat_overrides`; their automatic
-values continue to come from live records. Do not add a file here as a way to
-bypass migration review—production and source history must move together.
+This is deliberately staged because the production database is shared by all
+environments. Applying the destructive half before the matching code deploy
+would break the currently deployed website-project save path.

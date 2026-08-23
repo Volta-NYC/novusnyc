@@ -390,7 +390,7 @@ function ServicesTab() {
   const usageCount = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const b of businesses) {
-      for (const svc of (b.showcaseServices ?? b.activeServices ?? [])) {
+      for (const svc of (b.activeServices ?? [])) {
         counts[svc] = (counts[svc] ?? 0) + 1;
       }
     }

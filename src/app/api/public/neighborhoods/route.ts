@@ -5,7 +5,7 @@ import { dbRead } from "@/lib/server/adminApi";
 // of neighborhoods derived from all businesses in the database. Used by the
 // public contact form to populate the neighborhood datalist.
 
-type BusinessRow = { neighborhood?: string; showcaseNeighborhood?: string };
+type BusinessRow = { neighborhood?: string };
 
 export async function GET() {
   try {
@@ -16,7 +16,7 @@ export async function GET() {
 
     const seen = new Set<string>();
     for (const row of Object.values(data)) {
-      const raw = String(row?.neighborhood ?? row?.showcaseNeighborhood ?? "").trim();
+      const raw = String(row?.neighborhood ?? "").trim();
       if (!raw) continue;
       // Strip borough suffix (e.g. "Park Slope, Brooklyn" → "Park Slope")
       const commaIdx = raw.indexOf(",");

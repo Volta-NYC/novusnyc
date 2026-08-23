@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Btn, useDialogBehavior } from "@/components/members/ui";
 import {
-  updateBusiness, subscribeChapters, notifyProjectAssigned, TECH_STATUSES, TECH_PRIORITIES,
+  updateBusiness, subscribeChapters, notifyProjectAssigned, getSiteSettings, revalidatePublicPages, TECH_STATUSES, TECH_PRIORITIES,
   type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { formatPhone } from "@/lib/format";
@@ -12,11 +12,12 @@ import { isInactiveMember } from "@/lib/members/roles";
 // Everything about one project, beside the list rather than over it — a modal
 // would hide the row you clicked and the ones around it.
 export default function ProjectPanel({
-  business, team, canEdit, blocked, onClose, onStatus,
+  business, team, canEdit, canPublish, blocked, onClose, onStatus,
 }: {
   business: Business;
   team: TeamMember[];
   canEdit: boolean;
+  canPublish: boolean;
   blocked: string | null;
   onClose: () => void;
   onStatus: (status: TechStatus) => void;
@@ -28,12 +29,22 @@ export default function ProjectPanel({
   const [saveError, setSaveError] = useState("");
   const [memberQuery, setMemberQuery] = useState("");
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [tab, setTab] = useState<"website" | "public">("website");
+  const [serviceOptions, setServiceOptions] = useState<string[]>(["Website", "SEO", "Social Media", "Graphic Design", "Grants"]);
 
   useEffect(() => subscribeChapters(setChapters), []);
+  useEffect(() => { void getSiteSettings().then((settings) => setServiceOptions(settings.services)); }, []);
 
-  useEffect(() => { setDraft(business); setBaseline(business); setSaved(false); setSaveError(""); }, [business]);
+  useEffect(() => {
+    setDraft(business);
+    setBaseline(business);
+    setSaved(false);
+    setSaveError("");
+    setTab("website");
+  }, [business]);
 
   const panelRef = useRef<HTMLElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
   const sortedChapters = useMemo(
@@ -65,10 +76,18 @@ export default function ProjectPanel({
   const dirty = useMemo(() => {
     const keys: (keyof Business)[] = [
       "notes", "clientUrl", "previewUrl", "liveUrl", "assignees", "techPriority",
-      "hoursLogged", "ownerName", "ownerEmail", "phone", "address", "neighborhood", "targetDate",
-      "chapterId",
+      "ownerName", "ownerEmail", "phone", "address", "neighborhood", "chapterId",
+      "showcaseEnabled", "showcaseFeaturedOnHome", "showcaseDescription", "activeServices",
+      "showcaseColor", "showcaseImageData", "showcaseImageUrl",
     ];
     return keys.some((k) => JSON.stringify(draft[k] ?? "") !== JSON.stringify(baseline[k] ?? ""));
+  }, [draft, baseline]);
+  const publicDirty = useMemo(() => {
+    const keys: (keyof Business)[] = [
+      "showcaseEnabled", "showcaseFeaturedOnHome", "showcaseDescription", "activeServices",
+      "showcaseColor", "showcaseImageData", "showcaseImageUrl",
+    ];
+    return keys.some((key) => JSON.stringify(draft[key] ?? "") !== JSON.stringify(baseline[key] ?? ""));
   }, [draft, baseline]);
 
   const requestClose = useCallback(() => {
@@ -88,22 +107,33 @@ export default function ProjectPanel({
         liveUrl: draft.liveUrl ?? "",
         assignees: draft.assignees ?? [],
         techPriority: draft.techPriority,
-        hoursLogged: Number(draft.hoursLogged ?? 0),
         ownerName: draft.ownerName,
         ownerEmail: draft.ownerEmail,
         phone: draft.phone,
         address: draft.address,
         neighborhood: draft.neighborhood,
-        targetDate: draft.targetDate || undefined,
         chapterId: draft.chapterId,
+        ...(canPublish ? {
+          showcaseEnabled: !!draft.showcaseEnabled,
+          showcaseFeaturedOnHome: !!draft.showcaseEnabled && !!draft.showcaseFeaturedOnHome,
+          showcaseDescription: draft.showcaseDescription ?? "",
+          activeServices: draft.activeServices ?? [],
+          showcaseColor: draft.showcaseColor ?? "blue-mid",
+          showcaseSortIndex: draft.showcaseEnabled ? (draft.showcaseSortIndex ?? Date.now()) : draft.showcaseSortIndex,
+          homeSortIndex: draft.showcaseFeaturedOnHome ? (draft.homeSortIndex ?? Date.now()) : draft.homeSortIndex,
+          showcaseImageData: draft.showcaseImageData,
+          showcaseImageUrl: draft.showcaseImageUrl,
+        } : {}),
         lastTouchedAt: new Date().toISOString(),
       });
       // Only the people newly added hear about it; the ones already on the
       // project don't need telling again every time the notes change.
       const added = (draft.assignees ?? []).filter((id) => !(business.assignees ?? []).includes(id));
       if (added.length > 0) void notifyProjectAssigned({ ...business, ...draft }, added);
+      const publicRefreshed = !publicDirty || await revalidatePublicPages();
       setBaseline(draft);
       setSaved(true);
+      if (!publicRefreshed) setSaveError("Saved, but the public pages could not be refreshed. Try again shortly.");
       window.setTimeout(() => setSaved(false), 1800);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Project changes were not saved.");
@@ -120,6 +150,26 @@ export default function ProjectPanel({
   };
 
   const field = "w-full rounded-md border border-white/10 bg-[#0F1014] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none";
+
+  const colors: Array<{ value: NonNullable<Business["showcaseColor"]>; swatch: string; label: string }> = [
+    { value: "blue-soft", swatch: "#DDD6FE", label: "Lavender" },
+    { value: "blue-mid", swatch: "#C4B5FD", label: "Violet" },
+    { value: "blue-deep", swatch: "#A78BFA", label: "Deep violet" },
+    { value: "lime-soft", swatch: "#FED7AA", label: "Soft orange" },
+    { value: "lime-mid", swatch: "#FDBA74", label: "Orange" },
+    { value: "lime-deep", swatch: "#FB923C", label: "Deep orange" },
+    { value: "amber-soft", swatch: "#FDE68A", label: "Soft yellow" },
+    { value: "amber-mid", swatch: "#FCD34D", label: "Yellow" },
+    { value: "amber-deep", swatch: "#FBBF24", label: "Amber" },
+    { value: "pink-soft", swatch: "#F5D0FE", label: "Soft pink" },
+    { value: "pink-mid", swatch: "#F0ABFC", label: "Pink" },
+    { value: "pink-deep", swatch: "#E879F9", label: "Deep pink" },
+    { value: "purple-mid", swatch: "#D8B4FE", label: "Purple" },
+    { value: "red-soft", swatch: "#FECDD3", label: "Soft coral" },
+    { value: "red-mid", swatch: "#FDA4AF", label: "Coral" },
+    { value: "red-deep", swatch: "#FB7185", label: "Deep coral" },
+  ];
+  const selectedSwatch = colors.find((color) => color.value === (draft.showcaseColor ?? "blue-mid"))?.swatch ?? "#C4B5FD";
 
   return (
     <>
@@ -141,7 +191,6 @@ export default function ProjectPanel({
             <h2 className="truncate font-semibold text-white">{business.name}</h2>
             <p className="mt-0.5 text-[11px] text-white/35">
               {business.neighborhood || "No neighborhood"}
-              {business.hoursLogged ? ` · ${business.hoursLogged}h logged` : ""}
             </p>
           </div>
           <button
@@ -153,7 +202,26 @@ export default function ProjectPanel({
           </button>
         </header>
 
+        {canPublish && (
+          <div className="flex border-b border-white/10 bg-black/10 px-5 pt-3">
+            {(["website", "public"] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`border-b-2 px-3 pb-2 text-xs font-medium transition-colors ${tab === key
+                  ? "border-[#F6B78D] text-[#F6B78D]"
+                  : "border-transparent text-white/40 hover:text-white/75"}`}
+              >
+                {key === "website" ? "Website" : "Public card"}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {tab === "website" ? (
+            <>
           {/* Status */}
           <div className="mb-5">
             <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Status</p>
@@ -299,39 +367,6 @@ export default function ProjectPanel({
             </div>
           </div>
 
-          {/* Hours — optional by design; tech is judged on shipped sites */}
-          <div className="mb-5 flex items-end gap-3">
-            <div className="w-28">
-              <label htmlFor={`hours-${business.id}`} className="mb-1 block text-[10px] uppercase tracking-wide text-white/40">
-                Hours logged
-              </label>
-              <input
-                id={`hours-${business.id}`}
-                type="number" min="0" step="0.5"
-                className={field}
-                disabled={!canEdit}
-                value={draft.hoursLogged ?? 0}
-                onChange={(e) => setDraft((d) => ({ ...d, hoursLogged: Number(e.target.value) }))}
-              />
-            </div>
-            <div className="flex-1">
-              <label htmlFor={`target-${business.id}`} className="mb-1 block text-[10px] uppercase tracking-wide text-white/40">
-                Target date
-              </label>
-              <input
-                id={`target-${business.id}`}
-                type="date"
-                className={field}
-                disabled={!canEdit}
-                value={draft.targetDate ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, targetDate: e.target.value }))}
-              />
-            </div>
-          </div>
-          <p className="-mt-4 mb-5 text-[10px] leading-relaxed text-white/25">
-            Split evenly across everyone assigned.
-          </p>
-
           {/* Notes */}
           <div className="mb-5">
             <label htmlFor={`notes-${business.id}`} className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/40">
@@ -393,11 +428,166 @@ export default function ProjectPanel({
             )}
           </div>
 
-          {business.showcaseEnabled && (
-            <p className="mb-4 flex items-center gap-2 text-[11px] text-white/45">
-              <Badge label="Live" /> On the public showcase
-              {business.showcaseFeaturedOnHome ? " · featured on the home page" : ""}
-            </p>
+          {business.showcaseEnabled && canPublish && (
+            <button type="button" onClick={() => setTab("public")} className="mb-4 flex items-center gap-2 text-[11px] text-white/45 hover:text-white/75">
+              <Badge label="Public" /> On the public showcase
+              {business.showcaseFeaturedOnHome ? " · featured on the home page" : ""} →
+            </button>
+          )}
+            </>
+          ) : (
+            <div>
+              <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.025] p-3">
+                <p className="text-xs font-medium text-white/85">Public placement</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-white/40">
+                  Name, neighborhood, contact and website links stay in the Website tab. This tab only controls public presentation.
+                </p>
+                <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5">
+                  <span>
+                    <span className="block text-xs font-medium text-white/80">Show on the public Showcase</span>
+                    <span className="block text-[10px] text-white/35">Publishes this business as a project card.</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={!!draft.showcaseEnabled}
+                    onChange={(event) => setDraft((current) => ({
+                      ...current,
+                      showcaseEnabled: event.target.checked,
+                      showcaseFeaturedOnHome: event.target.checked ? current.showcaseFeaturedOnHome : false,
+                    }))}
+                    className="members-checkbox"
+                  />
+                </label>
+                <label className={`mt-2 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2.5 ${draft.showcaseEnabled ? "cursor-pointer" : "opacity-45"}`}>
+                  <span>
+                    <span className="block text-xs font-medium text-white/80">Feature on the home page</span>
+                    <span className="block text-[10px] text-white/35">Uses the same card with a separate home-page order.</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={!!draft.showcaseFeaturedOnHome}
+                    disabled={!draft.showcaseEnabled}
+                    onChange={(event) => setDraft((current) => ({ ...current, showcaseFeaturedOnHome: event.target.checked }))}
+                    className="members-checkbox"
+                  />
+                </label>
+              </div>
+
+              <div className={`space-y-5 ${draft.showcaseEnabled ? "" : "pointer-events-none opacity-40"}`} aria-disabled={!draft.showcaseEnabled}>
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#FDFBF8] text-[#2D2830] shadow-lg">
+                  <div className="h-2" style={{ backgroundColor: selectedSwatch }} />
+                  {(draft.showcaseImageData || draft.showcaseImageUrl) && (
+                    <div className="mx-4 mt-4 aspect-[16/9] overflow-hidden rounded-xl bg-black/5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={draft.showcaseImageData || draft.showcaseImageUrl || ""} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {(draft.activeServices ?? []).slice(0, 3).map((service) => (
+                        <span key={service} className="rounded-full border border-[#73516E]/20 bg-[#73516E]/8 px-2 py-0.5 text-[10px] font-medium">{service}</span>
+                      ))}
+                      <span className="ml-auto rounded-full bg-[#F6B78D]/30 px-2 py-0.5 text-[10px] font-medium">{draft.techStatus === "Live" ? "Completed" : "Ongoing"}</span>
+                    </div>
+                    <p className="text-lg font-bold leading-tight">{draft.name}</p>
+                    {draft.showcaseDescription && <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-[#6B646D]">{draft.showcaseDescription}</p>}
+                    <p className="mt-3 text-[10px] text-[#817982]">⌖ {draft.neighborhood || "Neighborhood not set"}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor={`public-description-${business.id}`} className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/40">Card description</label>
+                  <textarea
+                    id={`public-description-${business.id}`}
+                    rows={4}
+                    className={`${field} resize-y leading-relaxed`}
+                    value={draft.showcaseDescription ?? ""}
+                    onChange={(event) => setDraft((current) => ({ ...current, showcaseDescription: event.target.value }))}
+                    placeholder="A short public description of the work and its outcome."
+                  />
+                </div>
+
+                <fieldset>
+                  <legend className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Services</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {serviceOptions.map((service) => {
+                      const checked = (draft.activeServices ?? []).includes(service);
+                      return (
+                        <label key={service} className={`cursor-pointer rounded-full border px-2.5 py-1 text-[11px] transition-colors ${checked
+                          ? "border-[#F3E28D]/50 bg-[#F3E28D]/15 text-[#F3E28D]"
+                          : "border-white/10 bg-white/[0.03] text-white/45 hover:border-white/25"}`}>
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={checked}
+                            onChange={() => setDraft((current) => ({
+                              ...current,
+                              activeServices: checked
+                                ? (current.activeServices ?? []).filter((item) => item !== service)
+                                : [...(current.activeServices ?? []), service],
+                            }))}
+                          />
+                          {service}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Card color</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        aria-label={color.label}
+                        aria-pressed={(draft.showcaseColor ?? "blue-mid") === color.value}
+                        title={color.label}
+                        onClick={() => setDraft((current) => ({ ...current, showcaseColor: color.value }))}
+                        className={`h-8 w-8 rounded-full border-2 transition-transform ${(draft.showcaseColor ?? "blue-mid") === color.value
+                          ? "scale-110 border-white"
+                          : "border-white/15 hover:scale-105 hover:border-white/45"}`}
+                        style={{ backgroundColor: color.swatch }}
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+
+                <div>
+                  <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Card photo</p>
+                  {(draft.showcaseImageData || draft.showcaseImageUrl) && (
+                    <div className="mb-2 aspect-[16/9] overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={draft.showcaseImageData || draft.showcaseImageUrl || ""} alt="Public card preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Btn variant="secondary" size="sm" onClick={() => imageInputRef.current?.click()}>
+                      {draft.showcaseImageData || draft.showcaseImageUrl ? "Change photo" : "Upload photo"}
+                    </Btn>
+                    {(draft.showcaseImageData || draft.showcaseImageUrl) && (
+                      <Btn variant="ghost" size="sm" onClick={() => setDraft((current) => ({ ...current, showcaseImageData: "", showcaseImageUrl: "" }))}>Remove</Btn>
+                    )}
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (loadEvent) => setDraft((current) => ({ ...current, showcaseImageData: loadEvent.target?.result as string }));
+                        reader.readAsDataURL(file);
+                        event.target.value = "";
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-white/30">Stored in Supabase Storage. A 16:9 image works best.</p>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

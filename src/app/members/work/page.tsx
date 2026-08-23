@@ -196,7 +196,6 @@ export default function MyWorkPage() {
                   <p className="text-[12px] text-white/90">{b.name}</p>
                   <p className="mt-0.5 text-[10px] text-white/35">
                     {b.neighborhood || "—"}
-                    {b.hoursLogged ? ` · ${b.hoursLogged}h logged` : ""}
                   </p>
                 </div>
                 <Badge label={b.techStatus ?? "Backlog"} />

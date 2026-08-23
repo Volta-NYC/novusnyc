@@ -3,19 +3,19 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Empty, SkeletonRows, LoadError,
   Modal, Field, Input, Select, TextArea,
 } from "@/components/members/ui";
 import {
   subscribeBusinesses, subscribeTeam, subscribeChapters, updateBusiness, createBusiness,
-  notifyDraftReady,
+  notifyDraftReady, revalidatePublicPages,
   TECH_STATUSES, TECH_PIPELINE, TECH_PRIORITIES,
   type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import ProjectPanel from "./ProjectPanel";
+import PublicCardOrderModal from "./PublicCardOrderModal";
 
 // The doc's tabs, as filters over one list. Each is a question the tech team
 // actually asks: what's live, what needs assigning, what's mine.
@@ -132,6 +132,8 @@ function ProjectsPageInner() {
   const [createDraft, setCreateDraft] = useState<NewProjectDraft>(EMPTY_PROJECT_DRAFT);
   const [createError, setCreateError] = useState("");
   const [statusFilter, setStatusFilter] = useState<Set<TechStatus>>(new Set());
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [publicError, setPublicError] = useState("");
 
   useEffect(() => subscribeBusinesses((rows, state) => {
     setBusinesses(rows);
@@ -229,7 +231,6 @@ function ProjectsPageInner() {
       techStatus: draft.techStatus,
       techPriority: draft.techPriority,
       assignees: [],
-      hoursLogged: 0,
       clientUrl: draft.clientUrl.trim() || undefined,
       previewUrl: draft.previewUrl.trim() || undefined,
       liveUrl: draft.liveUrl.trim() || undefined,
@@ -254,6 +255,36 @@ function ProjectsPageInner() {
     setBlocked(null);
     await updateBusiness(b.id, { techStatus: status, lastTouchedAt: new Date().toISOString() });
     if (status === "Draft Ready") void notifyDraftReady(b);
+  };
+
+  const nextPublicOrder = (key: "showcaseSortIndex" | "homeSortIndex") => {
+    const current = (businesses ?? []).map((business) => business[key] ?? 0);
+    return Math.max(0, ...current) + 1000;
+  };
+
+  const setPublicPlacement = async (business: Business, placement: "showcase" | "home", enabled: boolean) => {
+    setPublicError("");
+    try {
+      if (placement === "showcase") {
+        await updateBusiness(business.id, {
+          showcaseEnabled: enabled,
+          showcaseFeaturedOnHome: enabled ? business.showcaseFeaturedOnHome : false,
+          ...(enabled && business.showcaseSortIndex == null ? { showcaseSortIndex: nextPublicOrder("showcaseSortIndex") } : {}),
+        });
+      } else {
+        await updateBusiness(business.id, {
+          showcaseEnabled: enabled ? true : business.showcaseEnabled,
+          showcaseFeaturedOnHome: enabled,
+          ...(enabled && business.showcaseSortIndex == null ? { showcaseSortIndex: nextPublicOrder("showcaseSortIndex") } : {}),
+          ...(enabled && business.homeSortIndex == null ? { homeSortIndex: nextPublicOrder("homeSortIndex") } : {}),
+        });
+      }
+      if (!(await revalidatePublicPages())) {
+        setPublicError("Placement saved, but the public pages could not be refreshed. Try again shortly.");
+      }
+    } catch (error) {
+      setPublicError(error instanceof Error ? error.message : "The public placement was not saved.");
+    }
   };
 
   // One field. Paste a link or type a name — the doc this replaces was a list
@@ -358,8 +389,9 @@ function ProjectsPageInner() {
     <MembersLayout>
       <PageHeader
         title="Tech Projects"
+        subtitle="Website pipeline, ownership, links, and public presentation."
+        action={canPublish ? <Btn variant="secondary" onClick={() => setOrderOpen(true)}>Arrange public cards</Btn> : undefined}
       />
-      <SectionTabs tabs={PROJECT_GROUP_TABS.filter((t) => canPublish || t.href === "/members/projects")} />
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New website project">
         <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
@@ -525,6 +557,8 @@ function ProjectsPageInner() {
         </div>
       )}
 
+      {publicError && <p role="alert" className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{publicError}</p>}
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {VIEWS.map((v) => (
           <button
@@ -552,14 +586,14 @@ function ProjectsPageInner() {
         <Empty message={`Nothing in ${VIEWS.find((v) => v.key === view)?.label}.`} />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-white/15">
-          <table className="w-full min-w-[880px] table-fixed border-collapse">
+          <table className={`w-full table-fixed border-collapse ${canPublish ? "min-w-[1080px]" : "min-w-[880px]"}`}>
             <colgroup>
-              <col className="w-[22%]" /><col className="w-[13%]" /><col className="w-[16%]" />
-              <col className="w-[20%]" /><col /><col className="w-[64px]" />
+              <col className="w-[20%]" /><col className="w-[13%]" /><col className="w-[15%]" />
+              <col className="w-[18%]" /><col />{canPublish && <col className="w-[170px]" />}<col className="w-[64px]" />
             </colgroup>
             <thead>
               <tr className="bg-white/[0.04]">
-                {["Business", "Status", "Assigned to", "Links", "Note", "Updated"].map((h) => (
+                {["Business", "Status", "Assigned to", "Links", "Note", ...(canPublish ? ["Public"] : []), "Updated"].map((h) => (
                   <th
                     key={h}
                     className="border-b border-white/15 px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45"
@@ -654,6 +688,32 @@ function ProjectsPageInner() {
                       </div>
                     </td>
 
+                    {canPublish && (
+                      <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
+                        <div className="flex items-center gap-3">
+                          <label className="flex cursor-pointer items-center gap-1.5 text-[10px] text-white/55">
+                            <input
+                              type="checkbox"
+                              checked={!!b.showcaseEnabled}
+                              onChange={(event) => void setPublicPlacement(b, "showcase", event.target.checked)}
+                              className="members-checkbox"
+                            />
+                            Showcase
+                          </label>
+                          <label className={`flex items-center gap-1.5 text-[10px] ${b.showcaseEnabled ? "cursor-pointer text-white/55" : "cursor-not-allowed text-white/25"}`}>
+                            <input
+                              type="checkbox"
+                              checked={!!b.showcaseFeaturedOnHome}
+                              disabled={!b.showcaseEnabled}
+                              onChange={(event) => void setPublicPlacement(b, "home", event.target.checked)}
+                              className="members-checkbox"
+                            />
+                            Home
+                          </label>
+                        </div>
+                      </td>
+                    )}
+
                     <td className="px-3 py-2 text-right">
                       <span className="whitespace-nowrap font-mono text-[10px] tabular-nums text-white/30">
                         {(b.lastTouchedAt ?? b.updatedAt ?? "").slice(5, 10)}
@@ -676,11 +736,14 @@ function ProjectsPageInner() {
           business={open}
           team={team}
           canEdit={canEdit}
+          canPublish={canPublish}
           blocked={blocked}
           onClose={() => { setOpenId(null); setBlocked(null); }}
           onStatus={(s) => setStatus(open, s)}
         />
       )}
+
+      <PublicCardOrderModal open={orderOpen} businesses={businesses ?? []} onClose={() => setOrderOpen(false)} />
     </MembersLayout>
   );
 }

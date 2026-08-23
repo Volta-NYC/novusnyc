@@ -243,8 +243,7 @@ const { user, userProfile, authRole, loading } = useAuth();
 | Route group | owner | admin | member |
 |---|---|---|---|
 | `/members/overview` | ✓ AdminDashboard | ✓ AdminDashboard | ✗ → `/members/me` |
-| `/members/projects` | ✓ full edit | ✓ full edit | ✓ only if tech leadership |
-| `/members/projects/showcase` | ✓ | ✓ | ✗ redirected (publishes to the public site) |
+| `/members/projects` | ✓ full edit + public cards | ✓ full edit + public cards | ✓ tracker only if tech leadership |
 | `/members/pods` | ✓ all pods | ✓ all pods | ✓ own pods only |
 | `/members/orgs` | ✓ full edit | ✗ redirected | ✗ redirected |
 | `/members/team` | ✓ full edit | ✓ read + hours adjustments | ✗ redirected |
