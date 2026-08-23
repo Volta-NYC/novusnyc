@@ -23,11 +23,7 @@ const PATH_TABLE: Record<string, string> = {
   businesses:               "businesses",
   bids:                     "bids",
   projects:                 "projects",
-  financeAssignments:       "finance_assignments",
-  assignmentClaims:         "assignment_claims",
   memberStrikes:            "member_strikes",
-  memberCreditAdjustments:  "member_credit_adjustments",
-  cycles:                   "cycles",
   infractions:              "infractions",
   emailTemplates:           "email_templates",
   userProfiles:             "user_profiles",
@@ -74,7 +70,8 @@ export async function dbRead(path: string): Promise<unknown> {
 
   if (!id) {
     // Read entire collection
-    const { data } = await sb.from(table).select("*");
+    const { data, error } = await sb.from(table).select("*");
+    if (error) throw new Error(`dbRead ${table}: ${error.message}`);
     if (!data?.length) return null;
     const obj: Record<string, unknown> = {};
     for (const row of data) {
@@ -85,7 +82,8 @@ export async function dbRead(path: string): Promise<unknown> {
     return obj;
   }
 
-  const { data } = await sb.from(table).select("*").eq("id", id).maybeSingle();
+  const { data, error } = await sb.from(table).select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(`dbRead ${table}/${id}: ${error.message}`);
   if (!data) return null;
 
   const camel = rowToCamel(data as Record<string, unknown>);

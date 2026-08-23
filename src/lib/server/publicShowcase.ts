@@ -94,7 +94,8 @@ async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>
   }
   try {
     const sb = getSupabaseAdmin();
-    const { data } = await sb.from("businesses").select("*").is("deleted_at", null);
+    const { data, error } = await sb.from("businesses").select("*").is("deleted_at", null);
+    if (error) throw new Error(`businesses: ${error.message}`);
     const obj: Record<string, Record<string, unknown>> = {};
     for (const row of data ?? []) {
       const r = row as Record<string, unknown>;
@@ -105,8 +106,12 @@ async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>
     }
     businessesCache = { data: obj, fetchedAt: now };
     return obj;
-  } catch {
-    return {};
+  } catch (error) {
+    // A stale snapshot is safer than publishing an empty showcase during a
+    // transient database problem. With no prior snapshot, fail the rebuild so
+    // the CDN keeps serving the last successful page.
+    if (businessesCache) return businessesCache.data;
+    throw error;
   }
 }
 
@@ -563,10 +568,12 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
   let sb;
   try { sb = getSupabaseAdmin(); } catch { return ZERO; }
 
-  const [businessRows, { data: bidsRows }] = await Promise.all([
+  const [businessRows, bidsResult] = await Promise.all([
     fetchBusinesses(),
     sb.from("bids").select("id").eq("status", "Active Partner"),
   ]);
+  if (bidsResult.error) throw new Error(`bids: ${bidsResult.error.message}`);
+  const bidsRows = bidsResult.data;
 
   let totalBusinesses = 0;
   const businesses: Array<{
@@ -625,10 +632,12 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   let sb;
   try { sb = getSupabaseAdmin(); } catch { return []; }
 
-  const [businessRows, { data: bidsRows }] = await Promise.all([
+  const [businessRows, bidsResult] = await Promise.all([
     fetchBusinesses(),
     sb.from("bids").select("*"),
   ]);
+  if (bidsResult.error) throw new Error(`bids: ${bidsResult.error.message}`);
+  const bidsRows = bidsResult.data;
 
   const entries: PublicMapEntry[] = [];
   const businessGeocodeWrites: Array<{ id: string; lat: number; lng: number }> = [];
@@ -699,7 +708,7 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   }
 
   if (businessGeocodeWrites.length > 0) {
-    await Promise.allSettled(
+    const writes = await Promise.allSettled(
       businessGeocodeWrites.map(({ id, lat, lng }) =>
         sb.from("businesses").update({
           lat,
@@ -708,6 +717,9 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
         }).eq("id", id),
       ),
     );
+    for (const write of writes) {
+      if (write.status === "rejected") console.error("Business geocode write failed", write.reason);
+    }
     // Bust the cache so next call picks up the new coords.
     businessesCache = null;
   }
@@ -762,10 +774,13 @@ export async function getApplicationsStatus(): Promise<{ paused: boolean; messag
   // Chapters come from the chapters table, not the old site_settings text
   // array. Two lists meant the apply form offered five cities while the portal
   // knew about two.
-  const [{ data }, { data: chapterRows, error: chapterError }] = await Promise.all([
+  const [settingsResult, chapterResult] = await Promise.all([
     sb.from("site_settings").select("applications_paused, applications_paused_msg").eq("id", "singleton").maybeSingle(),
     sb.from("chapters").select("name, status, sort_order").neq("status", "Archived").order("sort_order"),
   ]);
+  const { data, error: settingsError } = settingsResult;
+  const { data: chapterRows, error: chapterError } = chapterResult;
+  if (settingsError) throw new Error(`site_settings: ${settingsError.message}`);
 
   const chapters = (chapterRows ?? [])
     .map((c) => String((c as { name?: string }).name ?? "").trim())

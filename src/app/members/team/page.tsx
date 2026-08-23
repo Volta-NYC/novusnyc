@@ -10,13 +10,11 @@ import {
 import Combobox from "@/components/Combobox";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
-  subscribeBusinesses,
   subscribePods, subscribePodMembers, fetchMemberContributions, getSiteSettings,
   subscribeApplications,
-  type TeamMember, type Business, type ApplicationRecord,
+  type TeamMember, type ApplicationRecord,
   type Pod, type PodMember, type MemberContribution,
 } from "@/lib/members/storage";
-import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
 import TrackAvatar, { getMemberTrack, TRACK_SORT_ORDER, type TrackKey } from "@/components/members/TrackAvatar";
 import {
@@ -40,21 +38,6 @@ const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
 };
 
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
-type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C";
-
-type MemberAssignmentLink = {
-  id: string;
-  kind: "Business Project" | "Finance Assignment";
-  title: string;
-  topic?: string;
-  teamNames: string[];
-  codePrefix: AssignmentCodePrefix;
-  code: string;
-  status: string;
-  deadline: string;
-  href: string;
-};
-
 // col 0=Status(activity), 1=Track, 2=Name, 3=School, 4=Role
 const DEFAULT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 1, dir: "asc" },
@@ -128,7 +111,6 @@ function truncateCell(value: string, max = 64): string {
 
 export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
-  const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -147,7 +129,6 @@ export default function TeamPage() {
   const [pods, setPods] = useState<Pod[]>([]);
   const [podMembers, setPodMembers] = useState<PodMember[]>([]);
   const [drawerMember, setDrawerMember] = useState<TeamMember | null>(null);
-  const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
   const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [inviteAllState, setInviteAllState] = useState<"idle" | "running" | "done">("idle");
   const [inviteAllProgress, setInviteAllProgress] = useState({ sent: 0, total: 0 });
@@ -185,7 +166,6 @@ export default function TeamPage() {
 
   // Real-time subscriptions for all supporting data — automatic updates when database changes.
   useEffect(() => {
-    const unsubscribeBusinesses = subscribeBusinesses(setBusinesses);
     const unsubscribePods = subscribePods(setPods);
     const unsubscribePodMembers = subscribePodMembers(setPodMembers);
     void fetchMemberContributions().then(setContributions);
@@ -195,7 +175,6 @@ export default function TeamPage() {
 
     // Cleanup subscriptions on unmount
     return () => {
-      unsubscribeBusinesses();
       unsubscribePods();
       unsubscribePodMembers();
     };
@@ -480,113 +459,6 @@ export default function TeamPage() {
     setField("divisions", [track]);
   };
 
-  const globalCodeMaps = useMemo(
-    () => computeGlobalCodes(businesses),
-    [businesses]
-  );
-
-  const _assignmentsByMemberName = useMemo(() => {
-    const map = new Map<string, MemberAssignmentLink[]>();
-    const pushForMemberKey = (memberKey: string, item: Omit<MemberAssignmentLink, "code">) => {
-      const key = normalizeKey(memberKey);
-      if (!key) return;
-      const current = map.get(key) ?? [];
-      current.push({ ...item, code: "" });
-      map.set(key, current);
-    };
-    const pushForMemberName = (memberName: string, item: Omit<MemberAssignmentLink, "code">) => {
-      pushForMemberKey(memberName, item);
-    };
-
-    for (const business of businesses) {
-      const status = String(business.projectStatus ?? "").trim() || "—";
-      const trackProjects = business.trackProjects ?? {};
-      const requestedTracks = Array.isArray(business.projectTracks)
-        ? business.projectTracks.map((track) => String(track ?? "").trim()).filter(Boolean)
-        : [];
-      const explicitTracks = Object.keys(trackProjects).map((track) => String(track ?? "").trim()).filter(Boolean);
-      const allTracks = Array.from(new Set([...requestedTracks, ...explicitTracks]));
-      const trackOrder: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
-      const hasTrackSpecificAssignments = allTracks.length > 0;
-
-      if (!hasTrackSpecificAssignments) continue;
-
-      for (const track of trackOrder) {
-        if (!allTracks.includes(track)) continue;
-        const trackInfo = (trackProjects as Record<string, unknown>)[track];
-        const rawMembers = trackInfo && typeof trackInfo === "object"
-          ? (trackInfo as { teamMembers?: unknown }).teamMembers
-          : [];
-        const trackMembers = Array.isArray(rawMembers)
-          ? rawMembers.map((name) => String(name ?? "").trim()).filter(Boolean)
-          : [];
-        const assignedNames = Array.from(new Set(trackMembers));
-        if (assignedNames.length === 0) continue;
-        const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : track === "Finance" ? "F" : "W";
-        const topic =
-          track === "Marketing"
-            ? "Marketing project"
-            : track === "Finance"
-              ? "Finance project"
-              : "Website project";
-        const entry: Omit<MemberAssignmentLink, "code"> = {
-          id: `${business.id}-${track.toLowerCase()}`,
-          kind: "Business Project",
-          title: business.name || "Untitled Project",
-          topic,
-          teamNames: assignedNames,
-          codePrefix,
-          status,
-          deadline: "—",
-          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
-        };
-        for (const memberName of assignedNames) pushForMemberName(memberName, entry);
-      }
-    }
-
-
-    // Assign global codes using globalCodeMaps
-    for (const [key, items] of Array.from(map.entries())) {
-      map.set(
-        key,
-        items
-          .slice()
-          .map((item) => {
-            // Try to look up from globalCodeMaps
-            // Finance assignment: id is assignmentId
-            const fromAssignment = globalCodeMaps.assignmentCode.get(item.id);
-            if (fromAssignment) return { ...item, code: fromAssignment };
-            // Business with no track: id is businessId
-            const fromBusiness = globalCodeMaps.businessTrackCode.get(item.id);
-            if (fromBusiness) return { ...item, code: fromBusiness };
-            // Business with track: id is "businessId-trackname" (lowercase), global key is "businessId-Track" (Title case)
-            // Reconstruct the capitalized key
-            const dashIdx = item.id.lastIndexOf("-");
-            if (dashIdx >= 0) {
-              const bizId = item.id.slice(0, dashIdx);
-              const trackLower = item.id.slice(dashIdx + 1);
-              const track = trackLower.charAt(0).toUpperCase() + trackLower.slice(1);
-              const fromTrack = globalCodeMaps.businessTrackCode.get(`${bizId}-${track}`);
-              if (fromTrack) return { ...item, code: fromTrack };
-            }
-            // Fallback: use prefix-based relative code
-            return { ...item, code: `${item.codePrefix}?` };
-          })
-          .sort((a, b) => {
-            const prefixOrder: Record<string, number> = { W: 0, M: 1, F: 2, R: 3, C: 4, G: 5 };
-            const pa = prefixOrder[a.codePrefix] ?? 9;
-            const pb = prefixOrder[b.codePrefix] ?? 9;
-            if (pa !== pb) return pa - pb;
-            const na = parseInt(a.code.slice(1)) || 0;
-            const nb = parseInt(b.code.slice(1)) || 0;
-            return na - nb;
-          }),
-      );
-    }
-    return map;
-  }, [businesses, globalCodeMaps]);
-
-
   const workByMemberId = useMemo(
     () => new Map(contributions.map((c) => [c.memberId, c])),
     [contributions],
@@ -637,15 +509,6 @@ export default function TeamPage() {
     }
     return 0;
   });
-
-  const assignmentQuickViewRestTeam = useMemo(() => {
-    if (!assignmentQuickView) return [];
-    const currentMemberKey = normalizeKey(assignmentQuickView.memberName);
-    return assignmentQuickView.item.teamNames
-      .map((name) => String(name ?? "").trim())
-      .filter(Boolean)
-      .filter((name) => normalizeKey(name) !== currentMemberKey);
-  }, [assignmentQuickView]);
 
   const totalMembersCount = team.length;
   const inactiveMembersCount = team.filter((member) => normalizeKey(member.status ?? "") === "inactive").length;
@@ -1145,37 +1008,6 @@ export default function TeamPage() {
           action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first member</Btn> : undefined}
         />
       ) : null}
-
-      <Modal
-        open={!!assignmentQuickView}
-        onClose={() => setAssignmentQuickView(null)}
-        title={assignmentQuickView ? assignmentQuickView.item.title : "Assignment"}
-      >
-        {assignmentQuickView && (
-          <div className="space-y-3">
-            <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2">
-              <p className="text-[11px] text-white/55">
-                {assignmentQuickView.item.kind}{assignmentQuickView.item.topic ? ` · ${assignmentQuickView.item.topic}` : ""}
-              </p>
-              <p className="text-[11px] text-white/50 mt-1">
-                Status: {assignmentQuickView.item.status || "—"}
-                {assignmentQuickView.item.deadline && assignmentQuickView.item.deadline !== "—" ? ` · Due ${assignmentQuickView.item.deadline}` : ""}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-white/80">Rest of team</p>
-              {assignmentQuickViewRestTeam.length === 0 ? (
-                <p className="text-xs text-white/45 mt-1">No other members listed.</p>
-              ) : (
-                <p className="text-xs text-white/60 mt-1">{assignmentQuickViewRestTeam.join(", ")}</p>
-              )}
-            </div>
-          </div>
-        )}
-        <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setAssignmentQuickView(null)}>Close</Btn>
-        </div>
-      </Modal>
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingMember ? "Edit Member" : "New Member"}>

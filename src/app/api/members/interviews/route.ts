@@ -192,11 +192,12 @@ export async function POST(req: NextRequest) {
     .update({ status: "Interview Scheduled", updated_at: new Date().toISOString() })
     .eq("id", applicantId);
   if (statusError) {
-    await sb.from("interviews").delete().eq("id", id);
-    return NextResponse.json({ error: "application_update_failed" }, { status: 500 });
+    const { error: rollbackError } = await sb.from("interviews").delete().eq("id", id);
+    if (rollbackError) console.error("Interview create rollback failed", rollbackError);
+    return NextResponse.json({ error: rollbackError ? "application_update_and_rollback_failed" : "application_update_failed" }, { status: 500 });
   }
 
-  const warning = await sendConfirmation({
+  let warning = await sendConfirmation({
     id,
     applicantName,
     applicantEmail,
@@ -207,7 +208,8 @@ export async function POST(req: NextRequest) {
     organizerEmail: verified.caller.email,
   });
   if (!warning) {
-    await sb.from("interviews").update({ confirmation_sent_at: new Date().toISOString() }).eq("id", id);
+    const { error } = await sb.from("interviews").update({ confirmation_sent_at: new Date().toISOString() }).eq("id", id);
+    if (error) warning = "confirmation_tracking_failed";
   }
 
   const staffEmailSucceeded = await sendInterviewerNotifications({
@@ -280,7 +282,7 @@ export async function PATCH(req: NextRequest) {
       .update({ status: applicationStatus, updated_at: new Date().toISOString() })
       .eq("id", existing.applicant_id);
     if (applicationError) {
-      await sb.from("interviews").update({
+      const { error: rollbackError } = await sb.from("interviews").update({
         scheduled_at: existing.scheduled_at,
         duration_minutes: existing.duration_minutes,
         meeting_link: existing.meeting_link,
@@ -289,7 +291,8 @@ export async function PATCH(req: NextRequest) {
         notes: existing.notes,
         updated_at: existing.updated_at,
       }).eq("id", id);
-      return NextResponse.json({ error: "application_update_failed" }, { status: 500 });
+      if (rollbackError) console.error("Interview update rollback failed", rollbackError);
+      return NextResponse.json({ error: rollbackError ? "application_update_and_rollback_failed" : "application_update_failed" }, { status: 500 });
     }
   }
 
@@ -317,7 +320,8 @@ export async function PATCH(req: NextRequest) {
       organizerEmail: verified.caller.email,
     });
     if (!warning) {
-      await sb.from("interviews").update({ confirmation_sent_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await sb.from("interviews").update({ confirmation_sent_at: new Date().toISOString() }).eq("id", id);
+      if (error) warning = "confirmation_tracking_failed";
     }
   }
   if ((reschedule || resend || interviewerChanged) && nextStatus === "scheduled") {

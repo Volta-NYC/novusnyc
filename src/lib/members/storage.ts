@@ -252,12 +252,6 @@ export interface Project {
   updatedAt: string;
 }
 
-// ── Credit cycle types ────────────────────────────────────────────────────────
-//
-// A Cycle defines a credit-earning period (typically a quarter). Targets are
-// per-track × per-role. Senior Associate and Board are intentionally excluded
-// from the credit/strike system — they run it.
-
 // ── Infraction catalog ────────────────────────────────────────────────────────
 // One row per *type* of infraction. Issued instances live separately on a
 // member's record. Severity is implicit in the point value: 1 = minor,
@@ -321,7 +315,7 @@ export interface EmailTemplate {
 
 export interface AutomationConfig {
   id: string;             // same value as automationId — required by makeSubscriber
-  automationId: string;   // stable slug PK, e.g. "cycle_warning"
+  automationId: string;   // stable slug PK, e.g. "pod_meeting_reminder"
   label: string;
   description: string;
   templateKey: string | null;  // references email_templates.key; null means disabled
@@ -334,9 +328,9 @@ export interface AutomationConfig {
 // the three tracks still label divisions and project work.
 export type TrackName = "Tech" | "Marketing" | "Finance" | "General";
 
-// ── Member strikes + credit adjustments ───────────────────────────────────────
-// Strikes are point-bearing infractions issued against a member; thresholds on
-// the active cycle convert points → strike count (warning / demotion / reserve).
+// ── Member infractions ────────────────────────────────────────────────────────
+// Strikes are point-bearing infractions issued against a member. The live
+// threshold settings determine notice, warning and review standing.
 
 export interface MemberStrike {
   id: string;
@@ -353,12 +347,12 @@ export interface MemberStrike {
 }
 
 // ── Handbook pages ────────────────────────────────────────────────────────────
-// Admin-editable pages (credit/infraction policy etc.) shown to members.
+// Admin-editable policy pages shown to members.
 // Members must acknowledge each page on first login.
 
 export interface HandbookPage {
   id: string;
-  slug: string;         // e.g. "credit-infraction-policy"
+  slug: string;
   title: string;
   content: string;      // HTML (rich-text)
   updatedAt: string;
@@ -371,14 +365,6 @@ export interface MemberAcknowledgment {
   pageSlug: string;
   contentHash: string;  // SHA-256 of content at time of ack — stale when content changes
   acknowledgedAt: string;
-}
-
-export interface AssignmentUpdate {
-  id: string;
-  assignmentId: string;
-  message: string;
-  postedBy: string;   // email of the admin who posted
-  postedAt: string;
 }
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
@@ -752,7 +738,8 @@ export async function addBIDTimelineEntry(
   bidId: string,
   entry: { date: string; action: string; createdAt: string }
 ): Promise<void> {
-  const { data: row } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  const { data: row, error: timelineReadError } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  if (timelineReadError) throw new Error(timelineReadError.message);
   const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
   const entryId = genId();
   timeline[entryId] = entry;
@@ -762,7 +749,8 @@ export async function addBIDTimelineEntry(
 }
 
 export async function deleteBIDTimelineEntry(bidId: string, entryId: string): Promise<void> {
-  const { data: row } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  const { data: row, error: timelineReadError } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  if (timelineReadError) throw new Error(timelineReadError.message);
   const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
   delete timeline[entryId];
   const { error: timelineDeleteError } = await supabase.from("bids").update({ timeline }).eq("id", bidId);
@@ -1008,43 +996,14 @@ export async function updateUserProfile(uid: string, data: Partial<UserProfile>)
 }
 
 export async function setUserProfileRecord(uid: string, data: Omit<UserProfile, "id">): Promise<void> {
-  const { data: existing } = await supabase.from("user_profiles").select("*").eq("id", uid).maybeSingle();
+  const { data: existing, error: existingError } = await supabase.from("user_profiles").select("*").eq("id", uid).maybeSingle();
+  if (existingError) throw new Error(existingError.message);
   const before = existing ? fromRow<Omit<UserProfile, "id">>(existing as Record<string, unknown>) : null;
   const merged = before ? { ...before, ...data } : data;
   merged.authRole = normalizeAuthRoleValue(merged.authRole);
   const { error: profileUpsertError } = await supabase.from("user_profiles").upsert(toRow({ ...merged, id: uid }), { onConflict: "id" });
   if (profileUpsertError) throw new Error(profileUpsertError.message);
   await writeAuditLog({ action: before ? "update" : "create", collection: "userProfiles", recordId: uid, details: { fields: Object.keys(merged) } });
-}
-
-export async function deleteUserProfile(uid: string): Promise<void> {
-  const { error: profileDeleteError } = await supabase.from("user_profiles").delete().eq("id", uid);
-  if (profileDeleteError) throw new Error(profileDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "userProfiles", recordId: uid });
-}
-
-// Deletes a portal account via a protected admin API route.
-// Requires the current user to be signed in as admin.
-export async function deletePortalUserAccount(uid: string): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error("not_authenticated");
-
-  const token = session.access_token;
-  const res = await fetch(`/api/members/admin/users/${encodeURIComponent(uid)}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) {
-    let error = "delete_failed";
-    try {
-      const data = await res.json() as { error?: string };
-      if (data.error) error = data.error;
-    } catch {
-      // ignore json parse error
-    }
-    throw new Error(error);
-  }
 }
 
 export async function getUserProfilesList(): Promise<UserProfile[]> {
@@ -1408,34 +1367,6 @@ export async function updateAutomationConfig(automationId: string, patch: {
 
 // ── Assignments (new unified table) ──────────────────────────────────────────
 
-// Legacy soft-delete kept for existing callers; prefer archiveAssignment.
-// ── Assignment templates ──────────────────────────────────────────────────────
-
-// ── Assignment claims ─────────────────────────────────────────────────────────
-
-// Approve a recurring check-in. Awards credits for this period, increments the
-// check-in counter, sets the next due date, and resets the claim to In Progress
-// so the member can submit the following period.
-// ── Assignment updates (admin → member messages) ──────────────────────────────
-
-export const subscribeAssignmentUpdates =
-  makeSubscriber<AssignmentUpdate>("assignment_updates");
-
-export async function createAssignmentUpdate(
-  data: Omit<AssignmentUpdate, "id" | "postedAt">,
-): Promise<void> {
-  const id = genId();
-  const { error } = await supabase
-    .from("assignment_updates")
-    .insert(toRow({ ...data, id, postedAt: nowISO() }));
-  if (error) throw new Error(error.message);
-}
-
-export async function deleteAssignmentUpdate(id: string): Promise<void> {
-  const { error } = await supabase.from("assignment_updates").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
 // ── Member strikes ────────────────────────────────────────────────────────────
 
 export async function createMemberStrike(data: Omit<MemberStrike, "id" | "issuedAt">): Promise<string | null> {
@@ -1463,20 +1394,20 @@ export async function clearMemberStrikes(strikeIds: string[]): Promise<void> {
   await writeAuditLog({ action: "delete", collection: "memberStrikes", recordId: "bulk", details: { count: strikeIds.length, ids: strikeIds } });
 }
 
-// ── Member credit adjustments ─────────────────────────────────────────────────
-
 // ── Handbook pages ────────────────────────────────────────────────────────────
 
 export const subscribeHandbookPages =
   makeSubscriber<HandbookPage>("handbook_pages", (r) => fromRow<HandbookPage>(r));
 
 export async function getHandbookPagesList(): Promise<HandbookPage[]> {
-  const { data } = await supabase.from("handbook_pages").select("*");
+  const { data, error } = await supabase.from("handbook_pages").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<HandbookPage>(r as Record<string, unknown>));
 }
 
 export async function getHandbookPage(slug: string): Promise<HandbookPage | null> {
-  const { data } = await supabase.from("handbook_pages").select("*").eq("slug", slug).maybeSingle();
+  const { data, error } = await supabase.from("handbook_pages").select("*").eq("slug", slug).maybeSingle();
+  if (error) throw new Error(error.message);
   if (!data) return null;
   return fromRow<HandbookPage>(data as Record<string, unknown>);
 }
@@ -1656,14 +1587,16 @@ export async function setPodMemberRole(
 // their hours are still on the service letter. Someone added by mistake and
 // removed before any meeting leaves nothing behind.
 export async function removePodMember(podId: string, memberId: string): Promise<void> {
-  const { data: meetingRows } = await supabase.from("pod_meetings").select("id").eq("pod_id", podId);
+  const { data: meetingRows, error: meetingsError } = await supabase.from("pod_meetings").select("id").eq("pod_id", podId);
+  if (meetingsError) throw new Error(meetingsError.message);
   const meetingIds = ((meetingRows ?? []) as { id: string }[]).map((m) => m.id);
 
   let hasHistory = false;
   if (meetingIds.length) {
-    const { count } = await supabase.from("pod_attendance")
+    const { count, error: attendanceError } = await supabase.from("pod_attendance")
       .select("id", { count: "exact", head: true })
       .eq("member_id", memberId).in("meeting_id", meetingIds);
+    if (attendanceError) throw new Error(attendanceError.message);
     hasHistory = (count ?? 0) > 0;
   }
 

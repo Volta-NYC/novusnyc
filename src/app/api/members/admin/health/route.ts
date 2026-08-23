@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const sb = getSupabaseAdmin();
   try {
-    const [teamResult, applicationsResult, interviewsResult, podsResult, podMembersResult, businessesResult, automationsResult, templatesResult, settingsResult] = await Promise.all([
+    const [teamResult, applicationsResult, interviewsResult, podsResult, podMembersResult, businessesResult, automationsResult, templatesResult, handbookResult, settingsResult] = await Promise.all([
       sb.from("team").select("id,name,email,status,auth_uid").is("deleted_at", null),
       sb.from("applications").select("id,status"),
       sb.from("interviews").select("id,status,scheduled_at"),
@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
       sb.from("businesses").select("id,name,showcase_enabled,showcase_featured_on_home,showcase_image_url,live_url,preview_url,address").is("deleted_at", null),
       sb.from("automation_configs").select("automation_id,template_key,enabled"),
       sb.from("email_templates").select("key,active"),
+      sb.from("handbook_pages").select("slug,title,content").eq("slug", "credit-infraction-policy").maybeSingle(),
       sb.from("site_settings").select("applications_paused,public_banner_enabled,portal_banner_enabled,handbook_ack_required_at").eq("id", "singleton").maybeSingle(),
     ]);
 
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
     const businesses = required(businessesResult, "businesses");
     const automations = required(automationsResult, "automation_configs");
     const templates = required(templatesResult, "email_templates");
+    const handbook = required(handbookResult, "handbook_pages") as { content?: string | null } | null;
     const settings = required(settingsResult, "site_settings") as {
       applications_paused?: boolean;
       public_banner_enabled?: boolean;
@@ -67,6 +69,10 @@ export async function GET(req: NextRequest) {
     const brokenAutomations = automations.filter((automation) =>
       automation.enabled && (!automation.template_key || !activeTemplateKeys.has(automation.template_key)),
     );
+    const handbookHasContent = String(handbook?.content ?? "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .trim().length > 0;
 
     const issues = ([
       {
@@ -123,6 +129,14 @@ export async function GET(req: NextRequest) {
         detail: "An enabled automation cannot send until its email template exists and is active.",
         count: brokenAutomations.length,
         href: "/members/email",
+        severity: "attention",
+      },
+      {
+        id: "handbook-content",
+        label: "Member policy has no readable content",
+        detail: "Add the conduct, attendance, service-hour, and infraction rules before asking members to acknowledge them.",
+        count: handbookHasContent ? 0 : 1,
+        href: "/members/admin/policy",
         severity: "attention",
       },
     ] satisfies HealthIssue[]).filter((issue) => issue.count > 0);

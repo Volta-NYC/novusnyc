@@ -75,10 +75,6 @@ export default function SectionTabs({
   );
 }
 
-export const MEMBERS_GROUP_TABS: SectionTab[] = [
-  { href: "/members", label: "Members", exact: true },
-];
-
 // Interviews is a focused workflow within the Applicants section.
 export const APPLICANTS_GROUP_TABS: SectionTab[] = [
   { href: "/members/applicants", label: "Applicants", exact: true },

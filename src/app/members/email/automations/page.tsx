@@ -306,7 +306,7 @@ export default function AutomationsPage() {
                     ref={editorRef}
                     content={newTemplateForm.body}
                     onChange={(html) => setNewTemplateForm((p) => ({ ...p, body: html }))}
-                    placeholder="Write the email body… Use {{memberName}}, {{cycleName}}, etc."
+                    placeholder="Write the email body… Use variables such as {{memberName}} when they are available."
                   />
                 </Field>
 

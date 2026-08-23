@@ -31,35 +31,6 @@ const TEAM_EMAIL_FROM_OPTIONS = [
   { value: EMAIL.ethan, label: EMAIL.ethan },
 ];
 
-// System email templates seeded on first admin visit. Keys here match the
-// EmailTemplateKey union; automation looks them up by key. Edit copy at any
-// time from the templates panel — automation reads the live row.
-const SYSTEM_TEMPLATE_SEEDS: Array<{
-  key: string;
-  label: string;
-  description: string;
-  subject: string;
-  body: string;
-  variables: string[];
-}> = [
-  {
-    key: "assignment_update",
-    label: "Pod assignment update",
-    description: "Sent to active claimants when an admin posts an update on an assignment.",
-    subject: "Update on {{assignmentTitle}}",
-    body: "<p>Hi {{memberName}},</p><p>Your team posted an update on the assignment <strong>{{assignmentTitle}}</strong>{{businessNamePart}}.</p><div style=\"margin:16px 0;padding:14px 18px;border-left:3px solid #F6B78D;background:#f9fdf5;color:#1a1a1a;border-radius:0 6px 6px 0;font-size:14px;line-height:1.6;\">{{messageFmt}}</div><p><a href=\"{{portalLink}}\" style=\"color:#5c9911;font-weight:600;\">View in portal →</a></p>",
-    variables: ["memberName", "assignmentTitle", "message", "messageFmt", "businessName", "businessNamePart", "portalLink"],
-  },
-  {
-    key: "infraction_notice",
-    label: "Infraction notice",
-    description: "Sent when an admin manually issues an infraction.",
-    subject: "Infraction logged — {{infractionName}}",
-    body: "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} demerits). Total this cycle: {{totalPoints}} demerits.</p>",
-    variables: ["memberName", "infractionName", "points", "totalPoints", "issuedBy", "note"],
-  },
-];
-
 const EMAIL_PLACEHOLDERS = [
   "{{firstName}}",
   "{{fullName}}",
@@ -181,7 +152,6 @@ export default function MemberEmailPage() {
 
   // Templates state — drives the pill selector above compose.
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [templatesLoaded, setTemplatesLoaded] = useState(false);
   const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveModalLabel, setSaveModalLabel] = useState("");
@@ -189,38 +159,8 @@ export default function MemberEmailPage() {
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeEmailTemplates((data) => { setTemplatesLoaded(true); setTemplates(data); }), []);
+  useEffect(() => subscribeEmailTemplates(setTemplates), []);
   useEffect(() => { void fetchHoursTotals().then(setHoursTotals); }, []);
-
-  // Seed system templates once Supabase has confirmed the templates list.
-  // Wait for templatesLoaded so we don't seed against an empty initial state.
-  const [seededSystemTemplates, setSeededSystemTemplates] = useState(false);
-  useEffect(() => {
-    if (seededSystemTemplates) return;
-    if (!canUseEmail || !user) return;
-    if (!templatesLoaded) return;
-    setSeededSystemTemplates(true);
-    void (async () => {
-      const existingKeys = new Set(templates.map((t) => t.key));
-      const updatedBy = user.email || user.id || "system";
-      for (const def of SYSTEM_TEMPLATE_SEEDS) {
-        if (existingKeys.has(def.key)) continue;
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await createEmailTemplate({
-            key: def.key,
-            label: def.label,
-            description: def.description,
-            subject: def.subject,
-            body: def.body,
-            availableVariables: def.variables,
-            active: true,
-            updatedBy,
-          });
-        } catch { /* non-fatal */ }
-      }
-    })();
-  }, [seededSystemTemplates, canUseEmail, user, templates, templatesLoaded]);
 
   // Sort templates: system ones first, then user-created alphabetically.
   // Deduplicate by key, keeping the first occurrence (oldest row wins).

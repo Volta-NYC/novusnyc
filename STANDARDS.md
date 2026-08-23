@@ -267,6 +267,9 @@ lost access rather than a moved page.
 | `/members/finance-assignments` | `/members/pods` |
 | `/members/work/catalog`, `/members/work/:id` | `/members/work` |
 | `/members/projects/discovery` | `/members/projects?view=leads` |
+| `/members/projects/showcase` | `/members/projects` (open a website, then use its Public Card tab) |
+| `/members/bids` | `/members/orgs` |
+| `/book`, `/book/*` | `/apply` |
 
 The tracker's view is addressable — `?view=` accepts any key in `VIEWS`
 (`all`, `domains`, `backlog`, `leads`, `hold`) — so a filtered list can be

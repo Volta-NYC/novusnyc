@@ -75,12 +75,15 @@ export async function POST(req: NextRequest) {
   const url = urlData?.publicUrl ?? "";
 
   // Update businesses table with the new image path and URL.
-  await sb.from("businesses").update({
+  const { data: updated, error: updateError } = await sb.from("businesses").update({
     showcase_image_path: path,
     showcase_image_url: url,
     showcase_image_set: true,
     updated_at: new Date().toISOString(),
-  }).eq("id", businessId);
+  }).eq("id", businessId).is("deleted_at", null).select("id").maybeSingle();
+  if (updateError || !updated) {
+    return NextResponse.json({ error: "business_update_failed", detail: updateError?.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, path, url });
 }

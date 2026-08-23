@@ -99,8 +99,9 @@ async function upsertBusinessLeadFromContactForm(data: Record<string, unknown>):
 async function defaultChapterId(
   sb: ReturnType<typeof getSupabaseAdmin>,
 ): Promise<string | null> {
-  const { data } = await sb.from("chapters").select("id")
+  const { data, error } = await sb.from("chapters").select("id")
     .neq("status", "Archived").order("sort_order").limit(1);
+  if (error) throw new Error(`chapter_lookup_failed: ${error.message}`);
   return (data ?? [])[0]?.id ?? null;
 }
 
@@ -132,8 +133,9 @@ async function upsertApplicationFromForm(data: Record<string, unknown>): Promise
   // connection filed the same application twice. A day-long window catches
   // that without blocking someone genuinely reapplying weeks later.
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data: recent } = await sb.from("applications")
+  const { data: recent, error: recentError } = await sb.from("applications")
     .select("id").eq("email", email).gte("created_at", dayAgo).limit(1);
+  if (recentError) throw new Error(`applications_duplicate_check_failed: ${recentError.message}`);
   if ((recent ?? []).length > 0) return;
 
   const schoolName = asText(data["School Name"]) || asText(data.Education);

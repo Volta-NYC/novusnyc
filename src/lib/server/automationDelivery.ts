@@ -20,7 +20,8 @@ async function claimRecipient(
     p_subject_key: subjectKey,
     p_recipient: recipient,
   });
-  return !error && data === true;
+  if (error) throw new Error(`automation_delivery_claim_failed: ${error.message}`);
+  return data === true;
 }
 
 async function finishClaim(

@@ -373,7 +373,7 @@ export default function EmailTemplatesPage() {
             <Input
               value={form.label}
               onChange={(e) => setForm((p) => ({ ...p, label: e.target.value }))}
-              placeholder="e.g. End-of-cycle reminder"
+              placeholder="e.g. Monthly member reminder"
             />
           </Field>
           <Field label="Description">
@@ -395,7 +395,7 @@ export default function EmailTemplatesPage() {
               ref={editorRef}
               content={form.body}
               onChange={(html) => setForm((p) => ({ ...p, body: html }))}
-              placeholder="Write the email body… Use {{memberName}}, {{cycleName}}, etc."
+              placeholder="Write the email body… Use variables such as {{memberName}} when they are available."
             />
           </Field>
 
@@ -454,7 +454,7 @@ export default function EmailTemplatesPage() {
                 </div>
               ))}
               <p className="text-[11px] text-white/30 pt-1">
-                Other variables like <code className="text-white/50">{"{{memberName}}"}</code> and <code className="text-white/50">{"{{cycleName}}"}</code> are available for automation-triggered templates.
+                Available variables depend on how the message is sent. Common examples are <code className="text-white/50">{"{{memberName}}"}</code> and <code className="text-white/50">{"{{portalLink}}"}</code>.
               </p>
             </div>
           )}

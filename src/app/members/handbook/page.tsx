@@ -10,6 +10,10 @@ import { Spinner } from "@/components/members/ui";
 
 const POINTS_PILL = "border-white/20 bg-black/5 text-black/60";
 
+function hasReadableContent(html: string): boolean {
+  return html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").trim().length > 0;
+}
+
 function HandbookContent() {
   const [page, setPage] = useState<HandbookPage | null>(null);
   const [infractions, setInfractions] = useState<Infraction[]>([]);
@@ -51,7 +55,7 @@ function HandbookContent() {
                 </span>
               )}
             </div>
-            {page.content ? (
+            {hasReadableContent(page.content) ? (
               <div
                 className="prose prose-sm prose-headings:font-display prose-headings:text-black/85 prose-p:text-black/70 prose-li:text-black/70 max-w-none font-body leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: page.content }}

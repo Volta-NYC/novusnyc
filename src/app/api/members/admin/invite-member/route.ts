@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
 
   const sb = getSupabaseAdmin();
 
-  const { data: rows } = await sb.from("team").select("*").eq("id", memberId).limit(1);
+  const { data: rows, error: memberError } = await sb.from("team").select("*").eq("id", memberId).limit(1);
+  if (memberError) return NextResponse.json({ error: "member_lookup_failed" }, { status: 500 });
   const member = rows?.[0] as Record<string, unknown> | undefined;
   if (!member) return NextResponse.json({ error: "member_not_found" }, { status: 404 });
 

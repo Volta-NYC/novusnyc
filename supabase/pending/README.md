@@ -11,9 +11,10 @@ automations/templates. The legacy rows were exported and cleared on August 23,
 dropping anything.
 
 `20260824000003_drop_remaining_legacy_admin_schema.sql` removes the empty
-assignment-template system, unused project-group/calendar tables, their dead
-assignment links, and the superseded services/chapters settings columns. It
-asserts that no live assignment still references the retired structures.
+assignment-template and assignment-update systems, unused project-group/calendar
+tables, their dead assignment links, two obsolete email templates, and the
+superseded services/chapters settings columns. It asserts that no live
+assignment or update still references the retired structures.
 
 All three are deliberately staged because the production database is shared by all
 environments. Deploy the matching application code first, then move these files

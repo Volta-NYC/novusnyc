@@ -28,12 +28,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Find the team row by primary email, then alternate email.
-  const { data: rows } = await sb
+  const { data: rows, error: teamReadError } = await sb
     .from("team")
     .select("*")
     .or(`email.eq.${email},alternate_email.eq.${email}`)
     .is("deleted_at", null)
     .limit(1);
+  if (teamReadError) return NextResponse.json({ error: "team_lookup_failed" }, { status: 500 });
 
   const teamRow = rows?.[0] as Record<string, unknown> | undefined;
   if (!teamRow) {
@@ -49,16 +50,19 @@ export async function POST(req: NextRequest) {
   const patch: Record<string, unknown> = { auth_uid: user.id };
   if (displayName) patch.name = displayName;
 
-  await sb.from("team").update(patch).eq("id", String(teamRow.id));
+  const { data: updated, error: teamUpdateError } = await sb.from("team")
+    .update(patch).eq("id", String(teamRow.id)).select("id").maybeSingle();
+  if (teamUpdateError || !updated) return NextResponse.json({ error: "team_link_failed" }, { status: 500 });
 
   // Write auth_role into app_metadata so verifyCaller and authContext can read it
   // from the JWT without depending on PostgREST schema cache for new columns.
   const authRole = typeof teamRow.auth_role === "string" ? teamRow.auth_role : "member";
   const existingAppMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
-  await sb.auth.admin.updateUserById(user.id, {
+  const { error: metadataError } = await sb.auth.admin.updateUserById(user.id, {
     app_metadata: { ...existingAppMeta, auth_role: authRole },
     ...(displayName ? { user_metadata: { ...user.user_metadata, full_name: displayName } } : {}),
   });
+  if (metadataError) return NextResponse.json({ error: "account_metadata_failed" }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

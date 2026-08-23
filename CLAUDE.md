@@ -27,7 +27,7 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 
 ### Two distinct UIs in one repo
 
-**Public site** (`/`, `/showcase`, `/about`, `/partners`, `/apply`, `/impact`, `/book`, `/updates`, `/reports`) — light theme, `v-*` Tailwind color tokens, fonts: `font-display` (Space Grotesk) / `font-body` (DM Sans).
+**Public site** (`/`, `/showcase`, `/about`, `/partners`, `/apply`, `/join`, `/privacy`) — light theme, `v-*` Tailwind color tokens, fonts: `font-display` (Space Grotesk) / `font-body` (DM Sans). Retired public URLs are permanent redirects in `next.config.mjs`.
 
 **Members portal** (`/members/*`) — light theme for every role. Components use the historical dark-theme utility vocabulary, and `.members-portal-light` remaps surfaces/text to accessible light values. Peach (`#F6B78D`) is the primary action color.
 
@@ -43,7 +43,7 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 | `src/lib/schemas.ts` | Zod-like validation for `ContactFormValues` and `ApplicationFormValues` |
 | `src/components/members/ui.tsx` | Shared design system: `Btn`, `Modal`, `Field`, `Input`, `Select`, `Badge`, `SearchBar`, `Empty`, `useConfirm` |
 | `src/components/members/MembersLayout.tsx` | Portal shell with sidebar nav |
-| `src/components/members/SectionTabs.tsx` | Tab navigation; exports tab arrays (`ASSIGNMENTS_TABS`, `PROJECT_GROUP_TABS`, etc.). `MEMBERS_GROUP_TABS` exists but is no longer rendered on the Team page (single tab, removed). |
+| `src/components/members/SectionTabs.tsx` | Shared tab navigation for the Applicants and Email workflows. |
 | `src/components/members/RichTextEditor.tsx` | Tiptap wrapper; exposes `insertAtCursor` via `forwardRef` / `RichTextEditorHandle` |
 | `src/app/members/layout.tsx` | Wraps all `/members/*` pages with `<AuthProvider>` |
 | `src/app/globals.css` | Design token `:root` variables + shared utility classes |

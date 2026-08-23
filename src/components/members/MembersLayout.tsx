@@ -408,7 +408,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       <Modal open={showAckModal} onClose={() => {}} title="Before you continue" dismissible={false}>
           <div className="max-w-md rounded-xl bg-white p-5">
             <p className="text-black/60 text-sm font-body mb-4 leading-relaxed">
-              By continuing, you acknowledge that you have read and understand the Novus NYC credit and infraction system as described in the Member Handbook.
+              By continuing, you acknowledge that you have read and understand the Novus NYC conduct, attendance, and infraction policy in the Member Handbook.
             </p>
             <a
               href="/members/handbook"
@@ -424,7 +424,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 className="mt-0.5 w-4 h-4 accent-[#F6B78D] cursor-pointer flex-shrink-0"
               />
               <span className="text-sm text-black/70 font-body">
-                I have read and understand the credit and infraction policy.
+                I have read and understand the conduct, attendance, and infraction policy.
               </span>
             </label>
             <button
