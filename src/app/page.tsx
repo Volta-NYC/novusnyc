@@ -8,7 +8,7 @@ import HeroSection from "@/components/HeroSection";
 import HomeScrollBridge from "@/components/HomeScrollBridge";
 import HomeNetworkSection from "@/components/HomeNetworkSection";
 import { MapPinIcon } from "@/components/Icons";
-import { communityPartners, currentProjects as fallbackCurrentProjects } from "@/data";
+import { communityPartners, currentProjects as fallbackCurrentProjects, type CommunityPartner } from "@/data";
 import TracksTabbed from "@/components/TracksTabbed";
 import HomeProjectMobileCarousel from "@/components/HomeProjectMobileCarousel";
 import HomeProjectMasonry from "@/components/HomeProjectMasonry";
@@ -70,8 +70,6 @@ type HomeProject = {
   desc?: string;
   quote?: string;
 };
-
-type CommunityPartner = (typeof communityPartners)[number];
 
 const FLAGSHIP_PARTNER_ORDER = [
   "NYC Small Business Services",

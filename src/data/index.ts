@@ -78,6 +78,32 @@ export const communityPartners = [
   { name: "East New York Merchants Association", logo: "/partners/logos/east-new-york-merchants.png", website: "https://innresebv.org/home-program-services", important: false },
 ];
 
+export type CommunityPartner = (typeof communityPartners)[number];
+
+function normalizeCommunityPartnerName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/\([^)]*\)/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+const COMMUNITY_PARTNER_ALIASES: Record<string, string> = {
+  "nyc small business resource network": "NYC Small Business Resource Network",
+  "siboc": "SIBOC",
+};
+
+/** Resolve a portal record to the same website/logo used on the homepage. */
+export function findCommunityPartner(name: string): CommunityPartner | undefined {
+  const normalized = normalizeCommunityPartnerName(name);
+  const canonical = COMMUNITY_PARTNER_ALIASES[normalized] ?? name;
+  const canonicalNormalized = normalizeCommunityPartnerName(canonical);
+  return communityPartners.find(
+    (partner) => normalizeCommunityPartnerName(partner.name) === canonicalNormalized,
+  );
+}
+
 export const marqueeSchools = [
   "Cornell University",
   "Stuyvesant High School",

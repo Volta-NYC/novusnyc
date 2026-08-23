@@ -2,6 +2,7 @@
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
   PageHeader, SearchBar, Badge, Btn, Modal, Field, Input, Select, TextArea,
@@ -12,13 +13,12 @@ import {
   type BID, type BIDContact, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { findCommunityPartner } from "@/data";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
 const STATUSES   = ["Active Partner", "In Conversation", "Outreach", "Paused"] as const;
 const BOROUGHS   = ["Brooklyn", "Queens", "Manhattan", "Bronx", "Staten Island", "New York (All Boroughs)"];
-type BidViewMode = "cards" | "compact";
-
 type BidStatusOption = (typeof STATUSES)[number];
 
 const BID_STATUS_SORT_ORDER: Record<BidStatusOption, number> = {
@@ -53,17 +53,6 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
   borough: "", address: "", zipCode: "", nextAction: "", priority: "Medium",
 };
 
-// ── COLUMN DEFINITIONS (compact view) ─────────────────────────────────────────
-
-const BID_ALL_COLS = [
-  { key: "name",       label: "Name",        width: 240, restricted: false, adminOnly: false },
-  { key: "status",     label: "Status",      width: 140, restricted: false, adminOnly: false },
-  { key: "borough",    label: "Borough / Region", width: 190, restricted: false, adminOnly: false },
-  { key: "contact",    label: "Contact",     width: 260, restricted: true,  adminOnly: false },
-  { key: "nextAction", label: "Next Action", width: 240, restricted: true,  adminOnly: false },
-  { key: "actions",    label: "Actions",     width: 110, restricted: false, adminOnly: true  },
-] as const;
-
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function BIDTrackerPage() {
@@ -71,9 +60,6 @@ export default function BIDTrackerPage() {
   const [chapters, setChapters]       = useState<Chapter[]>([]);
   const [chapterId, setChapterId]     = useState<string | null>(null);
   const [search, setSearch]           = useState("");
-  const [viewMode, setViewMode]       = useState<BidViewMode>("cards");
-  const [hiddenBidCols, setHiddenBidCols] = useState<Set<string>>(new Set());
-  const [bidColsMenuOpen, setBidColsMenuOpen] = useState(false);
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
   const [form, setForm]               = useState(BLANK_FORM);
@@ -289,196 +275,85 @@ export default function BIDTrackerPage() {
         <StatCard label="In Pipeline"     value={stats.pipeline} color="text-blue-400" />
       </div>
 
-      {/* Search and filter controls */}
-      <div className="flex gap-3 mb-4 flex-wrap items-center">
+      <div className="mb-4">
         <SearchBar value={search} onChange={setSearch} placeholder="Search by name or location…" />
-        {viewMode === "compact" && (
-          <div className="relative">
-            <Btn size="sm" variant="ghost" onClick={() => setBidColsMenuOpen((v) => !v)}>
-              Columns{hiddenBidCols.size > 0 ? ` (${hiddenBidCols.size} hidden)` : ""}
-            </Btn>
-            {bidColsMenuOpen && (
-              <div className="members-col-panel" onClick={(e) => e.stopPropagation()}>
-                <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-white/40">Show / Hide Columns</p>
-                {BID_ALL_COLS.filter((c) => c.key !== "actions" && (!c.restricted || !isMemberRestricted) && (!c.adminOnly || canEdit)).map((col) => (
-                  <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 cursor-pointer text-xs text-white/70">
-                    <input
-                      type="checkbox"
-                      className="members-checkbox"
-                      checked={!hiddenBidCols.has(col.key)}
-                      onChange={(e) => setHiddenBidCols((prev) => {
-                        const next = new Set(prev);
-                        if (e.target.checked) next.delete(col.key); else next.add(col.key);
-                        return next;
-                      })}
-                    />
-                    {col.label}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1">
-          <button
-            onClick={() => setViewMode("cards")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "cards" ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
-          >
-            Cards
-          </button>
-          <button
-            onClick={() => setViewMode("compact")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "compact" ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/60 hover:text-white"}`}
-          >
-            Compact
-          </button>
-        </div>
       </div>
 
-      {viewMode === "cards" && (
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {sorted.map((bid) => {
+          const publicPartner = findCommunityPartner(bid.name);
+          const primaryContact = bid.contacts?.[0];
+          const contactName = primaryContact?.name || bid.contactName || "";
+          const contactEmail = primaryContact?.email || bid.contactEmail || "";
+          const initials = bid.name.split(/\s+/).filter(Boolean).slice(0, 2)
+            .map((part) => part[0]?.toUpperCase()).join("");
           return (
-            <div
+            <article
               key={bid.id}
-              className="bg-[#1C1F26] border border-white/8 rounded-xl p-3 sm:p-4"
+              className="group flex min-h-[330px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1C1F26] shadow-sm transition-shadow hover:shadow-lg"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2 min-w-0 flex-1">
-                  <p className="text-white font-semibold leading-snug break-words">{bid.name}</p>
-                  {!isMemberRestricted ? (
-                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
-                      <span>{bid.borough || "No location"}</span>
-                      <span>•</span>
-                      <span>{(bid.contacts?.[0]?.name || bid.contactName) || "No contact"}</span>
-                      {(bid.contacts?.[0]?.email || bid.contactEmail) && (
-                        <>
-                          <span>•</span>
-                          <a href={`mailto:${bid.contacts?.[0]?.email || bid.contactEmail}`} className="text-[#F6B78D]/75 hover:text-[#F6B78D] transition-colors">
-                            {bid.contacts?.[0]?.email || bid.contactEmail}
-                          </a>
-                        </>
-                      )}
-                      {bid.contacts && bid.contacts.length > 1 && (
-                        <span className="text-white/30">+{bid.contacts.length - 1} more</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-white/45">
-                      {bid.borough || "No location"}
-</div>
-                  )}
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge label={normalizeBidStatus(bid.status)} />
-                  </div>
-                </div>
-                {canEdit && (
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <Btn size="sm" variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openEdit(bid)}>Edit</Btn>
+              <div className="relative flex h-32 items-center justify-center border-b border-white/8 bg-white px-8 py-5">
+                {publicPartner ? (
+                  <Image
+                    src={publicPartner.logo}
+                    alt={`${publicPartner.name} logo`}
+                    fill
+                    sizes="(max-width: 640px) 90vw, (max-width: 1280px) 45vw, 30vw"
+                    className="object-contain p-6"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F6B78D]/20 text-xl font-bold tracking-tight text-[#8B5E48]">
+                    {initials || "ORG"}
                   </div>
                 )}
               </div>
-
-              {!isMemberRestricted && (bid.nextAction || bid.notes) && (
-                <div className="mt-3 bg-white/4 border border-white/6 rounded-lg px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-wider text-white/35 mb-1">Notes / Next Action</p>
-                  <p className="text-sm text-white/70">{bid.nextAction}</p>
+              <div className="flex flex-1 flex-col p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-[15px] font-semibold leading-snug text-white">{bid.name}</h2>
+                    <p className="mt-1 text-[11px] text-white/45">{bid.borough || "Location not recorded"}</p>
+                  </div>
+                  <Badge label={normalizeBidStatus(bid.status)} />
                 </div>
-              )}
-
-            </div>
+                {!isMemberRestricted && (
+                  <div className="mb-4 space-y-1 text-[11px] text-white/55">
+                    <p>{contactName || "No primary contact recorded"}</p>
+                    {contactEmail && (
+                      <a href={`mailto:${contactEmail}`} className="block truncate text-[#F6B78D]/75 hover:underline">
+                        {contactEmail}
+                      </a>
+                    )}
+                    {bid.contacts && bid.contacts.length > 1 && (
+                      <p className="text-white/35">{bid.contacts.length - 1} additional contact{bid.contacts.length === 2 ? "" : "s"}</p>
+                    )}
+                  </div>
+                )}
+                {!isMemberRestricted && (bid.nextAction || bid.notes) && (
+                  <div className="mb-4 rounded-lg border border-white/6 bg-white/4 px-3 py-2">
+                    <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/35">Next action</p>
+                    <p className="line-clamp-2 text-[11px] leading-relaxed text-white/65">{bid.nextAction || bid.notes}</p>
+                  </div>
+                )}
+                <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/8 pt-3">
+                  {publicPartner ? (
+                    <a href={publicPartner.website} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-[#F6B78D]/75 hover:underline">
+                      Visit website ↗
+                    </a>
+                  ) : (
+                    <span className="text-[10px] text-white/30">No public logo yet</span>
+                  )}
+                  {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit details</Btn>}
+                </div>
+              </div>
+            </article>
           );
         })}
         {filtered.length === 0 && (
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Empty
-              message="No partners match your filters."
-              action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first partner</Btn> : undefined}
-            />
+          <div className="sm:col-span-2 xl:col-span-3">
+            <Empty message="No partners match your filters." action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first partner</Btn> : undefined} />
           </div>
         )}
       </div>
-      )}
-      {viewMode === "compact" && (() => {
-        const visCols = BID_ALL_COLS.filter((c) =>
-          !hiddenBidCols.has(c.key)
-          && (!c.restricted || !isMemberRestricted)
-          && (!c.adminOnly || canEdit)
-        );
-        const tableWidth = visCols.reduce((s, c) => s + c.width, 0);
-        return (
-          <div className="rounded-2xl border border-white/10 bg-[#13161D] overflow-x-auto mb-6">
-            <table className="table-fixed text-left text-[11px]" style={{ width: tableWidth }}>
-              <thead className="bg-[#0F1014]">
-                <tr className="members-header-sep">
-                  {visCols.map((col) => (
-                    <th key={col.key} style={{ width: col.width }} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white/40 whitespace-nowrap">
-                      <span className="inline-flex items-center">
-                        {col.label}
-                        {col.key !== "actions" && (
-                          <button className="members-col-hide-btn" onClick={() => setHiddenBidCols((p) => new Set([...p, col.key]))} title={`Hide ${col.label}`}>✕</button>
-                        )}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((bid) => (
-                  <tr key={bid.id} className="border-b border-white/5 hover:bg-white/[0.025]">
-                    {visCols.map((col) => {
-                      switch (col.key) {
-                        case "name": return <td key="name" className="px-3 py-0 h-8 text-white/90 align-middle overflow-hidden"><span className="block truncate" title={bid.name}>{bid.name}</span></td>;
-                        case "status": return <td key="status" className="px-3 py-0 h-8 align-middle"><Badge label={normalizeBidStatus(bid.status)} /></td>;
-                        case "borough": return (
-                          <td key="borough" className="px-3 py-0 h-8 text-white/60 align-middle overflow-hidden">
-                            <span className="block truncate" title={bid.borough || "—"}>
-                              {bid.borough || "—"}
-                            </span>
-                          </td>
-                        );
-                        case "contact": return (
-                          <td key="contact" className="px-3 py-0 h-8 text-white/55 align-middle overflow-hidden">
-                            {(() => {
-                              const primary = bid.contacts?.[0];
-                              const name  = primary?.name  || bid.contactName || "";
-                              const email = primary?.email || bid.contactEmail || "";
-                              const phone = primary?.phone || bid.phone || "";
-                              const extra = bid.contacts && bid.contacts.length > 1 ? ` +${bid.contacts.length - 1}` : "";
-                              const text  = ([name, email, phone].filter(Boolean).join(" · ") + extra) || "—";
-                              return <span className="block truncate" title={text}>{text}</span>;
-                            })()}
-                          </td>
-                        );
-                        case "nextAction": return (
-                          <td key="nextAction" className="px-3 py-0 h-8 text-white/55 align-middle overflow-hidden">
-                            <span className="block truncate" title={bid.nextAction || bid.notes || "—"}>
-                              {bid.nextAction || bid.notes || "—"}
-                            </span>
-                          </td>
-                        );
-                        case "actions": return (
-                          <td key="actions" className="px-3 py-0 h-8 align-middle">
-                            <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit</Btn>
-                          </td>
-                        );
-                        default: return null;
-                      }
-                    })}
-                  </tr>
-                ))}
-                {sorted.length === 0 && (
-                  <tr>
-                    <td className="px-3 py-4 text-white/40 text-xs" colSpan={visCols.length}>
-                      No partners match your filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        );
-      })()}
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === "create" ? "New Partner Organization" : "Edit Partner Organization"}>

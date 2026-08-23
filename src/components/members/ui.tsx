@@ -1042,7 +1042,7 @@ export function Toggle({ checked, onChange, label }: {
 }
 
 // ── VIEW PANEL ────────────────────────────────────────────────────────────────
-// Unified "View" button + dropdown used by every admin table to host filter,
+// Unified filter button + dropdown used by every admin table to host filter,
 // sort, and column-visibility controls in one place.
 
 export interface SortRule { col: number; dir: "asc" | "desc" }
@@ -1106,7 +1106,7 @@ export function SortPanel({
 }
 
 export function ViewPanel({
-  active: _active,
+  active = false,
   align = "right",
   children,
 }: {
@@ -1133,9 +1133,15 @@ export function ViewPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+          active
+            ? "border-[#F6B78D]/40 bg-[#F6B78D]/10 text-[#F6B78D]"
+            : "border-white/12 bg-transparent text-white/55 hover:border-white/18 hover:text-white/75"
+        }`}
       >
-        View
+        Filters
+        {active && <span className="h-1.5 w-1.5 rounded-full bg-current" aria-label="Filters active" />}
       </button>
       {open && (
         <div

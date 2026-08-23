@@ -6,12 +6,13 @@ import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { PROJECT_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
   PageHeader, SearchBar, Badge, Btn, Empty, SkeletonRows, LoadError,
+  Modal, Field, Input, Select, TextArea,
 } from "@/components/members/ui";
 import {
   subscribeBusinesses, subscribeTeam, subscribeChapters, updateBusiness, createBusiness,
   notifyDraftReady,
-  TECH_STATUSES, TECH_PIPELINE,
-  type Business, type TeamMember, type TechStatus, type Chapter,
+  TECH_STATUSES, TECH_PIPELINE, TECH_PRIORITIES,
+  type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import ProjectPanel from "./ProjectPanel";
@@ -29,6 +30,38 @@ const VIEWS: { key: ViewKey; label: string }[] = [
 ];
 
 const PRIORITY_RANK: Record<string, number> = { High: 0, Medium: 1, Maybe: 2 };
+
+type NewProjectDraft = {
+  name: string;
+  techStatus: TechStatus;
+  techPriority: TechPriority;
+  chapterId: string;
+  ownerName: string;
+  ownerEmail: string;
+  phone: string;
+  address: string;
+  neighborhood: string;
+  clientUrl: string;
+  previewUrl: string;
+  liveUrl: string;
+  notes: string;
+};
+
+const EMPTY_PROJECT_DRAFT: NewProjectDraft = {
+  name: "",
+  techStatus: "Backlog",
+  techPriority: "Medium",
+  chapterId: "",
+  ownerName: "",
+  ownerEmail: "",
+  phone: "",
+  address: "",
+  neighborhood: "",
+  clientUrl: "",
+  previewUrl: "",
+  liveUrl: "",
+  notes: "",
+};
 
 // Colour belongs to the status, not to whichever URL happens to exist.
 const STATUS_TINT: Record<TechStatus, string> = {
@@ -94,6 +127,10 @@ function ProjectsPageInner() {
   const [blocked, setBlocked]       = useState<string | null>(null);
   const [quickAdd, setQuickAdd]     = useState("");
   const [adding, setAdding]         = useState(false);
+  const [quickAddError, setQuickAddError] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createDraft, setCreateDraft] = useState<NewProjectDraft>(EMPTY_PROJECT_DRAFT);
+  const [createError, setCreateError] = useState("");
   const [statusFilter, setStatusFilter] = useState<Set<TechStatus>>(new Set());
 
   useEffect(() => subscribeBusinesses((rows, state) => {
@@ -165,6 +202,42 @@ function ProjectsPageInner() {
 
   const open = businesses?.find((b) => b.id === openId) ?? null;
 
+  const openCreateForm = (name = "") => {
+    setCreateDraft({
+      ...EMPTY_PROJECT_DRAFT,
+      name,
+      chapterId: chapterId ?? defaultChapterId ?? "",
+    });
+    setCreateError("");
+    setCreateOpen(true);
+  };
+
+  const createProjectRecord = async (draft: NewProjectDraft) => {
+    const now = new Date().toISOString();
+    await createBusiness({
+      name: draft.name.trim(),
+      ownerName: draft.ownerName.trim(),
+      ownerEmail: draft.ownerEmail.trim(),
+      ownerAlternateEmail: "",
+      phone: draft.phone.trim(),
+      alternatePhone: "",
+      address: draft.address.trim(),
+      neighborhood: draft.neighborhood.trim() || undefined,
+      projectStatus: "Upcoming",
+      firstContactDate: "",
+      notes: draft.notes.trim(),
+      techStatus: draft.techStatus,
+      techPriority: draft.techPriority,
+      assignees: [],
+      hoursLogged: 0,
+      clientUrl: draft.clientUrl.trim() || undefined,
+      previewUrl: draft.previewUrl.trim() || undefined,
+      liveUrl: draft.liveUrl.trim() || undefined,
+      chapterId: draft.chapterId || undefined,
+      lastTouchedAt: now,
+    } as Omit<Business, "id" | "createdAt" | "updatedAt">);
+  };
+
   const setStatus = async (b: Business, status: TechStatus) => {
     // The gate that keeps the list honest: a status that claims a URL exists
     // can't be set until it does.
@@ -187,7 +260,12 @@ function ProjectsPageInner() {
   // of pasted links, so pasting one has to be the whole interaction.
   const addProject = async () => {
     const raw = quickAdd.trim();
-    if (!raw || adding) return;
+    if (adding) return;
+    setQuickAddError("");
+    if (!raw) {
+      openCreateForm();
+      return;
+    }
 
     const looksLikeUrl = /^(https?:\/\/|www\.)|\.[a-z]{2,}(\/|$)/i.test(raw);
     let name = raw;
@@ -226,16 +304,49 @@ function ProjectsPageInner() {
 
     setAdding(true);
     try {
-      await createBusiness({
-        name, ownerName: "", ownerEmail: "", ownerAlternateEmail: "", phone: "",
-        alternatePhone: "", address: "", website: "", projectStatus: "Upcoming",
-        teamLead: "", firstContactDate: "", notes: "",
-        techStatus, techPriority: "Medium", assignees: [], hoursLogged: 0,
-        previewUrl, liveUrl,
-        chapterId: chapterId ?? defaultChapterId ?? undefined,
-        lastTouchedAt: new Date().toISOString(),
-      } as Omit<Business, "id" | "createdAt" | "updatedAt">);
+      await createProjectRecord({
+        ...EMPTY_PROJECT_DRAFT,
+        name,
+        techStatus,
+        previewUrl: previewUrl ?? "",
+        liveUrl: liveUrl ?? "",
+        chapterId: chapterId ?? defaultChapterId ?? "",
+      });
       setQuickAdd("");
+    } catch (error) {
+      setQuickAddError(error instanceof Error ? error.message : "The website project was not added.");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const submitCreateForm = async () => {
+    if (!createDraft.name.trim() || adding) return;
+    const duplicate = (businesses ?? []).find((business) =>
+      business.name.trim().toLowerCase() === createDraft.name.trim().toLowerCase()
+      || (!!createDraft.previewUrl.trim() && business.previewUrl === createDraft.previewUrl.trim())
+      || (!!createDraft.liveUrl.trim() && business.liveUrl === createDraft.liveUrl.trim()));
+    if (duplicate) {
+      setCreateOpen(false);
+      setOpenId(duplicate.id);
+      return;
+    }
+    if (createDraft.techStatus === "Draft Ready" && !createDraft.previewUrl.trim()) {
+      setCreateError("Draft Ready needs a preview link.");
+      return;
+    }
+    if (createDraft.techStatus === "Live" && !createDraft.liveUrl.trim()) {
+      setCreateError("Live needs the launched domain.");
+      return;
+    }
+    setAdding(true);
+    setCreateError("");
+    try {
+      await createProjectRecord(createDraft);
+      setCreateOpen(false);
+      setCreateDraft(EMPTY_PROJECT_DRAFT);
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "The website project was not created.");
     } finally {
       setAdding(false);
     }
@@ -249,6 +360,92 @@ function ProjectsPageInner() {
         title="Tech Projects"
       />
       <SectionTabs tabs={PROJECT_GROUP_TABS.filter((t) => canPublish || t.href === "/members/projects")} />
+
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New website project">
+        <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Field label="Business or organization name" required>
+                <Input
+                  autoFocus
+                  value={createDraft.name}
+                  onChange={(e) => setCreateDraft((draft) => ({ ...draft, name: e.target.value }))}
+                  placeholder="Business name"
+                />
+              </Field>
+            </div>
+            <Field label="Website status">
+              <Select
+                options={TECH_STATUSES}
+                value={createDraft.techStatus}
+                onChange={(e) => setCreateDraft((draft) => ({ ...draft, techStatus: e.target.value as TechStatus }))}
+              />
+            </Field>
+            <Field label="Priority">
+              <Select
+                options={TECH_PRIORITIES}
+                value={createDraft.techPriority}
+                onChange={(e) => setCreateDraft((draft) => ({ ...draft, techPriority: e.target.value as TechPriority }))}
+              />
+            </Field>
+            {chapters.length > 1 && (
+              <div className="sm:col-span-2">
+                <Field label="Market">
+                  <select
+                    value={createDraft.chapterId}
+                    onChange={(e) => setCreateDraft((draft) => ({ ...draft, chapterId: e.target.value }))}
+                    className="w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-sm text-white focus:border-[#F6B78D]/45 focus:outline-none"
+                  >
+                    {[...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((chapter) => (
+                      <option key={chapter.id} value={chapter.id}>{chapter.name}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            )}
+            <Field label="Current website">
+              <Input value={createDraft.clientUrl} onChange={(e) => setCreateDraft((draft) => ({ ...draft, clientUrl: e.target.value }))} placeholder="https://…" />
+            </Field>
+            <Field label="Vercel preview">
+              <Input value={createDraft.previewUrl} onChange={(e) => setCreateDraft((draft) => ({ ...draft, previewUrl: e.target.value }))} placeholder="https://…vercel.app" />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Launched domain">
+                <Input value={createDraft.liveUrl} onChange={(e) => setCreateDraft((draft) => ({ ...draft, liveUrl: e.target.value }))} placeholder="https://…" />
+              </Field>
+            </div>
+            <Field label="Owner or main contact">
+              <Input value={createDraft.ownerName} onChange={(e) => setCreateDraft((draft) => ({ ...draft, ownerName: e.target.value }))} placeholder="Full name" />
+            </Field>
+            <Field label="Contact email">
+              <Input type="email" value={createDraft.ownerEmail} onChange={(e) => setCreateDraft((draft) => ({ ...draft, ownerEmail: e.target.value }))} placeholder="name@example.com" />
+            </Field>
+            <Field label="Phone">
+              <Input value={createDraft.phone} onChange={(e) => setCreateDraft((draft) => ({ ...draft, phone: e.target.value }))} placeholder="(555) 000-0000" />
+            </Field>
+            <Field label="Neighborhood">
+              <Input value={createDraft.neighborhood} onChange={(e) => setCreateDraft((draft) => ({ ...draft, neighborhood: e.target.value }))} placeholder="e.g. Bayside" />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Address">
+                <Input value={createDraft.address} onChange={(e) => setCreateDraft((draft) => ({ ...draft, address: e.target.value }))} placeholder="Street address" />
+              </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <Field label="Project notes">
+                <TextArea rows={3} value={createDraft.notes} onChange={(e) => setCreateDraft((draft) => ({ ...draft, notes: e.target.value }))} placeholder="Scope, context, or next step" />
+              </Field>
+            </div>
+          </div>
+          {createError && <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{createError}</p>}
+        </div>
+        <div className="mt-5 flex justify-end gap-2 border-t border-white/8 pt-4">
+          <Btn variant="ghost" onClick={() => setCreateOpen(false)} disabled={adding}>Cancel</Btn>
+          <Btn variant="primary" onClick={() => void submitCreateForm()} disabled={!createDraft.name.trim() || adding}>
+            {adding ? "Creating…" : "Create website project"}
+          </Btn>
+        </div>
+      </Modal>
 
       {/* The pipeline doubles as the filter, so each tier carries its own
           colour — a row of plain numbers gave no sign it could be clicked. */}
@@ -310,18 +507,21 @@ function ProjectsPageInner() {
       )}
 
       {canEdit && (
-        <div className="mb-3 flex items-center gap-2">
-          <input
-            value={quickAdd}
-            onChange={(e) => setQuickAdd(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addProject(); } }}
-            placeholder="Paste a Vercel link or type a business name, then press Enter"
-            aria-label="Add a website"
-            className="flex-1 rounded-lg border border-white/15 bg-[#0F1014] px-3 py-2 text-[13px] text-white/90 placeholder:text-white/35 focus:border-[#F3E28D]/50 focus:outline-none"
-          />
-          <Btn variant="primary" onClick={() => void addProject()} disabled={!quickAdd.trim() || adding}>
-            {adding ? "Adding…" : "Add"}
-          </Btn>
+        <div className="mb-3">
+          <div className="flex items-center gap-2">
+            <input
+              value={quickAdd}
+              onChange={(e) => { setQuickAdd(e.target.value); if (quickAddError) setQuickAddError(""); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addProject(); } }}
+              placeholder="Paste a Vercel link or type a business name"
+              aria-label="Add a website"
+              className="flex-1 rounded-lg border border-white/15 bg-[#0F1014] px-3 py-2 text-[13px] text-white/90 placeholder:text-white/35 focus:border-[#F3E28D]/50 focus:outline-none"
+            />
+            <Btn variant="primary" onClick={() => void addProject()} disabled={adding}>
+              {adding ? "Adding…" : "Add"}
+            </Btn>
+          </div>
+          {quickAddError && <p role="alert" className="mt-1.5 text-xs text-red-300">{quickAddError}</p>}
         </div>
       )}
 

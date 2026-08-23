@@ -679,7 +679,7 @@ export default function TeamPage() {
                   ? `Inviting… ${inviteAllProgress.sent}/${inviteAllProgress.total}`
                   : inviteAllState === "done"
                     ? `✓ Sent ${inviteAllProgress.sent}`
-                    : `Invite All (${unregisteredCount})`}
+                    : `Send account invites (${unregisteredCount})`}
               </Btn>
             )}
             <Btn
@@ -719,16 +719,16 @@ export default function TeamPage() {
                 downloadCsv(dateStampedFilename("team-directory"), csv);
               }}
             >
-              Export CSV
+              Export members
             </Btn>
             <Btn variant="primary" onClick={openCreate}>+ Add Member</Btn>
           </div>
         ) : undefined}
       />
       <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
-        <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
-        <span>With Account: <span className="text-emerald-300 font-semibold">{withAccountCount}</span></span>
-        <span>No Account: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>
+        <span>Total members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
+        <span>Portal accounts: <span className="text-emerald-300 font-semibold">{withAccountCount}</span></span>
+        <span>Need an account invite: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>
         <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
       </div>
 

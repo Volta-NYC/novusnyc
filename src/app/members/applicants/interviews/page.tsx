@@ -2223,6 +2223,22 @@ function InterviewsContent() {
                                       if (disabled) return;
                                       extendDragSelection(dayIdx, rowIndex, isPastSlot);
                                     }}
+                                    onKeyDown={(e) => {
+                                      if (disabled || (e.key !== "Enter" && e.key !== " ")) return;
+                                      e.preventDefault();
+                                      startDragSelection(day, dayIdx, hour, minute, isVisible, isPastSlot, isBooked);
+                                      if (isBooked) return;
+                                      const mode: DragMode = isVisible ? "remove" : "add";
+                                      setDraggingSelection(false);
+                                      setDragMode(mode);
+                                      setRepeatWeekly(mode === "add");
+                                      if (mode === "add") {
+                                        setBatchInterviewers([]);
+                                      } else if (slot) {
+                                        setSelectedInterviewers(interviewerDisplaysFromSlot(slot));
+                                      }
+                                      setShowBatchModal(true);
+                                    }}
                                     title={title}
                                     className={`w-full h-full border border-white/6 transition-colors ${
                                       disabled

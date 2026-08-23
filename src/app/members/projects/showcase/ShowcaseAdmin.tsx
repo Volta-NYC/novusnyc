@@ -1906,7 +1906,7 @@ function BusinessesPageInner() {
                   downloadCsv(dateStampedFilename(`businesses-${activeTab}`), csv);
                 }}
               >
-                Export CSV
+                Export businesses
               </Btn>
               <Btn variant="primary" onClick={() => openCreate(undefined, activeTab === "discovery")}>
                 {activeTab === "discovery" ? "+ Add to Discovery" : "+ New Business"}

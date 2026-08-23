@@ -898,7 +898,7 @@ export default function MemberEmailPage() {
               </Btn>
               {loadedTemplate && (
                 <Btn size="sm" variant="ghost" onClick={() => { setLoadedTemplateId(null); setSubject(""); setMessage(""); editorRef.current?.setContent(""); }}>
-                  Clear
+                  Clear draft
                 </Btn>
               )}
             </div>

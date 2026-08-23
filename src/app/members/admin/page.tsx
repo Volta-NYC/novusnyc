@@ -1163,7 +1163,7 @@ function AuditLogTab() {
               downloadCsv(dateStampedFilename("audit-log"), csv);
             }}
           >
-            Export CSV
+            Export audit log
           </Btn>
         </div>
 
@@ -1281,7 +1281,7 @@ function AdminContent() {
 
   const TABS: { key: AdminTab; label: string }[] = [
     { key: "data",     label: "Data" },
-    { key: "frontend", label: "Manage Frontend" },
+    { key: "frontend", label: "Public Site" },
     { key: "handbook", label: "Handbook" },
     { key: "audit",    label: "Audit Log" },
   ];

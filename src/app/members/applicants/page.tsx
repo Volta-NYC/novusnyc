@@ -699,7 +699,7 @@ export default function ApplicantsPage() {
             onClick={inviteAllUninvited}
             disabled={sendingInvites || uninvitedApplicantIds.length === 0}
           >
-            {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
+            {sendingInvites ? "Sending..." : `Send interview invites (${uninvitedApplicantIds.length})`}
           </Btn>
           <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites || unbookedReminderIds.length === 0} className={unbookedReminderIds.length === 0 ? "opacity-50" : ""}>
             {sendingReminders ? "Sending reminders..." : `Remind Unbooked (${unbookedReminderIds.length})`}
