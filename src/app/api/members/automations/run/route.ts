@@ -29,6 +29,10 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
 
+function firstName(value: unknown): string {
+  return String(value ?? "").trim().split(/\s+/)[0] || "there";
+}
+
 async function sendClaimed(
   automationId: string,
   subjectKey: string,
@@ -160,6 +164,51 @@ async function runSweep(viaCron: boolean) {
       }
     }
     report.task_due_soon = { sent, considered: (tasks ?? []).length };
+  }
+
+  // ── Semiannual certified-hours summary ────────────────────────────────────
+  {
+    const month = today.getUTCMonth();
+    const isSummaryMonth = month === 0 || month === 6;
+    let sent = 0;
+    let considered = 0;
+    if (isSummaryMonth) {
+      const year = today.getUTCFullYear();
+      const from = month === 0 ? `${year - 1}-07-01` : `${year}-01-01`;
+      const through = month === 0 ? `${year - 1}-12-31` : `${year}-06-30`;
+      const period = `${fmtDate(from)} through ${fmtDate(through)}`;
+      const { data: entries } = await sb.from("certified_hour_entries")
+        .select("member_id, department, hours")
+        .gte("occurred_on", from).lte("occurred_on", through);
+      const totals = new Map<string, { hours: number; departments: Map<string, number> }>();
+      for (const entry of entries ?? []) {
+        const memberId = String(entry.member_id);
+        const current = totals.get(memberId) ?? { hours: 0, departments: new Map<string, number>() };
+        const hours = Number(entry.hours || 0);
+        const department = String(entry.department || "General service");
+        current.hours += hours;
+        current.departments.set(department, (current.departments.get(department) ?? 0) + hours);
+        totals.set(memberId, current);
+      }
+      for (const [memberId, summary] of totals) {
+        const member = memberById.get(memberId);
+        const email = String(member?.email ?? "");
+        if (!member || !email || summary.hours <= 0) continue;
+        considered += 1;
+        const workSummary = [...summary.departments.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([department, hours]) => `${department}: ${hours.toFixed(2)}h`)
+          .join("; ");
+        sent += await sendClaimed("service_hours_summary", `${memberId}:${from}:${through}`, [email], {
+          memberName: firstName(member.name),
+          period,
+          totalHours: summary.hours.toFixed(2),
+          workSummary,
+          portalLink: `${SITE_URL}/members/me`,
+        });
+      }
+    }
+    report.service_hours_summary = { sent, considered };
   }
 
   return {

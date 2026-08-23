@@ -222,6 +222,9 @@ request review, but only owner/admin or that pod's LIT can approve `Done` and
 therefore certify task hours. Meetings may be saved before every roster row is
 marked; the attendance sheet finalizes only when every eligible member has an
 explicit status. Excused absences earn zero hours.
+The scheduled sweep emails a per-recipient certified-hours summary in January
+and July. Its delivery key includes the member and six-month period, so reruns
+and catch-up runs cannot duplicate a summary.
 
 Role is stored in `user_profiles.auth_role` and in the JWT `app_metadata.auth_role`. Read via `useAuth()` → `authRole`.
 
