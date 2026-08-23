@@ -39,16 +39,6 @@ export default async function Apply() {
                 <p className="mb-6 font-body text-lg leading-relaxed text-n-muted">
                   Join a student-led team doing real client work. The application takes about five minutes.
                 </p>
-                <ul className="mb-9 flex flex-wrap gap-2 font-body text-sm font-semibold text-n-ink" aria-label="Program details">
-                  {[
-                    "High school + college",
-                    "2–4 hours a week",
-                    "Fully remote",
-                  ].map((detail) => (
-                    <li key={detail} className="rounded-full border border-n-border bg-white px-3.5 py-2">{detail}</li>
-                  ))}
-                </ul>
-
                 <div className="space-y-5 border-t border-n-border pt-7">
                   <p className="font-body text-xs font-semibold text-n-muted uppercase tracking-widest">
                     What happens next
