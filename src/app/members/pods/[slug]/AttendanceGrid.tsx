@@ -291,6 +291,13 @@ export default function AttendanceGrid({
         </div>
       </div>
 
+      {meeting.notes && (
+        <div className="border-b border-white/10 bg-white/[0.02] px-4 py-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-white/40">Agenda and notes</p>
+          <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-white/65">{meeting.notes}</p>
+        </div>
+      )}
+
       {canEdit && (
         <div className="grid grid-cols-2 gap-px border-b border-white/10 bg-white/10 sm:grid-cols-6">
           {([

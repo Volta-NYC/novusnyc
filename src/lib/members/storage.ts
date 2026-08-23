@@ -1507,6 +1507,7 @@ export interface Pod {
   // task. Nothing about hours is fixed in code.
   defaultMeetingHours: number;
   defaultTaskHours: number;
+  calendarUrl: string;
   status: "Active" | "Archived";
   sortOrder: number;
   createdAt?: string;
