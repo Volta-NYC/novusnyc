@@ -102,31 +102,31 @@ export default function PublicCardOrderModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Arrange public cards" dismissible={!saving}>
-      <div className="mb-4 flex rounded-lg border border-white/10 bg-black/15 p-1">
+      <div className="mb-5 grid grid-cols-2 rounded-xl border border-black/10 bg-[#F2F3F5] p-1.5">
         {(["showcase", "home"] as const).map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => setSurface(key)}
-            className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${surface === key
+            className={`min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${surface === key
               ? "bg-[#F6B78D] text-[#17171B]"
-              : "text-white/55 hover:bg-white/5 hover:text-white/85"}`}
+              : "text-black/60 hover:bg-white hover:text-black/85"}`}
           >
             {key === "showcase" ? "Showcase" : "Home page"} · {counts[key]}
           </button>
         ))}
       </div>
 
-      <p className="mb-3 text-xs leading-relaxed text-white/45">
+      <p className="mb-4 text-sm leading-relaxed text-black/60">
         Drag cards into place, or use the arrow buttons. This order affects only the {surface === "showcase" ? "full Showcase" : "home-page selection"}.
       </p>
 
       {ordered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/15 px-4 py-10 text-center text-sm text-white/35">
+        <div className="rounded-xl border border-dashed border-black/15 bg-black/[0.02] px-4 py-10 text-center text-sm text-black/50">
           No cards are enabled for this surface yet.
         </div>
       ) : (
-        <ol className="grid max-h-[55vh] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+        <ol className="grid max-h-[56vh] grid-cols-1 gap-3 overflow-y-auto pr-2 sm:grid-cols-2">
           {ordered.map((business, index) => (
             <li
               key={business.id}
@@ -135,40 +135,40 @@ export default function PublicCardOrderModal({
               onDragEnd={() => setDraggedId(null)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={() => { if (draggedId) move(draggedId, business.id); setDraggedId(null); }}
-              className={`flex items-center gap-2 rounded-xl border bg-[#111319] p-2 transition-colors ${draggedId === business.id
-                ? "border-[#F6B78D]/60 opacity-55"
-                : "border-white/10 hover:border-white/25"}`}
+              className={`flex min-h-[72px] cursor-grab items-center gap-3 rounded-xl border bg-white p-3 shadow-sm transition-[border-color,box-shadow,opacity] active:cursor-grabbing ${draggedId === business.id
+                ? "border-[#F6B78D] opacity-55"
+                : "border-black/10 hover:border-black/25 hover:shadow-md"}`}
             >
-              <span className="w-6 shrink-0 text-center font-mono text-xs text-white/35">{index + 1}</span>
-              <div className="h-11 w-14 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+              <span className="w-6 shrink-0 text-center font-mono text-sm font-semibold text-black/45">{index + 1}</span>
+              <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-black/10 bg-black/[0.03]">
                 {business.showcaseImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={business.showcaseImageUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="flex h-full items-center justify-center text-lg font-semibold text-white/25">
+                  <span className="flex h-full items-center justify-center text-lg font-semibold text-black/30">
                     {business.name.slice(0, 1).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-white/85">{business.name}</p>
-                <p className="truncate text-[10px] text-white/35">{business.neighborhood || "No neighborhood"}</p>
+                <p className="truncate text-sm font-semibold text-black/85">{business.name}</p>
+                <p className="mt-0.5 truncate text-xs text-black/50">{business.neighborhood || "No neighborhood"}</p>
               </div>
               <div className="flex shrink-0 flex-col">
                 <button type="button" onClick={() => nudge(business.id, -1)} disabled={index === 0}
                   aria-label={`Move ${business.name} earlier`}
-                  className="rounded px-1.5 py-0.5 text-xs text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-20">↑</button>
+                  className="min-h-8 min-w-8 rounded-md text-sm text-black/55 hover:bg-black/5 hover:text-black disabled:opacity-20">↑</button>
                 <button type="button" onClick={() => nudge(business.id, 1)} disabled={index === ordered.length - 1}
                   aria-label={`Move ${business.name} later`}
-                  className="rounded px-1.5 py-0.5 text-xs text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-20">↓</button>
+                  className="min-h-8 min-w-8 rounded-md text-sm text-black/55 hover:bg-black/5 hover:text-black disabled:opacity-20">↓</button>
               </div>
             </li>
           ))}
         </ol>
       )}
 
-      {error && <p role="alert" className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{error}</p>}
-      <div className="mt-5 flex justify-end gap-2 border-t border-white/10 pt-4">
+      {error && <p role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700">{error}</p>}
+      <div className="mt-5 flex justify-end gap-2 border-t border-black/10 pt-4">
         <Btn variant="ghost" onClick={onClose} disabled={saving}>Cancel</Btn>
         <Btn variant="primary" onClick={() => void save()} disabled={!dirty || saving}>
           {saving ? "Saving order…" : "Save order"}

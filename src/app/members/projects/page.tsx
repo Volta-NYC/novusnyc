@@ -14,7 +14,7 @@ import {
   type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
-import ProjectPanel from "./ProjectPanel";
+import ProjectPanel, { type ProjectPanelFocus } from "./ProjectPanel";
 import PublicCardOrderModal from "./PublicCardOrderModal";
 
 // The doc's tabs, as filters over one list. Each is a question the tech team
@@ -124,6 +124,8 @@ function ProjectsPageInner() {
   );
   const [search, setSearch]         = useState("");
   const [openId, setOpenId]         = useState<string | null>(null);
+  const [panelFocus, setPanelFocus] = useState<ProjectPanelFocus>("primaryLink");
+  const [focusRequestKey, setFocusRequestKey] = useState(0);
   const [blocked, setBlocked]       = useState<string | null>(null);
   const [quickAdd, setQuickAdd]     = useState("");
   const [adding, setAdding]         = useState(false);
@@ -203,6 +205,12 @@ function ProjectsPageInner() {
   }, [businesses, chapterId, defaultChapterId]);
 
   const open = businesses?.find((b) => b.id === openId) ?? null;
+
+  const openProject = (id: string, focus: ProjectPanelFocus = "primaryLink") => {
+    setOpenId(id);
+    setPanelFocus(focus);
+    setFocusRequestKey((key) => key + 1);
+  };
 
   const openCreateForm = (name = "") => {
     setCreateDraft({
@@ -547,7 +555,7 @@ function ProjectsPageInner() {
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addProject(); } }}
               placeholder="Paste a Vercel link or type a business name"
               aria-label="Add a website"
-              className="flex-1 rounded-lg border border-white/15 bg-[#0F1014] px-3 py-2 text-[13px] text-white/90 placeholder:text-white/35 focus:border-[#F3E28D]/50 focus:outline-none"
+              className="min-h-10 flex-1 rounded-lg border border-white/15 bg-[#0F1014] px-3 py-2 text-[13px] text-white/90 placeholder:text-white/35 focus:border-[#F3E28D]/50 focus:outline-none"
             />
             <Btn variant="primary" onClick={() => void addProject()} disabled={adding}>
               {adding ? "Adding…" : "Add"}
@@ -613,28 +621,15 @@ function ProjectsPageInner() {
                 return (
                   <tr
                     key={b.id}
-                    // The row is the control that opens the project, so it has
-                    // to answer the keyboard the way a button does.
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Open ${b.name}`}
-                    onClick={() => setOpenId(b.id)}
-                    onKeyDown={(e) => {
-                      if (e.target !== e.currentTarget) return;
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setOpenId(b.id);
-                      }
-                    }}
-                    className={`cursor-pointer border-b border-white/10 align-middle transition-colors last:border-b-0 hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#F6B78D]/70 ${
+                    className={`border-b border-white/10 align-middle transition-colors last:border-b-0 hover:bg-white/[0.05] ${
                       openId === b.id ? "bg-white/[0.07]" : ""
                     }`}
                   >
                     <td className="px-3 py-2">
-                      <div className="truncate text-[12px] font-medium text-white/90" title={b.name}>{b.name}</div>
-                      {b.neighborhood && (
-                        <div className="truncate text-[10px] text-white/35">{b.neighborhood}</div>
-                      )}
+                      <button type="button" onClick={() => openProject(b.id, "name")} className="block w-full rounded text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F6B78D]/70" aria-label={`Edit name for ${b.name}`}>
+                        <span className="block truncate text-[12px] font-medium text-white/90" title={b.name}>{b.name}</span>
+                        {b.neighborhood && <span className="block truncate text-[10px] text-white/35">{b.neighborhood}</span>}
+                      </button>
                     </td>
 
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
@@ -661,18 +656,21 @@ function ProjectsPageInner() {
                     </td>
 
                     <td className="px-3 py-2">
-                      <div className="truncate text-[11px] text-white/70" title={assigned.join(", ")}>
+                      <button type="button" onClick={() => openProject(b.id, "assignees")} className="block w-full rounded text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F6B78D]/70" aria-label={`Edit assignees for ${b.name}`}>
+                      <span className="block truncate text-[11px] text-white/70" title={assigned.join(", ")}>
                         {assigned.length ? assigned.join(", ") : <span className="text-white/25">—</span>}
-                      </div>
+                      </span>
+                      </button>
                     </td>
 
-                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <td className="cursor-pointer px-3 py-2" onClick={() => openProject(b.id, "primaryLink")}>
                       {primary ? (
                         <a
                           href={primary}
                           target="_blank"
                           rel="noopener noreferrer"
                           title={primary}
+                          onClick={(event) => event.stopPropagation()}
                           className="block truncate text-[11px] text-blue-400 hover:underline"
                         >
                           {hostOf(primary)}
@@ -683,18 +681,21 @@ function ProjectsPageInner() {
                     </td>
 
                     <td className="px-3 py-2">
-                      <div className="truncate text-[11px] text-white/45" title={(b.notes ?? "").replace(/\n/g, " ")}>
+                      <button type="button" onClick={() => openProject(b.id, "notes")} className="block w-full rounded text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F6B78D]/70" aria-label={`Edit note for ${b.name}`}>
+                      <span className="block truncate text-[11px] text-white/45" title={(b.notes ?? "").replace(/\n/g, " ")}>
                         {(b.notes ?? "").split("\n")[0] || <span className="text-white/20">—</span>}
-                      </div>
+                      </span>
+                      </button>
                     </td>
 
                     {canPublish && (
-                      <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
+                      <td className="cursor-pointer px-3 py-2" onClick={() => openProject(b.id, "public")}>
                         <div className="flex items-center gap-3">
                           <label className="flex cursor-pointer items-center gap-1.5 text-[10px] text-white/55">
                             <input
                               type="checkbox"
                               checked={!!b.showcaseEnabled}
+                              onClick={(event) => event.stopPropagation()}
                               onChange={(event) => void setPublicPlacement(b, "showcase", event.target.checked)}
                               className="members-checkbox"
                             />
@@ -705,6 +706,7 @@ function ProjectsPageInner() {
                               type="checkbox"
                               checked={!!b.showcaseFeaturedOnHome}
                               disabled={!b.showcaseEnabled}
+                              onClick={(event) => event.stopPropagation()}
                               onChange={(event) => void setPublicPlacement(b, "home", event.target.checked)}
                               className="members-checkbox"
                             />
@@ -715,9 +717,11 @@ function ProjectsPageInner() {
                     )}
 
                     <td className="px-3 py-2 text-right">
+                      <button type="button" onClick={() => openProject(b.id)} className="w-full rounded text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F6B78D]/70" aria-label={`Open ${b.name}`}>
                       <span className="whitespace-nowrap font-mono text-[10px] tabular-nums text-white/30">
                         {(b.lastTouchedAt ?? b.updatedAt ?? "").slice(5, 10)}
                       </span>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -738,6 +742,8 @@ function ProjectsPageInner() {
           canEdit={canEdit}
           canPublish={canPublish}
           blocked={blocked}
+          initialFocus={panelFocus}
+          focusRequestKey={focusRequestKey}
           onClose={() => { setOpenId(null); setBlocked(null); }}
           onStatus={(s) => setStatus(open, s)}
         />

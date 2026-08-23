@@ -232,7 +232,7 @@ export function Input({ className = "", ...props }: InputProps) {
   return (
     <input
       {...props}
-      className={`w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
+      className={`min-h-10 w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
     />
   );
 }
@@ -247,7 +247,7 @@ export function PasswordInput({ className = "", ...props }: PasswordInputProps) 
       <input
         {...props}
         type={reveal ? "text" : "password"}
-        className={`w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 pr-10 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
+        className={`min-h-10 w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 pr-10 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
       />
       <button
         type="button"
@@ -291,7 +291,7 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
     <div className="relative w-full">
       <select
         {...props}
-        className={`w-full appearance-none bg-[#0F1014] border border-white/35 rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
+        className={`min-h-10 w-full appearance-none bg-[#0F1014] border border-white/35 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
       >
         {children ?? (
           <>
@@ -334,7 +334,7 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
   };
 
   return (
-    <div className="relative flex-1 min-w-0">
+    <div className="relative w-full min-w-[14rem] flex-[1_1_18rem]">
       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
@@ -343,7 +343,7 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
         value={local}
         onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-[#1C1F26] border border-white/35 rounded-lg pl-9 pr-16 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors"
+        className="min-h-10 w-full bg-[#1C1F26] border border-white/35 rounded-lg pl-9 pr-16 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors"
       />
       {local ? (
         <button
@@ -752,7 +752,7 @@ export function Btn({ variant = "secondary", size = "md", className = "", childr
     <button
       {...props}
       className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-        ${size === "sm" ? "text-xs px-3 py-1.5" : "text-sm px-4 py-2"}
+        ${size === "sm" ? "min-h-8 whitespace-nowrap text-xs px-3 py-1.5" : "min-h-10 whitespace-nowrap text-sm px-4 py-2"}
         ${BTN_CLASSES[variant]} ${className}`}
     >
       {children}

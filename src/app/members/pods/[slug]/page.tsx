@@ -407,7 +407,7 @@ function Roster({
       {canEdit ? (
         <>
           <input
-            className="mb-2 w-full rounded-md border border-white/10 bg-[#0F1014] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none"
+            className="mb-2 min-h-10 w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none"
             placeholder="Search everyone by name or email…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

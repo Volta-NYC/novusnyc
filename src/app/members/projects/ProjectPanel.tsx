@@ -10,16 +10,20 @@ import { BUSINESS_SERVICES } from "@/lib/members/constants";
 import { formatPhone } from "@/lib/format";
 import { isInactiveMember } from "@/lib/members/roles";
 
+export type ProjectPanelFocus = "name" | "primaryLink" | "assignees" | "notes" | "public";
+
 // Everything about one project, beside the list rather than over it — a modal
 // would hide the row you clicked and the ones around it.
 export default function ProjectPanel({
-  business, team, canEdit, canPublish, blocked, onClose, onStatus,
+  business, team, canEdit, canPublish, blocked, initialFocus, focusRequestKey, onClose, onStatus,
 }: {
   business: Business;
   team: TeamMember[];
   canEdit: boolean;
   canPublish: boolean;
   blocked: string | null;
+  initialFocus: ProjectPanelFocus;
+  focusRequestKey: number;
   onClose: () => void;
   onStatus: (status: TechStatus) => void;
 }) {
@@ -45,6 +49,12 @@ export default function ProjectPanel({
 
   const panelRef = useRef<HTMLElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const liveUrlInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlInputRef = useRef<HTMLInputElement>(null);
+  const assigneeSearchRef = useRef<HTMLInputElement>(null);
+  const notesInputRef = useRef<HTMLTextAreaElement>(null);
+  const publicToggleRef = useRef<HTMLInputElement>(null);
 
   const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
   const sortedChapters = useMemo(
@@ -75,7 +85,7 @@ export default function ProjectPanel({
 
   const dirty = useMemo(() => {
     const keys: (keyof Business)[] = [
-      "notes", "clientUrl", "previewUrl", "liveUrl", "assignees", "techPriority",
+      "name", "notes", "clientUrl", "previewUrl", "liveUrl", "assignees", "techPriority",
       "ownerName", "ownerEmail", "phone", "address", "neighborhood", "chapterId",
       "showcaseEnabled", "showcaseFeaturedOnHome", "showcaseDescription", "activeServices",
       "showcaseColor", "showcaseImageData", "showcaseImageUrl",
@@ -96,11 +106,40 @@ export default function ProjectPanel({
   }, [dirty, onClose]);
   useDialogBehavior(true, requestClose, panelRef);
 
+  // The table doubles as a set of editing shortcuts: opening from Name, Note,
+  // Assigned or Public should land exactly where the user intended. Selecting
+  // text makes a replacement a single keystroke, like editing a spreadsheet.
+  useEffect(() => {
+    const publicField = initialFocus === "public";
+    setTab(publicField ? "public" : "website");
+    const frame = window.requestAnimationFrame(() => {
+      const target = initialFocus === "name"
+        ? nameInputRef.current
+        : initialFocus === "assignees"
+          ? assigneeSearchRef.current
+          : initialFocus === "notes"
+            ? notesInputRef.current
+            : initialFocus === "public"
+              ? publicToggleRef.current
+              : (business.liveUrl ? liveUrlInputRef.current : previewUrlInputRef.current ?? liveUrlInputRef.current);
+      target?.focus();
+      if (target instanceof HTMLInputElement && target.type !== "checkbox") target.select();
+      if (target instanceof HTMLTextAreaElement) target.select();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [business.id, business.liveUrl, focusRequestKey, initialFocus]);
+
   const save = async () => {
+    if (!draft.name.trim()) {
+      setSaveError("The business or organization name cannot be empty.");
+      nameInputRef.current?.focus();
+      return;
+    }
     setSaving(true);
     setSaveError("");
     try {
       await updateBusiness(business.id, {
+        name: draft.name.trim(),
         notes: draft.notes,
         clientUrl: draft.clientUrl ?? "",
         previewUrl: draft.previewUrl ?? "",
@@ -149,7 +188,7 @@ export default function ProjectPanel({
     });
   };
 
-  const field = "w-full rounded-md border border-white/10 bg-[#0F1014] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none";
+  const field = "min-h-10 w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none";
 
   const colors: Array<{ value: NonNullable<Business["showcaseColor"]>; swatch: string; label: string }> = [
     { value: "blue-soft", swatch: "#DDD6FE", label: "Lavender" },
@@ -188,7 +227,7 @@ export default function ProjectPanel({
       >
         <header className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4">
           <div className="min-w-0">
-            <h2 className="truncate font-semibold text-white">{business.name}</h2>
+            <h2 className="truncate font-semibold text-white">{draft.name || business.name}</h2>
             <p className="mt-0.5 text-[11px] text-white/35">
               {business.neighborhood || "No neighborhood"}
             </p>
@@ -222,6 +261,20 @@ export default function ProjectPanel({
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {tab === "website" ? (
             <>
+          <div className="mb-5">
+            <label htmlFor={`name-${business.id}`} className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/40">
+              Business or organization
+            </label>
+            <input
+              ref={nameInputRef}
+              id={`name-${business.id}`}
+              className={field}
+              disabled={!canEdit}
+              value={draft.name}
+              onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+            />
+          </div>
+
           {/* Status */}
           <div className="mb-5">
             <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Status</p>
@@ -310,6 +363,7 @@ export default function ProjectPanel({
                   )}
                 </div>
                 <input
+                  ref={key === "liveUrl" ? liveUrlInputRef : key === "previewUrl" ? previewUrlInputRef : undefined}
                   id={`${key}-${business.id}`}
                   className={field}
                   placeholder={hint}
@@ -330,6 +384,7 @@ export default function ProjectPanel({
               </p>
             </div>
             <input
+              ref={assigneeSearchRef}
               className={`${field} mb-2`}
               placeholder="Filter people…"
               value={memberQuery}
@@ -373,6 +428,7 @@ export default function ProjectPanel({
               Notes
             </label>
             <textarea
+              ref={notesInputRef}
               id={`notes-${business.id}`}
               rows={5}
               className={`${field} resize-y leading-relaxed`}
@@ -448,6 +504,7 @@ export default function ProjectPanel({
                     <span className="block text-[10px] text-white/35">Publishes this business as a project card.</span>
                   </span>
                   <input
+                    ref={publicToggleRef}
                     type="checkbox"
                     checked={!!draft.showcaseEnabled}
                     onChange={(event) => setDraft((current) => ({
@@ -593,7 +650,7 @@ export default function ProjectPanel({
 
         {canEdit && (
           <footer className="flex items-center gap-2 border-t border-white/10 px-5 py-3">
-            <Btn variant="primary" onClick={save} disabled={!dirty || saving}>
+            <Btn variant="primary" onClick={save} disabled={!dirty || saving || !draft.name.trim()}>
               {saving ? "Saving…" : "Save"}
             </Btn>
             {dirty && !saving && <span className="text-[11px] text-white/35">Unsaved changes</span>}

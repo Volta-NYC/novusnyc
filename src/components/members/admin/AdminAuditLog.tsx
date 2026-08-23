@@ -186,9 +186,9 @@ export default function AdminAuditLog() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <Input aria-label="Search audit history" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search person, email, area, or record ID" className="lg:flex-1" />
-        <Select aria-label="Filter by action" value={action} onChange={(event) => setAction(event.target.value)} className="lg:w-40">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_180px_240px_auto] xl:items-center">
+        <Input aria-label="Search audit history" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search person, email, area, or record ID" className="md:col-span-2 xl:col-span-1" />
+        <Select aria-label="Filter by action" value={action} onChange={(event) => setAction(event.target.value)}>
           <option value="all">All actions</option>
           <option value="create">Created</option>
           <option value="update">Updated</option>
@@ -198,11 +198,11 @@ export default function AdminAuditLog() {
           <option value="decision_email">Decision email</option>
           <option value="delete_account">Account deleted</option>
         </Select>
-        <Select aria-label="Filter by area" value={collection} onChange={(event) => setCollection(event.target.value)} className="lg:w-56">
+        <Select aria-label="Filter by area" value={collection} onChange={(event) => setCollection(event.target.value)}>
           {COLLECTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </Select>
-        <Btn variant="secondary" onClick={() => void exportMatching()} disabled={exporting || total === 0}>
-          {exporting ? "Exporting…" : "Export matching"}
+        <Btn variant="secondary" className="w-full xl:w-auto" onClick={() => void exportMatching()} disabled={exporting || total === 0}>
+          {exporting ? "Exporting…" : "Export results"}
         </Btn>
       </div>
 
