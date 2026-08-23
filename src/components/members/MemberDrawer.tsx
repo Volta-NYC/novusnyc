@@ -471,22 +471,6 @@ export default function MemberDrawer({
                     </a>
                   )}
 
-                  {application.interviewEvaluations && Object.keys(application.interviewEvaluations).length > 0 && (
-                    <div>
-                      <p className="mb-1 text-[10px] uppercase tracking-wide text-white/35">Interview</p>
-                      {Object.values(application.interviewEvaluations).map((ev, i) => (
-                        <div key={i} className="mb-1.5">
-                          <p className="text-[11px] text-white/75">
-                            {ev.rating ?? "No rating"}
-                            {ev.interviewerName ? ` · ${ev.interviewerName}` : ""}
-                          </p>
-                          {ev.comments && (
-                            <p className="text-[10px] leading-relaxed text-white/45">{ev.comments}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
             </div>

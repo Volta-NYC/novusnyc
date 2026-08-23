@@ -79,7 +79,7 @@ export const MEMBERS_GROUP_TABS: SectionTab[] = [
   { href: "/members", label: "Members", exact: true },
 ];
 
-// Applicants + Interviews live on the same Applicants page.
+// Interviews is a focused workflow within the Applicants section.
 export const APPLICANTS_GROUP_TABS: SectionTab[] = [
   { href: "/members/applicants", label: "Applicants", exact: true },
   { href: "/members/applicants/interviews", label: "Interviews" },

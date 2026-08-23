@@ -111,7 +111,7 @@ function sampleValue(variable: string): string {
     // Interviews
     case "interviewTime": return "Tuesday, September 9 at 4:30 PM ET";
     case "previousTime": return "Monday, September 8 at 5:00 PM ET";
-    case "zoomLink": case "bookingLink": case "googleCalendarUrl":
+    case "zoomLink": case "googleCalendarUrl":
     case "link": case "portalLink": case "magicLink":
       return "https://www.novusnyc.org/members";
 
@@ -178,7 +178,6 @@ const VARIABLE_DESCRIPTIONS: Record<string, string> = {
   interviewTime:    "Interview date and time",
   previousTime:     "Previous interview time, before rescheduling",
   zoomLink:         "Zoom join link",
-  bookingLink:      "Link to book an interview slot",
   googleCalendarUrl:"Add-to-calendar link",
   link:             "Action link for this email",
   portalLink:       "Link into the member portal",

@@ -178,7 +178,7 @@ if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.
 
 `verifyCaller` extracts `auth_role` from the JWT `app_metadata` and validates it against the `allowedRoles` array.
 
-**Public routes** (no JWT): `/api/submit`, `/api/booking/*`, `/api/school-names`, `/api/public/*`
+**Public routes** (no JWT): `/api/submit`, `/api/school-names`, `/api/public/*`
 
 ### Running Ad-Hoc SQL
 

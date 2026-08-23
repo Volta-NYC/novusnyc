@@ -36,8 +36,6 @@ export async function promoteApplicantToMember(params: {
   // failed promotion can never leave an application marked Accepted with no
   // member behind it.
   markAcceptedRole?: string;
-  interviewSlotId?: string;
-  interviewScheduledAt?: string;
   applicationNotes?: string;
 }): Promise<PromoteResult> {
   const fullName = String(params.fullName ?? "").trim();
@@ -176,8 +174,6 @@ async function applyPromotionTransaction(
     p_source_note: params.source,
     p_decided_by: params.decidedBy ?? "",
     p_final_role: params.markAcceptedRole ?? params.role,
-    p_interview_slot_id: params.interviewSlotId ?? null,
-    p_interview_scheduled_at: params.interviewScheduledAt ?? null,
     p_application_notes: params.applicationNotes ?? null,
   });
   if (error) throw new Error(error.message);

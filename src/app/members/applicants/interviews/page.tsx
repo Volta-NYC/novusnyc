@@ -1,34 +1,83 @@
 "use client";
-import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
+import {
+  Btn,
+  Empty,
+  Field,
+  Input,
+  LoadError,
+  Modal,
+  PageHeader,
+  SearchBar,
+  Select,
+  Spinner,
+  StatCard,
+  TextArea,
+} from "@/components/members/ui";
 import { useAuth } from "@/lib/members/authContext";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 import {
-  subscribeInterviewSlots,
+  subscribeInterviews,
   subscribeTeam,
-  createInterviewSlot,
-  updateInterviewSlot,
-  updateInterviewSettings,
-  deleteBookedInterview,
-  deleteInterviewSlot,
-  type TeamMember,
-  type InterviewSlot,
   type ApplicationRecord,
+  type InterviewRecord,
+  type InterviewRecordStatus,
+  type TeamMember,
 } from "@/lib/members/storage";
-import { Btn, Field, Modal, Select, TextArea, AutocompleteInput, AutocompleteTagInput, useConfirm, Spinner } from "@/components/members/ui";
-import { DEFAULT_INTERVIEW_ZOOM_LINK } from "@/lib/interviews/config";
-import {
-  formatInterviewInET,
-  toInterviewDateString,
-  toInterviewDateTimeKey,
-  toInterviewTimestamp,
-} from "@/lib/interviews/datetime";
 
-function formatDateTime(isoString: string): string {
-  return formatInterviewInET(isoString, {
+type View = "upcoming" | "history";
+type FormState = {
+  applicantId: string;
+  date: string;
+  time: string;
+  durationMinutes: string;
+  meetingLink: string;
+  interviewerMemberIds: string[];
+  notes: string;
+  status: InterviewRecordStatus;
+};
+
+const EMPTY_FORM: FormState = {
+  applicantId: "",
+  date: "",
+  time: "",
+  durationMinutes: "30",
+  meetingLink: "",
+  interviewerMemberIds: [],
+  notes: "",
+  status: "scheduled",
+};
+
+function localDateTimeParts(value: string): { date: string; time: string } {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { date: "", time: "" };
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return {
+    date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  };
+}
+
+function defaultDateTime(): { date: string; time: string } {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  date.setMinutes(Math.ceil(date.getMinutes() / 15) * 15, 0, 0);
+  return localDateTimeParts(date.toISOString());
+}
+
+function toIso(date: string, time: string): string | null {
+  if (!date || !time) return null;
+  const parsed = new Date(`${date}T${time}:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date not set";
+  return date.toLocaleString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -39,2832 +88,345 @@ function formatDateTime(isoString: string): string {
   });
 }
 
-function formatDateHeading(isoDate: string): string {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+function statusMeta(status: InterviewRecordStatus) {
+  if (status === "completed") return { label: "Completed", className: "border-blue-500/25 bg-blue-500/10 text-blue-700" };
+  if (status === "no_show") return { label: "No-show", className: "border-red-500/25 bg-red-500/10 text-red-700" };
+  if (status === "cancelled") return { label: "Cancelled", className: "border-gray-500/25 bg-gray-500/10 text-gray-700" };
+  return { label: "Scheduled", className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700" };
 }
 
-function getSlotEndTimeMs(slot: InterviewSlot): number {
-  const startMs = toInterviewTimestamp(slot.datetime);
-  const rawDuration = Number(slot.durationMinutes ?? 30);
-  const duration = Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : 30;
-  return startMs + duration * 60_000;
-}
-
-const FALLBACK_BOOKING_URL = "https://www.novusnyc.org/book";
-
-function getMondayForDate(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const dowFromMonday = (d.getDay() + 6) % 7; // Mon=0 ... Sun=6
-  d.setDate(d.getDate() - dowFromMonday);
-  return d;
-}
-
-function getWeekDates(weekOffset: number, referenceDate: Date): Date[] {
-  const monday = getMondayForDate(referenceDate);
-  monday.setDate(monday.getDate() + weekOffset * 7);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
-}
-
-const GRID_HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM -> 11 PM
-const QUARTER_MINUTES = [0, 15, 30, 45] as const;
-const GRID_ROWS = GRID_HOURS.length * QUARTER_MINUTES.length;
-const MAX_WEEK_OFFSET = 2; // current week + next 2 weeks
-
-function planningWindowEnd(referenceDate: Date): Date {
-  const weekDates = getWeekDates(MAX_WEEK_OFFSET, referenceDate);
-  const end = new Date(weekDates[6]);
-  end.setHours(23, 59, 59, 999);
-  return end;
-}
-
-function buildRecurringSeriesId(): string {
-  return `weekly-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function toDateString(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function toLocalSlotDateTime(input: Date | number): string {
-  const d = input instanceof Date ? input : new Date(input);
-  const dateISO = toDateString(d);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${dateISO}T${hh}:${mm}:00`;
-}
-
-function slotDateISOFromDateTime(datetime: string): string {
-  return toInterviewDateString(datetime);
-}
-
-function slotDateTimeKeyFromDateTime(datetime: string): string {
-  return toInterviewDateTimeKey(datetime);
-}
-
-function slotKey(dateISO: string, hour: number, minute: number): string {
-  const h = String(hour).padStart(2, "0");
-  const m = String(minute).padStart(2, "0");
-  return `${dateISO}T${h}:${m}`;
-}
-
-function rowIndexFromTime(hour: number, minute: number): number {
-  const hourOffset = hour - GRID_HOURS[0];
-  const quarterIndex = QUARTER_MINUTES.indexOf(minute as (typeof QUARTER_MINUTES)[number]);
-  return hourOffset * QUARTER_MINUTES.length + quarterIndex;
-}
-
-function timeFromRowIndex(rowIndex: number): { hour: number; minute: number } | null {
-  if (rowIndex < 0 || rowIndex >= GRID_ROWS) return null;
-  const hourOffset = Math.floor(rowIndex / QUARTER_MINUTES.length);
-  const quarterIndex = rowIndex % QUARTER_MINUTES.length;
-  const hour = GRID_HOURS[0] + hourOffset;
-  const minute = QUARTER_MINUTES[quarterIndex];
-  if (!GRID_HOURS.includes(hour)) return null;
-  return { hour, minute };
-}
-
-function fmtHour(h: number): string {
-  const ampm = h >= 12 ? "PM" : "AM";
-  return `${h % 12 || 12} ${ampm}`;
-}
-
-function fmtTimeOption(hour: number, minute: number): string {
-  const ampm = hour >= 12 ? "PM" : "AM";
-  return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${ampm}`;
-}
-
-function parseDateInput(raw: string): string | null {
-  const value = raw.trim();
-  if (!value) return null;
-
-  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (isoMatch) {
-    const y = Number.parseInt(isoMatch[1], 10);
-    const m = Number.parseInt(isoMatch[2], 10);
-    const d = Number.parseInt(isoMatch[3], 10);
-    const dt = new Date(y, m - 1, d);
-    if (
-      !Number.isNaN(dt.getTime())
-      && dt.getFullYear() === y
-      && dt.getMonth() === m - 1
-      && dt.getDate() === d
-    ) {
-      return toDateString(dt);
-    }
-    return null;
-  }
-
-  const usMatch = value.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
-  if (usMatch) {
-    const currentYear = new Date().getFullYear();
-    const m = Number.parseInt(usMatch[1], 10);
-    const d = Number.parseInt(usMatch[2], 10);
-    let y = usMatch[3] ? Number.parseInt(usMatch[3], 10) : currentYear;
-    if (String(y).length === 2) y += 2000;
-    const dt = new Date(y, m - 1, d);
-    if (
-      !Number.isNaN(dt.getTime())
-      && dt.getFullYear() === y
-      && dt.getMonth() === m - 1
-      && dt.getDate() === d
-    ) {
-      return toDateString(dt);
-    }
-  }
-
-  return null;
-}
-
-function parseTimeInput(raw: string): { hour: number; minute: number } | null {
-  const value = raw.trim().toLowerCase();
-  if (!value) return null;
-
-  const match = value.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
-  if (!match) return null;
-
-  const hourPart = Number.parseInt(match[1], 10);
-  const minutePart = match[2] ? Number.parseInt(match[2], 10) : 0;
-  const meridiem = match[3] ?? null;
-  if (Number.isNaN(hourPart) || Number.isNaN(minutePart)) return null;
-  if (!QUARTER_MINUTES.includes(minutePart as (typeof QUARTER_MINUTES)[number])) return null;
-
-  let hour24 = hourPart;
-  if (meridiem) {
-    if (hourPart < 1 || hourPart > 12) return null;
-    hour24 = hourPart % 12;
-    if (meridiem === "pm") hour24 += 12;
-  } else {
-    if (hourPart < 0 || hourPart > 23) return null;
-  }
-
-  if (!GRID_HOURS.includes(hour24)) return null;
-  return { hour: hour24, minute: minutePart };
-}
-
-function mapZoomSaveError(code: string): string {
-  if (code.includes("not_authenticated") || code.includes("unauthorized")) {
-    return "Could not save zoom link: sign in again and retry.";
-  }
-  if (code.includes("forbidden")) {
-    return "Could not save zoom link: your account is missing admin permissions.";
-  }
-  if (code.includes("db_patch_failed")) {
-    return "Could not save zoom link: server could not write interview settings.";
-  }
-  return "Could not save zoom link. Try again.";
-}
-
-function normalizeInterviewerMemberIds(values: string[]): string[] {
-  return Array.from(
-    new Set(
-      (values ?? [])
-        .map((value) => value.trim())
-        .filter(Boolean)
-    )
-  );
-}
-
-function normalizeString(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-function normalizeName(value: string): string {
-  return normalizeString(value).replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function canonicalEmail(value: string): string {
-  const raw = normalizeString(value);
-  const [local, domain] = raw.split("@");
-  if (!local || !domain) return raw;
-  if (domain === "gmail.com" || domain === "googlemail.com") {
-    const base = local.split("+")[0].replace(/\./g, "");
-    return `${base}@gmail.com`;
-  }
-  return `${local}@${domain}`;
-}
-
-function namesLikelyMatch(a: string, b: string): boolean {
-  const left = normalizeName(a);
-  const right = normalizeName(b);
-  if (!left || !right) return false;
-  if (left === right || left.includes(right) || right.includes(left)) return true;
-  const lt = new Set(left.split(" ").filter(Boolean));
-  const rt = new Set(right.split(" ").filter(Boolean));
-  let overlap = 0;
-  lt.forEach((token) => {
-    if (rt.has(token)) overlap += 1;
-  });
-  return overlap >= 2;
-}
-
-type EvaluationEntry = {
-  interviewerUid?: string;
-  interviewerEmail?: string;
-  interviewerName?: string;
-  interviewerRole?: string;
-  rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
-  comments?: string;
-  updatedAt?: string;
-  slotId?: string;
-};
-
-const VALID_EVALUATION_RATINGS: Array<EvaluationEntry["rating"]> = [
-  "Extremely Qualified",
-  "Qualified",
-  "Decent",
-  "Unqualified",
-];
-
-function isValidEvaluationEntry(value: unknown): value is EvaluationEntry {
-  if (!value || typeof value !== "object") return false;
-  const row = value as EvaluationEntry;
-  const rating = String(row.rating ?? "").trim() as EvaluationEntry["rating"];
-  if (!VALID_EVALUATION_RATINGS.includes(rating)) return false;
-  const interviewerUid = String(row.interviewerUid ?? "").trim();
-  const interviewerEmail = String(row.interviewerEmail ?? "").trim();
-  const interviewerName = String(row.interviewerName ?? "").trim();
-  return !!(interviewerUid || interviewerEmail || interviewerName);
-}
-
-function getValidEvaluationEntries(value: unknown): EvaluationEntry[] {
-  if (!value || typeof value !== "object") return [];
-  return Object.values(value as Record<string, unknown>).filter((entry): entry is EvaluationEntry => isValidEvaluationEntry(entry));
-}
-
-function getSlotInterviewerNames(slot: InterviewSlot, memberNameById: Record<string, string>): string[] {
-  const ids = Array.isArray(slot.interviewerMemberIds)
-    ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
-    : [];
-  return ids
-    .map((id) => memberNameById[id] || "")
-    .map((name) => name.trim())
-    .filter(Boolean);
-}
-
-type DragCell = { dateISO: string; hour: number; minute: number; rowIndex: number };
-type DragMode = "add" | "remove";
-type DragAnchor = { dayIndex: number; rowIndex: number };
-
-function InterviewsContent() {
-  const { user, authRole, canInterview, loading } = useAuth();
-  const router = useRouter();
-  const { ask, Dialog } = useConfirm();
-
-  const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "availability">("upcoming");
-  const [slots, setSlots] = useState<InterviewSlot[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
-
-  const [copiedBookingLink, setCopiedBookingLink] = useState(false);
-  const [bookingLink, setBookingLink] = useState(FALLBACK_BOOKING_URL);
-  const [zoomLinkInput, setZoomLinkInput] = useState(DEFAULT_INTERVIEW_ZOOM_LINK);
-  const [effectiveZoomLink, setEffectiveZoomLink] = useState(DEFAULT_INTERVIEW_ZOOM_LINK);
-  const [editingZoom, setEditingZoom] = useState(false);
-  const [copiedZoom, setCopiedZoom] = useState(false);
-  const [zoomSaveMessage, setZoomSaveMessage] = useState<string | null>(null);
-  const [savingZoom, setSavingZoom] = useState(false);
-  const [rescheduleSourceSlot, setRescheduleSourceSlot] = useState<InterviewSlot | null>(null);
-  const [rescheduleTargetSlotId, setRescheduleTargetSlotId] = useState("");
-  const [rescheduleMessage, setRescheduleMessage] = useState<string | null>(null);
-  const [rescheduling, setRescheduling] = useState(false);
-  const [pastMessage, setPastMessage] = useState<string | null>(null);
-  const [evaluationSlot, setEvaluationSlot] = useState<InterviewSlot | null>(null);
-  const [evaluationRating, setEvaluationRating] = useState<"Extremely Qualified" | "Qualified" | "Decent" | "Unqualified" | "">("");
-  const [evaluationComments, setEvaluationComments] = useState("");
-  const [savingEvaluation, setSavingEvaluation] = useState(false);
-  const [evaluationMessage, setEvaluationMessage] = useState<string | null>(null);
-  const [finalizeSlot, setFinalizeSlot] = useState<InterviewSlot | null>(null);
-  const [finalizeRole, setFinalizeRole] = useState("Analyst");
-  const [finalizeSendEmail, setFinalizeSendEmail] = useState(true);
-  const [finalizing, setFinalizing] = useState(false);
-  const [viewingEvaluationsApp, setViewingEvaluationsApp] = useState<ApplicationRecord | null>(null);
-
-  const [slotWeek, setSlotWeek] = useState(0);
-  const [windowAnchor, setWindowAnchor] = useState(() => new Date());
-  const [dragSelection, setDragSelection] = useState<Record<string, DragCell>>({});
-  const [dragMode, setDragMode] = useState<DragMode | null>(null);
-  const [draggingSelection, setDraggingSelection] = useState(false);
-  const [showBatchModal, setShowBatchModal] = useState(false);
-  const [repeatWeekly, setRepeatWeekly] = useState(true);
-  const [batchInterviewers, setBatchInterviewers] = useState<string[]>([]);
-  const [bookedSlotDetails, setBookedSlotDetails] = useState<InterviewSlot | null>(null);
-  const [selectedInterviewers, setSelectedInterviewers] = useState<string[]>([]);
-  const [applyingBatch, setApplyingBatch] = useState(false);
-  const [manualStartDateInput, setManualStartDateInput] = useState(toDateString(new Date()));
-  const [manualEndDateInput, setManualEndDateInput] = useState(toDateString(new Date()));
-  const [manualStartTimeInput, setManualStartTimeInput] = useState("9:00 AM");
-  const [manualEndTimeInput, setManualEndTimeInput] = useState("10:00 AM");
-  const [manualRepeatWeekly, setManualRepeatWeekly] = useState(true);
-  const [manualInterviewers, setManualInterviewers] = useState<string[]>([]);
-  const [manualAddMessage, setManualAddMessage] = useState<string | null>(null);
-  const [addingManualAvailability, setAddingManualAvailability] = useState(false);
-  const [availableMessage, setAvailableMessage] = useState<string | null>(null);
-  const [editingAvailableSlot, setEditingAvailableSlot] = useState<InterviewSlot | null>(null);
-  const [editingAvailableInterviewers, setEditingAvailableInterviewers] = useState<string[]>([]);
-  const [applyAvailableEditWeekly, setApplyAvailableEditWeekly] = useState(false);
-  const [savingAvailableEdit, setSavingAvailableEdit] = useState(false);
-  const dragSelectionRef = useRef<Record<string, DragCell>>({});
-  const dragModeRef = useRef<DragMode | null>(null);
-  const dragAnchorRef = useRef<DragAnchor | null>(null);
-  const recurringSyncInFlightRef = useRef(false);
-  const evalCleanupTriggeredRef = useRef(false);
-
-  const [interviewerSearch, setInterviewerSearch] = useState("");
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [toggleError, setToggleError] = useState<string | null>(null);
-
-  const canAccessInterviews = authRole === "owner" || canInterview;
-  const canDeleteInterviews = authRole === "owner";
-  const canEditZoom = authRole === "owner";
-  const canEvaluate = authRole === "owner" || canInterview;
-
-  useEffect(() => {
-    if (!loading && !canAccessInterviews) {
-      router.replace("/members/projects");
-    }
-  }, [canAccessInterviews, loading, router]);
-
-  useEffect(() => {
-    if (!canDeleteInterviews || !user || evalCleanupTriggeredRef.current) return;
-    evalCleanupTriggeredRef.current = true;
-    void (async () => {
-      try {
-        const token = await getAuthToken();
-        await fetch("/api/members/interviews/cleanup-evaluations", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-      } catch {
-        // ignore; this is best-effort cleanup for legacy malformed eval records
-      }
-    })();
-  }, [canDeleteInterviews, user]);
-
-  useEffect(() => subscribeInterviewSlots(setSlots), []);
-  useEffect(() => subscribeTeam(setTeamMembers), []);
-
-  // Fetch applications from the server-side API (same as /applicants) so that
-  // resumeUrl, status, and interviewSlotId are computed with Admin SDK access
-  // and the same slot-cross-matching logic.
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const token = await getAuthToken();
-        const res = await fetch("/api/members/applicants/list", {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        if (!res.ok || cancelled) return;
-        const data = await res.json() as { applications?: ApplicationRecord[] };
-        if (!cancelled && Array.isArray(data.applications)) {
-          setApplications(data.applications);
-        }
-      } catch {
-        // ignore
-      }
-    };
-    void load();
-    return () => { cancelled = true; };
-  }, [user]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setBookingLink(`${window.location.origin}/book`);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/booking/zoom", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json() as {
-          zoomLink?: string;
-          customZoomLink?: string;
-        };
-        if (cancelled) return;
-        const effective = (data.zoomLink ?? "").trim() || DEFAULT_INTERVIEW_ZOOM_LINK;
-        const custom = (data.customZoomLink ?? "").trim();
-        setEffectiveZoomLink(effective);
-        setZoomLinkInput(custom || effective);
-      } catch {
-        if (cancelled) return;
-        setEffectiveZoomLink(DEFAULT_INTERVIEW_ZOOM_LINK);
-        setZoomLinkInput(DEFAULT_INTERVIEW_ZOOM_LINK);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Keep the rolling 3-week planner current without requiring a reload.
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setWindowAnchor(new Date());
-    }, 12 * 60 * 60 * 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!canAccessInterviews || !user?.id) return;
-    if (recurringSyncInFlightRef.current) return;
-
-    const nowTs = Date.now();
-    const endTs = planningWindowEnd(windowAnchor).getTime();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const existingDateTimes = new Set(slots.map((slot) => slotDateTimeKeyFromDateTime(slot.datetime)));
-    const recurring = slots.filter((slot) =>
-      !!slot.recurringWeekly
-      && !!slot.recurringSeriesId
-      && toInterviewTimestamp(slot.datetime) >= nowTs
-    );
-    if (recurring.length === 0) return;
-
-    const bySeries: Record<string, InterviewSlot[]> = {};
-    recurring.forEach((slot) => {
-      const seriesId = slot.recurringSeriesId;
-      if (!seriesId) return;
-      if (!bySeries[seriesId]) bySeries[seriesId] = [];
-      bySeries[seriesId].push(slot);
-    });
-
-    const missing: Omit<InterviewSlot, "id">[] = [];
-    Object.values(bySeries).forEach((seriesSlots) => {
-      const sorted = [...seriesSlots].sort((a, b) => toInterviewTimestamp(a.datetime) - toInterviewTimestamp(b.datetime));
-      const latestInWindow = [...sorted].reverse().find((slot) => toInterviewTimestamp(slot.datetime) <= endTs);
-      if (!latestInWindow) return;
-
-      const template = latestInWindow;
-      const templateInterviewerIds = normalizeInterviewerMemberIds(template.interviewerMemberIds ?? []);
-      if (templateInterviewerIds.length === 0) return;
-      let cursor = toInterviewTimestamp(template.datetime) + weekMs;
-      while (cursor <= endTs) {
-        const dt = toLocalSlotDateTime(cursor);
-        const slotKeyValue = slotDateTimeKeyFromDateTime(dt);
-        if (!existingDateTimes.has(slotKeyValue)) {
-          existingDateTimes.add(slotKeyValue);
-          missing.push({
-            datetime: dt,
-            durationMinutes: template.durationMinutes || 15,
-            available: true,
-            interviewerMemberIds: templateInterviewerIds,
-            recurringWeekly: true,
-            recurringSeriesId: template.recurringSeriesId,
-            location: template.location ?? "",
-            createdBy: user.id,
-            createdAt: Date.now(),
-          });
-        }
-        cursor += weekMs;
-      }
-    });
-
-    if (missing.length === 0) return;
-
-    recurringSyncInFlightRef.current = true;
-    void (async () => {
-      try {
-        for (const slot of missing) {
-          // eslint-disable-next-line no-await-in-loop
-          await createInterviewSlot(slot);
-        }
-      } finally {
-        recurringSyncInFlightRef.current = false;
-      }
-    })();
-  }, [canAccessInterviews, slots, user?.id, windowAnchor]);
-
-  const saveZoomSettings = async () => {
-    if (!canEditZoom) return;
-    setSavingZoom(true);
-    setZoomSaveMessage(null);
-    const trimmedZoom = zoomLinkInput.trim();
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        throw new Error("not_authenticated");
-      }
-
-      const saveRes = await fetch("/api/booking/zoom", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          zoomLink: trimmedZoom,
-          updatedBy: user?.id ?? "",
-        }),
-        cache: "no-store",
-      });
-
-      if (!saveRes.ok) {
-        let saveErr = "save_failed";
-        try {
-          const data = await saveRes.json() as { error?: string; reason?: string };
-          if (data.reason) saveErr = `${data.error ?? "save_failed"}:${data.reason}`;
-          else if (data.error) saveErr = data.error;
-        } catch {
-          // ignore parse errors
-        }
-        throw new Error(saveErr);
-      }
-
-      const data = await saveRes.json() as {
-        zoomLink?: string;
-        customZoomLink?: string;
-      };
-      const custom = (data.customZoomLink ?? "").trim();
-      setEffectiveZoomLink(data.zoomLink ?? "");
-      setZoomLinkInput(custom || (data.zoomLink ?? ""));
-      setEditingZoom(false);
-      setZoomSaveMessage("Zoom link saved.");
-    } catch (err) {
-      const code = err instanceof Error ? err.message : "save_failed";
-      try {
-        await updateInterviewSettings({
-          zoomLink: trimmedZoom,
-          zoomEnabled: true,
-          updatedAt: Date.now(),
-          updatedBy: user?.id ?? "",
-        });
-        setEffectiveZoomLink(trimmedZoom || DEFAULT_INTERVIEW_ZOOM_LINK);
-        setZoomLinkInput(trimmedZoom || DEFAULT_INTERVIEW_ZOOM_LINK);
-        setEditingZoom(false);
-        setZoomSaveMessage("Zoom link saved.");
-      } catch (fallbackErr) {
-        console.error("Zoom save failed:", { code, fallbackErr });
-        setZoomSaveMessage(mapZoomSaveError(code));
-      }
-    } finally {
-      setSavingZoom(false);
-      setTimeout(() => setZoomSaveMessage(null), 2200);
-    }
-  };
-
-  const copyBookingLink = async () => {
-    await navigator.clipboard.writeText(bookingLink);
-    setCopiedBookingLink(true);
-    setTimeout(() => setCopiedBookingLink(false), 1800);
-  };
-
-  const copyZoomLink = async () => {
-    if (!effectiveZoomLink) return;
-    await navigator.clipboard.writeText(effectiveZoomLink);
-    setCopiedZoom(true);
-    setTimeout(() => setCopiedZoom(false), 1800);
-  };
-
-  const now = Date.now();
-  const weekDates = useMemo(() => getWeekDates(slotWeek, windowAnchor), [slotWeek, windowAnchor]);
-
-  const slotMap = useMemo(() => {
-    const next: Record<string, InterviewSlot> = {};
-    for (const slot of slots) {
-      const key = slotDateTimeKeyFromDateTime(slot.datetime);
-      next[key] = slot;
-    }
-    return next;
-  }, [slots]);
-
-  const sortedSlots = useMemo(
-    () => [...slots].sort((a, b) => toInterviewTimestamp(a.datetime) - toInterviewTimestamp(b.datetime)),
-    [slots]
-  );
-
-  const memberNameById = useMemo(() => {
-    const map: Record<string, string> = {};
-    teamMembers.forEach((member) => {
-      if (!member.id) return;
-      const name = (member.name ?? "").trim();
-      if (!name) return;
-      map[member.id] = name;
-    });
-    return map;
-  }, [teamMembers]);
-
-  const currentInterviewerMemberIds = useMemo(() => {
-    if (!user) return [] as string[];
-    const email = normalizeString(user.email ?? "");
-    const canonical = canonicalEmail(user.email ?? "");
-    const displayName = normalizeName(user.user_metadata?.full_name ?? "");
-    return teamMembers
-      .filter((member) => {
-        const memberEmail = normalizeString(member.email ?? "");
-        const memberAltEmail = normalizeString(member.alternateEmail ?? "");
-        const memberCanonical = canonicalEmail(member.email ?? "");
-        const memberAltCanonical = canonicalEmail(member.alternateEmail ?? "");
-        if (email && (memberEmail === email || memberAltEmail === email || memberCanonical === canonical || memberAltCanonical === canonical)) return true;
-        if (displayName && namesLikelyMatch(displayName, member.name ?? "")) return true;
-        return false;
-      })
-      .map((member) => String(member.id ?? "").trim())
-      .filter(Boolean);
-  }, [teamMembers, user]);
-
-  const canViewResumeForSlot = useCallback((slot: InterviewSlot): boolean => {
-    // Admins can always see resumes
-    if (canDeleteInterviews) return true;
-    // Interviewers can only see resumes for slots they are assigned to
-    return false;
-    const slotIds = Array.isArray(slot.interviewerMemberIds)
-      ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
-      : [];
-    // If slot has no assigned interviewers, no interviewer can see the resume
-    if (slotIds.length === 0 || currentInterviewerMemberIds.length === 0) return false;
-    return slotIds.some((id) => currentInterviewerMemberIds.includes(id));
-  }, [canDeleteInterviews, currentInterviewerMemberIds]);
-
-  const interviewerDisplayOptions = useMemo(() => {
-    const nameCounts = new Map<string, number>();
-    teamMembers.forEach((member) => {
-      const name = (member.name ?? "").trim();
-      if (!name) return;
-      nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
-    });
-
-    return teamMembers
-      .map((member) => {
-        const id = member.id;
-        const name = (member.name ?? "").trim();
-        if (!id || !name) return null;
-        const email = (member.email ?? "").trim();
-        const needsEmail = (nameCounts.get(name) ?? 0) > 1;
-        const display = needsEmail && email ? `${name} <${email}>` : name;
-        return { id, display };
-      })
-      .filter((value): value is { id: string; display: string } => !!value)
-      .sort((a, b) => a.display.localeCompare(b.display));
-  }, [teamMembers]);
-
-  const interviewerOptions = useMemo(
-    () => interviewerDisplayOptions.map((option) => option.display),
-    [interviewerDisplayOptions]
-  );
-
-  const interviewerIdByDisplay = useMemo(() => {
-    const map: Record<string, string> = {};
-    interviewerDisplayOptions.forEach((option) => {
-      map[option.display] = option.id;
-    });
-    return map;
-  }, [interviewerDisplayOptions]);
-
-  const interviewerIdsFromDisplays = (displays: string[]): string[] =>
-    normalizeInterviewerMemberIds(
-      displays
-        .map((display) => interviewerIdByDisplay[display] ?? "")
-        .filter(Boolean)
-    );
-
-  const interviewerDisplaysFromSlot = useCallback((slot: InterviewSlot): string[] => {
-    const ids = Array.isArray(slot.interviewerMemberIds)
-      ? slot.interviewerMemberIds.map((value) => String(value ?? "").trim()).filter(Boolean)
-      : [];
-    return ids
-      .map((id) => interviewerDisplayOptions.find((option) => option.id === id)?.display ?? "")
-      .filter(Boolean);
-  }, [interviewerDisplayOptions]);
-
-  const typedDateOptions = useMemo(() => {
-    const start = new Date(windowAnchor);
-    start.setHours(0, 0, 0, 0);
-    const days = MAX_WEEK_OFFSET * 7 + 7;
-    const options: string[] = [];
-    for (let i = 0; i < days; i += 1) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      options.push(toDateString(d));
-    }
-    return options;
-  }, [windowAnchor]);
-
-  const typedTimeOptions = useMemo(
-    () => GRID_HOURS.flatMap((hour) => QUARTER_MINUTES.map((minute) => fmtTimeOption(hour, minute))),
-    []
-  );
-
-  const upcomingBookedSlots = useMemo(
-    () => sortedSlots.filter((s) => !!s.bookedBy && getSlotEndTimeMs(s) >= now),
-    [sortedSlots, now]
-  );
-
-  const pastBookedSlots = useMemo(
-    () => sortedSlots.filter((s) => !!s.bookedBy && getSlotEndTimeMs(s) < now),
-    [sortedSlots, now]
-  );
-
-  const availableFutureSlots = useMemo(
-    () =>
-      sortedSlots.filter((s) => s.available && !s.bookedBy && toInterviewTimestamp(s.datetime) > now),
-    [sortedSlots, now]
-  );
-
-  const findApplicationForSlot = useCallback((slot: InterviewSlot): ApplicationRecord | null => {
-    const slotId = (slot.id ?? "").trim();
-    const token = normalizeString(slot.bookedBy ?? "");
-    const slotEmail = normalizeString(slot.bookerEmail ?? "");
-    const slotCanonical = canonicalEmail(slotEmail);
-    const slotName = slot.bookerName ?? "";
-    for (const app of applications) {
-      // Strongest match: slot ID directly linked on the application
-      if (slotId && app.interviewSlotId && app.interviewSlotId === slotId) return app;
-      // Token match
-      const appToken = normalizeString(app.interviewInviteToken ?? "");
-      if (token && appToken && token === appToken) return app;
-      // Email match
-      const appEmail = normalizeString(app.email ?? "");
-      const appCanonical = canonicalEmail(appEmail);
-      if (slotEmail && appEmail && (slotEmail === appEmail || slotCanonical === appCanonical)) return app;
-      // Name match (weakest)
-      if (slotName && app.fullName && namesLikelyMatch(slotName, app.fullName)) return app;
-    }
-    return null;
-  }, [applications]);
-
-  const findResumeUrlForSlot = useCallback((slot: InterviewSlot): string => {
-    if (!canViewResumeForSlot(slot)) return "";
-    const app = findApplicationForSlot(slot);
-    return (app?.resumeUrl ?? "").trim();
-  }, [canViewResumeForSlot, findApplicationForSlot]);
-
-  // Use one consistent source for interview eval state:
-  // prefer slot-level evals; fall back to matched applicant legacy evals.
-  const getEffectiveEvaluationEntriesForSlot = useCallback((slot: InterviewSlot): EvaluationEntry[] => {
-    const slotEntries = getValidEvaluationEntries(slot.evaluationByUid);
-    if (slotEntries.length > 0) return slotEntries;
-    const matchedApp = findApplicationForSlot(slot);
-    return getValidEvaluationEntries(matchedApp?.interviewEvaluations);
-  }, [findApplicationForSlot]);
-
-  const getEffectiveEvaluationCountForSlot = useCallback(
-    (slot: InterviewSlot): number => getEffectiveEvaluationEntriesForSlot(slot).length,
-    [getEffectiveEvaluationEntriesForSlot]
-  );
-
-  const getLatestEffectiveEvaluationForSlot = useCallback((slot: InterviewSlot): EvaluationEntry | null => {
-    const entries = getEffectiveEvaluationEntriesForSlot(slot);
-    if (entries.length === 0) return null;
-    const sorted = [...entries].sort((a, b) => {
-      const aMs = Date.parse(String(a.updatedAt ?? ""));
-      const bMs = Date.parse(String(b.updatedAt ?? ""));
-      const aTs = Number.isFinite(aMs) ? aMs : 0;
-      const bTs = Number.isFinite(bMs) ? bMs : 0;
-      return bTs - aTs;
-    });
-    return sorted[0] ?? null;
-  }, [getEffectiveEvaluationEntriesForSlot]);
-
-  const recurringAvailableGroups = useMemo(() => {
-    const grouped: Record<string, InterviewSlot[]> = {};
-    for (const slot of availableFutureSlots) {
-      if (!slot.recurringWeekly) continue;
-      const recurringKey = slot.recurringSeriesId
-        ? `series:${slot.recurringSeriesId}`
-        : `weekly:${formatInterviewInET(slot.datetime, { weekday: "long", hour: "numeric", minute: "2-digit" })}`;
-      if (!grouped[recurringKey]) grouped[recurringKey] = [];
-      grouped[recurringKey].push(slot);
-    }
-
-    return Object.entries(grouped)
-      .map(([key, groupSlots]) => {
-        const sorted = [...groupSlots].sort((a, b) => toInterviewTimestamp(a.datetime) - toInterviewTimestamp(b.datetime));
-        const representative = sorted[0];
-        return { key, slots: sorted, representative };
-      })
-      .sort((a, b) => toInterviewTimestamp(a.representative.datetime) - toInterviewTimestamp(b.representative.datetime));
-  }, [availableFutureSlots]);
-
-  const oneTimeAvailableByDate = useMemo(() => {
-    const byDate: Record<string, InterviewSlot[]> = {};
-    for (const slot of availableFutureSlots) {
-      if (slot.recurringWeekly) continue;
-      const day = slotDateISOFromDateTime(slot.datetime);
-      if (!byDate[day]) byDate[day] = [];
-      byDate[day].push(slot);
-    }
-    return Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [availableFutureSlots]);
-
-  const singleSelectedCell = useMemo(() => {
-    const entries = Object.values(dragSelection);
-    return entries.length === 1 ? entries[0] : null;
-  }, [dragSelection]);
-
-  const singleSelectedSlot = useMemo(() => {
-    if (!singleSelectedCell) return null;
-    return slotMap[slotKey(singleSelectedCell.dateISO, singleSelectedCell.hour, singleSelectedCell.minute)] ?? null;
-  }, [singleSelectedCell, slotMap]);
-
-  const cancelBookedInterview = (slot: InterviewSlot) => {
-    if (!canDeleteInterviews) return;
-    ask(async () => {
-      await deleteBookedInterview(slot.id);
-    }, "Remove this booked interview and return the time to available?");
-  };
-
-  const startReschedule = (slot: InterviewSlot) => {
-    setRescheduleSourceSlot(slot);
-    const first = availableFutureSlots[0];
-    setRescheduleTargetSlotId(first?.id ?? "");
-    setRescheduleMessage(null);
-  };
-
-  const applyReschedule = async () => {
-    if (!rescheduleSourceSlot || !rescheduleTargetSlotId) return;
-    setRescheduling(true);
-    setRescheduleMessage(null);
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        setRescheduleMessage("Could not reschedule: not authenticated.");
-        return;
-      }
-      const res = await fetch("/api/booking/reschedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fromSlotId: rescheduleSourceSlot.id,
-          toSlotId: rescheduleTargetSlotId,
-        }),
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({} as { error?: string }));
-        const code = data.error ?? "save_failed";
-        if (code === "target_unavailable") setRescheduleMessage("Selected target time is no longer available.");
-        else if (code === "source_not_booked") setRescheduleMessage("Original interview is no longer booked.");
-        else setRescheduleMessage("Could not reschedule interview.");
-        return;
-      }
-      setRescheduleMessage("Interview rescheduled.");
-      setRescheduleSourceSlot(null);
-      setRescheduleTargetSlotId("");
-    } catch {
-      setRescheduleMessage("Could not reschedule interview.");
-    } finally {
-      setRescheduling(false);
-      setTimeout(() => setRescheduleMessage(null), 2200);
-    }
-  };
-
-  const openEvaluation = (slot: InterviewSlot) => {
-    // Pre-populate only from a valid existing eval (slot-level or matched legacy app eval).
-    const existingEval = getLatestEffectiveEvaluationForSlot(slot);
-    setEvaluationSlot(slot);
-    setEvaluationRating(existingEval?.rating ?? "");
-    setEvaluationComments(existingEval?.comments ?? "");
-    setEvaluationMessage(null);
-  };
-
-  const saveEvaluation = async () => {
-    if (!evaluationSlot || !user) return;
-    if (!evaluationRating) {
-      setEvaluationMessage("Please select a rating.");
-      return;
-    }
-    setSavingEvaluation(true);
-    setEvaluationMessage(null);
-    try {
-      const token = await getAuthToken();
-      const res = await fetch("/api/members/interviews/evaluate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          slotId: evaluationSlot.id,
-          rating: evaluationRating,
-          comments: evaluationComments,
-        }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({} as { error?: string }));
-        throw new Error(payload.error || "save_failed");
-      }
-      setEvaluationMessage("Evaluation saved.");
-      setTimeout(() => setEvaluationMessage(null), 2200);
-      setEvaluationSlot(null);
-    } catch {
-      setEvaluationMessage("Could not save evaluation.");
-      setTimeout(() => setEvaluationMessage(null), 2200);
-    } finally {
-      setSavingEvaluation(false);
-    }
-  };
-
-  const deleteEvaluation = async () => {
-    if (!evaluationSlot || !user) return;
-    ask(async () => {
-      setSavingEvaluation(true);
-      setEvaluationMessage(null);
-      try {
-        const token = await getAuthToken();
-        const res = await fetch("/api/members/interviews/evaluate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            slotId: evaluationSlot.id,
-            action: "delete",
-          }),
-        });
-        if (!res.ok) throw new Error("delete_failed");
-        setEvaluationMessage("Evaluation deleted.");
-        setTimeout(() => setEvaluationMessage(null), 2200);
-        setEvaluationSlot(null);
-      } catch {
-        setEvaluationMessage("Could not delete evaluation.");
-        setTimeout(() => setEvaluationMessage(null), 2200);
-      } finally {
-        setSavingEvaluation(false);
-      }
-    }, "Are you sure you want to delete this evaluation?");
-  };
-
-  const markNoShow = async (slot: InterviewSlot, noShow: boolean) => {
-    if (!user) return;
-    const label = slot.bookerName || "this interviewee";
-    ask(async () => {
-      try {
-        const token = await getAuthToken();
-        const res = await fetch("/api/members/interviews/no-show", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ slotId: slot.id, noShow }),
-        });
-        if (!res.ok) throw new Error("failed");
-        setPastMessage(noShow ? `Marked ${label} as No Show.` : `Cleared no-show for ${label}.`);
-        setTimeout(() => setPastMessage(null), 2200);
-      } catch {
-        setPastMessage("Could not update no-show status.");
-        setTimeout(() => setPastMessage(null), 2200);
-      }
-    }, noShow ? `Mark ${label} as a No Show?` : `Clear no-show for ${label}?`);
-  };
-
-  const finalizeAcceptedFromSlot = async () => {
-    if (!finalizeSlot || !user) return;
-    setFinalizing(true);
-    try {
-      const token = await getAuthToken();
-      const res = await fetch("/api/members/interviews/finalize", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          slotIds: [finalizeSlot.id],
-          teamRole: finalizeRole,
-          sendAcceptanceEmail: finalizeSendEmail,
-        }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({} as { error?: string }));
-        throw new Error(payload.error || "finalize_failed");
-      }
-      setPastMessage("Accepted, synced to member directory, and application updated.");
-      setFinalizeSlot(null);
-      setTimeout(() => setPastMessage(null), 2600);
-    } catch {
-      setPastMessage("Could not finalize accepted applicant for this interview.");
-      setTimeout(() => setPastMessage(null), 2600);
-    } finally {
-      setFinalizing(false);
-    }
-  };
-
-  const deletePastInterviewEntry = (slot: InterviewSlot) => {
-    if (!canDeleteInterviews) return;
-    ask(async () => {
-      await deleteInterviewSlot(slot.id);
-      setPastMessage("Past interview entry deleted.");
-      setTimeout(() => setPastMessage(null), 2200);
-    }, "Delete this past interview entry permanently?");
-  };
-
-  const deleteInterviewAvailability = async (slot: InterviewSlot): Promise<number> => {
-    const nowTs = Date.now();
-    if (slot.recurringWeekly && slot.recurringSeriesId) {
-      const targets = slots.filter((candidate) =>
-        candidate.recurringSeriesId === slot.recurringSeriesId
-        && candidate.available
-        && !candidate.bookedBy
-        && toInterviewTimestamp(candidate.datetime) >= nowTs
-      );
-      for (const target of targets) {
-        // eslint-disable-next-line no-await-in-loop
-        await deleteInterviewSlot(target.id);
-      }
-      return targets.length;
-    } else {
-      if (toInterviewTimestamp(slot.datetime) < nowTs || !slot.available || slot.bookedBy) return 0;
-      await deleteInterviewSlot(slot.id);
-      return 1;
-    }
-  };
-
-  const removeAvailability = (slot: InterviewSlot) => {
-    if (!canDeleteInterviews) return;
-    const isWeekly = slot.recurringWeekly && slot.recurringSeriesId;
-    ask(async () => {
-      const count = await deleteInterviewAvailability(slot);
-      setAvailableMessage(isWeekly ? `Removed ${count} weekly availability slot(s).` : "Availability removed.");
-      setTimeout(() => setAvailableMessage(null), 2400);
-    }, isWeekly ? "Remove this slot and all upcoming unbooked availabilities in this weekly series?" : "Remove this availability slot?");
-  };
-
-  const makeAvailabilityWeekly = (slot: InterviewSlot) => {
-    if (!canDeleteInterviews) return;
-    if (!slot.available || !!slot.bookedBy) return;
-    const slotInterviewerIds = normalizeInterviewerMemberIds(slot.interviewerMemberIds ?? []);
-    if (slotInterviewerIds.length === 0) {
-      setAvailableMessage("At least one interviewer is required.");
-      setTimeout(() => setAvailableMessage(null), 2200);
-      return;
-    }
-    ask(async () => {
-      const seriesId = slot.recurringSeriesId || buildRecurringSeriesId();
-      await updateInterviewSlot(slot.id, { recurringWeekly: true, recurringSeriesId: seriesId });
-
-      const endTs = planningWindowEnd(windowAnchor).getTime();
-      const weekMs = 7 * 24 * 60 * 60 * 1000;
-      const existing = new Set(slots.map((s) => slotDateTimeKeyFromDateTime(s.datetime)));
-      existing.add(slotDateTimeKeyFromDateTime(slot.datetime));
-      let created = 0;
-      let cursor = toInterviewTimestamp(slot.datetime) + weekMs;
-      while (cursor <= endTs) {
-        const dt = toLocalSlotDateTime(cursor);
-        const keyValue = slotDateTimeKeyFromDateTime(dt);
-        if (!existing.has(keyValue)) {
-          existing.add(keyValue);
-          // eslint-disable-next-line no-await-in-loop
-          await createInterviewSlot({
-            datetime: dt,
-            durationMinutes: slot.durationMinutes || 15,
-            available: true,
-            interviewerMemberIds: slotInterviewerIds,
-            recurringWeekly: true,
-            recurringSeriesId: seriesId,
-            location: slot.location ?? "",
-            createdBy: user?.id ?? "",
-            createdAt: Date.now(),
-          });
-          created += 1;
-        }
-        cursor += weekMs;
-      }
-
-      setAvailableMessage(
-        created > 0
-          ? `Marked weekly and added ${created} recurring slot(s).`
-          : "Marked as weekly recurring."
-      );
-      setTimeout(() => setAvailableMessage(null), 2400);
-    }, "Extend this slot as a weekly recurring availability?");
-  };
-
-  const openEditAvailableSlot = (slot: InterviewSlot) => {
-    setEditingAvailableSlot(slot);
-    setEditingAvailableInterviewers(interviewerDisplaysFromSlot(slot));
-    setApplyAvailableEditWeekly(!!slot.recurringWeekly && !!slot.recurringSeriesId);
-  };
-
-  const saveAvailableInterviewerEdit = async () => {
-    if (!editingAvailableSlot || !canDeleteInterviews) return;
-    const ids = interviewerIdsFromDisplays(editingAvailableInterviewers);
-    if (ids.length === 0) {
-      setAvailableMessage("At least one interviewer is required.");
-      setTimeout(() => setAvailableMessage(null), 2200);
-      return;
-    }
-    setSavingAvailableEdit(true);
-    try {
-      if (applyAvailableEditWeekly && editingAvailableSlot.recurringWeekly && editingAvailableSlot.recurringSeriesId) {
-        const nowTs = Date.now();
-        const targets = slots.filter((slot) =>
-          slot.recurringSeriesId === editingAvailableSlot.recurringSeriesId
-          && toInterviewTimestamp(slot.datetime) >= nowTs
-        );
-        for (const target of targets) {
-          // eslint-disable-next-line no-await-in-loop
-          await updateInterviewSlot(target.id, {
-            interviewerMemberIds: ids,
-          });
-        }
-        setAvailableMessage(`Updated interviewer(s) on ${targets.length} weekly slot(s).`);
-      } else {
-        await updateInterviewSlot(editingAvailableSlot.id, {
-          interviewerMemberIds: ids,
-        });
-        setAvailableMessage("Updated interviewer(s).");
-      }
-      setEditingAvailableSlot(null);
-      setTimeout(() => setAvailableMessage(null), 2200);
-    } finally {
-      setSavingAvailableEdit(false);
-    }
-  };
-
-  const applySlotAction = async (
-    dateISO: string,
-    hour: number,
-    minute: number,
-    mode: DragMode,
-    interviewerSelectionsInput?: string[],
-    recurring?: { enabled: boolean; seriesId?: string }
-  ) => {
-    const key = slotKey(dateISO, hour, minute);
-    const slot = slotMap[key];
-    const interviewerIds = interviewerIdsFromDisplays(interviewerSelectionsInput ?? []);
-
-    if (mode === "remove") {
-      if (!canDeleteInterviews || !slot || !slot.available || slot.bookedBy) return;
-      await deleteInterviewAvailability(slot);
-      return;
-    }
-
-    if (slot) {
-      if (slot.bookedBy) return;
-      const patch: Partial<InterviewSlot> = {};
-      if (!slot.available) {
-        if (interviewerIds.length === 0) return;
-        patch.available = true;
-      }
-      const currentIds = normalizeInterviewerMemberIds(slot.interviewerMemberIds ?? []);
-      if (interviewerIds.length > 0) {
-        const same =
-          currentIds.length === interviewerIds.length
-          && currentIds.every((value, idx) => value === interviewerIds[idx]);
-        if (!same) {
-          patch.interviewerMemberIds = interviewerIds;
-        }
-      }
-      if (recurring?.enabled) {
-        patch.recurringWeekly = true;
-        patch.recurringSeriesId = recurring.seriesId || slot.recurringSeriesId || buildRecurringSeriesId();
-      }
-      if (Object.keys(patch).length > 0) {
-        await updateInterviewSlot(slot.id, patch);
-      }
-      return;
-    }
-
-    if (interviewerIds.length === 0) return;
-    await createInterviewSlot({
-      datetime: `${key}:00`,
-      durationMinutes: 15,
-      available: true,
-      location: "",
-      interviewerMemberIds: interviewerIds,
-      recurringWeekly: !!recurring?.enabled,
-      recurringSeriesId: recurring?.enabled ? (recurring.seriesId || buildRecurringSeriesId()) : undefined,
-      createdBy: user?.id ?? "",
-      createdAt: Date.now(),
-    });
-  };
-
-  const toggleDay = async (date: Date) => {
-    const dateISO = toDateString(date);
-    const hasVisible = GRID_HOURS.some((hour) =>
-      QUARTER_MINUTES.some((minute) => {
-        const slot = slotMap[slotKey(dateISO, hour, minute)];
-        return !!slot && slot.available && !slot.bookedBy;
-      })
-    );
-    const mode: DragMode = hasVisible && canDeleteInterviews ? "remove" : "add";
-    if (mode === "add") {
-      setAvailableMessage("Use Add Availability with interviewer name(s) to create new visible slots.");
-      setTimeout(() => setAvailableMessage(null), 2400);
-      return;
-    }
-    for (const hour of GRID_HOURS) {
-      for (const minute of QUARTER_MINUTES) {
-        const slotTs = new Date(`${dateISO}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`).getTime();
-        if (slotTs < now) continue;
-        // eslint-disable-next-line no-await-in-loop
-        await applySlotAction(dateISO, hour, minute, mode);
-      }
-    }
-  };
-
-  const toggleHourRow = async (hour: number) => {
-    const futureDays = weekDates.filter((d) => {
-      const dt = new Date(`${toDateString(d)}T${String(hour).padStart(2, "0")}:00`).getTime();
-      return dt >= now;
-    });
-
-    const hasVisible = futureDays.some((date) => {
-      const dateISO = toDateString(date);
-      return QUARTER_MINUTES.some((minute) => {
-        const slot = slotMap[slotKey(dateISO, hour, minute)];
-        return !!slot && slot.available && !slot.bookedBy;
-      });
-    });
-    const mode: DragMode = hasVisible && canDeleteInterviews ? "remove" : "add";
-    if (mode === "add") {
-      setAvailableMessage("Use Add Availability with interviewer name(s) to create new visible slots.");
-      setTimeout(() => setAvailableMessage(null), 2400);
-      return;
-    }
-    for (const date of futureDays) {
-      const dateISO = toDateString(date);
-      for (const minute of QUARTER_MINUTES) {
-        // eslint-disable-next-line no-await-in-loop
-        await applySlotAction(dateISO, hour, minute, mode);
-      }
-    }
-  };
-
-  const addTypedAvailability = async () => {
-    const startDate = parseDateInput(manualStartDateInput);
-    const endDate = parseDateInput(manualEndDateInput);
-    const startTime = parseTimeInput(manualStartTimeInput);
-    const endTime = parseTimeInput(manualEndTimeInput);
-
-    if (!startDate || !endDate) {
-      setManualAddMessage("Enter valid start and end dates.");
-      return;
-    }
-    if (!startTime || !endTime) {
-      setManualAddMessage("Enter valid start and end times in 15-minute increments.");
-      return;
-    }
-    if (interviewerIdsFromDisplays(manualInterviewers).length === 0) {
-      setManualAddMessage("At least one interviewer is required.");
-      return;
-    }
-
-    const startDateObj = new Date(`${startDate}T00:00:00`);
-    const endDateObj = new Date(`${endDate}T00:00:00`);
-    if (endDateObj.getTime() < startDateObj.getTime()) {
-      setManualAddMessage("End date must be on or after start date.");
-      return;
-    }
-
-    const startMinutes = startTime.hour * 60 + startTime.minute;
-    const endMinutes = endTime.hour * 60 + endTime.minute;
-    if (endMinutes <= startMinutes) {
-      setManualAddMessage("End time must be after start time.");
-      return;
-    }
-
-    const endTs = planningWindowEnd(windowAnchor).getTime();
-    const seriesId = manualRepeatWeekly ? buildRecurringSeriesId() : "";
-    const uniqueTargets: Record<string, DragCell> = {};
-
-    // Build per-day time ranges first (date-by-date), then apply weekly repeat.
-    const baseTargets: DragCell[] = [];
-    for (let d = new Date(startDateObj); d.getTime() <= endDateObj.getTime(); d.setDate(d.getDate() + 1)) {
-      const dateISO = toDateString(d);
-      for (let t = startMinutes; t < endMinutes; t += 15) {
-        const hour = Math.floor(t / 60);
-        const minute = t % 60;
-        if (!GRID_HOURS.includes(hour) || !QUARTER_MINUTES.includes(minute as (typeof QUARTER_MINUTES)[number])) continue;
-        const rowIndex = rowIndexFromTime(hour, minute);
-        baseTargets.push({ dateISO, hour, minute, rowIndex });
-      }
-    }
-
-    baseTargets.forEach((base) => {
-      for (let week = 0; week < 60; week += 1) {
-        if (!manualRepeatWeekly && week > 0) break;
-        const date = new Date(`${base.dateISO}T00:00:00`);
-        date.setDate(date.getDate() + week * 7);
-        if (date.getTime() > endTs) break;
-        const dateISO = toDateString(date);
-        uniqueTargets[`${dateISO}|${base.hour}|${base.minute}`] = {
-          dateISO,
-          hour: base.hour,
-          minute: base.minute,
-          rowIndex: base.rowIndex,
-        };
-      }
-    });
-
-    setAddingManualAvailability(true);
-    setManualAddMessage(null);
-
-    let applied = 0;
-    try {
-      for (const cell of Object.values(uniqueTargets)) {
-        const slotTs = new Date(
-          `${cell.dateISO}T${String(cell.hour).padStart(2, "0")}:${String(cell.minute).padStart(2, "0")}:00`
-        ).getTime();
-        if (slotTs < Date.now()) continue;
-
-        // eslint-disable-next-line no-await-in-loop
-        await applySlotAction(
-          cell.dateISO,
-          cell.hour,
-          cell.minute,
-          "add",
-          manualInterviewers,
-          manualRepeatWeekly ? { enabled: true, seriesId } : undefined
-        );
-        applied += 1;
-      }
-
-      setManualStartDateInput(startDate);
-      setManualEndDateInput(endDate);
-      setManualStartTimeInput(fmtTimeOption(startTime.hour, startTime.minute));
-      setManualEndTimeInput(fmtTimeOption(endTime.hour, endTime.minute));
-      setManualAddMessage(
-        applied > 0
-          ? `Added ${applied} availability slot(s).`
-          : "No future slots to add."
-      );
-    } finally {
-      setAddingManualAvailability(false);
-      setTimeout(() => setManualAddMessage(null), 2400);
-    }
-  };
-
-  const startDragSelection = (
-    date: Date,
-    dayIndex: number,
-    hour: number,
-    minute: number,
-    isVisible: boolean,
-    isPastSlot: boolean,
-    isBooked: boolean
-  ) => {
-    if (isPastSlot) return;
-    if (isBooked) {
-      const dateISO = toDateString(date);
-      const booked = slotMap[slotKey(dateISO, hour, minute)];
-      if (booked) setBookedSlotDetails(booked);
-      return;
-    }
-    if (isVisible && !canDeleteInterviews) return;
-    const mode: DragMode = isVisible && canDeleteInterviews ? "remove" : "add";
-    const dateISO = toDateString(date);
-    const rowIndex = rowIndexFromTime(hour, minute);
-    const key = `${dateISO}|${hour}|${minute}`;
-    const initial: Record<string, DragCell> = { [key]: { dateISO, hour, minute, rowIndex } };
-    dragSelectionRef.current = initial;
-    setDragSelection(initial);
-    dragModeRef.current = mode;
-    dragAnchorRef.current = { dayIndex, rowIndex };
-    setDragMode(mode);
-    setDraggingSelection(true);
-  };
-
-  const extendDragSelection = (dayIndex: number, rowIndex: number, isPastSlot: boolean) => {
-    if (!draggingSelection || !dragModeRef.current || isPastSlot) return;
-    const mode = dragModeRef.current;
-    const anchor = dragAnchorRef.current;
-    if (!anchor) return;
-    if (mode === "remove" && !canDeleteInterviews) return;
-
-    const minDay = Math.min(anchor.dayIndex, dayIndex);
-    const maxDay = Math.max(anchor.dayIndex, dayIndex);
-    const minRow = Math.min(anchor.rowIndex, rowIndex);
-    const maxRow = Math.max(anchor.rowIndex, rowIndex);
-
-    const next: Record<string, DragCell> = {};
-    for (let day = minDay; day <= maxDay; day += 1) {
-      const cellDate = weekDates[day];
-      if (!cellDate) continue;
-      const dateISO = toDateString(cellDate);
-
-      for (let cellRow = minRow; cellRow <= maxRow; cellRow += 1) {
-        const parsed = timeFromRowIndex(cellRow);
-        if (!parsed) continue;
-        const { hour, minute } = parsed;
-        const slotTs = new Date(
-          `${dateISO}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:59`
-        ).getTime();
-        if (slotTs < now) continue;
-
-        const slot = slotMap[slotKey(dateISO, hour, minute)];
-        const isVisible = !!slot && slot.available && !slot.bookedBy;
-        const isBooked = !!slot?.bookedBy;
-        if (isBooked) continue;
-        if (mode === "remove" && !isVisible) continue;
-
-        const key = `${dateISO}|${hour}|${minute}`;
-        next[key] = { dateISO, hour, minute, rowIndex: cellRow };
-      }
-    }
-
-    dragSelectionRef.current = next;
-    setDragSelection(next);
-  };
-
-  const resetDragSelection = () => {
-    dragSelectionRef.current = {};
-    dragModeRef.current = null;
-    dragAnchorRef.current = null;
-    setDragSelection({});
-    setDragMode(null);
-    setDraggingSelection(false);
-  };
-
-  const closeBatchModal = () => {
-    setShowBatchModal(false);
-    setRepeatWeekly(true);
-    setBatchInterviewers([]);
-    setSelectedInterviewers([]);
-    resetDragSelection();
-  };
-
-  const applyBatchSelection = async () => {
-    if (!dragMode || Object.keys(dragSelection).length === 0) {
-      closeBatchModal();
-      return;
-    }
-
-    const shouldRepeatWeekly = dragMode === "add" ? repeatWeekly : false;
-    if (dragMode === "add" && interviewerIdsFromDisplays(batchInterviewers).length === 0) {
-      setAvailableMessage("At least one interviewer is required.");
-      setTimeout(() => setAvailableMessage(null), 2200);
-      return;
-    }
-    const planningEndTs = planningWindowEnd(windowAnchor).getTime();
-    const seriesId = dragMode === "add" && shouldRepeatWeekly ? buildRecurringSeriesId() : "";
-    const uniqueTargets: Record<string, DragCell> = {};
-
-    Object.values(dragSelection).forEach((cell) => {
-      for (let week = 0; week < 60; week += 1) {
-        const date = new Date(`${cell.dateISO}T00:00:00`);
-        date.setDate(date.getDate() + week * 7);
-        if (!shouldRepeatWeekly && week > 0) break;
-        if (date.getTime() > planningEndTs) break;
-        const dateISO = toDateString(date);
-        const key = `${dateISO}|${cell.hour}|${cell.minute}`;
-        uniqueTargets[key] = { dateISO, hour: cell.hour, minute: cell.minute, rowIndex: cell.rowIndex };
-      }
-    });
-
-    setApplyingBatch(true);
-    try {
-      if (dragMode === "remove") {
-        const idsToDelete = new Set<string>();
-        const nowTs = Date.now();
-        const selectedCells = Object.values(dragSelection);
-
-        selectedCells.forEach((cell) => {
-          const selected = slotMap[slotKey(cell.dateISO, cell.hour, cell.minute)];
-          if (!selected) return;
-
-          if (selected.recurringWeekly && selected.recurringSeriesId) {
-            // Add entire series to deletion set without mutating slots directly
-            slots.forEach((candidate) => {
-              const ts = toInterviewTimestamp(candidate.datetime);
-              if (ts < nowTs) return;
-              if (candidate.recurringSeriesId !== selected.recurringSeriesId) return;
-              if (!candidate.available || !!candidate.bookedBy) return;
-              idsToDelete.add(candidate.id);
-            });
-          } else {
-            // Delete only this standalone slot
-            if (toInterviewTimestamp(selected.datetime) < nowTs) return;
-            if (!selected.available || !!selected.bookedBy) return;
-            idsToDelete.add(selected.id);
-          }
-        });
-
-        for (const id of Array.from(idsToDelete)) {
-          // eslint-disable-next-line no-await-in-loop
-          await deleteInterviewSlot(id);
-        }
-        setAvailableMessage(
-          idsToDelete.size > 0
-            ? `Removed ${idsToDelete.size} availability slot(s).`
-            : "No availability slots to remove."
-        );
-        setTimeout(() => setAvailableMessage(null), 2400);
-        return;
-      }
-
-      for (const cell of Object.values(uniqueTargets)) {
-        const slotTs = new Date(
-          `${cell.dateISO}T${String(cell.hour).padStart(2, "0")}:${String(cell.minute).padStart(2, "0")}:00`
-        ).getTime();
-        if (slotTs < Date.now()) continue;
-        // eslint-disable-next-line no-await-in-loop
-        await applySlotAction(
-          cell.dateISO,
-          cell.hour,
-          cell.minute,
-          dragMode,
-          dragMode === "add" ? batchInterviewers : [],
-          dragMode === "add" && shouldRepeatWeekly ? { enabled: true, seriesId } : undefined
-        );
-      }
-    } finally {
-      setApplyingBatch(false);
-      closeBatchModal();
-    }
-  };
-
-  const saveSelectedInterviewers = async () => {
-    if (!canDeleteInterviews) return;
-    if (dragMode !== "remove") return;
-    const ids = interviewerIdsFromDisplays(selectedInterviewers);
-    if (ids.length === 0) {
-      setAvailableMessage("At least one interviewer is required.");
-      setTimeout(() => setAvailableMessage(null), 2200);
-      return;
-    }
-    const repeatCount = 1; // Drag-edit interviewers now inherently only applies to the explicitly selected cells
-    const planningWindowEnd = new Date();
-    planningWindowEnd.setDate(planningWindowEnd.getDate() + MAX_WEEK_OFFSET * 7 + 6);
-    const uniqueTargets: Record<string, DragCell> = {};
-
-    Object.values(dragSelection).forEach((cell) => {
-      for (let week = 0; week < repeatCount; week += 1) {
-        const date = new Date(`${cell.dateISO}T00:00:00`);
-        date.setDate(date.getDate() + week * 7);
-        if (date.getTime() > planningWindowEnd.getTime()) break;
-        const dateISO = toDateString(date);
-        const targetKey = `${dateISO}|${cell.hour}|${cell.minute}`;
-        uniqueTargets[targetKey] = {
-          dateISO,
-          hour: cell.hour,
-          minute: cell.minute,
-          rowIndex: cell.rowIndex,
-        };
-      }
-    });
-
-    setApplyingBatch(true);
-    try {
-      for (const cell of Object.values(uniqueTargets)) {
-        const key = slotKey(cell.dateISO, cell.hour, cell.minute);
-        const slot = slotMap[key];
-        if (!slot || !slot.available || slot.bookedBy) continue;
-        const current = normalizeInterviewerMemberIds(slot.interviewerMemberIds ?? []);
-        const same = current.length === ids.length && current.every((value, idx) => value === ids[idx]);
-        if (same) continue;
-        // eslint-disable-next-line no-await-in-loop
-        await updateInterviewSlot(slot.id, {
-          interviewerMemberIds: ids,
-        });
-      }
-    } finally {
-      setApplyingBatch(false);
-      closeBatchModal();
-    }
-  };
-
-  useEffect(() => {
-    if (!draggingSelection) return;
-    const handlePointerUp = () => {
-      setDraggingSelection(false);
-      const selectionCount = Object.keys(dragSelectionRef.current).length;
-      if (selectionCount >= 1 && dragModeRef.current) {
-        setRepeatWeekly(dragModeRef.current === "add");
-        if (dragModeRef.current === "add") {
-          setBatchInterviewers([]);
-        } else {
-          const entries = Object.values(dragSelectionRef.current);
-          if (entries.length === 1) {
-            const cell = entries[0];
-            const slot = slotMap[slotKey(cell.dateISO, cell.hour, cell.minute)];
-            setSelectedInterviewers(slot ? interviewerDisplaysFromSlot(slot) : []);
-          } else {
-            setSelectedInterviewers([]);
-          }
-        }
-        setShowBatchModal(true);
-        setDragMode(dragModeRef.current);
-        return;
-      }
-      resetDragSelection();
-    };
-    window.addEventListener("pointerup", handlePointerUp);
-    return () => window.removeEventListener("pointerup", handlePointerUp);
-  }, [draggingSelection, slotMap, interviewerDisplaysFromSlot]);
-
-  const getDayVisibleCount = (date: Date) => {
-    const d = toDateString(date);
-    let visible = 0;
-    slots.forEach((slot) => {
-      if (slotDateISOFromDateTime(slot.datetime) !== d || toInterviewTimestamp(slot.datetime) < now) return;
-      if (slot.available && !slot.bookedBy) visible += 1;
-    });
-    return visible;
-  };
-
-  const getHourVisibleCount = (hour: number) => {
-    let visible = 0;
-    for (const day of weekDates) {
-      const d = toDateString(day);
-      for (const minute of QUARTER_MINUTES) {
-        const slot = slotMap[slotKey(d, hour, minute)];
-        if (!slot) continue;
-        if (toInterviewTimestamp(slot.datetime) < now) continue;
-        if (slot.available && !slot.bookedBy) visible += 1;
-      }
-    }
-    return visible;
-  };
-
-  const toggleInterviewer = async (member: TeamMember) => {
-    if (!canDeleteInterviews) return;
-    setTogglingId(member.id);
-    try {
-      const token = await getAuthToken();
-      const res = await fetch("/api/members/admin/toggle-interviewer", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ memberId: member.id, enabled: !member.canInterview }),
-      });
-      if (!res.ok) {
-        setToggleError(`Could not change interviewer access for ${member.name}.`);
-      } else {
-        setToggleError(null);
-      }
-    } finally {
-      setTogglingId(null);
-    }
-  };
-
-  const TABS: { key: "upcoming" | "past" | "availability"; label: string }[] = [
-    { key: "upcoming", label: "Upcoming Interviews" },
-    { key: "past", label: "Past Interviews" },
-    { key: "availability", label: "Availability" },
-  ];
-
-  if (loading || !canAccessInterviews) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Spinner />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <Dialog />
-
-      <div className="mb-6">
-        <h1 className="font-display font-bold text-white text-2xl">Interviews</h1>
-        <p className="text-white/40 text-sm mt-1 font-body">
-          Manage one public booking link, availability, and upcoming interviews.
-        </p>
-        <p className="text-white/30 text-xs mt-1 font-body">
-          All times are shown in New York time (EST/EDT).
-        </p>
-      </div>
-      <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
-
-      <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-6 w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium font-body transition-colors ${
-              activeTab === tab.key ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "upcoming" && (
-        <div className="space-y-5">
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
-            <p className="text-white/85 text-sm font-semibold">Interview Booking Link</p>
-            <p className="text-white/40 text-xs font-body">Use this one link for all applicants. It does not expire.</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                value={bookingLink}
-                readOnly
-                className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#F6B78D] font-mono"
-              />
-              <Btn variant="primary" size="sm" onClick={copyBookingLink}>
-                {copiedBookingLink ? "Copied!" : "Copy Link"}
-              </Btn>
-            </div>
-          </div>
-
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <p className="text-white/85 text-sm font-semibold">Interview Zoom Link</p>
-                <p className="text-white/40 text-xs mt-1 font-body">
-                  Used for applicant confirmation pages and calendar .ics invites.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {canEditZoom && (
-                  <Btn variant="secondary" size="sm" onClick={() => setEditingZoom(true)}>
-                    Edit
-                  </Btn>
-                )}
-                <Btn variant="secondary" size="sm" onClick={copyZoomLink} disabled={!effectiveZoomLink}>
-                  {copiedZoom ? "Copied!" : "Copy Link"}
-                </Btn>
-                <a
-                  href={effectiveZoomLink || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                    effectiveZoomLink
-                      ? "bg-[#2D8CFF]/14 border border-[#2D8CFF]/30 text-[#6DB8FF] hover:bg-[#2D8CFF]/22"
-                      : "bg-white/6 border border-white/10 text-white/35 pointer-events-none"
-                  }`}
-                >
-                  Join
-                </a>
-              </div>
-            </div>
-
-            {!effectiveZoomLink && !editingZoom && (
-              <p className="text-white/35 text-xs font-body">No Zoom link configured yet.</p>
-            )}
-
-            {editingZoom && canEditZoom && (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  value={zoomLinkInput}
-                  onChange={(e) => setZoomLinkInput(e.target.value)}
-                  placeholder="https://zoom.us/j/..."
-                  className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#F6B78D]/45"
-                />
-                <Btn variant="primary" size="sm" onClick={saveZoomSettings} disabled={savingZoom}>
-                  {savingZoom ? "Saving..." : "Save"}
-                </Btn>
-                <Btn
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setEditingZoom(false);
-                    setZoomLinkInput(effectiveZoomLink);
-                  }}
-                >
-                  Cancel
-                </Btn>
-              </div>
-            )}
-
-            {zoomSaveMessage && <p className="text-xs text-white/55">{zoomSaveMessage}</p>}
-          </div>
-
-          {upcomingBookedSlots.length === 0 && (
-            <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-8 text-center text-white/30 text-sm font-body">
-              No upcoming interviews booked yet.
-            </div>
-          )}
-          {upcomingBookedSlots.length > 0 && (
-            <>
-              <div className="bg-blue-500/10 border border-blue-400/20 rounded-xl px-4 py-2.5 text-[11px] text-blue-200/80 font-body">
-                <span className="font-semibold text-blue-200">Interviewers:</span> After the interview is done, click <span className="font-semibold">Evaluate</span> in the Actions column to submit your rating and notes. Evaluations are saved to the applicant record and visible to all team members.
-              </div>
-            <div className="members-table-shell">
-              <table className="members-grid-table w-full min-w-[1280px] table-fixed text-[11px] leading-4 [&_td]:overflow-hidden">
-                <thead className="bg-[#0F1014]">
-                  <tr className="members-header-sep">
-                    {["Name", "Email", "Time", "Interviewer(s)", "Eval", "Resume", "Actions"].map((col) => (
-                      <th
-                        key={col}
-                        className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
-                          col === "Name" ? "w-[160px]" :
-                          col === "Email" ? "w-[220px]" :
-                          col === "Time" ? "w-[190px]" :
-                          col === "Interviewer(s)" ? "w-[180px]" :
-                          col === "Eval" ? "w-[52px]" :
-                          col === "Resume" ? "w-[72px]" :
-                          "w-[190px]"
-                        }`}
-                      >
-                        <span className="inline-flex items-center gap-0.5">
-                          {col}
-                          {col === "Time" && (
-                            <span className="inline-flex flex-col ml-1 leading-none align-middle">
-                              <span className="text-[8px] text-white/80">▲</span>
-                              <span className="text-[8px] text-white/20">▼</span>
-                            </span>
-                          )}
-                        </span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {upcomingBookedSlots.map((slot) => {
-                    const displayName = slot.bookerName?.trim() || "Interviewee";
-                    const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
-                    const resumeUrl = findResumeUrlForSlot(slot);
-                    const evalCount = getEffectiveEvaluationCountForSlot(slot);
-                    return (
-                      <tr key={slot.id} className="hover:bg-white/3 transition-colors">
-                        <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap max-w-[160px] truncate" title={displayName}>{displayName}</td>
-                        <td className="px-2 py-1.5 text-white/55 font-mono whitespace-nowrap max-w-[220px] truncate" title={slot.bookerEmail || "—"}>{slot.bookerEmail || "—"}</td>
-                        <td className="px-2 py-1.5 text-white/65 whitespace-nowrap">{formatDateTime(slot.datetime)}</td>
-                        <td className="px-2 py-1.5 text-white/50 whitespace-nowrap max-w-[180px] truncate" title={slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}>{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
-                        <td className="px-2 py-1.5 text-center">
-                          {evalCount > 0 ? (
-                            <div className="w-2.5 h-2.5 rounded-full bg-[#F6B78D] inline-block shadow-[0_0_8px_rgba(246,183,141,0.4)]" title="Evaluation submitted" />
-                          ) : (
-                            <span className="text-white/20">—</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5">
-                          {resumeUrl ? (
-                            <a 
-                              href={resumeUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-[#F3E28D] hover:underline text-[11px] whitespace-nowrap"
-                            >
-                              Resume
-                            </a>
-                          ) : (
-                            <span className="text-white/20">N/A</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap">
-                          <div className="flex gap-1 flex-nowrap">
-                            {canDeleteInterviews ? (
-                              <>
-                                <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => startReschedule(slot)}>Move</Btn>
-                                <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
-                                <Btn size="sm" variant="danger" className="members-pill-btn" onClick={() => cancelBookedInterview(slot)}>Cancel</Btn>
-                              </>
-                            ) : (canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) ? (
-                              <>
-                                <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
-                                <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot, true)}>No Show</Btn>
-                              </>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {activeTab === "past" && (
-        <div className="space-y-5">
-          {pastMessage && <p className="text-xs text-white/55 font-body">{pastMessage}</p>}
-          {pastBookedSlots.length === 0 && (
-            <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-8 text-center text-white/30 text-sm font-body">
-              No past interviews found.
-            </div>
-          )}
-          {pastBookedSlots.length > 0 && (
-            <>
-            <div className="members-table-shell">
-              <table className="members-grid-table w-full min-w-[1280px] table-fixed text-[11px] leading-4 [&_td]:overflow-hidden">
-                <thead className="bg-[#0F1014]">
-                  <tr className="members-header-sep">
-                    {["Name", "Email", "Time", "Interviewer(s)", "Eval", "Resume", "Actions"].map((col) => (
-                      <th
-                        key={col}
-                        className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45 whitespace-nowrap ${
-                          col === "Name" ? "w-[160px]" :
-                          col === "Email" ? "w-[220px]" :
-                          col === "Time" ? "w-[190px]" :
-                          col === "Interviewer(s)" ? "w-[180px]" :
-                          col === "Eval" ? "w-[52px]" :
-                          col === "Resume" ? "w-[72px]" :
-                          "w-[190px]"
-                        }`}
-                      >
-                        <span className="inline-flex items-center gap-0.5">
-                          {col}
-                          {col === "Time" && (
-                            <span className="inline-flex flex-col ml-1 leading-none align-middle">
-                              <span className="text-[8px] text-white/20">▲</span>
-                              <span className="text-[8px] text-white/80">▼</span>
-                            </span>
-                          )}
-                        </span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {[...pastBookedSlots].reverse().map((slot) => {
-                    const displayName = slot.bookerName?.trim() || "Interviewee";
-                    const slotInterviewers = getSlotInterviewerNames(slot, memberNameById);
-                    const resumeUrl = findResumeUrlForSlot(slot);
-                    const evalCount = getEffectiveEvaluationCountForSlot(slot);
-                    return (
-                      <tr key={slot.id} className="hover:bg-white/3 transition-colors">
-                        <td className="px-2 py-1.5 text-white/90 font-medium whitespace-nowrap max-w-[160px] truncate" title={displayName}>{displayName}</td>
-                        <td className="px-2 py-1.5 text-white/55 font-mono whitespace-nowrap max-w-[220px] truncate" title={slot.bookerEmail || "—"}>{slot.bookerEmail || "—"}</td>
-                        <td className="px-2 py-1.5 text-white/65 whitespace-nowrap">{formatDateTime(slot.datetime)}</td>
-                        <td className="px-2 py-1.5 text-white/50 whitespace-nowrap max-w-[180px] truncate" title={slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}>{slotInterviewers.length > 0 ? slotInterviewers.join(", ") : "—"}</td>
-                        <td className="px-2 py-1.5 text-center">
-                          {evalCount > 0 ? (
-                            <div className="w-2.5 h-2.5 rounded-full bg-[#F6B78D] inline-block shadow-[0_0_8px_rgba(246,183,141,0.4)]" title="Evaluation submitted" />
-                          ) : (
-                            <span className="text-white/20">—</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5">
-                          {resumeUrl ? (
-                            <a 
-                              href={resumeUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-[#F3E28D] hover:underline text-[11px] whitespace-nowrap"
-                            >
-                              Resume
-                            </a>
-                          ) : (
-                            <span className="text-white/20">N/A</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5 whitespace-nowrap">
-                          <div className="flex gap-1 flex-nowrap">
-                            {(canDeleteInterviews || canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && (
-                              <Btn size="sm" variant="secondary" className="members-pill-btn" onClick={() => openEvaluation(slot)}>Evaluate</Btn>
-                            )}
-                            {(canDeleteInterviews || canEvaluate || currentInterviewerMemberIds.some((mid) => slot.interviewerMemberIds?.includes(mid))) && !slot.noShow && (
-                              <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400" onClick={() => void markNoShow(slot, true)}>No Show</Btn>
-                            )}
-                            {slot.noShow && (
-                              <Btn size="sm" variant="ghost" className="members-pill-btn text-orange-400/60" onClick={() => void markNoShow(slot, false)}>No Show ✕</Btn>
-                            )}
-                            {canDeleteInterviews && (
-                              <Btn size="sm" variant="primary" className="members-pill-btn" onClick={() => setFinalizeSlot(slot)}>Accept</Btn>
-                            )}
-                            {canDeleteInterviews && (
-                              <Btn size="sm" variant="danger" className="members-pill-btn" onClick={() => deletePastInterviewEntry(slot)}>Delete</Btn>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {activeTab === "availability" && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-end">
-            <Field label="Start Date">
-              <AutocompleteInput
-                value={manualStartDateInput}
-                onChange={setManualStartDateInput}
-                options={typedDateOptions}
-                placeholder="YYYY-MM-DD"
-              />
-            </Field>
-            <Field label="End Date">
-              <AutocompleteInput
-                value={manualEndDateInput}
-                onChange={setManualEndDateInput}
-                options={typedDateOptions}
-                placeholder="YYYY-MM-DD"
-              />
-            </Field>
-            <Field label="Start Time">
-              <AutocompleteInput
-                value={manualStartTimeInput}
-                onChange={setManualStartTimeInput}
-                options={typedTimeOptions}
-                placeholder="e.g. 9:00 AM"
-                className="appearance-none"
-              />
-            </Field>
-            <Field label="End Time">
-              <AutocompleteInput
-                value={manualEndTimeInput}
-                onChange={setManualEndTimeInput}
-                options={typedTimeOptions}
-                placeholder="e.g. 10:00 AM"
-                className="appearance-none"
-              />
-            </Field>
-              <Field label="Interviewer(s)">
-                <AutocompleteTagInput
-                  values={manualInterviewers}
-                  onChange={setManualInterviewers}
-                  options={interviewerOptions}
-                  commitOnBlur
-                  placeholder="Type a name, then Enter/comma"
-                />
-              </Field>
-            <Btn
-              variant="primary"
-              className="w-full justify-center"
-              onClick={() => void addTypedAvailability()}
-              disabled={addingManualAvailability}
-            >
-              {addingManualAvailability ? "Adding..." : "Add Availability"}
-            </Btn>
-          </div>
-          <label className="inline-flex items-center gap-2 text-xs text-white/65 font-body select-none">
-            <input
-              type="checkbox"
-              checked={manualRepeatWeekly}
-              onChange={(e) => setManualRepeatWeekly(e.target.checked)}
-              className="members-checkbox"
-            />
-            Repeat weekly (same time range for future weeks)
-          </label>
-          {manualAddMessage && <p className="text-xs text-white/55">{manualAddMessage}</p>}
-          {availableMessage && <p className="text-xs text-white/55">{availableMessage}</p>}
-          {!canDeleteInterviews && (
-            <p className="text-white/35 text-xs font-body">
-              Interviewer role can add hours but cannot remove existing visible times.
-            </p>
-          )}
-
-          <div className="flex items-center gap-4 flex-wrap">
-            <button
-              onClick={() => setSlotWeek((w) => Math.max(0, w - 1))}
-              disabled={slotWeek === 0}
-              className="px-3 py-1.5 rounded-lg bg-white/8 text-white/65 hover:text-white hover:bg-white/12 transition-colors text-sm disabled:opacity-30"
-            >
-              ← Prev
-            </button>
-            <span className="text-white/65 text-sm font-body flex-1 text-center">
-              {weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
-              {weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            </span>
-            <button
-              onClick={() => setSlotWeek((w) => Math.min(MAX_WEEK_OFFSET, w + 1))}
-              disabled={slotWeek === MAX_WEEK_OFFSET}
-              className="px-3 py-1.5 rounded-lg bg-white/8 text-white/65 hover:text-white hover:bg-white/12 transition-colors text-sm disabled:opacity-30"
-            >
-              Next →
-            </button>
-            <button
-              onClick={() => setSlotWeek(0)}
-              className="px-3 py-1.5 rounded-lg bg-white/8 text-white/65 hover:text-white hover:bg-white/12 transition-colors text-sm"
-            >
-              Today
-            </button>
-          </div>
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <div className="min-w-[1180px]">
-                <div
-                  className="grid border-b border-white/8"
-                  style={{ gridTemplateColumns: `140px repeat(${GRID_HOURS.length}, minmax(56px, 1fr))` }}
-                >
-                  <div className="p-2 text-[10px] text-white/25 font-body uppercase tracking-wide text-center">Day / Time</div>
-                  {GRID_HOURS.map((hour) => {
-                    const visibleCount = getHourVisibleCount(hour);
-                    return (
-                      <button
-                        key={hour}
-                        onClick={() => toggleHourRow(hour)}
-                        title={canDeleteInterviews ? "Toggle this hour across all days" : "Add this hour across all days"}
-                        className="py-2 text-center text-[11px] font-medium font-body border-l border-white/6 text-white/55 hover:text-white hover:bg-white/5 transition-colors"
-                      >
-                        <div>{fmtHour(hour)}</div>
-                        <div className="text-[10px] text-white/25 mt-0.5">{visibleCount} visible</div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {weekDates.map((day, dayIdx) => {
-                  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                  const isToday = toDateString(day) === toDateString(new Date());
-                  const isPastDay = day < new Date(new Date().setHours(0, 0, 0, 0));
-                  const visibleCount = getDayVisibleCount(day);
-                  const d = toDateString(day);
-
-                  return (
-                    <div
-                      key={d}
-                      className="grid border-b border-white/4"
-                      style={{ gridTemplateColumns: `140px repeat(${GRID_HOURS.length}, minmax(56px, 1fr))` }}
-                    >
-                      <button
-                        onClick={() => !isPastDay && toggleDay(day)}
-                        disabled={isPastDay}
-                        title={isPastDay ? undefined : canDeleteInterviews ? "Toggle entire day" : "Add missing hours for this day"}
-                        className={`px-3 py-2 text-left border-r border-white/6 transition-colors ${
-                          isPastDay ? "opacity-30 cursor-default" : "hover:bg-white/5 cursor-pointer"
-                        }`}
-                      >
-                        <div className={`text-xs font-semibold ${isToday ? "text-[#F6B78D]" : "text-white/60"}`}>
-                          {dayNames[day.getDay()]} {day.getMonth() + 1}/{day.getDate()}
-                        </div>
-                        <div className="text-[10px] text-white/30 mt-0.5">{visibleCount} visible</div>
-                      </button>
-
-                      {GRID_HOURS.map((hour) => {
-                        const h = String(hour).padStart(2, "0");
-                        return (
-                          <div key={hour} className="border-l border-white/6">
-                            <div className="grid grid-rows-4 h-14">
-                              {QUARTER_MINUTES.map((minute) => {
-                                const minuteLabel = String(minute).padStart(2, "0");
-                                const key = slotKey(d, hour, minute);
-                                const slot = slotMap[key];
-                                const isVisible = !!slot && slot.available && !slot.bookedBy;
-                                const isBooked = !!slot?.bookedBy;
-                                const isPastSlot = new Date(`${d}T${h}:${minuteLabel}:59`).getTime() < now;
-                                const cannotRemoveVisible = !canDeleteInterviews && isVisible;
-                                const disabled = isPastSlot || cannotRemoveVisible;
-                                const rowIndex = rowIndexFromTime(hour, minute);
-                                const selectionKey = `${d}|${hour}|${minute}`;
-                                const isSelectedInDrag = !!dragSelection[selectionKey];
-
-                                let cellClass = "bg-white/10 hover:bg-white/25";
-                                if (isVisible) cellClass = "bg-[#F6B78D]/70 hover:bg-[#F6B78D]/45";
-                                if (isBooked) cellClass = "bg-red-500/45";
-
-                                const title = (() => {
-                                  const label = fmtTimeOption(hour, minute);
-                                  if (isPastSlot) return `${label} - Past`;
-                                  if (isBooked) return `${label} - Booked`;
-                                  if (cannotRemoveVisible) return `${label} - Visible (interviewer cannot remove)`;
-                                  if (isVisible) return `${label} - Visible on booking page`;
-                                  return `${label} - Hidden on booking page`;
-                                })();
-
-                                return (
-                                  <button
-                                    key={minute}
-                                    disabled={disabled}
-                                    onPointerDown={(e) => {
-                                      if (disabled) return;
-                                      e.preventDefault();
-                                      startDragSelection(day, dayIdx, hour, minute, isVisible, isPastSlot, isBooked);
-                                    }}
-                                    onPointerEnter={() => {
-                                      if (disabled) return;
-                                      extendDragSelection(dayIdx, rowIndex, isPastSlot);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (disabled || (e.key !== "Enter" && e.key !== " ")) return;
-                                      e.preventDefault();
-                                      startDragSelection(day, dayIdx, hour, minute, isVisible, isPastSlot, isBooked);
-                                      if (isBooked) return;
-                                      const mode: DragMode = isVisible ? "remove" : "add";
-                                      setDraggingSelection(false);
-                                      setDragMode(mode);
-                                      setRepeatWeekly(mode === "add");
-                                      if (mode === "add") {
-                                        setBatchInterviewers([]);
-                                      } else if (slot) {
-                                        setSelectedInterviewers(interviewerDisplaysFromSlot(slot));
-                                      }
-                                      setShowBatchModal(true);
-                                    }}
-                                    title={title}
-                                    className={`w-full h-full border border-white/6 transition-colors ${
-                                      disabled
-                                        ? `${cellClass} cursor-default ${isPastSlot ? "opacity-20" : "opacity-70"}`
-                                        : `${cellClass} cursor-pointer`
-                                    } ${isSelectedInDrag ? "ring-2 ring-inset ring-[#F6B78D]" : ""}`}
-                                    style={{ touchAction: "none" }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4 text-xs text-white/40 font-body">
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-[#F6B78D]/20 border border-[#F6B78D]/40" />
-              Visible to applicants
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-red-500/45 border border-red-400/45" />
-              Booked
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-white/8" />
-              {canDeleteInterviews
-                ? "Click or drag to select 15-minute slots, then apply changes in the popup"
-                : "Click or drag hidden 15-minute slots to select, then apply additions in the popup"}
-            </span>
-          </div>
-
-          <div className="bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-3">
-            <div>
-              <p className="text-white/85 text-sm font-semibold">Available Slots</p>
-              <p className="text-white/40 text-xs mt-1 font-body">
-                Upcoming availability in the booking window, separated into recurring weekly patterns and one-time slots.
-              </p>
-            </div>
-            {recurringAvailableGroups.length === 0 && oneTimeAvailableByDate.length === 0 && (
-              <p className="text-white/35 text-sm font-body">No available slots in the current window.</p>
-            )}
-            {recurringAvailableGroups.length > 0 && (
-              <div>
-                <h3 className="text-white/55 text-xs font-semibold font-body mb-2 uppercase tracking-wide">Recurring Weekly</h3>
-                <div className="space-y-2">
-                  {recurringAvailableGroups.map(({ key, representative }) => {
-                    const interviewerText = (() => {
-                      const names = getSlotInterviewerNames(representative, memberNameById);
-                      return names.length > 0 ? names.join(", ") : "Not set";
-                    })();
-                    const recurringLabel = `${formatInterviewInET(representative.datetime, { weekday: "long" })} ${formatInterviewInET(representative.datetime, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      timeZoneName: "short",
-                    })}`;
-                    return (
-                      <div key={key} className="bg-[#12141B] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#F6B78D] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white/90 text-sm font-medium">{recurringLabel}</p>
-                          <p className="text-white/45 text-xs mt-0.5">
-                            Interviewer{interviewerText.includes(",") ? "s" : ""}: {interviewerText} · Weekly
-                          </p>
-                        </div>
-                        {canDeleteInterviews && (
-                          <div className="flex items-center gap-2 flex-wrap justify-end">
-                            <Btn size="sm" variant="secondary" onClick={() => openEditAvailableSlot(representative)}>
-                              Edit
-                            </Btn>
-                            <Btn size="sm" variant="danger" onClick={() => removeAvailability(representative)}>
-                              Remove
-                            </Btn>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {oneTimeAvailableByDate.length > 0 && (
-              <div>
-                <h3 className="text-white/55 text-xs font-semibold font-body mb-2 uppercase tracking-wide">One-Time</h3>
-                <div className="space-y-3">
-                  {oneTimeAvailableByDate.map(([day, daySlots]) => (
-                    <div key={day}>
-                      <h4 className="text-white/55 text-xs font-semibold font-body mb-2 uppercase tracking-wide">{formatDateHeading(day)}</h4>
-                      <div className="space-y-2">
-                        {daySlots.map((slot) => {
-                          const interviewerText = (() => {
-                            const names = getSlotInterviewerNames(slot, memberNameById);
-                            return names.length > 0 ? names.join(", ") : "Not set";
-                          })();
-                          return (
-                            <div key={slot.id} className="bg-[#12141B] border border-white/8 rounded-lg px-3 py-2.5 flex items-center gap-3">
-                              <div className="w-2 h-2 rounded-full bg-[#F6B78D] flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-white/90 text-sm font-medium">{formatDateTime(slot.datetime)}</p>
-                                <p className="text-white/45 text-xs mt-0.5">
-                                  Interviewer{interviewerText.includes(",") ? "s" : ""}: {interviewerText}
-                                </p>
-                              </div>
-                              {canDeleteInterviews && (
-                                <div className="flex items-center gap-2 flex-wrap justify-end">
-                                  <Btn size="sm" variant="secondary" onClick={() => openEditAvailableSlot(slot)}>
-                                    Edit
-                                  </Btn>
-                                  <Btn size="sm" variant="secondary" onClick={() => makeAvailabilityWeekly(slot)}>
-                                    Make Weekly
-                                  </Btn>
-                                  <Btn size="sm" variant="danger" onClick={() => removeAvailability(slot)}>
-                                    Remove
-                                  </Btn>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {canDeleteInterviews && (() => {
-        const query = interviewerSearch.trim().toLowerCase();
-        const active = teamMembers.filter((m) => m.status === "Active");
-        // Who already has access is the question this panel exists to answer,
-        // so it is answered first. The rest of the directory is only ever a
-        // search target — rendering all of it made one grantee take 270 rows
-        // of scrolling to find.
-        const granted = active
-          .filter((m) => m.canInterview)
-          .sort((a, b) => a.name.localeCompare(b.name));
-        const matches = query
-          ? active
-              .filter((m) => !m.canInterview)
-              .filter((m) => m.name.toLowerCase().includes(query) || m.email.toLowerCase().includes(query))
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .slice(0, 20)
-          : [];
-
-        const Toggle = ({ member }: { member: TeamMember }) => (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={Boolean(member.canInterview)}
-            aria-label={`Interviewer access for ${member.name}`}
-            onClick={() => void toggleInterviewer(member)}
-            disabled={togglingId === member.id}
-            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
-              member.canInterview ? "bg-[#F6B78D]" : "bg-white/15"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                member.canInterview ? "translate-x-4" : "translate-x-0"
-              }`}
-            />
-          </button>
-        );
-
-        return (
-          <div className="mt-8 bg-[#1C1F26] border border-white/8 rounded-xl p-4 space-y-4">
-            <div>
-              <p className="text-white/85 text-sm font-semibold">
-                Interviewer Access
-                <span className="ml-2 font-normal text-white/40">
-                  {granted.length === 0
-                    ? "no one yet"
-                    : `${granted.length} ${granted.length === 1 ? "member" : "members"}`}
-                </span>
-              </p>
-              <p className="text-white/40 text-xs mt-1 font-body">
-                They can view scheduled interviews, submit evaluations, and mark no-shows.
-              </p>
-            </div>
-
-            {toggleError && (
-              <p role="alert" className="rounded-lg border border-red-400/25 bg-red-400/10 px-3 py-2 text-[12px] text-red-300">
-                {toggleError}
-              </p>
-            )}
-
-            {granted.length > 0 && (
-              <div className="divide-y divide-white/5 rounded-lg border border-white/10 bg-black/20">
-                {granted.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="text-sm text-white/85 truncate">{member.name}</p>
-                      <p className="text-[11px] text-white/35 font-body truncate">{member.role} · {member.email}</p>
-                    </div>
-                    <Toggle member={member} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div>
-              <input
-                aria-label="Search members to give interviewer access"
-                value={interviewerSearch}
-                onChange={(e) => setInterviewerSearch(e.target.value)}
-                placeholder="Search by name or email to give someone access"
-                className="w-full bg-[#0F1014] border border-white/35 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-[#F6B78D]"
-              />
-
-              {query && (
-                <div className="mt-2 divide-y divide-white/5 rounded-lg border border-white/10 max-h-64 overflow-y-auto">
-                  {matches.length === 0 ? (
-                    <p className="text-white/25 text-sm text-center py-4">
-                      No active member matches “{interviewerSearch.trim()}”.
-                    </p>
-                  ) : (
-                    matches.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                        <div className="min-w-0">
-                          <p className="text-sm text-white/85 truncate">{member.name}</p>
-                          <p className="text-[11px] text-white/35 font-body truncate">{member.role} · {member.email}</p>
-                        </div>
-                        <Toggle member={member} />
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {!query && (
-                <p className="mt-2 text-[11px] text-white/25">
-                  {active.length} active members.
-                </p>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
-      <Modal
-        open={!!editingAvailableSlot}
-        onClose={() => {
-          if (savingAvailableEdit) return;
-          setEditingAvailableSlot(null);
-        }}
-        title="Edit Available Slot"
-      >
-        {editingAvailableSlot && (
-          <div className="space-y-4">
-            <p className="text-white/60 text-sm font-body">{formatDateTime(editingAvailableSlot.datetime)}</p>
-            <Field label="Interviewer(s)">
-              <AutocompleteTagInput
-                values={editingAvailableInterviewers}
-                onChange={setEditingAvailableInterviewers}
-                options={interviewerOptions}
-                commitOnBlur
-                placeholder="Type a name, then Enter/comma"
-              />
-            </Field>
-            {editingAvailableSlot.recurringWeekly && editingAvailableSlot.recurringSeriesId && (
-              <label className="inline-flex items-center gap-2 text-sm text-white/70 font-body select-none">
-                <input
-                  type="checkbox"
-                  checked={applyAvailableEditWeekly}
-                  onChange={(e) => setApplyAvailableEditWeekly(e.target.checked)}
-                  className="members-checkbox"
-                />
-                Apply to all upcoming weekly slots in this series
-              </label>
-            )}
-          </div>
-        )}
-        <div className="flex justify-end gap-2 mt-5">
-          <Btn
-            variant="ghost"
-            onClick={() => setEditingAvailableSlot(null)}
-            disabled={savingAvailableEdit}
-          >
-            Cancel
-          </Btn>
-          <Btn
-            variant="primary"
-            onClick={() => void saveAvailableInterviewerEdit()}
-            disabled={savingAvailableEdit}
-          >
-            {savingAvailableEdit ? "Saving..." : "Save"}
-          </Btn>
-        </div>
-      </Modal>
-
-      <Modal
-        open={showBatchModal}
-        onClose={closeBatchModal}
-        title={dragMode === "remove" ? "Remove Selected Availability" : "Add Selected Availability"}
-      >
-        <div className="space-y-4">
-          <p className="text-white/55 text-sm font-body">
-            {Object.keys(dragSelection).length} 15-minute slot(s) selected in this week.
-          </p>
-          {dragMode === "remove" && singleSelectedSlot && (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-1">
-              <p className="text-xs text-white/45 uppercase tracking-wide">Current Interviewer</p>
-              <p className="text-sm text-white/85 font-body">
-                {(() => {
-                  const names = getSlotInterviewerNames(singleSelectedSlot, memberNameById);
-                  return names.length > 0 ? names.join(", ") : "Not set";
-                })()}
-              </p>
-            </div>
-          )}
-          {dragMode === "add" ? (
-            <>
-              <label className="inline-flex items-center gap-2 text-sm text-white/70 font-body select-none">
-                <input
-                  type="checkbox"
-                  checked={repeatWeekly}
-                  onChange={(e) => setRepeatWeekly(e.target.checked)}
-                  className="members-checkbox"
-                />
-                Repeat weekly (same slots for future weeks)
-              </label>
-              <Field label="Interviewer(s)">
-                <AutocompleteTagInput
-                  values={batchInterviewers}
-                  onChange={setBatchInterviewers}
-                  options={interviewerOptions}
-                  commitOnBlur
-                  placeholder="Type a name, then Enter/comma"
-                />
-              </Field>
-            </>
-          ) : (
-            <>
-              <Field label="Interviewer(s)">
-                <AutocompleteTagInput
-                  values={selectedInterviewers}
-                  onChange={setSelectedInterviewers}
-                  options={interviewerOptions}
-                  commitOnBlur
-                  placeholder="Type a name, then Enter/comma"
-                />
-              </Field>
-            </>
-          )}
-        </div>
-        <div className="flex justify-end gap-2 mt-5">
-          <Btn variant="ghost" onClick={closeBatchModal} disabled={applyingBatch}>
-            Cancel
-          </Btn>
-          {dragMode === "remove" && canDeleteInterviews && (
-            <Btn variant="secondary" onClick={saveSelectedInterviewers} disabled={applyingBatch}>
-              {applyingBatch ? "Saving..." : "Save Interviewers"}
-            </Btn>
-          )}
-          <Btn
-            variant={dragMode === "remove" ? "danger" : "primary"}
-            onClick={applyBatchSelection}
-            disabled={applyingBatch}
-          >
-            {applyingBatch
-              ? "Applying..."
-              : dragMode === "remove"
-                ? "Remove Availability"
-                : (repeatWeekly ? "Add Weekly Availability" : "Add Availability")}
-          </Btn>
-        </div>
-      </Modal>
-
-      <Modal
-        open={!!bookedSlotDetails}
-        onClose={() => setBookedSlotDetails(null)}
-        title="Booked Slot Details"
-      >
-        {bookedSlotDetails && (
-          <div className="space-y-3">
-            {(() => {
-              const resumeUrl = findResumeUrlForSlot(bookedSlotDetails);
-              return resumeUrl ? (
-                <div className="flex justify-start">
-                  <a
-                    href={resumeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/8 border border-white/12 text-white/80 hover:bg-white/12 transition-colors"
-                  >
-                    Open Resume
-                  </a>
-                </div>
-              ) : null;
-            })()}
-            <p className="text-white/60 text-sm font-body">{formatDateTime(bookedSlotDetails.datetime)}</p>
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-1">
-              <p className="text-xs text-white/45 uppercase tracking-wide">Interviewee</p>
-              <p className="text-sm text-white/90 font-body">
-                {bookedSlotDetails.bookerName?.trim() || "Unknown"}
-              </p>
-              <p className="text-sm text-white/70 font-body">
-                {bookedSlotDetails.bookerEmail?.trim() || "No email"}
-              </p>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-1">
-              <p className="text-xs text-white/45 uppercase tracking-wide">Interviewer</p>
-              <p className="text-sm text-white/85 font-body">
-                {(() => {
-                  const names = getSlotInterviewerNames(bookedSlotDetails, memberNameById);
-                  return names.length > 0 ? names.join(", ") : "Not set";
-                })()}
-              </p>
-            </div>
-            <div className="flex justify-end pt-1">
-              <Btn variant="ghost" onClick={() => setBookedSlotDetails(null)}>
-                Close
-              </Btn>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={!!rescheduleSourceSlot}
-        onClose={() => {
-          if (rescheduling) return;
-          setRescheduleSourceSlot(null);
-          setRescheduleTargetSlotId("");
-        }}
-        title="Move Interview"
-      >
-        <div className="space-y-3">
-          <p className="text-white/55 text-sm font-body">
-            {rescheduleSourceSlot
-              ? `Current: ${formatDateTime(rescheduleSourceSlot.datetime)}${rescheduleSourceSlot.bookerName ? ` · ${rescheduleSourceSlot.bookerName}` : ""}`
-              : ""}
-          </p>
-          <Field label="New Time">
-            <Select
-              value={rescheduleTargetSlotId}
-              onChange={(e) => setRescheduleTargetSlotId(e.target.value)}
-            >
-              {availableFutureSlots.length === 0 && (
-                <option value="">No available interview times</option>
-              )}
-              {availableFutureSlots.map((slot) => (
-                <option key={slot.id} value={slot.id}>
-                  {formatDateTime(slot.datetime)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          {rescheduleMessage && <p className="text-xs text-white/55">{rescheduleMessage}</p>}
-        </div>
-        <div className="flex justify-end gap-2 mt-5">
-          <Btn
-            variant="ghost"
-            onClick={() => {
-              if (rescheduling) return;
-              setRescheduleSourceSlot(null);
-              setRescheduleTargetSlotId("");
-            }}
-            disabled={rescheduling}
-          >
-            Cancel
-          </Btn>
-          <Btn
-            variant="primary"
-            onClick={() => void applyReschedule()}
-            disabled={rescheduling || !rescheduleTargetSlotId}
-          >
-            {rescheduling ? "Moving..." : "Move Interview"}
-          </Btn>
-        </div>
-      </Modal>
-
-      <Modal
-        open={!!evaluationSlot}
-        onClose={() => {
-          if (savingEvaluation) return;
-          setEvaluationSlot(null);
-        }}
-        title="Interview Evaluation"
-      >
-        <div className="space-y-3">
-          <p className="text-white/60 text-sm font-body">
-            {evaluationSlot ? `${evaluationSlot.bookerName || "Interviewee"} · ${formatDateTime(evaluationSlot.datetime)}` : ""}
-          </p>
-          <Field label="Evaluation">
-            <Select
-              value={evaluationRating}
-              onChange={(e) => setEvaluationRating(e.target.value as "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified" | "")}
-            >
-              <option value="" disabled>Select a rating...</option>
-              {["Extremely Qualified", "Qualified", "Decent", "Unqualified"].map((value) => (
-                <option key={value} value={value}>{value}</option>
-              ))}
-            </Select>
-          </Field>
-
-          <Field label="Comments">
-            <TextArea
-              rows={5}
-              value={evaluationComments}
-              onChange={(e) => setEvaluationComments(e.target.value)}
-              placeholder="Add interview notes, concerns, strengths..."
-            />
-          </Field>
-          {evaluationMessage && <p className="text-xs text-white/55">{evaluationMessage}</p>}
-        </div>
-        <div className="flex justify-between items-center mt-5">
-          <div>
-            {evaluationSlot && getEffectiveEvaluationCountForSlot(evaluationSlot) > 0 && (
-              <Btn variant="danger" onClick={() => void deleteEvaluation()} disabled={savingEvaluation}>
-                Delete
-              </Btn>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Btn variant="ghost" onClick={() => setEvaluationSlot(null)} disabled={savingEvaluation}>Cancel</Btn>
-            <Btn variant="primary" onClick={() => void saveEvaluation()} disabled={savingEvaluation}>
-              {savingEvaluation ? "Saving..." : "Save"}
-            </Btn>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={!!finalizeSlot}
-        onClose={() => {
-          if (finalizing) return;
-          setFinalizeSlot(null);
-        }}
-        title="Finalize Accepted Applicant"
-      >
-        <div className="space-y-3">
-          <p className="text-white/60 text-sm font-body">
-            {finalizeSlot ? `${finalizeSlot.bookerName || "Interviewee"} · ${formatDateTime(finalizeSlot.datetime)}` : ""}
-          </p>
-          <Field label="Team Role">
-            <Select
-              value={finalizeRole}
-              onChange={(e) => setFinalizeRole(e.target.value)}
-            >
-              {["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Project Lead"].map((role) => (
-                <option key={role} value={role}>{role}</option>
-              ))}
-            </Select>
-          </Field>
-          <label className="inline-flex items-center gap-2 text-sm text-white/65">
-            <input
-              type="checkbox"
-              checked={finalizeSendEmail}
-              onChange={(e) => setFinalizeSendEmail(e.target.checked)}
-              className="members-checkbox"
-            />
-            Send acceptance email
-          </label>
-        </div>
-        <div className="flex justify-end gap-2 mt-5">
-          <Btn variant="ghost" onClick={() => setFinalizeSlot(null)} disabled={finalizing}>Cancel</Btn>
-          <Btn variant="primary" onClick={() => void finalizeAcceptedFromSlot()} disabled={finalizing}>
-            {finalizing ? "Finalizing..." : "Accept"}
-          </Btn>
-        </div>
-      </Modal>
-
-      <Modal
-        open={!!viewingEvaluationsApp}
-        onClose={() => setViewingEvaluationsApp(null)}
-        title="Interview Evaluations"
-      >
-        <div className="space-y-4">
-          <p className="text-white/60 text-sm font-body">
-            Evaluations for <span className="text-white font-semibold">{viewingEvaluationsApp?.fullName}</span>
-          </p>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-            {viewingEvaluationsApp && getValidEvaluationEntries(viewingEvaluationsApp.interviewEvaluations).length > 0 ? (
-              getValidEvaluationEntries(viewingEvaluationsApp.interviewEvaluations)
-                .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
-                .map((ev, idx) => (
-                  <div key={idx} className="bg-white/3 border border-white/5 rounded-lg p-3 space-y-2">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <div className="text-xs font-semibold text-white/90">{ev.interviewerName}</div>
-                        <div className="text-[10px] text-white/40">{ev.updatedAt ? formatDateTime(ev.updatedAt) : ""}</div>
-                      </div>
-                      <div className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                        ev.rating === "Extremely Qualified" ? "bg-[#F6B78D]/20 text-[#F3E28D]" :
-                        ev.rating === "Qualified" ? "bg-blue-500/20 text-blue-400" :
-                        ev.rating === "Decent" ? "bg-yellow-500/20 text-yellow-400" :
-                        "bg-red-500/20 text-red-400"
-                      }`}>
-                        {ev.rating || "No Rating"}
-                      </div>
-                    </div>
-                    {ev.comments && (
-                      <div className="text-sm text-white/70 whitespace-pre-wrap font-body bg-black/20 p-2 rounded border border-white/5 italic">
-                        &quot;{ev.comments}&quot;
-                      </div>
-                    )}
-                  </div>
-                ))
-            ) : (
-              <div className="text-center py-8 text-white/20 italic text-sm">No evaluations found.</div>
-            )}
-          </div>
-          <div className="flex justify-end pt-2">
-            <Btn variant="secondary" onClick={() => setViewingEvaluationsApp(null)}>Close</Btn>
-          </div>
-        </div>
-      </Modal>
-    </>
-  );
+function isTerminalApplicant(status: string): boolean {
+  const key = status.trim().toLowerCase();
+  return key === "accepted" || key === "not accepted";
 }
 
 export default function InterviewsPage() {
+  const { authRole, canInterview, loading } = useAuth();
+  const canManage = authRole === "owner" || authRole === "admin" || canInterview;
+  const [interviews, setInterviews] = useState<InterviewRecord[] | null>(null);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [view, setView] = useState<View>("upcoming");
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<InterviewRecord | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => subscribeInterviews((rows, state) => {
+    setInterviews(rows);
+    setLoadError(state.error);
+  }), []);
+  useEffect(() => subscribeTeam((rows) => setTeam(rows)), []);
+
+  const loadApplications = useCallback(async () => {
+    const token = await getAuthToken();
+    const response = await fetch("/api/members/applicants/list", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("Could not load applicants.");
+    const payload = await response.json() as { applications?: ApplicationRecord[] };
+    setApplications(payload.applications ?? []);
+  }, []);
+
+  useEffect(() => {
+    if (!canManage) return;
+    void loadApplications().catch((error) => setLoadError(error instanceof Error ? error.message : "Could not load applicants."));
+  }, [canManage, loadApplications]);
+
+  const interviewers = useMemo(() => team
+    .filter((member) => member.status === "Active" && (member.canInterview || member.role === "Board"))
+    .sort((a, b) => a.name.localeCompare(b.name)), [team]);
+  const teamById = useMemo(() => new Map(team.map((member) => [member.id, member])), [team]);
+  const appById = useMemo(() => new Map(applications.map((application) => [application.id, application])), [applications]);
+  const selectableApplicants = useMemo(() => applications
+    .filter((application) => !isTerminalApplicant(application.status))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName)), [applications]);
+
+  const now = Date.now();
+  const records = useMemo(() => [...(interviews ?? [])].sort((a, b) => {
+    if (view === "upcoming") return Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt);
+    return Date.parse(b.scheduledAt) - Date.parse(a.scheduledAt);
+  }), [interviews, view]);
+  const visibleRecords = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return records.filter((record) => {
+      if (view === "upcoming" && record.status !== "scheduled") return false;
+      if (view === "history" && record.status === "scheduled") return false;
+      if (!query) return true;
+      const interviewersText = record.interviewerMemberIds.map((id) => teamById.get(id)?.name ?? "").join(" ");
+      return `${record.applicantName} ${record.applicantEmail} ${interviewersText} ${record.notes}`.toLowerCase().includes(query);
+    });
+  }, [records, search, teamById, view]);
+
+  const stats = useMemo(() => {
+    const rows = interviews ?? [];
+    const upcoming = rows.filter((row) => row.status === "scheduled" && Date.parse(row.scheduledAt) >= now).length;
+    const needsOutcome = rows.filter((row) => row.status === "scheduled" && Date.parse(row.scheduledAt) < now).length;
+    const completed = rows.filter((row) => row.status === "completed").length;
+    return { upcoming, needsOutcome, completed };
+  }, [interviews, now]);
+
+  const openCreate = async () => {
+    const defaults = defaultDateTime();
+    let meetingLink = "";
+    try {
+      const token = await getAuthToken();
+      const response = await fetch("/api/members/interviews/settings", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (response.ok) meetingLink = String((await response.json() as { zoomLink?: string }).zoomLink ?? "");
+    } catch { /* The form remains usable without a default link. */ }
+    setEditing(null);
+    setForm({ ...EMPTY_FORM, ...defaults, meetingLink });
+    setMessage("");
+    setModalOpen(true);
+  };
+
+  const openEdit = (record: InterviewRecord) => {
+    const parts = localDateTimeParts(record.scheduledAt);
+    setEditing(record);
+    setForm({
+      applicantId: record.applicantId ?? "",
+      date: parts.date,
+      time: parts.time,
+      durationMinutes: String(record.durationMinutes),
+      meetingLink: record.meetingLink,
+      interviewerMemberIds: record.interviewerMemberIds,
+      notes: record.notes,
+      status: record.status,
+    });
+    setMessage("");
+    setModalOpen(true);
+  };
+
+  const saveInterview = async (event: FormEvent | null, resendConfirmation = false) => {
+    event?.preventDefault();
+    const scheduledAt = toIso(form.date, form.time);
+    if (!scheduledAt || (!editing && !form.applicantId)) {
+      setMessage("Choose an applicant and a valid date and time.");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
+    try {
+      const token = await getAuthToken();
+      const response = await fetch("/api/members/interviews", {
+        method: editing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          id: editing?.id,
+          applicantId: form.applicantId,
+          scheduledAt,
+          durationMinutes: Number(form.durationMinutes),
+          meetingLink: form.meetingLink,
+          interviewerMemberIds: form.interviewerMemberIds,
+          notes: form.notes,
+          status: form.status,
+          resendConfirmation,
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as { warning?: string; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "save_failed");
+      await loadApplications();
+      setModalOpen(false);
+      setMessage(payload.warning === "email_failed"
+        ? "Saved, but the candidate confirmation failed. Open the interview and resend it."
+        : payload.warning === "staff_email_failed"
+          ? "Saved and the candidate was notified, but at least one interviewer email failed."
+          : editing ? "Interview updated." : "Interview scheduled and everyone was notified.");
+    } catch (error) {
+      setMessage(error instanceof Error ? `Could not save: ${error.message}` : "Could not save this interview.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setStatus = async (record: InterviewRecord, status: InterviewRecordStatus) => {
+    setSaving(true);
+    setMessage("");
+    try {
+      const token = await getAuthToken();
+      const response = await fetch("/api/members/interviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: record.id, status }),
+      });
+      if (!response.ok) throw new Error("update_failed");
+      await loadApplications();
+      setMessage(status === "completed" ? "Interview marked completed." : status === "no_show" ? "No-show recorded." : "Interview cancelled.");
+    } catch {
+      setMessage("Could not update the interview status.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <MembersLayout><div className="p-6" /></MembersLayout>;
+
   return (
     <MembersLayout>
-      <InterviewsContent />
+      <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
+      <PageHeader
+        title="Interviews"
+        subtitle="Schedule candidates directly, send calendar confirmations, and keep a clean history from August 23, 2026 forward."
+        action={canManage ? <Btn variant="primary" onClick={() => void openCreate()}>+ Schedule interview</Btn> : undefined}
+      />
+
+      {!canManage ? (
+        <LoadError message="Your account does not have interview access." />
+      ) : loadError ? (
+        <LoadError message={loadError} onRetry={() => window.location.reload()} />
+      ) : interviews === null ? (
+        <div className="flex justify-center py-20"><Spinner /></div>
+      ) : (
+        <>
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StatCard label="Upcoming" value={stats.upcoming} color="text-emerald-700" />
+            <StatCard label="Needs outcome" value={stats.needsOutcome} color={stats.needsOutcome ? "text-amber-700" : "text-emerald-700"} />
+            <StatCard label="Completed since cutover" value={stats.completed} color="text-blue-700" />
+          </div>
+
+          {message && <div role="status" className="mb-4 rounded-lg border border-[#F6B78D]/35 bg-[#F6B78D]/10 px-4 py-3 text-sm text-[#8B5E48]">{message}</div>}
+
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex w-fit rounded-xl border border-black/10 bg-black/[0.04] p-1">
+              {(["upcoming", "history"] as View[]).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setView(item)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${view === item ? "border border-[#F6B78D]/35 bg-[#F6B78D]/15 text-[#8B5E48]" : "border border-transparent text-black/55 hover:bg-black/5 hover:text-black/85"}`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="w-full sm:max-w-sm">
+              <SearchBar value={search} onChange={setSearch} placeholder="Search candidates or interviewers…" />
+            </div>
+          </div>
+
+          {visibleRecords.length === 0 ? (
+            <Empty
+              message={view === "upcoming" ? "No interviews are scheduled yet." : "No interview history in the new system yet."}
+              action={view === "upcoming" ? <Btn variant="primary" onClick={() => void openCreate()}>Schedule the first interview</Btn> : undefined}
+            />
+          ) : (
+            <div className="grid gap-3 xl:grid-cols-2">
+              {visibleRecords.map((record) => {
+                const meta = statusMeta(record.status);
+                const interviewerNames = record.interviewerMemberIds.map((id) => teamById.get(id)?.name).filter(Boolean).join(", ");
+                const overdue = record.status === "scheduled" && Date.parse(record.scheduledAt) < now;
+                return (
+                  <article key={record.id} className={`rounded-xl border bg-white p-4 shadow-sm ${overdue ? "border-amber-400/60" : "border-black/10"}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${meta.className}`}>{overdue ? "Needs outcome" : meta.label}</span>
+                          <span className="text-[11px] text-black/40">{record.durationMinutes} min</span>
+                        </div>
+                        <h2 className="font-display text-lg font-semibold text-[#28242B]">{record.applicantName}</h2>
+                        <p className="text-xs text-black/45">{record.applicantEmail}</p>
+                      </div>
+                      <Btn size="sm" onClick={() => openEdit(record)}>Edit</Btn>
+                    </div>
+                    <div className="mt-4 grid gap-3 border-t border-black/8 pt-3 text-xs sm:grid-cols-2">
+                      <div><p className="text-[9px] font-bold uppercase tracking-wider text-black/35">When</p><p className="mt-1 font-medium text-black/75">{formatDateTime(record.scheduledAt)}</p></div>
+                      <div><p className="text-[9px] font-bold uppercase tracking-wider text-black/35">Interviewer</p><p className="mt-1 font-medium text-black/75">{interviewerNames || "Not assigned"}</p></div>
+                      {record.meetingLink && <div className="sm:col-span-2"><a className="font-semibold text-[#8B5E48] hover:underline" href={record.meetingLink} target="_blank" rel="noreferrer">Open meeting link ↗</a></div>}
+                      {record.notes && <p className="sm:col-span-2 line-clamp-2 text-black/55">{record.notes}</p>}
+                    </div>
+                    {record.status === "scheduled" && (
+                      <div className="mt-4 flex flex-wrap gap-2 border-t border-black/8 pt-3">
+                        <Btn size="sm" onClick={() => void setStatus(record, "completed")} disabled={saving}>Mark completed</Btn>
+                        <Btn size="sm" variant="ghost" onClick={() => void setStatus(record, "no_show")} disabled={saving}>No-show</Btn>
+                        <Btn size="sm" variant="ghost" onClick={() => void setStatus(record, "cancelled")} disabled={saving}>Cancel</Btn>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? `Edit ${editing.applicantName}` : "Schedule interview"} dismissible={!saving}>
+        <form onSubmit={(event) => void saveInterview(event)} className="space-y-4">
+          <Field label="Applicant" required>
+            <Select value={form.applicantId} disabled={!!editing} onChange={(event) => setForm((current) => ({ ...current, applicantId: event.target.value }))}>
+              <option value="">Choose an applicant…</option>
+              {selectableApplicants.map((application) => (
+                <option key={application.id} value={application.id}>{application.fullName} — {application.email}</option>
+              ))}
+              {editing?.applicantId && !selectableApplicants.some((application) => application.id === editing.applicantId) && (
+                <option value={editing.applicantId}>{appById.get(editing.applicantId)?.fullName ?? editing.applicantName}</option>
+              )}
+            </Select>
+          </Field>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Date" required><Input type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} /></Field>
+            <Field label="Time" required><Input type="time" step={900} value={form.time} onChange={(event) => setForm((current) => ({ ...current, time: event.target.value }))} /></Field>
+            <Field label="Duration" required>
+              <Select value={form.durationMinutes} onChange={(event) => setForm((current) => ({ ...current, durationMinutes: event.target.value }))}>
+                {[15, 20, 30, 45, 60].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}
+              </Select>
+            </Field>
+          </div>
+
+          <Field label="Meeting link"><Input type="url" value={form.meetingLink} placeholder="Zoom or Google Meet link" onChange={(event) => setForm((current) => ({ ...current, meetingLink: event.target.value }))} /></Field>
+
+          <fieldset>
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/60">Interviewers</legend>
+            <div className="grid max-h-40 gap-2 overflow-y-auto rounded-lg border border-white/10 bg-black/10 p-3 sm:grid-cols-2">
+              {interviewers.length === 0 ? <p className="text-xs text-white/45">No interviewers are enabled yet.</p> : interviewers.map((member) => {
+                const checked = form.interviewerMemberIds.includes(member.id);
+                return (
+                  <label key={member.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-white/75 hover:bg-white/5">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => setForm((current) => ({
+                        ...current,
+                        interviewerMemberIds: checked
+                          ? current.interviewerMemberIds.filter((id) => id !== member.id)
+                          : [...current.interviewerMemberIds, member.id],
+                      }))}
+                    />
+                    {member.name}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          {editing && (
+            <Field label="Status">
+              <Select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as InterviewRecordStatus }))}>
+                <option value="scheduled">Scheduled</option>
+                <option value="completed">Completed</option>
+                <option value="no_show">No-show</option>
+                <option value="cancelled">Cancelled</option>
+              </Select>
+            </Field>
+          )}
+
+          <Field label="Internal notes"><TextArea rows={4} value={form.notes} placeholder="Topics to cover, context, or outcome notes" onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></Field>
+          {message && <p role="alert" className="text-xs text-red-400">{message}</p>}
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-white/10 pt-4">
+            <Btn type="button" variant="ghost" onClick={() => setModalOpen(false)} disabled={saving}>Cancel</Btn>
+            {editing && <Btn type="button" onClick={() => void saveInterview(null, true)} disabled={saving}>Resend confirmation</Btn>}
+            <Btn type="submit" variant="primary" disabled={saving}>{saving ? <Spinner size="sm" /> : editing ? "Save changes" : "Schedule & email"}</Btn>
+          </div>
+        </form>
+      </Modal>
     </MembersLayout>
   );
 }

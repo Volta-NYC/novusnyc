@@ -13,7 +13,6 @@ type IncomingApplicant = {
   notes?: string;
   timestampRaw?: string;
   resumeUrl?: string;
-  inviteSent?: boolean;
 };
 
 type ApplicationRow = Record<string, unknown>;
@@ -38,10 +37,10 @@ function parseTimestamp(value: string): string {
 
 function coerceStatus(raw: string): string {
   const key = normalize(raw);
-  if (key.includes("invite")) return "Invited for Interview";
+  if (key.includes("invite")) return "New";
   if (key.includes("review")) return "New";
   if (key.includes("interview") && key.includes("schedule")) return "Interview Scheduled";
-  if (key.includes("interview")) return "Invited for Interview";
+  if (key.includes("interview")) return "New";
   if (key.includes("accept")) return "Accepted";
   if (key.includes("reject") || key.includes("not accepted")) return "Not Accepted";
   return "New";
@@ -118,7 +117,6 @@ export async function POST(req: NextRequest) {
       patch.resumeUrl = asText(incoming.resumeUrl);
       patch.hasResume = "Yes";
     }
-    if (incoming.inviteSent) patch.interviewInviteSentAt = importedCreatedAt;
 
     if (match) {
       await dbPatch(`applications/${match.id}`, patch);
@@ -153,7 +151,6 @@ export async function POST(req: NextRequest) {
       createdAt,
       updatedAt: createdAt,
     };
-    if (incoming.inviteSent) record.interviewInviteSentAt = importedCreatedAt;
 
     await dbPush("applications", record);
     added += 1;

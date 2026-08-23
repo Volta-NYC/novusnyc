@@ -203,7 +203,6 @@ export interface TeamMember {
 
 export type ApplicationStatus =
   | "New"
-  | "Invited for Interview"
   | "Interview Scheduled"
   | "Interview Completed"
   | "Accepted"
@@ -228,20 +227,6 @@ export interface ApplicationRecord {
   accomplishment?: string;
   status: ApplicationStatus;
   notes?: string;
-  interviewInviteToken?: string;
-  interviewInviteSentAt?: string;
-  interviewReminderSentAt?: string;
-  interviewSlotId?: string;
-  interviewScheduledAt?: string;
-  interviewEvaluations?: Record<string, {
-    interviewerUid?: string;
-    interviewerEmail?: string;
-    interviewerName?: string;
-    rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
-    comments?: string;
-    updatedAt?: string;
-    slotId?: string;
-  }>;
   finalDecisionRole?: string;
   memberId?: string | null;   // the member this application became
   decidedAt?: string | null;
@@ -312,13 +297,9 @@ export type SystemEmailTemplateKey =
   | "infraction_notice"
   | "monthly_portal_reminder"
   | "biweekly_checkin"
-  | "interview_invite"
-  | "interview_invite_reminder"
   | "applicant_accepted"
-  | "interview_booked"
+  | "interview_confirmation"
   | "interview_rescheduled"
-  | "interviewer_booking_notify"
-  | "interviewer_reschedule_notify"
   | "invite"
   | "setup-link"
   | "password-reset";
@@ -456,53 +437,24 @@ export interface CalendarEvent {
 
 // ── Interview scheduling types ────────────────────────────────────────────────
 
-export type InterviewStatus = "pending" | "booked" | "expired" | "cancelled";
+export type InterviewRecordStatus = "scheduled" | "completed" | "no_show" | "cancelled";
 
-export interface InterviewInvite {
-  id: string;             // the booking token
-  applicantName?: string; // only set for single-use invites
-  applicantEmail?: string;
-  role: string;
-  expiresAt: number;      // Unix ms timestamp
-  bookedSlotId?: string;  // only for single-use invites
-  status: InterviewStatus;
-  multiUse?: boolean;     // if true, link can be used by multiple applicants
-  createdBy: string;      // uid
-  createdAt: number;      // Unix ms timestamp
-  note?: string;
-}
-
-export interface InterviewSlot {
+export interface InterviewRecord {
   id: string;
-  datetime: string;       // ISO datetime (UTC)
+  applicantId?: string;
+  applicantName: string;
+  applicantEmail: string;
+  scheduledAt: string;
   durationMinutes: number;
-  available: boolean;
-  bookedBy?: string;      // booking token that reserved this slot
-  bookerName?: string;    // name entered by applicant at booking time
-  bookerEmail?: string;   // email entered by applicant at booking time
+  meetingLink: string;
   interviewerMemberIds: string[];
-  evaluationByUid?: Record<string, {
-    interviewerUid?: string;
-    interviewerEmail?: string;
-    interviewerName?: string;
-    interviewerRole?: string;
-    rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
-    comments?: string;
-    updatedAt?: string;
-  }>;
-  recurringWeekly?: boolean;
-  recurringSeriesId?: string;
-  noShow?: boolean;
-  location?: string;
-  createdBy: string;      // uid
-  createdAt: number;      // Unix ms timestamp
-}
-
-export interface InterviewSettings {
-  zoomLink?: string;
-  zoomEnabled?: boolean;
-  updatedAt?: number;
-  updatedBy?: string;
+  status: InterviewRecordStatus;
+  notes: string;
+  confirmationSentAt?: string;
+  reminderSentAt?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type AuditAction = "create" | "update" | "delete" | "import" | "export";
@@ -660,8 +612,8 @@ function makeSubscriber<T extends { id: string }>(
 
 // ── SPECIALISED ROW CONVERTERS ────────────────────────────────────────────────
 
-// InterviewSlot/InterviewInvite/CalendarEvent store createdAt as Unix ms in TS
-// but as timestamptz in Postgres — convert on read.
+// CalendarEvent and legacy settings use Unix ms in TS but timestamptz in
+// Postgres — convert at the storage boundary.
 function tsToMs(val: unknown): number {
   if (typeof val === "number") return val;
   if (typeof val === "string" && val) return new Date(val).getTime();
@@ -674,58 +626,25 @@ function msToIso(val: unknown): string | null {
   return null;
 }
 
-function interviewSlotFromRow(row: Record<string, unknown>): InterviewSlot {
+function interviewRecordFromRow(row: Record<string, unknown>): InterviewRecord {
   return {
-    id:                    row.id as string,
-    datetime:              row.datetime as string ?? "",
-    durationMinutes:       row.duration_minutes as number,
-    available:             row.available as boolean ?? true,
-    bookedBy:              row.booked_by as string | undefined,
-    bookerName:            row.booker_name as string | undefined,
-    bookerEmail:           row.booker_email as string | undefined,
-    interviewerMemberIds:  (row.interviewer_member_ids as string[]) ?? [],
-    evaluationByUid:       row.evaluation_by_uid as InterviewSlot["evaluationByUid"],
-    recurringWeekly:       row.recurring_weekly as boolean | undefined,
-    recurringSeriesId:     row.recurring_series_id as string | undefined,
-    noShow:                row.no_show as boolean | undefined,
-    location:              row.location as string | undefined,
-    createdBy:             row.created_by as string ?? "",
-    createdAt:             tsToMs(row.created_at),
-  };
-}
-
-function interviewSlotToRow(data: Partial<InterviewSlot>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  if (data.datetime           !== undefined) out.datetime                = data.datetime || null;
-  if (data.durationMinutes    !== undefined) out.duration_minutes        = data.durationMinutes;
-  if (data.available          !== undefined) out.available               = data.available;
-  if (data.bookedBy           !== undefined) out.booked_by               = data.bookedBy || null;
-  if (data.bookerName         !== undefined) out.booker_name             = data.bookerName || null;
-  if (data.bookerEmail        !== undefined) out.booker_email            = data.bookerEmail || null;
-  if (data.interviewerMemberIds !== undefined) out.interviewer_member_ids = data.interviewerMemberIds;
-  if (data.evaluationByUid    !== undefined) out.evaluation_by_uid      = data.evaluationByUid;
-  if (data.recurringWeekly    !== undefined) out.recurring_weekly        = data.recurringWeekly;
-  if (data.recurringSeriesId  !== undefined) out.recurring_series_id     = data.recurringSeriesId;
-  if (data.noShow             !== undefined) out.no_show                 = data.noShow;
-  if (data.location           !== undefined) out.location                = data.location;
-  if (data.createdBy          !== undefined) out.created_by              = data.createdBy;
-  if (data.createdAt          !== undefined) out.created_at              = msToIso(data.createdAt);
-  return out;
-}
-
-function interviewInviteFromRow(row: Record<string, unknown>): InterviewInvite {
-  return {
-    id:             row.id as string,
-    applicantName:  row.applicant_name as string | undefined,
-    applicantEmail: row.applicant_email as string | undefined,
-    role:           row.role as string ?? "",
-    expiresAt:      tsToMs(row.expires_at),
-    bookedSlotId:   row.booked_slot_id as string | undefined,
-    status:         row.status as InterviewStatus ?? "pending",
-    multiUse:       row.multi_use as boolean | undefined,
-    createdBy:      row.created_by as string ?? "",
-    createdAt:      tsToMs(row.created_at),
-    note:           row.note as string | undefined,
+    id: String(row.id ?? ""),
+    applicantId: typeof row.applicant_id === "string" ? row.applicant_id : undefined,
+    applicantName: String(row.applicant_name ?? ""),
+    applicantEmail: String(row.applicant_email ?? ""),
+    scheduledAt: String(row.scheduled_at ?? ""),
+    durationMinutes: Number(row.duration_minutes ?? 30),
+    meetingLink: String(row.meeting_link ?? ""),
+    interviewerMemberIds: Array.isArray(row.interviewer_member_ids)
+      ? row.interviewer_member_ids.map(String)
+      : [],
+    status: String(row.status ?? "scheduled") as InterviewRecordStatus,
+    notes: String(row.notes ?? ""),
+    confirmationSentAt: typeof row.confirmation_sent_at === "string" ? row.confirmation_sent_at : undefined,
+    reminderSentAt: typeof row.reminder_sent_at === "string" ? row.reminder_sent_at : undefined,
+    createdBy: String(row.created_by ?? ""),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
   };
 }
 
@@ -761,47 +680,18 @@ function normalizeTimestamp(value: unknown, fallbackIso?: string): string {
   return fallbackIso ?? nowISO();
 }
 
-function normalizeApplicationStatus(
-  raw: string,
-  hasScheduledInterview: boolean,
-  hasCompletedInterview: boolean,
-  hasInviteSent: boolean,
-  hasPassedInterviewTime: boolean,
-): ApplicationStatus {
+function normalizeApplicationStatus(raw: string): ApplicationStatus {
   const key = raw.trim().toLowerCase();
-  // Accepted is always terminal
   if (key === "accepted") return "Accepted";
-  // Interview time passed or eval submitted → Completed
-  if (hasCompletedInterview || hasPassedInterviewTime) return "Interview Completed";
-  // Slot booked (datetime in future) → Scheduled
-  if (hasScheduledInterview) return "Interview Scheduled";
-  // Invite sent → Invited
-  if (hasInviteSent) return "Invited for Interview";
-  // Respect any stored explicit status (legacy records)
   if (key === "interview completed") return "Interview Completed";
   if (key === "interview scheduled") return "Interview Scheduled";
-  if (key === "invited for interview") return "Invited for Interview";
+  if (key === "not accepted" || key === "rejected") return "Not Accepted";
   return "New";
 }
 
 function normalizeApplicationRecord(id: string, row: Record<string, unknown>): ApplicationRecord {
   const createdAt = normalizeTimestamp(row.createdAt ?? row.Timestamp);
   const updatedAt = normalizeTimestamp(row.updatedAt, createdAt);
-  const interviewSlotId = readLegacyText(row, ["interviewSlotId"]);
-  const interviewScheduledAt = readLegacyText(row, ["interviewScheduledAt"]);
-  const hasScheduledInterview = !!(interviewSlotId || interviewScheduledAt);
-
-  const interviewEvaluations = (row.interviewEvaluations && typeof row.interviewEvaluations === "object")
-      ? (row.interviewEvaluations as ApplicationRecord["interviewEvaluations"])
-      : {};
-  const hasCompletedInterview = Object.keys(interviewEvaluations || {}).length > 0;
-
-  const interviewInviteSentAt = readLegacyText(row, ["interviewInviteSentAt"]);
-  const hasInviteSent = !!interviewInviteSentAt;
-
-  // If the interview slot datetime is in the past, mark as completed
-  const hasPassedInterviewTime = !!interviewScheduledAt && Date.parse(interviewScheduledAt) < Date.now();
-
   return {
     id,
     fullName: readLegacyText(row, ["fullName", "Full Name", "name"]),
@@ -824,14 +714,8 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
     resumeUrl: readLegacyText(row, ["resumeUrl", "Resume URL"]),
     toolsSoftware: readLegacyText(row, ["toolsSoftware", "Tools/Software"]),
     accomplishment: readLegacyText(row, ["accomplishment", "Accomplishment"]),
-    status: normalizeApplicationStatus(readLegacyText(row, ["status"]), hasScheduledInterview, hasCompletedInterview, hasInviteSent, hasPassedInterviewTime),
+    status: normalizeApplicationStatus(readLegacyText(row, ["status"])),
     notes: readLegacyText(row, ["notes", "Notes"]),
-    interviewInviteToken: readLegacyText(row, ["interviewInviteToken"]),
-    interviewInviteSentAt: readLegacyText(row, ["interviewInviteSentAt"]),
-    interviewReminderSentAt: readLegacyText(row, ["interviewReminderSentAt"]),
-    interviewSlotId,
-    interviewScheduledAt,
-    interviewEvaluations,
     finalDecisionRole: readLegacyText(row, ["finalDecisionRole"]),
     source: (readLegacyText(row, ["source"]) as ApplicationRecord["source"]) || undefined,
     sourceTimestampRaw: readLegacyText(row, ["sourceTimestampRaw", "Timestamp"]),
@@ -1403,168 +1287,10 @@ export async function deleteCalendarEvent(id: string): Promise<void> {
   await writeAuditLog({ action: "delete", collection: "calendarEvents", recordId: id });
 }
 
-// ── InterviewInvites ──────────────────────────────────────────────────────────
+// ── Direct interview records (August 2026 cutover) ──────────────────────────
 
-export const subscribeInterviewInvites =
-  makeSubscriber<InterviewInvite>("interview_invites", interviewInviteFromRow);
-
-export async function createInterviewInvite(token: string, data: Omit<InterviewInvite, "id">): Promise<void> {
-  await supabase.from("interview_invites").upsert({
-    id: token,
-    applicant_name:  data.applicantName ?? null,
-    applicant_email: data.applicantEmail ?? null,
-    role:            data.role,
-    expires_at:      msToIso(data.expiresAt),
-    booked_slot_id:  data.bookedSlotId ?? null,
-    status:          data.status,
-    multi_use:       data.multiUse ?? false,
-    created_by:      data.createdBy,
-    created_at:      msToIso(data.createdAt),
-    note:            data.note ?? null,
-  }, { onConflict: "id" });
-  await writeAuditLog({ action: "create", collection: "interviewInvites", recordId: token, details: { role: data.role, expiresAt: data.expiresAt, multiUse: !!data.multiUse } });
-}
-
-export async function updateInterviewInvite(token: string, data: Partial<InterviewInvite>): Promise<void> {
-  const row: Record<string, unknown> = {};
-  if (data.applicantName  !== undefined) row.applicant_name  = data.applicantName;
-  if (data.applicantEmail !== undefined) row.applicant_email = data.applicantEmail;
-  if (data.role           !== undefined) row.role            = data.role;
-  if (data.expiresAt      !== undefined) row.expires_at      = msToIso(data.expiresAt);
-  if (data.bookedSlotId   !== undefined) row.booked_slot_id  = data.bookedSlotId;
-  if (data.status         !== undefined) row.status          = data.status;
-  if (data.multiUse       !== undefined) row.multi_use       = data.multiUse;
-  if (data.note           !== undefined) row.note            = data.note;
-  await supabase.from("interview_invites").update(row).eq("id", token);
-  await writeAuditLog({ action: "update", collection: "interviewInvites", recordId: token, details: { fields: Object.keys(data) } });
-}
-
-export async function getInterviewInvite(token: string): Promise<InterviewInvite | null> {
-  const { data } = await supabase.from("interview_invites").select("*").eq("id", token).maybeSingle();
-  if (!data) return null;
-  return interviewInviteFromRow(data as Record<string, unknown>);
-}
-
-// ── InterviewSlots ────────────────────────────────────────────────────────────
-
-export const subscribeInterviewSlots =
-  makeSubscriber<InterviewSlot>("interview_slots", interviewSlotFromRow);
-
-export async function createInterviewSlot(data: Omit<InterviewSlot, "id">): Promise<void> {
-  const id = genId();
-  await supabase.from("interview_slots").insert({ ...interviewSlotToRow(data), id });
-  await writeAuditLog({ action: "create", collection: "interviewSlots", recordId: id, details: { datetime: data.datetime, durationMinutes: data.durationMinutes } });
-}
-
-export async function updateInterviewSlot(id: string, data: Partial<InterviewSlot>): Promise<void> {
-  await supabase.from("interview_slots").update(interviewSlotToRow(data)).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "interviewSlots", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteBookedInterview(slotId: string): Promise<void> {
-  const { data: slotRow } = await supabase.from("interview_slots").select("*").eq("id", slotId).maybeSingle();
-  if (!slotRow) return;
-
-  const slot = interviewSlotFromRow(slotRow as Record<string, unknown>);
-
-  await supabase.from("interview_slots").update({
-    available:        true,
-    booked_by:        null,
-    booker_name:      null,
-    booker_email:     null,
-    reminder_sent_at: null,
-  }).eq("id", slotId);
-
-  const bookedEmail = String(slot.bookerEmail ?? "").trim().toLowerCase();
-  const bookedName  = String(slot.bookerName  ?? "").trim().toLowerCase();
-  const bookedBy    = String(slot.bookedBy    ?? "").trim();
-
-  if (bookedEmail) {
-    const now = nowISO();
-    const terminal = new Set(["accepted", "not accepted", "rejected"]);
-
-    const { data: apps } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("email", bookedEmail)
-      .limit(10);
-
-    const appEntries = (apps ?? []).map((r) => ({
-      id: String((r as Record<string, unknown>).id),
-      row: r as Record<string, unknown>,
-    }));
-
-    let target = appEntries.find(({ row }) => {
-      const token = String(row.interview_invite_token ?? "").trim();
-      return bookedBy && bookedBy !== "public-booking" && token === bookedBy;
-    });
-    if (!target) target = appEntries.find(({ row }) => String(row.interview_slot_id ?? "").trim() === slotId);
-    if (!target) {
-      const sorted = [...appEntries].sort((a, b) => {
-        const aT = Date.parse(String(a.row.updated_at ?? a.row.created_at ?? ""));
-        const bT = Date.parse(String(b.row.updated_at ?? b.row.created_at ?? ""));
-        return (Number.isNaN(bT) ? 0 : bT) - (Number.isNaN(aT) ? 0 : aT);
-      });
-      target = sorted.find(({ row }) => String(row.full_name ?? "").trim().toLowerCase() === bookedName) ?? sorted[0];
-    }
-
-    if (target) {
-      const currentStatus = String(target.row.status ?? "").trim().toLowerCase();
-      const patch: Record<string, unknown> = { interview_slot_id: null, interview_scheduled_at: null, updated_at: now };
-      if (!target.row.status_manual_override && !terminal.has(currentStatus)) {
-        patch.status = "Invited for Interview";
-      }
-      await supabase.from("applications").update(patch).eq("id", target.id);
-    }
-  }
-
-  await writeAuditLog({ action: "delete", collection: "interviewBookings", recordId: slotId, details: { datetime: slot.datetime, previousBookedBy: slot.bookedBy, previousBookerName: slot.bookerName, previousBookerEmail: slot.bookerEmail } });
-}
-
-export async function deleteInterviewSlot(id: string): Promise<void> {
-  await supabase.from("interview_slots").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "interviewSlots", recordId: id });
-}
-
-export async function getInterviewSlots(): Promise<InterviewSlot[]> {
-  const { data } = await supabase.from("interview_slots").select("*");
-  return (data ?? []).map((r) => interviewSlotFromRow(r as Record<string, unknown>));
-}
-
-// ── Interview Settings ───────────────────────────────────────────────────────
-
-export function subscribeInterviewSettings(callback: (settings: InterviewSettings | null) => void): (() => void) {
-  const fetchSettings = () =>
-    supabase.from("interview_settings").select("*").eq("id", "singleton").maybeSingle().then(({ data }) => {
-      if (!data) { callback(null); return; }
-      const r = data as Record<string, unknown>;
-      callback({
-        zoomLink:    r.zoom_link as string | undefined,
-        zoomEnabled: r.zoom_enabled as boolean | undefined,
-        updatedAt:   tsToMs(r.updated_at) || undefined,
-        updatedBy:   r.updated_by as string | undefined,
-      });
-    });
-
-  void fetchSettings();
-
-  const channel = supabase
-    .channel(`realtime-interview_settings-${Math.random().toString(36).slice(2)}`)
-    .on("postgres_changes", { event: "*", schema: "public", table: "interview_settings" }, () => void fetchSettings())
-    .subscribe();
-
-  return () => { void supabase.removeChannel(channel); };
-}
-
-export async function updateInterviewSettings(data: Partial<InterviewSettings>): Promise<void> {
-  const row: Record<string, unknown> = {};
-  if (data.zoomLink    !== undefined) row.zoom_link    = data.zoomLink;
-  if (data.zoomEnabled !== undefined) row.zoom_enabled = data.zoomEnabled;
-  if (data.updatedAt   !== undefined) row.updated_at   = msToIso(data.updatedAt);
-  if (data.updatedBy   !== undefined) row.updated_by   = data.updatedBy;
-  await supabase.from("interview_settings").update(row).eq("id", "singleton");
-  await writeAuditLog({ action: "update", collection: "interviewSettings", recordId: "singleton", details: { fields: Object.keys(data) } });
-}
+export const subscribeInterviews =
+  makeSubscriber<InterviewRecord>("interviews", interviewRecordFromRow);
 
 // ── Site Settings ─────────────────────────────────────────────────────────────
 

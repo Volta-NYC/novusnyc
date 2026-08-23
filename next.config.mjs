@@ -115,6 +115,11 @@ const nextConfig = {
       { source: "/members/projects/discovery",    destination: "/members/projects?view=leads", permanent: true },
       // Public-card settings now live inside each website's drawer.
       { source: "/members/projects/showcase",     destination: "/members/projects", permanent: true },
+      // The retired self-booking portal is replaced by staff-scheduled
+      // interviews. Old invite links should land on the current application
+      // pathway instead of presenting a dead booking form.
+      { source: "/book",                          destination: "/apply", permanent: true },
+      { source: "/book/:path*",                   destination: "/apply", permanent: true },
 
       // Legacy paths. These were previously stub pages calling Next's
       // redirect(), which emits 307 Temporary — that tells Google to keep the

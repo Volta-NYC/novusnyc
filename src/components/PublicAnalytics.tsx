@@ -9,7 +9,7 @@ const GA_DISABLE_KEY = `ga-disable-${GA_MEASUREMENT_ID}`;
 
 export default function PublicAnalytics() {
   const pathname = usePathname();
-  const isPrivateRoute = pathname?.startsWith("/members") || pathname?.startsWith("/book");
+  const isPrivateRoute = pathname?.startsWith("/members");
 
   if (isPrivateRoute || process.env.NODE_ENV !== "production") return null;
 

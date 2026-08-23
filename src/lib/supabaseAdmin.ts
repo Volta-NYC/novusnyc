@@ -33,9 +33,6 @@ const PATH_TABLE: Record<string, string> = {
   userProfiles:             "user_profiles",
   auditLogs:                "audit_logs",
   calendarEvents:           "calendar_events",
-  interviewInvites:         "interview_invites",
-  interviewSlots:           "interview_slots",
-  interviewSettings:        "interview_settings",
 };
 
 function camelToSnake(s: string): string {
