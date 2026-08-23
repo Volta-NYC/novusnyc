@@ -159,6 +159,11 @@ export default function TeamTracker({
         }] : []);
         await saveAttendance(meeting.id, cells, { title: meeting.title, hours: meeting.hours });
       }
+      // The summary columns are derived from persisted attendance. Refreshing
+      // immediately prevents a successful save from leaving stale percentages
+      // and certified-hour totals on screen until the next subscription event.
+      const refreshed = await fetchAttendanceForMeetings(meetings.map((meeting) => meeting.id));
+      setAttendance(refreshed);
       setDirtyMeetingIds(new Set());
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
