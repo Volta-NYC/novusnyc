@@ -32,7 +32,6 @@ const PATH_TABLE: Record<string, string> = {
   emailTemplates:           "email_templates",
   userProfiles:             "user_profiles",
   auditLogs:                "audit_logs",
-  calendarEvents:           "calendar_events",
 };
 
 function camelToSnake(s: string): string {
@@ -169,7 +168,7 @@ export async function writeAuditLog(entry: {
 }): Promise<void> {
   try {
     const sb = getSupabaseAdmin();
-    await sb.from("audit_logs").insert({
+    const { error } = await sb.from("audit_logs").insert({
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       action: entry.action,
@@ -180,6 +179,7 @@ export async function writeAuditLog(entry: {
       actor_name: entry.actorName ?? null,
       details: entry.details ?? null,
     });
+    if (error) throw new Error(error.message);
   } catch (err) {
     console.error("Audit log write failed:", err);
   }

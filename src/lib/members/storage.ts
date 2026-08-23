@@ -190,13 +190,6 @@ export interface TeamMember {
   skills: string[];       // may be undefined on legacy rows
   joinDate: string;
   createdAt: string;
-  // Automation bookkeeping — populated by the cycle sweep so warnings/strikes
-  // are issued at most once per cycle per member, and biweekly check-ins fire
-  // exactly once per 14-day mark.
-  lastWarningCycleId?: string;
-  lastAutoStrikeCycleId?: string;
-  lastBiweeklyCheckinMark?: number;     // floor(daysSinceCycleStart / 14)
-  lastBiweeklyCheckinCycleId?: string;  // resets when cycle changes
   authUid?: string;
   canInterview?: boolean;
 }
@@ -286,20 +279,19 @@ export interface Infraction {
 // Stable keys referenced by automation. Custom (admin-authored) templates use
 // arbitrary strings — typically `custom_<id>` — and never collide with these.
 export type SystemEmailTemplateKey =
-  | "orange_pace_warning"
-  | "red_pace_strike"
-  | "demotion_notice"
-  | "cycle_start"
-  | "cycle_end_summary"
-  | "assignment_approved"
-  | "assignment_rejected"
-  | "assignment_update"
-  | "infraction_notice"
-  | "monthly_portal_reminder"
-  | "biweekly_checkin"
   | "applicant_accepted"
   | "interview_confirmation"
   | "interview_rescheduled"
+  | "interviewer_booking_notify"
+  | "interviewer_reschedule_notify"
+  | "pod_meeting_reminder"
+  | "pod_attendance_missing"
+  | "pod_task_assigned"
+  | "pod_task_due_soon"
+  | "project_assigned"
+  | "project_draft_ready"
+  | "infraction_issued"
+  | "service_hours_summary"
   | "invite"
   | "setup-link"
   | "password-reset";
@@ -341,22 +333,6 @@ export interface AutomationConfig {
 // Work tracks. Named CycleTrack while credits existed; the cycles are gone but
 // the three tracks still label divisions and project work.
 export type TrackName = "Tech" | "Marketing" | "Finance" | "General";
-
-// ── Project groups (standalone non-business project containers) ───────────────
-// Businesses already serve as their own group via business_id on assignments.
-// ProjectGroup covers internal work, cohorts, or multi-business initiatives that
-// don't map to a single client record.
-
-export interface ProjectGroup {
-  id: string;
-  name: string;
-  description: string;
-  color: "green" | "blue" | "amber" | "purple" | "gray";
-  status: "Ongoing" | "Upcoming" | "Completed";
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 // ── Member strikes + credit adjustments ───────────────────────────────────────
 // Strikes are point-bearing infractions issued against a member; thresholds on
@@ -418,21 +394,6 @@ export interface UserProfile {
   grade?: string;
   active: boolean;
   createdAt: string;
-}
-
-// ── Calendar event type ───────────────────────────────────────────────────────
-
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  start: string;        // ISO datetime string
-  end: string;          // ISO datetime string
-  iCalUID?: string;
-  description?: string;
-  color?: string;       // hex color, e.g. "#F6B78D"
-  allDay?: boolean;
-  createdBy: string;    // uid
-  createdAt: number;    // Unix ms timestamp
 }
 
 // ── Interview scheduling types ────────────────────────────────────────────────
@@ -499,7 +460,7 @@ async function writeAuditLog(
 ): Promise<void> {
   try {
     const actor = await getAuditActor();
-    await supabase.from("audit_logs").insert({
+    const { error } = await supabase.from("audit_logs").insert({
       id: genId(),
       timestamp: nowISO(),
       actor_uid: actor.actorUid,
@@ -510,6 +471,7 @@ async function writeAuditLog(
       record_id: entry.recordId ?? null,
       details: entry.details ?? null,
     });
+    if (error) throw new Error(error.message);
   } catch (err) {
     console.error("Audit log write failed:", err);
   }
@@ -612,20 +574,6 @@ function makeSubscriber<T extends { id: string }>(
 
 // ── SPECIALISED ROW CONVERTERS ────────────────────────────────────────────────
 
-// CalendarEvent and legacy settings use Unix ms in TS but timestamptz in
-// Postgres — convert at the storage boundary.
-function tsToMs(val: unknown): number {
-  if (typeof val === "number") return val;
-  if (typeof val === "string" && val) return new Date(val).getTime();
-  return 0;
-}
-// Convert Unix ms → ISO for write
-function msToIso(val: unknown): string | null {
-  if (typeof val === "number" && val > 0) return new Date(val).toISOString();
-  if (typeof val === "string" && val) return val;
-  return null;
-}
-
 function interviewRecordFromRow(row: Record<string, unknown>): InterviewRecord {
   return {
     id: String(row.id ?? ""),
@@ -645,21 +593,6 @@ function interviewRecordFromRow(row: Record<string, unknown>): InterviewRecord {
     createdBy: String(row.created_by ?? ""),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
-  };
-}
-
-function calendarEventFromRow(row: Record<string, unknown>): CalendarEvent {
-  return {
-    id:          row.id as string,
-    title:       row.title as string ?? "",
-    start:       row.start as string ?? "",
-    end:         row.end as string ?? "",
-    iCalUID:     row.i_cal_uid as string | undefined,
-    description: row.description as string | undefined,
-    color:       row.color as string | undefined,
-    allDay:      row.all_day as boolean | undefined,
-    createdBy:   row.created_by as string ?? "",
-    createdAt:   tsToMs(row.created_at),
   };
 }
 
@@ -767,9 +700,6 @@ export const subscribeAutomationConfigs =
     updatedAt:    String(r.updated_at ?? ""),
     updatedBy:    String(r.updated_by ?? ""),
   }));
-
-export const subscribeProjectGroups =
-  makeSubscriber<ProjectGroup>("project_groups", (r) => fromRow<ProjectGroup>(r));
 
 export const subscribeMemberStrikes =
   makeSubscriber<MemberStrike>("member_strikes", (r) => fromRow<MemberStrike>(r));
@@ -1241,52 +1171,6 @@ export async function getApplicationsList(): Promise<ApplicationRecord[]> {
   return (data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r)));
 }
 
-export async function getCalendarEventsList(): Promise<CalendarEvent[]> {
-  const { data, error } = await supabase.from("calendar_events").select("*");
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => calendarEventFromRow(r as Record<string, unknown>));
-}
-
-// ── CalendarEvents ────────────────────────────────────────────────────────────
-
-export const subscribeCalendarEvents =
-  makeSubscriber<CalendarEvent>("calendar_events", calendarEventFromRow);
-
-export async function createCalendarEvent(data: Omit<CalendarEvent, "id">): Promise<void> {
-  const id = genId();
-  await supabase.from("calendar_events").insert({
-    id,
-    title: data.title,
-    start: data.start || null,
-    end: data.end || null,
-    i_cal_uid: data.iCalUID ?? null,
-    description: data.description ?? null,
-    color: data.color ?? null,
-    all_day: data.allDay ?? false,
-    created_by: data.createdBy,
-    created_at: msToIso(data.createdAt),
-  });
-  await writeAuditLog({ action: "create", collection: "calendarEvents", recordId: id, details: { title: data.title } });
-}
-
-export async function updateCalendarEvent(id: string, data: Partial<CalendarEvent>): Promise<void> {
-  const row: Record<string, unknown> = {};
-  if (data.title       !== undefined) row.title       = data.title;
-  if (data.start       !== undefined) row.start       = data.start || null;
-  if (data.end         !== undefined) row.end         = data.end || null;
-  if (data.iCalUID     !== undefined) row.i_cal_uid   = data.iCalUID;
-  if (data.description !== undefined) row.description = data.description;
-  if (data.color       !== undefined) row.color       = data.color;
-  if (data.allDay      !== undefined) row.all_day     = data.allDay;
-  await supabase.from("calendar_events").update(row).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "calendarEvents", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteCalendarEvent(id: string): Promise<void> {
-  await supabase.from("calendar_events").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "calendarEvents", recordId: id });
-}
-
 // ── Direct interview records (August 2026 cutover) ──────────────────────────
 
 export const subscribeInterviews =
@@ -1309,9 +1193,6 @@ export type PortalPermissions = Record<PortalRole, Record<PortalPermissionKey, b
 export interface SiteSettings {
   applicationsPaused:       boolean;
   applicationsPausedMsg:    string;
-  services:                 string[];
-  /** Chapter options on the public application form. Order is shown as-is. */
-  chapters:                 string[];
   publicBannerEnabled:      boolean;
   publicBannerMessage:      string;
   publicBannerBg:           string;
@@ -1336,8 +1217,6 @@ const DEFAULT_PERMISSIONS: PortalPermissions = {
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   applicationsPaused:    false,
   applicationsPausedMsg: "Applications are currently paused. Check back soon.",
-  services:              ["Website", "SEO", "Social Media", "Graphic Design", "Grants"],
-  chapters:              [],   // superseded by the chapters table
   publicBannerEnabled:   false,
   publicBannerMessage:   "",
   publicBannerBg:        "#1a1a2e",
@@ -1372,8 +1251,6 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
   return {
     applicationsPaused:    Boolean(r.applications_paused ?? false),
     applicationsPausedMsg: String(r.applications_paused_msg ?? DEFAULT_SITE_SETTINGS.applicationsPausedMsg),
-    services:              Array.isArray(r.services) ? (r.services as string[]) : DEFAULT_SITE_SETTINGS.services,
-    chapters:              Array.isArray(r.chapters) && r.chapters.length > 0 ? (r.chapters as string[]) : DEFAULT_SITE_SETTINGS.chapters,
     publicBannerEnabled:   Boolean(r.public_banner_enabled ?? false),
     publicBannerMessage:   String(r.public_banner_message ?? ""),
     publicBannerBg:        String(r.public_banner_bg ?? DEFAULT_SITE_SETTINGS.publicBannerBg),
@@ -1415,7 +1292,8 @@ function parseThresholds(value: unknown): { notice: number; warning: number; rev
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const { data } = await supabase.from("site_settings").select("*").eq("id", "singleton").maybeSingle();
+  const { data, error } = await supabase.from("site_settings").select("*").eq("id", "singleton").maybeSingle();
+  if (error) throw new Error(error.message);
   return data ? siteSettingsFromRow(data as Record<string, unknown>) : DEFAULT_SITE_SETTINGS;
 }
 
@@ -1423,8 +1301,6 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   const row: Record<string, unknown> = { updated_at: nowISO() };
   if (patch.applicationsPaused    !== undefined) row.applications_paused     = patch.applicationsPaused;
   if (patch.applicationsPausedMsg !== undefined) row.applications_paused_msg = patch.applicationsPausedMsg;
-  if (patch.services              !== undefined) row.services                = patch.services;
-  if (patch.chapters              !== undefined) row.chapters                = patch.chapters;
   if (patch.publicBannerEnabled   !== undefined) row.public_banner_enabled   = patch.publicBannerEnabled;
   if (patch.publicBannerMessage   !== undefined) row.public_banner_message   = patch.publicBannerMessage;
   if (patch.publicBannerBg        !== undefined) row.public_banner_bg        = patch.publicBannerBg;
@@ -1450,17 +1326,22 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
 export async function createInfraction(data: Omit<Infraction, "id" | "createdAt" | "updatedAt">): Promise<void> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("infractions").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  const { error } = await supabase.from("infractions").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (error) throw new Error(error.message);
   await writeAuditLog({ action: "create", collection: "infractions", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateInfraction(id: string, data: Partial<Infraction>): Promise<void> {
-  await supabase.from("infractions").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { data: updated, error } = await supabase.from("infractions").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id).select("id").maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!updated) throw new Error("The infraction type was not updated.");
   await writeAuditLog({ action: "update", collection: "infractions", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteInfraction(id: string): Promise<void> {
-  await supabase.from("infractions").delete().eq("id", id);
+  const { data: deleted, error } = await supabase.from("infractions").delete().eq("id", id).select("id").maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!deleted) throw new Error("The infraction type was not deleted.");
   await writeAuditLog({ action: "delete", collection: "infractions", recordId: id });
 }
 
@@ -1529,31 +1410,6 @@ export async function updateAutomationConfig(automationId: string, patch: {
 
 // Legacy soft-delete kept for existing callers; prefer archiveAssignment.
 // ── Assignment templates ──────────────────────────────────────────────────────
-
-// ── Project groups ────────────────────────────────────────────────────────────
-
-export async function createProjectGroup(
-  data: Omit<ProjectGroup, "id" | "createdAt" | "updatedAt">
-): Promise<string> {
-  const id = genId();
-  const now = nowISO();
-  const { error: groupInsertError } = await supabase.from("project_groups").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (groupInsertError) throw new Error(groupInsertError.message);
-  await writeAuditLog({ action: "create", collection: "projectGroups", recordId: id, details: { name: data.name } });
-  return id;
-}
-
-export async function updateProjectGroup(id: string, data: Partial<ProjectGroup>): Promise<void> {
-  const { error: groupUpdateError } = await supabase.from("project_groups").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (groupUpdateError) throw new Error(groupUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "projectGroups", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteProjectGroup(id: string): Promise<void> {
-  const { error: groupDeleteError } = await supabase.from("project_groups").delete().eq("id", id);
-  if (groupDeleteError) throw new Error(groupDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "projectGroups", recordId: id });
-}
 
 // ── Assignment claims ─────────────────────────────────────────────────────────
 

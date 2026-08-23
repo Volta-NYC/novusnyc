@@ -8,9 +8,10 @@ export const EXPORT_SECTIONS = [
   { key: "memberStrikes",     label: "Member Infractions",  table: "member_strikes" },
   { key: "memberNotes",       label: "Private Member Notes", table: "member_notes" },
   { key: "emailTemplates",    label: "Email Templates",     table: "email_templates" },
-  { key: "calendarEvents",    label: "Calendar Events",     table: "calendar_events" },
+  { key: "interviews",        label: "Interviews",          table: "interviews" },
   { key: "handbookPages",     label: "Handbook Pages",      table: "handbook_pages" },
   { key: "auditLogs",         label: "Audit Logs",          table: "audit_logs" },
+  { key: "siteSettings",      label: "Site Settings",       table: "site_settings" },
   { key: "chapters",          label: "Chapters",            table: "chapters" },
   { key: "pods",              label: "Pods",                table: "pods" },
   { key: "podMembers",        label: "Pod Memberships",     table: "pod_members" },
@@ -21,6 +22,7 @@ export const EXPORT_SECTIONS = [
   { key: "hoursAdjustments",  label: "Hours Adjustments",   table: "hours_adjustments" },
   { key: "infractions",       label: "Infraction Types",    table: "infractions" },
   { key: "automationConfigs", label: "Automation Config",   table: "automation_configs" },
+  { key: "automationDeliveries", label: "Automation Deliveries", table: "automation_deliveries" },
 ] as const;
 
 export type ExportSectionKey = (typeof EXPORT_SECTIONS)[number]["key"];

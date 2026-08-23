@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin, writeAuditLog } from "@/lib/supabaseAdmin";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { resolveInterviewZoomSettings } from "@/lib/interviews/config";
 import {
@@ -221,6 +221,16 @@ export async function POST(req: NextRequest) {
     organizerEmail: verified.caller.email,
   });
 
+  await writeAuditLog({
+    action: "create",
+    collection: "interviews",
+    recordId: id,
+    actorUid: verified.caller.uid,
+    actorEmail: verified.caller.email,
+    actorName: verified.caller.name,
+    details: { applicantId, applicantName, scheduledAt, durationMinutes, interviewerCount: interviewerMemberIds.length },
+  });
+
   return NextResponse.json({
     success: true,
     id,
@@ -324,6 +334,21 @@ export async function PATCH(req: NextRequest) {
     });
     if (!staffEmailSucceeded && !warning) warning = "staff_email_failed";
   }
+
+  await writeAuditLog({
+    action: "update",
+    collection: "interviews",
+    recordId: id,
+    actorUid: verified.caller.uid,
+    actorEmail: verified.caller.email,
+    actorName: verified.caller.name,
+    details: {
+      applicantName: String(existing.applicant_name),
+      fields: Object.keys(patch).filter((field) => field !== "updated_at"),
+      status: nextStatus,
+      confirmationResent: resend,
+    },
+  });
 
   return NextResponse.json({ success: true, warning });
 }

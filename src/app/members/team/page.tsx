@@ -189,7 +189,9 @@ export default function TeamPage() {
     const unsubscribePods = subscribePods(setPods);
     const unsubscribePodMembers = subscribePodMembers(setPodMembers);
     void fetchMemberContributions().then(setContributions);
-    void getSiteSettings().then((settings) => setThresholds(settings.infractionThresholds));
+    void getSiteSettings()
+      .then((settings) => setThresholds(settings.infractionThresholds))
+      .catch((error) => console.error("Infraction thresholds could not load", error));
 
     // Cleanup subscriptions on unmount
     return () => {

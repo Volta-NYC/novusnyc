@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Btn, Modal } from "@/components/members/ui";
-import { revalidatePublicPages, updateBusiness, type Business } from "@/lib/members/storage";
+import { revalidatePublicPages, type Business } from "@/lib/members/storage";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 type Surface = "showcase" | "home";
 
@@ -70,9 +71,16 @@ export default function PublicCardOrderModal({
     setSaving(true);
     setError("");
     try {
-      await Promise.all(orderedIds.map((id, index) => updateBusiness(id, surface === "home"
-        ? { homeSortIndex: (index + 1) * 1000 }
-        : { showcaseSortIndex: (index + 1) * 1000 })));
+      const token = await getAuthToken();
+      const response = await fetch("/api/members/admin/public-card-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ surface, orderedIds }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(payload?.error || "The public card order was not saved.");
+      }
       if (!(await revalidatePublicPages())) {
         setError("Order saved, but the public pages could not be refreshed. Try again shortly.");
         setSaving(false);

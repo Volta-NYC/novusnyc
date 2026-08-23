@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Btn, useDialogBehavior } from "@/components/members/ui";
 import {
-  updateBusiness, subscribeChapters, notifyProjectAssigned, getSiteSettings, revalidatePublicPages, TECH_STATUSES, TECH_PRIORITIES,
+  updateBusiness, subscribeChapters, notifyProjectAssigned, revalidatePublicPages, TECH_STATUSES, TECH_PRIORITIES,
   type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
+import { BUSINESS_SERVICES } from "@/lib/members/constants";
 import { formatPhone } from "@/lib/format";
 import { isInactiveMember } from "@/lib/members/roles";
 
@@ -30,10 +31,9 @@ export default function ProjectPanel({
   const [memberQuery, setMemberQuery] = useState("");
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [tab, setTab] = useState<"website" | "public">("website");
-  const [serviceOptions, setServiceOptions] = useState<string[]>(["Website", "SEO", "Social Media", "Graphic Design", "Grants"]);
+  const serviceOptions = BUSINESS_SERVICES;
 
   useEffect(() => subscribeChapters(setChapters), []);
-  useEffect(() => { void getSiteSettings().then((settings) => setServiceOptions(settings.services)); }, []);
 
   useEffect(() => {
     setDraft(business);
