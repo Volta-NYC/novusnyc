@@ -1,24 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import MembersLayout from "@/components/members/MembersLayout";
-import AdminCycleOverview from "@/components/members/AdminCycleOverview";
-import MemberOverview from "@/components/members/MemberOverview";
+import AdminDashboard from "@/components/members/AdminDashboard";
 import { useAuth } from "@/lib/members/authContext";
 import { Spinner } from "@/components/members/ui";
 
 export default function OverviewPage() {
   const { authRole, loading } = useAuth();
+  const router = useRouter();
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && authRole === "member") router.replace("/members/me");
+  }, [loading, authRole, router]);
+
+  if (loading || authRole === "member") {
     return (
       <MembersLayout>
-        <div className="flex items-center justify-center h-64">
-          <Spinner />
-        </div>
+        <div className="flex h-64 items-center justify-center"><Spinner /></div>
       </MembersLayout>
     );
   }
 
-  if (authRole === "owner" || authRole === "admin") return <AdminCycleOverview />;
-  return <MemberOverview />;
+  return <AdminDashboard />;
 }

@@ -26,14 +26,31 @@ export interface PublicStatSnapshot {
 }
 
 /**
- * Explicitly preserved public all-time totals. These are deliberately kept
- * separate from the live active-record counts below: the current database is
- * not a complete historical archive of every student or business served.
+ * All-time public totals. The database is not a complete historical archive —
+ * it holds current members and current businesses, not everyone ever served —
+ * so these run ahead of the live counts on purpose.
+ *
+ * They are the *seed for an override*, not an automatic value. Presenting them
+ * as automatic meant the admin panel showed a hand-written figure in the column
+ * labelled "automatic" and there was no way to see the real number at all.
  */
 export const PUBLISHED_IMPACT_TOTALS = {
   students: "400+",
   businesses: "170+",
 } as const;
+
+async function getActiveMemberCount(): Promise<number> {
+  try {
+    const { count } = await getSupabaseAdmin()
+      .from("team")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .neq("status", "Inactive");
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
 
 async function getCommunityOrganizationCount(): Promise<number> {
   try {
@@ -82,10 +99,11 @@ export function publicCommunityOrganizationStat(overrides: PublicStatOverrides, 
  * effective values here prevents the admin preview from drifting from the site.
  */
 export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
-  const [rawOverrides, liveStats, communityOrganizations] = await Promise.all([
+  const [rawOverrides, liveStats, communityOrganizations, activeMembers] = await Promise.all([
     getPublicStatOverrides(),
     getPublicLiveStats(),
     getCommunityOrganizationCount(),
+    getActiveMemberCount(),
   ]);
 
   const overrides: PublicStatOverrides = { ...rawOverrides };
@@ -97,11 +115,13 @@ export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
   delete overrides.aboutCommunityPartners;
 
   const automaticValues: PublicStatValues = {
-    homeStudentMembers: PUBLISHED_IMPACT_TOTALS.students,
-    homeBusinessesSupported: PUBLISHED_IMPACT_TOTALS.businesses,
+    // What the database actually holds right now. The published all-time
+    // figures live in the overrides, so the panel can show both.
+    homeStudentMembers: `${activeMembers}`,
+    homeBusinessesSupported: `${liveStats.totalBusinesses}`,
     communityOrganizations: `${communityOrganizations}+`,
     homeNetworkLocations: `${chapterLocations.length}+`,
-    aboutBusinesses: PUBLISHED_IMPACT_TOTALS.businesses,
+    aboutBusinesses: `${liveStats.totalBusinesses}`,
     aboutWebsiteProjects: `${liveStats.websiteProjects}+`,
     aboutMarketingProjects: `${liveStats.marketingProjects}+`,
   };

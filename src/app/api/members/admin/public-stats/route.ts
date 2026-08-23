@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const verified = await verifyCaller(req, ["owner", "admin"]);
+  const verified = await verifyCaller(req, ["owner"]);
   if (!verified.ok) {
     return NextResponse.json({ error: verified.error }, { status: verified.status });
   }

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { substituteEmailTokens } from "@/lib/members/cycleCompute";
+import { substituteEmailTokens, substituteEmailTokensHtml, safeLinkValue } from "@/lib/members/emailTokens";
 
 export interface RenderedEmail {
   subject: string;
@@ -34,8 +34,15 @@ export async function renderAutomationEmail(
 
   if (!template || template.active === false) return null;
 
+  // Link-shaped values sit inside an href, so anything that isn't http(s) is
+  // dropped rather than escaped.
+  const safe = Object.fromEntries(
+    Object.entries(variables).map(([k, v]) =>
+      [k, /url$|link$/i.test(k) ? safeLinkValue(v) : v]),
+  );
+
   return {
-    subject: substituteEmailTokens(String(template.subject ?? ""), variables),
-    html:    substituteEmailTokens(String(template.body    ?? ""), variables),
+    subject: substituteEmailTokens(String(template.subject ?? ""), safe),
+    html:    substituteEmailTokensHtml(String(template.body ?? ""), safe),
   };
 }

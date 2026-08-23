@@ -37,7 +37,7 @@ function mimeToExt(mime: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const verified = await verifyCaller(req, ["owner"]);
+  const verified = await verifyCaller(req, ["owner", "admin"]);
   if (!verified.ok) return NextResponse.json({ error: verified.error }, { status: verified.status });
 
   const body = (await req.json().catch(() => ({}))) as UploadBody;
@@ -49,6 +49,12 @@ export async function POST(req: NextRequest) {
 
   const decoded = extractMimeAndBuffer(dataUrl);
   if (!decoded) return NextResponse.json({ error: "invalid_data_url" }, { status: 400 });
+  if (!new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]).has(decoded.mime)) {
+    return NextResponse.json({ error: "unsupported_image_type" }, { status: 400 });
+  }
+  if (decoded.buffer.byteLength > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "image_too_large", detail: "Card photos must be 5 MB or smaller." }, { status: 413 });
+  }
 
   const ext = mimeToExt(decoded.mime);
   const path = `${businessId}/showcase.${ext}`;
@@ -69,12 +75,15 @@ export async function POST(req: NextRequest) {
   const url = urlData?.publicUrl ?? "";
 
   // Update businesses table with the new image path and URL.
-  await sb.from("businesses").update({
+  const { data: updated, error: updateError } = await sb.from("businesses").update({
     showcase_image_path: path,
     showcase_image_url: url,
     showcase_image_set: true,
     updated_at: new Date().toISOString(),
-  }).eq("id", businessId);
+  }).eq("id", businessId).is("deleted_at", null).select("id").maybeSingle();
+  if (updateError || !updated) {
+    return NextResponse.json({ error: "business_update_failed", detail: updateError?.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, path, url });
 }

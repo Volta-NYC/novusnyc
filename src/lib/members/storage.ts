@@ -5,7 +5,6 @@
 // channel so the UI updates automatically when the database changes.
 
 import { supabase } from "@/lib/supabaseClient";
-import { normalizeTeamPod } from "@/lib/teamPod";
 
 // ── DATA TYPES ────────────────────────────────────────────────────────────────
 
@@ -19,6 +18,7 @@ export interface BIDContact {
 
 export interface BID {
   id: string;
+  chapterId?: string;   // which market this partner belongs to
   name: string;
   status: "Active Partner" | "In Conversation" | "Outreach" | "Paused" | "Dead";
   contacts?: BIDContact[];
@@ -46,6 +46,22 @@ export interface BID {
   updatedAt: string;
 }
 
+// Tech pipeline. Draft Ready requires previewUrl and Live requires liveUrl —
+// enforced at the transition so the list stays honest without anyone policing it.
+// No "Building" tier: it said the same thing as Assigned, and nothing ever
+// used it.
+export const TECH_STATUSES = [
+  "Backlog", "Assigned", "Draft Ready", "With Client", "Live", "On Hold", "Dropped",
+] as const;
+export type TechStatus = (typeof TECH_STATUSES)[number];
+
+export const TECH_PIPELINE: TechStatus[] = [
+  "Backlog", "Assigned", "Draft Ready", "With Client", "Live",
+];
+
+export const TECH_PRIORITIES = ["High", "Medium", "Maybe"] as const;
+export type TechPriority = (typeof TECH_PRIORITIES)[number];
+
 export interface Business {
   id: string;
   name: string;
@@ -59,8 +75,18 @@ export interface Business {
   neighborhood?: string;
   lat?: number;
   lng?: number;
-  website: string;
-  activeServices?: string[];   // legacy field
+  // ── Tech project tracker ──────────────────────────────────────────────────
+  // Three URLs because two columns previously carried three meanings between
+  // them, and launching a site overwrote its preview link.
+  chapterId?: string;     // which market this client belongs to
+  clientUrl?: string;     // what the business had before Novus
+  previewUrl?: string;    // the Vercel deploy
+  liveUrl?: string;       // launched on its own domain — the "real domains" list
+  techStatus?: TechStatus;
+  techPriority?: TechPriority;
+  assignees?: string[];   // team member ids
+  lastTouchedAt?: string;
+  activeServices?: string[];   // services shown on the public project card
   projectStatus:
     | "Ongoing"
     | "Upcoming"
@@ -70,15 +96,12 @@ export interface Business {
     | "Active"
     | "On Hold"
     | "Complete";
-  teamLead: string;
   languages?: string[];        // legacy field
   firstContactDate: string;
   notes: string;
   createdAt: string;
   updatedAt: string;
   // Project-level fields (merged from Projects tab)
-  division?: "Tech" | "Marketing" | "Finance";
-  teamMembers?: string[];     // may be undefined on legacy rows
   githubUrl?: string;         // legacy field
   driveFolderUrl?: string;    // legacy field
   clientNotes?: string;       // legacy field
@@ -90,14 +113,11 @@ export interface Business {
   // Public-site showcase configuration (optional, managed in Projects UI).
   showcaseEnabled?: boolean;
   showcaseFeaturedOnHome?: boolean;
-  showcaseName?: string;
   showcaseType?: string;
-  showcaseNeighborhood?: string;
-  showcaseServices?: string[]; // may be undefined on legacy rows
-  showcaseStatus?: "In Progress" | "Active" | "Upcoming";
   showcaseDescription?: string;
-  showcaseUrl?: string;
   showcaseImageUrl?: string;
+  showcaseSortIndex?: number;
+  homeSortIndex?: number;
   // showcaseImageData is no longer stored inline in businesses — it lives at
   // businessImages/{id}. This field is kept for reading legacy records that
   // haven't been re-saved yet. New writes go through setBusinessImage().
@@ -133,8 +153,7 @@ export interface Business {
   projectTracks?: Array<"Tech" | "Marketing" | "Finance">;
   trackProjects?: Partial<Record<"Tech" | "Marketing" | "Finance", {
     projectStatus?: "Ongoing" | "Upcoming" | "Completed" | "Not Started" | "Discovery" | "Active" | "On Hold" | "Complete" | "In Development" | "Awaiting Client" | "Awaiting Deployment" | "In Planning" | "Consistent Posts" | "In Progress";
-    teamMembers?: string[];
-    deadlines?: Array<{
+      deadlines?: Array<{
       label?: string;
       date?: string;
     }>;
@@ -142,6 +161,8 @@ export interface Business {
   }>>;
 }
 
+// notes lives in member_notes now — owner/admin only. It was readable by every
+// member here.
 export interface TeamMember {
   id: string;
   name: string;
@@ -149,11 +170,17 @@ export interface TeamMember {
   grade?: string;
   acceptedDate?: string;
   divisions: string[];    // may be undefined on legacy rows
-  pod: string;
-  // Role label as captured at acceptance (e.g. "Analyst", "Senior Analyst",
-  // "Associate", "Senior Associate", "Board") — kept as a free-form string so
-  // legacy values from earlier role taxonomies still display verbatim.
+  // Rank on the ladder in roles.ts. Free-form so any legacy value still shows
+  // verbatim rather than vanishing from the directory.
   role: string;
+  // Where the member actually lives. Information only — it is NOT their
+  // chapter, since remote members routinely work on another city's clients.
+  homeCity?: string;
+  homeState?: string;
+  // Which market they were recruited into. Blank means New York, so this is
+  // set only for a recruit in a new chapter who has no pod or client yet.
+  chapterId?: string;
+  deletedAt?: string | null;
   slackHandle: string;
   email: string;
   alternateEmail?: string;
@@ -162,22 +189,13 @@ export interface TeamMember {
   status: "Active" | "On Leave" | "Alumni" | "Inactive" | "Reserve";
   skills: string[];       // may be undefined on legacy rows
   joinDate: string;
-  notes: string;
   createdAt: string;
-  // Automation bookkeeping — populated by the cycle sweep so warnings/strikes
-  // are issued at most once per cycle per member, and biweekly check-ins fire
-  // exactly once per 14-day mark.
-  lastWarningCycleId?: string;
-  lastAutoStrikeCycleId?: string;
-  lastBiweeklyCheckinMark?: number;     // floor(daysSinceCycleStart / 14)
-  lastBiweeklyCheckinCycleId?: string;  // resets when cycle changes
   authUid?: string;
   canInterview?: boolean;
 }
 
 export type ApplicationStatus =
   | "New"
-  | "Invited for Interview"
   | "Interview Scheduled"
   | "Interview Completed"
   | "Accepted"
@@ -202,21 +220,11 @@ export interface ApplicationRecord {
   accomplishment?: string;
   status: ApplicationStatus;
   notes?: string;
-  interviewInviteToken?: string;
-  interviewInviteSentAt?: string;
-  interviewReminderSentAt?: string;
-  interviewSlotId?: string;
-  interviewScheduledAt?: string;
-  interviewEvaluations?: Record<string, {
-    interviewerUid?: string;
-    interviewerEmail?: string;
-    interviewerName?: string;
-    rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
-    comments?: string;
-    updatedAt?: string;
-    slotId?: string;
-  }>;
   finalDecisionRole?: string;
+  memberId?: string | null;   // the member this application became
+  decidedAt?: string | null;
+  decidedBy?: string | null;
+  city?: string;
   source?: "website_form" | "csv_import" | "manual" | "legacy_sheet_import";
   sourceTimestampRaw?: string;
   createdAt: string;
@@ -244,71 +252,6 @@ export interface Project {
   updatedAt: string;
 }
 
-export type FinanceAssignmentType = "Report" | "Case Study";
-export type FinanceAssignmentStatus = "Upcoming" | "Ongoing" | "Completed";
-
-export interface FinanceAssignment {
-  id: string;
-  seedKey?: string;
-  type: FinanceAssignmentType;
-  title: string;
-  topic: string;
-  teamLabel: string;
-  region: string;
-  assignedMemberNames: string[]; // may be undefined on legacy rows
-  assignedMemberIds?: string[];  // may be undefined on legacy rows
-  deadlines?: Array<{
-    label: string;
-    date: string;
-  }>;
-  deadline?: string;
-  interviewDueDate?: string;
-  firstDraftDueDate?: string;
-  finalDueDate?: string;
-  deliverableUrl?: string;
-  status: FinanceAssignmentStatus;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ── Credit cycle types ────────────────────────────────────────────────────────
-//
-// A Cycle defines a credit-earning period (typically a quarter). Targets are
-// per-track × per-role. Senior Associate and Board are intentionally excluded
-// from the credit/strike system — they run it.
-
-export type CycleTrack = "Tech" | "Marketing" | "Finance" | "General";
-export type CycleRole = "Analyst" | "Senior Analyst" | "Associate";
-
-export interface CycleCreditTargets {
-  baseRequirement: number;
-  promotionTargets: {
-    Analyst: number;
-    "Senior Analyst": number;
-    Associate: number;
-  };
-}
-
-export interface CycleStrikeThresholds {
-  warning: number;       // points to first strike
-  demotion: number;      // points to second strike
-  reserve: number;       // points to third strike
-}
-
-export interface Cycle {
-  id: string;
-  name: string;                       // e.g. "Summer 2026"
-  startDate: string;                  // ISO date (YYYY-MM-DD)
-  endDate: string;                    // ISO date (YYYY-MM-DD)
-  active: boolean;                    // exactly one cycle is active at a time
-  pacingPercentPerCheckin: number;    // default 20 — drives biweekly nudge + dot
-  creditTargets: CycleCreditTargets;
-  strikeThresholds: CycleStrikeThresholds;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // ── Infraction catalog ────────────────────────────────────────────────────────
 // One row per *type* of infraction. Issued instances live separately on a
 // member's record. Severity is implicit in the point value: 1 = minor,
@@ -330,24 +273,19 @@ export interface Infraction {
 // Stable keys referenced by automation. Custom (admin-authored) templates use
 // arbitrary strings — typically `custom_<id>` — and never collide with these.
 export type SystemEmailTemplateKey =
-  | "orange_pace_warning"
-  | "red_pace_strike"
-  | "demotion_notice"
-  | "cycle_start"
-  | "cycle_end_summary"
-  | "assignment_approved"
-  | "assignment_rejected"
-  | "assignment_update"
-  | "infraction_notice"
-  | "monthly_portal_reminder"
-  | "biweekly_checkin"
-  | "interview_invite"
-  | "interview_invite_reminder"
   | "applicant_accepted"
-  | "interview_booked"
+  | "interview_confirmation"
   | "interview_rescheduled"
   | "interviewer_booking_notify"
   | "interviewer_reschedule_notify"
+  | "pod_meeting_reminder"
+  | "pod_attendance_missing"
+  | "pod_task_assigned"
+  | "pod_task_due_soon"
+  | "project_assigned"
+  | "project_draft_ready"
+  | "infraction_issued"
+  | "service_hours_summary"
   | "invite"
   | "setup-link"
   | "password-reset";
@@ -377,7 +315,7 @@ export interface EmailTemplate {
 
 export interface AutomationConfig {
   id: string;             // same value as automationId — required by makeSubscriber
-  automationId: string;   // stable slug PK, e.g. "cycle_warning"
+  automationId: string;   // stable slug PK, e.g. "pod_meeting_reminder"
   label: string;
   description: string;
   templateKey: string | null;  // references email_templates.key; null means disabled
@@ -386,178 +324,35 @@ export interface AutomationConfig {
   updatedBy: string;
 }
 
-// ── Assignment templates (admin-managed blueprints) ───────────────────────────
-// Templates are reusable blueprints for creating assignments. They have no
-// business_id and no status — they are never "open" assignments themselves.
+// Work tracks. Named CycleTrack while credits existed; the cycles are gone but
+// the three tracks still label divisions and project work.
+export type TrackName = "Tech" | "Marketing" | "Finance" | "General";
 
-export interface AssignmentTemplate {
-  id: string;
-  title: string;
-  description: string;             // HTML (rich-text)
-  type?: string;                   // null | 'Report' | 'Case Study'
-  track: CycleTrack;
-  credits: number;
-  creditsMax?: number;
-  creditsNote?: string;
-  difficulty: string;
-  estimatedHours: number;
-  minRole: CycleRole;
-  capacity: number;
-  requiresApproval?: boolean;
-  applicationRequired?: boolean;    // true = member must contact board before claiming
-  allowMultipleCompletions?: boolean;
-  deadlineOffsetDays?: number | null; // null clears offset when switching to recurring
-  // Recurring check-in support
-  recurringEnabled?: boolean;      // true = periodic check-ins with per-check-in credits
-  checkinIntervalDays?: number | null; // null clears when switching away from recurring
-  maxDurationDays?: number | null;     // null clears when switching away from recurring
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-}
-
-// ── Active assignments (unified: Tech + Marketing + Finance) ──────────────────
-
-export type AssignmentDifficulty = string; // admin-configurable, free-form
-
-export type AssignmentStatus =
-  | "Open"          // visible in catalog; accepting new claims
-  | "Active"        // at least one claim in progress
-  | "Under Review"  // at least one submission pending admin approval
-  | "Completed"     // all work done and credits awarded
-  | "Archived";     // manually hidden; history preserved; hard-deletable by admins
-
-export interface Assignment {
-  id: string;
-  title: string;
-  description: string;             // HTML (rich-text)
-  type?: string;                   // null | 'Report' | 'Case Study' (Finance)
-  track: CycleTrack;
-  businessId?: string;             // required for active assignments
-  status: AssignmentStatus;
-  assignedMemberIds?: string[];
-  assignedMemberNames?: string[];
-  deadlines?: Array<{ label: string; date: string }> | null; // hard deadline dates; null clears them
-  deliverableUrl?: string;
-  credits: number;
-  creditsMax?: number;
-  creditsNote?: string;
-  difficulty: AssignmentDifficulty;
-  estimatedHours: number;
-  minRole: CycleRole;
-  capacity: number;
-  priority?: boolean;
-  requiresApproval?: boolean;       // false = auto-approve on member submit; default true
-  applicationRequired?: boolean;    // true = member must contact board before claiming; admin alerted on claim
-  allowMultipleCompletions?: boolean; // true = same member can claim again after Approved; default false
-  projectGroupId?: string;          // set when assignment belongs to a standalone project group
-  cycleId?: string;
-  templateId?: string;             // template used to create this assignment
-  // Deadline system: 'hard' = admin-set date in deadlines[]; 'offset' = days after member claims
-  deadlineType?: "hard" | "offset"; // default 'hard'
-  deadlineOffsetDays?: number | null; // null clears the offset when switching to hard/recurring
-  // Recurring check-in support (credits awarded per approved check-in)
-  recurringEnabled?: boolean;
-  checkinIntervalDays?: number | null; // null clears when switching away from recurring
-  maxDurationDays?: number | null;     // null clears when switching away from recurring
-  // Finance-specific
-  region?: string;
-  teamLabel?: string;
-  seedKey?: string;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-  primaryTrack?: CycleTrack;
-  visibleTracks?: CycleTrack[];
-  deadline?: string;
-}
-
-// ── Project groups (standalone non-business project containers) ───────────────
-// Businesses already serve as their own group via business_id on assignments.
-// ProjectGroup covers internal work, cohorts, or multi-business initiatives that
-// don't map to a single client record.
-
-export interface ProjectGroup {
-  id: string;
-  name: string;
-  description: string;
-  color: "green" | "blue" | "amber" | "purple" | "gray";
-  status: "Ongoing" | "Upcoming" | "Completed";
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type AssignmentClaimStatus =
-  | "claimed"
-  | "In Progress"
-  | "Submitted"
-  | "Approved"
-  | "rejected";
-
-export interface AssignmentClaim {
-  id: string;
-  assignmentId: string;
-  memberId: string;
-  memberName: string;              // denormalized for display
-  cycleId: string;
-  status: AssignmentClaimStatus;
-  deliverableUrl?: string | null;
-  submissionNotes?: string | null;
-  claimedAt: string;
-  submittedAt?: string | null;
-  approvedAt?: string;
-  rejectedAt?: string;
-  rejectReason?: string;
-  // Awarded credits — for one-time claims: set at approval. For recurring: cumulative total.
-  creditsAwarded?: number;
-  approvedBy?: string;
-  // Offset deadline: calculated at claim time when assignment.deadlineType = 'offset'
-  dueDate?: string;               // ISO date string
-  // Recurring check-in tracking
-  checkinsApproved?: number;      // how many check-ins have been approved so far
-  totalCreditsEarned?: number;    // cumulative credits from all check-ins
-  nextCheckinDue?: string;        // ISO date string for next required check-in
-}
-
-// ── Member strikes + credit adjustments ───────────────────────────────────────
-// Strikes are point-bearing infractions issued against a member; thresholds on
-// the active cycle convert points → strike count (warning / demotion / reserve).
+// ── Member infractions ────────────────────────────────────────────────────────
+// Strikes are point-bearing infractions issued against a member. The live
+// threshold settings determine notice, warning and review standing.
 
 export interface MemberStrike {
   id: string;
   memberId: string;
   memberName: string;              // denormalized for display
-  cycleId: string;
   infractionId: string;            // catalog reference
   infractionName: string;          // denormalized in case the catalog row is retired
-  points: number;                  // 1 minor, 2 major, 3 severe — matches Infraction.points
+  points: number;                  // matches Infraction.points at time of issue
   issuedAt: string;
   issuedBy: string;
   note: string;
-  source: "manual" | "auto_pace";  // how it was issued (manual or by automation)
-}
-
-export interface MemberCreditAdjustment {
-  id: string;
-  memberId: string;
-  memberName: string;
-  cycleId: string;
-  points: number;                  // can be negative
-  reason: string;
-  createdAt: string;
-  createdBy: string;
+  // "attendance" is issued straight from the grid, where the absence happened.
+  source: "manual" | "attendance";
 }
 
 // ── Handbook pages ────────────────────────────────────────────────────────────
-// Admin-editable pages (credit/infraction policy etc.) shown to members.
+// Admin-editable policy pages shown to members.
 // Members must acknowledge each page on first login.
 
 export interface HandbookPage {
   id: string;
-  slug: string;         // e.g. "credit-infraction-policy"
+  slug: string;
   title: string;
   content: string;      // HTML (rich-text)
   updatedAt: string;
@@ -570,14 +365,6 @@ export interface MemberAcknowledgment {
   pageSlug: string;
   contentHash: string;  // SHA-256 of content at time of ack — stale when content changes
   acknowledgedAt: string;
-}
-
-export interface AssignmentUpdate {
-  id: string;
-  assignmentId: string;
-  message: string;
-  postedBy: string;   // email of the admin who posted
-  postedAt: string;
 }
 
 // ── Auth and invite types ─────────────────────────────────────────────────────
@@ -595,70 +382,26 @@ export interface UserProfile {
   createdAt: string;
 }
 
-// ── Calendar event type ───────────────────────────────────────────────────────
-
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  start: string;        // ISO datetime string
-  end: string;          // ISO datetime string
-  iCalUID?: string;
-  description?: string;
-  color?: string;       // hex color, e.g. "#F6B78D"
-  allDay?: boolean;
-  createdBy: string;    // uid
-  createdAt: number;    // Unix ms timestamp
-}
-
 // ── Interview scheduling types ────────────────────────────────────────────────
 
-export type InterviewStatus = "pending" | "booked" | "expired" | "cancelled";
+export type InterviewRecordStatus = "scheduled" | "completed" | "no_show" | "cancelled";
 
-export interface InterviewInvite {
-  id: string;             // the booking token
-  applicantName?: string; // only set for single-use invites
-  applicantEmail?: string;
-  role: string;
-  expiresAt: number;      // Unix ms timestamp
-  bookedSlotId?: string;  // only for single-use invites
-  status: InterviewStatus;
-  multiUse?: boolean;     // if true, link can be used by multiple applicants
-  createdBy: string;      // uid
-  createdAt: number;      // Unix ms timestamp
-  note?: string;
-}
-
-export interface InterviewSlot {
+export interface InterviewRecord {
   id: string;
-  datetime: string;       // ISO datetime (UTC)
+  applicantId?: string;
+  applicantName: string;
+  applicantEmail: string;
+  scheduledAt: string;
   durationMinutes: number;
-  available: boolean;
-  bookedBy?: string;      // booking token that reserved this slot
-  bookerName?: string;    // name entered by applicant at booking time
-  bookerEmail?: string;   // email entered by applicant at booking time
+  meetingLink: string;
   interviewerMemberIds: string[];
-  evaluationByUid?: Record<string, {
-    interviewerUid?: string;
-    interviewerEmail?: string;
-    interviewerName?: string;
-    interviewerRole?: string;
-    rating?: "Extremely Qualified" | "Qualified" | "Decent" | "Unqualified";
-    comments?: string;
-    updatedAt?: string;
-  }>;
-  recurringWeekly?: boolean;
-  recurringSeriesId?: string;
-  noShow?: boolean;
-  location?: string;
-  createdBy: string;      // uid
-  createdAt: number;      // Unix ms timestamp
-}
-
-export interface InterviewSettings {
-  zoomLink?: string;
-  zoomEnabled?: boolean;
-  updatedAt?: number;
-  updatedBy?: string;
+  status: InterviewRecordStatus;
+  notes: string;
+  confirmationSentAt?: string;
+  reminderSentAt?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type AuditAction = "create" | "update" | "delete" | "import" | "export";
@@ -678,40 +421,6 @@ export interface AuditLogEntry {
 // ── STATUS NORMALIZERS ────────────────────────────────────────────────────────
 // The DB may contain legacy lowercase values written before the types were
 // formalised. Normalise on read so all callers see canonical Title-Case values.
-
-function normalizeAssignmentStatus(raw: unknown): AssignmentStatus {
-  const v = String(raw ?? "").trim();
-  if (v === "Open") return "Open";
-  if (v === "Active") return "Active";
-  if (v === "Under Review") return "Under Review";
-  if (v === "Completed") return "Completed";
-  if (v === "Archived") return "Archived";
-  return "Open";
-}
-
-function normalizeClaimStatus(raw: unknown): AssignmentClaimStatus {
-  const v = String(raw ?? "").trim().toLowerCase().replace(/_/g, " ");
-  if (v === "in progress") return "In Progress";
-  if (v === "submitted") return "Submitted";
-  if (v === "approved") return "Approved";
-  if (v === "rejected") return "rejected";
-  return "claimed";
-}
-
-function assignmentFromRow(r: Record<string, unknown>): Assignment {
-  const a = fromRow<Assignment>(r);
-  a.status = normalizeAssignmentStatus(r.status);
-  // New table uses `track`; old catalog used `primary_track` — normalise both.
-  if (!a.track && a.primaryTrack) a.track = a.primaryTrack;
-  if (!a.track) a.track = "Tech";
-  return a;
-}
-
-function claimFromRow(r: Record<string, unknown>): AssignmentClaim {
-  const c = fromRow<AssignmentClaim>(r);
-  c.status = normalizeClaimStatus(r.status);
-  return c;
-}
 
 // ── INTERNAL HELPERS ──────────────────────────────────────────────────────────
 
@@ -737,7 +446,7 @@ async function writeAuditLog(
 ): Promise<void> {
   try {
     const actor = await getAuditActor();
-    await supabase.from("audit_logs").insert({
+    const { error } = await supabase.from("audit_logs").insert({
       id: genId(),
       timestamp: nowISO(),
       actor_uid: actor.actorUid,
@@ -748,6 +457,7 @@ async function writeAuditLog(
       record_id: entry.recordId ?? null,
       details: entry.details ?? null,
     });
+    if (error) throw new Error(error.message);
   } catch (err) {
     console.error("Audit log write failed:", err);
   }
@@ -790,12 +500,22 @@ function toRow(obj: Record<string, unknown>): Record<string, unknown> {
 // 1. Fetches the full table immediately and calls callback.
 // 2. Opens a Supabase postgres_changes channel; re-fetches on any row change.
 // 3. Returns an unsubscribe function that removes the channel.
+// A failed query used to be delivered as an empty array, so an outage rendered
+// as "0 projects" or "no members" — a wrong answer stated confidently. The
+// second callback argument carries load state; callers that ignore it behave
+// exactly as before, and the rows already on screen are kept rather than blanked.
+export type LoadState = { error: string | null };
+
+export type SubscribeCallback<T> = (items: T[], state: LoadState) => void;
+
+const OK: LoadState = { error: null };
+
 function makeSubscriber<T extends { id: string }>(
   table: string,
   transform?: (row: Record<string, unknown>) => T,
   options?: { excludeSoftDeleted?: boolean },
 ) {
-  return (callback: (items: T[]) => void): (() => void) => {
+  return (callback: SubscribeCallback<T>): (() => void) => {
     let current: T[] = [];
     const applyRow = (row: Record<string, unknown>): T =>
       transform ? transform(row) : fromRow<T>(row);
@@ -804,9 +524,9 @@ function makeSubscriber<T extends { id: string }>(
       let query = supabase.from(table).select("*");
       if (options?.excludeSoftDeleted) query = query.is("deleted_at", null);
       return query.then(({ data, error }) => {
-        if (error || !data) { callback([]); return; }
-        current = (data as Record<string, unknown>[]).map(applyRow);
-        callback(current);
+        if (error) { callback(current, { error: error.message }); return; }
+        current = ((data ?? []) as Record<string, unknown>[]).map(applyRow);
+        callback(current, OK);
       });
     };
 
@@ -830,7 +550,7 @@ function makeSubscriber<T extends { id: string }>(
         } else if (p.eventType === "DELETE") {
           current = current.filter((x) => x.id !== p.old.id);
         }
-        callback(current);
+        callback(current, OK);
       })
       .subscribe();
 
@@ -840,87 +560,25 @@ function makeSubscriber<T extends { id: string }>(
 
 // ── SPECIALISED ROW CONVERTERS ────────────────────────────────────────────────
 
-// InterviewSlot/InterviewInvite/CalendarEvent store createdAt as Unix ms in TS
-// but as timestamptz in Postgres — convert on read.
-function tsToMs(val: unknown): number {
-  if (typeof val === "number") return val;
-  if (typeof val === "string" && val) return new Date(val).getTime();
-  return 0;
-}
-// Convert Unix ms → ISO for write
-function msToIso(val: unknown): string | null {
-  if (typeof val === "number" && val > 0) return new Date(val).toISOString();
-  if (typeof val === "string" && val) return val;
-  return null;
-}
-
-function interviewSlotFromRow(row: Record<string, unknown>): InterviewSlot {
+function interviewRecordFromRow(row: Record<string, unknown>): InterviewRecord {
   return {
-    id:                    row.id as string,
-    datetime:              row.datetime as string ?? "",
-    durationMinutes:       row.duration_minutes as number,
-    available:             row.available as boolean ?? true,
-    bookedBy:              row.booked_by as string | undefined,
-    bookerName:            row.booker_name as string | undefined,
-    bookerEmail:           row.booker_email as string | undefined,
-    interviewerMemberIds:  (row.interviewer_member_ids as string[]) ?? [],
-    evaluationByUid:       row.evaluation_by_uid as InterviewSlot["evaluationByUid"],
-    recurringWeekly:       row.recurring_weekly as boolean | undefined,
-    recurringSeriesId:     row.recurring_series_id as string | undefined,
-    noShow:                row.no_show as boolean | undefined,
-    location:              row.location as string | undefined,
-    createdBy:             row.created_by as string ?? "",
-    createdAt:             tsToMs(row.created_at),
-  };
-}
-
-function interviewSlotToRow(data: Partial<InterviewSlot>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  if (data.datetime           !== undefined) out.datetime                = data.datetime || null;
-  if (data.durationMinutes    !== undefined) out.duration_minutes        = data.durationMinutes;
-  if (data.available          !== undefined) out.available               = data.available;
-  if (data.bookedBy           !== undefined) out.booked_by               = data.bookedBy || null;
-  if (data.bookerName         !== undefined) out.booker_name             = data.bookerName || null;
-  if (data.bookerEmail        !== undefined) out.booker_email            = data.bookerEmail || null;
-  if (data.interviewerMemberIds !== undefined) out.interviewer_member_ids = data.interviewerMemberIds;
-  if (data.evaluationByUid    !== undefined) out.evaluation_by_uid      = data.evaluationByUid;
-  if (data.recurringWeekly    !== undefined) out.recurring_weekly        = data.recurringWeekly;
-  if (data.recurringSeriesId  !== undefined) out.recurring_series_id     = data.recurringSeriesId;
-  if (data.noShow             !== undefined) out.no_show                 = data.noShow;
-  if (data.location           !== undefined) out.location                = data.location;
-  if (data.createdBy          !== undefined) out.created_by              = data.createdBy;
-  if (data.createdAt          !== undefined) out.created_at              = msToIso(data.createdAt);
-  return out;
-}
-
-function interviewInviteFromRow(row: Record<string, unknown>): InterviewInvite {
-  return {
-    id:             row.id as string,
-    applicantName:  row.applicant_name as string | undefined,
-    applicantEmail: row.applicant_email as string | undefined,
-    role:           row.role as string ?? "",
-    expiresAt:      tsToMs(row.expires_at),
-    bookedSlotId:   row.booked_slot_id as string | undefined,
-    status:         row.status as InterviewStatus ?? "pending",
-    multiUse:       row.multi_use as boolean | undefined,
-    createdBy:      row.created_by as string ?? "",
-    createdAt:      tsToMs(row.created_at),
-    note:           row.note as string | undefined,
-  };
-}
-
-function calendarEventFromRow(row: Record<string, unknown>): CalendarEvent {
-  return {
-    id:          row.id as string,
-    title:       row.title as string ?? "",
-    start:       row.start as string ?? "",
-    end:         row.end as string ?? "",
-    iCalUID:     row.i_cal_uid as string | undefined,
-    description: row.description as string | undefined,
-    color:       row.color as string | undefined,
-    allDay:      row.all_day as boolean | undefined,
-    createdBy:   row.created_by as string ?? "",
-    createdAt:   tsToMs(row.created_at),
+    id: String(row.id ?? ""),
+    applicantId: typeof row.applicant_id === "string" ? row.applicant_id : undefined,
+    applicantName: String(row.applicant_name ?? ""),
+    applicantEmail: String(row.applicant_email ?? ""),
+    scheduledAt: String(row.scheduled_at ?? ""),
+    durationMinutes: Number(row.duration_minutes ?? 30),
+    meetingLink: String(row.meeting_link ?? ""),
+    interviewerMemberIds: Array.isArray(row.interviewer_member_ids)
+      ? row.interviewer_member_ids.map(String)
+      : [],
+    status: String(row.status ?? "scheduled") as InterviewRecordStatus,
+    notes: String(row.notes ?? ""),
+    confirmationSentAt: typeof row.confirmation_sent_at === "string" ? row.confirmation_sent_at : undefined,
+    reminderSentAt: typeof row.reminder_sent_at === "string" ? row.reminder_sent_at : undefined,
+    createdBy: String(row.created_by ?? ""),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
   };
 }
 
@@ -941,47 +599,18 @@ function normalizeTimestamp(value: unknown, fallbackIso?: string): string {
   return fallbackIso ?? nowISO();
 }
 
-function normalizeApplicationStatus(
-  raw: string,
-  hasScheduledInterview: boolean,
-  hasCompletedInterview: boolean,
-  hasInviteSent: boolean,
-  hasPassedInterviewTime: boolean,
-): ApplicationStatus {
+function normalizeApplicationStatus(raw: string): ApplicationStatus {
   const key = raw.trim().toLowerCase();
-  // Accepted is always terminal
   if (key === "accepted") return "Accepted";
-  // Interview time passed or eval submitted → Completed
-  if (hasCompletedInterview || hasPassedInterviewTime) return "Interview Completed";
-  // Slot booked (datetime in future) → Scheduled
-  if (hasScheduledInterview) return "Interview Scheduled";
-  // Invite sent → Invited
-  if (hasInviteSent) return "Invited for Interview";
-  // Respect any stored explicit status (legacy records)
   if (key === "interview completed") return "Interview Completed";
   if (key === "interview scheduled") return "Interview Scheduled";
-  if (key === "invited for interview") return "Invited for Interview";
+  if (key === "not accepted" || key === "rejected") return "Not Accepted";
   return "New";
 }
 
 function normalizeApplicationRecord(id: string, row: Record<string, unknown>): ApplicationRecord {
   const createdAt = normalizeTimestamp(row.createdAt ?? row.Timestamp);
   const updatedAt = normalizeTimestamp(row.updatedAt, createdAt);
-  const interviewSlotId = readLegacyText(row, ["interviewSlotId"]);
-  const interviewScheduledAt = readLegacyText(row, ["interviewScheduledAt"]);
-  const hasScheduledInterview = !!(interviewSlotId || interviewScheduledAt);
-
-  const interviewEvaluations = (row.interviewEvaluations && typeof row.interviewEvaluations === "object")
-      ? (row.interviewEvaluations as ApplicationRecord["interviewEvaluations"])
-      : {};
-  const hasCompletedInterview = Object.keys(interviewEvaluations || {}).length > 0;
-
-  const interviewInviteSentAt = readLegacyText(row, ["interviewInviteSentAt"]);
-  const hasInviteSent = !!interviewInviteSentAt;
-
-  // If the interview slot datetime is in the past, mark as completed
-  const hasPassedInterviewTime = !!interviewScheduledAt && Date.parse(interviewScheduledAt) < Date.now();
-
   return {
     id,
     fullName: readLegacyText(row, ["fullName", "Full Name", "name"]),
@@ -1004,14 +633,8 @@ function normalizeApplicationRecord(id: string, row: Record<string, unknown>): A
     resumeUrl: readLegacyText(row, ["resumeUrl", "Resume URL"]),
     toolsSoftware: readLegacyText(row, ["toolsSoftware", "Tools/Software"]),
     accomplishment: readLegacyText(row, ["accomplishment", "Accomplishment"]),
-    status: normalizeApplicationStatus(readLegacyText(row, ["status"]), hasScheduledInterview, hasCompletedInterview, hasInviteSent, hasPassedInterviewTime),
+    status: normalizeApplicationStatus(readLegacyText(row, ["status"])),
     notes: readLegacyText(row, ["notes", "Notes"]),
-    interviewInviteToken: readLegacyText(row, ["interviewInviteToken"]),
-    interviewInviteSentAt: readLegacyText(row, ["interviewInviteSentAt"]),
-    interviewReminderSentAt: readLegacyText(row, ["interviewReminderSentAt"]),
-    interviewSlotId,
-    interviewScheduledAt,
-    interviewEvaluations,
     finalDecisionRole: readLegacyText(row, ["finalDecisionRole"]),
     source: (readLegacyText(row, ["source"]) as ApplicationRecord["source"]) || undefined,
     sourceTimestampRaw: readLegacyText(row, ["sourceTimestampRaw", "Timestamp"]),
@@ -1043,12 +666,6 @@ export const subscribeTeam =
 export const subscribeProjects =
   makeSubscriber<Project>("projects", (r) => fromRow<Project>(r));
 
-export const subscribeFinanceAssignments =
-  makeSubscriber<FinanceAssignment>("finance_assignments", (r) => fromRow<FinanceAssignment>(r));
-
-export const subscribeCycles =
-  makeSubscriber<Cycle>("cycles", (r) => fromRow<Cycle>(r));
-
 export const subscribeInfractions =
   makeSubscriber<Infraction>("infractions", (r) => fromRow<Infraction>(r));
 
@@ -1070,34 +687,18 @@ export const subscribeAutomationConfigs =
     updatedBy:    String(r.updated_by ?? ""),
   }));
 
-// Legacy subscriber retained for the old catalog page (will be removed once
-// the catalog page is fully migrated).
-export const subscribeAssignments =
-  makeSubscriber<Assignment>("assignments", assignmentFromRow, { excludeSoftDeleted: true });
-
-export const subscribeAssignmentClaims =
-  makeSubscriber<AssignmentClaim>("assignment_claims", claimFromRow);
-
-export const subscribeAssignmentTemplates =
-  makeSubscriber<AssignmentTemplate>("assignment_templates", (r) => fromRow<AssignmentTemplate>(r));
-
-export const subscribeProjectGroups =
-  makeSubscriber<ProjectGroup>("project_groups", (r) => fromRow<ProjectGroup>(r));
-
 export const subscribeMemberStrikes =
   makeSubscriber<MemberStrike>("member_strikes", (r) => fromRow<MemberStrike>(r));
-
-export const subscribeMemberCreditAdjustments =
-  makeSubscriber<MemberCreditAdjustment>("member_credit_adjustments", (r) => fromRow<MemberCreditAdjustment>(r));
 
 export const subscribeAuditLogs =
   makeSubscriber<AuditLogEntry>("audit_logs", (r) => fromRow<AuditLogEntry>(r));
 
-export function subscribeApplications(callback: (items: ApplicationRecord[]) => void): (() => void) {
+export function subscribeApplications(callback: SubscribeCallback<ApplicationRecord>): (() => void) {
   const fetchAll = () =>
     supabase.from("applications").select("*").then(({ data, error }) => {
-      if (error || !data) { callback([]); return; }
-      callback((data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r))));
+      if (error) { callback([], { error: error.message }); return; }
+      callback(((data ?? []) as Record<string, unknown>[])
+        .map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r))), OK);
     });
 
   void fetchAll();
@@ -1137,7 +738,8 @@ export async function addBIDTimelineEntry(
   bidId: string,
   entry: { date: string; action: string; createdAt: string }
 ): Promise<void> {
-  const { data: row } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  const { data: row, error: timelineReadError } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  if (timelineReadError) throw new Error(timelineReadError.message);
   const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
   const entryId = genId();
   timeline[entryId] = entry;
@@ -1147,7 +749,8 @@ export async function addBIDTimelineEntry(
 }
 
 export async function deleteBIDTimelineEntry(bidId: string, entryId: string): Promise<void> {
-  const { data: row } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  const { data: row, error: timelineReadError } = await supabase.from("bids").select("timeline").eq("id", bidId).single();
+  if (timelineReadError) throw new Error(timelineReadError.message);
   const timeline = ((row as Record<string, unknown> | null)?.timeline ?? {}) as Record<string, unknown>;
   delete timeline[entryId];
   const { error: timelineDeleteError } = await supabase.from("bids").update({ timeline }).eq("id", bidId);
@@ -1196,21 +799,22 @@ export async function updateBusiness(id: string, data: Partial<Business>): Promi
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        if (token) {
-          const res = await fetch("/api/members/upload-business-image", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ businessId: id, dataUrl: showcaseImageData }),
-          });
-          if (res.ok) {
-            const { path, url } = await res.json() as { path: string; url: string };
-            (rest as Partial<Business> & Record<string, unknown>).showcaseImagePath = path;
-            (rest as Partial<Business>).showcaseImageUrl = url;
-            (rest as Partial<Business>).showcaseImageSet = true;
-          }
+        if (!token) throw new Error("Your session expired. Sign in again before uploading a card photo.");
+        const res = await fetch("/api/members/upload-business-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ businessId: id, dataUrl: showcaseImageData }),
+        });
+        if (!res.ok) {
+          const detail = await res.text();
+          throw new Error(detail || "The card photo could not be uploaded.");
         }
+        const { path, url } = await res.json() as { path: string; url: string };
+        (rest as Partial<Business> & Record<string, unknown>).showcaseImagePath = path;
+        (rest as Partial<Business>).showcaseImageUrl = url;
+        (rest as Partial<Business>).showcaseImageSet = true;
       } catch (err) {
-        console.error("Business image upload failed:", err);
+        throw new Error(err instanceof Error ? err.message : "The card photo could not be uploaded.");
       }
     } else {
       (rest as Partial<Business>).showcaseImageSet = false;
@@ -1222,6 +826,20 @@ export async function updateBusiness(id: string, data: Partial<Business>): Promi
   const { error: bizUpdateError } = await supabase.from("businesses").update(toRow({ ...rest, updatedAt: nowISO() })).eq("id", id);
   if (bizUpdateError) throw new Error(bizUpdateError.message);
   await writeAuditLog({ action: "update", collection: "businesses", recordId: id, details: { fields: Object.keys(data) } });
+}
+
+export async function revalidatePublicPages(): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return false;
+    const response = await fetch("/api/members/admin/revalidate", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export async function deleteBusiness(id: string): Promise<void> {
@@ -1251,7 +869,7 @@ export async function hardDeleteBusiness(id: string): Promise<void> {
 
 export async function createTeamMember(data: Omit<TeamMember, "id" | "createdAt">): Promise<void> {
   const id = genId();
-  const row = toRow({ ...data, id, pod: normalizeTeamPod(data.pod), createdAt: nowISO() });
+  const row = toRow({ ...data, id, createdAt: nowISO(), updatedAt: nowISO() });
   const { error: teamInsertError } = await supabase.from("team").insert(row);
   if (teamInsertError) throw new Error(teamInsertError.message);
   await writeAuditLog({ action: "create", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
@@ -1280,13 +898,40 @@ export async function updateApplicationRecord(
 }
 
 export async function updateTeamMember(id: string, data: Partial<TeamMember>): Promise<void> {
-  const patch = { ...data };
-  if (Object.prototype.hasOwnProperty.call(patch, "pod")) {
-    patch.pod = normalizeTeamPod(patch.pod);
-  }
-  const { error: teamUpdateError } = await supabase.from("team").update(toRow(patch as Record<string, unknown>)).eq("id", id);
+  const { error: teamUpdateError } = await supabase.from("team")
+    .update(toRow({ ...data, updatedAt: nowISO() } as Record<string, unknown>)).eq("id", id);
   if (teamUpdateError) throw new Error(teamUpdateError.message);
   await writeAuditLog({ action: "update", collection: "team", recordId: id, details: { fields: Object.keys(data) } });
+}
+
+// Removal is a soft delete, so a mistake is recoverable — but nothing surfaced
+// the removed rows, which made it recoverable only from the database.
+// An accepted application is history about a member, so it belongs on their
+// record rather than in a separate tab you have to go and find.
+export async function fetchApplicationForMember(memberId: string): Promise<ApplicationRecord | null> {
+  const { data, error } = await supabase.from("applications").select("*")
+    .eq("member_id", memberId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error) throw new Error(error.message);
+  const row = (data ?? [])[0] as Record<string, unknown> | undefined;
+  return row ? fromRow<ApplicationRecord>(row) : null;
+}
+
+export async function fetchDeletedTeamMembers(): Promise<TeamMember[]> {
+  const { data, error } = await supabase.from("team").select("*")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false })
+    .limit(50);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<TeamMember>(r));
+}
+
+export async function restoreTeamMember(id: string): Promise<void> {
+  const { error } = await supabase.from("team")
+    .update({ deleted_at: null, updated_at: nowISO() }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "team", recordId: id, details: { restored: true } });
 }
 
 export async function deleteTeamMember(id: string): Promise<void> {
@@ -1322,41 +967,16 @@ export async function deleteProject(id: string): Promise<void> {
 
 // ── Finance Assignments ──────────────────────────────────────────────────────
 
-export async function createFinanceAssignment(
-  data: Omit<FinanceAssignment, "id" | "createdAt" | "updatedAt">
-): Promise<void> {
-  const id = genId();
-  const now = nowISO();
-  const { error: financeInsertError } = await supabase.from("finance_assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (financeInsertError) throw new Error(financeInsertError.message);
-  await writeAuditLog({ action: "create", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function updateFinanceAssignment(
-  id: string,
-  data: Partial<FinanceAssignment>
-): Promise<void> {
-  const { error: financeUpdateError } = await supabase.from("finance_assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (financeUpdateError) throw new Error(financeUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "financeAssignments", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteFinanceAssignment(id: string): Promise<void> {
-  const { error: financeDeleteError } = await supabase.from("finance_assignments").delete().eq("id", id);
-  if (financeDeleteError) throw new Error(financeDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "financeAssignments", recordId: id });
-}
-
 // ── UserProfiles (admin only) ─────────────────────────────────────────────────
 
-export function subscribeUserProfiles(callback: (items: UserProfile[]) => void): (() => void) {
+export function subscribeUserProfiles(callback: SubscribeCallback<UserProfile>): (() => void) {
   const fetchAll = () =>
     supabase.from("user_profiles").select("*").then(({ data, error }) => {
-      if (error || !data) { callback([]); return; }
-      callback((data as Record<string, unknown>[]).map((r) => ({
+      if (error) { callback([], { error: error.message }); return; }
+      callback(((data ?? []) as Record<string, unknown>[]).map((r) => ({
         ...fromRow<UserProfile>(r),
         authRole: normalizeAuthRoleValue((r.auth_role)),
-      })));
+      })), OK);
     });
 
   void fetchAll();
@@ -1376,7 +996,8 @@ export async function updateUserProfile(uid: string, data: Partial<UserProfile>)
 }
 
 export async function setUserProfileRecord(uid: string, data: Omit<UserProfile, "id">): Promise<void> {
-  const { data: existing } = await supabase.from("user_profiles").select("*").eq("id", uid).maybeSingle();
+  const { data: existing, error: existingError } = await supabase.from("user_profiles").select("*").eq("id", uid).maybeSingle();
+  if (existingError) throw new Error(existingError.message);
   const before = existing ? fromRow<Omit<UserProfile, "id">>(existing as Record<string, unknown>) : null;
   const merged = before ? { ...before, ...data } : data;
   merged.authRole = normalizeAuthRoleValue(merged.authRole);
@@ -1385,38 +1006,9 @@ export async function setUserProfileRecord(uid: string, data: Omit<UserProfile, 
   await writeAuditLog({ action: before ? "update" : "create", collection: "userProfiles", recordId: uid, details: { fields: Object.keys(merged) } });
 }
 
-export async function deleteUserProfile(uid: string): Promise<void> {
-  const { error: profileDeleteError } = await supabase.from("user_profiles").delete().eq("id", uid);
-  if (profileDeleteError) throw new Error(profileDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "userProfiles", recordId: uid });
-}
-
-// Deletes a portal account via a protected admin API route.
-// Requires the current user to be signed in as admin.
-export async function deletePortalUserAccount(uid: string): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error("not_authenticated");
-
-  const token = session.access_token;
-  const res = await fetch(`/api/members/admin/users/${encodeURIComponent(uid)}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) {
-    let error = "delete_failed";
-    try {
-      const data = await res.json() as { error?: string };
-      if (data.error) error = data.error;
-    } catch {
-      // ignore json parse error
-    }
-    throw new Error(error);
-  }
-}
-
 export async function getUserProfilesList(): Promise<UserProfile[]> {
-  const { data } = await supabase.from("user_profiles").select("*");
+  const { data, error } = await supabase.from("user_profiles").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => ({
     ...fromRow<UserProfile>(r as Record<string, unknown>),
     authRole: normalizeAuthRoleValue((r as Record<string, unknown>).auth_role),
@@ -1424,74 +1016,72 @@ export async function getUserProfilesList(): Promise<UserProfile[]> {
 }
 
 export async function getTeamMembersList(): Promise<TeamMember[]> {
-  const { data } = await supabase.from("team").select("*").is("deleted_at", null);
+  const { data, error } = await supabase.from("team").select("*").is("deleted_at", null);
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<TeamMember>(r as Record<string, unknown>));
 }
 
 export async function getAuditLogsList(limit = 200): Promise<AuditLogEntry[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("audit_logs")
     .select("*")
     .order("timestamp", { ascending: false })
     .limit(limit);
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<AuditLogEntry>(r as Record<string, unknown>));
 }
 
 // Returns the public showcase image URL for a business, or null if none set.
 export async function getBusinessImage(id: string): Promise<string | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("businesses")
     .select("showcase_image_url")
     .eq("id", id)
     .maybeSingle();
+  if (error) throw new Error(error.message);
   return (data as Record<string, unknown> | null)?.showcase_image_url as string | null ?? null;
 }
 
 // ── ONE-SHOT GET VARIANTS ─────────────────────────────────────────────────────
 
 export async function getBusinessesList(): Promise<Business[]> {
-  const { data } = await supabase.from("businesses").select("*").is("deleted_at", null);
+  const { data, error } = await supabase.from("businesses").select("*").is("deleted_at", null);
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<Business>(r as Record<string, unknown>));
 }
 
 export async function getBIDsList(): Promise<BID[]> {
-  const { data } = await supabase.from("bids").select("*");
+  const { data, error } = await supabase.from("bids").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<BID>(r as Record<string, unknown>));
 }
 
 export async function getProjectsList(): Promise<Project[]> {
-  const { data } = await supabase.from("projects").select("*");
+  const { data, error } = await supabase.from("projects").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<Project>(r as Record<string, unknown>));
 }
 
-export async function getFinanceAssignmentsList(): Promise<FinanceAssignment[]> {
-  const { data } = await supabase.from("finance_assignments").select("*");
-  return (data ?? []).map((r) => fromRow<FinanceAssignment>(r as Record<string, unknown>));
-}
-
-export async function getCyclesList(): Promise<Cycle[]> {
-  const { data } = await supabase.from("cycles").select("*");
-  return (data ?? []).map((r) => fromRow<Cycle>(r as Record<string, unknown>));
-}
-
 export async function getInfractionsList(): Promise<Infraction[]> {
-  const { data } = await supabase.from("infractions").select("*");
+  const { data, error } = await supabase.from("infractions").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<Infraction>(r as Record<string, unknown>));
 }
 
 // Get distinct school names from applications for autocomplete
 export async function getApplicationSchoolNames(): Promise<string[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("applications")
-    .select("schoolName")
-    .not("schoolName", "is", "");
+    .select("school_name")
+    .not("school_name", "is", "");
+  if (error) throw new Error(error.message);
 
   if (!data?.length) return [];
 
   // Extract distinct school names
   const schoolNames = [...new Set(
     data
-      .map((r: { schoolName?: string | null }) => r.schoolName?.trim())
+      .map((r: { school_name?: string | null }) => r.school_name?.trim())
       .filter((name): name is string => name !== null && name !== undefined && name !== "")
   )];
 
@@ -1500,11 +1090,12 @@ export async function getApplicationSchoolNames(): Promise<string[]> {
 
 // Get distinct school names from team directory for autocomplete
 export async function getTeamSchoolNames(): Promise<string[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("team")
     .select("school")
     .not("school", "is", null)
     .neq("school", "");
+  if (error) throw new Error(error.message);
 
   if (!data?.length) return [];
 
@@ -1516,7 +1107,8 @@ export async function getTeamSchoolNames(): Promise<string[]> {
 }
 
 export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
-  const { data } = await supabase.from("email_templates").select("*");
+  const { data, error } = await supabase.from("email_templates").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => ({
     ...fromRow<EmailTemplate>(r as Record<string, unknown>),
     availableVariables: ((r as Record<string, unknown>).available_variables as string[]) ?? [],
@@ -1525,234 +1117,23 @@ export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
 
 // getAssignmentsList is defined above in the unified assignments section.
 
-export async function getAssignmentClaimsList(): Promise<AssignmentClaim[]> {
-  const { data } = await supabase.from("assignment_claims").select("*");
-  return (data ?? []).map((r) => claimFromRow(r as Record<string, unknown>));
-}
-
 export async function getMemberStrikesList(): Promise<MemberStrike[]> {
-  const { data } = await supabase.from("member_strikes").select("*");
+  const { data, error } = await supabase.from("member_strikes").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<MemberStrike>(r as Record<string, unknown>));
 }
 
-export async function getMemberCreditAdjustmentsList(): Promise<MemberCreditAdjustment[]> {
-  const { data } = await supabase.from("member_credit_adjustments").select("*");
-  return (data ?? []).map((r) => fromRow<MemberCreditAdjustment>(r as Record<string, unknown>));
-}
-
 export async function getApplicationsList(): Promise<ApplicationRecord[]> {
-  const { data } = await supabase.from("applications").select("*");
+  const { data, error } = await supabase.from("applications").select("*");
+  if (error) throw new Error(error.message);
   if (!data?.length) return [];
   return (data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r)));
 }
 
-export async function getCalendarEventsList(): Promise<CalendarEvent[]> {
-  const { data } = await supabase.from("calendar_events").select("*");
-  return (data ?? []).map((r) => calendarEventFromRow(r as Record<string, unknown>));
-}
+// ── Direct interview records (August 2026 cutover) ──────────────────────────
 
-// ── CalendarEvents ────────────────────────────────────────────────────────────
-
-export const subscribeCalendarEvents =
-  makeSubscriber<CalendarEvent>("calendar_events", calendarEventFromRow);
-
-export async function createCalendarEvent(data: Omit<CalendarEvent, "id">): Promise<void> {
-  const id = genId();
-  await supabase.from("calendar_events").insert({
-    id,
-    title: data.title,
-    start: data.start || null,
-    end: data.end || null,
-    i_cal_uid: data.iCalUID ?? null,
-    description: data.description ?? null,
-    color: data.color ?? null,
-    all_day: data.allDay ?? false,
-    created_by: data.createdBy,
-    created_at: msToIso(data.createdAt),
-  });
-  await writeAuditLog({ action: "create", collection: "calendarEvents", recordId: id, details: { title: data.title } });
-}
-
-export async function updateCalendarEvent(id: string, data: Partial<CalendarEvent>): Promise<void> {
-  const row: Record<string, unknown> = {};
-  if (data.title       !== undefined) row.title       = data.title;
-  if (data.start       !== undefined) row.start       = data.start || null;
-  if (data.end         !== undefined) row.end         = data.end || null;
-  if (data.iCalUID     !== undefined) row.i_cal_uid   = data.iCalUID;
-  if (data.description !== undefined) row.description = data.description;
-  if (data.color       !== undefined) row.color       = data.color;
-  if (data.allDay      !== undefined) row.all_day     = data.allDay;
-  await supabase.from("calendar_events").update(row).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "calendarEvents", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteCalendarEvent(id: string): Promise<void> {
-  await supabase.from("calendar_events").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "calendarEvents", recordId: id });
-}
-
-// ── InterviewInvites ──────────────────────────────────────────────────────────
-
-export const subscribeInterviewInvites =
-  makeSubscriber<InterviewInvite>("interview_invites", interviewInviteFromRow);
-
-export async function createInterviewInvite(token: string, data: Omit<InterviewInvite, "id">): Promise<void> {
-  await supabase.from("interview_invites").upsert({
-    id: token,
-    applicant_name:  data.applicantName ?? null,
-    applicant_email: data.applicantEmail ?? null,
-    role:            data.role,
-    expires_at:      msToIso(data.expiresAt),
-    booked_slot_id:  data.bookedSlotId ?? null,
-    status:          data.status,
-    multi_use:       data.multiUse ?? false,
-    created_by:      data.createdBy,
-    created_at:      msToIso(data.createdAt),
-    note:            data.note ?? null,
-  }, { onConflict: "id" });
-  await writeAuditLog({ action: "create", collection: "interviewInvites", recordId: token, details: { role: data.role, expiresAt: data.expiresAt, multiUse: !!data.multiUse } });
-}
-
-export async function updateInterviewInvite(token: string, data: Partial<InterviewInvite>): Promise<void> {
-  const row: Record<string, unknown> = {};
-  if (data.applicantName  !== undefined) row.applicant_name  = data.applicantName;
-  if (data.applicantEmail !== undefined) row.applicant_email = data.applicantEmail;
-  if (data.role           !== undefined) row.role            = data.role;
-  if (data.expiresAt      !== undefined) row.expires_at      = msToIso(data.expiresAt);
-  if (data.bookedSlotId   !== undefined) row.booked_slot_id  = data.bookedSlotId;
-  if (data.status         !== undefined) row.status          = data.status;
-  if (data.multiUse       !== undefined) row.multi_use       = data.multiUse;
-  if (data.note           !== undefined) row.note            = data.note;
-  await supabase.from("interview_invites").update(row).eq("id", token);
-  await writeAuditLog({ action: "update", collection: "interviewInvites", recordId: token, details: { fields: Object.keys(data) } });
-}
-
-export async function getInterviewInvite(token: string): Promise<InterviewInvite | null> {
-  const { data } = await supabase.from("interview_invites").select("*").eq("id", token).maybeSingle();
-  if (!data) return null;
-  return interviewInviteFromRow(data as Record<string, unknown>);
-}
-
-// ── InterviewSlots ────────────────────────────────────────────────────────────
-
-export const subscribeInterviewSlots =
-  makeSubscriber<InterviewSlot>("interview_slots", interviewSlotFromRow);
-
-export async function createInterviewSlot(data: Omit<InterviewSlot, "id">): Promise<void> {
-  const id = genId();
-  await supabase.from("interview_slots").insert({ ...interviewSlotToRow(data), id });
-  await writeAuditLog({ action: "create", collection: "interviewSlots", recordId: id, details: { datetime: data.datetime, durationMinutes: data.durationMinutes } });
-}
-
-export async function updateInterviewSlot(id: string, data: Partial<InterviewSlot>): Promise<void> {
-  await supabase.from("interview_slots").update(interviewSlotToRow(data)).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "interviewSlots", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteBookedInterview(slotId: string): Promise<void> {
-  const { data: slotRow } = await supabase.from("interview_slots").select("*").eq("id", slotId).maybeSingle();
-  if (!slotRow) return;
-
-  const slot = interviewSlotFromRow(slotRow as Record<string, unknown>);
-
-  await supabase.from("interview_slots").update({
-    available:        true,
-    booked_by:        null,
-    booker_name:      null,
-    booker_email:     null,
-    reminder_sent_at: null,
-  }).eq("id", slotId);
-
-  const bookedEmail = String(slot.bookerEmail ?? "").trim().toLowerCase();
-  const bookedName  = String(slot.bookerName  ?? "").trim().toLowerCase();
-  const bookedBy    = String(slot.bookedBy    ?? "").trim();
-
-  if (bookedEmail) {
-    const now = nowISO();
-    const terminal = new Set(["accepted", "not accepted", "rejected"]);
-
-    const { data: apps } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("email", bookedEmail)
-      .limit(10);
-
-    const appEntries = (apps ?? []).map((r) => ({
-      id: String((r as Record<string, unknown>).id),
-      row: r as Record<string, unknown>,
-    }));
-
-    let target = appEntries.find(({ row }) => {
-      const token = String(row.interview_invite_token ?? "").trim();
-      return bookedBy && bookedBy !== "public-booking" && token === bookedBy;
-    });
-    if (!target) target = appEntries.find(({ row }) => String(row.interview_slot_id ?? "").trim() === slotId);
-    if (!target) {
-      const sorted = [...appEntries].sort((a, b) => {
-        const aT = Date.parse(String(a.row.updated_at ?? a.row.created_at ?? ""));
-        const bT = Date.parse(String(b.row.updated_at ?? b.row.created_at ?? ""));
-        return (Number.isNaN(bT) ? 0 : bT) - (Number.isNaN(aT) ? 0 : aT);
-      });
-      target = sorted.find(({ row }) => String(row.full_name ?? "").trim().toLowerCase() === bookedName) ?? sorted[0];
-    }
-
-    if (target) {
-      const currentStatus = String(target.row.status ?? "").trim().toLowerCase();
-      const patch: Record<string, unknown> = { interview_slot_id: null, interview_scheduled_at: null, updated_at: now };
-      if (!target.row.status_manual_override && !terminal.has(currentStatus)) {
-        patch.status = "Invited for Interview";
-      }
-      await supabase.from("applications").update(patch).eq("id", target.id);
-    }
-  }
-
-  await writeAuditLog({ action: "delete", collection: "interviewBookings", recordId: slotId, details: { datetime: slot.datetime, previousBookedBy: slot.bookedBy, previousBookerName: slot.bookerName, previousBookerEmail: slot.bookerEmail } });
-}
-
-export async function deleteInterviewSlot(id: string): Promise<void> {
-  await supabase.from("interview_slots").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "interviewSlots", recordId: id });
-}
-
-export async function getInterviewSlots(): Promise<InterviewSlot[]> {
-  const { data } = await supabase.from("interview_slots").select("*");
-  return (data ?? []).map((r) => interviewSlotFromRow(r as Record<string, unknown>));
-}
-
-// ── Interview Settings ───────────────────────────────────────────────────────
-
-export function subscribeInterviewSettings(callback: (settings: InterviewSettings | null) => void): (() => void) {
-  const fetchSettings = () =>
-    supabase.from("interview_settings").select("*").eq("id", "singleton").maybeSingle().then(({ data }) => {
-      if (!data) { callback(null); return; }
-      const r = data as Record<string, unknown>;
-      callback({
-        zoomLink:    r.zoom_link as string | undefined,
-        zoomEnabled: r.zoom_enabled as boolean | undefined,
-        updatedAt:   tsToMs(r.updated_at) || undefined,
-        updatedBy:   r.updated_by as string | undefined,
-      });
-    });
-
-  void fetchSettings();
-
-  const channel = supabase
-    .channel(`realtime-interview_settings-${Math.random().toString(36).slice(2)}`)
-    .on("postgres_changes", { event: "*", schema: "public", table: "interview_settings" }, () => void fetchSettings())
-    .subscribe();
-
-  return () => { void supabase.removeChannel(channel); };
-}
-
-export async function updateInterviewSettings(data: Partial<InterviewSettings>): Promise<void> {
-  const row: Record<string, unknown> = {};
-  if (data.zoomLink    !== undefined) row.zoom_link    = data.zoomLink;
-  if (data.zoomEnabled !== undefined) row.zoom_enabled = data.zoomEnabled;
-  if (data.updatedAt   !== undefined) row.updated_at   = msToIso(data.updatedAt);
-  if (data.updatedBy   !== undefined) row.updated_by   = data.updatedBy;
-  await supabase.from("interview_settings").update(row).eq("id", "singleton");
-  await writeAuditLog({ action: "update", collection: "interviewSettings", recordId: "singleton", details: { fields: Object.keys(data) } });
-}
+export const subscribeInterviews =
+  makeSubscriber<InterviewRecord>("interviews", interviewRecordFromRow);
 
 // ── Site Settings ─────────────────────────────────────────────────────────────
 
@@ -1771,9 +1152,6 @@ export type PortalPermissions = Record<PortalRole, Record<PortalPermissionKey, b
 export interface SiteSettings {
   applicationsPaused:       boolean;
   applicationsPausedMsg:    string;
-  services:                 string[];
-  /** Chapter options on the public application form. Order is shown as-is. */
-  chapters:                 string[];
   publicBannerEnabled:      boolean;
   publicBannerMessage:      string;
   publicBannerBg:           string;
@@ -1783,6 +1161,7 @@ export interface SiteSettings {
   portalBannerBg:           string;
   portalBannerText:         string;
   permissions:              PortalPermissions;
+  infractionThresholds:     { notice: number; warning: number; review: number };
   handbookAckRequiredAt:    string | null;
   publicStatOverrides:      Record<string, string>;
 }
@@ -1797,8 +1176,6 @@ const DEFAULT_PERMISSIONS: PortalPermissions = {
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   applicationsPaused:    false,
   applicationsPausedMsg: "Applications are currently paused. Check back soon.",
-  services:              ["Website", "SEO", "Social Media", "Graphic Design", "Grants"],
-  chapters:              ["New York", "Boston", "Chicago", "California", "Michigan"],
   publicBannerEnabled:   false,
   publicBannerMessage:   "",
   publicBannerBg:        "#1a1a2e",
@@ -1808,6 +1185,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   portalBannerBg:        "#F6B78D",
   portalBannerText:      "#0D0D0D",
   permissions:           DEFAULT_PERMISSIONS,
+  infractionThresholds:  { notice: 3, warning: 6, review: 10 },
   handbookAckRequiredAt: null,
   publicStatOverrides:    {},
 };
@@ -1832,8 +1210,6 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
   return {
     applicationsPaused:    Boolean(r.applications_paused ?? false),
     applicationsPausedMsg: String(r.applications_paused_msg ?? DEFAULT_SITE_SETTINGS.applicationsPausedMsg),
-    services:              Array.isArray(r.services) ? (r.services as string[]) : DEFAULT_SITE_SETTINGS.services,
-    chapters:              Array.isArray(r.chapters) && r.chapters.length > 0 ? (r.chapters as string[]) : DEFAULT_SITE_SETTINGS.chapters,
     publicBannerEnabled:   Boolean(r.public_banner_enabled ?? false),
     publicBannerMessage:   String(r.public_banner_message ?? ""),
     publicBannerBg:        String(r.public_banner_bg ?? DEFAULT_SITE_SETTINGS.publicBannerBg),
@@ -1843,6 +1219,7 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
     portalBannerBg:        String(r.portal_banner_bg ?? DEFAULT_SITE_SETTINGS.portalBannerBg),
     portalBannerText:      String(r.portal_banner_text ?? DEFAULT_SITE_SETTINGS.portalBannerText),
     permissions:           parsePermissions(r.permissions),
+    infractionThresholds:  parseThresholds(r.infraction_thresholds),
     handbookAckRequiredAt: r.handbook_ack_required_at ? String(r.handbook_ack_required_at) : null,
     publicStatOverrides: typeof r.public_stat_overrides === "object" && r.public_stat_overrides !== null && !Array.isArray(r.public_stat_overrides)
       ? Object.fromEntries(Object.entries(r.public_stat_overrides as Record<string, unknown>).map(([key, value]) => [key, String(value ?? "")]))
@@ -1864,8 +1241,18 @@ export function subscribeSiteSettings(callback: (s: SiteSettings) => void): () =
   return () => { void supabase.removeChannel(channel); };
 }
 
+function parseThresholds(value: unknown): { notice: number; warning: number; review: number } {
+  const fallback = { notice: 3, warning: 6, review: 10 };
+  if (!value || typeof value !== "object") return fallback;
+  const raw = value as Record<string, unknown>;
+  const num = (key: keyof typeof fallback) =>
+    typeof raw[key] === "number" && Number.isFinite(raw[key]) ? (raw[key] as number) : fallback[key];
+  return { notice: num("notice"), warning: num("warning"), review: num("review") };
+}
+
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const { data } = await supabase.from("site_settings").select("*").eq("id", "singleton").maybeSingle();
+  const { data, error } = await supabase.from("site_settings").select("*").eq("id", "singleton").maybeSingle();
+  if (error) throw new Error(error.message);
   return data ? siteSettingsFromRow(data as Record<string, unknown>) : DEFAULT_SITE_SETTINGS;
 }
 
@@ -1873,8 +1260,6 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   const row: Record<string, unknown> = { updated_at: nowISO() };
   if (patch.applicationsPaused    !== undefined) row.applications_paused     = patch.applicationsPaused;
   if (patch.applicationsPausedMsg !== undefined) row.applications_paused_msg = patch.applicationsPausedMsg;
-  if (patch.services              !== undefined) row.services                = patch.services;
-  if (patch.chapters              !== undefined) row.chapters                = patch.chapters;
   if (patch.publicBannerEnabled   !== undefined) row.public_banner_enabled   = patch.publicBannerEnabled;
   if (patch.publicBannerMessage   !== undefined) row.public_banner_message   = patch.publicBannerMessage;
   if (patch.publicBannerBg        !== undefined) row.public_banner_bg        = patch.publicBannerBg;
@@ -1884,6 +1269,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.portalBannerBg        !== undefined) row.portal_banner_bg        = patch.portalBannerBg;
   if (patch.portalBannerText      !== undefined) row.portal_banner_text      = patch.portalBannerText;
   if (patch.permissions           !== undefined) row.permissions             = patch.permissions;
+  if (patch.infractionThresholds  !== undefined) row.infraction_thresholds   = patch.infractionThresholds;
   if (patch.handbookAckRequiredAt !== undefined) row.handbook_ack_required_at = patch.handbookAckRequiredAt;
   if (patch.publicStatOverrides      !== undefined) row.public_stat_overrides      = patch.publicStatOverrides;
   const { data, error } = await supabase.from("site_settings").update(row).eq("id", "singleton").select("id").maybeSingle();
@@ -1894,50 +1280,27 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
 
 // ── Cycles ────────────────────────────────────────────────────────────────────
 
-export async function createCycle(data: Omit<Cycle, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
-  const id = genId();
-  const now = nowISO();
-  await supabase.from("cycles").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  await writeAuditLog({ action: "create", collection: "cycles", recordId: id, details: { fields: Object.keys(data) } });
-  return id;
-}
-
-export async function updateCycle(id: string, data: Partial<Cycle>): Promise<void> {
-  await supabase.from("cycles").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  await writeAuditLog({ action: "update", collection: "cycles", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteCycle(id: string): Promise<void> {
-  await supabase.from("cycles").delete().eq("id", id);
-  await writeAuditLog({ action: "delete", collection: "cycles", recordId: id });
-}
-
-export async function activateCycleExclusive(id: string, allCycleIds: string[]): Promise<void> {
-  const now = nowISO();
-  await supabase.from("cycles").update({ active: true,  updated_at: now }).eq("id", id);
-  const others = allCycleIds.filter((c) => c !== id);
-  if (others.length) {
-    await supabase.from("cycles").update({ active: false, updated_at: now }).in("id", others);
-  }
-  await writeAuditLog({ action: "update", collection: "cycles", recordId: id, details: { activated: true, deactivated: others } });
-}
-
 // ── Infractions ───────────────────────────────────────────────────────────────
 
 export async function createInfraction(data: Omit<Infraction, "id" | "createdAt" | "updatedAt">): Promise<void> {
   const id = genId();
   const now = nowISO();
-  await supabase.from("infractions").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  const { error } = await supabase.from("infractions").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (error) throw new Error(error.message);
   await writeAuditLog({ action: "create", collection: "infractions", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function updateInfraction(id: string, data: Partial<Infraction>): Promise<void> {
-  await supabase.from("infractions").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
+  const { data: updated, error } = await supabase.from("infractions").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id).select("id").maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!updated) throw new Error("The infraction type was not updated.");
   await writeAuditLog({ action: "update", collection: "infractions", recordId: id, details: { fields: Object.keys(data) } });
 }
 
 export async function deleteInfraction(id: string): Promise<void> {
-  await supabase.from("infractions").delete().eq("id", id);
+  const { data: deleted, error } = await supabase.from("infractions").delete().eq("id", id).select("id").maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!deleted) throw new Error("The infraction type was not deleted.");
   await writeAuditLog({ action: "delete", collection: "infractions", recordId: id });
 }
 
@@ -2004,176 +1367,6 @@ export async function updateAutomationConfig(automationId: string, patch: {
 
 // ── Assignments (new unified table) ──────────────────────────────────────────
 
-export async function createAssignment(data: Omit<Assignment, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
-  const id = genId();
-  const now = nowISO();
-  const { error: assignmentInsertError } = await supabase.from("assignments").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (assignmentInsertError) throw new Error(assignmentInsertError.message);
-  await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { title: data.title, track: data.track } });
-  return id;
-}
-
-export async function updateAssignment(id: string, data: Partial<Assignment>): Promise<void> {
-  const { error: assignmentUpdateError } = await supabase.from("assignments").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (assignmentUpdateError) throw new Error(assignmentUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function archiveAssignment(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("assignments")
-    .update({ status: "Archived", updated_at: nowISO() })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { fields: ["status"], note: "archived" } });
-}
-
-export async function hardDeleteAssignment(id: string): Promise<void> {
-  const { error } = await supabase.from("assignments").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
-}
-
-// Legacy soft-delete kept for existing callers; prefer archiveAssignment.
-export async function deleteAssignment(id: string): Promise<void> {
-  const { error: assignmentDeleteError } = await supabase
-    .from("assignments")
-    .update({ deleted_at: nowISO(), updated_at: nowISO() })
-    .eq("id", id);
-  if (assignmentDeleteError) throw new Error(assignmentDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
-}
-
-export async function getAssignmentsList(): Promise<Assignment[]> {
-  const { data } = await supabase.from("assignments").select("*").is("deleted_at", null);
-  return (data ?? []).map((r) => assignmentFromRow(r as Record<string, unknown>));
-}
-
-// ── Assignment templates ──────────────────────────────────────────────────────
-
-export async function createAssignmentTemplate(data: Omit<AssignmentTemplate, "id" | "createdAt" | "updatedAt">): Promise<string | null> {
-  const id = genId();
-  const now = nowISO();
-  const { error: templateInsertError } = await supabase.from("assignment_templates").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (templateInsertError) throw new Error(templateInsertError.message);
-  await writeAuditLog({ action: "create", collection: "assignmentTemplates", recordId: id, details: { title: data.title, track: data.track } });
-  return id;
-}
-
-export async function updateAssignmentTemplate(id: string, data: Partial<AssignmentTemplate>): Promise<void> {
-  const { error: templateUpdateError } = await supabase.from("assignment_templates").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (templateUpdateError) throw new Error(templateUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "assignmentTemplates", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteAssignmentTemplate(id: string): Promise<void> {
-  const { error: templateDeleteError } = await supabase.from("assignment_templates").delete().eq("id", id);
-  if (templateDeleteError) throw new Error(templateDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "assignmentTemplates", recordId: id });
-}
-
-export async function getAssignmentTemplatesList(): Promise<AssignmentTemplate[]> {
-  const { data } = await supabase.from("assignment_templates").select("*");
-  return (data ?? []).map((r) => fromRow<AssignmentTemplate>(r as Record<string, unknown>));
-}
-
-// ── Project groups ────────────────────────────────────────────────────────────
-
-export async function createProjectGroup(
-  data: Omit<ProjectGroup, "id" | "createdAt" | "updatedAt">
-): Promise<string> {
-  const id = genId();
-  const now = nowISO();
-  const { error: groupInsertError } = await supabase.from("project_groups").insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
-  if (groupInsertError) throw new Error(groupInsertError.message);
-  await writeAuditLog({ action: "create", collection: "projectGroups", recordId: id, details: { name: data.name } });
-  return id;
-}
-
-export async function updateProjectGroup(id: string, data: Partial<ProjectGroup>): Promise<void> {
-  const { error: groupUpdateError } = await supabase.from("project_groups").update(toRow({ ...data, updatedAt: nowISO() })).eq("id", id);
-  if (groupUpdateError) throw new Error(groupUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "projectGroups", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteProjectGroup(id: string): Promise<void> {
-  const { error: groupDeleteError } = await supabase.from("project_groups").delete().eq("id", id);
-  if (groupDeleteError) throw new Error(groupDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "projectGroups", recordId: id });
-}
-
-// ── Assignment claims ─────────────────────────────────────────────────────────
-
-export async function createAssignmentClaim(data: Omit<AssignmentClaim, "id">): Promise<string | null> {
-  const id = genId();
-  const { error: claimInsertError } = await supabase.from("assignment_claims").insert(toRow({ ...data, id }));
-  if (claimInsertError) throw new Error(claimInsertError.message);
-  await writeAuditLog({ action: "create", collection: "assignmentClaims", recordId: id, details: { assignmentId: data.assignmentId, memberId: data.memberId } });
-  return id;
-}
-
-export async function updateAssignmentClaim(id: string, data: Partial<AssignmentClaim>): Promise<void> {
-  const { error: claimUpdateError } = await supabase.from("assignment_claims").update(toRow(data as Record<string, unknown>)).eq("id", id);
-  if (claimUpdateError) throw new Error(claimUpdateError.message);
-  await writeAuditLog({ action: "update", collection: "assignmentClaims", recordId: id, details: { fields: Object.keys(data) } });
-}
-
-export async function deleteAssignmentClaim(id: string): Promise<void> {
-  const { error: claimDeleteError } = await supabase.from("assignment_claims").delete().eq("id", id);
-  if (claimDeleteError) throw new Error(claimDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "assignmentClaims", recordId: id });
-}
-
-// Approve a recurring check-in. Awards credits for this period, increments the
-// check-in counter, sets the next due date, and resets the claim to In Progress
-// so the member can submit the following period.
-export async function approveCheckinClaim(
-  claim: AssignmentClaim,
-  creditsPerCheckin: number,
-  checkinIntervalDays: number,
-  approvedBy: string,
-): Promise<void> {
-  const newCheckinsApproved = (claim.checkinsApproved ?? 0) + 1;
-  const newTotalCredits = (claim.totalCreditsEarned ?? 0) + creditsPerCheckin;
-  const nextDue = new Date();
-  nextDue.setDate(nextDue.getDate() + checkinIntervalDays);
-  await updateAssignmentClaim(claim.id, {
-    status: "In Progress",
-    checkinsApproved: newCheckinsApproved,
-    totalCreditsEarned: newTotalCredits,
-    // creditsAwarded tracks cumulative total so the credit ledger picks it up
-    creditsAwarded: newTotalCredits,
-    nextCheckinDue: nextDue.toISOString().slice(0, 10),
-    approvedBy,
-    approvedAt: new Date().toISOString(),
-    // clear deliverable/notes/submittedAt for next check-in
-    // (null is sent to DB as NULL; undefined is skipped by toRow and leaves stale values)
-    deliverableUrl: null,
-    submissionNotes: null,
-    submittedAt: null,
-  });
-}
-
-// ── Assignment updates (admin → member messages) ──────────────────────────────
-
-export const subscribeAssignmentUpdates =
-  makeSubscriber<AssignmentUpdate>("assignment_updates");
-
-export async function createAssignmentUpdate(
-  data: Omit<AssignmentUpdate, "id" | "postedAt">,
-): Promise<void> {
-  const id = genId();
-  const { error } = await supabase
-    .from("assignment_updates")
-    .insert(toRow({ ...data, id, postedAt: nowISO() }));
-  if (error) throw new Error(error.message);
-}
-
-export async function deleteAssignmentUpdate(id: string): Promise<void> {
-  const { error } = await supabase.from("assignment_updates").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
 // ── Member strikes ────────────────────────────────────────────────────────────
 
 export async function createMemberStrike(data: Omit<MemberStrike, "id" | "issuedAt">): Promise<string | null> {
@@ -2181,6 +1374,10 @@ export async function createMemberStrike(data: Omit<MemberStrike, "id" | "issued
   const { error: strikeInsertError } = await supabase.from("member_strikes").insert(toRow({ ...data, id, issuedAt: nowISO() }));
   if (strikeInsertError) throw new Error(strikeInsertError.message);
   await writeAuditLog({ action: "create", collection: "memberStrikes", recordId: id, details: { memberId: data.memberId, infractionId: data.infractionId, points: data.points, source: data.source } });
+
+  // Tell them, with their running total — a points tally nobody sees can't
+  // change anyone's behaviour. The total and standing are computed server-side.
+  await notify("infraction_issued", { strikeId: id });
   return id;
 }
 
@@ -2197,34 +1394,20 @@ export async function clearMemberStrikes(strikeIds: string[]): Promise<void> {
   await writeAuditLog({ action: "delete", collection: "memberStrikes", recordId: "bulk", details: { count: strikeIds.length, ids: strikeIds } });
 }
 
-// ── Member credit adjustments ─────────────────────────────────────────────────
-
-export async function createMemberCreditAdjustment(data: Omit<MemberCreditAdjustment, "id" | "createdAt">): Promise<string | null> {
-  const id = genId();
-  const { error: creditInsertError } = await supabase.from("member_credit_adjustments").insert(toRow({ ...data, id, createdAt: nowISO() }));
-  if (creditInsertError) throw new Error(creditInsertError.message);
-  await writeAuditLog({ action: "create", collection: "memberCreditAdjustments", recordId: id, details: { memberId: data.memberId, points: data.points } });
-  return id;
-}
-
-export async function deleteMemberCreditAdjustment(id: string): Promise<void> {
-  const { error: creditDeleteError } = await supabase.from("member_credit_adjustments").delete().eq("id", id);
-  if (creditDeleteError) throw new Error(creditDeleteError.message);
-  await writeAuditLog({ action: "delete", collection: "memberCreditAdjustments", recordId: id });
-}
-
 // ── Handbook pages ────────────────────────────────────────────────────────────
 
 export const subscribeHandbookPages =
   makeSubscriber<HandbookPage>("handbook_pages", (r) => fromRow<HandbookPage>(r));
 
 export async function getHandbookPagesList(): Promise<HandbookPage[]> {
-  const { data } = await supabase.from("handbook_pages").select("*");
+  const { data, error } = await supabase.from("handbook_pages").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<HandbookPage>(r as Record<string, unknown>));
 }
 
 export async function getHandbookPage(slug: string): Promise<HandbookPage | null> {
-  const { data } = await supabase.from("handbook_pages").select("*").eq("slug", slug).maybeSingle();
+  const { data, error } = await supabase.from("handbook_pages").select("*").eq("slug", slug).maybeSingle();
+  if (error) throw new Error(error.message);
   if (!data) return null;
   return fromRow<HandbookPage>(data as Record<string, unknown>);
 }
@@ -2262,4 +1445,467 @@ export async function createMemberAcknowledgment(data: Omit<MemberAcknowledgment
     { onConflict: "member_id,page_slug" }
   );
   if (ackUpsertError) throw new Error(ackUpsertError.message);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PODS — marketing & finance
+//
+// A pod is a standing group with one or more LITs, meeting on its own cadence.
+// Membership is many-to-many: the recruitment page offers "choose a focus, or
+// work across all four", and a member can lead one pod while sitting in another.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// A chapter is a market — the city whose small businesses we take on as
+// clients. Members are mostly remote and are not confined to one.
+export interface Chapter {
+  id: string;
+  name: string;
+  slug: string;
+  city: string;
+  state: string;
+  status: "Active" | "Launching" | "Archived";
+  siteUrl: string;
+  sortOrder: number;
+}
+
+export const subscribeChapters = makeSubscriber<Chapter>("chapters");
+
+export async function updateChapter(id: string, patch: Partial<Chapter>): Promise<void> {
+  const { error } = await supabase.from("chapters")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "chapters", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+export async function createChapter(name: string, city: string, state: string): Promise<void> {
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (!slug) throw new Error("A chapter needs a name.");
+  const { data: chapterId, error } = await supabase.rpc("create_chapter_with_pods", {
+    p_name: name.trim(), p_slug: slug, p_city: city.trim(), p_state: state.trim().toUpperCase(),
+  });
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "chapters", recordId: String(chapterId), details: { name } });
+}
+
+export interface Pod {
+  id: string;
+  chapterId: string;
+  // Marketing exists for the businesses we take on as clients; finance and
+  // operations keep Novus running. Shown on the pod so nobody has to infer it.
+  track: "Marketing" | "Finance";
+  serves: "clients" | "novus";
+  name: string;
+  slug: string;
+  description: string;
+  cadenceDays: number;
+  // Prefill values for the LIT — editable per pod, overridable per meeting or
+  // task. Nothing about hours is fixed in code.
+  defaultMeetingHours: number;
+  defaultTaskHours: number;
+  status: "Active" | "Archived";
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type PodRole = "lit" | "member";
+
+export interface PodMember {
+  id: string;
+  podId: string;
+  memberId: string;
+  role: PodRole;
+  joinedAt: string;
+  leftAt?: string | null;
+}
+
+export interface PodMeeting {
+  id: string;
+  podId: string;
+  meetsOn: string;
+  title: string;
+  hours: number;
+  notes: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  meetingUrl: string;
+  createdBy?: string;
+  createdAt?: string;
+  attendanceFinalizedAt?: string | null;
+  attendanceFinalizedBy?: string | null;
+}
+
+export const ATTENDANCE_STATUSES = ["Present", "Excused", "Unexcused"] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+
+export interface PodAttendance {
+  id: string;
+  meetingId: string;
+  memberId: string;
+  status: AttendanceStatus;
+  tasksDone: number;
+  hours?: number | null;   // null inherits the meeting's hours
+  note: string;
+  markedBy?: string;
+  markedAt?: string;
+}
+
+export const subscribePods         = makeSubscriber<Pod>("pods");
+export const subscribePodMembers   = makeSubscriber<PodMember>("pod_members");
+export const subscribePodMeetings  = makeSubscriber<PodMeeting>("pod_meetings");
+
+export async function updatePod(id: string, patch: Partial<Pod>): Promise<void> {
+  const { error } = await supabase.from("pods")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pods", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+// Single-row membership edits. One click in the UI should be one write, not a
+// diff of the whole roster.
+export async function addPodMember(
+  podId: string, memberId: string, role: PodRole = "member",
+): Promise<void> {
+  const { error } = await supabase.from("pod_members").upsert(
+    toRow({ id: genId(), podId, memberId, role, joinedAt: nowISO(), leftAt: null }),
+    { onConflict: "pod_id,member_id" },
+  );
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "pod_members", recordId: `${podId}/${memberId}`, details: { role } });
+}
+
+export async function setPodMemberRole(
+  podId: string, memberId: string, role: PodRole,
+): Promise<void> {
+  const { error } = await supabase.from("pod_members")
+    .update({ role }).eq("pod_id", podId).eq("member_id", memberId);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pod_members", recordId: `${podId}/${memberId}`, details: { role } });
+}
+
+// Someone who has attended a meeting keeps their row with left_at set, because
+// their hours are still on the service letter. Someone added by mistake and
+// removed before any meeting leaves nothing behind.
+export async function removePodMember(podId: string, memberId: string): Promise<void> {
+  const { data: meetingRows, error: meetingsError } = await supabase.from("pod_meetings").select("id").eq("pod_id", podId);
+  if (meetingsError) throw new Error(meetingsError.message);
+  const meetingIds = ((meetingRows ?? []) as { id: string }[]).map((m) => m.id);
+
+  let hasHistory = false;
+  if (meetingIds.length) {
+    const { count, error: attendanceError } = await supabase.from("pod_attendance")
+      .select("id", { count: "exact", head: true })
+      .eq("member_id", memberId).in("meeting_id", meetingIds);
+    if (attendanceError) throw new Error(attendanceError.message);
+    hasHistory = (count ?? 0) > 0;
+  }
+
+  const { error } = hasHistory
+    ? await supabase.from("pod_members").update({ left_at: nowISO() })
+        .eq("pod_id", podId).eq("member_id", memberId)
+    : await supabase.from("pod_members").delete()
+        .eq("pod_id", podId).eq("member_id", memberId);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "pod_members", recordId: `${podId}/${memberId}`, details: { keptHistory: hasHistory } });
+}
+
+export async function createPodMeeting(
+  podId: string,
+  meeting: Pick<PodMeeting, "meetsOn" | "title" | "hours"> &
+    Partial<Pick<PodMeeting, "notes" | "startsAt" | "endsAt" | "meetingUrl">>,
+): Promise<string> {
+  const id = genId();
+  const { error } = await supabase.from("pod_meetings")
+    .insert(toRow({
+      id, podId, ...meeting, notes: meeting.notes ?? "",
+      meetingUrl: meeting.meetingUrl ?? "", createdAt: nowISO(),
+    }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "pod_meetings", recordId: id, details: { podId, meetsOn: meeting.meetsOn } });
+  return id;
+}
+
+export async function updatePodMeeting(id: string, patch: Partial<PodMeeting>): Promise<void> {
+  const { error } = await supabase.from("pod_meetings").update(toRow(patch)).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deletePodMeeting(id: string): Promise<void> {
+  const { error } = await supabase.from("pod_meetings").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "pod_meetings", recordId: id });
+}
+
+export async function fetchAttendance(meetingId: string): Promise<PodAttendance[]> {
+  const { data, error } = await supabase.from("pod_attendance").select("*").eq("meeting_id", meetingId);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<PodAttendance>(r));
+}
+
+// The whole grid saves in one call — a LIT fills a column and presses save once.
+export async function saveAttendance(
+  meetingId: string,
+  cells: { memberId: string; status: AttendanceStatus; tasksDone: number; hours?: number | null; note?: string }[],
+  meeting: { title: string; hours: number },
+): Promise<void> {
+  const { error } = await supabase.rpc("save_pod_attendance", {
+    p_meeting_id: meetingId,
+    p_cells: cells.map((cell) => ({
+      member_id: cell.memberId,
+      status: cell.status,
+      tasks_done: cell.tasksDone,
+      hours: cell.hours ?? null,
+      note: cell.note ?? "",
+    })),
+    p_title: meeting.title,
+    p_hours: meeting.hours,
+  });
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "pod_attendance", recordId: meetingId, details: { cells: cells.length } });
+}
+
+// ── Hours ────────────────────────────────────────────────────────────────────
+// Hours replaced credits. The ledger is a view over meetings, pod tasks, tech
+// projects and manual adjustments, so there is no total to keep in sync.
+
+export interface HoursEntry {
+  memberId: string;
+  source: "meeting" | "task" | "project" | "adjustment";
+  department: string;
+  occurredOn: string;
+  hours: number;
+  detail: string;
+}
+
+// Everything a member has done, in one row. Sources are disjoint, so nothing is
+// counted twice and no kind of work is missing.
+export interface MemberContribution {
+  memberId: string;
+  hoursTotal: number;
+  hoursMeeting: number;
+  hoursTask: number;
+  hoursProject: number;
+  meetingsPresent: number;
+  meetingsExcused: number;
+  meetingsMissed: number;
+  tasksDone: number;
+  tasksOpen: number;
+  tasksOverdue: number;
+  projectsLive: number;
+  projectsActive: number;
+  projectsTotal: number;
+  podsLed: number;
+  podsJoined: number;
+  infractionPoints: number;
+  infractionCount: number;
+  workScore: number;
+  lastActivity: string | null;
+  noRecordedWork: boolean;
+}
+
+export async function fetchMemberContributions(): Promise<MemberContribution[]> {
+  const { data, error } = await supabase.from("member_contributions").select("*");
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<MemberContribution>(r));
+}
+
+export interface HoursTotals {
+  memberId: string;
+  totalHours: number;
+  meetingHours: number | null;
+  taskHours: number | null;
+  projectHours: number | null;
+  adjustmentHours: number | null;
+  firstActivity: string | null;
+  lastActivity: string | null;
+}
+
+export async function fetchHoursTotals(): Promise<HoursTotals[]> {
+  const { data, error } = await supabase.from("member_hours_totals").select("*");
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<HoursTotals>(r));
+}
+
+export async function fetchMemberHours(memberId: string, from?: string, to?: string): Promise<HoursEntry[]> {
+  let q = supabase.from("member_hours_ledger").select("*").eq("member_id", memberId);
+  if (from) q = q.gte("occurred_on", from);
+  if (to)   q = q.lte("occurred_on", to);
+  const { data, error } = await q.order("occurred_on", { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<HoursEntry>(r));
+}
+
+export async function createHoursAdjustment(
+  memberId: string, hours: number, reason: string, occurredOn: string,
+): Promise<void> {
+  const id = genId();
+  const { error } = await supabase.from("hours_adjustments")
+    .insert(toRow({ id, memberId, hours, reason, occurredOn, createdAt: nowISO() }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "hours_adjustments", recordId: id, details: { memberId, hours } });
+}
+
+// Fire an event-driven automation. Failure is deliberately swallowed: the
+// action that triggered it has already happened, and an unsent notification
+// must not make it look like the action failed.
+// Names the record the notification is about. The server resolves addresses
+// and message content from persisted data; a client-provided member subset is
+// always intersected with the people saved on that record.
+async function notify(
+  automationId: string,
+  subject: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+    await fetch("/api/members/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ automationId, subject }),
+    });
+  } catch {
+    // no-op
+  }
+}
+
+// ── Tech project notifications ───────────────────────────────────────────────
+
+export async function notifyProjectAssigned(
+  business: Business, newAssigneeIds: string[],
+): Promise<void> {
+  if (newAssigneeIds.length === 0) return;
+  await notify("project_assigned", {
+    businessId: business.id,
+    addedAssigneeIds: newAssigneeIds,
+  });
+}
+
+export async function notifyDraftReady(business: Business): Promise<void> {
+  // Goes to whoever can act on it: the leads, not the whole directory.
+  await notify("project_draft_ready", { businessId: business.id });
+}
+
+// ── Pod assignments ──────────────────────────────────────────────────────────
+// The assignments table survives the marketplace, scoped to a pod and pushed to
+// named people instead of posted to a catalog for anyone to claim.
+
+export interface PodAssignment {
+  id: string;
+  podId: string;
+  title: string;
+  description: string;
+  status: "Open" | "In Progress" | "In Review" | "Done";
+  assignedMemberIds: string[];
+  assignedMemberNames: string[];
+  dueDate?: string | null;
+  hours?: number | null;
+  deliverableUrl?: string | null;
+  reviewRequestedAt?: string | null;
+  completedAt?: string | null;
+  completedBy?: string | null;
+  createdAt?: string;
+}
+
+export function subscribePodAssignments(callback: SubscribeCallback<PodAssignment>): () => void {
+  return makeSubscriber<PodAssignment>("assignments")((rows, state) =>
+    callback(rows.filter((r) => !!r.podId), state));
+}
+
+export async function createPodAssignment(
+  data: Omit<PodAssignment, "id" | "createdAt" | "completedAt" | "completedBy">,
+): Promise<void> {
+  const id = genId();
+  const { error } = await supabase.from("assignments")
+    .insert(toRow({ ...data, id, type: "Task", track: "Marketing", createdAt: nowISO(), updatedAt: nowISO() }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { podId: data.podId, title: data.title } });
+
+  await notify("pod_task_assigned", { assignmentId: id });
+}
+
+export async function updatePodAssignment(id: string, patch: Partial<PodAssignment>): Promise<void> {
+  const { error } = await supabase.from("assignments")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  if (patch.assignedMemberIds) await notify("pod_task_assigned", { assignmentId: id });
+}
+
+export async function completePodAssignment(id: string, done: boolean): Promise<void> {
+  const { error } = await supabase.rpc("set_assignment_completion", {
+    p_assignment_id: id,
+    p_done: done,
+  });
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { completed: done } });
+}
+
+export async function setPodAssignmentStatus(
+  id: string,
+  status: PodAssignment["status"],
+): Promise<void> {
+  const { error } = await supabase.rpc("set_assignment_workflow_status", {
+    p_assignment_id: id,
+    p_status: status,
+  });
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { status } });
+}
+
+export async function deletePodAssignment(id: string): Promise<void> {
+  const { error } = await supabase.from("assignments").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
+}
+
+export const GRANT_STATUSES = ["Researching", "Ready to Share", "Shared", "Closed"] as const;
+export type GrantStatus = (typeof GRANT_STATUSES)[number];
+
+export interface GrantOpportunity {
+  id: string;
+  podId: string;
+  name: string;
+  funder: string;
+  url: string;
+  deadline?: string | null;
+  amount: string;
+  geography: string;
+  eligibility: string;
+  focusAreas: string[];
+  status: GrantStatus;
+  notes: string;
+  createdBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+}
+
+export const subscribeGrantOpportunities = makeSubscriber<GrantOpportunity>("grant_opportunities");
+
+export async function createGrantOpportunity(
+  data: Omit<GrantOpportunity, "id" | "createdAt" | "updatedAt" | "deletedAt">,
+): Promise<void> {
+  const id = genId();
+  const now = nowISO();
+  const { error } = await supabase.from("grant_opportunities")
+    .insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "grant_opportunities", recordId: id, details: { podId: data.podId } });
+}
+
+export async function updateGrantOpportunity(
+  id: string,
+  patch: Partial<GrantOpportunity>,
+): Promise<void> {
+  const { error } = await supabase.from("grant_opportunities")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "grant_opportunities", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+export async function deleteGrantOpportunity(id: string): Promise<void> {
+  const { error } = await supabase.from("grant_opportunities")
+    .update({ deleted_at: nowISO(), updated_at: nowISO() }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "grant_opportunities", recordId: id });
 }

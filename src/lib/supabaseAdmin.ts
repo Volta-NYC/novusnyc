@@ -23,19 +23,11 @@ const PATH_TABLE: Record<string, string> = {
   businesses:               "businesses",
   bids:                     "bids",
   projects:                 "projects",
-  financeAssignments:       "finance_assignments",
-  assignmentClaims:         "assignment_claims",
   memberStrikes:            "member_strikes",
-  memberCreditAdjustments:  "member_credit_adjustments",
-  cycles:                   "cycles",
   infractions:              "infractions",
   emailTemplates:           "email_templates",
   userProfiles:             "user_profiles",
   auditLogs:                "audit_logs",
-  calendarEvents:           "calendar_events",
-  interviewInvites:         "interview_invites",
-  interviewSlots:           "interview_slots",
-  interviewSettings:        "interview_settings",
 };
 
 function camelToSnake(s: string): string {
@@ -78,7 +70,8 @@ export async function dbRead(path: string): Promise<unknown> {
 
   if (!id) {
     // Read entire collection
-    const { data } = await sb.from(table).select("*");
+    const { data, error } = await sb.from(table).select("*");
+    if (error) throw new Error(`dbRead ${table}: ${error.message}`);
     if (!data?.length) return null;
     const obj: Record<string, unknown> = {};
     for (const row of data) {
@@ -89,7 +82,8 @@ export async function dbRead(path: string): Promise<unknown> {
     return obj;
   }
 
-  const { data } = await sb.from(table).select("*").eq("id", id).maybeSingle();
+  const { data, error } = await sb.from(table).select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(`dbRead ${table}/${id}: ${error.message}`);
   if (!data) return null;
 
   const camel = rowToCamel(data as Record<string, unknown>);
@@ -111,19 +105,22 @@ export async function dbPatch(path: string, data: Record<string, unknown>): Prom
   if (id && field) {
     // Patching a single nested field (e.g. userProfiles/{uid}/authRole → handled as a column update)
     const colName = camelToSnake(field);
-    await sb.from(table).update({ [colName]: data[field] ?? data[Object.keys(data)[0]] }).eq("id", id);
+    const { error } = await sb.from(table).update({ [colName]: data[field] ?? data[Object.keys(data)[0]] }).eq("id", id);
+    if (error) throw new Error(`dbPatch ${table}/${id}.${field}: ${error.message}`);
     return;
   }
 
   if (id) {
-    await sb.from(table).update(snake).eq("id", id);
+    const { error } = await sb.from(table).update(snake).eq("id", id);
+    if (error) throw new Error(`dbPatch ${table}/${id}: ${error.message}`);
     return;
   }
 
   // No id — multi-record patch via object of id→patch (Firebase multi-path update style)
   for (const [key, value] of Object.entries(data)) {
     if (typeof value === "object" && value !== null) {
-      await sb.from(table).update(objToSnake(value as Record<string, unknown>)).eq("id", key);
+      const { error } = await sb.from(table).update(objToSnake(value as Record<string, unknown>)).eq("id", key);
+      if (error) throw new Error(`dbPatch ${table}/${key}: ${error.message}`);
     }
   }
 }
@@ -136,7 +133,10 @@ export async function dbPush(path: string, data: Record<string, unknown>): Promi
   const { table } = parsePath(path);
   const id = crypto.randomUUID();
   const snake = objToSnake(data);
-  await sb.from(table).insert({ ...snake, id });
+  // Returning an id for a row that was never written let callers report success
+  // on a failed insert — an accepted applicant with no member record.
+  const { error } = await sb.from(table).insert({ ...snake, id });
+  if (error) throw new Error(`dbPush ${table}: ${error.message}`);
   return id;
 }
 
@@ -147,7 +147,8 @@ export async function dbDelete(path: string): Promise<void> {
   const sb = getSupabaseAdmin();
   const { table, id } = parsePath(path);
   if (id) {
-    await sb.from(table).delete().eq("id", id);
+    const { error } = await sb.from(table).delete().eq("id", id);
+    if (error) throw new Error(`dbDelete ${table}/${id}: ${error.message}`);
   }
 }
 
@@ -165,7 +166,7 @@ export async function writeAuditLog(entry: {
 }): Promise<void> {
   try {
     const sb = getSupabaseAdmin();
-    await sb.from("audit_logs").insert({
+    const { error } = await sb.from("audit_logs").insert({
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       action: entry.action,
@@ -176,6 +177,7 @@ export async function writeAuditLog(entry: {
       actor_name: entry.actorName ?? null,
       details: entry.details ?? null,
     });
+    if (error) throw new Error(error.message);
   } catch (err) {
     console.error("Audit log write failed:", err);
   }

@@ -1,14 +1,8 @@
 import "server-only";
 
-type TeamRow = Record<string, unknown>;
 
 export type MemberTrack = "Tech" | "Marketing" | "Finance" | "Other";
 
-const FINANCE_GROUPS = [
-  "Outreach",
-  "Grants",
-  "Reports",
-] as const;
 
 function normalize(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
@@ -41,46 +35,6 @@ export function trackToDivisions(track: MemberTrack): string[] {
   return [track];
 }
 
-function inferTrackFromMemberRow(row: TeamRow): MemberTrack {
-  const divisionsRaw = row.divisions;
-  const divisions = Array.isArray(divisionsRaw)
-    ? divisionsRaw.map((item) => String(item ?? "").trim())
-    : [];
-  if (divisions.includes("Tech")) return "Tech";
-  if (divisions.includes("Marketing")) return "Marketing";
-  if (divisions.includes("Finance")) return "Finance";
-  return "Other";
-}
-
-function countPods(team: Record<string, TeamRow>, filterTrack: MemberTrack): Map<string, number> {
-  const counts = new Map<string, number>();
-  Object.values(team).forEach((row) => {
-    if (inferTrackFromMemberRow(row) !== filterTrack) return;
-    const pod = String(row.pod ?? "").trim();
-    if (!pod) return;
-    counts.set(pod, (counts.get(pod) ?? 0) + 1);
-  });
-  return counts;
-}
-
-export function suggestTeamForTrack(track: MemberTrack, team: Record<string, TeamRow>): string {
-  if (track === "Tech") return "";
-  if (track === "Marketing") return "";
-  if (track === "Finance") {
-    const counts = countPods(team, "Finance");
-    let selected: (typeof FINANCE_GROUPS)[number] = FINANCE_GROUPS[0];
-    let min = Number.POSITIVE_INFINITY;
-    for (const group of FINANCE_GROUPS) {
-      const count = counts.get(group) ?? 0;
-      if (count < min) {
-        min = count;
-        selected = group;
-      }
-    }
-    return selected;
-  }
-  return "";
-}
 
 export function canonicalEmail(value: unknown): string {
   const raw = normalize(value);

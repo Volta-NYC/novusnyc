@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/members/authContext";
 
 export type SectionTab = {
   href: string;
@@ -38,8 +37,9 @@ export default function SectionTabs({
   tabs: SectionTab[];
   className?: string;
 }) {
-  const { authRole } = useAuth();
-  const lightTheme = authRole === "member";
+  // MembersLayout uses the light portal theme for every role. Branching this
+  // by role made owner/admin tabs render dark controls on a light surface.
+  const lightTheme = true;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = (searchParams?.get("tab") ?? "").toLowerCase();
@@ -55,6 +55,7 @@ export default function SectionTabs({
             <Link
               key={tab.href}
               href={tab.href}
+              aria-current={active ? "page" : undefined}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
                 active
                   ? lightTheme
@@ -74,17 +75,7 @@ export default function SectionTabs({
   );
 }
 
-export const PROJECT_GROUP_TABS: SectionTab[] = [
-  { href: "/members/projects", label: "Businesses", exact: true },
-  { href: "/members/projects/discovery", label: "Discovery" },
-  { href: "/members/projects/showcase", label: "Showcase" },
-];
-
-export const MEMBERS_GROUP_TABS: SectionTab[] = [
-  { href: "/members", label: "Members", exact: true },
-];
-
-// Applicants + Interviews live on the same Applicants page.
+// Interviews is a focused workflow within the Applicants section.
 export const APPLICANTS_GROUP_TABS: SectionTab[] = [
   { href: "/members/applicants", label: "Applicants", exact: true },
   { href: "/members/applicants/interviews", label: "Interviews" },
@@ -95,17 +86,4 @@ export const EMAIL_TABS: SectionTab[] = [
   { href: "/members/email", label: "Compose", exact: true },
   { href: "/members/email/templates", label: "Templates" },
   { href: "/members/email/automations", label: "Automations" },
-];
-
-// Assignments: by-project grouped view, flat list, review queue, templates.
-export const ASSIGNMENTS_TABS: SectionTab[] = [
-  { href: "/members/assignments/catalog", label: "All Assignments" },
-  { href: "/members/assignments/by-project", label: "By Project" },
-  { href: "/members/assignments/for-review", label: "For Review" },
-  { href: "/members/assignments/templates", label: "Create from Template" },
-];
-
-export const WORK_TABS: SectionTab[] = [
-  { href: "/members/work", label: "My Work", exact: true },
-  { href: "/members/work/catalog", label: "Assignment Catalog" },
 ];

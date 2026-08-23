@@ -65,8 +65,11 @@ CREATE TABLE IF NOT EXISTS assignments (
 );
 
 CREATE INDEX IF NOT EXISTS assignments_business_id_idx ON assignments (business_id);
+
 CREATE INDEX IF NOT EXISTS assignments_track_idx        ON assignments (track);
+
 CREATE INDEX IF NOT EXISTS assignments_status_idx       ON assignments (status);
+
 CREATE INDEX IF NOT EXISTS assignments_cycle_id_idx     ON assignments (cycle_id);
 
 -- ---------------------------------------------------------------------------

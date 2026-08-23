@@ -1,31 +1,31 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { Fragment, useState, useEffect, useMemo } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import {
-  PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, useConfirm,
+  PageHeader, SearchBar, Btn, Modal, Field, Input, Select, Empty, SkeletonRows, LoadError, useConfirm,
   ViewPanel, ViewSection, SortPanel, type SortRule,
 } from "@/components/members/ui";
 import Combobox from "@/components/Combobox";
 import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
-  subscribeBusinesses, subscribeCycles, subscribeAssignments, subscribeAssignmentClaims,
-  subscribeMemberStrikes, subscribeMemberCreditAdjustments, subscribeEmailTemplates, subscribeInfractions,
-  subscribeApplications, subscribeFinanceAssignments, subscribeAutomationConfigs,
-  createMemberCreditAdjustment, deleteMemberCreditAdjustment,
-  type TeamMember, type Business, type FinanceAssignment, type ApplicationRecord,
-  type AutomationConfig, type Cycle, type Assignment, type AssignmentClaim,
-  type MemberStrike, type MemberCreditAdjustment, type EmailTemplate, type Infraction,
+  subscribePods, subscribePodMembers, fetchMemberContributions, getSiteSettings,
+  subscribeApplications,
+  type TeamMember, type ApplicationRecord,
+  type Pod, type PodMember, type MemberContribution,
 } from "@/lib/members/storage";
-import { computeGlobalCodes } from "@/lib/members/assignmentCodes";
 import { useAuth } from "@/lib/members/authContext";
+import TrackAvatar, { getMemberTrack, TRACK_SORT_ORDER, type TrackKey } from "@/components/members/TrackAvatar";
+import {
+  MEMBER_ROLES, DEFAULT_MEMBER_ROLE, isInactiveMember,
+  TIER_ORDER, memberTier, infractionStanding, STANDING_LABEL,
+  STANDING_STYLE, DEFAULT_INFRACTION_THRESHOLDS, WORK_SCORE_EXPLAINER,
+  type MemberRole, type MemberTier,
+} from "@/lib/members/roles";
 import { CLASS_GRADE_OPTIONS, gradeToClassOf } from "@/lib/grades";
 import MemberDrawer from "@/components/members/MemberDrawer";
-import { classifyMember, computeCreditLedger, computeDot, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
-import { runCycleSweep } from "@/lib/members/cycleAutomation";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
-import { EMAIL } from "@/lib/mail";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -33,95 +33,28 @@ import { EMAIL } from "@/lib/mail";
 const BLANK_FORM: Omit<TeamMember, "id" | "createdAt"> = {
   grade: "",
   acceptedDate: "",
-  name: "", school: "", divisions: [], pod: "", role: "Analyst", slackHandle: "",
-  email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "", notes: "",
+  name: "", school: "", divisions: [], role: DEFAULT_MEMBER_ROLE, slackHandle: "",
+  email: "", alternateEmail: "", status: "Active", skills: [], joinDate: "",
 };
 
 const GRADE_OPTIONS = CLASS_GRADE_OPTIONS;
-type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
-type AssignmentCodePrefix = "W" | "M" | "F" | "R" | "C";
-
-function getMemberTrack(member: TeamMember): TrackKey {
-  const divisions = member.divisions ?? [];
-  if (divisions.includes("Tech")) return "Tech";
-  if (divisions.includes("Marketing")) return "Marketing";
-  if (divisions.includes("Finance")) return "Finance";
-  if (divisions.includes("Other") || divisions.includes("Outreach")) return "Other";
-  return "—";
-}
-
-function getTrackAvatarClasses(track: TrackKey): { bgClass: string; textClass: string } {
-  switch (track) {
-    // Hues follow the public site: purple Tech, peach Marketing, yellow Finance.
-    case "Tech":      return { bgClass: "bg-n-purple/30",     textClass: "text-n-ink" };
-    case "Marketing": return { bgClass: "bg-n-orange/30",     textClass: "text-n-ink" };
-    case "Finance":   return { bgClass: "bg-n-yellow/40",     textClass: "text-n-ink" };
-    case "Other":     return { bgClass: "bg-gray-100",        textClass: "text-gray-700" };
-    default:          return { bgClass: "bg-[#F6B78D]/15",    textClass: "text-[#F6B78D]" };
-  }
-}
-
-const TRACK_SORT_ORDER: Record<TrackKey, number> = {
-  Tech: 0,
-  Marketing: 1,
-  Finance: 2,
-  Other: 3,
-  "—": 4,
-};
-
-function TrackAvatarIcon({ track }: { track: TrackKey }) {
-  if (track === "Tech") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M8 8L3 12L8 16" />
-        <path d="M16 8L21 12L16 16" />
-      </svg>
-    );
-  }
-  if (track === "Marketing") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 20l4.5-1.2L19 8.3a1.6 1.6 0 0 0 0-2.2l-1.1-1.1a1.6 1.6 0 0 0-2.2 0L5.2 15.5L4 20z" />
-        <path d="M13.5 6.5l4 4" />
-      </svg>
-    );
-  }
-  if (track === "Finance") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 19h16" />
-        <path d="M7 16v-4" />
-        <path d="M12 16V9" />
-        <path d="M17 16v-10" />
-      </svg>
-    );
-  }
-  return (
-    <span className="text-[11px] font-semibold leading-none" aria-hidden="true">
-      –
-    </span>
-  );
-}
-
-type MemberAssignmentLink = {
-  id: string;
-  kind: "Business Project" | "Finance Assignment";
-  title: string;
-  topic?: string;
-  teamNames: string[];
-  codePrefix: AssignmentCodePrefix;
-  code: string;
-  status: string;
-  deadline: string;
-  href: string;
-};
-
-// col 0=Status(credit pace), 1=Track, 2=Name, 3=School, 4=Role
+// col 0=Status(activity), 1=Track, 2=Name, 3=School, 4=Role
 const DEFAULT_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 1, dir: "asc" },
   { col: 4, dir: "asc" },
   { col: 2, dir: "asc" },
 ];
+
+// Colour by the stored title only — leading a pod is a separate fact and gets
+// its own chip, so a Developer who runs a pod shows both instead of one
+// overwriting the other.
+const ROLE_CHIP: Record<MemberTier, string> = {
+  board:          "border-amber-400/40 bg-amber-400/10 text-amber-400",
+  "chapter-exec": "border-orange-400/40 bg-orange-400/10 text-orange-400",
+  leadership:     "border-violet-400/35 bg-violet-400/10 text-violet-300",
+  lit:            "border-sky-400/35 bg-sky-400/10 text-sky-300",
+  member:         "border-white/15 bg-[#11141A] text-white/80",
+};
 
 const SORT_OPTIONS = [
   { value: 0, label: "Status" },
@@ -130,6 +63,8 @@ const SORT_OPTIONS = [
   { value: 3, label: "School" },
   { value: 4, label: "Role" },
   { value: 5, label: "Date Accepted" },
+  { value: 6, label: "Work" },
+  { value: 7, label: "Hours" },
 ];
 
 const ADMIN_COLS = [
@@ -140,56 +75,21 @@ const ADMIN_COLS = [
   { key: "role",           label: "Role",            width: 120, sortCol: 4  as number | null },
   { key: "resume",         label: "Resume",          width: 80,  sortCol: null },
   { key: "acceptedDate",   label: "Date Accepted",   width: 116, sortCol: 5   as number | null },
-  { key: "strikes",        label: "Strikes",         width: 72,  sortCol: null },
+  { key: "home",           label: "Based in",        width: 130, sortCol: null },
+  { key: "work",           label: "Work",            width: 190, sortCol: 6  as number | null },
+  { key: "pods",           label: "Pods",            width: 150, sortCol: null },
+  { key: "strikes",        label: "Standing",        width: 96,  sortCol: null },
   { key: "actions",        label: "Actions",         width: 148, sortCol: null },
 ];
 
-// Roles offered in the inline role-edit popover, ordered seniority-high to seniority-low
-// so the dropdown reads top-down from most senior. Board is an internal designation for leadership.
-const ROLE_OPTIONS = ["Board", "Senior Associate", "Associate", "Senior Analyst", "Analyst"] as const;
-type RoleOption = (typeof ROLE_OPTIONS)[number];
+const ROLE_OPTIONS = MEMBER_ROLES;
+type RoleOption = MemberRole;
 
 // Display the role exactly as stored, so legacy entries (e.g. "Project Lead",
 // "Member") still show up faithfully even though they aren't selectable in the popover.
 function displayRoleValue(value: unknown): string {
   const raw = String(value ?? "").trim();
   return raw || "—";
-}
-
-const ROLE_SORT_ORDER: Record<string, number> = {
-  Board: 0,
-  "Senior Associate": 1,
-  Associate: 2,
-  "Senior Analyst": 3,
-  Analyst: 4,
-};
-
-function roleSortKey(value: unknown): number {
-  const raw = String(value ?? "").trim();
-  return raw in ROLE_SORT_ORDER ? ROLE_SORT_ORDER[raw] : 99;
-}
-
-// Members who should hold the Board role regardless of what they were originally
-// accepted with. Compared loosely against name + email so casing/spacing in
-// stored data doesn't cause a miss.
-const BOARD_MEMBERS: Array<{ name: string; emails: string[] }> = [
-  { name: "Ethan Zhang", emails: [EMAIL.ethan] },
-  { name: "Andrew Chin", emails: [] },
-  { name: "Tahmid Islam", emails: [] },
-  { name: "Ellie Mak", emails: [] },
-  { name: "Joseph Long", emails: [] },
-];
-
-function isBoardMember(member: TeamMember): boolean {
-  const memberName = String(member.name ?? "").trim().toLowerCase();
-  const memberEmails = [member.email, member.alternateEmail]
-    .map((value) => String(value ?? "").trim().toLowerCase())
-    .filter(Boolean);
-  return BOARD_MEMBERS.some((entry) => {
-    if (entry.name.toLowerCase() === memberName) return true;
-    if (entry.emails.length === 0) return false;
-    return entry.emails.some((emailMatch) => memberEmails.includes(emailMatch.toLowerCase()));
-  });
 }
 
 function normalizeText(v: string): string {
@@ -207,36 +107,10 @@ function truncateCell(value: string, max = 64): string {
   return `${text.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
 }
 
-function readAssignmentNames(assignment: FinanceAssignment): string[] {
-  const raw = (assignment as { assignedMemberNames?: unknown }).assignedMemberNames;
-  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
-  if (raw && typeof raw === "object") {
-    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
-  }
-  if (typeof raw === "string") {
-    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-}
-
-function readAssignmentIds(assignment: FinanceAssignment): string[] {
-  const raw = (assignment as { assignedMemberIds?: unknown }).assignedMemberIds;
-  if (Array.isArray(raw)) return raw.map((item) => String(item ?? "").trim()).filter(Boolean);
-  if (raw && typeof raw === "object") {
-    return Object.values(raw as Record<string, unknown>).map((item) => String(item ?? "").trim()).filter(Boolean);
-  }
-  if (typeof raw === "string") {
-    return raw.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-}
-
 // ── PAGE COMPONENT ────────────────────────────────────────────────────────────
 
 export default function TeamPage() {
   const [team, setTeam]               = useState<TeamMember[]>([]);
-  const [businesses, setBusinesses]   = useState<Business[]>([]);
-  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
@@ -249,23 +123,12 @@ export default function TeamPage() {
   const [showOnlyInactive, setShowOnlyInactive] = useState(false);
   const [openRolePopoverId, setOpenRolePopoverId] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
-  const boardMigrationRef = useRef(false);
-  // Credit-system inputs for the dot color computation + drawer.
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [creditAssignments, setCreditAssignments] = useState<Assignment[]>([]);
-  const [creditClaims, setCreditClaims] = useState<AssignmentClaim[]>([]);
-  const [creditStrikes, setCreditStrikes] = useState<MemberStrike[]>([]);
-  const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
-  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
-  const [automationConfigs, setAutomationConfigs] = useState<AutomationConfig[]>([]);
-  const [infractionCatalog, setInfractionCatalog] = useState<Infraction[]>([]);
+  // Hours + pods drive the member row; credits were retired.
+  const [thresholds, setThresholds] = useState(DEFAULT_INFRACTION_THRESHOLDS);
+  const [contributions, setContributions] = useState<MemberContribution[]>([]);
+  const [pods, setPods] = useState<Pod[]>([]);
+  const [podMembers, setPodMembers] = useState<PodMember[]>([]);
   const [drawerMember, setDrawerMember] = useState<TeamMember | null>(null);
-  const sweepRanRef = useRef(false);
-  const [assignmentQuickView, setAssignmentQuickView] = useState<{ item: MemberAssignmentLink; memberName: string } | null>(null);
-  const [creditSummaryMember, setCreditSummaryMember] = useState<TeamMember | null>(null);
-  const [adjPoints, setAdjPoints] = useState("0");
-  const [adjReason, setAdjReason] = useState("");
-  const [adjBusy, setAdjBusy] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [inviteAllState, setInviteAllState] = useState<"idle" | "running" | "done">("idle");
   const [inviteAllProgress, setInviteAllProgress] = useState({ sent: 0, total: 0 });
@@ -294,67 +157,29 @@ export default function TeamPage() {
 
   // Subscribe to real-time team updates; unsubscribe on unmount.
   const [teamLoaded, setTeamLoaded] = useState(false);
-  useEffect(() => subscribeTeam((items) => { setTeam(items); setTeamLoaded(true); }), []);
+  const [teamLoadError, setTeamLoadError] = useState<string | null>(null);
+  useEffect(() => subscribeTeam((items, state) => {
+    setTeam(items);
+    setTeamLoaded(true);
+    setTeamLoadError(state.error);
+  }), []);
 
   // Real-time subscriptions for all supporting data — automatic updates when database changes.
   useEffect(() => {
-    const unsubscribeBusinesses = subscribeBusinesses(setBusinesses);
-    const unsubscribeCycles = subscribeCycles(setCycles);
-    const unsubscribeCreditAssignments = subscribeAssignments(setCreditAssignments);
-    const unsubscribeCreditClaims = subscribeAssignmentClaims(setCreditClaims);
-    const unsubscribeCreditStrikes = subscribeMemberStrikes(setCreditStrikes);
-    const unsubscribeCreditAdjustments = subscribeMemberCreditAdjustments(setCreditAdjustments);
-    const unsubscribeEmailTemplates = subscribeEmailTemplates(setEmailTemplates);
-    const unsubscribeAutomationConfigs = subscribeAutomationConfigs(setAutomationConfigs);
-    const unsubscribeInfractionCatalog = subscribeInfractions(setInfractionCatalog);
+    const unsubscribePods = subscribePods(setPods);
+    const unsubscribePodMembers = subscribePodMembers(setPodMembers);
+    void fetchMemberContributions().then(setContributions);
+    void getSiteSettings()
+      .then((settings) => setThresholds(settings.infractionThresholds))
+      .catch((error) => console.error("Infraction thresholds could not load", error));
 
     // Cleanup subscriptions on unmount
     return () => {
-      unsubscribeBusinesses();
-      unsubscribeCycles();
-      unsubscribeCreditAssignments();
-      unsubscribeCreditClaims();
-      unsubscribeCreditStrikes();
-      unsubscribeCreditAdjustments();
-      unsubscribeEmailTemplates();
-      unsubscribeAutomationConfigs();
-      unsubscribeInfractionCatalog();
+      unsubscribePods();
+      unsubscribePodMembers();
     };
   }, []);
 
-  // One-shot automation sweep: when admin loads this page with full cycle data,
-  // walk every active member and run cycle reminders. Pace warnings/auto-strikes
-  // stay paused unless automatic demerits are enabled in code.
-  useEffect(() => {
-    if (sweepRanRef.current) return;
-    if (!canEdit || !user) return;
-    if (team.length === 0) return;
-    if (cycles.length === 0) return;
-    sweepRanRef.current = true;
-    void (async () => {
-      try {
-        const idToken = await getAuthToken();
-        await runCycleSweep({
-          team,
-          cycles,
-          assignments: creditAssignments,
-          claims: creditClaims,
-          strikes: creditStrikes,
-          adjustments: creditAdjustments,
-          templates: emailTemplates,
-          automationConfigs,
-          infractions: infractionCatalog,
-          idToken,
-          reviewerLabel: "system (auto)",
-        });
-      } catch {
-        // Non-fatal: never block the directory render.
-      }
-    })();
-  }, [
-    canEdit, user, team, cycles, creditAssignments, creditClaims, creditStrikes,
-    creditAdjustments, emailTemplates, automationConfigs, infractionCatalog,
-  ]);
   useEffect(() => subscribeApplications(setApplications), []);
 
   // Close the inline role-edit popover on click outside, scroll, or resize.
@@ -378,55 +203,6 @@ export default function TeamPage() {
     setTeam((prev) => prev.map((m) => m.id === member.id ? { ...m, role: nextRole } : m));
     await updateTeamMember(member.id, { role: nextRole });
   };
-
-  // One-time backfill: stamp the Board role onto the named leadership members
-  // whose stored role hasn't already been set to Board. Runs once per session
-  // for admins so old "Member"/"Project Lead" entries get corrected.
-  useEffect(() => {
-    if (boardMigrationRef.current) return;
-    if (!canEdit || team.length === 0) return;
-    boardMigrationRef.current = true;
-    void (async () => {
-      for (const member of team) {
-        if (!isBoardMember(member)) continue;
-        if (String(member.role ?? "").trim() === "Board") continue;
-        // eslint-disable-next-line no-await-in-loop
-        await updateTeamMember(member.id, { role: "Board" });
-      }
-    })();
-  }, [team, canEdit]);
-  useEffect(() => {
-    let mounted = true;
-    let timer: number | null = null;
-
-    if (!canEdit || !user) {
-      return subscribeFinanceAssignments(setFinanceAssignments);
-    }
-
-    const loadAssignments = async () => {
-      try {
-        const token = await getAuthToken();
-        const res = await fetch("/api/members/finance-assignments", {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json() as { assignments?: FinanceAssignment[] };
-        if (!mounted) return;
-        setFinanceAssignments(Array.isArray(data.assignments) ? data.assignments : []);
-      } catch {
-        // Keep existing in-memory assignments.
-      }
-    };
-
-    void loadAssignments();
-    timer = window.setInterval(() => { void loadAssignments(); }, 30000);
-
-    return () => {
-      mounted = false;
-      if (timer) window.clearInterval(timer);
-    };
-  }, [canEdit, user]);
 
   const copyText = async (value: string) => {
     const safe = value.trim();
@@ -455,10 +231,9 @@ export default function TeamPage() {
       school:      member.school,
       // Coerce any legacy "Senior"/"Junior" value into the matching Class-of label
       // so the dropdown lands on the right option when editing older records.
-      grade:       gradeToClassOf(member.grade ?? ""),
+      grade:       gradeToClassOf(member.grade ?? "", member.acceptedDate || member.joinDate),
       // Guard against undefined arrays on legacy rows.
       divisions:   member.divisions ?? [],
-      pod:         "",
       role:        member.role,
       slackHandle: member.slackHandle,
       email:       member.email,
@@ -467,7 +242,6 @@ export default function TeamPage() {
       skills:      member.skills ?? [],
       joinDate:    member.joinDate,
       acceptedDate: member.acceptedDate ?? "",
-      notes:       member.notes,
     });
     setEditingMember(member);
     setShowAlternateEmail(!!(member.alternateEmail ?? "").trim());
@@ -478,9 +252,9 @@ export default function TeamPage() {
     if (!form.name.trim()) return;
     if (editingMember) {
       setTeam((prev) => prev.map((m) => m.id === editingMember.id ? { ...m, ...(form as Partial<TeamMember>) } : m));
-      await updateTeamMember(editingMember.id, { ...(form as Partial<TeamMember>), pod: "" });
+      await updateTeamMember(editingMember.id, form as Partial<TeamMember>);
     } else {
-      await createTeamMember({ ...(form as Omit<TeamMember, "id" | "createdAt">), pod: "" });
+      await createTeamMember(form as Omit<TeamMember, "id" | "createdAt">);
     }
     setModal(null);
   };
@@ -492,7 +266,7 @@ export default function TeamPage() {
         await deleteTeamMember(editingMember.id);
         setModal(null);
       },
-      `Delete ${editingMember.name}? This permanently removes them from the member directory.`
+      `Remove ${editingMember.name} from the directory? Their hours and pod history are kept, and an owner can restore the record from the database if this was a mistake.`
     );
   };
 
@@ -562,20 +336,19 @@ export default function TeamPage() {
   };
 
   const filtered = team.filter(member => {
-    const isInactive = normalizeKey(member.status ?? "") === "inactive";
-    const isReserve = classifyMember(member).status === "reserve";
-    const isInactiveOrReserve = isInactive || isReserve;
+    const isInactive = isInactiveMember(member.status);
+
     if (showOnlyInactive) {
-      if (!isInactiveOrReserve) return false;
+      if (!isInactive) return false;
     } else if (hideInactive) {
-      if (isInactiveOrReserve) return false;
+      if (isInactive) return false;
     }
     if (!search) return true;
     const q = search.toLowerCase();
     return (member.name ?? "").toLowerCase().includes(q)
       || (member.school ?? "").toLowerCase().includes(q)
       || (member.grade ?? "").toLowerCase().includes(q)
-      || gradeToClassOf(member.grade ?? "").toLowerCase().includes(q)
+      || gradeToClassOf(member.grade ?? "", member.acceptedDate || member.joinDate).toLowerCase().includes(q)
       || getMemberTrack(member).toLowerCase().includes(q)
       || String(member.role ?? "").toLowerCase().includes(q)
       || (member.email ?? "").toLowerCase().includes(q)
@@ -592,7 +365,7 @@ export default function TeamPage() {
     return map;
   }, [applications]);
 
-  // Status dot rank: green=0 (on pace) through gray=4 (inactive/reserve).
+  // Status dot rank: green=0 (most recent activity) through gray=4 (none).
   const DOT_RANK: Record<string, number> = {
     "bg-emerald-400": 0,
     "bg-yellow-400": 1,
@@ -613,8 +386,25 @@ export default function TeamPage() {
       case 2: return (a.name || "").localeCompare(b.name || "");
       case 3: return (a.school || "").localeCompare(b.school || "");
       case 4: {
-        const roleCmp = roleSortKey(a.role) - roleSortKey(b.role);
-        return roleCmp !== 0 ? roleCmp : (a.name || "").localeCompare(b.name || "");
+        // Rank means the display tier — Board, Leadership, LIT, then members
+        // ordered by how much work they've actually done.
+        const ta = TIER_ORDER.indexOf(tierOf(a));
+        const tb = TIER_ORDER.indexOf(tierOf(b));
+        if (ta !== tb) return ta - tb;
+        const wa = workByMemberId.get(a.id)?.workScore ?? 0;
+        const wb = workByMemberId.get(b.id)?.workScore ?? 0;
+        if (wa !== wb) return wb - wa;
+        return (a.name || "").localeCompare(b.name || "");
+      }
+      case 6: {
+        const wa = workByMemberId.get(a.id)?.workScore ?? 0;
+        const wb = workByMemberId.get(b.id)?.workScore ?? 0;
+        return wb - wa;
+      }
+      case 7: {
+        const ha = workByMemberId.get(a.id)?.hoursTotal ?? 0;
+        const hb = workByMemberId.get(b.id)?.hoursTotal ?? 0;
+        return hb - ha;
       }
       case 5: {
         const da = a.acceptedDate || "";
@@ -669,223 +459,48 @@ export default function TeamPage() {
     setField("divisions", [track]);
   };
 
-  const resolvedFinanceMemberKeysByAssignment = useMemo(() => {
-    const map = new Map<string, string[]>();
-    const teamRows = team.map((member) => {
-      const full = normalizeKey(member.name ?? "");
-      const first = normalizeKey((member.name ?? "").split(/\s+/)[0] ?? "");
-      return {
-        id: member.id,
-        full,
-        first,
-      };
-    }).filter((row) => row.full);
-    const fullById = new Map(teamRows.map((row) => [row.id, row.full]));
-
-    const resolveName = (rawName: string): string[] => {
-      const rawKey = normalizeKey(rawName ?? "");
-      if (!rawKey) return [];
-
-      // Exact full-name match takes priority.
-      const exactFull = teamRows.filter((row) => row.full === rawKey);
-      if (exactFull.length === 1) return [exactFull[0].full];
-      if (exactFull.length > 1) return exactFull.map((row) => row.full);
-
-      // If first-name match is unique, use it.
-      const firstMatches = teamRows.filter((row) => row.first && row.first === rawKey);
-      if (firstMatches.length === 1) return [firstMatches[0].full];
-
-      // Fallback: closest contains relation when unique.
-      const containsMatches = teamRows.filter((row) => row.full.includes(rawKey) || rawKey.includes(row.full));
-      if (containsMatches.length === 1) return [containsMatches[0].full];
-
-      // Unknown/ambiguous raw names still get recorded as their own key.
-      return [rawKey];
-    };
-
-    for (const assignment of financeAssignments) {
-      const keySet = new Set<string>();
-
-      for (const memberId of readAssignmentIds(assignment)) {
-        const memberKey = fullById.get(memberId);
-        if (memberKey) keySet.add(memberKey);
-      }
-
-      for (const memberName of readAssignmentNames(assignment)) {
-        for (const resolved of resolveName(memberName)) keySet.add(resolved);
-      }
-
-      map.set(assignment.id, Array.from(keySet));
-    }
-    return map;
-  }, [financeAssignments, team]);
-
-  const globalCodeMaps = useMemo(
-    () => computeGlobalCodes(businesses, financeAssignments),
-    [businesses, financeAssignments]
+  const workByMemberId = useMemo(
+    () => new Map(contributions.map((c) => [c.memberId, c])),
+    [contributions],
   );
 
-  const _assignmentsByMemberName = useMemo(() => {
-    const map = new Map<string, MemberAssignmentLink[]>();
-    const teamNameById = new Map(team.map((member) => [member.id, String(member.name ?? "").trim()]));
-    const pushForMemberKey = (memberKey: string, item: Omit<MemberAssignmentLink, "code">) => {
-      const key = normalizeKey(memberKey);
-      if (!key) return;
-      const current = map.get(key) ?? [];
-      current.push({ ...item, code: "" });
-      map.set(key, current);
-    };
-    const pushForMemberName = (memberName: string, item: Omit<MemberAssignmentLink, "code">) => {
-      pushForMemberKey(memberName, item);
-    };
+  // LIT is derived from pod leadership, never stored on the member, so the
+  // badge can't disagree with who actually runs a pod.
+  const tierOf = (member: TeamMember) =>
+    memberTier(member.role, workByMemberId.get(member.id)?.podsLed ?? 0);
 
-    for (const business of businesses) {
-      const status = String(business.projectStatus ?? "").trim() || "—";
-      const legacyAssignedNames = [...(business.teamMembers ?? []), business.teamLead ?? ""]
-        .map((name) => String(name ?? "").trim())
-        .filter(Boolean)
-        .filter((name, index, arr) => arr.indexOf(name) === index);
-      const trackProjects = business.trackProjects ?? {};
-      const requestedTracks = Array.isArray(business.projectTracks)
-        ? business.projectTracks.map((track) => String(track ?? "").trim()).filter(Boolean)
-        : [];
-      const explicitTracks = Object.keys(trackProjects).map((track) => String(track ?? "").trim()).filter(Boolean);
-      const allTracks = Array.from(new Set([...requestedTracks, ...explicitTracks]));
-      const trackOrder: Array<"Tech" | "Marketing" | "Finance"> = ["Tech", "Marketing", "Finance"];
-      const hasTrackSpecificAssignments = allTracks.length > 0;
-      const hasAnyExplicitTrackTeamMembers = trackOrder.some((track) => {
-        if (!allTracks.includes(track)) return false;
-        const info = (trackProjects as Record<string, unknown>)[track];
-        if (!info || typeof info !== "object") return false;
-        const raw = (info as { teamMembers?: unknown }).teamMembers;
-        return Array.isArray(raw);
-      });
+  const roleTierOf = (member: TeamMember) => memberTier(member.role, 0);
+  const leadsAPod = (member: TeamMember) => (workByMemberId.get(member.id)?.podsLed ?? 0) > 0;
 
-      if (!hasTrackSpecificAssignments) {
-        const entry: Omit<MemberAssignmentLink, "code"> = {
-          id: business.id,
-          kind: "Business Project",
-          title: business.name || "Untitled Project",
-          topic: "Website project",
-          teamNames: legacyAssignedNames,
-          codePrefix: "W",
-          status,
-          deadline: "—",
-          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
-        };
-        for (const memberName of legacyAssignedNames) pushForMemberName(memberName, entry);
-        continue;
-      }
-
-      for (const track of trackOrder) {
-        if (!allTracks.includes(track)) continue;
-        const trackInfo = (trackProjects as Record<string, unknown>)[track];
-        const rawMembers = trackInfo && typeof trackInfo === "object"
-          ? (trackInfo as { teamMembers?: unknown }).teamMembers
-          : [];
-        const trackMembers = Array.isArray(rawMembers)
-          ? rawMembers.map((name) => String(name ?? "").trim()).filter(Boolean)
-          : [];
-        const fallbackMembers = hasAnyExplicitTrackTeamMembers ? [] : legacyAssignedNames;
-        const assignedNames = Array.from(new Set(trackMembers.length > 0 ? trackMembers : fallbackMembers));
-        if (assignedNames.length === 0) continue;
-        const codePrefix: AssignmentCodePrefix = track === "Marketing" ? "M" : track === "Finance" ? "F" : "W";
-        const topic =
-          track === "Marketing"
-            ? "Marketing project"
-            : track === "Finance"
-              ? "Finance project"
-              : "Website project";
-        const entry: Omit<MemberAssignmentLink, "code"> = {
-          id: `${business.id}-${track.toLowerCase()}`,
-          kind: "Business Project",
-          title: business.name || "Untitled Project",
-          topic,
-          teamNames: assignedNames,
-          codePrefix,
-          status,
-          deadline: "—",
-          href: `/members/projects?projectId=${encodeURIComponent(business.id)}#project-${business.id}`,
-        };
-        for (const memberName of assignedNames) pushForMemberName(memberName, entry);
-      }
-    }
-
-    for (const assignment of financeAssignments) {
-      const assignmentType = String(assignment.type ?? "").trim().toLowerCase();
-      const codePrefix: AssignmentCodePrefix = assignmentType === "case study" ? "C" : "R";
-      const assignmentTypeLabel =
-        assignmentType === "case study" ? "Case Study"
-          : "Report";
-      const region = String(assignment.region ?? "").trim();
-      const assignmentDisplayTitle = region ? `${region} ${assignmentTypeLabel}` : assignmentTypeLabel;
-      const firstDeadlineDate = Array.isArray(assignment.deadlines)
-        ? assignment.deadlines
-          .map((entry) => (entry && typeof entry === "object" ? String((entry as { date?: string }).date ?? "").trim() : ""))
-          .find(Boolean)
-        : "";
-      const deadline = firstDeadlineDate || assignment.deadline || assignment.finalDueDate || assignment.firstDraftDueDate || assignment.interviewDueDate || "—";
-      const assignmentTeamNames = Array.from(new Set([
-        ...readAssignmentIds(assignment).map((memberId) => teamNameById.get(memberId) ?? "").filter(Boolean),
-        ...readAssignmentNames(assignment),
-      ]));
-      const entry: Omit<MemberAssignmentLink, "code"> = {
-        id: assignment.id,
-        kind: "Finance Assignment",
-        title: assignmentDisplayTitle,
-        topic: "",
-        teamNames: assignmentTeamNames,
-        codePrefix,
-        status: assignment.status || "—",
-        deadline,
-        href: `/members/assignments/by-business`,
-      };
-      for (const memberKey of resolvedFinanceMemberKeysByAssignment.get(assignment.id) ?? []) {
-        pushForMemberKey(memberKey, entry);
-      }
-    }
-
-    // Assign global codes using globalCodeMaps
-    for (const [key, items] of Array.from(map.entries())) {
-      map.set(
-        key,
-        items
-          .slice()
-          .map((item) => {
-            // Try to look up from globalCodeMaps
-            // Finance assignment: id is assignmentId
-            const fromAssignment = globalCodeMaps.assignmentCode.get(item.id);
-            if (fromAssignment) return { ...item, code: fromAssignment };
-            // Business with no track: id is businessId
-            const fromBusiness = globalCodeMaps.businessTrackCode.get(item.id);
-            if (fromBusiness) return { ...item, code: fromBusiness };
-            // Business with track: id is "businessId-trackname" (lowercase), global key is "businessId-Track" (Title case)
-            // Reconstruct the capitalized key
-            const dashIdx = item.id.lastIndexOf("-");
-            if (dashIdx >= 0) {
-              const bizId = item.id.slice(0, dashIdx);
-              const trackLower = item.id.slice(dashIdx + 1);
-              const track = trackLower.charAt(0).toUpperCase() + trackLower.slice(1);
-              const fromTrack = globalCodeMaps.businessTrackCode.get(`${bizId}-${track}`);
-              if (fromTrack) return { ...item, code: fromTrack };
-            }
-            // Fallback: use prefix-based relative code
-            return { ...item, code: `${item.codePrefix}?` };
-          })
-          .sort((a, b) => {
-            const prefixOrder: Record<string, number> = { W: 0, M: 1, F: 2, R: 3, C: 4, G: 5 };
-            const pa = prefixOrder[a.codePrefix] ?? 9;
-            const pb = prefixOrder[b.codePrefix] ?? 9;
-            if (pa !== pb) return pa - pb;
-            const na = parseInt(a.code.slice(1)) || 0;
-            const nb = parseInt(b.code.slice(1)) || 0;
-            return na - nb;
-          }),
-      );
+  const podsByMemberId = useMemo(() => {
+    const map = new Map<string, { name: string; lit: boolean }[]>();
+    for (const pm of podMembers) {
+      if (pm.leftAt) continue;
+      const pod = pods.find((p) => p.id === pm.podId);
+      if (!pod) continue;
+      const list = map.get(pm.memberId) ?? [];
+      list.push({ name: pod.name, lit: pm.role === "lit" });
+      map.set(pm.memberId, list);
     }
     return map;
-  }, [businesses, financeAssignments, resolvedFinanceMemberKeysByAssignment, team, globalCodeMaps]);
+  }, [podMembers, pods]);
 
+  // Recency, not pace. Credits had a per-cycle target to measure against;
+  // hours don't, so the useful signal is whether someone is still active.
+  const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
+    const work = workByMemberId.get(member.id);
+    if (!work || work.noRecordedWork || !work.lastActivity || work.lastActivity < "2000-01-01") {
+      return { colorClass: "bg-gray-400", label: "No recorded work yet" };
+    }
+    const days = Math.floor(
+      (Date.now() - new Date(work.lastActivity + "T12:00:00").getTime()) / 86_400_000,
+    );
+    const hrs = Number(work.hoursTotal ?? 0).toFixed(1);
+    if (days <= 21) return { colorClass: "bg-emerald-400", label: `${hrs}h · active ${days}d ago` };
+    if (days <= 45) return { colorClass: "bg-yellow-400", label: `${hrs}h · last active ${days}d ago` };
+    if (days <= 90) return { colorClass: "bg-orange-400", label: `${hrs}h · quiet for ${days}d` };
+    return { colorClass: "bg-red-500", label: `${hrs}h · nothing for ${days}d` };
+  };
 
   const sorted = [...filtered].sort((a, b) => {
     for (const rule of sortRules) {
@@ -894,64 +509,6 @@ export default function TeamPage() {
     }
     return 0;
   });
-
-  const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
-
-  const strikesByMemberId = useMemo(() => {
-    const map = new Map<string, MemberStrike[]>();
-    for (const s of creditStrikes) {
-      const list = map.get(s.memberId) ?? [];
-      list.push(s);
-      map.set(s.memberId, list);
-    }
-    return map;
-  }, [creditStrikes]);
-
-  // Dot color is driven by the credit-system pace computation. Falls back to a
-  // gray "no cycle" state when there's no active cycle to anchor the math.
-  const getMemberIndicator = (member: TeamMember): { colorClass: string; label: string } => {
-    const memberClaims = creditClaims.filter(
-      (c) => c.memberId === member.id && (!activeCycle || c.cycleId === activeCycle.id),
-    );
-    const memberAdjustments = creditAdjustments.filter(
-      (a) => a.memberId === member.id && (!activeCycle || a.cycleId === activeCycle.id),
-    );
-    const credits = new Map<string, number>();
-    for (const a of creditAssignments) credits.set(a.id, a.credits);
-    const ledger = computeCreditLedger({
-      claims: memberClaims,
-      adjustments: memberAdjustments,
-      assignmentCredits: credits,
-    });
-    const classification = classifyMember(member);
-    const primaryTrack = pickPrimaryTrack(member);
-    const target = activeCycle && classification.cycleRole
-      ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
-      : 0;
-    const dot = computeDot({
-      cycle: activeCycle,
-      member,
-      earnedCredits: ledger.total,
-      targetCredits: target,
-      hasAnyClaims: memberClaims.length > 0,
-    });
-    const colorClass =
-      dot.color === "green" ? "bg-emerald-400"
-        : dot.color === "yellow" ? "bg-yellow-400"
-        : dot.color === "orange" ? "bg-orange-400"
-        : dot.color === "red" ? "bg-red-500"
-        : "bg-gray-400";
-    return { colorClass, label: dot.label };
-  };
-
-  const assignmentQuickViewRestTeam = useMemo(() => {
-    if (!assignmentQuickView) return [];
-    const currentMemberKey = normalizeKey(assignmentQuickView.memberName);
-    return assignmentQuickView.item.teamNames
-      .map((name) => String(name ?? "").trim())
-      .filter(Boolean)
-      .filter((name) => normalizeKey(name) !== currentMemberKey);
-  }, [assignmentQuickView]);
 
   const totalMembersCount = team.length;
   const inactiveMembersCount = team.filter((member) => normalizeKey(member.status ?? "") === "inactive").length;
@@ -979,36 +536,56 @@ export default function TeamPage() {
                   ? `Inviting… ${inviteAllProgress.sent}/${inviteAllProgress.total}`
                   : inviteAllState === "done"
                     ? `✓ Sent ${inviteAllProgress.sent}`
-                    : `Invite All (${unregisteredCount})`}
+                    : `Send account invites (${unregisteredCount})`}
               </Btn>
             )}
             <Btn
               variant="secondary"
               onClick={() => {
-                const csv = toCsv(filtered, [
+                // Pods live in their own table now, so flatten them onto the
+                // row rather than exporting a column the member record lacks.
+                const exportRows = filtered.map((m) => ({
+                  ...m,
+                  pods: (podsByMemberId.get(m.id) ?? [])
+                    .map((p) => (p.lit ? `${p.name} (LIT)` : p.name))
+                    .join("; "),
+                  hours: Number(workByMemberId.get(m.id)?.hoursTotal ?? 0).toFixed(1),
+                  work: Number(workByMemberId.get(m.id)?.workScore ?? 0).toFixed(0),
+                  sitesShipped: workByMemberId.get(m.id)?.projectsLive ?? 0,
+                  tasksDone: workByMemberId.get(m.id)?.tasksDone ?? 0,
+                  meetings: workByMemberId.get(m.id)?.meetingsPresent ?? 0,
+                }));
+                const csv = toCsv(exportRows, [
                   { key: "name", label: "Name" },
                   { key: "email", label: "Email" },
                   { key: "school", label: "School" },
                   { key: "grade", label: "Grade" },
                   { key: "role", label: "Role" },
+                  { key: "homeCity", label: "Home City" },
+                  { key: "homeState", label: "Home State" },
                   { key: "status", label: "Status" },
-                  { key: "pod", label: "Pod" },
+                  { key: "pods", label: "Pods" },
+                  { key: "work", label: "Work Score" },
+                  { key: "sitesShipped", label: "Sites Shipped" },
+                  { key: "tasksDone", label: "Tasks Done" },
+                  { key: "meetings", label: "Meetings" },
+                  { key: "hours", label: "Hours" },
                   { key: "joinDate", label: "Join Date" },
                   { key: "slackHandle", label: "Slack" },
                 ]);
                 downloadCsv(dateStampedFilename("team-directory"), csv);
               }}
             >
-              Export CSV
+              Export members
             </Btn>
             <Btn variant="primary" onClick={openCreate}>+ Add Member</Btn>
           </div>
         ) : undefined}
       />
       <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
-        <span>Total Members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
-        <span>With Account: <span className="text-emerald-300 font-semibold">{withAccountCount}</span></span>
-        <span>No Account: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>
+        <span>Total members: <span className="text-white/85 font-semibold">{totalMembersCount}</span></span>
+        <span>Portal accounts: <span className="text-emerald-300 font-semibold">{withAccountCount}</span></span>
+        <span>Need an account invite: <span className="text-yellow-300 font-semibold">{unregisteredCount}</span></span>
         <span>Inactive: <span className="text-red-300 font-semibold">{inactiveMembersCount}</span></span>
       </div>
 
@@ -1072,11 +649,11 @@ export default function TeamPage() {
         )}
       </div>
       <div className="flex flex-wrap items-center gap-3 mb-4 text-[10px] text-white/55">
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> On pace</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> 1 check-in behind</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> 2–3 behind</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> 4+ behind / no activity</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Inactive</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Active this month</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Within 6 weeks</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-400" /> Within 3 months</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> Longer than that</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Nothing recorded</span>
       </div>
       {/* Team member list */}
       {isMemberRestricted ? (
@@ -1093,32 +670,29 @@ export default function TeamPage() {
             <tbody className="divide-y divide-white/5">
               {sorted.map((member) => {
                 const track = getMemberTrack(member);
-                const avatar = getTrackAvatarClasses(track);
                 const indicator = getMemberIndicator(member);
                 return (
                   <tr key={member.id} className="hover:bg-white/3 transition-colors">
-                    <td className="px-2 py-0 h-9 align-middle overflow-hidden">
+                    <td className="px-2 py-0 h-8 align-middle overflow-hidden">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
                           className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
                           title={`${indicator.label} · Click for progress summary`}
-                          onClick={() => setCreditSummaryMember(member)}
-                          aria-label={`View credit progress for ${member.name}`}
+                          onClick={() => setDrawerMember(member)}
+                          aria-label={`Open ${member.name}’s record`}
                         />
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${avatar.bgClass} ${avatar.textClass}`}>
-                          <TrackAvatarIcon track={track} />
-                        </div>
+                        <TrackAvatar track={track} />
                         <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 44)}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                    <td className="px-2 py-0 h-8 align-middle overflow-hidden whitespace-nowrap">
                       <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 64) : "—"}</span>
                     </td>
-                    <td className="px-2 py-0 h-9 align-middle whitespace-nowrap">
-                      <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
+                    <td className="px-2 py-0 h-8 align-middle whitespace-nowrap">
+                      <span className="text-white/50">{gradeToClassOf(member.grade, member.acceptedDate || member.joinDate) || "—"}</span>
                     </td>
-                    <td className="px-2 py-0 h-9 align-middle whitespace-nowrap">
+                    <td className="px-2 py-0 h-8 align-middle whitespace-nowrap">
                       <span className="text-white/60">{displayRoleValue(member.role)}</span>
                     </td>
                   </tr>
@@ -1175,11 +749,8 @@ export default function TeamPage() {
               <tbody className="divide-y divide-white/5">
                 {sorted.map((member) => {
                   const track = getMemberTrack(member);
-                  const avatar = getTrackAvatarClasses(track);
                   const indicator = getMemberIndicator(member);
                   const _hasPortalAccount = !!member.authUid;
-                  const memberStrikes = strikesByMemberId.get(member.id) ?? [];
-                  const strikeCount = memberStrikes.length;
                   return (
                     <tr
                       key={member.id}
@@ -1201,24 +772,22 @@ export default function TeamPage() {
                       {visCols.map((col) => {
                         switch (col.key) {
                           case "name": return (
-                            <td key="name" className="px-3 py-0 h-9 align-middle overflow-hidden">
+                            <td key="name" className="px-3 py-0 h-8 align-middle overflow-hidden">
                               <div className="flex items-center gap-2 min-w-0">
                                 <button
                                   type="button"
                                   className={`members-status-dot h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/35`}
                                   title={`${indicator.label} · Click for progress summary`}
-                                  onClick={() => setCreditSummaryMember(member)}
-                                  aria-label={`View credit progress for ${member.name}`}
+                                  onClick={() => setDrawerMember(member)}
+                                  aria-label={`Open ${member.name}’s record`}
                                 />
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${avatar.bgClass} ${avatar.textClass}`}>
-                                  <TrackAvatarIcon track={track} />
-                                </div>
+                                <TrackAvatar track={track} />
                                 <span className="text-white/90 font-medium truncate whitespace-nowrap" title={member.name}>{truncateCell(member.name, 56)}</span>
                               </div>
                             </td>
                           );
                           case "email": return (
-                            <td key="email" className="px-3 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                            <td key="email" className="px-3 py-0 h-8 align-middle overflow-hidden whitespace-nowrap">
                               <div className="font-mono inline-flex items-center gap-1.5 max-w-full">
                                 {member.email || member.alternateEmail ? (
                                   <a
@@ -1244,43 +813,66 @@ export default function TeamPage() {
                             </td>
                           );
                           case "school": return (
-                            <td key="school" className="px-3 py-0 h-9 align-middle overflow-hidden whitespace-nowrap">
+                            <td key="school" className="px-3 py-0 h-8 align-middle overflow-hidden whitespace-nowrap">
                               <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 72) : "—"}</span>
                             </td>
                           );
                           case "hsClass": return (
-                            <td key="hsClass" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
-                              <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
+                            <td key="hsClass" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                              <span className="text-white/50">{gradeToClassOf(member.grade, member.acceptedDate || member.joinDate) || "—"}</span>
                             </td>
                           );
-                          case "role": return (
-                            <td key="role" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
-                              {canEdit ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (openRolePopoverId === member.id) {
-                                      setOpenRolePopoverId(null);
-                                      setPopoverPos(null);
-                                    } else {
-                                      const r = e.currentTarget.getBoundingClientRect();
-                                      setPopoverPos({ top: r.bottom + 4, left: r.left });
-                                      setOpenRolePopoverId(member.id);
-                                    }
-                                  }}
-                                  className="inline-flex items-center rounded-full border border-white/15 bg-[#11141A] hover:border-[#F6B78D]/45 hover:bg-[#F6B78D]/10 px-2 py-0.5 text-[10px] font-semibold text-white/80 transition-colors"
-                                  title="Click to change role"
-                                >
-                                  {displayRoleValue(member.role)}
-                                </button>
-                              ) : (
-                                <span className="text-white/50">{displayRoleValue(member.role)}</span>
-                              )}
-                            </td>
-                          );
+                          case "role": return (() => {
+                            const roleTier = roleTierOf(member);
+                            const isLit = leadsAPod(member);
+                            // LIT sits above Member in the ladder, so it replaces
+                            // that label rather than sitting beside it. A leadership
+                            // role is a separate fact and still shows alongside —
+                            // collapsing those would hide one of the two.
+                            const litReplacesRole = isLit && roleTier === "member";
+                            const label = litReplacesRole ? "LIT" : displayRoleValue(member.role);
+                            const chip = litReplacesRole ? ROLE_CHIP.lit : ROLE_CHIP[roleTier];
+                            const hint = litReplacesRole
+                              ? "Leads a pod. Click to change their roster role."
+                              : "Click to change role";
+                            return (
+                              <td key="role" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1">
+                                  {canEdit ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (openRolePopoverId === member.id) {
+                                          setOpenRolePopoverId(null);
+                                          setPopoverPos(null);
+                                        } else {
+                                          const r = e.currentTarget.getBoundingClientRect();
+                                          setPopoverPos({ top: r.bottom + 4, left: r.left });
+                                          setOpenRolePopoverId(member.id);
+                                        }
+                                      }}
+                                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:brightness-110 ${chip}`}
+                                      title={hint}
+                                    >
+                                      {label}
+                                    </button>
+                                  ) : (
+                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${chip}`} title={litReplacesRole ? "Leads a pod" : undefined}>
+                                      {label}
+                                    </span>
+                                  )}
+                                  {isLit && !litReplacesRole && (
+                                    <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${ROLE_CHIP.lit}`} title="Leads a pod">
+                                      LIT
+                                    </span>
+                                  )}
+                                </span>
+                              </td>
+                            );
+                          })();
                           case "resume": return (
-                            <td key="resume" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="resume" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               {(() => {
                                 const emailKey = normalizeKey(member.email ?? "");
                                 const altEmailKey = normalizeKey(member.alternateEmail ?? "");
@@ -1294,33 +886,88 @@ export default function TeamPage() {
                             </td>
                           );
                           case "acceptedDate": return (
-                            <td key="acceptedDate" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="acceptedDate" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               <span className="text-white/50">{member.acceptedDate || "—"}</span>
                             </td>
                           );
+                          case "home": return (
+                            <td key="home" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                              {(() => {
+                                const city = (member.homeCity ?? "").trim();
+                                const st   = (member.homeState ?? "").trim();
+                                if (!city && !st) return <span className="text-white/25">—</span>;
+                                return (
+                                  <span className="text-[11px] text-white/60">
+                                    {city ? `${city}, ${st}` : st}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          );
+                          case "work": return (
+                            <td key="work" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                              {(() => {
+                                const w = workByMemberId.get(member.id);
+                                if (!w || w.noRecordedWork) return <span className="text-white/25">—</span>;
+                                const parts: string[] = [];
+                                if (w.projectsLive > 0)    parts.push(`${w.projectsLive} live`);
+                                if (w.projectsActive > 0)  parts.push(`${w.projectsActive} building`);
+                                if (w.tasksDone > 0)       parts.push(`${w.tasksDone} tasks`);
+                                if (w.meetingsPresent > 0) parts.push(`${w.meetingsPresent} mtgs`);
+                                if (w.hoursTotal > 0)      parts.push(`${Number(w.hoursTotal).toFixed(1)}h`);
+                                return (
+                                  <span className="flex items-baseline gap-2" title={`Work score ${w.workScore} — ${WORK_SCORE_EXPLAINER}`}>
+                                    <span className="font-mono text-[11px] tabular-nums text-white/85">
+                                      {Number(w.workScore).toFixed(0)}
+                                    </span>
+                                    <span className="text-[10px] text-white/40">{parts.join(" · ")}</span>
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          );
+                          case "pods": return (
+                            <td key="pods" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                              {(() => {
+                                const list = podsByMemberId.get(member.id) ?? [];
+                                if (list.length === 0) return <span className="text-white/25">—</span>;
+                                return (
+                                  <span className="text-[11px] text-white/70" title={list.map((p) => p.name).join(", ")}>
+                                    {list.map((p) => p.name.replace(/^Novus /, "")).join(", ")}
+                                    {list.some((p) => p.lit) && (
+                                      <span className="ml-1 text-[9px] uppercase tracking-wide text-[#F3E28D]">LIT</span>
+                                    )}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          );
                           case "strikes": return (
-                            <td key="strikes" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
-                              {strikeCount > 0 ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setDrawerMember(member)}
-                                  title={`${strikeCount} strike${strikeCount === 1 ? "" : "s"} — click to view in member drawer`}
-                                  className="members-chip border-red-400/35 bg-red-400/10 text-red-300 hover:bg-red-400/20 transition-colors cursor-pointer"
-                                >
-                                  {strikeCount} strike{strikeCount === 1 ? "" : "s"}
-                                </button>
-                              ) : (
-                                <span className="text-white/25">—</span>
-                              )}
+                            <td key="strikes" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                              {(() => {
+                                const points = workByMemberId.get(member.id)?.infractionPoints ?? 0;
+                                const standing = infractionStanding(points, thresholds);
+                                if (standing === "clear") return <span className="text-white/25">—</span>;
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDrawerMember(member)}
+                                    title={`${points} infraction point${points === 1 ? "" : "s"} — open the member record`}
+                                    className={`text-[11px] ${STANDING_STYLE[standing]} hover:underline`}
+                                  >
+                                    {STANDING_LABEL[standing]} · {points}
+                                  </button>
+                                );
+                              })()}
                             </td>
                           );
                           case "actions": return (
-                            <td key="actions" className="px-3 py-0 h-9 align-middle whitespace-nowrap">
+                            <td key="actions" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               <div className="members-row-actions">
                                 {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
                                 {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
-                                {canEdit && member.authUid ? (
-                                  <span className="members-pill-btn whitespace-nowrap text-emerald-400 text-xs font-medium">✓</span>
+                                {canEdit && (member.authUid ? (
+                                  <span className="members-pill-btn whitespace-nowrap text-emerald-400 text-xs font-medium" aria-label="Portal account active">✓</span>
                                 ) : (() => {
                                   const st = inviteStatus[member.id];
                                   return (
@@ -1334,7 +981,7 @@ export default function TeamPage() {
                                       {st === "sending" ? "Sending…" : st === "sent" ? "✓ Sent" : st === "error" ? "Retry" : "Invite"}
                                     </Btn>
                                   );
-                                })()}
+                                })())}
                               </div>
                             </td>
                           );
@@ -1349,7 +996,11 @@ export default function TeamPage() {
           </div>
         );
       })()}
-      {!teamLoaded ? (
+      {teamLoadError ? (
+        <div className="mt-4">
+          <LoadError message={teamLoadError} onRetry={() => window.location.reload()} />
+        </div>
+      ) : !teamLoaded ? (
         <div className="mt-4"><SkeletonRows rows={8} cols={6} /></div>
       ) : filtered.length === 0 ? (
         <Empty
@@ -1357,206 +1008,6 @@ export default function TeamPage() {
           action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first member</Btn> : undefined}
         />
       ) : null}
-
-      <Modal
-        open={!!assignmentQuickView}
-        onClose={() => setAssignmentQuickView(null)}
-        title={assignmentQuickView ? assignmentQuickView.item.title : "Assignment"}
-      >
-        {assignmentQuickView && (
-          <div className="space-y-3">
-            <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2">
-              <p className="text-[11px] text-white/55">
-                {assignmentQuickView.item.kind}{assignmentQuickView.item.topic ? ` · ${assignmentQuickView.item.topic}` : ""}
-              </p>
-              <p className="text-[11px] text-white/50 mt-1">
-                Status: {assignmentQuickView.item.status || "—"}
-                {assignmentQuickView.item.deadline && assignmentQuickView.item.deadline !== "—" ? ` · Due ${assignmentQuickView.item.deadline}` : ""}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-white/80">Rest of team</p>
-              {assignmentQuickViewRestTeam.length === 0 ? (
-                <p className="text-xs text-white/45 mt-1">No other members listed.</p>
-              ) : (
-                <p className="text-xs text-white/60 mt-1">{assignmentQuickViewRestTeam.join(", ")}</p>
-              )}
-            </div>
-            <p className="text-[11px] text-white/45">
-              Click the assignment again to open the full project popup.
-            </p>
-          </div>
-        )}
-        <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => setAssignmentQuickView(null)}>Close</Btn>
-        </div>
-      </Modal>
-
-      <Modal
-        open={!!creditSummaryMember}
-        onClose={() => setCreditSummaryMember(null)}
-        title={`Credit Progress · ${creditSummaryMember?.name ?? ""}`}
-      >
-        {creditSummaryMember && (() => {
-          const m = creditSummaryMember;
-          const memberClaims = creditClaims.filter(
-            (c) => c.memberId === m.id && (!activeCycle || c.cycleId === activeCycle.id),
-          );
-          const memberAdjustments = creditAdjustments.filter(
-            (a) => a.memberId === m.id && (!activeCycle || a.cycleId === activeCycle.id),
-          );
-          const credits = new Map<string, number>();
-          for (const a of creditAssignments) credits.set(a.id, a.credits);
-          const ledger = computeCreditLedger({ claims: memberClaims, adjustments: memberAdjustments, assignmentCredits: credits });
-          const classification = classifyMember(m);
-          const primaryTrack = pickPrimaryTrack(m);
-          const target = activeCycle && classification.cycleRole
-            ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
-            : 0;
-          const dot = computeDot({ cycle: activeCycle, member: m, earnedCredits: ledger.total, targetCredits: target, hasAnyClaims: memberClaims.length > 0 });
-          const dotColorClass = dot.color === "green" ? "bg-emerald-400" : dot.color === "yellow" ? "bg-yellow-400" : dot.color === "orange" ? "bg-orange-400" : dot.color === "red" ? "bg-red-500" : "bg-gray-400";
-          const pendingClaims = memberClaims.filter((c) => c.status === "claimed" || c.status === "In Progress" || c.status === "Submitted");
-          const approvedClaims = memberClaims.filter((c) => c.status === "Approved");
-          return (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <span className={`h-3 w-3 rounded-full flex-shrink-0 ${dotColorClass}`} />
-                <span className="text-sm text-white/80">{dot.label}</span>
-              </div>
-              {activeCycle ? (
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-white tabular-nums">{ledger.total}</p>
-                    <p className="text-[10px] text-white/55 mt-0.5">Credits earned</p>
-                  </div>
-                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-white tabular-nums">{target}</p>
-                    <p className="text-[10px] text-white/55 mt-0.5">Target</p>
-                  </div>
-                  <div className="rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-center">
-                    <p className={`text-lg font-bold tabular-nums ${dot.checkInsBehind > 0 ? "text-red-400" : "text-emerald-400"}`}>{dot.checkInsBehind > 0 ? `-${dot.checkInsBehind}` : "On track"}</p>
-                    <p className="text-[10px] text-white/55 mt-0.5">Check-ins behind</p>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-white/45">No active cycle — credit tracking is paused.</p>
-              )}
-              {memberClaims.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-white/70 mb-1.5">Claims this cycle ({memberClaims.length})</p>
-                  <div className="max-h-[180px] overflow-y-auto space-y-1 pr-1">
-                    {memberClaims.map((claim) => {
-                      const assignment = creditAssignments.find((a) => a.id === claim.assignmentId);
-                      return (
-                        <div key={claim.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/8 bg-[#0F1014] px-3 py-2">
-                          <span className="text-xs text-white/70 truncate">{assignment?.title ?? claim.assignmentId}</span>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-white/50">{credits.get(claim.assignmentId) ?? "?"} credits</span>
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${claim.status === "Approved" ? "bg-emerald-500/15 text-emerald-300" : claim.status === "rejected" ? "bg-red-500/15 text-red-300" : "bg-yellow-500/15 text-yellow-300"}`}>
-                              {claim.status}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] text-white/35 mt-1.5">{approvedClaims.length} approved · {pendingClaims.length} pending</p>
-                </div>
-              )}
-              {memberClaims.length === 0 && activeCycle && (
-                <p className="text-xs text-white/45">No claims submitted this cycle.</p>
-              )}
-
-              {/* Manual adjustments */}
-              {canEdit && activeCycle && (
-                <div className="border-t border-white/8 pt-3 space-y-2">
-                  <p className="text-xs font-semibold text-white/70">Manual credit adjustment</p>
-                  {memberAdjustments.length > 0 && (
-                    <div className="space-y-1">
-                      {memberAdjustments.map((adj) => (
-                        <div key={adj.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/8 bg-[#0F1014] px-3 py-2">
-                          <span className={`text-xs font-mono font-bold ${adj.points >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                            {adj.points >= 0 ? "+" : ""}{adj.points}
-                          </span>
-                          <span className="text-xs text-white/60 flex-1 truncate">{adj.reason}</span>
-                          <button
-                            type="button"
-                            onClick={() => void ask(async () => { await deleteMemberCreditAdjustment(adj.id); }, `Remove adjustment "${adj.reason}"?`)}
-                            className="members-icon-btn members-icon-btn-danger h-5 w-5 text-[10px] flex-shrink-0"
-                            title="Remove adjustment"
-                          >✕</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {[+1, +2, +5, -1, -2, -3].map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setAdjPoints(String(n))}
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border transition-colors ${
-                          adjPoints === String(n)
-                            ? n > 0
-                              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-                              : "border-red-400/40 bg-red-400/10 text-red-300"
-                            : "border-white/12 text-white/45 hover:border-white/25 hover:text-white/70"
-                        }`}
-                      >
-                        {n > 0 ? `+${n}` : n}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={adjPoints}
-                      onChange={(e) => setAdjPoints(e.target.value)}
-                      placeholder="±pts"
-                      className="w-20 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
-                    />
-                    <input
-                      type="text"
-                      value={adjReason}
-                      onChange={(e) => setAdjReason(e.target.value)}
-                      placeholder="Reason…"
-                      className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#F6B78D]/45"
-                    />
-                    <Btn
-                      size="sm"
-                      variant="secondary"
-                      disabled={adjBusy || !adjReason.trim() || !adjPoints.trim() || adjPoints === "0"}
-                      onClick={async () => {
-                        if (!activeCycle || !adjReason.trim()) return;
-                        setAdjBusy(true);
-                        try {
-                          await createMemberCreditAdjustment({
-                            memberId: m.id,
-                            memberName: m.name,
-                            cycleId: activeCycle.id,
-                            points: Number(adjPoints) || 0,
-                            reason: adjReason.trim(),
-                            createdBy: user?.email ?? "admin",
-                          });
-                          setAdjPoints("0");
-                          setAdjReason("");
-                        } finally {
-                          setAdjBusy(false);
-                        }
-                      }}
-                    >
-                      Add
-                    </Btn>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-        <div className="flex justify-end mt-4 pt-3 border-t border-white/8">
-          <Btn variant="ghost" onClick={() => { setCreditSummaryMember(null); setAdjPoints("0"); setAdjReason(""); }}>Close</Btn>
-        </div>
-      </Modal>
 
       {/* Create / Edit modal */}
       <Modal open={modal !== null} onClose={() => setModal(null)} title={editingMember ? "Edit Member" : "New Member"}>
@@ -1677,6 +1128,10 @@ export default function TeamPage() {
         <MemberDrawer
           member={team.find((m) => m.id === drawerMember.id) ?? drawerMember}
           reviewerLabel={user?.email || user?.id || "admin"}
+          canEdit={canEdit}
+          canAdjustHours={authRole === "owner" || authRole === "admin"}
+          canGenerateLetter={authRole === "owner" || authRole === "admin"}
+          canManageInfractions={authRole === "owner"}
           onClose={() => setDrawerMember(null)}
         />
       )}
@@ -1695,15 +1150,35 @@ export default function TeamPage() {
             {ROLE_OPTIONS.map((roleOption) => {
               const isActive = String(member.role ?? "").trim() === roleOption;
               return (
-                <button
-                  key={roleOption}
-                  type="button"
-                  onClick={() => void handleQuickRoleChange(member, roleOption)}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#F6B78D]" : "text-white/70"}`}
-                >
-                  <span className="w-3 flex-shrink-0 text-[#F6B78D]">{isActive ? "✓" : ""}</span>
-                  {roleOption}
-                </button>
+                <Fragment key={roleOption}>
+                  <button
+                    type="button"
+                    onClick={() => void handleQuickRoleChange(member, roleOption)}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${isActive ? "text-[#F6B78D]" : "text-white/70"}`}
+                  >
+                    <span className="w-3 flex-shrink-0 text-[#F6B78D]">{isActive ? "✓" : ""}</span>
+                    {roleOption}
+                  </button>
+
+                  {/* LIT sits in the ladder here, but it is earned by leading a
+                      pod rather than assigned — shown so the list reads complete,
+                      disabled so nobody sets a badge that grants nothing. */}
+                  {roleOption === "Team Lead" && (
+                    <div
+                      aria-disabled="true"
+                      title={leadsAPod(member)
+                        ? `${member.name} leads a pod, which is what makes them a LIT. Change it on the pod's roster.`
+                        : "LIT comes from leading a pod, not from this list. Add them as LIT on a pod's roster and the badge follows."}
+                      className={`w-full px-3 py-2 text-xs flex items-center gap-2 cursor-not-allowed ${
+                        leadsAPod(member) ? "text-sky-300" : "text-white/25"
+                      }`}
+                    >
+                      <span className="w-3 flex-shrink-0">{leadsAPod(member) ? "✓" : ""}</span>
+                      LIT
+                      <span className="ml-auto text-[9px] uppercase tracking-wide text-white/30">via pod</span>
+                    </div>
+                  )}
+                </Fragment>
               );
             })}
           </div>

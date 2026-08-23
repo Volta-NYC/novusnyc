@@ -18,10 +18,7 @@ import {
   type EmailTemplate,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
-import {
-  AUTOMATIC_DEMERITS_ENABLED,
-  isAutomaticDemeritAutomation,
-} from "@/lib/members/automaticDemerits";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 interface NewTemplateForm {
   label: string;
@@ -32,6 +29,30 @@ interface NewTemplateForm {
 const BLANK_NEW_TEMPLATE: NewTemplateForm = { label: "", subject: "", body: "" };
 
 export default function AutomationsPage() {
+  const [sweeping, setSweeping] = useState(false);
+  const [sweepResult, setSweepResult] = useState<string | null>(null);
+
+  const runSweep = async () => {
+    setSweeping(true);
+    setSweepResult(null);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/automations/run", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { setSweepResult("Could not run the scheduled automations."); return; }
+      const data = await res.json() as { report?: Record<string, { sent: number; considered: number }> };
+      const parts = Object.entries(data.report ?? {})
+        .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v.sent} sent of ${v.considered} due`);
+      setSweepResult(parts.length ? parts.join(" · ") : "Nothing was due.");
+    } catch {
+      setSweepResult("Could not run the scheduled automations.");
+    } finally {
+      setSweeping(false);
+    }
+  };
+
   const { authRole, user, loading } = useAuth();
   const router = useRouter();
   const editorRef = useRef<EmailBodyEditorHandle>(null);
@@ -146,6 +167,23 @@ export default function AutomationsPage() {
       <PageHeader title="Member Email" />
       <SectionTabs tabs={EMAIL_TABS} />
 
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-[#111418] px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[12px] text-white/75">Scheduled automations</p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-white/40">
+            Runs once a day. Sends are recorded, so running it by hand won&apos;t repeat any.
+          </p>
+        </div>
+        <Btn variant="secondary" onClick={() => void runSweep()} disabled={sweeping}>
+          {sweeping ? "Running…" : "Run now"}
+        </Btn>
+      </div>
+      {sweepResult && (
+        <p className="mb-4 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] text-white/60">
+          {sweepResult}
+        </p>
+      )}
+
       {sortedAutomations.length === 0 ? (
         <Empty message="No automation configs found. Run the migration to seed defaults." />
       ) : (
@@ -161,7 +199,7 @@ export default function AutomationsPage() {
             <tbody className="divide-y divide-white/5">
               {sortedAutomations.map((a) => {
                 const linkedTemplate = templates.find((t) => t.key === a.templateKey);
-                const pausedInCode = !AUTOMATIC_DEMERITS_ENABLED && isAutomaticDemeritAutomation(a.automationId);
+                const pausedInCode = false;
                 return (
                   <tr key={a.automationId} className="hover:bg-white/4 group">
                     <td className="px-4 py-3 align-middle">
@@ -268,7 +306,7 @@ export default function AutomationsPage() {
                     ref={editorRef}
                     content={newTemplateForm.body}
                     onChange={(html) => setNewTemplateForm((p) => ({ ...p, body: html }))}
-                    placeholder="Write the email body… Use {{memberName}}, {{cycleName}}, etc."
+                    placeholder="Write the email body… Use variables such as {{memberName}} when they are available."
                   />
                 </Field>
 

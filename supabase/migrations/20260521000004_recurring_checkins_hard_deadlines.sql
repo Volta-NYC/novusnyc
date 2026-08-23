@@ -9,7 +9,9 @@
 ALTER TABLE assignment_templates
   ADD COLUMN IF NOT EXISTS recurring_enabled    boolean DEFAULT false,
   ADD COLUMN IF NOT EXISTS checkin_interval_days integer,        -- e.g. 7 = weekly
-  ADD COLUMN IF NOT EXISTS max_duration_days     integer;        -- null = no hard cap
+  ADD COLUMN IF NOT EXISTS max_duration_days     integer;
+
+-- null = no hard cap
 
 -- ── assignments ───────────────────────────────────────────────────────────────
 
@@ -18,7 +20,9 @@ ALTER TABLE assignments
   ADD COLUMN IF NOT EXISTS checkin_interval_days integer,
   ADD COLUMN IF NOT EXISTS max_duration_days     integer,
   ADD COLUMN IF NOT EXISTS deadline_type         text DEFAULT 'hard',  -- 'hard' | 'offset'
-  ADD COLUMN IF NOT EXISTS deadline_offset_days  integer;              -- used when deadline_type='offset'
+  ADD COLUMN IF NOT EXISTS deadline_offset_days  integer;
+
+-- used when deadline_type='offset'
 
 -- ── assignment_claims ─────────────────────────────────────────────────────────
 
@@ -33,7 +37,7 @@ ALTER TABLE assignment_claims
 
 -- Biweekly Report (already Finance)
 UPDATE assignment_templates SET
-  description = '<p>Write Novus''s internal biweekly newsletter. Covers recent deliverables shipped, active projects, timeline updates, team highlights, and org-wide goals for the next two weeks. Distributed to all members upon approval.</p>',
+  description = '<p>Write Volta''s internal biweekly newsletter. Covers recent deliverables shipped, active projects, timeline updates, team highlights, and org-wide goals for the next two weeks. Distributed to all members upon approval.</p>',
   deadline_offset_days = 4
 WHERE id = '1e075e49-bea9-4a9b-b40b-1a2bb31327bd';
 
@@ -79,7 +83,7 @@ WHERE id = 'cd856268-1eca-488a-93b4-9148a686e4f9';
 -- Manage Communication (1 organization)
 UPDATE assignment_templates SET
   title = 'Manage Communication (1 Organization)',
-  description = '<p>Serve as Novus''s point of contact for an assigned partner organization (BID, nonprofit, city agency). Handle correspondence, relay updates internally, and log all communications. Ongoing weekly responsibility.</p>',
+  description = '<p>Serve as Volta''s point of contact for an assigned partner organization (BID, nonprofit, city agency). Handle correspondence, relay updates internally, and log all communications. Ongoing weekly responsibility.</p>',
   deadline_offset_days = 7
 WHERE id = 'e03e3654-5068-444b-81c6-730b38c3149d';
 
@@ -109,23 +113,23 @@ WHERE id = '32b88291-4652-44ff-8844-a0c5f4029211';
 -- ── Template data: General track ──────────────────────────────────────────────
 
 UPDATE assignment_templates SET
-  description = '<p>Follow Novus NYC''s official Instagram account.</p>',
+  description = '<p>Follow Volta NYC''s official Instagram account.</p>',
   deadline_offset_days = 1
 WHERE id = '2df05eee-c994-4e01-9c43-ec2635a971d0';
 
 UPDATE assignment_templates SET
-  description = '<p>Follow Novus NYC''s official LinkedIn page.</p>',
+  description = '<p>Follow Volta NYC''s official LinkedIn page.</p>',
   deadline_offset_days = 1
 WHERE id = '1d214359-1dd9-495e-81e6-21f89e7c5907';
 
 UPDATE assignment_templates SET
-  description = '<p>Refer a small business to Novus NYC for free consulting services. Business must be submitted through the proper intake form or directly to a Senior Associate.</p>'
+  description = '<p>Refer a small business to Volta NYC for free consulting services. Business must be submitted through the proper intake form or directly to a Senior Associate.</p>'
 WHERE id = '0d1e56de-ed50-4a30-83b4-edca3d6fe531';
 
 UPDATE assignment_templates SET
-  description = '<p>Refer a new student member to Novus NYC. They must complete their application for the credit to be awarded.</p>'
+  description = '<p>Refer a new student member to Volta NYC. They must complete their application for the credit to be awarded.</p>'
 WHERE id = '66979690-160a-4531-bb32-2a0120ba4ae7';
 
 UPDATE assignment_templates SET
-  description = '<p>Refer a new student member from one of Novus''s target expansion cities (Boston, Philly, Washington D.C., or Chicago). They must complete their application for the credit to be awarded.</p>'
+  description = '<p>Refer a new student member from one of Volta''s target expansion cities (Boston, Philly, Washington D.C., or Chicago). They must complete their application for the credit to be awarded.</p>'
 WHERE id = 'ac9ea4f4-9d77-4879-b9f7-7c95d756d550';

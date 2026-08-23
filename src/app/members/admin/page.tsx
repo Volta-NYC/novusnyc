@@ -1,59 +1,48 @@
 "use client";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
-import { Btn, Field, Input, Select, SearchBar, Spinner, Toggle } from "@/components/members/ui";
+import { Btn, Field, Input, Select, Spinner, Toggle, PageHeader, LoadError } from "@/components/members/ui";
 import RichTextEditor from "@/components/members/RichTextEditor";
+import AdminAuditLog from "@/components/members/admin/AdminAuditLog";
 import { useAuth } from "@/lib/members/authContext";
 import { useRouter, usePathname } from "next/navigation";
 import {
   getHandbookPage, upsertHandbookPage, type HandbookPage,
   getSiteSettings, updateSiteSettings, type SiteSettings,
+  subscribeChapters, updateChapter, createChapter, type Chapter,
   subscribeInfractions, createInfraction, updateInfraction, deleteInfraction,
-  subscribeBusinesses, type Business,
   type Infraction,
-  getAuditLogsList, type AuditLogEntry,
 } from "@/lib/members/storage";
 import { useConfirm, Modal, TextArea } from "@/components/members/ui";
 import { formatDate } from "@/lib/format";
-import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
+import { EXPORT_SECTIONS, type ExportSectionKey } from "@/lib/members/exportSections";
 
-const EXPORT_OPTIONS = [
-  { key: "team",                label: "Team Members" },
-  { key: "userProfiles",        label: "User Profiles" },
-  { key: "businesses",          label: "Businesses" },
-  { key: "assignments",         label: "Assignments" },
-  { key: "assignmentCatalog",   label: "Assignment Catalog" },
-  { key: "assignmentClaims",    label: "Assignment Claims" },
-  { key: "applicants",          label: "Applicants" },
-  { key: "bids",                label: "BID Directory" },
-  { key: "cycles",              label: "Cycles" },
-  { key: "creditAdjustments",   label: "Credit Adjustments" },
-  { key: "emailTemplates",      label: "Email Templates" },
-  { key: "calendarEvents",      label: "Calendar Events" },
-  { key: "auditLogs",           label: "Audit Logs" },
-] as const;
-
-type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
-type AdminTab = "data" | "frontend" | "handbook" | "audit";
+const EXPORT_OPTIONS = EXPORT_SECTIONS;
+type ExportOptionKey = ExportSectionKey;
+type AdminTab = "overview" | "public" | "policy" | "data";
 
 const ADMIN_TAB_HREFS: Record<AdminTab, string> = {
-  data:     "/members/admin",
-  frontend: "/members/admin/frontend",
-  handbook: "/members/admin/handbook",
-  audit:    "/members/admin/audit-logs",
+  overview: "/members/admin",
+  public:   "/members/admin/public",
+  policy:   "/members/admin/policy",
+  data:     "/members/admin/data",
 };
 
 function getAdminTab(pathname: string): AdminTab {
   if (pathname.startsWith("/members/admin/frontend") ||
       pathname.startsWith("/members/admin/applications") ||
       pathname.startsWith("/members/admin/services") ||
-      pathname.startsWith("/members/admin/banners"))     return "frontend";
+      pathname.startsWith("/members/admin/banners") ||
+      pathname.startsWith("/members/admin/public"))      return "public";
   if (pathname.startsWith("/members/admin/handbook") ||
-      pathname.startsWith("/members/admin/infractions")) return "handbook";
-  if (pathname.startsWith("/members/admin/audit-logs")) return "audit";
-  return "data";
+      pathname.startsWith("/members/admin/infractions") ||
+      pathname.startsWith("/members/admin/policy"))      return "policy";
+  if (pathname.startsWith("/members/admin/audit-logs") ||
+      pathname.startsWith("/members/admin/data"))        return "data";
+  return "overview";
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
@@ -81,11 +70,147 @@ function StatusMsg({ msg }: { msg: string }) {
   return <div className="mt-3 bg-white/5 border border-white/8 rounded-lg px-4 py-2.5 text-white/60 text-sm font-body">{msg}</div>;
 }
 
+type AdminHealth = {
+  checkedAt: string;
+  issues: Array<{
+    id: string;
+    label: string;
+    detail: string;
+    count: number;
+    href: string;
+    severity: "attention" | "info";
+  }>;
+  summary: {
+    activeMembers: number;
+    pendingApplications: number;
+    scheduledInterviews: number;
+    activePods: number;
+    publicCards: number;
+    enabledAutomations: number;
+  };
+  settings: {
+    applicationsOpen: boolean;
+    publicBannerOn: boolean;
+    portalBannerOn: boolean;
+    handbookAcknowledgmentResetAt: string | null;
+  };
+};
+
+const QUICK_ACTIONS = [
+  { label: "Review applicants", detail: "Decisions and interview scheduling", href: "/members/applicants" },
+  { label: "Manage access", detail: "Invite members and review roles", href: "/members/team" },
+  { label: "Check pod operations", detail: "Meetings, attendance, tasks, and grants", href: "/members/pods" },
+  { label: "Edit public cards", detail: "Website details, images, and card order", href: "/members/projects?view=public" },
+  { label: "Manage email", detail: "Templates, automations, and delivery status", href: "/members/email" },
+  { label: "Open operations dashboard", detail: "Projects, pods, members, and hours", href: "/members/overview" },
+] as const;
+
+function OverviewTab() {
+  const [health, setHealth] = useState<AdminHealth | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = await getAuthToken();
+      const response = await fetch("/api/members/admin/health", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("health_check_failed");
+      setHealth(await response.json() as AdminHealth);
+    } catch {
+      setError("The system check could not load. No counts on this page should be treated as current.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void load(); }, []);
+
+  return (
+    <div className="space-y-6">
+      <section>
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-bold text-white">Needs attention</h2>
+            <p className="mt-0.5 text-sm text-white/45">Only exceptions appear here. Routine counts live on the Dashboard.</p>
+          </div>
+          <Btn variant="secondary" size="sm" onClick={() => void load()} disabled={loading}>
+            {loading ? "Checking…" : "Run check again"}
+          </Btn>
+        </div>
+        {error ? (
+          <LoadError message={error} onRetry={() => void load()} />
+        ) : loading ? (
+          <div className="flex h-28 items-center justify-center rounded-xl border border-white/10 bg-[#1C1F26]"><Spinner size="sm" /></div>
+        ) : health && health.issues.length === 0 ? (
+          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.05] px-5 py-5">
+            <p className="font-medium text-emerald-300">Nothing is waiting on an owner.</p>
+            <p className="mt-1 text-xs text-white/45">Applications, interviews, pod leadership, public cards, and email automations all passed their checks.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {health?.issues.map((issue) => (
+              <Link key={issue.id} href={issue.href} className={`group rounded-xl border p-4 transition-colors hover:border-white/30 ${issue.severity === "attention" ? "border-amber-500/25 bg-amber-500/[0.04]" : "border-white/10 bg-[#1C1F26]"}`}>
+                <div className="flex items-start gap-4">
+                  <span className={`min-w-10 rounded-lg px-2 py-1 text-center font-mono text-lg font-semibold tabular-nums ${issue.severity === "attention" ? "bg-amber-500/15 text-amber-300" : "bg-white/8 text-white/75"}`}>{issue.count}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-white/90 group-hover:text-[#F6B78D]">{issue.label}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-white/45">{issue.detail}</span>
+                  </span>
+                  <span aria-hidden="true" className="text-white/30 group-hover:text-white/70">→</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 font-display text-lg font-bold text-white">Common tasks</h2>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {QUICK_ACTIONS.map((action) => (
+            <Link key={action.href} href={action.href} className="group rounded-xl border border-white/10 bg-[#1C1F26] px-4 py-3 transition-colors hover:border-[#F6B78D]/45">
+              <span className="block text-sm font-medium text-white/85 group-hover:text-[#F6B78D]">{action.label} →</span>
+              <span className="mt-1 block text-[11px] text-white/40">{action.detail}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {health && (
+        <section>
+          <h2 className="mb-3 font-display text-lg font-bold text-white">Current switches</h2>
+          <div className="grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 sm:grid-cols-3">
+            {[
+              { label: "Applications", value: health.settings.applicationsOpen ? "Open" : "Closed", href: ADMIN_TAB_HREFS.public },
+              { label: "Public banner", value: health.settings.publicBannerOn ? "On" : "Off", href: ADMIN_TAB_HREFS.public },
+              { label: "Portal banner", value: health.settings.portalBannerOn ? "On" : "Off", href: ADMIN_TAB_HREFS.public },
+            ].map((item) => (
+              <Link key={item.label} href={item.href} className="bg-[#1C1F26] px-4 py-3 hover:bg-white/[0.04]">
+                <span className="block text-[10px] uppercase tracking-wide text-white/40">{item.label}</span>
+                <span className="mt-1 block text-sm font-semibold text-white/85">{item.value}</span>
+              </Link>
+            ))}
+          </div>
+          <p className="mt-2 text-[10px] text-white/30">Checked {formatDate(health.checkedAt, { withTime: true })}</p>
+        </section>
+      )}
+    </div>
+  );
+}
+
+// The Novus palette, not generic Tailwind. Pastels are fills carrying ink text;
+// the dark option is the one place a pastel works as the text colour. Every
+// pairing clears AA (6.2:1 at worst).
 const BANNER_PRESET_COLORS = [
-  { bg: "#0D0D0D", text: "#F6B78D", label: "Black + green" },
-  { bg: "#F6B78D", text: "#0D0D0D", label: "Novus green" },
-  { bg: "#1e40af", text: "#ffffff", label: "Blue" },
-  { bg: "#7f1d1d", text: "#fee2e2", label: "Red" },
+  { bg: "#F6B78D", text: "#2D282E", label: "Peach" },
+  { bg: "#F3E28D", text: "#2D282E", label: "Yellow" },
+  { bg: "#BEA2BA", text: "#2D282E", label: "Lavender" },
+  { bg: "#231F24", text: "#F6B78D", label: "Ink" },
 ];
 
 // ── TAB: DATA ─────────────────────────────────────────────────────────────────
@@ -151,25 +276,23 @@ function DataTab() {
 
   return (
     <div className="max-w-lg space-y-4">
-      <Card title="Public Stats" subtitle="Refresh the cached data shown on the public showcase, home, and about pages.">
+      <Card title="Refresh public pages" subtitle="Recovery control only. Public settings normally refresh automatically when you save them.">
         <Btn variant="primary" onClick={() => void handleRevalidate()} disabled={revalidating}>
-          {revalidating ? "Refreshing…" : "Update All Stats"}
+          {revalidating ? "Refreshing…" : "Refresh public pages"}
         </Btn>
       </Card>
 
-      <Card title="Export Data" subtitle="Download a full JSON backup, or export selected datasets only.">
+      <Card title="Database backup" subtitle="Download database records as JSON. Uploaded images, resumes, and other Supabase Storage files are not included.">
         <Btn variant="primary" onClick={() => void handleExport()} className="mb-4">
-          Download Full Backup
+          Download full database backup
         </Btn>
 
         <div className="border border-white/10 rounded-lg p-3 bg-[#0F1014]">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] uppercase tracking-wide text-white/45">Select Sections</p>
             <div className="flex gap-3 text-[11px]">
-              <button type="button" className="text-[#F6B78D]/80 hover:text-[#F6B78D] transition-colors"
-                onClick={() => setSelectedSections(EXPORT_OPTIONS.map((o) => o.key))}>Select all</button>
-              <button type="button" className="text-red-300/80 hover:text-red-300 transition-colors"
-                onClick={() => setSelectedSections([])}>Clear</button>
+              <Btn type="button" variant="ghost" size="sm" onClick={() => setSelectedSections(EXPORT_OPTIONS.map((o) => o.key))}>Select all</Btn>
+              <Btn type="button" variant="ghost" size="sm" onClick={() => setSelectedSections([])}>Clear</Btn>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -203,12 +326,15 @@ function DataTab() {
 
 function ApplicationsTab() {
   const [loading, setLoading] = useState(true);
+  const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const [paused, setPaused] = useState(false);
   const [message, setMessage] = useState("");
-  const [chapters, setChapters] = useState<string[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [newChapter, setNewChapter] = useState("");
+  const [newChapterCity, setNewChapterCity] = useState("");
+  const [newChapterState, setNewChapterState] = useState("");
   const [savingChapters, setSavingChapters] = useState(false);
   const [chapterStatus, setChapterStatus] = useState("");
 
@@ -216,44 +342,57 @@ function ApplicationsTab() {
     getSiteSettings().then((s) => {
       setPaused(s.applicationsPaused);
       setMessage(s.applicationsPausedMsg);
-      setChapters(s.chapters);
+      setLoading(false);
+    }).catch(() => {
+      setSettingsLoadFailed(true);
+      setStatus("Application settings could not load. Refresh this page before making changes.");
       setLoading(false);
     });
   }, []);
 
-  /**
-   * Persist immediately rather than staging edits behind a Save button.
-   * "Add" reads as committing, so a separate save step is a reliable way to
-   * lose a change without noticing.
-   */
-  const commitChapters = async (next: string[]) => {
-    // The field is required on /apply, so an empty list would leave applicants
-    // with a dropdown they cannot satisfy.
-    const cleaned = next.map((c) => c.trim()).filter(Boolean);
-    if (cleaned.length === 0) {
-      setChapterStatus("Keep at least one chapter.");
-      return;
-    }
-    const previous = chapters;
-    setChapters(cleaned);
+  useEffect(() => subscribeChapters(setChapters), []);
+
+  const renameChapter = async (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
     setSavingChapters(true);
     setChapterStatus("");
     try {
-      await updateSiteSettings({ chapters: cleaned });
+      await updateChapter(id, { name: trimmed });
       setChapterStatus("Saved.");
     } catch {
-      setChapters(previous);
       setChapterStatus("Save failed. Nothing changed.");
     } finally {
       setSavingChapters(false);
     }
   };
 
-  const addChapter = () => {
+  const setChapterStatusValue = async (id: string, status: Chapter["status"]) => {
+    setSavingChapters(true);
+    try {
+      await updateChapter(id, { status });
+      setChapterStatus("Saved.");
+    } catch {
+      setChapterStatus("Save failed. Nothing changed.");
+    } finally {
+      setSavingChapters(false);
+    }
+  };
+
+  const addChapter = async () => {
     const trimmed = newChapter.trim();
-    if (!trimmed || chapters.includes(trimmed)) return;
-    setNewChapter("");
-    void commitChapters([...chapters, trimmed]);
+    if (!trimmed) return;
+    setSavingChapters(true);
+    setChapterStatus("");
+    try {
+      await createChapter(trimmed, newChapterCity, newChapterState);
+      setNewChapter(""); setNewChapterCity(""); setNewChapterState("");
+      setChapterStatus("Added.");
+    } catch (err) {
+      setChapterStatus(err instanceof Error ? err.message : "Could not add that chapter.");
+    } finally {
+      setSavingChapters(false);
+    }
   };
 
   const save = async () => {
@@ -261,7 +400,16 @@ function ApplicationsTab() {
     setStatus("");
     try {
       await updateSiteSettings({ applicationsPaused: paused, applicationsPausedMsg: message });
-      setStatus("Saved.");
+      // /apply is statically generated, so the switch means nothing to a visitor
+      // until the page is rebuilt.
+      const token = await getAuthToken();
+      const res = await fetch("/api/members/admin/revalidate", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setStatus(res.ok
+        ? "Saved and the public page was refreshed."
+        : "Saved, but the public page didn't refresh — use Refresh public pages.");
     } catch {
       setStatus("Save failed. Try again.");
     } finally {
@@ -274,7 +422,9 @@ function ApplicationsTab() {
   return (
     <div className="max-w-lg space-y-4">
       <Card title="Application Status" subtitle="Control whether the public /apply page accepts new submissions.">
-        <div className="space-y-5">
+        {settingsLoadFailed ? (
+          <LoadError message="Application settings could not load. The open/closed control is disabled so it cannot overwrite the live value." />
+        ) : <div className="space-y-5">
           <Toggle
             checked={!paused}
             onChange={(open) => setPaused(!open)}
@@ -292,173 +442,72 @@ function ApplicationsTab() {
           <div className="pt-1">
             <SaveBtn saving={saving} onClick={() => void save()} />
           </div>
-        </div>
+        </div>}
         <StatusMsg msg={status} />
       </Card>
 
-      <Card title="Chapters" subtitle="Options in the Chapter dropdown on /apply. Shown in this order.">
+      <Card title="Chapters" subtitle="Markets where Novus is active or launching. Active and launching chapters appear on /apply.">
         <div className="space-y-3">
           {chapters.length === 0 && (
-            <p className="text-[11px] text-white/40">No chapters yet. Add one below.</p>
+            <p className="text-[11px] text-white/40">No chapters yet.</p>
           )}
-          {chapters.map((chapter, i) => (
-            <div key={i} className="flex items-center gap-2">
+          {[...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((chapter) => (
+            <div key={chapter.id} className="flex flex-wrap items-center gap-2">
               <Input
-                value={chapter}
+                defaultValue={chapter.name}
                 disabled={savingChapters}
-                onChange={(e) => setChapters((prev) => prev.map((c, idx) => (idx === i ? e.target.value : c)))}
                 onBlur={(e) => {
                   const edited = e.target.value.trim();
-                  if (edited && edited !== chapter) {
-                    void commitChapters(chapters.map((c, idx) => (idx === i ? edited : c)));
-                  }
+                  if (edited && edited !== chapter.name) void renameChapter(chapter.id, edited);
                 }}
               />
-              <Btn
-                variant="ghost"
-                onClick={() => void commitChapters(chapters.filter((_, idx) => idx !== i))}
-                disabled={chapters.length === 1 || savingChapters}
-              >
-                Remove
-              </Btn>
+              <span className="text-[11px] text-white/35">
+                {[chapter.city, chapter.state].filter(Boolean).join(", ") || "—"}
+              </span>
+              <div className="ml-auto flex gap-1">
+                {(["Active", "Launching", "Archived"] as const).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    disabled={savingChapters}
+                    onClick={() => void setChapterStatusValue(chapter.id, st)}
+                    className={`rounded px-2 py-0.5 text-[10px] uppercase tracking-wide transition-colors disabled:opacity-50 ${
+                      chapter.status === st
+                        ? "bg-[#F3E28D]/20 text-[#F3E28D]"
+                        : "text-white/35 hover:text-white/70"
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
             </div>
           ))}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Input
               value={newChapter}
               disabled={savingChapters}
               onChange={(e) => setNewChapter(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addChapter(); } }}
-              placeholder="Add a chapter"
+              placeholder="Chapter name"
             />
-            <Btn variant="secondary" onClick={addChapter} disabled={!newChapter.trim() || savingChapters}>
+            <Input
+              value={newChapterCity}
+              disabled={savingChapters}
+              onChange={(e) => setNewChapterCity(e.target.value)}
+              placeholder="City"
+            />
+            <Input
+              value={newChapterState}
+              disabled={savingChapters}
+              onChange={(e) => setNewChapterState(e.target.value)}
+              placeholder="State"
+            />
+            <Btn variant="secondary" onClick={() => void addChapter()} disabled={!newChapter.trim() || savingChapters}>
               {savingChapters ? "Saving…" : "Add"}
             </Btn>
           </div>
-          <p className="text-[11px] text-white/35">Changes save as you make them.</p>
         </div>
         <StatusMsg msg={chapterStatus} />
-      </Card>
-    </div>
-  );
-}
-
-// ── TAB: SERVICES ─────────────────────────────────────────────────────────────
-
-function ServicesTab() {
-  const { ask, Dialog } = useConfirm();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState("");
-  const [services, setServices] = useState<string[]>([]);
-  const [newService, setNewService] = useState("");
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-
-  useEffect(() => {
-    getSiteSettings().then((s) => { setServices(s.services); setLoading(false); });
-  }, []);
-
-  useEffect(() => subscribeBusinesses(setBusinesses), []);
-
-  const usageCount = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const b of businesses) {
-      for (const svc of (b.showcaseServices ?? b.activeServices ?? [])) {
-        counts[svc] = (counts[svc] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [businesses]);
-
-  const save = async () => {
-    setSaving(true);
-    setStatus("");
-    try {
-      await updateSiteSettings({ services: services.filter(Boolean) });
-      setStatus("Saved.");
-    } catch {
-      setStatus("Save failed. Try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addService = () => {
-    const trimmed = newService.trim();
-    if (!trimmed || services.includes(trimmed)) return;
-    setServices((prev) => [...prev, trimmed]);
-    setNewService("");
-  };
-
-  const removeService = (i: number) => {
-    const svc = services[i];
-    const count = usageCount[svc] ?? 0;
-    if (count > 0) {
-      void ask(
-        async () => { setServices((prev) => prev.filter((_, idx) => idx !== i)); },
-        `"${svc}" is used by ${count} business${count === 1 ? "" : "es"}. Remove it from the list? Existing businesses keep their data.`,
-      );
-    } else {
-      setServices((prev) => prev.filter((_, idx) => idx !== i));
-    }
-  };
-  const renameService = (i: number, val: string) => setServices((prev) => prev.map((s, idx) => idx === i ? val : s));
-
-  if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
-
-  return (
-    <div className="max-w-lg space-y-4">
-      <Dialog />
-      <Card title="Active Services" subtitle="These appear in the showcase filter, business edit form, and application form.">
-        <div className="space-y-2 mb-4">
-          {services.map((svc, i) => {
-            const count = usageCount[svc] ?? 0;
-            return (
-              <div key={i} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={svc}
-                  onChange={(e) => renameService(i, e.target.value)}
-                  className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#F6B78D]/50"
-                />
-                <span className="text-[10px] text-white/35 w-16 text-right shrink-0">
-                  {count > 0 ? `${count} biz` : "unused"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeService(i)}
-                  className={`transition-colors text-xs px-1 ${count > 0 ? "text-amber-400/50 hover:text-red-400" : "text-white/30 hover:text-red-400"}`}
-                  aria-label="Remove"
-                  title={count > 0 ? `Used by ${count} business${count === 1 ? "" : "es"}` : "Remove"}
-                >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={newService}
-            onChange={(e) => setNewService(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addService(); } }}
-            placeholder="New service name…"
-            className="flex-1 bg-[#0F1014] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-body focus:outline-none focus:border-[#F6B78D]/50"
-          />
-          <button
-            type="button"
-            onClick={addService}
-            disabled={!newService.trim()}
-            className="px-3 py-1.5 rounded-lg bg-white/8 text-white/70 hover:bg-white/12 text-sm disabled:opacity-40 transition-colors"
-          >
-            Add
-          </button>
-        </div>
-
-        <SaveBtn saving={saving} onClick={() => void save()} />
-        <StatusMsg msg={status} />
       </Card>
     </div>
   );
@@ -497,7 +546,10 @@ function BannerEditor({
 }) {
   return (
     <Card title={title} subtitle={subtitle}>
-      <div className="space-y-4">
+      {/* A column, not space-y: the toggle and the save button are both
+          inline-flex, and margin alone lets them share a line whenever the
+          block-level fields between them are hidden. */}
+      <div className="flex flex-col items-start gap-4">
         <Toggle checked={enabled} onChange={onToggle} label={enabled ? "Banner is on" : "Banner is off"} />
 
         {enabled && (
@@ -507,31 +559,22 @@ function BannerEditor({
             </Field>
 
             <div>
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Colors</p>
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-white/45 mb-2">Color</p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {BANNER_PRESET_COLORS.map((preset) => (
                   <button
                     key={preset.label}
                     type="button"
                     onClick={() => { onBg(preset.bg); onText(preset.text); }}
-                    title={preset.label}
-                    className={`w-7 h-7 rounded-full border-2 transition-all ${bg === preset.bg ? "border-white scale-110" : "border-white/20 hover:border-white/50"}`}
-                    style={{ backgroundColor: preset.bg }}
-                  />
+                    aria-pressed={bg === preset.bg && text === preset.text}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors ${bg === preset.bg && text === preset.text ? "border-white/70" : "border-white/15 hover:border-white/40"}`}
+                    style={{ backgroundColor: preset.bg, color: preset.text }}
+                  >
+                    {preset.label}
+                  </button>
                 ))}
               </div>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-xs text-white/60">
-                  <input type="color" value={bg} onChange={(e) => onBg(e.target.value)}
-                    className="w-8 h-6 rounded cursor-pointer bg-transparent border-0" />
-                  Background
-                </label>
-                <label className="flex items-center gap-2 text-xs text-white/60">
-                  <input type="color" value={text} onChange={(e) => onText(e.target.value)}
-                    className="w-8 h-6 rounded cursor-pointer bg-transparent border-0" />
-                  Text
-                </label>
-              </div>
+              <p className="text-[11px] text-white/40">Presets use the approved Novus palette and readable text contrast.</p>
             </div>
 
             {message && (
@@ -558,12 +601,20 @@ function BannersTab() {
   const [portalStatus, setPortalStatus] = useState("");
 
   useEffect(() => {
-    getSiteSettings().then((s) => { setSettings(s); setLoading(false); });
+    getSiteSettings()
+      .then((s) => setSettings(s))
+      .catch(() => setPublicStatus("Banner settings could not load. Refresh this page before making changes."))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !settings) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
+  if (loading) return <div className="flex items-center h-24"><Spinner size="sm" /></div>;
+  if (!settings) return <LoadError message={publicStatus || "Banner settings could not load."} />;
 
   const savePublic = async () => {
+    if (settings.publicBannerEnabled && !settings.publicBannerMessage.trim()) {
+      setPublicStatus("Add a message before turning on the public banner.");
+      return;
+    }
     setPublicSaving(true);
     setPublicStatus("");
     try {
@@ -579,6 +630,10 @@ function BannersTab() {
   };
 
   const savePortal = async () => {
+    if (settings.portalBannerEnabled && !settings.portalBannerMessage.trim()) {
+      setPortalStatus("Add a message before turning on the portal banner.");
+      return;
+    }
     setPortalSaving(true);
     setPortalStatus("");
     try {
@@ -630,11 +685,11 @@ function BannersTab() {
 }
 
 const PUBLIC_STAT_FIELDS = [
-  { key: "homeStudentMembers", label: "Homepage: Student members", source: "Published all-time total" },
-  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", source: "Published all-time total" },
+  { key: "homeStudentMembers", label: "Homepage: Student members", source: "Live active-member records" },
+  { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", source: "Live business records" },
   { key: "communityOrganizations", label: "All public pages: Community organizations", source: "Live partner-organization records" },
   { key: "homeNetworkLocations", label: "Homepage: Network locations", source: "Exact network-location list" },
-  { key: "aboutBusinesses", label: "About: Total businesses", source: "Published all-time total" },
+  { key: "aboutBusinesses", label: "About: Total businesses", source: "Live business records" },
   { key: "aboutWebsiteProjects", label: "About: Website projects", source: "Live Tech project-track records" },
   { key: "aboutMarketingProjects", label: "About: Marketing projects", source: "Live Marketing project-track records" },
 ] as const;
@@ -718,7 +773,7 @@ function PublicStatsTab() {
         if (!response.ok) throw new Error("revalidate_failed");
         setStatus("Saved and public pages refreshed. Values matching the automatic count remain automatic.");
       } catch {
-        setStatus("Saved, but the public pages could not refresh automatically. Use Refresh Public Pages in the Data tab.");
+        setStatus("Saved, but the public pages could not refresh automatically. Use Refresh public pages under Data & Audit → Backup & recovery.");
       }
     } catch (error) {
       console.error("Failed to save public number overrides", error);
@@ -775,62 +830,20 @@ function FrontendSection({ title, subtitle }: { title: string; subtitle?: string
   );
 }
 
-function HandbookAckResetSection() {
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<"idle" | "done" | "error">("idle");
-
-  const handleReset = async () => {
-    setBusy(true);
-    setStatus("idle");
-    try {
-      await updateSiteSettings({ handbookAckRequiredAt: new Date().toISOString() });
-      setStatus("done");
-    } catch {
-      setStatus("error");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="flex items-start justify-between gap-6">
-      <div className="min-w-0">
-        <p className="text-sm text-white/85 font-body font-medium">Require all members to re-confirm the handbook</p>
-        <p className="text-xs text-white/40 font-body mt-0.5">
-          Members will see the acknowledgment prompt on their next portal visit. Has no effect on admins or owners.
-        </p>
-        {status === "done" && <p className="text-xs text-[#F6B78D] mt-1.5">Done — all members will be prompted on next login.</p>}
-        {status === "error" && <p className="text-xs text-red-400 mt-1.5">Something went wrong. Try again.</p>}
-      </div>
-      <Btn variant="secondary" onClick={() => void handleReset()} disabled={busy}>
-        {busy ? "Resetting…" : "Reset acknowledgments"}
-      </Btn>
-    </div>
-  );
-}
-
 function ManageFrontendTab() {
   return (
-    <div className="space-y-14">
+    <div className="space-y-12">
       <section>
-        <FrontendSection title="Applications" subtitle="Control whether the public /apply page accepts new submissions." />
+        <FrontendSection title="Applications & chapters" subtitle="Control public intake and the locations shown on the application form." />
         <ApplicationsTab />
-      </section>
-      <section>
-        <FrontendSection title="Services" subtitle="Manage the service options shown in the showcase filter, business edit form, and application form." />
-        <ServicesTab />
       </section>
       <section>
         <FrontendSection title="Banners" subtitle="Configure announcement banners shown on the public site and members portal." />
         <BannersTab />
       </section>
       <section>
-        <FrontendSection title="Public Numbers" subtitle="Override the numbers shown on the homepage and About page when a verified figure needs to be published." />
+        <FrontendSection title="Impact numbers" subtitle="Override the numbers shown on the homepage and About page when a verified all-time figure needs to be published." />
         <PublicStatsTab />
-      </section>
-      <section>
-        <FrontendSection title="Member Handbook" subtitle="Control when members are prompted to re-read and re-confirm the handbook." />
-        <HandbookAckResetSection />
       </section>
     </div>
   );
@@ -965,7 +978,7 @@ function HandbookTab() {
     getHandbookPage("credit-infraction-policy")
       .then((p) => {
         setPage(p);
-        setTitle(p?.title ?? "Credit & Infraction Policy");
+        setTitle(p?.title ?? "Conduct & Infraction Policy");
         setContent(p?.content ?? "");
       })
       .finally(() => setLoading(false));
@@ -1022,7 +1035,7 @@ function HandbookTab() {
   return (
     <div className="space-y-4">
       <div className="max-w-2xl space-y-4">
-        <Card title="Credit & Infraction Policy" subtitle={page?.updatedAt ? `Last saved: ${new Date(page.updatedAt).toLocaleString()}${page.updatedBy ? ` by ${page.updatedBy}` : ""}` : "Edit the handbook page shown to members. Members must acknowledge this page on first login."}>
+        <Card title="Conduct & Infraction Policy" subtitle={page?.updatedAt ? `Last saved: ${new Date(page.updatedAt).toLocaleString()}${page.updatedBy ? ` by ${page.updatedBy}` : ""}` : "Edit the handbook page shown to members. Members must acknowledge this page on first login."}>
           <div className="space-y-3">
             <div>
               <label htmlFor="handbook-page-title" className="block text-xs text-white/50 font-body mb-1">Page Title</label>
@@ -1032,7 +1045,7 @@ function HandbookTab() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-body focus:outline-none focus:border-[#F6B78D]/50"
-                placeholder="Credit & Infraction Policy"
+                placeholder="Conduct & Infraction Policy"
               />
             </div>
             <div>
@@ -1066,167 +1079,27 @@ function HandbookTab() {
 // ── AUDIT LOG TAB ──────────────────────────────────────────────────────────────
 
 function AuditLogTab() {
-  const [entries, setEntries] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch]   = useState("");
-  const [actionFilter, setActionFilter] = useState<"all" | "create" | "update" | "delete">("all");
-  const [detailEntry, setDetailEntry] = useState<AuditLogEntry | null>(null);
+  return <AdminAuditLog />;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const items = await getAuditLogsList(500);
-      if (cancelled) return;
-      setEntries(items);
-      setLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return entries.filter((e) => {
-      if (actionFilter !== "all" && e.action !== actionFilter) return false;
-      if (!q) return true;
-      const haystack = [
-        e.actorEmail, e.actorName, e.collection, e.recordId,
-        JSON.stringify(e.details ?? {}),
-      ].join(" ").toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [entries, search, actionFilter]);
-
-  const actionBadgeClass = (action: string) => {
-    if (action === "create") return "bg-[#F6B78D]/15 text-[#F6B78D] border-[#F6B78D]/30";
-    if (action === "update") return "bg-blue-500/15 text-blue-300 border-blue-500/30";
-    if (action === "delete") return "bg-red-500/15 text-red-300 border-red-500/30";
-    return "bg-white/10 text-white/60 border-white/20";
-  };
-
+function DataAuditTab() {
+  const [view, setView] = useState<"audit" | "backup">("audit");
   return (
-    <div className="space-y-4">
-      <Card title="Audit log" subtitle={`Showing ${filtered.length} of ${entries.length} recent entries (most recent 500).`}>
-        <div className="flex gap-2 mb-4 flex-wrap">
-          <SearchBar value={search} onChange={setSearch} placeholder="Filter by user, collection, record, or details…" debounceMs={250} />
-          <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-lg p-1">
-            {(["all", "create", "update", "delete"] as const).map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setActionFilter(opt)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  actionFilter === opt ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"
-                }`}
-              >
-                {opt[0].toUpperCase() + opt.slice(1)}
-              </button>
-            ))}
-          </div>
-          <Btn
-            variant="secondary"
-            onClick={() => {
-              const csv = toCsv(filtered, [
-                { key: "timestamp", label: "Timestamp" },
-                { key: "action", label: "Action" },
-                { key: "collection", label: "Collection" },
-                { key: "recordId", label: "Record ID" },
-                { key: "actorEmail", label: "Actor Email" },
-                { key: "actorName", label: "Actor Name" },
-                { key: "details", label: "Details" },
-              ]);
-              downloadCsv(dateStampedFilename("audit-log"), csv);
-            }}
-          >
-            Export CSV
-          </Btn>
-        </div>
-
-        {loading ? (
-          <div className="py-12 flex justify-center"><Spinner /></div>
-        ) : filtered.length === 0 ? (
-          <p className="text-white/30 text-sm py-12 text-center">No audit entries match your filter.</p>
-        ) : (
-          <div className="overflow-x-auto -mx-2 px-2">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="members-header-sep text-white/40 uppercase tracking-wider text-[10px]">
-                  <th className="text-left py-2 pr-3 font-medium">When</th>
-                  <th className="text-left py-2 pr-3 font-medium">Action</th>
-                  <th className="text-left py-2 pr-3 font-medium">Collection</th>
-                  <th className="text-left py-2 pr-3 font-medium">Record</th>
-                  <th className="text-left py-2 pr-3 font-medium">Actor</th>
-                  <th className="text-left py-2 pr-3 font-medium">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((e) => (
-                  <tr key={e.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="py-2 pr-3 text-white/70 whitespace-nowrap" title={e.timestamp}>
-                      {formatDate(e.timestamp, { withTime: true })}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] uppercase tracking-wider border ${actionBadgeClass(e.action)}`}>
-                        {e.action}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-3 text-white/70 font-mono">{e.collection}</td>
-                    <td className="py-2 pr-3 text-white/40 font-mono text-[10px]">{e.recordId ?? "—"}</td>
-                    <td className="py-2 pr-3 text-white/70">{e.actorName || e.actorEmail || "—"}</td>
-                    <td className="py-2 pr-3">
-                      {e.details && Object.keys(e.details).length > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => setDetailEntry(e)}
-                          className="text-[10px] text-white/40 hover:text-white/75 underline underline-offset-2 transition-colors font-mono"
-                        >
-                          {Object.keys(e.details).length} field{Object.keys(e.details).length !== 1 ? "s" : ""} changed
-                        </button>
-                      ) : (
-                        <span className="text-white/20 text-[10px]">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-
-      {detailEntry && (
-        <Modal open onClose={() => setDetailEntry(null)} title={`${detailEntry.action.toUpperCase()} · ${detailEntry.collection}`}>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs bg-[#0F1014] rounded-lg p-3">
-              <span className="text-white/40">Actor</span>
-              <span className="text-white/80">{detailEntry.actorName || detailEntry.actorEmail || "—"}</span>
-              <span className="text-white/40">When</span>
-              <span className="text-white/80">{new Date(detailEntry.timestamp).toLocaleString()}</span>
-              {detailEntry.recordId && (
-                <>
-                  <span className="text-white/40">Record ID</span>
-                  <span className="text-white/55 font-mono text-[10px] break-all">{detailEntry.recordId}</span>
-                </>
-              )}
-            </div>
-            {detailEntry.details && Object.keys(detailEntry.details).length > 0 && (
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-white/35 font-semibold mb-2">Changed fields</p>
-                <div className="rounded-lg border border-white/8 overflow-hidden divide-y divide-white/6">
-                  {Object.entries(detailEntry.details).map(([key, val]) => (
-                    <div key={key} className="grid grid-cols-[160px_1fr] gap-3 px-3 py-2 text-xs">
-                      <span className="text-white/45 font-mono truncate">{key}</span>
-                      <span className="text-white/75 break-words">
-                        {typeof val === "object" ? JSON.stringify(val) : String(val ?? "—")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <p className="text-[10px] text-white/25 pt-1">
-              Note: the audit log records what was written, not the previous state — point-in-time undo requires storing before-snapshots, which is a planned schema improvement.
-            </p>
-          </div>
-        </Modal>
+    <div>
+      <div role="tablist" aria-label="Data and audit tools" className="mb-5 flex w-fit rounded-lg border border-white/10 bg-[#1C1F26] p-1">
+        <button type="button" role="tab" onClick={() => setView("audit")} aria-selected={view === "audit"} className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${view === "audit" ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"}`}>Audit history</button>
+        <button type="button" role="tab" onClick={() => setView("backup")} aria-selected={view === "backup"} className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${view === "backup" ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"}`}>Backup & recovery</button>
+      </div>
+      {view === "audit" ? (
+        <section>
+          <FrontendSection title="Audit history" subtitle="A searchable owner-only record of meaningful changes. Bulk migrations and retired-system noise have been removed." />
+          <AuditLogTab />
+        </section>
+      ) : (
+        <section>
+          <FrontendSection title="Backup & recovery" subtitle="Download database records or manually refresh cached public pages after a failed automatic refresh." />
+          <DataTab />
+        </section>
       )}
     </div>
   );
@@ -1253,25 +1126,24 @@ function AdminContent() {
   }
 
   const TABS: { key: AdminTab; label: string }[] = [
-    { key: "data",     label: "Data" },
-    { key: "frontend", label: "Manage Frontend" },
-    { key: "handbook", label: "Handbook" },
-    { key: "audit",    label: "Audit Log" },
+    { key: "overview", label: "Overview" },
+    { key: "public",   label: "Public & Intake" },
+    { key: "policy",   label: "Policy" },
+    { key: "data",     label: "Data & Audit" },
   ];
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="font-display font-bold text-white text-2xl">Admin</h1>
-        <p className="text-white/40 text-sm mt-1">Site settings, content, and data management.</p>
-      </div>
+      <PageHeader title="Admin" subtitle="Owner controls, system checks, public settings, and policy." />
 
-      <div className="flex gap-1 bg-[#1C1F26] border border-white/8 rounded-xl p-1 mb-6 w-fit flex-wrap">
+      <div className="mb-6 flex w-full gap-1 overflow-x-auto rounded-xl border border-white/8 bg-[#1C1F26] p-1 sm:w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.key}
+            type="button"
             onClick={() => router.push(ADMIN_TAB_HREFS[tab.key])}
-            className={`px-4 py-2 rounded-lg text-sm font-medium font-body transition-colors ${
+            aria-current={activeTab === tab.key ? "page" : undefined}
+            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium font-body transition-colors ${
               activeTab === tab.key ? "bg-[#F6B78D] text-[#0D0D0D]" : "text-white/50 hover:text-white"
             }`}
           >
@@ -1280,10 +1152,10 @@ function AdminContent() {
         ))}
       </div>
 
-      {activeTab === "data"     && <DataTab />}
-      {activeTab === "frontend" && <ManageFrontendTab />}
-      {activeTab === "handbook" && <HandbookTab />}
-      {activeTab === "audit"    && <AuditLogTab />}
+      {activeTab === "overview" && <OverviewTab />}
+      {activeTab === "public"   && <ManageFrontendTab />}
+      {activeTab === "policy"   && <HandbookTab />}
+      {activeTab === "data"     && <DataAuditTab />}
     </>
   );
 }

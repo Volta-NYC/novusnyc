@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState, ReactNode, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Wordmark from "@/components/Wordmark";
 import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
 import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
 import { supabase } from "@/lib/supabaseClient";
-import { sora } from "@/lib/fonts";
 import { Modal } from "@/components/members/ui";
+import { EMAIL } from "@/lib/mail";
 
 // ── NAV ITEM TYPE ─────────────────────────────────────────────────────────────
 
@@ -36,20 +37,20 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/members/projects",
-    label: "Businesses",
+    label: "Tech Projects",
     activeMatchRoots: ["/members/projects"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>,
   },
   {
     href: "/members/orgs",
-    label: "Organizations",
+    label: "Partner Organizations",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/><path d="M10 21v-4h4v4"/></svg>,
   },
   {
-    href: "/members/assignments/catalog",
-    label: "Assignments",
-    activeMatchRoots: ["/members/assignments"],
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
+    href: "/members/pods",
+    label: "Marketing & Finance",
+    activeMatchRoots: ["/members/pods"],
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="7" r="2.5"/><path d="M2 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><path d="M17 13a4 4 0 0 1 4 4v1"/></svg>,
   },
   {
     href: "/members/team",
@@ -75,7 +76,7 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/assignments/catalog", "/members/email"]);
+const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/pods", "/members/team", "/members/email"]);
 const ADMIN_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS.filter((item) => ADMIN_NAV_HREFS.has(item.href));
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
@@ -92,11 +93,10 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>,
   },
   {
-    href: "/members/work/catalog",
-    label: "Catalog",
-    // Match /members/work/catalog and all detail pages /members/work/[id]
-    startWithRoots: ["/members/work/"],
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    href: "/members/pods",
+    label: "My Pods",
+    startWithRoots: ["/members/pods"],
+    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="7" r="2.5"/><path d="M2 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><path d="M17 13a4 4 0 0 1 4 4v1"/></svg>,
   },
   {
     href: "/members/handbook",
@@ -119,18 +119,26 @@ function getDefaultMembersPath(_role: AuthRole | null): string {
   return "/members/overview";
 }
 
-function getNavItemsForRole(role: AuthRole | null): NavItem[] {
+const TECH_PROJECTS_ITEM = OWNER_NAV_ITEMS.find((i) => i.href === "/members/projects")!;
+
+// Tech leadership is a member everywhere except the project tracker, so it gets
+// the member nav with that one page added rather than a tier of its own.
+function getNavItemsForRole(role: AuthRole | null, isTechLead: boolean): NavItem[] {
   if (role === "owner") return OWNER_NAV_ITEMS;
   if (role === "admin") return ADMIN_NAV_ITEMS;
+  if (isTechLead) {
+    const [overview, ...rest] = MEMBER_NAV_ITEMS;
+    return [overview, TECH_PROJECTS_ITEM, ...rest];
+  }
   return MEMBER_NAV_ITEMS;
 }
 
-function getAllowedRootsForRole(role: AuthRole | null): string[] {
+function getAllowedRootsForRole(role: AuthRole | null, isTechLead: boolean): string[] {
   if (role === "owner") {
     return [
       "/members/projects",
       "/members/overview",
-      "/members/assignments",
+      "/members/pods",
       "/members/orgs",
       "/members/team",
       "/members/applicants",
@@ -142,11 +150,13 @@ function getAllowedRootsForRole(role: AuthRole | null): string[] {
     return [
       "/members/overview",
       "/members/projects",
-      "/members/assignments",
+      "/members/pods",
+      "/members/team",
       "/members/email",
     ];
   }
-  return ["/members/work", "/members/me", "/members/handbook", "/members/work/catalog", "/members/settings"];
+  const base = ["/members/work", "/members/me", "/members/pods", "/members/handbook", "/members/settings"];
+  return isTechLead ? [...base, "/members/projects"] : base;
 }
 
 function isAllowedPath(pathname: string, allowedRoots: string[]): boolean {
@@ -161,8 +171,10 @@ let _ackSessionDone = false;
 // ── INNER LAYOUT ──────────────────────────────────────────────────────────────
 
 function MembersLayoutInner({ children }: { children: ReactNode }) {
-  const { user, userProfile, authRole, loading } = useAuth();
+  const { user, userProfile, authRole, isTechLead, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarTriggerRef = useRef<HTMLButtonElement>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false);
   const profilePopoverRef = useRef<HTMLDivElement>(null);
@@ -181,9 +193,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   // Reverts on unmount so navigating back to the public site restores the dark bg.
   useEffect(() => {
     if (loading) return;
-    const isLight = authRole === "member";
-    document.body.style.backgroundColor = isLight ? "#F5F6F8" : "#0D0F14";
-    localStorage.setItem("novus-portal-theme", isLight ? "light" : "dark");
+    document.body.style.backgroundColor = "#F4F5F7";
+    localStorage.setItem("novus-portal-theme", "light");
     return () => { document.body.style.backgroundColor = ""; };
   }, [authRole, loading]);
 
@@ -212,6 +223,21 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const [ackLoading, setAckLoading] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const trigger = sidebarTriggerRef.current;
+    const first = sidebarRef.current?.querySelector<HTMLElement>("a[href], button:not([disabled])");
+    window.setTimeout(() => first?.focus(), 0);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      trigger?.focus();
+    };
+  }, [sidebarOpen]);
 
   useEffect(() => {
     if (loading) return;
@@ -255,15 +281,15 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     }
   };
 
-  const visibleNavItems = getNavItemsForRole(authRole);
+  const visibleNavItems = getNavItemsForRole(authRole, isTechLead);
 
   useEffect(() => {
     if (loading || !user) return;
-    const allowedRoots = getAllowedRootsForRole(authRole);
+    const allowedRoots = getAllowedRootsForRole(authRole, isTechLead);
     if (!isAllowedPath(pathname, allowedRoots)) {
       router.replace(getDefaultMembersPath(authRole));
     }
-  }, [authRole, loading, pathname, router, user]);
+  }, [authRole, isTechLead, loading, pathname, router, user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -291,8 +317,32 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#F6B78D]/30 border-t-[#F6B78D] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Marking a member inactive used to be cosmetic — a red dot and exclusion from
+  // mass email — while they kept full portal access. Owners and admins are never
+  // locked out, so an accidental self-deactivation stays recoverable.
+  if (userProfile && !userProfile.active && authRole === "member") {
+    return (
+      <div className="min-h-screen bg-[#0F1014] flex items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <h1 className="font-display text-lg font-semibold text-white">Your access is paused</h1>
+          <p className="mt-2 text-sm leading-relaxed text-white/45">
+            Your Novus membership is marked inactive, so the portal is closed for now.
+            If that&apos;s not right, email{" "}
+            <a href={`mailto:${EMAIL.info}`} className="text-[#F6B78D] hover:underline">{EMAIL.info}</a>.
+          </p>
+          <button
+            onClick={() => void signOut()}
+            className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 transition-colors hover:border-white/35 hover:text-white"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     );
   }
@@ -304,7 +354,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
     "Member";
   const initials = getInitials(memberDisplayName);
 
-  const lightTheme = authRole === "member";
+  const lightTheme = true;
   const tone = lightTheme
     ? {
         page: "bg-[#F5F6F8]",
@@ -358,7 +408,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
       <Modal open={showAckModal} onClose={() => {}} title="Before you continue" dismissible={false}>
           <div className="max-w-md rounded-xl bg-white p-5">
             <p className="text-black/60 text-sm font-body mb-4 leading-relaxed">
-              By continuing, you acknowledge that you have read and understand the Novus NYC credit and infraction system as described in the Member Handbook.
+              By continuing, you acknowledge that you have read and understand the Novus NYC conduct, attendance, and infraction policy in the Member Handbook.
             </p>
             <a
               href="/members/handbook"
@@ -374,7 +424,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 className="mt-0.5 w-4 h-4 accent-[#F6B78D] cursor-pointer flex-shrink-0"
               />
               <span className="text-sm text-black/70 font-body">
-                I have read and understand the credit and infraction policy.
+                I have read and understand the conduct, attendance, and infraction policy.
               </span>
             </label>
             <button
@@ -402,7 +452,13 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full ${sidebarW} ${tone.sidebar} z-30 flex flex-col transition-[width,transform] duration-200 ease-in-out overflow-hidden ${
+        id="member-navigation"
+        ref={sidebarRef}
+        // Translated offscreen is still focusable: Tab used to walk into a
+        // sidebar the reader could not see. data-closed drives visibility, which
+        // does remove it from the tab order, delayed so the slide still plays.
+        data-closed={!sidebarOpen}
+        className={`members-sidebar fixed left-0 top-0 h-full ${sidebarW} ${tone.sidebar} z-30 flex flex-col transition-[width,transform] duration-200 ease-in-out overflow-hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -428,7 +484,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
           {!sidebarCollapsed && (
             <>
               <div className="min-w-0 flex-1">
-                <p className={`${sora.className} font-bold ${tone.sidebarLogoText} text-sm leading-none`}>Novus</p>
+                <Wordmark className={`${tone.sidebarLogoText} text-sm leading-none`} />
                 <p className={`font-body text-[10px] ${tone.sidebarSubtle} mt-0.5`}>Members Portal</p>
               </div>
               <button
@@ -464,6 +520,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? item.label : undefined}
                 aria-label={sidebarCollapsed ? item.label : undefined}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2.5 rounded-lg text-sm font-body transition-colors ${
                   sidebarCollapsed ? "justify-center px-2 py-2" : "px-3 py-2"
                 } ${isActive ? tone.navActive : tone.navInactive}`}
@@ -558,7 +615,15 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Mobile top bar */}
         <div className={`lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-10 ${tone.mobileBar}`}>
-          <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open member navigation" className={`rounded p-1 ${tone.burgerText}`}>
+          <button
+            ref={sidebarTriggerRef}
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open member navigation"
+            aria-expanded={sidebarOpen}
+            aria-controls="member-navigation"
+            className={`rounded p-1 ${tone.burgerText}`}
+          >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="12" x2="21" y2="12"/>

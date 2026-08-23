@@ -35,7 +35,7 @@ The portal does **not** have Tailwind tokens — use Tailwind arbitrary values. 
 | `--color-portal-input` (`#0F1014`) | `bg-[#0F1014]` | Input / select backgrounds |
 | `--color-portal-row` (`#13161D`) | `bg-[#13161D]` | Table row alternation, nested surfaces |
 
-Page background is `bg-[#0F1014]`. The `members-portal-light` class (for `authRole === "member"`) switches to `bg-[#F5F6F8]` / `bg-white` sidebar.
+`MembersLayout` applies `members-portal-light` for every role, switching the portal to `bg-[#F5F6F8]` with a white sidebar. Never branch theme treatment on `authRole`.
 
 #### Portal Green
 
@@ -178,7 +178,7 @@ if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.
 
 `verifyCaller` extracts `auth_role` from the JWT `app_metadata` and validates it against the `allowedRoles` array.
 
-**Public routes** (no JWT): `/api/submit`, `/api/booking/*`, `/api/school-names`, `/api/public/*`
+**Public routes** (no JWT): `/api/submit`, `/api/school-names`, `/api/public/*`
 
 ### Running Ad-Hoc SQL
 
@@ -198,9 +198,33 @@ npx supabase db query --linked "SELECT ..."
 
 ```
 owner  → Founder / Board — full portal access + admin panel
-admin  → Senior Associates — elevated: projects, assignments, overview
-member → Standard member — work marketplace, handbook, own profile
+admin  → Senior Associates — elevated: projects, pods, team, email, overview
+member → Standard member — own work, own pods, handbook, own profile
 ```
+
+Two capabilities are derived rather than stored in `auth_role`:
+
+- **Tech leadership** — `team.role = 'Developer'`. Opens `/members/projects` with
+  full edit, and nothing else. Enforced in the database by `is_tech_lead()`.
+- **LIT** — a `pod_members` row with `role = 'lit'`. Grants meetings, attendance
+  and the task board *for that pod only*, via `my_led_pods()`. It is earned by
+  leading a pod, never assigned as a role, and never converts to or from
+  leadership.
+
+Both leave `auth_role` at `member`.
+
+Certified hours are stored in the append-only `certified_hour_entries` journal.
+Attendance, task completion, projects and manual adjustments post correction
+entries; they must never recompute or delete previously certified history.
+
+Pod work follows a review boundary: an assigned member may start work and
+request review, but only owner/admin or that pod's LIT can approve `Done` and
+therefore certify task hours. Meetings may be saved before every roster row is
+marked; the attendance sheet finalizes only when every eligible member has an
+explicit status. Excused absences earn zero hours.
+The scheduled sweep emails a per-recipient certified-hours summary in January
+and July. Its delivery key includes the member and six-month period, so reruns
+and catch-up runs cannot duplicate a summary.
 
 Role is stored in `user_profiles.auth_role` and in the JWT `app_metadata.auth_role`. Read via `useAuth()` → `authRole`.
 
@@ -218,17 +242,38 @@ const { user, userProfile, authRole, loading } = useAuth();
 
 | Route group | owner | admin | member |
 |---|---|---|---|
-| `/members/overview` | ✓ AdminCycleOverview | ✓ AdminCycleOverview | ✓ MemberOverview |
-| `/members/projects` | ✓ full edit | ✓ full edit | ✗ redirected |
-| `/members/assignments/*` | ✓ full edit | ✓ full edit | ✗ redirected |
-| `/members/bids` | ✓ full edit | ✗ redirected | ✗ redirected |
-| `/members/team` | ✓ full edit | ✗ redirected | ✗ redirected |
+| `/members/overview` | ✓ AdminDashboard | ✓ AdminDashboard | ✗ → `/members/me` |
+| `/members/projects` | ✓ full edit + public cards | ✓ full edit + public cards | ✓ tracker only if tech leadership |
+| `/members/pods` | ✓ all pods | ✓ all pods | ✓ own pods only |
+| `/members/orgs` | ✓ full edit | ✗ redirected | ✗ redirected |
+| `/members/team` | ✓ full edit | ✓ read + hours adjustments | ✗ redirected |
 | `/members/applicants` | ✓ full edit | ✗ redirected | ✗ redirected |
-| `/members/email` | ✓ | ✗ redirected | ✗ redirected |
+| `/members/email` | ✓ | ✓ | ✗ redirected |
 | `/members/admin` | ✓ | ✗ redirected | ✗ redirected |
 | `/members/work` | ✗ redirected | ✗ redirected | ✓ |
 | `/members/me` | ✗ redirected | ✗ redirected | ✓ |
 | `/members/handbook` | ✗ redirected | ✗ redirected | ✓ |
+
+### Removed routes
+
+These were deleted when the assignment marketplace became Pods and Tech
+Projects. Each 308s in `next.config.mjs` — old bookmarks and links in
+already-sent email still point at them, and a 404 inside the portal reads as
+lost access rather than a moved page.
+
+| Removed | Now |
+|---|---|
+| `/members/assignments`, `/members/assignments/*` | `/members/pods` |
+| `/members/finance-assignments` | `/members/pods` |
+| `/members/work/catalog`, `/members/work/:id` | `/members/work` |
+| `/members/projects/discovery` | `/members/projects?view=leads` |
+| `/members/projects/showcase` | `/members/projects` (open a website, then use its Public Card tab) |
+| `/members/bids` | `/members/orgs` |
+| `/book`, `/book/*` | `/apply` |
+
+The tracker's view is addressable — `?view=` accepts any key in `VIEWS`
+(`all`, `domains`, `backlog`, `leads`, `hold`) — so a filtered list can be
+linked to directly.
 
 Redirects are enforced by `MembersLayout` via `getAllowedRootsForRole()`. Pages should **not** duplicate the top-level redirect — they may add a local guard only to render a loading state while auth resolves.
 
@@ -243,7 +288,7 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 ### Two UIs, One Repo
 
 - **Public site** (`/`, `/showcase`, `/apply`, etc.): light theme, `v-*` Tailwind tokens, `font-display` / `font-body`.
-- **Members portal** (`/members/*`): dark theme (`#0F1014` bg), `#F6B78D` as primary action, `font-display` / `font-body`.
+- **Members portal** (`/members/*`): light theme for every role via `members-portal-light`; `#F6B78D` is the primary action, `font-display` / `font-body`.
 - `members-portal` CSS class on the root element triggers portal-specific global styles (`.members-portal *` selectors in `globals.css`).
 
 ### State Management
@@ -260,7 +305,11 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 
 ### Performance
 
-- Heavy portal pages (team, applicants, assignments) subscribe to multiple tables; subscriptions are opened in parallel with a combined cleanup function.
+- Heavy portal pages (team, applicants, projects) subscribe to multiple tables; subscriptions are opened in parallel with a combined cleanup function.
+- `subscribe*` callbacks take a second argument, `{ error }`. A failed query
+  delivers the rows already held plus the error — never an empty array, because
+  "the query failed" and "there are none" must not render identically. Pages
+  show `<LoadError />` for the first and `<Empty />` for the second.
 - Do not subscribe to data the page doesn't display — fetch only what you need.
 - Public pages with expensive DB reads use ISR (`revalidate`) and can be refreshed via `POST /api/members/admin/revalidate`.
 
@@ -298,4 +347,4 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 | New admin API endpoint | `src/app/api/members/admin/[name]/route.ts` using `verifyCaller` |
 | New auth-required API endpoint | `src/app/api/members/[name]/route.ts`, verify JWT |
 | New public page | `src/app/[slug]/page.tsx` — use `v-*` tokens, `font-display`/`font-body` |
-| New portal page (admin) | `src/app/members/[slug]/page.tsx` — wrap with `MembersLayout`, use portal dark theme |
+| New portal page (admin) | `src/app/members/[slug]/page.tsx` — wrap with `MembersLayout`; global light remaps apply to every role |

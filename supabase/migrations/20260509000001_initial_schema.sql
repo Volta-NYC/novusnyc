@@ -1,5 +1,5 @@
 -- =============================================================================
--- Novus NYC – initial Supabase schema
+-- Volta NYC – initial Supabase schema
 -- Migrated from Firebase Realtime Database.
 -- Firebase push-generated IDs are preserved as text primary keys.
 -- Nested / variable-shape structures are kept as JSONB.
@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS businesses (
 );
 
 CREATE INDEX IF NOT EXISTS businesses_owner_email_idx ON businesses (owner_email);
+
 CREATE INDEX IF NOT EXISTS businesses_showcase_enabled_idx ON businesses (showcase_enabled) WHERE showcase_enabled = true;
 
 -- ---------------------------------------------------------------------------
@@ -115,6 +116,7 @@ CREATE TABLE IF NOT EXISTS team (
 );
 
 CREATE INDEX IF NOT EXISTS team_email_idx ON team (email);
+
 CREATE INDEX IF NOT EXISTS team_alternate_email_idx ON team (alternate_email);
 
 -- ---------------------------------------------------------------------------
@@ -152,6 +154,7 @@ CREATE TABLE IF NOT EXISTS applications (
 );
 
 CREATE INDEX IF NOT EXISTS applications_email_idx ON applications (email);
+
 CREATE INDEX IF NOT EXISTS applications_status_idx ON applications (status);
 
 -- ---------------------------------------------------------------------------
@@ -255,6 +258,7 @@ CREATE TABLE IF NOT EXISTS member_strikes (
 );
 
 CREATE INDEX IF NOT EXISTS member_strikes_member_id_idx ON member_strikes (member_id);
+
 CREATE INDEX IF NOT EXISTS member_strikes_cycle_id_idx  ON member_strikes (cycle_id);
 
 -- ---------------------------------------------------------------------------
@@ -272,6 +276,7 @@ CREATE TABLE IF NOT EXISTS member_credit_adjustments (
 );
 
 CREATE INDEX IF NOT EXISTS member_credit_adj_member_id_idx ON member_credit_adjustments (member_id);
+
 CREATE INDEX IF NOT EXISTS member_credit_adj_cycle_id_idx  ON member_credit_adjustments (cycle_id);
 
 -- ---------------------------------------------------------------------------
@@ -317,6 +322,7 @@ CREATE TABLE IF NOT EXISTS assignment_catalog (
 );
 
 CREATE INDEX IF NOT EXISTS assignment_catalog_cycle_id_idx  ON assignment_catalog (cycle_id);
+
 CREATE INDEX IF NOT EXISTS assignment_catalog_status_idx    ON assignment_catalog (status);
 
 -- ---------------------------------------------------------------------------
@@ -341,10 +347,11 @@ CREATE TABLE IF NOT EXISTS assignment_claims (
 );
 
 CREATE INDEX IF NOT EXISTS assignment_claims_member_id_idx     ON assignment_claims (member_id);
+
 CREATE INDEX IF NOT EXISTS assignment_claims_assignment_id_idx ON assignment_claims (assignment_id);
 
 -- ---------------------------------------------------------------------------
--- user_profiles
+-- user_profiles  (keyed by Firebase Auth UID)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_profiles (
   id         text PRIMARY KEY,   -- Firebase UID
@@ -376,6 +383,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 CREATE INDEX IF NOT EXISTS audit_logs_timestamp_idx   ON audit_logs (timestamp DESC);
+
 CREATE INDEX IF NOT EXISTS audit_logs_collection_idx  ON audit_logs (collection);
 
 -- ---------------------------------------------------------------------------
@@ -440,6 +448,7 @@ CREATE TABLE IF NOT EXISTS interview_slots (
 );
 
 CREATE INDEX IF NOT EXISTS interview_slots_datetime_idx   ON interview_slots (datetime);
+
 CREATE INDEX IF NOT EXISTS interview_slots_available_idx  ON interview_slots (available) WHERE available = true;
 
 -- ---------------------------------------------------------------------------

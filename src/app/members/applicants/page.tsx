@@ -11,17 +11,13 @@ import {
 import {
   type ApplicationRecord,
   type ApplicationStatus,
-  type InterviewSlot,
-  type TeamMember,
-  subscribeTeam,
-  subscribeInterviewSlots,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
 import { gradeToClassOf } from "@/lib/grades";
+import { DEFAULT_MEMBER_ROLE } from "@/lib/members/roles";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "New",
-  "Invited for Interview",
   "Interview Scheduled",
   "Interview Completed",
   "Accepted",
@@ -29,9 +25,8 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
 ];
 
 const VALID_NEXT_STATUSES: Record<ApplicationStatus, ApplicationStatus[]> = {
-  "New":                   ["New", "Invited for Interview"],
-  "Invited for Interview": ["Invited for Interview", "Interview Scheduled", "New"],
-  "Interview Scheduled":   ["Interview Scheduled", "Interview Completed", "Invited for Interview"],
+  "New":                   ["New", "Interview Scheduled"],
+  "Interview Scheduled":   ["Interview Scheduled", "Interview Completed", "New"],
   "Interview Completed":   ["Interview Completed", "Accepted", "Not Accepted", "Interview Scheduled"],
   "Accepted":              ["Accepted", "Interview Completed"],
   "Not Accepted":          ["Not Accepted", "Interview Completed"],
@@ -39,7 +34,6 @@ const VALID_NEXT_STATUSES: Record<ApplicationStatus, ApplicationStatus[]> = {
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   "New": "bg-white/10 text-white/75 border border-white/20",
-  "Invited for Interview": "bg-[#F6B78D]/20 text-[#F3E28D] border border-[#F6B78D]/35",
   "Interview Scheduled": "bg-blue-500/20 text-blue-200 border border-blue-400/35",
   "Interview Completed": "bg-purple-500/20 text-purple-200 border border-purple-400/35",
   "Accepted": "bg-emerald-500/20 text-emerald-200 border border-emerald-400/35",
@@ -49,35 +43,6 @@ function normalize(v: string): string {
   return v.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-
-function normalizeName(value: string): string {
-  return normalize(value).replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function canonicalEmail(value: string): string {
-  const email = normalize(value);
-  const [local, domain] = email.split("@");
-  if (!local || !domain) return email;
-  if (domain === "gmail.com" || domain === "googlemail.com") {
-    const base = local.split("+")[0].replace(/\./g, "");
-    return `${base}@gmail.com`;
-  }
-  return `${local}@${domain}`;
-}
-
-function namesLikelyMatch(leftRaw: string, rightRaw: string): boolean {
-  const left = normalizeName(leftRaw);
-  const right = normalizeName(rightRaw);
-  if (!left || !right) return false;
-  if (left === right || left.includes(right) || right.includes(left)) return true;
-  const leftTokens = new Set(left.split(" ").filter(Boolean));
-  const rightTokens = new Set(right.split(" ").filter(Boolean));
-  let overlap = 0;
-  leftTokens.forEach((token) => {
-    if (rightTokens.has(token)) overlap += 1;
-  });
-  return overlap >= 2;
-}
 
 function formatDateTime(value: string): string {
   if (!value) return "—";
@@ -95,7 +60,7 @@ function formatDateTime(value: string): string {
 
 // ── Column definitions ─────────────────────────────────────────────────────────
 
-type ColumnKey = "status" | "actions" | "name" | "email" | "school" | "grade" | "cityState" | "chapter" | "referral" | "tracks" | "resume" | "applied" | "invite" | "interview" | "evals";
+type ColumnKey = "status" | "actions" | "name" | "email" | "school" | "grade" | "cityState" | "chapter" | "referral" | "tracks" | "resume" | "applied";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "name", label: "Name" },
@@ -110,9 +75,6 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "tracks", label: "Tracks" },
   { key: "resume", label: "Resume URL" },
   { key: "applied", label: "Applied" },
-  { key: "evals", label: "Eval" },
-  { key: "interview", label: "Interview" },
-  { key: "invite", label: "Invite" },
 ];
 
 // ── Column widths ──────────────────────────────────────────────────────────────
@@ -130,9 +92,6 @@ const COLUMN_WIDTH: Partial<Record<ColumnKey, string>> = {
   tracks: "w-[220px]",
   resume: "w-[90px]",
   applied: "w-[170px]",
-  invite: "w-[170px]",
-  interview: "w-[185px]",
-  evals: "w-[56px]",
 };
 
 const COLUMN_WIDTH_PX: Record<ColumnKey, number> = {
@@ -148,24 +107,17 @@ const COLUMN_WIDTH_PX: Record<ColumnKey, number> = {
   tracks: 220,
   resume: 90,
   applied: 170,
-  invite: 170,
-  interview: 185,
-  evals: 56,
 };
 
 
 export default function ApplicantsPage() {
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
-  const [slots, setSlots] = useState<InterviewSlot[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState("");
   const [showAcceptedApplicants, setShowAcceptedApplicants] = useState(false);
   const { selected, toggle, toggleAll, clear, isSelected, allSelected, someSelected, count: selectedCount } = useBulkSelect();
   const [bulkTargetStatus, setBulkTargetStatus] = useState<ApplicationStatus>("New");
   const [bulkStatusApplying, setBulkStatusApplying] = useState(false);
-  const [sendingInvites, setSendingInvites] = useState(false);
-  const [sendingReminders, setSendingReminders] = useState(false);
   const [bulkPromoting, setBulkPromoting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
@@ -173,40 +125,12 @@ export default function ApplicantsPage() {
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
   const [acceptRole, setAcceptRole] = useState("Analyst");
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
-  const [viewingEvaluationsApp, setViewingEvaluationsApp] = useState<ApplicationRecord | null>(null);
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const canEdit = authRole === "owner";
   const canDelete = authRole === "owner";
   const canManageStatus = authRole === "owner";
   const canView = authRole === "owner" || authRole === "admin";
-  const isInterviewerOnly = false;
-
-  // Subscribe to team members for interviewer identity resolution
-  useEffect(() => subscribeTeam(setTeamMembers), []);
-
-  // Subscribe to interview slots for resume access control
-  useEffect(() => subscribeInterviewSlots(setSlots), []);
-
-  // Resolve the current user's team member IDs
-  const currentInterviewerMemberIds = useMemo(() => {
-    if (!user) return [] as string[];
-    const email = normalize(user.email ?? "");
-    const canonical = canonicalEmail(user.email ?? "");
-    const displayName = normalizeName(user.user_metadata?.full_name ?? "");
-    return teamMembers
-      .filter((member) => {
-        const memberEmail = normalize(member.email ?? "");
-        const memberAltEmail = normalize(member.alternateEmail ?? "");
-        const memberCanonical = canonicalEmail(member.email ?? "");
-        const memberAltCanonical = canonicalEmail(member.alternateEmail ?? "");
-        if (email && (memberEmail === email || memberAltEmail === email || memberCanonical === canonical || memberAltCanonical === canonical)) return true;
-        if (displayName && namesLikelyMatch(displayName, member.name ?? "")) return true;
-        return false;
-      })
-      .map((member) => String(member.id ?? "").trim())
-      .filter(Boolean);
-  }, [teamMembers, user]);
 
   const fetchApplicantsData = useCallback(async () => {
     if (!user || !canView) {
@@ -222,7 +146,6 @@ export default function ApplicantsPage() {
       if (!res.ok) throw new Error("load_failed");
       const payload = await res.json() as {
         applications?: ApplicationRecord[];
-        slots?: Record<string, InterviewSlot>;
       };
       setApplications(Array.isArray(payload.applications) ? payload.applications : []);
     } catch {
@@ -238,49 +161,6 @@ export default function ApplicantsPage() {
     const timer = setInterval(() => void fetchApplicantsData(), 15000);
     return () => clearInterval(timer);
   }, [fetchApplicantsData, canView]);
-
-  const bookedSlots = useMemo(
-    () => [...slots]
-      .filter((slot) => !slot.available)
-      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()),
-    [slots],
-  );
-
-  const matchBookedSlot = useCallback((app: ApplicationRecord): InterviewSlot | undefined => {
-    const appEmail = normalize(app.email);
-    const appCanonical = canonicalEmail(appEmail);
-    const appName = app.fullName;
-    const token = normalize(app.interviewInviteToken ?? "");
-    const appSlotId = normalize(app.interviewSlotId ?? "");
-    return bookedSlots.find((slot) => {
-      if (appSlotId && normalize(slot.id) === appSlotId) return true;
-      const slotEmail = normalize(slot.bookerEmail ?? "");
-      const slotCanonical = canonicalEmail(slotEmail);
-      const slotName = slot.bookerName ?? "";
-      const slotToken = normalize(slot.bookedBy ?? "");
-      if (token && slotToken && token === slotToken) return true;
-      if (appEmail && slotEmail && (appEmail === slotEmail || appCanonical === slotCanonical)) return true;
-      if (appName && slotName && namesLikelyMatch(appName, slotName)) return true;
-      return false;
-    });
-  }, [bookedSlots]);
-
-  // Check if the current interviewer can view the resume for a specific applicant
-  const canViewResumeForApp = useCallback((app: ApplicationRecord): boolean => {
-    // Admins can view all resumes
-    if (canEdit) return true;
-    // Interviewers can only view resumes of applicants who booked in their assigned slots
-    if (isInterviewerOnly) {
-      const bookedSlot = matchBookedSlot(app);
-      if (!bookedSlot) return false;
-      const slotInterviewerIds = Array.isArray(bookedSlot.interviewerMemberIds)
-        ? bookedSlot.interviewerMemberIds.map((v) => String(v ?? "").trim()).filter(Boolean)
-        : [];
-      if (slotInterviewerIds.length === 0 || currentInterviewerMemberIds.length === 0) return false;
-      return slotInterviewerIds.some((id) => currentInterviewerMemberIds.includes(id));
-    }
-    return false;
-  }, [canEdit, isInterviewerOnly, matchBookedSlot, currentInterviewerMemberIds]);
 
   const filtered = useMemo(() => {
     const q = normalize(search);
@@ -300,39 +180,14 @@ export default function ApplicantsPage() {
 
   const totalApplicantsCount = applications.length;
   const acceptedApplicantsCount = applications.filter((app) => normalize(app.status) === "accepted").length;
-  const newApplicantsCount = applications.filter((app) => normalize(app.status) === "new").length;
-
-  const uninvitedApplicantIds = useMemo(
-    () =>
-      applications
-        .filter((app) => {
-          if (app.interviewInviteSentAt) return false;
-          if (["accepted", "not accepted", "rejected", "interview scheduled"].includes(normalize(app.status))) return false;
-          if (matchBookedSlot(app)) return false;
-          return true;
-        })
-        .map((app) => app.id),
-    [applications, matchBookedSlot]
-  );
-
-  const unbookedReminderIds = useMemo(() => {
-    const now = Date.now();
-    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
-    return applications
-      .filter((app) => {
-        // Must have been invited
-        const sentAt = Date.parse(app.interviewInviteSentAt ?? "");
-        if (!sentAt) return false;
-        // Must not be accepted/booked
-        if (["accepted"].includes(normalize(app.status))) return false;
-        if (matchBookedSlot(app)) return false;
-        // Use the latest of invite or reminder timestamp for the 2-day check
-        const remindedAt = Date.parse(app.interviewReminderSentAt ?? "");
-        const lastContactAt = remindedAt > sentAt ? remindedAt : sentAt;
-        return now - lastContactAt >= twoDaysMs;
-      })
-      .map((app) => app.id);
-  }, [applications, matchBookedSlot]);
+  // Someone who reapplied after already joining is not awaiting anything, so
+  // counting them as pending overstates the queue.
+  const awaitingDecisionCount = applications.filter(
+    (app) => normalize(app.status) !== "accepted" && !app.memberId,
+  ).length;
+  const alreadyMemberCount = applications.filter(
+    (app) => normalize(app.status) !== "accepted" && !!app.memberId,
+  ).length;
 
   const selectableFilteredIds = useMemo(() => filtered.map((app) => app.id), [filtered]);
 
@@ -355,95 +210,13 @@ export default function ApplicantsPage() {
     }
   };
 
-  const sendInterviewInviteEmails = async (
-    ids: string[],
-    mode: "initial" | "reminder",
-    allowAlreadyInvited = false
-  ) => {
-    if (!user || ids.length === 0) return { sent: 0, skipped: 0, failed: 0 };
-    const token = await getAuthToken();
-    if (!token) return { sent: 0, skipped: 0, failed: ids.length };
-    const response = await fetch("/api/members/applicants/interview-invite-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        mode,
-        applicationIds: ids,
-        allowAlreadyInvited,
-      }),
-    });
-    if (!response.ok) throw new Error("send_invite_failed");
-    const json = await response.json() as {
-      sent?: number;
-      skipped?: number;
-      failed?: number;
-    };
-    return {
-      sent: json.sent ?? 0,
-      skipped: json.skipped ?? 0,
-      failed: json.failed ?? 0,
-    };
-  };
-
-  const sendInviteForApplicant = async (app: ApplicationRecord) => {
-    setSendingInvites(true);
-    try {
-      const result = await sendInterviewInviteEmails([app.id], "initial", !!app.interviewInviteSentAt);
-      setStatusMessage(`Invite email result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
-      await fetchApplicantsData();
-    } catch {
-      setStatusMessage("Could not send interview invite email.");
-    } finally {
-      setSendingInvites(false);
-    }
-  };
-
-  const inviteAllUninvited = async () => {
-    if (!canEdit || uninvitedApplicantIds.length === 0) {
-      setStatusMessage("No uninvited applicants found.");
-      return;
-    }
-    setSendingInvites(true);
-    try {
-      const result = await sendInterviewInviteEmails(uninvitedApplicantIds, "initial", false);
-      setStatusMessage(`Invite all result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
-      await fetchApplicantsData();
-    } catch {
-      setStatusMessage("Could not send invite emails to all uninvited applicants.");
-    } finally {
-      setSendingInvites(false);
-    }
-  };
-
-  const inviteSelected = async () => {
-    if (!canEdit || selected.size === 0) {
-      setStatusMessage("Select at least one applicant.");
-      return;
-    }
-    setSendingInvites(true);
-    try {
-      const result = await sendInterviewInviteEmails(Array.from(selected), "initial", false);
-      setStatusMessage(`Invite selected result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
-      await fetchApplicantsData();
-      clear();
-    } catch {
-      setStatusMessage("Could not send invite emails to selected applicants.");
-    } finally {
-      setSendingInvites(false);
-    }
-  };
-
   const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, role: string) => {
     if (!user) throw new Error("not_authenticated");
     const token = await getAuthToken();
-    await updateApplicantServer(app.id, {
-      status: "Accepted",
-      finalDecisionRole: role,
-    });
-    await fetch("/api/members/applicants/promote", {
+    // The Accepted stamp is applied by the promote endpoint once the member row
+    // exists. Flipping it here first meant a failed promotion left an accepted
+    // applicant with nothing in the directory.
+    const promoteRes = await fetch("/api/members/applicants/promote", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -453,13 +226,22 @@ export default function ApplicantsPage() {
         fullName: app.fullName,
         email: app.email,
         schoolName: app.schoolName,
-        grade: gradeToClassOf(app.grade),
+        grade: gradeToClassOf(app.grade, app.createdAt),
         role,
         tracksSelected: app.tracksSelected,
+        applicationId: app.id,
+        markAccepted: true,
       }),
     });
+    if (!promoteRes.ok) {
+      const { error } = await promoteRes.json().catch(() => ({})) as { error?: string };
+      throw new Error(error === "missing_fields"
+        ? `${app.fullName} needs a name and email before they can be added to the directory.`
+        : `Could not add ${app.fullName} to the member directory.`);
+    }
+    const promoted = await promoteRes.json() as { action?: string };
     if (shouldEmail) {
-      await fetch("/api/members/applicants/decision-email", {
+      const emailRes = await fetch("/api/members/applicants/decision-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -471,19 +253,26 @@ export default function ApplicantsPage() {
           decision: "Accepted",
         }),
       });
+      if (!emailRes.ok) {
+        // The member exists either way; say so rather than implying a rollback.
+        throw new Error(`${app.fullName} was added, but the acceptance email didn't send.`);
+      }
     }
+    return promoted.action ?? "updated";
   };
 
   const handleAcceptFromModal = async () => {
     if (!acceptModalApp) return;
     setBulkPromoting(true);
     try {
-      await promoteApplicant(acceptModalApp, acceptSendEmail, acceptRole);
-      setStatusMessage(`Accepted and added ${acceptModalApp.fullName} to member directory.`);
+      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptRole);
+      setStatusMessage(action === "created"
+        ? `Accepted ${acceptModalApp.fullName} and added them to the member directory.`
+        : `Accepted ${acceptModalApp.fullName}. They were already in the directory, so their record was updated.`);
       await fetchApplicantsData();
       setAcceptModalApp(null);
-    } catch {
-      setStatusMessage(`Could not promote ${acceptModalApp.fullName}.`);
+    } catch (err) {
+      setStatusMessage(err instanceof Error ? err.message : `Could not accept ${acceptModalApp.fullName}.`);
     } finally {
       setBulkPromoting(false);
     }
@@ -502,7 +291,7 @@ export default function ApplicantsPage() {
       for (const app of selectedApps) {
         try {
           // eslint-disable-next-line no-await-in-loop
-          await promoteApplicant(app, true, "Analyst");
+          await promoteApplicant(app, true, DEFAULT_MEMBER_ROLE);
           ok += 1;
         } catch {
           failed += 1;
@@ -513,24 +302,6 @@ export default function ApplicantsPage() {
       await fetchApplicantsData();
     } finally {
       setBulkPromoting(false);
-    }
-  };
-
-  const remindUnbookedAfterTwoDays = async () => {
-    if (unbookedReminderIds.length === 0) {
-      setStatusMessage("No unbooked applicants need reminders right now.");
-      return;
-    }
-
-    setSendingReminders(true);
-    try {
-      const result = await sendInterviewInviteEmails(unbookedReminderIds, "reminder", true);
-      setStatusMessage(`Reminder result — sent: ${result.sent}, skipped: ${result.skipped}, failed: ${result.failed}.`);
-      await fetchApplicantsData();
-    } catch {
-      setStatusMessage("Could not send reminder emails.");
-    } finally {
-      setSendingReminders(false);
     }
   };
 
@@ -659,27 +430,15 @@ export default function ApplicantsPage() {
       <PageHeader
         title="Applicants"
       />
-      <div className="flex flex-wrap items-center gap-4 mb-3 text-[11px] text-white/55">
-        <span>Total: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
+      <div className="flex flex-wrap items-center gap-4 mb-1 text-[11px] text-white/55">
+        <span>Total applications: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
         <span>Accepted: <span className="text-emerald-300 font-semibold">{acceptedApplicantsCount}</span></span>
-        <span>New: <span className="text-sky-300 font-semibold">{newApplicantsCount}</span></span>
+        <span>Awaiting a decision: <span className="text-sky-300 font-semibold">{awaitingDecisionCount}</span></span>
+        {alreadyMemberCount > 0 && (
+          <span className="text-white/35">{alreadyMemberCount} reapplied after joining</span>
+        )}
       </div>
       <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
-
-      {canEdit && (
-        <div className="flex gap-2 mb-4 flex-wrap">
-          <Btn
-            variant="secondary"
-            onClick={inviteAllUninvited}
-            disabled={sendingInvites || uninvitedApplicantIds.length === 0}
-          >
-            {sendingInvites ? "Sending..." : `Invite All Uninvited (${uninvitedApplicantIds.length})`}
-          </Btn>
-          <Btn variant="secondary" onClick={remindUnbookedAfterTwoDays} disabled={sendingReminders || sendingInvites || unbookedReminderIds.length === 0} className={unbookedReminderIds.length === 0 ? "opacity-50" : ""}>
-            {sendingReminders ? "Sending reminders..." : `Remind Unbooked (${unbookedReminderIds.length})`}
-          </Btn>
-        </div>
-      )}
 
       {statusMessage && <p className="text-xs text-white/55 mb-4">{statusMessage}</p>}
 
@@ -754,12 +513,9 @@ export default function ApplicantsPage() {
           </thead>
           <tbody className="divide-y divide-white/5">
             {filtered.map((app) => {
-              const latestInterview = matchBookedSlot(app);
-              const showResume = canViewResumeForApp(app);
+              const showResume = canView;
               const statusKey = normalize(app.status);
               const isAccepted = statusKey === "accepted";
-              const hasBookedInterview = !!latestInterview || statusKey === "interview scheduled" || statusKey === "interview completed";
-              const canSendInviteAction = !isAccepted && !hasBookedInterview;
               const canAcceptAction = !isAccepted;
               return (
                 <tr key={app.id} className="hover:bg-white/3 transition-colors">
@@ -812,7 +568,7 @@ export default function ApplicantsPage() {
                           </td>
                         );
                       case "grade": {
-                        const display = gradeToClassOf(app.grade);
+                        const display = gradeToClassOf(app.grade, app.createdAt);
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/55 whitespace-nowrap">
                             <span className="block truncate" title={display || ""}>{display || "—"}</span>
@@ -868,51 +624,9 @@ export default function ApplicantsPage() {
                             )}
                           </td>
                         );
-                      case "evals": {
-                        const hasEval = Object.keys(app.interviewEvaluations || {}).length > 0;
-                        return (
-                          <td key={col.key} className="px-2 py-1.5 text-center">
-                            {hasEval ? (
-                              <button
-                                onClick={() => setViewingEvaluationsApp(app)}
-                                className="w-2.5 h-2.5 rounded-full bg-[#F6B78D] inline-block shadow-[0_0_8px_rgba(246,183,141,0.4)] hover:shadow-[0_0_12px_rgba(246,183,141,0.6)] transition-shadow"
-                                title="Click to view evaluation"
-                              />
-                            ) : (
-                              <span className="text-white/20">—</span>
-                            )}
-                          </td>
-                        );
-                      }
                       case "applied":
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/45 whitespace-nowrap">{formatDateTime(app.createdAt)}</td>
-                        );
-                      case "invite": {
-                        const sentAt = app.interviewInviteSentAt ? Date.parse(app.interviewInviteSentAt) : 0;
-                        const remAt = app.interviewReminderSentAt ? Date.parse(app.interviewReminderSentAt) : 0;
-                        const latestTs = remAt > sentAt ? app.interviewReminderSentAt : app.interviewInviteSentAt;
-                        return (
-                          <td key={col.key} className="px-2 py-1.5">
-                            {latestTs ? (
-                              <span className="text-white/65 whitespace-nowrap">{formatDateTime(latestTs)}</span>
-                            ) : (
-                              <span className="text-white/30">Not sent</span>
-                            )}
-                          </td>
-                        );
-                      }
-                      case "interview":
-                        return (
-                          <td key={col.key} className="px-2 py-1.5">
-                            {latestInterview ? (
-                              <div className="text-white/65">
-                                <div className="whitespace-nowrap">{formatDateTime(latestInterview.datetime)}</div>
-                              </div>
-                            ) : (
-                              <span className="text-white/30">Not booked</span>
-                            )}
-                          </td>
                         );
                       case "actions":
                         return (
@@ -920,15 +634,6 @@ export default function ApplicantsPage() {
                             <div className="members-no-cell-scroll flex gap-1 flex-nowrap">
                               {canEdit && (
                                 <>
-                                  <Btn
-                                    size="sm"
-                                    variant="secondary"
-                                    className={`members-pill-btn whitespace-nowrap ${!canSendInviteAction ? "opacity-50" : ""}`}
-                                    onClick={() => sendInviteForApplicant(app)}
-                                    disabled={sendingInvites || sendingReminders || !canSendInviteAction}
-                                  >
-                                    {app.interviewInviteSentAt ? "Resend Invite" : "Send Invite"}
-                                  </Btn>
                                   <Btn
                                     size="sm"
                                     variant="primary"
@@ -985,14 +690,6 @@ export default function ApplicantsPage() {
         <BulkActionBar count={selectedCount} onClear={clear}>
           <Btn
             size="sm"
-            variant="secondary"
-            onClick={() => void inviteSelected()}
-            disabled={sendingInvites}
-          >
-            {sendingInvites ? "Sending…" : "Send Invites"}
-          </Btn>
-          <Btn
-            size="sm"
             variant="primary"
             onClick={() => void skipInterviewForSelected()}
             disabled={bulkPromoting}
@@ -1021,52 +718,6 @@ export default function ApplicantsPage() {
         </BulkActionBar>
       )}
 
-      {/* Evaluation viewer modal */}
-      <Modal
-        open={!!viewingEvaluationsApp}
-        onClose={() => setViewingEvaluationsApp(null)}
-        title="Interview Evaluations"
-      >
-        <div className="space-y-4">
-          <p className="text-white/60 text-sm font-body">
-            Evaluations for <span className="text-white font-semibold">{viewingEvaluationsApp?.fullName}</span>
-          </p>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-            {viewingEvaluationsApp && Object.values(viewingEvaluationsApp.interviewEvaluations || {}).length > 0 ? (
-              Object.values(viewingEvaluationsApp.interviewEvaluations || {})
-                .sort((a, b) => new Date(b?.updatedAt || 0).getTime() - new Date(a?.updatedAt || 0).getTime())
-                .map((ev, idx) => (
-                  <div key={idx} className="bg-white/3 border border-white/5 rounded-lg p-3 space-y-2">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <div className="text-xs font-semibold text-white/90">{ev?.interviewerName || "Unknown"}</div>
-                        <div className="text-[10px] text-white/40">{ev?.updatedAt ? new Date(ev.updatedAt).toLocaleString() : ""}</div>
-                      </div>
-                      <div className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                        ev?.rating === "Extremely Qualified" ? "bg-[#F6B78D]/20 text-[#F3E28D]" :
-                        ev?.rating === "Qualified" ? "bg-blue-500/20 text-blue-400" :
-                        ev?.rating === "Decent" ? "bg-yellow-500/20 text-yellow-400" :
-                        "bg-red-500/20 text-red-400"
-                      }`}>
-                        {ev?.rating || "No Rating"}
-                      </div>
-                    </div>
-                    {ev?.comments && (
-                      <div className="text-sm text-white/70 whitespace-pre-wrap font-body bg-black/20 p-2 rounded border border-white/5 italic">
-                        &quot;{ev.comments}&quot;
-                      </div>
-                    )}
-                  </div>
-                ))
-            ) : (
-              <div className="text-center py-8 text-white/20 italic text-sm">No evaluations yet.</div>
-            )}
-          </div>
-          <div className="flex justify-end pt-2">
-            <Btn variant="secondary" onClick={() => setViewingEvaluationsApp(null)}>Close</Btn>
-          </div>
-        </div>
-      </Modal>
     </MembersLayout>
   );
 }

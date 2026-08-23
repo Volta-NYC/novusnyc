@@ -3,6 +3,11 @@ import AnimatedSection from "@/components/AnimatedSection";
 import ApplicationForm from "@/components/ApplicationForm";
 import { getApplicationsStatus } from "@/lib/server/publicShowcase";
 
+// The pause switch and the chapter list live in the database, so this page
+// cannot be built once and cached forever. Five minutes bounds how stale it can
+// get; the admin revalidate hook makes an intentional change immediate.
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Apply to Join as a Student Volunteer",
   description:
@@ -22,7 +27,7 @@ export default async function Apply() {
       <section id="application-details" className="section-flush-bottom public-surface public-surface-lavender bg-n-bg pt-32 pb-0">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <AnimatedSection>
-            <div className="grid md:grid-cols-5 gap-12 items-start pb-12">
+            <div className="grid md:grid-cols-5 gap-12 lg:gap-16 items-start pb-16">
               {/* Left: what to expect */}
               <div className="md:col-span-2 md:pt-2">
                 <p className="mb-4 font-body text-xs font-bold uppercase tracking-[0.2em] text-n-orange sm:text-sm">
@@ -34,16 +39,6 @@ export default async function Apply() {
                 <p className="mb-6 font-body text-lg leading-relaxed text-n-muted">
                   Join a student-led team doing real client work. The application takes about five minutes.
                 </p>
-                <ul className="mb-9 flex flex-wrap gap-2 font-body text-sm font-semibold text-n-ink" aria-label="Program details">
-                  {[
-                    "High school + college",
-                    "2–4 hours a week",
-                    "Fully remote",
-                  ].map((detail) => (
-                    <li key={detail} className="rounded-full border border-n-border bg-white px-3.5 py-2">{detail}</li>
-                  ))}
-                </ul>
-
                 <div className="space-y-5 border-t border-n-border pt-7">
                   <p className="font-body text-xs font-semibold text-n-muted uppercase tracking-widest">
                     What happens next

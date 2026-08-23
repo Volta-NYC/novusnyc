@@ -2,376 +2,514 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
-  subscribeAssignmentClaims, subscribeAssignments, subscribeCycles,
-  subscribeMemberStrikes, subscribeInfractions,
-  deleteMemberStrike, clearMemberStrikes,
-  createMemberStrike,
-  type Assignment, type AssignmentClaim, type Cycle,
+  subscribeMemberStrikes, subscribeInfractions, subscribePods, subscribePodMembers,
+  deleteMemberStrike, clearMemberStrikes, createMemberStrike,
+  fetchMemberHours, createHoursAdjustment, updateTeamMember, fetchApplicationForMember,
   type Infraction, type MemberStrike, type TeamMember,
+  type Pod, type PodMember, type HoursEntry, type ApplicationRecord,
 } from "@/lib/members/storage";
-import {
-  classifyMember, computeCreditLedger, computeDot, computeStrikeCount,
-  computeStrikePoints, lookupCreditTarget, pickPrimaryTrack,
-} from "@/lib/members/cycleCompute";
-import { Btn, Field, Input, useConfirm } from "@/components/members/ui";
+import { Btn, Field, Input, Modal, Select, useConfirm, useDialogBehavior } from "@/components/members/ui";
+import PodPicker from "@/components/members/PodPicker";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
-const DOT_HEX: Record<string, string> = {
-  green: "#16A34A",
-  yellow: "#EAB308",
-  orange: "#F97316",
-  red: "#DC2626",
-  gray: "#9CA3AF",
-};
-
-const CLAIM_STATUS_CLASS: Record<string, string> = {
-  Approved:    "bg-emerald-500/15 text-emerald-300",
-  Submitted:   "bg-yellow-500/15 text-yellow-300",
-  "In Progress": "bg-blue-500/15 text-blue-300",
-  claimed:     "bg-white/10 text-white/55",
-  rejected:    "bg-red-500/15 text-red-300",
-};
+const TRACKS = ["Tech", "Marketing", "Finance"] as const;
 
 interface Props {
   member: TeamMember | null;
   reviewerLabel: string;
+  canEdit?: boolean;
+  canAdjustHours?: boolean;
+  canGenerateLetter?: boolean;
+  canManageInfractions?: boolean;
   onClose: () => void;
 }
 
-export default function MemberDrawer({ member, reviewerLabel, onClose }: Props) {
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [strikes, setStrikes] = useState<MemberStrike[]>([]);
-  const [claims, setClaims] = useState<AssignmentClaim[]>([]);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+const SOURCE_LABEL: Record<HoursEntry["source"], string> = {
+  meeting: "Meetings",
+  task: "Assignments",
+  project: "Projects",
+  adjustment: "Adjustments",
+};
+
+export default function MemberDrawer({
+  member, reviewerLabel, canEdit = false,
+  canAdjustHours = false, canGenerateLetter = false, canManageInfractions = false, onClose,
+}: Props) {
+  const [strikes, setStrikes]       = useState<MemberStrike[]>([]);
   const [infractions, setInfractions] = useState<Infraction[]>([]);
+  const [pods, setPods]             = useState<Pod[]>([]);
+  const [podMembers, setPodMembers] = useState<PodMember[]>([]);
+  const [hours, setHours]           = useState<HoursEntry[] | null>(null);
+  const [application, setApplication] = useState<ApplicationRecord | null>(null);
+  const [loadError, setLoadError]   = useState(false);
+  const [showApplication, setShowApplication] = useState(false);
 
   const [issueOpen, setIssueOpen] = useState(false);
   const [issueInfractionId, setIssueInfractionId] = useState("");
   const [issueNote, setIssueNote] = useState("");
   const [issuePointsOverride, setIssuePointsOverride] = useState("");
   const [issueStatus, setIssueStatus] = useState<"idle" | "busy" | "done" | "error">("idle");
+
+  const [adjOpen, setAdjOpen] = useState(false);
+  const [adjHours, setAdjHours] = useState("");
+  const [adjReason, setAdjReason] = useState("");
+  const year = new Date().getFullYear();
+  const secondHalf = new Date().getMonth() >= 6;
+  const [letterOpen, setLetterOpen] = useState(false);
+  const [letterFrom, setLetterFrom] = useState(`${year}-${secondHalf ? "07-01" : "01-01"}`);
+  const [letterTo, setLetterTo] = useState(`${year}-${secondHalf ? "12-31" : "06-30"}`);
+  const [letterStatus, setLetterStatus] = useState<"idle" | "busy" | "error">("idle");
+
   const drawerRef = useRef<HTMLElement>(null);
   const drawerTitleId = useId();
   const onCloseRef = useRef(onClose);
   const memberId = member?.id;
+  const { ask, Dialog } = useConfirm();
 
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
-  useEffect(() => subscribeCycles(setCycles), []);
   useEffect(() => subscribeMemberStrikes(setStrikes), []);
-  useEffect(() => subscribeAssignmentClaims(setClaims), []);
-  useEffect(() => subscribeAssignments(setAssignments), []);
   useEffect(() => subscribeInfractions(setInfractions), []);
-
-  const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
-
-  const memberStrikes = useMemo(
-    () => member ? strikes.filter((s) => s.memberId === member.id && (!activeCycle || s.cycleId === activeCycle.id)) : [],
-    [strikes, member, activeCycle],
-  );
-  const memberClaims = useMemo(
-    () => member ? claims.filter((c) => c.memberId === member.id && (!activeCycle || c.cycleId === activeCycle.id)) : [],
-    [claims, member, activeCycle],
-  );
-
-  const sortedInfractions = useMemo(
-    () => [...infractions].sort((a, b) => (a.points - b.points) || a.name.localeCompare(b.name)),
-    [infractions],
-  );
-
-  const ledger = useMemo(() => {
-    const credits = new Map<string, number>();
-    for (const a of assignments) credits.set(a.id, a.credits);
-    return computeCreditLedger({ claims: memberClaims, adjustments: [], assignmentCredits: credits });
-  }, [assignments, memberClaims]);
-
-  const classification = member ? classifyMember(member) : null;
-  const primaryTrack = member ? pickPrimaryTrack(member) : null;
-  const targetCredits =
-    member && activeCycle && classification?.cycleRole && primaryTrack
-      ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
-      : 0;
-
-  const strikePoints = computeStrikePoints(memberStrikes);
-  const strikeCount = activeCycle ? computeStrikeCount(strikePoints, activeCycle) : 0;
-
-  const dot = member
-    ? computeDot({ cycle: activeCycle, member, earnedCredits: ledger.total, targetCredits, hasAnyClaims: memberClaims.length > 0 })
-    : null;
-
-  // Weekly (bi-weekly) target: pacingPercentPerCheckin of cycle target
-  const weeklyTarget = activeCycle && targetCredits
-    ? Math.ceil(targetCredits * (activeCycle.pacingPercentPerCheckin / 100))
-    : 0;
-
-  // Claims grouped by status for the assignments section
-  const claimsWithAssignment = useMemo(() => {
-    return memberClaims
-      .map((c) => ({ claim: c, assignment: assignments.find((a) => a.id === c.assignmentId) ?? null }))
-      .sort((a, b) => (b.claim.claimedAt ?? "").localeCompare(a.claim.claimedAt ?? ""));
-  }, [memberClaims, assignments]);
-
-  // Called before the early return below: hooks cannot sit behind a condition.
-  const { ask: askConfirm, Dialog: ConfirmDialog } = useConfirm();
+  useEffect(() => subscribePods(setPods), []);
+  useEffect(() => subscribePodMembers(setPodMembers), []);
 
   useEffect(() => {
-    if (!memberId) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const drawer = drawerRef.current;
-    const timer = window.setTimeout(() => drawer?.querySelector<HTMLElement>('button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')?.focus());
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); onCloseRef.current(); return; }
-      if (event.key !== "Tab" || !drawer) return;
-      const focusable = Array.from(drawer.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'));
-      if (!focusable.length) { event.preventDefault(); return; }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
+    if (!memberId) { setApplication(null); setLoadError(false); return; }
+    let live = true;
+    setLoadError(false);
+    void fetchApplicationForMember(memberId)
+      .then((a) => { if (live) setApplication(a); })
+      .catch(() => { if (live) setLoadError(true); });
+    return () => { live = false; };
   }, [memberId]);
 
-  if (!member) return null;
+  useEffect(() => {
+    if (!memberId) { setHours(null); return; }
+    let live = true;
+    void fetchMemberHours(memberId)
+      .then((h) => { if (live) setHours(h); })
+      .catch(() => { if (live) setLoadError(true); });
+    return () => { live = false; };
+  }, [memberId, strikes]);
 
-  const handleRevokeStrike = (id: string) => {
-    askConfirm(
-      async () => { await deleteMemberStrike(id); },
-      "Revoke this strike? It is removed from the member's record.",
-    );
-  };
+  useDialogBehavior(true, onClose, drawerRef);
 
-  const handleClearStrikes = () => {
-    if (memberStrikes.length === 0) return;
-    askConfirm(
-      async () => { await clearMemberStrikes(memberStrikes.map((s) => s.id)); },
-      `Clear all ${memberStrikes.length} strikes for this cycle?`,
-    );
-  };
+  const memberStrikes = useMemo(
+    () => (memberId ? strikes.filter((s) => s.memberId === memberId) : []),
+    [strikes, memberId],
+  );
+
+  const strikePoints = useMemo(
+    () => memberStrikes.reduce((sum, s) => sum + (s.points || 0), 0),
+    [memberStrikes],
+  );
+
+  const myPodRows = useMemo(
+    () => (memberId ? podMembers.filter((m) => m.memberId === memberId && !m.leftAt) : []),
+    [podMembers, memberId],
+  );
+
+  // LIT supersedes Member in the ladder, so it replaces that word here the same
+  // way it does in the directory. A leadership title stays as it is.
+  const roleLabel = useMemo(() => {
+    const stored = String(member?.role ?? "").trim();
+    const leadsAPod = myPodRows.some((m) => m.role === "lit");
+    return leadsAPod && (stored === "" || stored === "Member") ? "LIT" : stored;
+  }, [member?.role, myPodRows]);
+
+  const bySource = useMemo(() => {
+    const m = new Map<HoursEntry["source"], number>();
+    for (const h of hours ?? []) m.set(h.source, (m.get(h.source) ?? 0) + Number(h.hours || 0));
+    return m;
+  }, [hours]);
+
+  const totalHours = useMemo(
+    () => (hours ?? []).reduce((s, h) => s + Number(h.hours || 0), 0),
+    [hours],
+  );
 
   const handleIssueStrike = async () => {
-    const infraction = sortedInfractions.find((i) => i.id === issueInfractionId);
-    if (!infraction || !member || !activeCycle) return;
+    const infraction = infractions.find((i) => i.id === issueInfractionId);
+    if (!infraction || !member) return;
     setIssueStatus("busy");
     try {
-      const points = issuePointsOverride.trim()
-        ? Math.max(0, Number(issuePointsOverride) || 0)
-        : infraction.points;
+      const override = issuePointsOverride.trim();
       await createMemberStrike({
         memberId: member.id,
         memberName: member.name,
-        cycleId: activeCycle.id,
         infractionId: infraction.id,
         infractionName: infraction.name,
-        points,
+        points: override ? Number(override) : infraction.points,
+        source: "manual",
         issuedBy: reviewerLabel,
         note: issueNote.trim(),
-        source: "manual",
       });
       setIssueStatus("done");
-      setIssueInfractionId("");
-      setIssueNote("");
-      setIssuePointsOverride("");
+      setIssueOpen(false);
+      setIssueInfractionId(""); setIssueNote(""); setIssuePointsOverride("");
+      window.setTimeout(() => setIssueStatus("idle"), 1500);
     } catch {
       setIssueStatus("error");
     }
   };
 
-  const earnedPct = targetCredits > 0 ? Math.min(100, Math.round((ledger.total / targetCredits) * 100)) : 0;
-  const weeklyPct = weeklyTarget > 0 ? Math.min(100, Math.round((ledger.total / weeklyTarget) * 100)) : 0;
+  const handleAdjust = async () => {
+    if (!member || !adjHours.trim()) return;
+    try {
+      await createHoursAdjustment(
+        member.id, Number(adjHours), adjReason.trim(), new Date().toISOString().slice(0, 10),
+      );
+      setAdjOpen(false); setAdjHours(""); setAdjReason("");
+      setHours(await fetchMemberHours(member.id));
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    }
+  };
+
+  const generateLetter = async () => {
+    if (!member || !letterFrom || !letterTo || letterFrom > letterTo) return;
+    const popup = window.open("", "_blank");
+    setLetterStatus("busy");
+    try {
+      const token = await getAuthToken();
+      const params = new URLSearchParams({ memberId: member.id, from: letterFrom, to: letterTo });
+      const response = await fetch(`/api/members/service-letter?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error("The letter could not be generated.");
+      const html = await response.text();
+      const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+      if (popup) popup.location.href = url;
+      else window.location.href = url;
+      window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+      setLetterOpen(false);
+      setLetterStatus("idle");
+    } catch {
+      popup?.close();
+      setLetterStatus("error");
+    }
+  };
+
+  if (!member) return null;
+
+  const field = "w-full rounded-md border border-white/10 bg-[#0F1014] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none";
 
   return (
     <>
-      <div aria-hidden="true" className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <aside ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby={drawerTitleId} className="fixed top-0 right-0 z-50 h-full w-full md:w-[480px] bg-[#13161D] border-l border-white/10 shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-[#13161D] border-b border-white/8 px-5 py-3 flex items-center justify-between">
-          <h2 id={drawerTitleId} className="font-display font-bold text-white text-base">{member.name}</h2>
-          <button type="button" aria-label="Close member details" onClick={onClose} className="rounded text-white/55 hover:text-white text-xl leading-none">×</button>
-        </div>
-
-        <div className="p-5 space-y-5">
-          {/* Identity */}
-          <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-            <div className="flex items-center gap-3">
-              {dot && (
-                <span
-                  className="inline-block h-3 w-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: DOT_HEX[dot.color] }}
-                  title={dot.label}
-                />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-white/85">{member.role}{primaryTrack ? ` · ${primaryTrack}` : ""}</p>
-                <p className="text-xs text-white/55 truncate">{member.email}</p>
-              </div>
-              <span className="text-[10px] uppercase tracking-wider text-white/40">{member.status}</span>
-            </div>
-          </section>
-
-          {/* Assignments + progress */}
-          <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-            <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-3">
-              {activeCycle ? activeCycle.name : "Assignments"}
+      <Dialog />
+      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} aria-hidden="true" />
+      <aside
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        aria-labelledby={drawerTitleId}
+        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[440px] flex-col border-l border-white/10 bg-[#13161D] shadow-2xl"
+      >
+        <header className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4">
+          <div className="min-w-0">
+            <h2 id={drawerTitleId} className="truncate font-semibold text-white">{member.name}</h2>
+            <p className="mt-0.5 text-[11px] text-white/35">
+              {[roleLabel, member.school].filter(Boolean).join(" · ") || member.email}
             </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-md px-2 py-1 text-white/40 transition-colors hover:bg-white/5 hover:text-white"
+          >✕</button>
+        </header>
 
-            {activeCycle && classification?.status === "participant" && (
-              <div className="space-y-3 mb-4">
-                {/* Cycle progress */}
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-white/55">Cycle target</span>
-                    <span className="text-white/85 font-mono">{ledger.total} / {targetCredits} credits</span>
-                  </div>
-                  <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${earnedPct}%`, backgroundColor: earnedPct >= 100 ? "#F6B78D" : earnedPct >= 60 ? "#EAB308" : "#DC2626" }}
-                    />
-                  </div>
-                </div>
-                {/* Bi-weekly pace */}
-                {weeklyTarget > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-white/55">Bi-weekly pace ({activeCycle.pacingPercentPerCheckin}%)</span>
-                      <span className="text-white/85 font-mono">{ledger.total} / {weeklyTarget} credits</span>
-                    </div>
-                    <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${weeklyPct}%`, backgroundColor: weeklyPct >= 100 ? "#F6B78D" : weeklyPct >= 60 ? "#EAB308" : "#DC2626" }}
-                      />
-                    </div>
-                  </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {loadError && (
+            <div role="alert" className="mb-4 rounded-md border border-red-400/35 bg-red-500/10 px-3 py-2 text-[11px] text-red-200">
+              Some member details could not be loaded or saved. Try again before relying on these values.
+            </div>
+          )}
+          {/* Hours */}
+          <div className="mb-5">
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <p className="text-[10px] uppercase tracking-wide text-white/40">Hours</p>
+              <div className="flex items-center gap-3">
+                {canGenerateLetter && <button onClick={() => { setLetterStatus("idle"); setLetterOpen(true); }} className="text-[10px] font-medium text-sky-300 transition-colors hover:text-sky-200">Service letter</button>}
+                {canAdjustHours && (
+                  <button onClick={() => setAdjOpen((v) => !v)} className="text-[10px] text-white/35 transition-colors hover:text-white/70">{adjOpen ? "Cancel" : "Adjust"}</button>
                 )}
-                {dot && (
-                  <p className="text-xs text-white/45">
-                    {dot.label}{dot.checkInsBehind > 0 ? ` · ${dot.checkInsBehind} check-in${dot.checkInsBehind === 1 ? "" : "s"} behind` : ""}
-                  </p>
-                )}
+              </div>
+            </div>
+            <p className="font-mono text-3xl font-semibold tabular-nums text-[#F3E28D]">
+              {totalHours.toFixed(1)}
+            </p>
+            {bySource.size > 0 && (
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                {(["meeting", "task", "project", "adjustment"] as const).map((src) => {
+                  const n = bySource.get(src);
+                  if (!n) return null;
+                  return (
+                    <span key={src} className="text-[11px] text-white/45">
+                      <span className="font-mono tabular-nums text-white/70">{n.toFixed(1)}</span>{" "}
+                      {SOURCE_LABEL[src].toLowerCase()}
+                    </span>
+                  );
+                })}
               </div>
             )}
 
-            {claimsWithAssignment.length === 0 ? (
-              <p className="text-xs text-white/45">No assignments claimed this cycle.</p>
-            ) : (
-              <ul className="space-y-1.5 text-xs">
-                {claimsWithAssignment.map(({ claim, assignment: a }) => (
-                  <li key={claim.id} className="flex items-center justify-between gap-2">
-                    <span className="text-white/80 truncate">{a?.title ?? "—"}</span>
-                    <span className={`flex-shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${CLAIM_STATUS_CLASS[claim.status] ?? "bg-white/10 text-white/55"}`}>
-                      {claim.status.replace("_", " ")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+            {adjOpen && (
+              <div className="mt-3 space-y-2 rounded-md border border-white/10 bg-[#0F1014] p-3">
+                <div className="flex gap-2">
+                  <input
+                    type="number" step="0.25"
+                    className={`${field} w-24`}
+                    placeholder="± hours"
+                    value={adjHours}
+                    onChange={(e) => setAdjHours(e.target.value)}
+                    aria-label="Hours to add or remove"
+                  />
+                  <input
+                    className={field}
+                    placeholder="Reason"
+                    value={adjReason}
+                    onChange={(e) => setAdjReason(e.target.value)}
+                    aria-label="Reason for adjustment"
+                  />
+                </div>
+                <Btn variant="primary" size="sm" onClick={handleAdjust} disabled={!adjHours.trim()}>
+                  Add adjustment
+                </Btn>
+                <p className="text-[10px] text-white/25">
+                  Negative subtracts. Every adjustment is logged.
+                </p>
+              </div>
             )}
-          </section>
+          </div>
 
-          {/* Strikes + Issue infraction */}
-          <section className="rounded-xl border border-white/10 bg-[#0F1014] p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">Infractions this cycle</p>
-              <span className="text-xs text-white/55">{strikePoints} pts · strike {strikeCount} of 3</span>
+          {/* Tracks */}
+          <div className="mb-5">
+            <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Track</p>
+            <div className="flex flex-wrap gap-1.5">
+              {TRACKS.map((track) => {
+                const on = (member.divisions ?? []).includes(track);
+                return (
+                  <button
+                    key={track}
+                    type="button"
+                    disabled={!canEdit}
+                    aria-pressed={on}
+                    onClick={() => {
+                      const current = member.divisions ?? [];
+                      void updateTeamMember(member.id, {
+                        divisions: on ? current.filter((d) => d !== track) : [...current, track],
+                      });
+                    }}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors disabled:cursor-not-allowed ${
+                      on
+                        ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
+                        : "border-white/12 bg-white/[0.03] text-white/55 hover:text-white/85"
+                    }`}
+                  >
+                    {track}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Pods */}
+          <div className="mb-5">
+            <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">Pods</p>
+            <PodPicker
+              pods={pods}
+              memberships={myPodRows}
+              memberId={member.id}
+              disabled={!canEdit}
+            />
+          </div>
+
+          {/* Infractions */}
+          <div className="mb-5">
+            <div className="mb-2 flex items-baseline justify-between">
+              <p className="text-[10px] uppercase tracking-wide text-white/40">
+                Infractions
+                {strikePoints > 0 && <span className="ml-1.5 text-red-400">{strikePoints} pts</span>}
+              </p>
+              <div className="flex gap-2">
+                {canManageInfractions && memberStrikes.length > 0 && (
+                  <button
+                    onClick={() => ask(
+                      async () => { await clearMemberStrikes(memberStrikes.map((s) => s.id)); },
+                      `Clear all ${memberStrikes.length} infractions for ${member.name}?`,
+                    )}
+                    className="text-[10px] text-white/35 transition-colors hover:text-red-400"
+                  >Clear all</button>
+                )}
+                {canManageInfractions && (
+                  <button
+                    onClick={() => setIssueOpen((v) => !v)}
+                    className="text-[10px] text-white/35 transition-colors hover:text-white/70"
+                  >{issueOpen ? "Cancel" : "Issue"}</button>
+                )}
+              </div>
             </div>
 
             {memberStrikes.length === 0 ? (
-              <p className="text-xs text-white/45 mb-3">No infractions issued this cycle.</p>
+              <p className="text-[11px] text-white/25">None.</p>
             ) : (
-              <ul className="space-y-2 mb-3">
-                {memberStrikes
-                  .sort((a, b) => (b.issuedAt ?? "").localeCompare(a.issuedAt ?? ""))
-                  .map((s) => (
-                    <li key={s.id} className="flex items-start justify-between gap-2 text-xs">
-                      <div className="min-w-0">
-                        <p className="text-white/85 font-medium">{s.infractionName}</p>
-                        <p className="text-white/45">
-                          {new Date(s.issuedAt).toLocaleDateString()} · {s.source === "auto_pace" ? "auto" : s.issuedBy}
-                        </p>
-                        {s.note && <p className="text-white/60 mt-0.5 italic">{s.note}</p>}
-                      </div>
-                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span className="text-[#F6B78D] font-mono text-[11px]">{s.points} {s.points === 1 ? "demerit" : "demerits"}</span>
-                        <button
-                          type="button"
-                          onClick={() => void handleRevokeStrike(s.id)}
-                          className="text-[10px] text-red-300/70 hover:text-red-200"
-                        >
-                          revoke
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
+              <div className="divide-y divide-white/5 rounded-md border border-white/10">
+                {memberStrikes.map((s) => (
+                  <div key={s.id} className="flex items-start gap-2 px-2.5 py-1.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] text-white/80">{s.infractionName}</p>
+                      <p className="text-[10px] text-white/30">
+                        {(s.issuedAt ?? "").slice(0, 10)} · {s.points} pts
+                        {s.note ? ` · ${s.note}` : ""}
+                      </p>
+                    </div>
+                    {canManageInfractions && (
+                      <button
+                        onClick={() => ask(
+                          async () => { await deleteMemberStrike(s.id); },
+                          "Revoke this infraction? It is removed from the member's record.",
+                        )}
+                        className="text-[10px] text-white/25 transition-colors hover:text-red-400"
+                      >Revoke</button>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
 
-            <div className="pt-3 border-t border-white/8 space-y-2">
-              {!issueOpen ? (
-                <div className="flex flex-wrap gap-2">
-                  <Btn size="sm" variant="secondary" onClick={() => { setIssueOpen(true); setIssueStatus("idle"); }} disabled={!activeCycle}>
-                    Issue infraction
-                  </Btn>
-                  {memberStrikes.length > 0 && (
-                    <Btn size="sm" variant="danger" onClick={() => void handleClearStrikes()}>Clear all</Btn>
-                  )}
-                  {!activeCycle && <span className="text-[11px] text-white/40 self-center">No active cycle</span>}
+            {canManageInfractions && issueOpen && (
+              <div className="mt-3 space-y-2 rounded-md border border-white/10 bg-[#0F1014] p-3">
+                <Select
+                  value={issueInfractionId}
+                  onChange={(e) => setIssueInfractionId(e.target.value)}
+                  aria-label="Infraction"
+                >
+                  <option value="">— Pick an infraction —</option>
+                  {infractions.map((i) => (
+                    <option key={i.id} value={i.id}>{i.name} ({i.points})</option>
+                  ))}
+                </Select>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    className={`${field} w-24`}
+                    placeholder="Points"
+                    value={issuePointsOverride}
+                    onChange={(e) => setIssuePointsOverride(e.target.value)}
+                    aria-label="Override points"
+                  />
+                  <input
+                    className={field}
+                    placeholder="Note (optional)"
+                    value={issueNote}
+                    onChange={(e) => setIssueNote(e.target.value)}
+                    aria-label="Note"
+                  />
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <Field label="Infraction" required>
-                    <select
-                      value={issueInfractionId}
-                      onChange={(e) => { setIssueInfractionId(e.target.value); setIssueStatus("idle"); }}
-                      className="w-full bg-[#0F1014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F6B78D]/45"
-                    >
-                      <option value="">— Select infraction —</option>
-                      {sortedInfractions.map((i) => (
-                        <option key={i.id} value={i.id}>{i.name} ({i.points} {i.points === 1 ? "demerit" : "demerits"})</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field label="Demerits override (optional)">
-                      <Input
-                        type="number"
-                        min="0"
-                        value={issuePointsOverride}
-                        onChange={(e) => setIssuePointsOverride(e.target.value)}
-                        placeholder={sortedInfractions.find((i) => i.id === issueInfractionId)?.points?.toString() ?? "default"}
-                      />
-                    </Field>
-                    <Field label="Note (optional)">
-                      <Input
-                        value={issueNote}
-                        onChange={(e) => setIssueNote(e.target.value)}
-                        placeholder="Context…"
-                      />
-                    </Field>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Btn
-                      size="sm"
-                      variant="primary"
-                      disabled={!issueInfractionId || issueStatus === "busy"}
-                      onClick={() => void handleIssueStrike()}
-                    >
-                      {issueStatus === "busy" ? "Issuing…" : "Issue"}
-                    </Btn>
-                    <Btn size="sm" variant="ghost" onClick={() => { setIssueOpen(false); setIssueStatus("idle"); }}>Cancel</Btn>
-                    {issueStatus === "done" && <span className="text-xs text-emerald-400">✓ Issued</span>}
-                    {issueStatus === "error" && <span className="text-xs text-red-400">Failed — try again</span>}
-                  </div>
+                <Btn
+                  variant="danger" size="sm"
+                  onClick={handleIssueStrike}
+                  disabled={!issueInfractionId || issueStatus === "busy"}
+                >
+                  {issueStatus === "busy" ? "Issuing…" : "Issue infraction"}
+                </Btn>
+                {issueStatus === "error" && (
+                  <p role="alert" className="text-[10px] text-red-400">That didn&apos;t save. Try again.</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Application */}
+          {application && (
+            <div className="mb-5">
+              <div className="mb-2 flex items-baseline justify-between">
+                <p className="text-[10px] uppercase tracking-wide text-white/40">Application</p>
+                <button
+                  onClick={() => setShowApplication((v) => !v)}
+                  className="text-[10px] text-white/35 transition-colors hover:text-white/70"
+                >
+                  {showApplication ? "Hide" : "Show"}
+                </button>
+              </div>
+              <p className="text-[11px] text-white/45">
+                Applied {String(application.createdAt ?? "").slice(0, 10)}
+                {application.tracksSelected ? ` · ${application.tracksSelected}` : ""}
+              </p>
+
+              {showApplication && (
+                <div className="mt-2 space-y-2.5 rounded-md border border-white/10 bg-[#0F1014] p-3">
+                  {([
+                    ["School", application.schoolName],
+                    ["Grade", application.grade],
+                    ["From", [application.city, application.state].filter(Boolean).join(", ")],
+                    ["Track", application.tracksSelected],
+                    ["Focus", application.marketingSubtrack],
+                    ["Heard via", [application.referral, application.referralName].filter(Boolean).join(" — ")],
+                    ["Tools", application.toolsSoftware],
+                  ] as const).map(([label, value]) =>
+                    value ? (
+                      <div key={label} className="flex gap-2">
+                        <span className="w-20 shrink-0 text-[10px] uppercase tracking-wide text-white/35">{label}</span>
+                        <span className="text-[11px] leading-relaxed text-white/75">{value}</span>
+                      </div>
+                    ) : null,
+                  )}
+
+                  {application.accomplishment && (
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-white/35">In their words</p>
+                      <p className="text-[11px] leading-relaxed text-white/70">{application.accomplishment}</p>
+                    </div>
+                  )}
+
+                  {application.resumeUrl && (
+                    <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer"
+                       className="inline-block text-[11px] text-[#F3E28D]/80 hover:underline">
+                      Résumé ↗
+                    </a>
+                  )}
+
                 </div>
               )}
             </div>
-          </section>
+          )}
+
+          {/* History */}
+          {hours && hours.length > 0 && (
+            <div>
+              <p className="mb-2 text-[10px] uppercase tracking-wide text-white/40">History</p>
+              <div className="divide-y divide-white/5 rounded-md border border-white/10">
+                {hours.slice(0, 20).map((h, i) => (
+                  <div key={`${h.occurredOn}-${i}`} className="flex items-center gap-2 px-2.5 py-1.5">
+                    <span className="w-20 shrink-0 font-mono text-[10px] tabular-nums text-white/35">{h.occurredOn}</span>
+                    <span className="min-w-0 flex-1 truncate text-[11px] text-white/70">{h.detail}</span>
+                    <span className="shrink-0 font-mono text-[11px] tabular-nums text-white/60">
+                      {Number(h.hours).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </aside>
-      <ConfirmDialog />
+      <Modal open={letterOpen} onClose={() => letterStatus !== "busy" && setLetterOpen(false)} title={`Service letter · ${member.name}`}>
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed text-white/55">Generate a one-page verification letter from the certified-hours journal. The letter includes the work performed and a department breakdown.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="From"><Input type="date" value={letterFrom} onChange={(e) => setLetterFrom(e.target.value)} /></Field>
+            <Field label="Through"><Input type="date" value={letterTo} onChange={(e) => setLetterTo(e.target.value)} /></Field>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Btn variant="secondary" size="sm" onClick={() => { setLetterFrom(`${year}-01-01`); setLetterTo(`${year}-06-30`); }}>Jan–Jun</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => { setLetterFrom(`${year}-07-01`); setLetterTo(`${year}-12-31`); }}>Jul–Dec</Btn>
+          </div>
+          {letterStatus === "error" && <p role="alert" className="text-xs text-red-400">The letter could not be generated. Check the date range and try again.</p>}
+          <div className="flex gap-2"><Btn variant="primary" onClick={() => void generateLetter()} disabled={letterStatus === "busy" || !letterFrom || !letterTo || letterFrom > letterTo}>{letterStatus === "busy" ? "Generating…" : "Open service letter"}</Btn><Btn variant="ghost" onClick={() => setLetterOpen(false)} disabled={letterStatus === "busy"}>Cancel</Btn></div>
+        </div>
+      </Modal>
     </>
   );
 }

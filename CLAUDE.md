@@ -27,9 +27,9 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 
 ### Two distinct UIs in one repo
 
-**Public site** (`/`, `/showcase`, `/about`, `/partners`, `/apply`, `/impact`, `/book`, `/updates`, `/reports`) — light theme, `v-*` Tailwind color tokens, fonts: `font-display` (Space Grotesk) / `font-body` (DM Sans).
+**Public site** (`/`, `/showcase`, `/about`, `/partners`, `/apply`, `/join`, `/privacy`) — light theme, `v-*` Tailwind color tokens, fonts: `font-display` (Space Grotesk) / `font-body` (DM Sans). Retired public URLs are permanent redirects in `next.config.mjs`.
 
-**Members portal** (`/members/*`) — dark theme (`#0D0F14` bg, `#13161D` panels), `n-yellow` (`#F3E28D`) as primary action color.
+**Members portal** (`/members/*`) — light theme for every role. Components use the historical dark-theme utility vocabulary, and `.members-portal-light` remaps surfaces/text to accessible light values. Peach (`#F6B78D`) is the primary action color.
 
 ### Critical files
 
@@ -43,19 +43,25 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 | `src/lib/schemas.ts` | Zod-like validation for `ContactFormValues` and `ApplicationFormValues` |
 | `src/components/members/ui.tsx` | Shared design system: `Btn`, `Modal`, `Field`, `Input`, `Select`, `Badge`, `SearchBar`, `Empty`, `useConfirm` |
 | `src/components/members/MembersLayout.tsx` | Portal shell with sidebar nav |
-| `src/components/members/SectionTabs.tsx` | Tab navigation; exports tab arrays (`ASSIGNMENTS_TABS`, `PROJECT_GROUP_TABS`, etc.). `MEMBERS_GROUP_TABS` exists but is no longer rendered on the Team page (single tab, removed). |
+| `src/components/members/SectionTabs.tsx` | Shared tab navigation for the Applicants and Email workflows. |
 | `src/components/members/RichTextEditor.tsx` | Tiptap wrapper; exposes `insertAtCursor` via `forwardRef` / `RichTextEditorHandle` |
 | `src/app/members/layout.tsx` | Wraps all `/members/*` pages with `<AuthProvider>` |
 | `src/app/globals.css` | Design token `:root` variables + shared utility classes |
 | `src/app/api/submit/route.ts` | Handles contact + application form submissions; writes to Supabase and forwards to Google Sheets backup |
 | `supabase/migrations/` | Ordered SQL migrations for the linked Supabase project |
 
+There is one shared Supabase database and no staging copy. Every schema or
+policy change must have a checked-in, replay-safe migration before it is
+applied. Never use untracked data-definition SQL. `certified_hour_entries` is
+an append-only journal: correct hours by posting a delta, never by editing or
+deleting certified entries.
+
 ### Auth roles
 
 ```
 owner  → founder / board (full access, all admin actions)
-admin  → Senior Associates (elevated: can manage assignments, applicants, email)
-member → standard member (read-only access to portal, can claim assignments)
+admin  → Senior Associates (projects, pods, team, email, overview)
+member → standard member (own work, own pods, handbook, own profile)
 ```
 
 Role is stored in `user_profiles.auth_role` (Supabase Postgres) and surfaced via `useAuth()` → `authRole`. Page-level guard pattern:
@@ -118,12 +124,18 @@ npm start          # serve the production build locally
 - Only add one when the WHY is non-obvious: a hidden constraint, a workaround, a subtle invariant.
 - Never explain what code does — well-named identifiers do that.
 
-### UI — Members portal (dark theme)
-- Background layers: page `#0D0F14` → panel `#13161D` → card `#111418` → input `#0F1014`.
-- Primary action color: `n-yellow` (`#F3E28D`). Text on yellow: `n-ink` (`#2D282E`) — 11.05:1, AAA.
+### UI — Members portal (light theme)
+- `MembersLayout` always applies `members-portal-light`; do not branch component colors by role.
+- Components retain the portal utility vocabulary and the global light remaps provide white/tinted surfaces plus accessible dark text.
+- Primary action color: peach `#F6B78D` with near-black text.
 - Use `Btn`, `Modal`, `Field`, `Input`, `Select` from `ui.tsx` — never raw `<button>` / `<input>` in portal pages.
-- `Btn` variants: `primary` (green fill), `secondary` (white/8 glass), `ghost` (text only), `danger` (red tint).
-- Row heights in tables: `h-9`. Text sizes: header labels `text-[10px] uppercase tracking-wide`, cell content `text-[11px]`.
+- `Btn` variants: `primary` (peach fill), `secondary` (white/8 glass), `ghost` (text only), `danger` (red tint).
+- Table rhythm is set centrally in `globals.css`, not per cell: data rows are 32px
+  (`.members-grid-table tbody td`), headers 28px (`table thead th`), horizontal
+  padding `px-3`. Don't add `py-*`/`h-*` to table cells to change row height —
+  change the scale. Roomier list tables (email templates, automations) opt out by
+  not carrying `members-grid-table`. Text sizes: header labels `text-[10px]
+  uppercase tracking-wide`, cell content `text-[11px]`.
 - Status/badge pattern: use `<Badge label={value} />` from `ui.tsx`. Colors are defined in `BADGE_COLORS` in `ui.tsx`. Add new status values there when introducing new statuses.
 - Empty cells (no data): `<span className="text-white/25">—</span>`.
 
@@ -151,6 +163,27 @@ The Business Directory (`/members/projects`) has **two separate status columns**
 Status values are stored inside the `track_projects` JSONB column per-track (e.g. `track_projects->'Tech'->>'projectStatus'`). The overall `project_status` column is derived via `deriveOverallStatus()` and used only for sort/filter/counts — it is not displayed directly. There is no legacy fallback from `project_status` to per-track display; all data has been migrated. Do not add legacy fallback logic.
 
 Colors for all status values are defined in `BADGE_COLORS` in `src/components/members/ui.tsx` and rendered via the `Badge` component.
+
+### Marketing & Finance pods
+
+`/members/pods` is the operations workspace that replaced the open assignment
+marketplace. Work is assigned to named pod members; nobody claims work from a
+catalog.
+
+- A `pod_members.role = 'lit'` row grants management of that pod only. Display
+  the acronym as **LIT** and use the same sky role chip as the member directory.
+- Members may move their assigned work from `Open` → `In Progress` → `In Review`.
+  Only an owner, admin, or that pod's LIT may approve `Done`; that approval posts
+  immutable certified hours.
+- Meetings hold an optional start time and meeting link. Attendance is saved as
+  explicit `Present`, `Excused`, or `Unexcused` values; only `Present` earns
+  meeting hours. A complete roster finalizes the sheet.
+- The Grants & Funding pod owns the filterable `grant_opportunities` master
+  tracker. Marketing uses peach; Finance uses yellow, matching `TRACK_META`.
+- Service letters are generated by owner/admin from the member drawer and read
+  only from `certified_hour_entries`. The `service_hours_summary` sweep sends
+  each active member with certified hours one deduplicated summary in January
+  and July; formal verification letters still require owner/admin review.
 
 ### Services / filters
 Active service options for businesses: `Website`, `SEO`, `Social Media`, `Graphic Design`, `Grants`.

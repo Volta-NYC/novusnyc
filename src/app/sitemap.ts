@@ -24,7 +24,7 @@ import { SITE_URL } from "@/lib/site";
 //
 // Pages intentionally excluded:
 //   /impact      — 308 redirects to the impact section on /about
-//   /book        — internal applicant scheduling tool, not a public landing page
+//   /book        — retired self-booking portal; 308 redirects to /apply
 //   /members/*   — private portal, behind auth (also disallowed in robots.txt)
 //   /updates, /progress-updates — 308 → /showcase (page retired)
 //   /students, /business-guides, /contact, /guides, /reports, /impact — 308 redirects to active pages

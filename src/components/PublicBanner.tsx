@@ -17,7 +17,7 @@ export default function PublicBanner() {
         setBg(s.publicBannerBg);
         setText(s.publicBannerText);
       }
-    });
+    }).catch((error) => console.error("Public banner settings could not load", error));
   }, []);
 
   useEffect(() => {

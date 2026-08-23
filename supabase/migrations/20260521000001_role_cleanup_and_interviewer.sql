@@ -64,8 +64,11 @@ WHERE t.auth_uid = u.id
 
 -- Drop any existing permissive policies we are replacing.
 DROP POLICY IF EXISTS "owners can manage interview_slots" ON interview_slots;
+
 DROP POLICY IF EXISTS "interviewers can read interview_slots"  ON interview_slots;
+
 DROP POLICY IF EXISTS "interviewers can insert interview_slots" ON interview_slots;
+
 DROP POLICY IF EXISTS "interviewers can update interview_slots" ON interview_slots;
 
 -- Owners/admins: full access.

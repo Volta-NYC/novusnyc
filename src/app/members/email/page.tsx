@@ -11,133 +11,24 @@ import EmailBodyEditor, { type EmailBodyEditorHandle } from "@/components/member
 import {
   subscribeTeam,
   subscribeBusinesses,
-  subscribeFinanceAssignments,
   subscribeEmailTemplates,
-  subscribeCycles,
-  subscribeAssignments,
-  subscribeAssignmentClaims,
-  subscribeMemberCreditAdjustments,
+  fetchHoursTotals,
   createEmailTemplate,
   updateEmailTemplate,
   type TeamMember,
   type Business,
-  type FinanceAssignment,
+  type HoursTotals,
   type EmailTemplate,
-  type Cycle,
-  type Assignment,
-  type AssignmentClaim,
-  type MemberCreditAdjustment,
 } from "@/lib/members/storage";
 import { computeGlobalCodes, getMemberCodes, type AssignmentCode } from "@/lib/members/assignmentCodes";
-import { computeDot, computeCreditLedger, classifyMember, lookupCreditTarget, pickPrimaryTrack } from "@/lib/members/cycleCompute";
 import { useAuth } from "@/lib/members/authContext";
+import TrackAvatar, { getMemberTrack, TRACK_SORT_ORDER } from "@/components/members/TrackAvatar";
 import { gradeToClassOf } from "@/lib/grades";
 import { EMAIL } from "@/lib/mail";
 
 const TEAM_EMAIL_FROM_OPTIONS = [
   { value: EMAIL.info, label: EMAIL.info },
   { value: EMAIL.ethan, label: EMAIL.ethan },
-];
-
-// System email templates seeded on first admin visit. Keys here match the
-// EmailTemplateKey union; automation looks them up by key. Edit copy at any
-// time from the templates panel — automation reads the live row.
-const SYSTEM_TEMPLATE_SEEDS: Array<{
-  key: string;
-  label: string;
-  description: string;
-  subject: string;
-  body: string;
-  variables: string[];
-}> = [
-  {
-    key: "orange_pace_warning",
-    label: "Pace warning (orange)",
-    description: "Sent when a member crosses into orange (2–3 check-ins behind credits). No strike issued.",
-    subject: "Heads up — you're behind pace on {{cycleName}}",
-    body: "<p>Hey {{memberName}},</p><p>You're at <strong>{{creditsEarned}} of {{creditsTarget}} credits</strong> for {{cycleName}}, which puts you {{checkInsBehind}} check-ins behind pace. There are {{daysRemaining}} days left in the cycle — please claim something from the marketplace soon.</p><p>This is a heads-up, not a strike.</p>",
-    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "checkInsBehind", "daysRemaining"],
-  },
-  {
-    key: "red_pace_strike",
-    label: "Pace strike (red)",
-    description: "Sent when a member crosses into red (>3 behind, or zero activity past day 28). Issues an automatic strike.",
-    subject: "Strike issued — {{cycleName}}",
-    body: "<p>Hi {{memberName}},</p><p>You've been issued a strike for: <strong>{{strikeReason}}</strong>.</p><p>Current standing: {{creditsEarned}} of {{creditsTarget}} credits, {{strikeCount}} strikes total. Please reach out to a senior associate if there's context we should know about.</p>",
-    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "strikeReason", "strikeCount"],
-  },
-  {
-    key: "biweekly_checkin",
-    label: "Biweekly check-in reminder",
-    description: "Fires automatically every two weeks during an active cycle.",
-    subject: "{{cycleName}} — biweekly check-in",
-    body: "<p>Hey {{memberName}},</p><p>Quick biweekly check-in for {{cycleName}}. You're at <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits.</p><p>Aim for ~{{pacingPercent}}% of your target every two weeks. Browse the portal for available work.</p>",
-    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "pacingPercent"],
-  },
-  {
-    key: "demotion_notice",
-    label: "Demotion notice",
-    description: "Sent when a member crosses the demotion threshold and their role is automatically lowered.",
-    subject: "Role change — {{cycleName}}",
-    body: "<p>Hi {{memberName}},</p><p>Your role has been changed from <strong>{{previousRole}}</strong> to <strong>{{newRole}}</strong> for {{cycleName}} due to accumulated strikes.</p>",
-    variables: ["memberName", "previousRole", "newRole", "cycleName"],
-  },
-  {
-    key: "cycle_start",
-    label: "Cycle start announcement",
-    description: "Mass email at the start of a new cycle.",
-    subject: "{{cycleName}} starts now",
-    body: "<p>Team,</p><p>{{cycleName}} runs from {{startDate}} to {{endDate}}. Your credit target depends on your role and track — check the portal dashboard for your number.</p>",
-    variables: ["cycleName", "startDate", "endDate", "creditsTarget", "pacingPercent"],
-  },
-  {
-    key: "cycle_end_summary",
-    label: "Cycle end summary",
-    description: "Per-member email at cycle close summarizing earned credits.",
-    subject: "{{cycleName}} — your wrap-up",
-    body: "<p>Hi {{memberName}},</p><p>{{cycleName}} is closed. You earned <strong>{{creditsEarned}} of {{creditsTarget}}</strong> credits with {{strikeCount}} strikes.</p>",
-    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "outcome", "strikeCount"],
-  },
-  {
-    key: "assignment_approved",
-    label: "Assignment approved",
-    description: "Sent when an approver accepts a submitted claim.",
-    subject: "Approved — {{assignmentTitle}}",
-    body: "<p>Nice work, {{memberName}}.</p><p><strong>{{assignmentTitle}}</strong> was approved. {{creditsAwarded}} credits added to your ledger.</p>",
-    variables: ["memberName", "assignmentTitle", "creditsAwarded", "businessName"],
-  },
-  {
-    key: "assignment_rejected",
-    label: "Assignment rejected",
-    description: "Sent when a submission is rejected. Includes the reviewer's reason.",
-    subject: "Resubmit needed — {{assignmentTitle}}",
-    body: "<p>Hi {{memberName}},</p><p>Your submission for <strong>{{assignmentTitle}}</strong> needs revision.</p><blockquote>{{rejectionReason}}</blockquote><p>Address the feedback and resubmit when ready.</p>",
-    variables: ["memberName", "assignmentTitle", "rejectionReason"],
-  },
-  {
-    key: "assignment_update",
-    label: "Assignment update",
-    description: "Sent to active claimants when an admin posts an update on an assignment.",
-    subject: "Update on {{assignmentTitle}}",
-    body: "<p>Hi {{memberName}},</p><p>Your team posted an update on the assignment <strong>{{assignmentTitle}}</strong>{{businessNamePart}}.</p><div style=\"margin:16px 0;padding:14px 18px;border-left:3px solid #F6B78D;background:#f9fdf5;color:#1a1a1a;border-radius:0 6px 6px 0;font-size:14px;line-height:1.6;\">{{messageFmt}}</div><p><a href=\"{{portalLink}}\" style=\"color:#5c9911;font-weight:600;\">View in portal →</a></p>",
-    variables: ["memberName", "assignmentTitle", "message", "messageFmt", "businessName", "businessNamePart", "portalLink"],
-  },
-  {
-    key: "infraction_notice",
-    label: "Infraction notice",
-    description: "Sent when an admin manually issues an infraction.",
-    subject: "Infraction logged — {{infractionName}}",
-    body: "<p>Hi {{memberName}},</p><p>An infraction was logged: <strong>{{infractionName}}</strong> ({{points}} demerits). Total this cycle: {{totalPoints}} demerits.</p>",
-    variables: ["memberName", "infractionName", "points", "totalPoints", "issuedBy", "note"],
-  },
-  {
-    key: "monthly_portal_reminder",
-    label: "Monthly portal reminder",
-    description: "Replaces per-assignment emails. Reminds members to check the portal.",
-    subject: "{{cycleName}} — check the portal",
-    body: "<p>Hey {{memberName}},</p><p>Quick reminder: {{openAssignmentCount}} assignments are open. You're at {{creditsEarned}} of {{creditsTarget}} credits.</p>",
-    variables: ["memberName", "cycleName", "creditsEarned", "creditsTarget", "openAssignmentCount"],
-  },
 ];
 
 const EMAIL_PLACEHOLDERS = [
@@ -150,7 +41,6 @@ const EMAIL_PLACEHOLDERS = [
 ] as const;
 
 type DeliveryMode = "to" | "cc" | "bcc";
-type TrackKey = "Tech" | "Marketing" | "Finance" | "Other" | "—";
 
 const DEFAULT_EMAIL_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 1, dir: "asc" },
@@ -158,7 +48,7 @@ const DEFAULT_EMAIL_SORT_RULES: { col: number; dir: "asc" | "desc" }[] = [
   { col: 2, dir: "asc" },
 ];
 
-// col 0=Status(credit pace), 1=Track, 2=Name, 3=School, 4=Role
+// col 0=Status(activity), 1=Track, 2=Name, 3=School, 4=Role
 const EMAIL_SORT_OPTIONS = [
   { value: 0, label: "Status" },
   { value: 1, label: "Track" },
@@ -185,74 +75,8 @@ function roleSortKey(role: string | undefined | null): number {
   }
 }
 
-const TRACK_SORT_ORDER: Record<TrackKey, number> = {
-  Tech: 0,
-  Marketing: 1,
-  Finance: 2,
-  Other: 3,
-  "—": 4,
-};
-
 function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function getMemberTrack(member: TeamMember): TrackKey {
-  const divisions = member.divisions ?? [];
-  if (divisions.includes("Tech")) return "Tech";
-  if (divisions.includes("Marketing")) return "Marketing";
-  if (divisions.includes("Finance")) return "Finance";
-  if (divisions.includes("Other") || divisions.includes("Outreach")) return "Other";
-  return "—";
-}
-
-function getTrackAvatarStyles(track: TrackKey): { bg: string; text: string } {
-  switch (track) {
-    case "Tech":
-      return { bg: "#DBEAFE", text: "#1E3A8A" };
-    case "Marketing":
-      return { bg: "#FEF3C7", text: "#92400E" };
-    case "Finance":
-      return { bg: "#DCFCE7", text: "#166534" };
-    case "Other":
-      return { bg: "#F3F4F6", text: "#374151" };
-    default:
-      return { bg: "rgba(246,183,141,0.15)", text: "#F6B78D" };
-  }
-}
-
-function TrackAvatarIcon({ track, color }: { track: TrackKey; color: string }) {
-  if (track === "Tech") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M8 8L3 12L8 16" />
-        <path d="M16 8L21 12L16 16" />
-      </svg>
-    );
-  }
-  if (track === "Marketing") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 20l4.5-1.2L19 8.3a1.6 1.6 0 0 0 0-2.2l-1.1-1.1a1.6 1.6 0 0 0-2.2 0L5.2 15.5L4 20z" />
-        <path d="M13.5 6.5l4 4" />
-      </svg>
-    );
-  }
-  if (track === "Finance") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 19h16" />
-        <path d="M7 16v-4" />
-        <path d="M12 16V9" />
-        <path d="M17 16v-10" />
-      </svg>
-    );
-  }
-  return (
-    <span className="text-[11px] font-semibold leading-none" style={{ color }} aria-hidden="true">
-      –
-    </span>
-  );
 }
 
 function isInactiveMember(member: TeamMember): boolean {
@@ -304,11 +128,7 @@ export default function MemberEmailPage() {
 
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [financeAssignments, setFinanceAssignments] = useState<FinanceAssignment[]>([]);
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [creditAssignments, setCreditAssignments] = useState<Assignment[]>([]);
-  const [creditClaims, setCreditClaims] = useState<AssignmentClaim[]>([]);
-  const [creditAdjustments, setCreditAdjustments] = useState<MemberCreditAdjustment[]>([]);
+  const [hoursTotals, setHoursTotals] = useState<HoursTotals[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
   const [fromAddress, setFromAddress] = useState<string>(EMAIL.info);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -332,7 +152,6 @@ export default function MemberEmailPage() {
 
   // Templates state — drives the pill selector above compose.
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [templatesLoaded, setTemplatesLoaded] = useState(false);
   const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveModalLabel, setSaveModalLabel] = useState("");
@@ -340,42 +159,8 @@ export default function MemberEmailPage() {
 
   useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeBusinesses(setBusinesses), []);
-  useEffect(() => subscribeFinanceAssignments(setFinanceAssignments), []);
-  useEffect(() => subscribeEmailTemplates((data) => { setTemplatesLoaded(true); setTemplates(data); }), []);
-  useEffect(() => subscribeCycles(setCycles), []);
-  useEffect(() => subscribeAssignments(setCreditAssignments), []);
-  useEffect(() => subscribeAssignmentClaims(setCreditClaims), []);
-  useEffect(() => subscribeMemberCreditAdjustments(setCreditAdjustments), []);
-
-  // Seed system templates once Supabase has confirmed the templates list.
-  // Wait for templatesLoaded so we don't seed against an empty initial state.
-  const [seededSystemTemplates, setSeededSystemTemplates] = useState(false);
-  useEffect(() => {
-    if (seededSystemTemplates) return;
-    if (!canUseEmail || !user) return;
-    if (!templatesLoaded) return;
-    setSeededSystemTemplates(true);
-    void (async () => {
-      const existingKeys = new Set(templates.map((t) => t.key));
-      const updatedBy = user.email || user.id || "system";
-      for (const def of SYSTEM_TEMPLATE_SEEDS) {
-        if (existingKeys.has(def.key)) continue;
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await createEmailTemplate({
-            key: def.key,
-            label: def.label,
-            description: def.description,
-            subject: def.subject,
-            body: def.body,
-            availableVariables: def.variables,
-            active: true,
-            updatedBy,
-          });
-        } catch { /* non-fatal */ }
-      }
-    })();
-  }, [seededSystemTemplates, canUseEmail, user, templates, templatesLoaded]);
+  useEffect(() => subscribeEmailTemplates(setTemplates), []);
+  useEffect(() => { void fetchHoursTotals().then(setHoursTotals); }, []);
 
   // Sort templates: system ones first, then user-created alphabetically.
   // Deduplicate by key, keeping the first occurrence (oldest row wins).
@@ -457,45 +242,40 @@ export default function MemberEmailPage() {
   }, []);
 
   const globalCodeMaps = useMemo(
-    () => computeGlobalCodes(businesses, financeAssignments),
-    [businesses, financeAssignments]
+    () => computeGlobalCodes(businesses),
+    [businesses]
   );
 
   const memberAssignmentsById = useMemo(() => {
     const map = new Map<string, AssignmentCode[]>();
     for (const member of team) {
-      const codes = getMemberCodes(member.name ?? "", businesses, financeAssignments, globalCodeMaps);
+      const codes = getMemberCodes(member.name ?? "", businesses, globalCodeMaps);
       map.set(member.id, codes);
     }
     return map;
-  }, [team, businesses, financeAssignments, globalCodeMaps]);
+  }, [team, businesses, globalCodeMaps]);
 
-const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]);
+  const hoursByMemberId = useMemo(
+    () => new Map(hoursTotals.map((h) => [h.memberId, h])),
+    [hoursTotals],
+  );
 
+  // Recency of logged hours — the credit-pace math it replaced needed a
+  // per-cycle target, and hours have none.
   const getMemberIndicator = useCallback((member: TeamMember): { colorClass: string; label: string } => {
-    const memberClaims = creditClaims.filter(
-      (c) => c.memberId === member.id && (!activeCycle || c.cycleId === activeCycle.id),
+    const totals = hoursByMemberId.get(member.id);
+    if (!totals || !totals.lastActivity) {
+      return { colorClass: "bg-gray-400", label: "No hours logged yet" };
+    }
+    const days = Math.floor(
+      (Date.now() - new Date(totals.lastActivity + "T12:00:00").getTime()) / 86_400_000,
     );
-    const memberAdjustments = creditAdjustments.filter(
-      (a) => a.memberId === member.id && (!activeCycle || a.cycleId === activeCycle.id),
-    );
-    const credits = new Map<string, number>();
-    for (const a of creditAssignments) credits.set(a.id, a.credits);
-    const ledger = computeCreditLedger({ claims: memberClaims, adjustments: memberAdjustments, assignmentCredits: credits });
-    const classification = classifyMember(member);
-    const primaryTrack = pickPrimaryTrack(member);
-    const target = activeCycle && classification.cycleRole
-      ? lookupCreditTarget(activeCycle, primaryTrack, classification.cycleRole)
-      : 0;
-    const dot = computeDot({ cycle: activeCycle, member, earnedCredits: ledger.total, targetCredits: target, hasAnyClaims: memberClaims.length > 0 });
-    const colorClass =
-      dot.color === "green" ? "bg-emerald-400"
-        : dot.color === "yellow" ? "bg-yellow-400"
-        : dot.color === "orange" ? "bg-orange-400"
-        : dot.color === "red" ? "bg-red-500"
-        : "bg-gray-400";
-    return { colorClass, label: dot.label };
-  }, [activeCycle, creditClaims, creditAdjustments, creditAssignments]);
+    const hrs = Number(totals.totalHours ?? 0).toFixed(1);
+    if (days <= 21) return { colorClass: "bg-emerald-400", label: `${hrs}h · active ${days}d ago` };
+    if (days <= 45) return { colorClass: "bg-yellow-400", label: `${hrs}h · last active ${days}d ago` };
+    if (days <= 90) return { colorClass: "bg-orange-400", label: `${hrs}h · quiet for ${days}d` };
+    return { colorClass: "bg-red-500", label: `${hrs}h · nothing for ${days}d` };
+  }, [hoursByMemberId]);
 
   const compareMemberByCol = useCallback((a: TeamMember, b: TeamMember, col: number): number => {
     switch (col) {
@@ -826,7 +606,6 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                 <tbody className="divide-y divide-white/5">
                   {selectedMembers.map((member) => {
                     const track = getMemberTrack(member);
-                    const avatar = getTrackAvatarStyles(track);
                     const indicator = getMemberIndicator(member);
                     const mode = deliveryModeById[member.id] ?? defaultNewRecipientMode;
                     return (
@@ -847,9 +626,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
                           <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                              <TrackAvatarIcon track={track} color={avatar.text} />
-                            </span>
+                            <TrackAvatar track={track} />
                             <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
                           </span>
                         </td>
@@ -996,7 +773,6 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                     const inactive = isInactiveMember(member);
                     const indicator = getMemberIndicator(member);
                     const track = getMemberTrack(member);
-                    const avatar = getTrackAvatarStyles(track);
                     return (
                       <tr key={member.id} className={`hover:bg-white/5 ${checked ? "bg-[#F6B78D]/6" : ""} ${inactive ? "opacity-50 bg-white/[0.02]" : ""}`}>
                         <td className="px-3 py-2">
@@ -1016,9 +792,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
                         <td className="px-3 py-2 text-white/75 whitespace-nowrap">
                           <span className="members-no-cell-scroll inline-flex items-center gap-2 min-w-0 max-w-full">
                             <span className={`h-2.5 w-2.5 rounded-full ${indicator.colorClass} flex-shrink-0`} title={indicator.label} />
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatar.bg }}>
-                              <TrackAvatarIcon track={track} color={avatar.text} />
-                            </span>
+                            <TrackAvatar track={track} />
                             <span className="truncate block max-w-[190px]" title={member.name || "—"}>{member.name || "—"}</span>
                           </span>
                           {inactive && <span className="text-white/35 ml-2">(inactive)</span>}
@@ -1064,7 +838,7 @@ const activeCycle = useMemo(() => cycles.find((c) => c.active) ?? null, [cycles]
               </Btn>
               {loadedTemplate && (
                 <Btn size="sm" variant="ghost" onClick={() => { setLoadedTemplateId(null); setSubject(""); setMessage(""); editorRef.current?.setContent(""); }}>
-                  Clear
+                  Clear draft
                 </Btn>
               )}
             </div>

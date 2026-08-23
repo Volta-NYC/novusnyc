@@ -2061,6 +2061,13 @@ details[open] > .accordion-body {
   outline-offset: 3px;
 }
 
+/* The portal is light for every role. This comes after the dark-surface rule
+   above so keyboard focus never falls back to the low-contrast pastel. */
+.members-portal-light
+  :where(a, button, input, select, textarea, summary, [role="tab"]):focus-visible {
+  outline-color: rgb(var(--color-orange-ink));
+}
+
 /* Keep form element focus rings consistent */
 .novus-input:focus-visible {
   outline: 3px solid rgb(var(--color-orange-ink));
@@ -2288,3 +2295,268 @@ summary:focus-visible {
   overflow-x: auto;
   margin-bottom: 0.75rem;
 }
+/* ── Portal light theme ────────────────────────────────────────
+   The portal was authored dark: ~1,250 literal utility classes across twenty
+   files. Remapping them here flips the theme without editing component logic,
+   so a mistake shows up as a colour rather than a broken page. */
+.members-portal-light { color-scheme: light; }
+.members-portal-light .bg-\[\#0F1014\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#10131A\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#111418\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#11141A\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#11151D\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#12141B\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#12151B\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#13151A\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#13161D\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#141821\] { background-color: #FFFFFF !important; }
+.members-portal-light .bg-\[\#151920\] { background-color: #F7F8FA !important; }
+.members-portal-light .bg-\[\#1A1D25\] { background-color: #F7F8FA !important; }
+.members-portal-light .bg-\[\#1C1F26\] { background-color: #FFFFFF !important; }
+
+/* The table shell paints from --color-portal-panel rather than a literal, so it
+   was the one surface the hex remaps above never reached: rows are transparent,
+   which left them sitting on the dark slab while their header went white. */
+.members-portal-light .members-table-shell {
+  background: #FFFFFF !important;
+  border-color: rgba(0,0,0,.10) !important;
+}
+.members-portal-light .bg-white\/10 { background-color: rgba(0,0,0,0.077) !important; }
+.members-portal-light .bg-white\/12 { background-color: rgba(0,0,0,0.099) !important; }
+.members-portal-light .bg-white\/15 { background-color: rgba(0,0,0,0.121) !important; }
+.members-portal-light .bg-white\/25 { background-color: rgba(0,0,0,0.187) !important; }
+.members-portal-light .bg-white\/5 { background-color: rgba(0,0,0,0.05) !important; }
+.members-portal-light .bg-white\/6 { background-color: rgba(0,0,0,0.055) !important; }
+.members-portal-light .bg-white\/8 { background-color: rgba(0,0,0,0.066) !important; }
+.members-portal-light .bg-white\/\[0\.02\] { background-color: rgba(0,0,0,0.028) !important; }
+.members-portal-light .bg-white\/\[0\.03\] { background-color: rgba(0,0,0,0.033) !important; }
+.members-portal-light .bg-white\/\[0\.04\] { background-color: rgba(0,0,0,0.039) !important; }
+.members-portal-light .bg-white\/\[0\.05\] { background-color: rgba(0,0,0,0.044) !important; }
+.members-portal-light .bg-white\/\[0\.06\] { background-color: rgba(0,0,0,0.05) !important; }
+.members-portal-light .border-white\/10 { border-color: rgba(0,0,0,0.11) !important; }
+.members-portal-light .border-white\/12 { border-color: rgba(0,0,0,0.12) !important; }
+.members-portal-light .border-white\/15 { border-color: rgba(0,0,0,0.14) !important; }
+.members-portal-light .border-white\/20 { border-color: rgba(0,0,0,0.16) !important; }
+.members-portal-light .border-white\/25 { border-color: rgba(0,0,0,0.18) !important; }
+.members-portal-light .border-white\/30 { border-color: rgba(0,0,0,0.38) !important; }
+.members-portal-light .border-white\/35 { border-color: rgba(0,0,0,0.22) !important; }
+.members-portal-light .border-white\/5 { border-color: rgba(0,0,0,0.07) !important; }
+.members-portal-light .border-white\/50 { border-color: rgba(0,0,0,0.5) !important; }
+.members-portal-light .border-white\/6 { border-color: rgba(0,0,0,0.08) !important; }
+.members-portal-light .border-white\/8 { border-color: rgba(0,0,0,0.09) !important; }
+.members-portal-light .divide-white\/5 > * + * { border-color: rgba(0,0,0,0.07) !important; }
+.members-portal-light .divide-white\/6 > * + * { border-color: rgba(0,0,0,0.08) !important; }
+.members-portal-light .placeholder-white\/20::placeholder { color: rgba(0,0,0,0.28) !important; }
+.members-portal-light .placeholder-white\/25::placeholder { color: rgba(0,0,0,0.34) !important; }
+.members-portal-light .placeholder-white\/30::placeholder { color: rgba(0,0,0,0.38) !important; }
+.members-portal-light .placeholder-white\/50::placeholder { color: rgba(0,0,0,0.5) !important; }
+.members-portal-light .ring-white\/35 { --tw-ring-color: rgba(0,0,0,0.22) !important; }
+.members-portal-light .text-white\/20 { color: rgba(0,0,0,0.55) !important; }
+.members-portal-light .text-white\/25 { color: rgba(0,0,0,0.555) !important; }
+.members-portal-light .text-white\/30 { color: rgba(0,0,0,0.56) !important; }
+.members-portal-light .text-white\/35 { color: rgba(0,0,0,0.57) !important; }
+.members-portal-light .text-white\/40 { color: rgba(0,0,0,0.56) !important; }
+.members-portal-light .text-white\/45 { color: rgba(0,0,0,0.58) !important; }
+.members-portal-light .text-white\/50 { color: rgba(0,0,0,0.6) !important; }
+.members-portal-light .text-white\/55 { color: rgba(0,0,0,0.62) !important; }
+.members-portal-light .text-white\/60 { color: rgba(0,0,0,0.64) !important; }
+.members-portal-light .text-white\/65 { color: rgba(0,0,0,0.68) !important; }
+.members-portal-light .text-white\/70 { color: rgba(0,0,0,0.72) !important; }
+.members-portal-light .text-white\/75 { color: rgba(0,0,0,0.76) !important; }
+.members-portal-light .text-white\/80 { color: rgba(0,0,0,0.8) !important; }
+.members-portal-light .text-white\/85 { color: rgba(0,0,0,0.84) !important; }
+.members-portal-light .text-white\/90 { color: rgba(0,0,0,0.88) !important; }
+.members-portal-light .text-white { color: rgba(0,0,0,0.88) !important; }
+.members-portal-light input, .members-portal-light textarea, .members-portal-light select {
+  background-color: #FFFFFF !important; color: rgba(0,0,0,0.88) !important;
+  border-color: rgba(0,0,0,0.18) !important;
+}
+.members-portal-light input::placeholder, .members-portal-light textarea::placeholder {
+  color: rgba(0,0,0,0.38) !important;
+}
+/* Panels sit on a tinted page, so they need an edge rather than a glow. */
+.members-portal-light .shadow-2xl, .members-portal-light .shadow-xl {
+  box-shadow: 0 1px 2px rgba(16,18,24,.06), 0 8px 28px rgba(16,18,24,.08) !important;
+}
+
+/* Colored text was tuned against a dark ground: text-green-400 on white
+   measures about 1.8:1. Anything at 500 or lighter is pulled to its
+   700-level, which clears 4.5:1 on the light surfaces. 600 and 700 are
+   already dark enough and are left alone. */
+.members-portal-light .text-amber-200 { color: #b45309 !important; }
+.members-portal-light .text-amber-400 { color: #b45309 !important; }
+.members-portal-light .text-blue-200 { color: #1d4ed8 !important; }
+.members-portal-light .text-blue-300 { color: #1d4ed8 !important; }
+.members-portal-light .text-blue-400 { color: #1d4ed8 !important; }
+.members-portal-light .text-cyan-300 { color: #0e7490 !important; }
+.members-portal-light .text-cyan-400 { color: #0e7490 !important; }
+.members-portal-light .text-emerald-200 { color: #047857 !important; }
+.members-portal-light .text-emerald-300 { color: #047857 !important; }
+.members-portal-light .text-emerald-400 { color: #047857 !important; }
+.members-portal-light .text-gray-300 { color: #374151 !important; }
+.members-portal-light .text-gray-400 { color: #374151 !important; }
+.members-portal-light .text-gray-500 { color: #374151 !important; }
+.members-portal-light .text-green-300 { color: #15803d !important; }
+.members-portal-light .text-green-400 { color: #15803d !important; }
+.members-portal-light .text-indigo-300 { color: #4338ca !important; }
+.members-portal-light .text-indigo-400 { color: #4338ca !important; }
+.members-portal-light .text-orange-400 { color: #c2410c !important; }
+.members-portal-light .text-purple-200 { color: #7e22ce !important; }
+.members-portal-light .text-purple-300 { color: #7e22ce !important; }
+.members-portal-light .text-purple-400 { color: #7e22ce !important; }
+.members-portal-light .text-red-200 { color: #b91c1c !important; }
+.members-portal-light .text-red-300 { color: #b91c1c !important; }
+.members-portal-light .text-red-400 { color: #b91c1c !important; }
+.members-portal-light .text-red-500 { color: #b91c1c !important; }
+.members-portal-light .text-sky-300 { color: #0369a1 !important; }
+.members-portal-light .text-violet-300 { color: #6d28d9 !important; }
+.members-portal-light .text-yellow-200 { color: #a16207 !important; }
+.members-portal-light .text-yellow-300 { color: #a16207 !important; }
+.members-portal-light .text-yellow-400 { color: #a16207 !important; }
+
+/* ── Portal tables and controls ──────────────────────────────────────────────
+   Row separators on a light ground need real contrast; the dark theme's
+   white/5 hairlines disappear entirely. Padding and truncation are set here
+   rather than per-table so every list in the portal behaves the same way. */
+.members-portal-light table th {
+  border-bottom-color: rgba(0,0,0,.16) !important;
+  background-color: #F2F3F5 !important;
+  color: rgba(0,0,0,.55) !important;
+}
+.members-portal-light table td { border-bottom-color: rgba(0,0,0,.09) !important; }
+.members-portal-light table tbody tr:hover { background-color: rgba(0,0,0,.035) !important; }
+/* ── Table rhythm ────────────────────────────────────────────────────────────
+   One scale for every dense portal table. 32px data rows clear the 20px track
+   avatar with 6px either side and sit comfortably under 11px text; a 28px
+   header keeps the label row visibly lighter than the data it labels. Roomier
+   tables (email templates, automations) opt out by not carrying
+   members-grid-table, and colSpan empty states keep their own padding. */
+.members-portal table thead th {
+  height: 1.75rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+.members-portal .members-grid-table tbody td:not([colspan]) {
+  height: 2rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+
+/* A select styled as a pill still draws the platform arrow at its own metrics,
+   which is what made the status cells look cramped on one side. */
+.members-portal-light select,
+.members-portal .members-status-select {
+  background-image: none;
+  text-overflow: ellipsis;
+}
+
+/* The status control is a select inside a tinted pill, so it has to stay
+   transparent and inherit the pill's colour — the blanket rule above paints
+   every other select white, which read as a white slab over the tint. */
+.members-portal-light .members-status-select select {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: inherit !important;
+}
+.members-portal select:not([multiple]) {
+  padding-right: 1.75rem;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23666' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6.5 8 10.5 12 6.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .5rem center;
+  background-size: .85rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* The status pill supplies its own chevron spacing, so it opts out. */
+.members-portal .members-status-select select { padding-right: 1.1rem; background-size: .7rem; }
+
+/* Long values truncate rather than reflow a row to two lines. */
+.members-portal-light td .truncate,
+.members-portal-light th .truncate { max-width: 100%; }
+
+/* The mobile sidebar slides offscreen but stayed in the tab order, so keyboard
+   users landed on links they could not see. visibility removes it; the 200ms
+   delay on close lets the slide finish first, and it never applies at lg where
+   the sidebar is permanently on screen. */
+.members-portal .members-sidebar[data-closed="true"] {
+  visibility: hidden;
+  transition:
+    transform 200ms ease-in-out,
+    width 200ms ease-in-out,
+    visibility 0s linear 200ms;
+}
+@media (min-width: 1024px) {
+  .members-portal .members-sidebar[data-closed="true"] { visibility: visible; }
+}
+
+/* The blanket `.members-portal-light input` rule below paints every input white,
+   including a checked checkbox — so a ticked box looked exactly like an empty
+   one and there was no way to see what you had selected. The checked state is
+   restored here, after that rule, at equal specificity plus !important. */
+.members-portal-light .members-checkbox {
+  background: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.28) !important;
+}
+.members-portal-light .members-checkbox:checked {
+  background: rgb(var(--color-orange)) !important;
+  border-color: rgb(var(--color-orange)) !important;
+}
+
+/* Icon-only controls inherited white-on-white and vanished on light surfaces. */
+.members-portal-light .members-icon-btn {
+  color: rgba(0, 0, 0, 0.62) !important;
+  border-color: rgba(0, 0, 0, 0.16) !important;
+}
+.members-portal-light .members-icon-btn:hover {
+  color: rgba(0, 0, 0, 0.88) !important;
+  border-color: rgba(0, 0, 0, 0.34) !important;
+}
+.members-portal-light .members-icon-btn-danger {
+  color: #b91c1c !important;
+  border-color: rgba(185, 28, 28, 0.32) !important;
+}
+
+/* ── Light-theme accent text ─────────────────────────────────────────────────
+   The portal's accents are pastels chosen for a dark background. On white the
+   peach reads 1.74:1 and the pale yellow 1.31:1 — effectively invisible. These
+   are arbitrary-hex classes, so the earlier named-colour remaps never caught
+   them. Each maps to a saturated shade of the same hue, per the palette rule in
+   CLAUDE.md: pastels are fills on light backgrounds, never text.
+
+   Opacity variants collapse to the solid colour deliberately — the alpha was a
+   dark-mode dimming device, and compositing it over white drops contrast back
+   below AA. */
+.members-portal-light .text-\[\#F6B78D\] { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/55 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/70 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/75 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F6B78D\]\/80 { color: #8B5E48 !important; }
+.members-portal-light .text-\[\#F3E28D\] { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/55 { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/70 { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/75 { color: #a16207 !important; }
+.members-portal-light .text-\[\#F3E28D\]\/80 { color: #a16207 !important; }
+.members-portal-light .text-\[\#9B9B95\] { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/55 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/70 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/75 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#9B9B95\]\/80 { color: #5C5C56 !important; }
+.members-portal-light .text-\[\#6DB8FF\] { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/55 { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/70 { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/75 { color: #1d4ed8 !important; }
+.members-portal-light .text-\[\#6DB8FF\]\/80 { color: #1d4ed8 !important; }
+
+/* A focus ring must clear 3:1 against its background (WCAG 1.4.11). At 45%
+   opacity the peach border reaches 1.93:1, so focus is solid in light mode. */
+.members-portal-light .focus\:border-\[\#F6B78D\]:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/40:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/45:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/50:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F6B78D\]\/60:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F3E28D\]\/40:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus\:border-\[\#F3E28D\]\/50:focus { border-color: #8B5E48 !important; }
+.members-portal-light .focus-visible\:ring-\[\#F6B78D\]\/60:focus-visible { --tw-ring-color: #8B5E48 !important; }
+.members-portal-light .focus-visible\:ring-\[\#F6B78D\]\/70:focus-visible { --tw-ring-color: #8B5E48 !important; }

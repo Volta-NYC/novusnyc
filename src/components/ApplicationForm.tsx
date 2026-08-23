@@ -169,7 +169,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-7">
+    <form onSubmit={handleSubmit} noValidate className="space-y-9">
 
       <div>
         <label htmlFor="application-full-name" className="block font-body text-sm font-semibold text-n-ink mb-2">Full Name *</label>
@@ -244,7 +244,7 @@ export default function ApplicationForm({ chapters }: { chapters: string[] }) {
         <FieldError id="application-grade-error" message={errors.grade} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="application-state" className="block font-body text-sm font-semibold text-n-ink mb-2">State *</label>
           <SelectMenu

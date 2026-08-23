@@ -74,33 +74,47 @@ function TemplatePreview({
 // variable name itself so the preview never shows raw {{x}} placeholders.
 function sampleValue(variable: string): string {
   switch (variable) {
-    case "memberName": return "Jordan Lee";
-    case "cycleName": return "Summer 2026";
-    case "startDate": return "June 1, 2026";
-    case "endDate": return "September 1, 2026";
-    case "creditsEarned": return "6";
-    case "creditsTarget": return "12";
-    case "creditsAwarded": return "3";
-    case "checkInsBehind": return "2";
-    case "daysRemaining": return "47";
-    case "pacingPercent": return "20";
-    case "strikeReason": return "Missed credit pace — 4 check-ins behind";
-    case "strikeCount": return "1";
-    case "previousRole": return "Associate";
-    case "newRole": return "Senior Analyst";
-    case "outcome": return "On track for next cycle";
+    // People and places
+    case "memberName": case "name": return "Jordan Lee";
+    case "firstName": return "Jordan";
+    case "applicantName": return "Sam Rivera";
+    case "interviewerName": case "leadName": case "litName": return "Alex Chen";
+    case "assigneeNames": return "Alex Chen, Sam Rivera";
+    case "podName": return "Small Business Outreach";
+    case "departments": return "Small Business Outreach, Tech";
+
+    // Pods and tasks
+    case "taskTitle": return "Draft the September outreach list";
+    case "meetingTitle": return "Fortnightly check-in";
+    case "meetingDate": case "dueDate": return "Tuesday, September 9";
+    case "dueDatePart": return "Due Tuesday, September 9";
+
+    // Projects
+    case "businessName": return "Petite Dumpling";
+    case "businessNamePart": return " for Petite Dumpling";
+    case "neighborhoodPart": return " in Flushing";
+    case "contactPart": return "Wei Zhang · owner@example.com · (212) 555-0142";
+    case "previewUrl": return "https://petite-dumpling.vercel.app/";
     case "assignmentTitle": return "UI/UX checkup — Petite Dumpling";
-    case "businessName": return " for Petite Dumpling";
-    case "rejectionReason": return "Please add a screenshot of the mobile breakpoint.";
-    case "infractionName": return "Did not respond within 48 hours";
+    case "message": case "messageFmt": return "Client asked for the hours block to move above the menu.";
+
+    // Standing and hours
+    case "infractionName": return "Unexcused absence";
     case "points": return "2";
     case "totalPoints": return "5";
-    case "issuedBy": return "Ethan Zhang";
-    case "note": return "Please reply to client emails by EOD.";
-    case "openAssignmentCount": return "12";
-    case "link":       return "https://www.novusnyc.org/members";
-    case "portalLink": return "https://www.novusnyc.org/members";
-    case "magicLink":  return "https://www.novusnyc.org/members";
+    case "standing": return "consider this a notice";
+    case "notePart": return "Missed the September 9 meeting without notice.";
+    case "periodLabel": return "January–June 2026";
+    case "totalHours": return "18.5";
+    case "breakdown": return "6 meetings · 4 tasks · 1 site shipped";
+
+    // Interviews
+    case "interviewTime": return "Tuesday, September 9 at 4:30 PM ET";
+    case "previousTime": return "Monday, September 8 at 5:00 PM ET";
+    case "zoomLink": case "googleCalendarUrl":
+    case "link": case "portalLink": case "magicLink":
+      return "https://www.novusnyc.org/members";
+
     default: return variable;
   }
 }
@@ -125,33 +139,51 @@ const TEMPLATE_LINK_DESCRIPTIONS: Record<string, string> = {
 };
 
 const VARIABLE_DESCRIPTIONS: Record<string, string> = {
-  firstName:           "Recipient's first name",
-  name:                "Recipient's full name",
-  memberName:          "Member's full name",
-  cycleName:           "Active cycle name",
-  startDate:           "Cycle start date",
-  endDate:             "Cycle end date",
-  creditsEarned:       "Credits earned so far this cycle",
-  creditsTarget:       "Total credit target for this cycle",
-  creditsAwarded:      "Credits awarded for this assignment",
-  checkInsBehind:      "Number of check-ins behind pace",
-  daysRemaining:       "Days remaining in the cycle",
-  pacingPercent:       "Expected % completion at this point in the cycle",
-  strikeReason:        "Reason a strike was issued",
-  strikeCount:         "Total strikes this cycle",
-  previousRole:        "Role before the change",
-  newRole:             "Role after the change",
-  outcome:             "Cycle outcome summary",
-  assignmentTitle:     "Title of the assignment",
-  businessName:        "Business name for the assignment",
-  rejectionReason:     "Reviewer's rejection feedback",
-  infractionName:      "Infraction type name",
-  points:              "Demerits for this infraction",
-  totalPoints:         "Total demerits this cycle",
-  issuedBy:            "Admin who issued the infraction",
-  note:                "Optional note from the admin",
-  openAssignmentCount: "Number of open assignments in the marketplace",
+  firstName:        "Recipient's first name",
+  name:             "Recipient's full name",
+  memberName:       "Member's full name",
+  applicantName:    "Applicant's full name",
+  interviewerName:  "Interviewer's name",
+  leadName:         "Tech lead's name",
+  litName:          "LIT's name",
+  assigneeNames:    "Everyone assigned, comma separated",
+
+  podName:          "Pod the work belongs to",
+  taskTitle:        "Title of the task",
+  meetingTitle:     "Title of the meeting",
+  meetingDate:      "Date of the meeting, written out",
+  dueDate:          "Due date, written out",
+  dueDatePart:      "\"Due <date>\", or a note that none is set",
+
+  businessName:     "Client business name",
+  businessNamePart: "\" for <business>\", or empty when there is none",
+  neighborhoodPart: "\" in <neighborhood>\", or empty when unknown",
+  contactPart:      "Owner name, email and phone on one line",
+  previewUrl:       "Vercel preview link for the site",
+  assignmentTitle:  "Title of the assignment",
+  message:          "Update text, plain",
+  messageFmt:       "Update text, formatted",
+
+  infractionName:   "Infraction type",
+  points:           "Points for this infraction",
+  totalPoints:      "Member's running total",
+  standing:         "What that total means, in words",
+  notePart:         "Note attached to the infraction, if any",
+
+  periodLabel:      "Period the summary covers",
+  totalHours:       "Hours in that period",
+  breakdown:        "Meetings, tasks and sites behind the total",
+  departments:      "Pods and tracks they worked in",
+
+  interviewTime:    "Interview date and time",
+  previousTime:     "Previous interview time, before rescheduling",
+  zoomLink:         "Zoom join link",
+  googleCalendarUrl:"Add-to-calendar link",
+  link:             "Action link for this email",
+  portalLink:       "Link into the member portal",
+  magicLink:        "One-time sign-in link",
 };
+
 
 const LINK_VARIABLES = [
   {
@@ -341,7 +373,7 @@ export default function EmailTemplatesPage() {
             <Input
               value={form.label}
               onChange={(e) => setForm((p) => ({ ...p, label: e.target.value }))}
-              placeholder="e.g. End-of-cycle reminder"
+              placeholder="e.g. Monthly member reminder"
             />
           </Field>
           <Field label="Description">
@@ -363,7 +395,7 @@ export default function EmailTemplatesPage() {
               ref={editorRef}
               content={form.body}
               onChange={(html) => setForm((p) => ({ ...p, body: html }))}
-              placeholder="Write the email body… Use {{memberName}}, {{cycleName}}, etc."
+              placeholder="Write the email body… Use variables such as {{memberName}} when they are available."
             />
           </Field>
 
@@ -422,7 +454,7 @@ export default function EmailTemplatesPage() {
                 </div>
               ))}
               <p className="text-[11px] text-white/30 pt-1">
-                Other variables like <code className="text-white/50">{"{{memberName}}"}</code> and <code className="text-white/50">{"{{cycleName}}"}</code> are available for automation-triggered templates.
+                Available variables depend on how the message is sent. Common examples are <code className="text-white/50">{"{{memberName}}"}</code> and <code className="text-white/50">{"{{portalLink}}"}</code>.
               </p>
             </div>
           )}

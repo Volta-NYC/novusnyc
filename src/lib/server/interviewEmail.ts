@@ -4,7 +4,6 @@ import {
   getDefaultReplyToAddress,
   resolveFromWithName,
 } from "@/lib/server/smtp";
-import { buildInterviewInviteTemplate } from "@/lib/server/applicantEmails";
 import { formatInterviewInET, parseInterviewDateTime } from "@/lib/interviews/datetime";
 import { renderAutomationEmail } from "@/lib/server/templateRenderer";
 import { EMAIL } from "@/lib/mail";
@@ -49,6 +48,7 @@ function buildIcs(input: BookingEmailInput): string {
   const start = getInterviewInstant(input.datetimeIso);
   const end = new Date(start.getTime() + input.durationMinutes * 60_000);
   const descParts: string[] = [];
+  descParts.push(`Candidate: ${input.bookerName}`);
   if (input.zoomLink) descParts.push(`Join Zoom: ${input.zoomLink}`);
   const organizerName = (input.organizerName || "Novus NYC").trim();
   const organizerEmail = sanitizeEmailAddress(input.organizerEmail || getDefaultFromAddress() || "");
@@ -83,6 +83,15 @@ function buildIcs(input: BookingEmailInput): string {
   ].filter(Boolean);
 
   return `${lines.join("\r\n")}\r\n`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function buildGoogleCalendarUrl(input: BookingEmailInput): string {
@@ -152,14 +161,14 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
   const googleCalendarUrl = buildGoogleCalendarUrl(input);
   const ics = buildIcs(input);
 
-  const rendered = await renderAutomationEmail("interview_booked", {
+  const rendered = await renderAutomationEmail("interview_confirmation", {
     applicantName:    input.bookerName || "there",
     interviewTime:    timeText,
     zoomLink:         input.zoomLink || "will be provided separately",
     googleCalendarUrl,
   });
 
-  const subject = rendered?.subject ?? "Novus interview Confirmation";
+  const subject = rendered?.subject ?? "Novus interview confirmation";
   const html    = rendered?.html    ?? `
       <p>Hi ${input.bookerName || "there"},</p>
       <p>Your Novus interview is confirmed.</p>
@@ -171,7 +180,7 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
         <a href="${googleCalendarUrl}">Add to Google Calendar</a><br/>
         A calendar invite (<code>.ics</code>) is attached to this email.
       </p>
-      <p>If you need to reschedule, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
+      <p>If you need to reschedule, reply to this email and we&apos;ll sort it out.<br/><br/>We look forward to speaking with you.</p>
       <p>Best,<br/>Ethan Zhang</p>
     `;
 
@@ -188,7 +197,7 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
       `Add to Google Calendar: ${googleCalendarUrl}`,
       "A calendar invite (.ics) is attached to this email.",
       "",
-      "If you need to reschedule, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.",
+      "If you need to reschedule, reply to this email and we'll sort it out.",
       "",
       "We look forward to speaking with you.",
       "",
@@ -219,7 +228,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
     googleCalendarUrl,
   });
 
-  const subject = rendered?.subject ?? "Novus interview Rescheduled";
+  const subject = rendered?.subject ?? "Novus interview rescheduled";
   const html    = rendered?.html    ?? `
       <p>Hi ${input.bookerName || "there"},</p>
       <p>Your <strong>Novus interview</strong> has been rescheduled.</p>
@@ -232,7 +241,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
         <a href="${googleCalendarUrl}">Open in Google Calendar</a><br/>
         A fresh calendar invite (<code>.ics</code>) is attached.
       </p>
-      <p>If you need to reschedule again, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.<br/><br/>We look forward to speaking with you.</p>
+      <p>If you need to reschedule again, reply to this email and we&apos;ll sort it out.<br/><br/>We look forward to speaking with you.</p>
       <p>Best,<br/>Ethan Zhang</p>
     `;
 
@@ -250,7 +259,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
       `Google Calendar: ${googleCalendarUrl}`,
       "A fresh calendar invite (.ics) is attached.",
       "",
-      "If you need to reschedule again, please do so through the booking portal at novusnyc.org/book using the same name and email you signed up for the original time slot with. If you have any trouble, reply to this email and we'll sort it out.",
+      "If you need to reschedule again, reply to this email and we'll sort it out.",
       "",
       "We look forward to speaking with you.",
       "",
@@ -265,197 +274,48 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
   });
 }
 
-export async function sendInterviewerBookingNotificationEmail(input: {
-  to: string;
+export async function sendInterviewStaffNotificationEmail(input: BookingEmailInput & {
   interviewerName: string;
-  bookerName: string;
-  bookerEmail: string;
-  datetimeIso: string;
-  durationMinutes: number;
-  zoomLink: string;
-  location?: string;
-  slotId: string;
-  scheduleSummaryLines?: string[];
-  scheduleTotal?: number;
+  previousDatetimeIso?: string;
 }): Promise<void> {
   const timeText = formatTime(input.datetimeIso);
-  const summaryLines = input.scheduleSummaryLines ?? [];
-  const scheduleTotal = Number.isFinite(input.scheduleTotal) ? Number(input.scheduleTotal) : summaryLines.length;
-  const summaryTextBlock = [
-    "Your upcoming interviews (next 3 weeks):",
-    ...summaryLines.map((line) => `- ${line}`),
-    `Total: ${scheduleTotal}`,
-  ];
-  const summaryHtmlLines = summaryLines.length > 0
-    ? `<ul>${summaryLines.map((line) => `<li>${line}</li>`).join("")}</ul>`
-    : "<ul><li>No upcoming interviews in this window.</li></ul>";
-
-  const rendered = await renderAutomationEmail("interviewer_booking_notify", {
-    interviewerName: input.interviewerName || "Interviewer",
-    applicantName:   `${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}`,
-    interviewTime:   timeText,
-    zoomLink:        input.zoomLink || "will be provided separately",
-  });
-
-  const subject = rendered?.subject ?? "New Novus interview Scheduled";
-  const html    = rendered?.html    ?? `
-      <p>Hi ${input.interviewerName || "Interviewer"},</p>
-      <p>A new interview has been scheduled for one of your available slots.</p>
-      <p>
-        <strong>Candidate:</strong> ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}<br/>
-        <strong>Time:</strong> ${timeText}<br/>
-        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
-      </p>
-      <p><strong>Your upcoming interviews (next 3 weeks):</strong></p>
-      ${summaryHtmlLines}
-      <p><strong>Total:</strong> ${scheduleTotal}</p>
-      <p>You can review details in the member interview panel.</p>
-    `;
+  const previousTimeText = input.previousDatetimeIso
+    ? formatTime(input.previousDatetimeIso)
+    : "";
+  const isReschedule = Boolean(input.previousDatetimeIso);
+  const candidate = escapeHtml(input.bookerName || "Candidate");
+  const interviewer = escapeHtml(input.interviewerName || "there");
+  const meetingLink = escapeHtml(input.zoomLink);
+  const ics = buildIcs(input);
 
   await sendInterviewEmail({
     to: input.to,
-    subject,
+    subject: isReschedule
+      ? `Interview rescheduled — ${input.bookerName}`
+      : `Interview scheduled — ${input.bookerName}`,
     text: [
-      `Hi ${input.interviewerName || "Interviewer"},`,
+      `Hi ${input.interviewerName || "there"},`,
       "",
-      "A new interview has been scheduled for one of your available slots.",
-      `Candidate: ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}`,
+      `An interview with ${input.bookerName} has ${isReschedule ? "been rescheduled" : "been assigned to you"}.`,
+      ...(previousTimeText ? [`Previous time: ${previousTimeText}`] : []),
       `Time: ${timeText}`,
-      input.zoomLink ? `Zoom: ${input.zoomLink}` : "Zoom: (will be provided separately)",
+      input.zoomLink ? `Meeting: ${input.zoomLink}` : "Meeting link: (not set)",
       "",
-      ...summaryTextBlock,
-      "",
-      "You can review details in the member interview panel.",
+      "The calendar invite is attached. Open the Interviews page in the member portal for notes and status updates.",
     ].join("\n"),
-    html,
-  });
-}
-
-export async function sendInterviewerRescheduledNotificationEmail(input: {
-  to: string;
-  interviewerName: string;
-  bookerName: string;
-  bookerEmail: string;
-  previousDatetimeIso: string;
-  datetimeIso: string;
-  durationMinutes: number;
-  zoomLink: string;
-  location?: string;
-  slotId: string;
-}): Promise<void> {
-  const oldTimeText = formatTime(input.previousDatetimeIso);
-  const newTimeText = formatTime(input.datetimeIso);
-
-  const rendered = await renderAutomationEmail("interviewer_reschedule_notify", {
-    interviewerName: input.interviewerName || "Interviewer",
-    applicantName:   `${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}`,
-    previousTime:    oldTimeText,
-    interviewTime:   newTimeText,
-    zoomLink:        input.zoomLink || "will be provided separately",
-  });
-
-  const subject = rendered?.subject ?? "Novus interview Rescheduled to Your Slot";
-  const html    = rendered?.html    ?? `
-      <p>Hi ${input.interviewerName || "Interviewer"},</p>
-      <p>An interview has been rescheduled to one of your available slots.</p>
+    html: `
+      <p>Hi ${interviewer},</p>
+      <p>An interview with <strong>${candidate}</strong> has ${isReschedule ? "been rescheduled" : "been assigned to you"}.</p>
       <p>
-        <strong>Candidate:</strong> ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}<br/>
-        <strong>Previous time:</strong> ${oldTimeText}<br/>
-        <strong>New time:</strong> ${newTimeText}<br/>
-        <strong>Zoom:</strong> ${input.zoomLink ? `<a href="${input.zoomLink}">${input.zoomLink}</a>` : "will be provided separately"}
+        ${previousTimeText ? `<strong>Previous time:</strong> ${escapeHtml(previousTimeText)}<br/>` : ""}
+        <strong>Time:</strong> ${escapeHtml(timeText)}<br/>
+        <strong>Meeting:</strong> ${input.zoomLink ? `<a href="${meetingLink}">${meetingLink}</a>` : "not set"}
       </p>
-      <p>You can review details in the member interview panel.</p>
-    `;
-
-  await sendInterviewEmail({
-    to: input.to,
-    subject,
-    text: [
-      `Hi ${input.interviewerName || "Interviewer"},`,
-      "",
-      "An interview has been rescheduled to one of your available slots.",
-      `Candidate: ${input.bookerName || "Interviewee"}${input.bookerEmail ? ` (${input.bookerEmail})` : ""}`,
-      `Previous time: ${oldTimeText}`,
-      `New time: ${newTimeText}`,
-      input.zoomLink ? `Zoom: ${input.zoomLink}` : "Zoom: (will be provided separately)",
-      "",
-      "You can review details in the member interview panel.",
-    ].join("\n"),
-    html,
-  });
-}
-
-function getSiteBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL
-    || process.env.VERCEL_PROJECT_PRODUCTION_URL
-    || process.env.VERCEL_URL
-    || ""
-  ).replace(/\/+$/, "");
-}
-
-function bookingPortalUrl(token: string, fallbackOrigin?: string): string {
-  const base = getSiteBaseUrl() || (fallbackOrigin ?? "").replace(/\/+$/, "");
-  if (!base) return `/book/${token}`;
-  const withProtocol = /^https?:\/\//i.test(base) ? base : `https://${base}`;
-  return `${withProtocol}/book/${token}`;
-}
-
-export async function sendInterviewInviteLinkEmail(input: {
-  to: string;
-  applicantName: string;
-  bookingToken: string;
-  fallbackOrigin?: string;
-}): Promise<void> {
-  const link = bookingPortalUrl(input.bookingToken, input.fallbackOrigin);
-  const rendered = await renderAutomationEmail("interview_invite", {
-    applicantName: input.applicantName || "there",
-    bookingLink:   link,
-  });
-  const fallback = buildInterviewInviteTemplate({ name: input.applicantName || "there", bookingLink: link });
-  await sendInterviewEmail({
-    to:      input.to,
-    subject: rendered?.subject ?? fallback.subject,
-    text:    fallback.text,
-    html:    rendered?.html    ?? fallback.html,
-  });
-}
-
-export async function sendInterviewInviteReminderEmail(input: {
-  to: string;
-  applicantName: string;
-  bookingToken: string;
-  fallbackOrigin?: string;
-}): Promise<void> {
-  const link = bookingPortalUrl(input.bookingToken, input.fallbackOrigin);
-  const rendered = await renderAutomationEmail("interview_invite_reminder", {
-    applicantName: input.applicantName || "there",
-    bookingLink:   link,
-  });
-
-  const subject = rendered?.subject ?? "Reminder: book your Novus interview";
-  const html    = rendered?.html    ?? `
-      <p>Hi ${input.applicantName || "there"},</p>
-      <p>Quick reminder to book your Novus interview slot:</p>
-      <p><a href="${link}">${link}</a></p>
-      <p>Please use the same name and email you used in your application.</p>
-      <p>Best,<br/>Ethan Zhang</p>
-    `;
-
-  await sendInterviewEmail({
-    to: input.to,
-    subject,
-    text: [
-      `Hi ${input.applicantName || "there"},`,
-      "",
-      "Quick reminder to book your Novus interview slot:",
-      link,
-      "",
-      "Please use the same name and email you used in your application.",
-      "",
-      "Best,",
-      "Ethan Zhang",
-    ].join("\n"),
-    html,
+      <p>The calendar invite is attached. Open the Interviews page in the member portal for notes and status updates.</p>
+    `,
+    ics: {
+      filename: "novus-nyc-interview.ics",
+      content: ics,
+    },
   });
 }

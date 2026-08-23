@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS project_groups (
 CREATE INDEX IF NOT EXISTS project_groups_status_idx ON project_groups (status, sort_order, created_at);
 
 ALTER TABLE assignments ADD COLUMN IF NOT EXISTS project_group_id text REFERENCES project_groups(id);
+
 CREATE INDEX IF NOT EXISTS assignments_project_group_id_idx ON assignments (project_group_id);
 
 ALTER TABLE project_groups ENABLE ROW LEVEL SECURITY;

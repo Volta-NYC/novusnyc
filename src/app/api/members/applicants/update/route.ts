@@ -10,13 +10,7 @@ const ALLOWED_FIELDS = new Set([
   "status",
   "statusManualOverride",
   "notes",
-  "interviewInviteToken",
-  "interviewInviteSentAt",
-  "interviewReminderSentAt",
-  "interviewSlotId",
-  "interviewScheduledAt",
   "finalDecisionRole",
-  "interviewEvaluations",
   // Allow admin tooling to migrate legacy grade labels (e.g. "Senior") to the
   // class-of-YYYY equivalent so applicant records stop drifting each fall.
   "grade",

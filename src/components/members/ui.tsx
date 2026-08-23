@@ -31,11 +31,29 @@ const BADGE_COLORS: Record<string, string> = {
   "Awaiting Deployment": "bg-sky-400/15 text-sky-300 border-sky-400/20",
   "In Planning":         "bg-yellow-400/15 text-yellow-300 border-yellow-400/20",
   "Consistent Posts":    "bg-emerald-400/15 text-emerald-300 border-emerald-400/20",
+  // tech project pipeline
+  Backlog:             "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  Assigned:            "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
+  "Draft Ready":       "bg-yellow-400/15 text-yellow-300 border-yellow-400/20",
+  "With Client":       "bg-purple-400/15 text-purple-300 border-purple-400/20",
+  Live:                "bg-green-500/15 text-green-400 border-green-500/20",
+  Dropped:             "bg-red-900/30 text-red-500 border-red-900/20",
+  Maybe:               "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  // pod attendance
+  Present:             "bg-green-500/15 text-green-400 border-green-500/20",
+  Excused:             "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Unexcused:           "bg-red-500/15 text-red-400 border-red-500/20",
+  lit:                 "bg-sky-400/10 text-sky-300 border-sky-400/35",
+  Open:                "bg-gray-500/15 text-gray-300 border-gray-500/20",
   Blocked:             "bg-red-500/15 text-red-400 border-red-500/20",
   Rejected:            "bg-red-500/15 text-red-400 border-red-500/20",
   Paused:              "bg-orange-500/15 text-orange-400 border-orange-500/20",
   "On Hold":           "bg-orange-500/15 text-orange-400 border-orange-500/20",
   "In Review":         "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Researching:          "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  "Ready to Share":    "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Shared:               "bg-green-500/15 text-green-400 border-green-500/20",
+  Closed:               "bg-gray-500/15 text-gray-400 border-gray-500/20",
   "Form Sent":         "bg-purple-500/15 text-purple-400 border-purple-500/20",
   Dead:                "bg-red-900/30 text-red-500 border-red-900/20",
   // interview status
@@ -63,12 +81,72 @@ export function Badge({ label }: { label: string }) {
   const colorClass = BADGE_COLORS[label] ?? "bg-gray-500/15 text-gray-400 border-gray-500/20";
   return (
     <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${colorClass} whitespace-nowrap`}>
-      {label}
+      {label === "lit" ? "LIT" : label}
     </span>
   );
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
+
+const FOCUSABLE =
+  'a[href],button:not([disabled]),input:not([type="hidden"]):not([disabled]),' +
+  'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+/**
+ * Dialog keyboard behaviour: Escape to close, Tab kept inside, focus moved in
+ * on open and returned to the trigger on close.
+ *
+ * Extracted from Modal because the project and member drawers are dialogs too
+ * and had none of it — Tab walked straight out into the page behind them.
+ */
+export function useDialogBehavior(
+  open: boolean,
+  onClose: () => void,
+  ref: React.RefObject<HTMLElement | null>,
+  opts: { dismissible?: boolean } = {},
+) {
+  const dismissible = opts.dismissible !== false;
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && dismissible) { onCloseRef.current(); return; }
+      if (e.key !== "Tab" || !ref.current) return;
+      const focusable = Array.from(ref.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (focusable.length === 0) { e.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else if (document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    const timer = setTimeout(() => {
+      const root = ref.current;
+      if (!root) return;
+      if (root.contains(document.activeElement)) return;
+      const field = root.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled])'
+      );
+      const fallback = root.querySelector<HTMLElement>('button:not([disabled]),[tabindex]:not([tabindex="-1"])');
+      (field ?? fallback ?? root)?.focus();
+    }, 0);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(timer);
+      previouslyFocused?.focus();
+    };
+  }, [open, dismissible, ref]);
+}
 
 export function Modal({ open, onClose, title, children, dismissible = true }: {
   open: boolean;
@@ -79,56 +157,20 @@ export function Modal({ open, onClose, title, children, dismissible = true }: {
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const onCloseRef = useRef(onClose);
 
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useDialogBehavior(open, onClose, dialogRef, { dismissible });
 
+  // Cmd/Ctrl+Enter submits the dialog's form — specific to Modal, which is the
+  // only dialog that wraps one.
   useEffect(() => {
     if (!open) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && dismissible) { onCloseRef.current(); return; }
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && dialogRef.current) {
-        const form = dialogRef.current.querySelector<HTMLFormElement>("form");
-        if (form) { e.preventDefault(); form.requestSubmit(); return; }
-      }
-      if (e.key !== "Tab" || !dialogRef.current) return;
-      const focusable = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-        )
-      );
-      if (focusable.length === 0) { e.preventDefault(); return; }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-      } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key !== "Enter" || !dialogRef.current) return;
+      const form = dialogRef.current.querySelector<HTMLFormElement>("form");
+      if (form) { e.preventDefault(); form.requestSubmit(); }
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [dismissible, open]);
-
-  // Auto-focus the first real form field when the modal opens. We pick the
-  // first input/textarea/select before falling back to a button so the close
-  // X (which sits earlier in the DOM) isn't what receives focus.
-  useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(() => {
-      const root = dialogRef.current;
-      if (!root) return;
-      const field = root.querySelector<HTMLElement>(
-        'input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled])'
-      );
-      const fallback = root.querySelector<HTMLElement>('button:not([disabled]),[tabindex]:not([tabindex="-1"])');
-      (field ?? fallback)?.focus();
-    }, 0);
-    return () => clearTimeout(timer);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
   if (!open) return null;
@@ -249,7 +291,7 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
     <div className="relative w-full">
       <select
         {...props}
-        className={`w-full appearance-none bg-[#0F1014] border border-white/35 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
+        className={`w-full appearance-none bg-[#0F1014] border border-white/35 rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
       >
         {children ?? (
           <>
@@ -258,38 +300,11 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
           </>
         )}
       </select>
-      {/* Custom chevron — positioned well inside the border */}
-      <svg
-        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
-        viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
     </div>
   );
 }
 
 // ── SEARCH BAR ────────────────────────────────────────────────────────────────
-
-// Cmd/Ctrl+K from anywhere on the page focuses the first SearchBar.
-// SearchBar tags its input with data-search-bar so this hook can find it.
-function useSearchBarShortcut() {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        const el = document.querySelector<HTMLInputElement>("input[data-search-bar]");
-        if (el) {
-          e.preventDefault();
-          el.focus();
-          el.select();
-        }
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-}
 
 export function SearchBar({ value, onChange, placeholder = "Search…", debounceMs = 250 }: {
   value: string;
@@ -297,10 +312,7 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
   placeholder?: string;
   debounceMs?: number;
 }) {
-  useSearchBarShortcut();
   const [local, setLocal] = useState(value);
-  const [focused, setFocused] = useState(false);
-  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
   useEffect(() => { setLocal(value); }, [value]);
 
@@ -327,12 +339,9 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
       <input
-        data-search-bar=""
         aria-label="Search"
         value={local}
         onChange={(e) => handleChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         placeholder={placeholder}
         className="w-full bg-[#1C1F26] border border-white/35 rounded-lg pl-9 pr-16 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-[#F6B78D] transition-colors"
       />
@@ -348,10 +357,6 @@ export function SearchBar({ value, onChange, placeholder = "Search…", debounce
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
-      ) : !focused ? (
-        <kbd className="hidden sm:inline-flex absolute right-2 top-1/2 -translate-y-1/2 items-center gap-0.5 h-5 px-1.5 rounded border border-white/10 bg-white/5 text-[10px] text-white/40 font-medium pointer-events-none">
-          {isMac ? "⌘" : "Ctrl"}K
-        </kbd>
       ) : null}
     </div>
   );
@@ -766,6 +771,30 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
   );
 }
 
+// Nothing loaded, and we know why. Distinct from Empty on purpose: "no results"
+// and "the query failed" look identical to a reader otherwise, and one of them
+// is a number they should not trust.
+export function LoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-6 text-center">
+      <p className="text-sm text-red-300">Couldn&apos;t load this.</p>
+      <p className="mt-1 text-[11px] text-white/45">
+        Nothing here is up to date — don&apos;t read the numbers as zero.
+      </p>
+      <p className="mt-2 font-mono text-[10px] text-white/30">{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-3 rounded-md border border-white/15 px-3 py-1 text-[11px] text-white/70 transition-colors hover:border-white/35 hover:text-white/90"
+        >
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── CONFIRM DELETE DIALOG ─────────────────────────────────────────────────────
 // Returns an `ask` function to trigger the dialog and a `Dialog` component to render it.
 // Usage: const { ask, Dialog } = useConfirm();
@@ -1013,7 +1042,7 @@ export function Toggle({ checked, onChange, label }: {
 }
 
 // ── VIEW PANEL ────────────────────────────────────────────────────────────────
-// Unified "View" button + dropdown used by every admin table to host filter,
+// Unified filter button + dropdown used by every admin table to host filter,
 // sort, and column-visibility controls in one place.
 
 export interface SortRule { col: number; dir: "asc" | "desc" }
@@ -1077,7 +1106,7 @@ export function SortPanel({
 }
 
 export function ViewPanel({
-  active: _active,
+  active = false,
   align = "right",
   children,
 }: {
@@ -1104,9 +1133,15 @@ export function ViewPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors border-white/12 bg-transparent text-white/45 hover:text-white/70 hover:border-white/18"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+          active
+            ? "border-[#F6B78D]/40 bg-[#F6B78D]/10 text-[#F6B78D]"
+            : "border-white/12 bg-transparent text-white/55 hover:border-white/18 hover:text-white/75"
+        }`}
       >
-        View
+        Filters
+        {active && <span className="h-1.5 w-1.5 rounded-full bg-current" aria-label="Filters active" />}
       </button>
       {open && (
         <div

@@ -1,8 +1,11 @@
 -- Grant service_role full access to all tables (needed for server-side scripts)
 GRANT USAGE ON SCHEMA public TO service_role;
+
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 
 -- Ensure future tables also get the grant
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;

@@ -35,6 +35,7 @@ export interface PublicShowcaseCard {
   imageUrl?: string;
   featuredOnHome: boolean;
   sortIndex?: number;
+  homeSortIndex?: number;
 }
 
 export interface PublicMapEntry {
@@ -65,8 +66,6 @@ export interface PublicLiveStats {
   totalBusinesses: number;
   websiteProjects: number;   // W# count
   marketingProjects: number; // M# count
-  caseStudies: number;       // C# count
-  educationalReports: number;// R# count
   bidPartners: number;
 }
 
@@ -84,6 +83,10 @@ const NYC_COORDINATE_BOUNDS = {
   maxLng: -73.65,
 };
 
+export function clearPublicShowcaseCache(): void {
+  businessesCache = null;
+}
+
 async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>>> {
   const now = Date.now();
   if (businessesCache && now - businessesCache.fetchedAt < BUSINESSES_CACHE_TTL_MS) {
@@ -91,7 +94,8 @@ async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>
   }
   try {
     const sb = getSupabaseAdmin();
-    const { data } = await sb.from("businesses").select("*").is("deleted_at", null);
+    const { data, error } = await sb.from("businesses").select("*").is("deleted_at", null);
+    if (error) throw new Error(`businesses: ${error.message}`);
     const obj: Record<string, Record<string, unknown>> = {};
     for (const row of data ?? []) {
       const r = row as Record<string, unknown>;
@@ -102,8 +106,12 @@ async function fetchBusinesses(): Promise<Record<string, Record<string, unknown>
     }
     businessesCache = { data: obj, fetchedAt: now };
     return obj;
-  } catch {
-    return {};
+  } catch (error) {
+    // A stale snapshot is safer than publishing an empty showcase during a
+    // transient database problem. With no prior snapshot, fail the rebuild so
+    // the CDN keeps serving the last successful page.
+    if (businessesCache) return businessesCache.data;
+    throw error;
   }
 }
 
@@ -216,6 +224,10 @@ function defaultShowcaseColor(): PublicShowcaseColor {
 
 function mapBusinessStatusToShowcase(value: unknown): PublicShowcaseStatus {
   const key = asText(value);
+  // Tech statuses first — this is what the tracker actually writes now.
+  if (key === "Live") return "Completed";
+  if (key === "Assigned" || key === "Draft Ready" || key === "With Client") return "Ongoing";
+  if (key === "Backlog" || key === "On Hold" || key === "Dropped") return "Upcoming";
   if (key === "Completed" || key === "Complete") return "Completed";
   if (
     key === "Ongoing" || 
@@ -239,13 +251,25 @@ function defaultServicesFromDivision(value: unknown): string[] {
 }
 
 function inferDivision(value: unknown, row: Record<string, unknown>): "Tech" | "Marketing" | "Finance" {
+  // project_tracks is canonical; `division` is a denormalised copy on its way out.
+  const tracks = asStringArray(row.projectTracks);
+  for (const candidate of ["Tech", "Marketing", "Finance"] as const) {
+    if (tracks.includes(candidate)) return candidate;
+  }
+
   const direct = asText(value);
   if (direct === "Tech" || direct === "Marketing" || direct === "Finance") return direct;
 
-  const services = asStringArray(row.showcaseServices).map((item) => item.toLowerCase());
+  const services = resolveServices(row).map((item) => item.toLowerCase());
   if (services.some((item) => item.includes("grant") || item.includes("finance") || item.includes("ops"))) return "Finance";
   if (services.some((item) => item.includes("social") || item.includes("content") || item.includes("brand"))) return "Marketing";
   return "Tech";
+}
+
+// One canonical service list feeds both public cards and admin usage counts, so
+// those surfaces cannot drift between two copies.
+function resolveServices(row: Record<string, unknown>): string[] {
+  return asStringArray(row.activeServices);
 }
 
 function divisionLabel(value: "Tech" | "Marketing" | "Finance"): string {
@@ -448,23 +472,29 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
   const fallbackCards: PublicShowcaseCard[] = [];
 
   for (const [id, row] of Object.entries(rows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
 
     const division = inferDivision(row.division, row);
     const type = divisionLabel(division);
-    const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
-    const services = asStringArray(row.showcaseServices);
+    const neighborhood = normalizeNeighborhood(undefined, row);
+    const services = resolveServices(row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
-    const status = mapBusinessStatusToShowcase(row.projectStatus);
+    const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
     const desc = normalizeDescription(row.showcaseDescription);
-    const url = asText(row.showcaseUrl);
+    // Read the tracker's own fields first so the public link follows the project
+    // rather than a separately-maintained copy. A launched domain wins over a
+    // preview. There is no second public-only URL to drift out of sync.
+    const url = asText(row.liveUrl) || asText(row.previewUrl);
     const imageUrl = resolvePublicShowcaseImageUrl(id, row);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();
-    const featuredOnHome = asBool(row.showcaseFeaturedOnHome, status !== "Upcoming");
-    const sortIndex = typeof row.sortIndex === "number" ? row.sortIndex : undefined;
+    const featuredOnHome = asBool(row.showcaseFeaturedOnHome, false);
+    const sortIndex = typeof row.showcaseSortIndex === "number"
+      ? row.showcaseSortIndex
+      : (typeof row.sortIndex === "number" ? row.sortIndex : undefined);
+    const homeSortIndex = typeof row.homeSortIndex === "number" ? row.homeSortIndex : sortIndex;
 
     const card: PublicShowcaseCard = {
       id,
@@ -479,6 +509,7 @@ export async function getPublicShowcaseCards(): Promise<PublicShowcaseCard[]> {
       imageUrl: imageUrl || undefined,
       featuredOnHome,
       sortIndex,
+      homeSortIndex,
     };
 
     if (asBool(row.showcaseEnabled, false)) {
@@ -511,14 +542,14 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
   let financeProjects = 0;
 
   for (const [, row] of Object.entries(rows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
 
-    const status = mapBusinessStatusToShowcase(row.projectStatus);
+    const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
     if (status === "Upcoming") continue;
 
     totalProjects++;
-    const services = asStringArray(row.showcaseServices);
+    const services = resolveServices(row);
     const division = inferDivision(row.division, row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
 
@@ -533,15 +564,16 @@ export async function getPublicImpactStats(): Promise<PublicImpactStats> {
 }
 
 export async function getPublicLiveStats(): Promise<PublicLiveStats> {
-  const ZERO: PublicLiveStats = { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, caseStudies: 0, educationalReports: 0, bidPartners: 0 };
+  const ZERO: PublicLiveStats = { totalBusinesses: 0, websiteProjects: 0, marketingProjects: 0, bidPartners: 0 };
   let sb;
   try { sb = getSupabaseAdmin(); } catch { return ZERO; }
 
-  const [businessRows, { data: financeRows }, { data: bidsRows }] = await Promise.all([
+  const [businessRows, bidsResult] = await Promise.all([
     fetchBusinesses(),
-    sb.from("finance_assignments").select("type"),
     sb.from("bids").select("id").eq("status", "Active Partner"),
   ]);
+  if (bidsResult.error) throw new Error(`bids: ${bidsResult.error.message}`);
+  const bidsRows = bidsResult.data;
 
   let totalBusinesses = 0;
   const businesses: Array<{
@@ -553,7 +585,7 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
   }> = [];
 
   for (const [id, row] of Object.entries(businessRows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
     totalBusinesses++;
     businesses.push({
@@ -590,48 +622,45 @@ export async function getPublicLiveStats(): Promise<PublicLiveStats> {
     }
   }
 
-  let caseStudies = 0;
-  let educationalReports = 0;
-  for (const row of financeRows ?? []) {
-    const r = row as Record<string, unknown>;
-    if (r.type === "Case Study") caseStudies++;
-    else if (r.type === "Report") educationalReports++;
-  }
 
   const bidPartners = bidsRows?.length ?? 0;
 
-  return { totalBusinesses, websiteProjects: wCount, marketingProjects: mCount, caseStudies, educationalReports, bidPartners };
+  return { totalBusinesses, websiteProjects: wCount, marketingProjects: mCount, bidPartners };
 }
 
 export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   let sb;
   try { sb = getSupabaseAdmin(); } catch { return []; }
 
-  const [businessRows, { data: bidsRows }] = await Promise.all([
+  const [businessRows, bidsResult] = await Promise.all([
     fetchBusinesses(),
     sb.from("bids").select("*"),
   ]);
+  if (bidsResult.error) throw new Error(`bids: ${bidsResult.error.message}`);
+  const bidsRows = bidsResult.data;
 
   const entries: PublicMapEntry[] = [];
   const businessGeocodeWrites: Array<{ id: string; lat: number; lng: number }> = [];
   const businessesMissingCoords: Array<{ id: string; address: string; borough: string; entry: PublicMapEntry }> = [];
 
   for (const [id, row] of Object.entries(businessRows)) {
-    const name = asText(row.showcaseName) || asText(row.name);
+    const name = asText(row.name);
     if (!name) continue;
 
     const division = inferDivision(row.division, row);
     const type = divisionLabel(division);
-    const neighborhood = normalizeNeighborhood(row.showcaseNeighborhood, row);
-    const services = asStringArray(row.showcaseServices);
+    const neighborhood = normalizeNeighborhood(undefined, row);
+    const services = resolveServices(row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
-    const status = mapBusinessStatusToShowcase(row.projectStatus);
-    const url = asText(row.showcaseUrl);
+    const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
+    // A launched domain wins over its Vercel preview. There is no separate
+    // public-only URL to drift out of sync with the tracker.
+    const url = asText(row.liveUrl) || asText(row.previewUrl);
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();
     const address = asText(row.address);
-    const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(row.showcaseNeighborhood, row));
+    const borough = normalizeBoroughName(asText(row.borough) || normalizeNeighborhood(undefined, row));
     const lat = asNumber(row.lat);
     const lng = asNumber(row.lng);
     const hasNycCoords = isNycCoordinate(lat ?? undefined, lng ?? undefined);
@@ -679,7 +708,7 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
   }
 
   if (businessGeocodeWrites.length > 0) {
-    await Promise.allSettled(
+    const writes = await Promise.allSettled(
       businessGeocodeWrites.map(({ id, lat, lng }) =>
         sb.from("businesses").update({
           lat,
@@ -688,6 +717,9 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
         }).eq("id", id),
       ),
     );
+    for (const write of writes) {
+      if (write.status === "rejected") console.error("Business geocode write failed", write.reason);
+    }
     // Bust the cache so next call picks up the new coords.
     businessesCache = null;
   }
@@ -727,18 +759,40 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
 }
 
 
-const DEFAULT_CHAPTERS = ["New York", "Boston", "Chicago", "California", "Michigan"];
+// Only used if the chapters table can't be read at all — the apply form must
+// still render something rather than an empty dropdown.
+// Only used when the chapters table cannot be read at all. An empty result is
+// a real answer — every chapter archived means the form should offer none, not
+// quietly resurrect New York.
+const DEFAULT_CHAPTERS = ["New York"];
 
 export async function getApplicationsStatus(): Promise<{ paused: boolean; message: string; chapters: string[] }> {
   const fallback = { paused: false, message: "", chapters: DEFAULT_CHAPTERS };
   let sb;
   try { sb = getSupabaseAdmin(); } catch { return fallback; }
-  const { data } = await sb.from("site_settings").select("applications_paused, applications_paused_msg, chapters").eq("id", "singleton").maybeSingle();
-  if (!data) return fallback;
-  const r = data as Record<string, unknown>;
+
+  // Chapters come from the chapters table, not the old site_settings text
+  // array. Two lists meant the apply form offered five cities while the portal
+  // knew about two.
+  const [settingsResult, chapterResult] = await Promise.all([
+    sb.from("site_settings").select("applications_paused, applications_paused_msg").eq("id", "singleton").maybeSingle(),
+    sb.from("chapters").select("name, status, sort_order").neq("status", "Archived").order("sort_order"),
+  ]);
+  const { data, error: settingsError } = settingsResult;
+  const { data: chapterRows, error: chapterError } = chapterResult;
+  if (settingsError) throw new Error(`site_settings: ${settingsError.message}`);
+
+  const chapters = (chapterRows ?? [])
+    .map((c) => String((c as { name?: string }).name ?? "").trim())
+    .filter(Boolean);
+
+  const r = (data ?? {}) as Record<string, unknown>;
+  const paused = Boolean(r.applications_paused ?? false);
   return {
-    paused: Boolean(r.applications_paused ?? false),
+    // No readable chapter means nowhere to apply to, so the form closes rather
+    // than inventing a location.
+    paused: paused || (!chapterError && chapters.length === 0),
     message: String(r.applications_paused_msg ?? "Applications are currently paused. Check back soon."),
-    chapters: Array.isArray(r.chapters) && r.chapters.length > 0 ? (r.chapters as string[]) : DEFAULT_CHAPTERS,
+    chapters: chapterError ? DEFAULT_CHAPTERS : chapters,
   };
 }
