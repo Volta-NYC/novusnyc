@@ -109,6 +109,14 @@ export default function MemberDrawer({
     [podMembers, memberId],
   );
 
+  // LIT supersedes Member in the ladder, so it replaces that word here the same
+  // way it does in the directory. A leadership title stays as it is.
+  const roleLabel = useMemo(() => {
+    const stored = String(member?.role ?? "").trim();
+    const leadsAPod = myPodRows.some((m) => m.role === "lit");
+    return leadsAPod && (stored === "" || stored === "Member") ? "LIT" : stored;
+  }, [member?.role, myPodRows]);
+
   const bySource = useMemo(() => {
     const m = new Map<HoursEntry["source"], number>();
     for (const h of hours ?? []) m.set(h.source, (m.get(h.source) ?? 0) + Number(h.hours || 0));
@@ -201,7 +209,7 @@ export default function MemberDrawer({
           <div className="min-w-0">
             <h2 id={drawerTitleId} className="truncate font-semibold text-white">{member.name}</h2>
             <p className="mt-0.5 text-[11px] text-white/35">
-              {[member.role, member.school].filter(Boolean).join(" · ") || member.email}
+              {[roleLabel, member.school].filter(Boolean).join(" · ") || member.email}
             </p>
           </div>
           <button

@@ -965,41 +965,55 @@ export default function TeamPage() {
                               <span className="text-white/50">{gradeToClassOf(member.grade, member.acceptedDate || member.joinDate) || "—"}</span>
                             </td>
                           );
-                          case "role": return (
-                            <td key="role" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1">
-                                {canEdit ? (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (openRolePopoverId === member.id) {
-                                        setOpenRolePopoverId(null);
-                                        setPopoverPos(null);
-                                      } else {
-                                        const r = e.currentTarget.getBoundingClientRect();
-                                        setPopoverPos({ top: r.bottom + 4, left: r.left });
-                                        setOpenRolePopoverId(member.id);
-                                      }
-                                    }}
-                                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:brightness-110 ${ROLE_CHIP[roleTierOf(member)]}`}
-                                    title="Click to change role"
-                                  >
-                                    {displayRoleValue(member.role)}
-                                  </button>
-                                ) : (
-                                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${ROLE_CHIP[roleTierOf(member)]}`}>
-                                    {displayRoleValue(member.role)}
-                                  </span>
-                                )}
-                                {leadsAPod(member) && (
-                                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${ROLE_CHIP.lit}`} title="Leads a pod">
-                                    LIT
-                                  </span>
-                                )}
-                              </span>
-                            </td>
-                          );
+                          case "role": return (() => {
+                            const roleTier = roleTierOf(member);
+                            const isLit = leadsAPod(member);
+                            // LIT sits above Member in the ladder, so it replaces
+                            // that label rather than sitting beside it. A leadership
+                            // role is a separate fact and still shows alongside —
+                            // collapsing those would hide one of the two.
+                            const litReplacesRole = isLit && roleTier === "member";
+                            const label = litReplacesRole ? "LIT" : displayRoleValue(member.role);
+                            const chip = litReplacesRole ? ROLE_CHIP.lit : ROLE_CHIP[roleTier];
+                            const hint = litReplacesRole
+                              ? "Leads a pod. Click to change their roster role."
+                              : "Click to change role";
+                            return (
+                              <td key="role" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1">
+                                  {canEdit ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (openRolePopoverId === member.id) {
+                                          setOpenRolePopoverId(null);
+                                          setPopoverPos(null);
+                                        } else {
+                                          const r = e.currentTarget.getBoundingClientRect();
+                                          setPopoverPos({ top: r.bottom + 4, left: r.left });
+                                          setOpenRolePopoverId(member.id);
+                                        }
+                                      }}
+                                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:brightness-110 ${chip}`}
+                                      title={hint}
+                                    >
+                                      {label}
+                                    </button>
+                                  ) : (
+                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${chip}`} title={litReplacesRole ? "Leads a pod" : undefined}>
+                                      {label}
+                                    </span>
+                                  )}
+                                  {isLit && !litReplacesRole && (
+                                    <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${ROLE_CHIP.lit}`} title="Leads a pod">
+                                      LIT
+                                    </span>
+                                  )}
+                                </span>
+                              </td>
+                            );
+                          })();
                           case "resume": return (
                             <td key="resume" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
                               {(() => {
