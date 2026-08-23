@@ -12,6 +12,31 @@ type Draft = { title: string; description: string; dueDate: string; hours: strin
 const blank = (pod: Pod): Draft => ({ title: "", description: "", dueDate: "", hours: String(pod.defaultTaskHours), deliverableUrl: "", assignedMemberIds: [] });
 const statusHelp = (status: PodAssignment["status"]) => status === "Open" ? "Not started" : status === "In Progress" ? "Member is working" : status === "In Review" ? "LIT needs to check it" : "Approved; hours certified";
 
+type WorkTemplate = { label: string; title: string; description: string };
+
+function templatesForPod(pod: Pod): WorkTemplate[] {
+  if (/grant|fund/i.test(pod.name)) return [
+    { label: "Research a grant", title: "Research and add a grant opportunity", description: "Verify the source, eligibility, geography, amount, deadline, and required materials. Add the complete record to the Grant tracker and paste the source link as the deliverable." },
+    { label: "Verify eligibility", title: "Verify grant eligibility and requirements", description: "Read the official grant source, confirm who can apply, list required materials, and flag anything that needs follow-up before the opportunity is shared." },
+    { label: "Prepare application", title: "Prepare grant application materials", description: "Gather the required materials, draft the requested responses, and place the working document or folder in the deliverable link for review." },
+  ];
+  if (/social|brand/i.test(pod.name)) return [
+    { label: "Create a post", title: "Create social media post", description: "Use the current brand guidelines. Include the editable Canva/design link, draft caption, intended platform, and any partner tags. Move to In Review when the draft is ready for feedback." },
+    { label: "Revise a draft", title: "Revise social media draft", description: "Apply the review notes, check branding and readability, and update the same deliverable link before requesting review again." },
+    { label: "Plan content", title: "Plan upcoming content", description: "Propose the topic, goal, intended audience, posting window, source material, and any partner outreach needed before production starts." },
+  ];
+  if (/ambassador/i.test(pod.name)) return [
+    { label: "Research a school", title: "Research school and counselor contact", description: "Confirm the school name, borough, relevant counselor or program contact, and a public source for the contact information. Record the result in the deliverable." },
+    { label: "Send outreach", title: "Send school or partner outreach", description: "Personalize the approved outreach message, record when it was sent, and set a follow-up deadline. Put the sent message or tracking record in the deliverable link." },
+    { label: "Prepare a pitch", title: "Prepare outreach pitch", description: "Review the organization, prepare a concise Novus introduction, list likely questions, and attach the pitch notes for the next practice call." },
+  ];
+  return [
+    { label: "Research a lead", title: "Research and qualify a business lead", description: "Confirm the business, public contact information, current website or social presence, likely needs, and why Novus is a fit. Link the research notes as the deliverable." },
+    { label: "Contact a business", title: "Contact and follow up with business", description: "Send the approved outreach, record the contact attempt and response, and set the next follow-up date. Attach the sent message or call notes." },
+    { label: "Prepare proposal", title: "Prepare business support proposal", description: "Summarize the business need, recommended services, scope, owner, and next steps. Attach the proposal or consultation notes for LIT review." },
+  ];
+}
+
 export default function PodAssignments({ pod, roster, nameById, canEdit, myId }: {
   pod: Pod; roster: PodMember[]; nameById: Map<string, string>; canEdit: boolean; myId: string | null;
 }) {
@@ -24,6 +49,7 @@ export default function PodAssignments({ pod, roster, nameById, canEdit, myId }:
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const templates = useMemo(() => templatesForPod(pod), [pod]);
 
   useEffect(() => subscribePodAssignments((rows, state) => { setAll(rows); setLoadError(state.error); }), []);
   const podRows = useMemo(() => (all ?? []).filter((a) => a.podId === pod.id), [all, pod.id]);
@@ -115,6 +141,26 @@ export default function PodAssignments({ pod, roster, nameById, canEdit, myId }:
 
     <Modal open={editing !== null} onClose={() => !saving && setEditing(null)} title={editing === "new" ? "Assign work" : "Edit assignment"}>
       <form className="space-y-4" onSubmit={save}>
+        {editing === "new" && (
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/55">Start with a common task</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {templates.map((template) => (
+                <Btn
+                  key={template.label}
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="h-auto min-h-10 whitespace-normal px-3 py-2 text-left"
+                  onClick={() => setDraft((value) => ({ ...value, title: template.title, description: template.description }))}
+                >
+                  {template.label}
+                </Btn>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-white/40">Templates fill the brief; every field remains editable.</p>
+          </div>
+        )}
         <Field label="Assignment" required><Input autoFocus value={draft.title} onChange={(e) => setDraft((v) => ({ ...v, title: e.target.value }))} /></Field>
         <Field label="What does done look like?"><TextArea rows={4} placeholder="Describe the deliverable and where it should be shared." value={draft.description} onChange={(e) => setDraft((v) => ({ ...v, description: e.target.value }))} /></Field>
         <div className="grid gap-4 sm:grid-cols-3">
