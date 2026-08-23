@@ -1,6 +1,6 @@
 import "server-only";
 
-import { dbRead, dbPatch, dbPush, getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { dbRead, getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { pickPrimaryTrack, trackToDivisions } from "@/lib/server/memberPlacement";
 import { canonicalEmail, findPersonMatch, normalizeKey } from "@/lib/identity";
 
@@ -36,6 +36,9 @@ export async function promoteApplicantToMember(params: {
   // failed promotion can never leave an application marked Accepted with no
   // member behind it.
   markAcceptedRole?: string;
+  interviewSlotId?: string;
+  interviewScheduledAt?: string;
+  applicationNotes?: string;
 }): Promise<PromoteResult> {
   const fullName = String(params.fullName ?? "").trim();
   const email = canonicalEmail(params.email);
@@ -51,7 +54,7 @@ export async function promoteApplicantToMember(params: {
     ([, row]) => ({ email: row.email, alternateEmail: row.alternateEmail, name: row.name }),
     // Promotion merges records, so a fuzzy name match here would fuse two
     // different people into one member.
-    { strictNames: true },
+    { strictNames: true, allowNameFallbackWithEmail: false },
   );
 
   // The application already knows where this person is; not carrying it over
@@ -61,7 +64,19 @@ export async function promoteApplicantToMember(params: {
     : null;
   const appCity     = String(application?.city ?? "").trim();
   const appState    = String(application?.state ?? "").trim();
-  const appChapter  = String(application?.chapterId ?? application?.chapter_id ?? "").trim();
+  const appChapterRaw = String(application?.chapterId ?? application?.chapter_id ?? application?.chapter ?? "").trim();
+  let appChapter = "";
+  if (appChapterRaw) {
+    const chapters = ((await dbRead("chapters")) ?? {}) as Record<string, Record<string, unknown>>;
+    const wanted = normalizeKey(appChapterRaw);
+    const resolved = Object.entries(chapters).find(([id, row]) =>
+      normalizeKey(id) === wanted
+      || normalizeKey(row.name) === wanted
+      || normalizeKey(row.slug) === wanted
+      || normalizeKey(row.city) === wanted,
+    );
+    appChapter = resolved?.[0] ?? "";
+  }
 
   const track = pickPrimaryTrack(params.tracksSelected ?? "");
   const nowIso = new Date().toISOString();
@@ -102,68 +117,68 @@ export async function promoteApplicantToMember(params: {
     if (isBlank(existing.chapterId) && appChapter) patch.chapterId = appChapter;
 
     if (Object.keys(patch).length > 0) {
-      patch.updatedAt = nowIso;
-      await dbPatch(`team/${targetId}`, patch);
+      patch.updated_at = nowIso;
     }
-    await linkApplication(params.applicationId, targetId, params.decidedBy, params.markAcceptedRole);
+    await applyPromotionTransaction(params, targetId, toDatabasePatch(patch), nowIso);
     return {
       memberId: targetId,
       action: "updated",
       matchedOn,
-      changedFields: Object.keys(patch).filter((k) => k !== "updatedAt"),
+      changedFields: Object.keys(patch).filter((k) => k !== "updated_at"),
     };
   }
 
-  const memberId = await dbPush("team", {
+  const memberId = `member_${crypto.randomUUID().replace(/-/g, "").slice(0, 20)}`;
+  const memberData = {
+    id: memberId,
     name: fullName,
     school: params.schoolName ?? "",
     grade: params.grade ?? "",
     divisions: track === "Other" ? [] : trackToDivisions(track),
     role: params.role,
-    slackHandle: "",
+    slack_handle: "",
     email,
-    alternateEmail: "",
+    alternate_email: "",
     status: "Active",
     skills: [],
-    joinDate: today,
-    acceptedDate: today,
-    homeCity: appCity,
-    homeState: appState,
-    ...(appChapter ? { chapterId: appChapter } : {}),
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  });
+    join_date: today,
+    accepted_date: today,
+    home_city: appCity,
+    home_state: appState,
+    ...(appChapter ? { chapter_id: appChapter } : {}),
+    created_at: nowIso,
+    updated_at: nowIso,
+  };
 
-  // Provenance lives in member_notes, which only owners and admins can read.
-  await getSupabaseAdmin().from("member_notes")
-    .upsert({ member_id: memberId, note: params.source, updated_at: nowIso },
-            { onConflict: "member_id" });
-
-  await linkApplication(params.applicationId, memberId, params.decidedBy, params.markAcceptedRole);
+  await applyPromotionTransaction(params, null, memberData, nowIso);
   return { memberId, action: "created", matchedOn: null, changedFields: ["created"] };
 }
 
-// Record which member this application became, so nothing has to re-guess the
-// match later, and stamp the decision in the same write.
-//
-// This runs only once the member row is confirmed, which is the whole point of
-// its position: the caller no longer marks the application Accepted up front,
-// so the "accepted applicant with no member record" state cannot occur. A
-// failure here leaves a real member and an un-stamped application — visible and
-// re-runnable, which the reverse never was.
-async function linkApplication(
-  applicationId: string | undefined,
-  memberId: string,
-  decidedBy?: string,
-  markAcceptedRole?: string,
+function toDatabasePatch(patch: Record<string, unknown>): Record<string, unknown> {
+  const names: Record<string, string> = {
+    alternateEmail: "alternate_email", acceptedDate: "accepted_date",
+    homeCity: "home_city", homeState: "home_state", chapterId: "chapter_id",
+  };
+  return Object.fromEntries(Object.entries(patch).map(([key, value]) => [names[key] ?? key, value]));
+}
+
+async function applyPromotionTransaction(
+  params: Parameters<typeof promoteApplicantToMember>[0],
+  memberId: string | null,
+  memberPatch: Record<string, unknown>,
+  nowIso: string,
 ): Promise<void> {
-  if (!applicationId) return;
-  await dbPatch(`applications/${applicationId}`, {
-    memberId,
-    decidedAt: new Date().toISOString(),
-    decidedBy: decidedBy ?? "",
-    ...(markAcceptedRole
-      ? { status: "Accepted", finalDecisionRole: markAcceptedRole }
-      : {}),
+  if (!params.applicationId) throw new Error("missing_application_id");
+  const { error } = await getSupabaseAdmin().rpc("promote_application_transaction", {
+    p_application_id: params.applicationId,
+    p_member_id: memberId,
+    p_member_patch: { ...memberPatch, updated_at: nowIso },
+    p_source_note: params.source,
+    p_decided_by: params.decidedBy ?? "",
+    p_final_role: params.markAcceptedRole ?? params.role,
+    p_interview_slot_id: params.interviewSlotId ?? null,
+    p_interview_scheduled_at: params.interviewScheduledAt ?? null,
+    p_application_notes: params.applicationNotes ?? null,
   });
+  if (error) throw new Error(error.message);
 }

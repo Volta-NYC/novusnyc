@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Btn } from "@/components/members/ui";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 import {
-  fetchAttendance, saveAttendance, updatePodMeeting,
-  subscribeInfractions, subscribeMemberStrikes, createMemberStrike,
+  fetchAttendance, saveAttendance,
   ATTENDANCE_STATUSES,
   type Pod, type PodMeeting, type PodMember, type PodRole, type PodAttendance, type AttendanceStatus,
-  type Infraction, type MemberStrike,
 } from "@/lib/members/storage";
 
 type Cell = { status: AttendanceStatus | null; tasksDone: number; note: string; hours: number | null };
@@ -18,9 +17,8 @@ const STATUS_STYLE: Record<AttendanceStatus, string> = {
   Unexcused: "bg-red-500/20 text-red-300 border-red-500/30",
 };
 
-// The only screen a LIT has to use. Roster is prefilled, everyone starts
-// Present, and the totals are computed — so filling it in is marking the
-// exceptions and pressing save once.
+// The only screen a LIT has to use. Nobody starts Present: certified hours are
+// written only after an explicit choice (or the explicit Mark all control).
 export default function AttendanceGrid({
   pod, meeting, roster, nameById, canEdit, myId, onDelete,
 }: {
@@ -35,49 +33,39 @@ export default function AttendanceGrid({
   const [cells, setCells]   = useState<Record<string, Cell> | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved]   = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [hours, setHours]   = useState(String(meeting.hours));
   const [title, setTitle]   = useState(meeting.title);
-  const [infractions, setInfractions] = useState<Infraction[]>([]);
-  const [strikes, setStrikes] = useState<MemberStrike[]>([]);
+  const [issuedMemberIds, setIssuedMemberIds] = useState<Set<string>>(new Set());
   const [issuing, setIssuing] = useState<string | null>(null);
 
-  useEffect(() => subscribeInfractions(setInfractions), []);
-  useEffect(() => subscribeMemberStrikes(setStrikes), []);
+  useEffect(() => {
+    if (!canEdit) return;
+    let live = true;
+    void getAuthToken().then((token) => fetch(
+      `/api/members/pods/attendance-infraction?meetingId=${encodeURIComponent(meeting.id)}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )).then(async (response) => {
+      if (!response.ok) return;
+      const data = await response.json() as { memberIds?: string[] };
+      if (live) setIssuedMemberIds(new Set(data.memberIds ?? []));
+    }).catch(() => undefined);
+    return () => { live = false; };
+  }, [canEdit, meeting.id]);
 
-  // The infraction the grid offers for an unexcused absence. Falls back to the
-  // repeat version once someone already has one on record, so the escalation
-  // doesn't depend on anyone remembering to pick the harsher entry.
-  const absenceInfraction = useMemo(
-    () => infractions.find((i) => i.name.toLowerCase() === "unexcused absence") ?? null,
-    [infractions],
-  );
-  const repeatInfraction = useMemo(
-    () => infractions.find((i) => i.name.toLowerCase() === "repeated unexcused absence") ?? null,
-    [infractions],
-  );
+  const issuedFor = (memberId: string) => issuedMemberIds.has(memberId);
 
-  const issuedFor = (memberId: string) =>
-    strikes.some((s) => s.memberId === memberId && (s.note ?? "").includes(meeting.id));
-
-  const issueAbsence = async (memberId: string, memberName: string) => {
-    const priorAbsences = strikes.filter(
-      (s) => s.memberId === memberId && /absence/i.test(s.infractionName ?? ""),
-    ).length;
-    const chosen = (priorAbsences > 0 ? repeatInfraction : absenceInfraction) ?? absenceInfraction;
-    if (!chosen) return;
+  const issueAbsence = async (memberId: string) => {
     setIssuing(memberId);
     try {
-      await createMemberStrike({
-        memberId,
-        memberName,
-        infractionId: chosen.id,
-        infractionName: chosen.name,
-        points: chosen.points,
-        source: "attendance",
-        issuedBy: "attendance grid",
-        // The meeting id makes this idempotent: the button won't offer twice.
-        note: `${pod.name} meeting ${meeting.meetsOn} (${meeting.id})`,
+      const token = await getAuthToken();
+      const response = await fetch("/api/members/pods/attendance-infraction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ meetingId: meeting.id, memberId }),
       });
+      if (!response.ok) throw new Error("Infraction could not be issued.");
+      setIssuedMemberIds((prev) => new Set(prev).add(memberId));
     } finally {
       setIssuing(null);
     }
@@ -86,9 +74,18 @@ export default function AttendanceGrid({
   // Row-level security returns only a member's own attendance, so filling the
   // rest of the roster with a Present default would show them a pod that was
   // never marked. Whoever can't edit sees their own row and nothing more.
+  const meetingRoster = useMemo(() => {
+    const start = new Date(`${meeting.meetsOn}T00:00:00`).getTime();
+    const end = new Date(`${meeting.meetsOn}T23:59:59`).getTime();
+    return roster.filter((m) => {
+      const joined = !m.joinedAt || new Date(m.joinedAt).getTime() <= end;
+      const notLeft = !m.leftAt || new Date(m.leftAt).getTime() >= start;
+      return joined && notLeft;
+    });
+  }, [roster, meeting.meetsOn]);
   const visibleRoster = useMemo(
-    () => (canEdit ? roster : roster.filter((m) => m.memberId === myId)),
-    [canEdit, roster, myId],
+    () => (canEdit ? meetingRoster : meetingRoster.filter((m) => m.memberId === myId)),
+    [canEdit, meetingRoster, myId],
   );
 
   // Whoever was marked for this meeting stays on it even if they have since
@@ -122,13 +119,11 @@ export default function AttendanceGrid({
     const next: Record<string, Cell> = {};
     for (const m of gridRoster) {
       const found = byMember.get(m.memberId);
-      // An unmarked row on an already-marked meeting is genuinely unknown, so
-      // it starts blank; only a fresh sheet prefills Present.
+      // An unmarked row is unknown, including on a brand-new sheet. Nothing is
+      // certified from a default value the LIT never chose.
       next[m.memberId] = found
         ? { status: found.status, tasksDone: found.tasksDone, note: found.note ?? "", hours: found.hours ?? null }
-        : marked.length > 0
-          ? { status: null, tasksDone: 0, note: "", hours: null }
-          : { status: "Present", tasksDone: 0, note: "", hours: null };
+        : { status: null, tasksDone: 0, note: "", hours: null };
     }
     setCells(next);
   }, [marked, gridRoster]);
@@ -142,7 +137,7 @@ export default function AttendanceGrid({
       if (!c || !c.status) continue;
       t[c.status] += 1;
       t.tasks += c.tasksDone;
-      if (c.status !== "Unexcused") t.hours += c.hours ?? meetingHours;
+      if (c.status === "Present") t.hours += c.hours ?? meetingHours;
     }
     return t;
   }, [cells, gridRoster, hours]);
@@ -153,10 +148,8 @@ export default function AttendanceGrid({
   const save = async () => {
     if (!cells) return;
     setSaving(true);
+    setSaveError("");
     try {
-      if (Number(hours) !== meeting.hours || title !== meeting.title) {
-        await updatePodMeeting(meeting.id, { hours: Number(hours) || 0, title });
-      }
       // Only rows somebody actually marked are written. Defaulting an unset
       // row to Present would certify hours for a meeting nobody recorded.
       await saveAttendance(
@@ -172,9 +165,12 @@ export default function AttendanceGrid({
             note: c.note,
           }];
         }),
+        { title, hours: Number(hours) || 0 },
       );
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Attendance was not saved.");
     } finally {
       setSaving(false);
     }
@@ -348,13 +344,13 @@ export default function AttendanceGrid({
                       />
                     </td>
                     <td className="px-3 py-1.5 whitespace-nowrap">
-                      {c.status === "Unexcused" && canEdit && absenceInfraction && (
+                      {c.status === "Unexcused" && canEdit && (
                         issuedFor(m.memberId) ? (
                           <span className="text-[10px] text-white/30">Infraction issued</span>
                         ) : (
                           <button
                             disabled={issuing === m.memberId}
-                            onClick={() => void issueAbsence(m.memberId, nameById.get(m.memberId) ?? "")}
+                            onClick={() => void issueAbsence(m.memberId)}
                             className="rounded border border-red-400/30 px-1.5 py-0.5 text-[10px] text-red-300 transition-colors hover:bg-red-400/10 disabled:opacity-50"
                           >
                             {issuing === m.memberId ? "…" : "Issue infraction"}
@@ -376,6 +372,7 @@ export default function AttendanceGrid({
             {saving ? "Saving…" : "Save attendance"}
           </Btn>
           {saved && <span className="text-[11px] text-green-400">Saved</span>}
+          {saveError && <span role="alert" className="text-[11px] text-red-400">{saveError}</span>}
           <button
             onClick={onDelete}
             className="ml-auto text-[11px] text-white/30 transition-colors hover:text-red-400"

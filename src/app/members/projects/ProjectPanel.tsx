@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Btn, useDialogBehavior } from "@/components/members/ui";
 import {
   updateBusiness, subscribeChapters, notifyProjectAssigned, TECH_STATUSES, TECH_PRIORITIES,
@@ -22,17 +22,18 @@ export default function ProjectPanel({
   onStatus: (status: TechStatus) => void;
 }) {
   const [draft, setDraft] = useState(business);
+  const [baseline, setBaseline] = useState(business);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [memberQuery, setMemberQuery] = useState("");
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
   useEffect(() => subscribeChapters(setChapters), []);
 
-  useEffect(() => { setDraft(business); setSaved(false); }, [business]);
+  useEffect(() => { setDraft(business); setBaseline(business); setSaved(false); setSaveError(""); }, [business]);
 
   const panelRef = useRef<HTMLElement>(null);
-  useDialogBehavior(true, onClose, panelRef);
 
   const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
   const sortedChapters = useMemo(
@@ -67,11 +68,18 @@ export default function ProjectPanel({
       "hoursLogged", "ownerName", "ownerEmail", "phone", "address", "neighborhood", "targetDate",
       "chapterId",
     ];
-    return keys.some((k) => JSON.stringify(draft[k] ?? "") !== JSON.stringify(business[k] ?? ""));
-  }, [draft, business]);
+    return keys.some((k) => JSON.stringify(draft[k] ?? "") !== JSON.stringify(baseline[k] ?? ""));
+  }, [draft, baseline]);
+
+  const requestClose = useCallback(() => {
+    if (dirty && !window.confirm("Discard the unsaved changes to this project?")) return;
+    onClose();
+  }, [dirty, onClose]);
+  useDialogBehavior(true, requestClose, panelRef);
 
   const save = async () => {
     setSaving(true);
+    setSaveError("");
     try {
       await updateBusiness(business.id, {
         notes: draft.notes,
@@ -94,8 +102,11 @@ export default function ProjectPanel({
       // project don't need telling again every time the notes change.
       const added = (draft.assignees ?? []).filter((id) => !(business.assignees ?? []).includes(id));
       if (added.length > 0) void notifyProjectAssigned({ ...business, ...draft }, added);
+      setBaseline(draft);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1800);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Project changes were not saved.");
     } finally {
       setSaving(false);
     }
@@ -114,7 +125,7 @@ export default function ProjectPanel({
     <>
       <div
         className="fixed inset-0 z-40 bg-black/50 lg:bg-black/25"
-        onClick={onClose}
+        onClick={requestClose}
         aria-hidden="true"
       />
       <aside
@@ -134,7 +145,7 @@ export default function ProjectPanel({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Close"
             className="rounded-md px-2 py-1 text-white/40 transition-colors hover:bg-white/5 hover:text-white"
           >
@@ -152,6 +163,7 @@ export default function ProjectPanel({
                   key={s}
                   disabled={!canEdit}
                   onClick={() => onStatus(s)}
+                  aria-pressed={(business.techStatus ?? "Backlog") === s}
                   className={`rounded-md border px-2 py-1 text-[11px] transition-colors disabled:opacity-50 ${
                     (business.techStatus ?? "Backlog") === s
                       ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
@@ -175,6 +187,7 @@ export default function ProjectPanel({
                     key={p}
                     disabled={!canEdit}
                     onClick={() => setDraft((d) => ({ ...d, techPriority: p as TechPriority }))}
+                    aria-pressed={(draft.techPriority ?? "Medium") === p}
                     className={`rounded px-1.5 py-0.5 text-[10px] transition-colors disabled:opacity-50 ${
                       (draft.techPriority ?? "Medium") === p
                         ? "bg-white/15 text-white"
@@ -198,6 +211,7 @@ export default function ProjectPanel({
                     key={c.id}
                     disabled={!canEdit}
                     onClick={() => setDraft((d) => ({ ...d, chapterId: c.id }))}
+                    aria-pressed={(draft.chapterId ?? sortedChapters[0]?.id) === c.id}
                     className={`rounded-md border px-2 py-1 text-[11px] transition-colors disabled:opacity-50 ${
                       (draft.chapterId ?? sortedChapters[0]?.id) === c.id
                         ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
@@ -394,6 +408,7 @@ export default function ProjectPanel({
             </Btn>
             {dirty && !saving && <span className="text-[11px] text-white/35">Unsaved changes</span>}
             {saved && <span className="text-[11px] text-green-400">Saved</span>}
+            {saveError && <span role="alert" className="text-[11px] text-red-400">{saveError}</span>}
           </footer>
         )}
       </aside>

@@ -19,21 +19,10 @@ import {
 import { useConfirm, Modal, TextArea } from "@/components/members/ui";
 import { formatDate } from "@/lib/format";
 import { toCsv, downloadCsv, dateStampedFilename } from "@/lib/csv";
+import { EXPORT_SECTIONS, type ExportSectionKey } from "@/lib/members/exportSections";
 
-const EXPORT_OPTIONS = [
-  { key: "team",                label: "Team Members" },
-  { key: "userProfiles",        label: "User Profiles" },
-  { key: "businesses",          label: "Businesses" },
-  { key: "assignments",         label: "Assignments" },
-  { key: "assignmentCatalog",   label: "Assignment Catalog" },
-  { key: "applicants",          label: "Applicants" },
-  { key: "bids",                label: "BID Directory" },
-  { key: "emailTemplates",      label: "Email Templates" },
-  { key: "calendarEvents",      label: "Calendar Events" },
-  { key: "auditLogs",           label: "Audit Logs" },
-] as const;
-
-type ExportOptionKey = (typeof EXPORT_OPTIONS)[number]["key"];
+const EXPORT_OPTIONS = EXPORT_SECTIONS;
+type ExportOptionKey = ExportSectionKey;
 type AdminTab = "data" | "frontend" | "handbook" | "audit";
 
 const ADMIN_TAB_HREFS: Record<AdminTab, string> = {

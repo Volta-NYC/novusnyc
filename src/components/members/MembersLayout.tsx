@@ -177,6 +177,8 @@ let _ackSessionDone = false;
 function MembersLayoutInner({ children }: { children: ReactNode }) {
   const { user, userProfile, authRole, isTechLead, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarTriggerRef = useRef<HTMLButtonElement>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false);
   const profilePopoverRef = useRef<HTMLDivElement>(null);
@@ -225,6 +227,21 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   const [ackLoading, setAckLoading] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const trigger = sidebarTriggerRef.current;
+    const first = sidebarRef.current?.querySelector<HTMLElement>("a[href], button:not([disabled])");
+    window.setTimeout(() => first?.focus(), 0);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      trigger?.focus();
+    };
+  }, [sidebarOpen]);
 
   useEffect(() => {
     if (loading) return;
@@ -440,6 +457,8 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside
+        id="member-navigation"
+        ref={sidebarRef}
         // Translated offscreen is still focusable: Tab used to walk into a
         // sidebar the reader could not see. data-closed drives visibility, which
         // does remove it from the tab order, delayed so the slide still plays.
@@ -506,6 +525,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? item.label : undefined}
                 aria-label={sidebarCollapsed ? item.label : undefined}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2.5 rounded-lg text-sm font-body transition-colors ${
                   sidebarCollapsed ? "justify-center px-2 py-2" : "px-3 py-2"
                 } ${isActive ? tone.navActive : tone.navInactive}`}
@@ -600,7 +620,15 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
 
         {/* Mobile top bar */}
         <div className={`lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-10 ${tone.mobileBar}`}>
-          <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open member navigation" className={`rounded p-1 ${tone.burgerText}`}>
+          <button
+            ref={sidebarTriggerRef}
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open member navigation"
+            aria-expanded={sidebarOpen}
+            aria-controls="member-navigation"
+            className={`rounded p-1 ${tone.burgerText}`}
+          >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="12" x2="21" y2="12"/>

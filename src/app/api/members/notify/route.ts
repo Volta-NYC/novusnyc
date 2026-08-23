@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { sendAutomationEmail } from "@/lib/server/notify";
+import { deliverAutomationOnce } from "@/lib/server/automationDelivery";
 
 export const runtime = "nodejs";
 
@@ -16,9 +16,9 @@ export const runtime = "nodejs";
 
 type Subject = {
   businessId?: string;
-  memberIds?: string[];
   assignmentId?: string;
   strikeId?: string;
+  addedAssigneeIds?: string[];
 };
 
 type Resolved = { to: string[]; variables: Record<string, string> } | null;
@@ -44,12 +44,19 @@ async function resolve(automationId: string, subject: Subject): Promise<Resolved
   const sb = getSupabaseAdmin();
 
   if (automationId === "project_assigned") {
-    if (!subject.businessId || !Array.isArray(subject.memberIds)) return null;
+    if (!subject.businessId) return null;
     const { data: biz } = await sb.from("businesses")
-      .select("name, neighborhood, owner_name, owner_email, phone")
+      .select("name, neighborhood, owner_name, owner_email, phone, assignees")
       .eq("id", subject.businessId).is("deleted_at", null).maybeSingle();
     if (!biz) return null;
-    const people = await emailsFor(subject.memberIds.map(String));
+    const savedAssigneeIds = ((biz.assignees ?? []) as string[]).map(String);
+    const requestedIds = Array.isArray(subject.addedAssigneeIds)
+      ? subject.addedAssigneeIds.map(String).slice(0, MAX_RECIPIENTS)
+      : savedAssigneeIds;
+    // The client may identify which assignees were newly added, but it never
+    // supplies email addresses. Only IDs that are actually on the saved
+    // project are accepted, and addresses are resolved server-side.
+    const people = await emailsFor(requestedIds.filter((id) => savedAssigneeIds.includes(id)));
     if (people.length === 0) return null;
     const contact = [biz.owner_name, biz.owner_email, biz.phone]
       .map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ");
@@ -153,10 +160,46 @@ export async function POST(req: NextRequest) {
   };
 
   const automationId = String(body.automationId ?? "");
+  const sb = getSupabaseAdmin();
+  const { data: callerRow } = await sb.from("team")
+    .select("id, role")
+    .eq("auth_uid", verified.caller.uid)
+    .is("deleted_at", null)
+    .neq("status", "Inactive")
+    .maybeSingle();
+  const privileged = verified.caller.role === "owner" || verified.caller.role === "admin";
+
+  let authorized = privileged;
+  if (!authorized && ["project_assigned", "project_draft_ready"].includes(automationId)) {
+    authorized = callerRow?.role === "Developer";
+  }
+  if (!authorized && automationId === "pod_task_assigned" && body.subject?.assignmentId) {
+    const { data: task } = await sb.from("assignments").select("pod_id")
+      .eq("id", body.subject.assignmentId).maybeSingle();
+    const { count } = task?.pod_id && callerRow?.id
+      ? await sb.from("pod_members").select("id", { count: "exact", head: true })
+          .eq("pod_id", task.pod_id).eq("member_id", callerRow.id)
+          .eq("role", "lit").is("left_at", null)
+      : { count: 0 };
+    authorized = (count ?? 0) > 0;
+  }
+  // Infractions are sensitive personnel actions. Attendance infractions use a
+  // separate route that verifies the LIT against the meeting and pod.
+  if (!authorized) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+
   const resolved = await resolve(automationId, body.subject ?? {});
   if (!resolved) {
     return NextResponse.json({ error: "unknown_automation_or_subject" }, { status: 400 });
   }
 
-  return NextResponse.json(await sendAutomationEmail(automationId, resolved.to, resolved.variables));
+  const subjectKey = body.subject?.businessId
+    ?? body.subject?.assignmentId
+    ?? body.subject?.strikeId;
+  if (!subjectKey) {
+    return NextResponse.json({ error: "missing_subject_key" }, { status: 400 });
+  }
+
+  return NextResponse.json(
+    await deliverAutomationOnce(automationId, subjectKey, resolved.to, resolved.variables),
+  );
 }

@@ -460,7 +460,7 @@ export default function ApplicantsPage() {
         fullName: app.fullName,
         email: app.email,
         schoolName: app.schoolName,
-        grade: gradeToClassOf(app.grade),
+        grade: gradeToClassOf(app.grade, app.createdAt),
         role,
         tracksSelected: app.tracksSelected,
         applicationId: app.id,
@@ -838,7 +838,7 @@ export default function ApplicantsPage() {
                           </td>
                         );
                       case "grade": {
-                        const display = gradeToClassOf(app.grade);
+                        const display = gradeToClassOf(app.grade, app.createdAt);
                         return (
                           <td key={col.key} className="px-2 py-1.5 text-white/55 whitespace-nowrap">
                             <span className="block truncate" title={display || ""}>{display || "—"}</span>

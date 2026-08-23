@@ -17,6 +17,8 @@ interface Props {
   member: TeamMember | null;
   reviewerLabel: string;
   canEdit?: boolean;
+  canAdjustHours?: boolean;
+  canManageInfractions?: boolean;
   onClose: () => void;
 }
 
@@ -27,13 +29,17 @@ const SOURCE_LABEL: Record<HoursEntry["source"], string> = {
   adjustment: "Adjustments",
 };
 
-export default function MemberDrawer({ member, reviewerLabel, canEdit = false, onClose }: Props) {
+export default function MemberDrawer({
+  member, reviewerLabel, canEdit = false,
+  canAdjustHours = false, canManageInfractions = false, onClose,
+}: Props) {
   const [strikes, setStrikes]       = useState<MemberStrike[]>([]);
   const [infractions, setInfractions] = useState<Infraction[]>([]);
   const [pods, setPods]             = useState<Pod[]>([]);
   const [podMembers, setPodMembers] = useState<PodMember[]>([]);
   const [hours, setHours]           = useState<HoursEntry[] | null>(null);
   const [application, setApplication] = useState<ApplicationRecord | null>(null);
+  const [loadError, setLoadError]   = useState(false);
   const [showApplication, setShowApplication] = useState(false);
 
   const [issueOpen, setIssueOpen] = useState(false);
@@ -60,16 +66,21 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
   useEffect(() => subscribePodMembers(setPodMembers), []);
 
   useEffect(() => {
-    if (!memberId) { setApplication(null); return; }
+    if (!memberId) { setApplication(null); setLoadError(false); return; }
     let live = true;
-    void fetchApplicationForMember(memberId).then((a) => { if (live) setApplication(a); });
+    setLoadError(false);
+    void fetchApplicationForMember(memberId)
+      .then((a) => { if (live) setApplication(a); })
+      .catch(() => { if (live) setLoadError(true); });
     return () => { live = false; };
   }, [memberId]);
 
   useEffect(() => {
     if (!memberId) { setHours(null); return; }
     let live = true;
-    void fetchMemberHours(memberId).then((h) => { if (live) setHours(h); });
+    void fetchMemberHours(memberId)
+      .then((h) => { if (live) setHours(h); })
+      .catch(() => { if (live) setLoadError(true); });
     return () => { live = false; };
   }, [memberId, strikes]);
 
@@ -128,11 +139,16 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
 
   const handleAdjust = async () => {
     if (!member || !adjHours.trim()) return;
-    await createHoursAdjustment(
-      member.id, Number(adjHours), adjReason.trim(), new Date().toISOString().slice(0, 10),
-    );
-    setAdjOpen(false); setAdjHours(""); setAdjReason("");
-    setHours(await fetchMemberHours(member.id));
+    try {
+      await createHoursAdjustment(
+        member.id, Number(adjHours), adjReason.trim(), new Date().toISOString().slice(0, 10),
+      );
+      setAdjOpen(false); setAdjHours(""); setAdjReason("");
+      setHours(await fetchMemberHours(member.id));
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    }
   };
 
   if (!member) return null;
@@ -166,16 +182,23 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
         </header>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {loadError && (
+            <div role="alert" className="mb-4 rounded-md border border-red-400/35 bg-red-500/10 px-3 py-2 text-[11px] text-red-200">
+              Some member details could not be loaded or saved. Try again before relying on these values.
+            </div>
+          )}
           {/* Hours */}
           <div className="mb-5">
             <div className="mb-2 flex items-baseline justify-between">
               <p className="text-[10px] uppercase tracking-wide text-white/40">Hours</p>
-              <button
-                onClick={() => setAdjOpen((v) => !v)}
-                className="text-[10px] text-white/35 transition-colors hover:text-white/70"
-              >
-                {adjOpen ? "Cancel" : "Adjust"}
-              </button>
+              {canAdjustHours && (
+                <button
+                  onClick={() => setAdjOpen((v) => !v)}
+                  className="text-[10px] text-white/35 transition-colors hover:text-white/70"
+                >
+                  {adjOpen ? "Cancel" : "Adjust"}
+                </button>
+              )}
             </div>
             <p className="font-mono text-3xl font-semibold tabular-nums text-[#F3E28D]">
               {totalHours.toFixed(1)}
@@ -274,7 +297,7 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
                 {strikePoints > 0 && <span className="ml-1.5 text-red-400">{strikePoints} pts</span>}
               </p>
               <div className="flex gap-2">
-                {memberStrikes.length > 0 && (
+                {canManageInfractions && memberStrikes.length > 0 && (
                   <button
                     onClick={() => ask(
                       async () => { await clearMemberStrikes(memberStrikes.map((s) => s.id)); },
@@ -283,10 +306,12 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
                     className="text-[10px] text-white/35 transition-colors hover:text-red-400"
                   >Clear all</button>
                 )}
-                <button
-                  onClick={() => setIssueOpen((v) => !v)}
-                  className="text-[10px] text-white/35 transition-colors hover:text-white/70"
-                >{issueOpen ? "Cancel" : "Issue"}</button>
+                {canManageInfractions && (
+                  <button
+                    onClick={() => setIssueOpen((v) => !v)}
+                    className="text-[10px] text-white/35 transition-colors hover:text-white/70"
+                  >{issueOpen ? "Cancel" : "Issue"}</button>
+                )}
               </div>
             </div>
 
@@ -303,19 +328,21 @@ export default function MemberDrawer({ member, reviewerLabel, canEdit = false, o
                         {s.note ? ` · ${s.note}` : ""}
                       </p>
                     </div>
-                    <button
-                      onClick={() => ask(
-                        async () => { await deleteMemberStrike(s.id); },
-                        "Revoke this infraction? It is removed from the member's record.",
-                      )}
-                      className="text-[10px] text-white/25 transition-colors hover:text-red-400"
-                    >Revoke</button>
+                    {canManageInfractions && (
+                      <button
+                        onClick={() => ask(
+                          async () => { await deleteMemberStrike(s.id); },
+                          "Revoke this infraction? It is removed from the member's record.",
+                        )}
+                        className="text-[10px] text-white/25 transition-colors hover:text-red-400"
+                      >Revoke</button>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            {issueOpen && (
+            {canManageInfractions && issueOpen && (
               <div className="mt-3 space-y-2 rounded-md border border-white/10 bg-[#0F1014] p-3">
                 <Select
                   value={issueInfractionId}

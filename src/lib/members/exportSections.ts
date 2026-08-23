@@ -1,0 +1,25 @@
+export const EXPORT_SECTIONS = [
+  { key: "team",              label: "Team Members",        table: "team" },
+  { key: "userProfiles",      label: "User Profiles",       table: "user_profiles" },
+  { key: "businesses",        label: "Businesses",          table: "businesses" },
+  { key: "assignments",       label: "Assignments",         table: "assignments" },
+  { key: "applicants",        label: "Applicants",          table: "applications" },
+  { key: "bids",              label: "Partner Organizations", table: "bids" },
+  { key: "memberStrikes",     label: "Member Infractions",  table: "member_strikes" },
+  { key: "memberNotes",       label: "Private Member Notes", table: "member_notes" },
+  { key: "emailTemplates",    label: "Email Templates",     table: "email_templates" },
+  { key: "calendarEvents",    label: "Calendar Events",     table: "calendar_events" },
+  { key: "handbookPages",     label: "Handbook Pages",      table: "handbook_pages" },
+  { key: "auditLogs",         label: "Audit Logs",          table: "audit_logs" },
+  { key: "chapters",          label: "Chapters",            table: "chapters" },
+  { key: "pods",              label: "Pods",                table: "pods" },
+  { key: "podMembers",        label: "Pod Memberships",     table: "pod_members" },
+  { key: "podMeetings",       label: "Pod Meetings",        table: "pod_meetings" },
+  { key: "podAttendance",     label: "Pod Attendance",      table: "pod_attendance" },
+  { key: "certifiedHours",    label: "Certified Hours",     table: "certified_hour_entries" },
+  { key: "hoursAdjustments",  label: "Hours Adjustments",   table: "hours_adjustments" },
+  { key: "infractions",       label: "Infraction Types",    table: "infractions" },
+  { key: "automationConfigs", label: "Automation Config",   table: "automation_configs" },
+] as const;
+
+export type ExportSectionKey = (typeof EXPORT_SECTIONS)[number]["key"];

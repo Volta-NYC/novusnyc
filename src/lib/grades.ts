@@ -1,16 +1,10 @@
 // Class-of-YYYY is the student's high-school graduation year.
 
-export const CLASS_GRADE_OPTIONS = [
-  "Class of 2022",
-  "Class of 2023",
-  "Class of 2024",
-  "Class of 2025",
-  "Class of 2026",
-  "Class of 2027",
-  "Class of 2028",
-  "Class of 2029",
-  "Class of 2030",
-] as const;
+const currentYear = new Date().getFullYear();
+export const CLASS_GRADE_OPTIONS = Array.from(
+  { length: 10 },
+  (_, index) => `Class of ${currentYear - 4 + index}`,
+);
 
 // A grade label only means a graduation year relative to the school year it was
 // given in, so derive it rather than pinning it. A US school year starting in
@@ -35,10 +29,14 @@ const YEARS_REMAINING: Record<string, number> = {
   "12": 0,
 };
 
-export function gradeToClassOf(value: string | null | undefined): string {
+export function gradeToClassOf(
+  value: string | null | undefined,
+  referenceDate?: string | Date | null,
+): string {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
   const remaining = YEARS_REMAINING[raw.toLowerCase()];
   if (remaining === undefined) return raw;
-  return `Class of ${graduationYearFor(remaining)}`;
+  const anchor = referenceDate instanceof Date ? referenceDate : referenceDate ? new Date(referenceDate) : new Date();
+  return `Class of ${graduationYearFor(remaining, Number.isNaN(anchor.getTime()) ? new Date() : anchor)}`;
 }

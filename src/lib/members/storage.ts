@@ -1097,19 +1097,21 @@ export async function updateTeamMember(id: string, data: Partial<TeamMember>): P
 // An accepted application is history about a member, so it belongs on their
 // record rather than in a separate tab you have to go and find.
 export async function fetchApplicationForMember(memberId: string): Promise<ApplicationRecord | null> {
-  const { data } = await supabase.from("applications").select("*")
+  const { data, error } = await supabase.from("applications").select("*")
     .eq("member_id", memberId)
     .order("created_at", { ascending: false })
     .limit(1);
+  if (error) throw new Error(error.message);
   const row = (data ?? [])[0] as Record<string, unknown> | undefined;
   return row ? fromRow<ApplicationRecord>(row) : null;
 }
 
 export async function fetchDeletedTeamMembers(): Promise<TeamMember[]> {
-  const { data } = await supabase.from("team").select("*")
+  const { data, error } = await supabase.from("team").select("*")
     .not("deleted_at", "is", null)
     .order("deleted_at", { ascending: false })
     .limit(50);
+  if (error) throw new Error(error.message);
   return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<TeamMember>(r));
 }
 
@@ -1222,7 +1224,8 @@ export async function deletePortalUserAccount(uid: string): Promise<void> {
 }
 
 export async function getUserProfilesList(): Promise<UserProfile[]> {
-  const { data } = await supabase.from("user_profiles").select("*");
+  const { data, error } = await supabase.from("user_profiles").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => ({
     ...fromRow<UserProfile>(r as Record<string, unknown>),
     authRole: normalizeAuthRoleValue((r as Record<string, unknown>).auth_role),
@@ -1230,64 +1233,72 @@ export async function getUserProfilesList(): Promise<UserProfile[]> {
 }
 
 export async function getTeamMembersList(): Promise<TeamMember[]> {
-  const { data } = await supabase.from("team").select("*").is("deleted_at", null);
+  const { data, error } = await supabase.from("team").select("*").is("deleted_at", null);
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<TeamMember>(r as Record<string, unknown>));
 }
 
 export async function getAuditLogsList(limit = 200): Promise<AuditLogEntry[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("audit_logs")
     .select("*")
     .order("timestamp", { ascending: false })
     .limit(limit);
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<AuditLogEntry>(r as Record<string, unknown>));
 }
 
 // Returns the public showcase image URL for a business, or null if none set.
 export async function getBusinessImage(id: string): Promise<string | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("businesses")
     .select("showcase_image_url")
     .eq("id", id)
     .maybeSingle();
+  if (error) throw new Error(error.message);
   return (data as Record<string, unknown> | null)?.showcase_image_url as string | null ?? null;
 }
 
 // ── ONE-SHOT GET VARIANTS ─────────────────────────────────────────────────────
 
 export async function getBusinessesList(): Promise<Business[]> {
-  const { data } = await supabase.from("businesses").select("*").is("deleted_at", null);
+  const { data, error } = await supabase.from("businesses").select("*").is("deleted_at", null);
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<Business>(r as Record<string, unknown>));
 }
 
 export async function getBIDsList(): Promise<BID[]> {
-  const { data } = await supabase.from("bids").select("*");
+  const { data, error } = await supabase.from("bids").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<BID>(r as Record<string, unknown>));
 }
 
 export async function getProjectsList(): Promise<Project[]> {
-  const { data } = await supabase.from("projects").select("*");
+  const { data, error } = await supabase.from("projects").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<Project>(r as Record<string, unknown>));
 }
 
 export async function getInfractionsList(): Promise<Infraction[]> {
-  const { data } = await supabase.from("infractions").select("*");
+  const { data, error } = await supabase.from("infractions").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<Infraction>(r as Record<string, unknown>));
 }
 
 // Get distinct school names from applications for autocomplete
 export async function getApplicationSchoolNames(): Promise<string[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("applications")
-    .select("schoolName")
-    .not("schoolName", "is", "");
+    .select("school_name")
+    .not("school_name", "is", "");
+  if (error) throw new Error(error.message);
 
   if (!data?.length) return [];
 
   // Extract distinct school names
   const schoolNames = [...new Set(
     data
-      .map((r: { schoolName?: string | null }) => r.schoolName?.trim())
+      .map((r: { school_name?: string | null }) => r.school_name?.trim())
       .filter((name): name is string => name !== null && name !== undefined && name !== "")
   )];
 
@@ -1296,11 +1307,12 @@ export async function getApplicationSchoolNames(): Promise<string[]> {
 
 // Get distinct school names from team directory for autocomplete
 export async function getTeamSchoolNames(): Promise<string[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("team")
     .select("school")
     .not("school", "is", null)
     .neq("school", "");
+  if (error) throw new Error(error.message);
 
   if (!data?.length) return [];
 
@@ -1312,7 +1324,8 @@ export async function getTeamSchoolNames(): Promise<string[]> {
 }
 
 export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
-  const { data } = await supabase.from("email_templates").select("*");
+  const { data, error } = await supabase.from("email_templates").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => ({
     ...fromRow<EmailTemplate>(r as Record<string, unknown>),
     availableVariables: ((r as Record<string, unknown>).available_variables as string[]) ?? [],
@@ -1322,18 +1335,21 @@ export async function getEmailTemplatesList(): Promise<EmailTemplate[]> {
 // getAssignmentsList is defined above in the unified assignments section.
 
 export async function getMemberStrikesList(): Promise<MemberStrike[]> {
-  const { data } = await supabase.from("member_strikes").select("*");
+  const { data, error } = await supabase.from("member_strikes").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => fromRow<MemberStrike>(r as Record<string, unknown>));
 }
 
 export async function getApplicationsList(): Promise<ApplicationRecord[]> {
-  const { data } = await supabase.from("applications").select("*");
+  const { data, error } = await supabase.from("applications").select("*");
+  if (error) throw new Error(error.message);
   if (!data?.length) return [];
   return (data as Record<string, unknown>[]).map((r) => normalizeApplicationRecord(String(r.id), fromRow<Record<string, unknown>>(r)));
 }
 
 export async function getCalendarEventsList(): Promise<CalendarEvent[]> {
-  const { data } = await supabase.from("calendar_events").select("*");
+  const { data, error } = await supabase.from("calendar_events").select("*");
+  if (error) throw new Error(error.message);
   return (data ?? []).map((r) => calendarEventFromRow(r as Record<string, unknown>));
 }
 
@@ -1941,47 +1957,11 @@ export async function updateChapter(id: string, patch: Partial<Chapter>): Promis
 export async function createChapter(name: string, city: string, state: string): Promise<void> {
   const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   if (!slug) throw new Error("A chapter needs a name.");
-  const { data: existing } = await supabase.from("chapters").select("sort_order").order("sort_order", { ascending: false }).limit(1);
-  const nextOrder = Number((existing ?? [])[0]?.sort_order ?? 0) + 1;
-  const { error } = await supabase.from("chapters").insert(toRow({
-    id: `chapter_${slug.replace(/-/g, "_")}`,
-    name: name.trim(), slug, city: city.trim(), state: state.trim().toUpperCase(),
-    status: "Launching", sortOrder: nextOrder, createdAt: nowISO(), updatedAt: nowISO(),
-  }));
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: "create", collection: "chapters", recordId: slug, details: { name } });
-
-  // A chapter with no pods has nowhere to put people, and rebuilding the four
-  // subdepartments by hand invites them to drift apart between chapters. The
-  // structure is copied from the founding chapter rather than hardcoded, so
-  // renaming or adding a pod there carries forward on its own.
-  const chapterId = `chapter_${slug.replace(/-/g, "_")}`;
-  const { data: firstChapter } = await supabase.from("chapters")
-    .select("id, slug").neq("id", chapterId).order("sort_order").limit(1);
-  const templateChapter = (firstChapter ?? [])[0] as { id?: string; slug?: string } | undefined;
-  if (!templateChapter?.id) return;
-
-  const { data: templatePods } = await supabase.from("pods")
-    .select("*").eq("chapter_id", templateChapter.id).neq("status", "Archived").order("sort_order");
-
-  const rows = ((templatePods ?? []) as Record<string, unknown>[]).map((pod) => {
-    const podSlug = String(pod.slug ?? "");
-    const bare = templateChapter.slug && podSlug.startsWith(`${templateChapter.slug}-`)
-      ? podSlug.slice(templateChapter.slug.length + 1)
-      : podSlug;
-    return {
-      ...pod,
-      id: genId(),
-      chapter_id: chapterId,
-      slug: `${slug}-${bare}`,
-      created_at: nowISO(),
-      updated_at: nowISO(),
-    };
+  const { data: chapterId, error } = await supabase.rpc("create_chapter_with_pods", {
+    p_name: name.trim(), p_slug: slug, p_city: city.trim(), p_state: state.trim().toUpperCase(),
   });
-  if (rows.length === 0) return;
-
-  const { error: podError } = await supabase.from("pods").insert(rows);
-  if (podError) throw new Error(`Chapter created, but its pods were not: ${podError.message}`);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "chapters", recordId: String(chapterId), details: { name } });
 }
 
 export interface Pod {
@@ -2025,6 +2005,8 @@ export interface PodMeeting {
   notes: string;
   createdBy?: string;
   createdAt?: string;
+  attendanceFinalizedAt?: string | null;
+  attendanceFinalizedBy?: string | null;
 }
 
 export const ATTENDANCE_STATUSES = ["Present", "Excused", "Unexcused"] as const;
@@ -2134,21 +2116,20 @@ export async function fetchAttendance(meetingId: string): Promise<PodAttendance[
 export async function saveAttendance(
   meetingId: string,
   cells: { memberId: string; status: AttendanceStatus; tasksDone: number; hours?: number | null; note?: string }[],
+  meeting: { title: string; hours: number },
 ): Promise<void> {
-  const existing = await fetchAttendance(meetingId);
-  const byMember = new Map(existing.map((c) => [c.memberId, c.id]));
-  const rows = cells.map((c) => toRow({
-    id: byMember.get(c.memberId) ?? genId(),
-    meetingId,
-    memberId: c.memberId,
-    status: c.status,
-    tasksDone: c.tasksDone,
-    hours: c.hours ?? null,
-    note: c.note ?? "",
-    markedAt: nowISO(),
-  }));
-  const { error } = await supabase.from("pod_attendance")
-    .upsert(rows, { onConflict: "meeting_id,member_id" });
+  const { error } = await supabase.rpc("save_pod_attendance", {
+    p_meeting_id: meetingId,
+    p_cells: cells.map((cell) => ({
+      member_id: cell.memberId,
+      status: cell.status,
+      tasks_done: cell.tasksDone,
+      hours: cell.hours ?? null,
+      note: cell.note ?? "",
+    })),
+    p_title: meeting.title,
+    p_hours: meeting.hours,
+  });
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "update", collection: "pod_attendance", recordId: meetingId, details: { cells: cells.length } });
 }
@@ -2193,7 +2174,8 @@ export interface MemberContribution {
 }
 
 export async function fetchMemberContributions(): Promise<MemberContribution[]> {
-  const { data } = await supabase.from("member_contributions").select("*");
+  const { data, error } = await supabase.from("member_contributions").select("*");
+  if (error) throw new Error(error.message);
   return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<MemberContribution>(r));
 }
 
@@ -2209,7 +2191,8 @@ export interface HoursTotals {
 }
 
 export async function fetchHoursTotals(): Promise<HoursTotals[]> {
-  const { data } = await supabase.from("member_hours_totals").select("*");
+  const { data, error } = await supabase.from("member_hours_totals").select("*");
+  if (error) throw new Error(error.message);
   return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<HoursTotals>(r));
 }
 
@@ -2217,7 +2200,8 @@ export async function fetchMemberHours(memberId: string, from?: string, to?: str
   let q = supabase.from("member_hours_ledger").select("*").eq("member_id", memberId);
   if (from) q = q.gte("occurred_on", from);
   if (to)   q = q.lte("occurred_on", to);
-  const { data } = await q.order("occurred_on", { ascending: false });
+  const { data, error } = await q.order("occurred_on", { ascending: false });
+  if (error) throw new Error(error.message);
   return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<HoursEntry>(r));
 }
 
@@ -2234,8 +2218,9 @@ export async function createHoursAdjustment(
 // Fire an event-driven automation. Failure is deliberately swallowed: the
 // action that triggered it has already happened, and an unsent notification
 // must not make it look like the action failed.
-// Names the record the notification is about. The server resolves recipients
-// and message content from it — the client never supplies either.
+// Names the record the notification is about. The server resolves addresses
+// and message content from persisted data; a client-provided member subset is
+// always intersected with the people saved on that record.
 async function notify(
   automationId: string,
   subject: Record<string, unknown>,
@@ -2259,7 +2244,11 @@ async function notify(
 export async function notifyProjectAssigned(
   business: Business, newAssigneeIds: string[],
 ): Promise<void> {
-  await notify("project_assigned", { businessId: business.id, memberIds: newAssigneeIds });
+  if (newAssigneeIds.length === 0) return;
+  await notify("project_assigned", {
+    businessId: business.id,
+    addedAssigneeIds: newAssigneeIds,
+  });
 }
 
 export async function notifyDraftReady(business: Business): Promise<void> {
@@ -2310,13 +2299,10 @@ export async function updatePodAssignment(id: string, patch: Partial<PodAssignme
 }
 
 export async function completePodAssignment(id: string, done: boolean): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  const { error } = await supabase.from("assignments").update({
-    status: done ? "Done" : "Open",
-    completed_at: done ? nowISO() : null,
-    completed_by: done ? (user?.email ?? null) : null,
-    updated_at: nowISO(),
-  }).eq("id", id);
+  const { error } = await supabase.rpc("set_assignment_completion", {
+    p_assignment_id: id,
+    p_done: done,
+  });
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { completed: done } });
 }

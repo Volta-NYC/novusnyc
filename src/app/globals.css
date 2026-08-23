@@ -2061,6 +2061,13 @@ details[open] > .accordion-body {
   outline-offset: 3px;
 }
 
+/* The portal is light for every role. This comes after the dark-surface rule
+   above so keyboard focus never falls back to the low-contrast pastel. */
+.members-portal-light
+  :where(a, button, input, select, textarea, summary, [role="tab"]):focus-visible {
+  outline-color: rgb(var(--color-orange-ink));
+}
+
 /* Keep form element focus rings consistent */
 .novus-input:focus-visible {
   outline: 3px solid rgb(var(--color-orange-ink));

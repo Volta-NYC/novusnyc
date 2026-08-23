@@ -258,7 +258,7 @@ export default function TeamPage() {
       school:      member.school,
       // Coerce any legacy "Senior"/"Junior" value into the matching Class-of label
       // so the dropdown lands on the right option when editing older records.
-      grade:       gradeToClassOf(member.grade ?? ""),
+      grade:       gradeToClassOf(member.grade ?? "", member.acceptedDate || member.joinDate),
       // Guard against undefined arrays on legacy rows.
       divisions:   member.divisions ?? [],
       role:        member.role,
@@ -375,7 +375,7 @@ export default function TeamPage() {
     return (member.name ?? "").toLowerCase().includes(q)
       || (member.school ?? "").toLowerCase().includes(q)
       || (member.grade ?? "").toLowerCase().includes(q)
-      || gradeToClassOf(member.grade ?? "").toLowerCase().includes(q)
+      || gradeToClassOf(member.grade ?? "", member.acceptedDate || member.joinDate).toLowerCase().includes(q)
       || getMemberTrack(member).toLowerCase().includes(q)
       || String(member.role ?? "").toLowerCase().includes(q)
       || (member.email ?? "").toLowerCase().includes(q)
@@ -833,7 +833,7 @@ export default function TeamPage() {
                       <span className="text-white/50 block truncate" title={member.school || ""}>{member.school ? truncateCell(member.school, 64) : "—"}</span>
                     </td>
                     <td className="px-2 py-0 h-8 align-middle whitespace-nowrap">
-                      <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
+                      <span className="text-white/50">{gradeToClassOf(member.grade, member.acceptedDate || member.joinDate) || "—"}</span>
                     </td>
                     <td className="px-2 py-0 h-8 align-middle whitespace-nowrap">
                       <span className="text-white/60">{displayRoleValue(member.role)}</span>
@@ -962,7 +962,7 @@ export default function TeamPage() {
                           );
                           case "hsClass": return (
                             <td key="hsClass" className="px-3 py-0 h-8 align-middle whitespace-nowrap">
-                              <span className="text-white/50">{gradeToClassOf(member.grade) || "—"}</span>
+                              <span className="text-white/50">{gradeToClassOf(member.grade, member.acceptedDate || member.joinDate) || "—"}</span>
                             </td>
                           );
                           case "role": return (
@@ -1095,8 +1095,8 @@ export default function TeamPage() {
                               <div className="members-row-actions">
                                 {canEdit && <Btn size="sm" variant="secondary" className="members-pill-btn whitespace-nowrap" onClick={() => setDrawerMember(member)}>Manage</Btn>}
                                 {canEdit && <Btn size="sm" variant="ghost" className="members-pill-btn whitespace-nowrap" onClick={() => openEdit(member)}>Edit</Btn>}
-                                {canEdit && member.authUid ? (
-                                  <span className="members-pill-btn whitespace-nowrap text-emerald-400 text-xs font-medium">✓</span>
+                                {canEdit && (member.authUid ? (
+                                  <span className="members-pill-btn whitespace-nowrap text-emerald-400 text-xs font-medium" aria-label="Portal account active">✓</span>
                                 ) : (() => {
                                   const st = inviteStatus[member.id];
                                   return (
@@ -1110,7 +1110,7 @@ export default function TeamPage() {
                                       {st === "sending" ? "Sending…" : st === "sent" ? "✓ Sent" : st === "error" ? "Retry" : "Invite"}
                                     </Btn>
                                   );
-                                })()}
+                                })())}
                               </div>
                             </td>
                           );
@@ -1323,6 +1323,8 @@ export default function TeamPage() {
           member={team.find((m) => m.id === drawerMember.id) ?? drawerMember}
           reviewerLabel={user?.email || user?.id || "admin"}
           canEdit={canEdit}
+          canAdjustHours={authRole === "owner" || authRole === "admin"}
+          canManageInfractions={authRole === "owner"}
           onClose={() => setDrawerMember(null)}
         />
       )}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { sendAutomationEmail } from "@/lib/server/notify";
+import { deliverAutomationOnce } from "@/lib/server/automationDelivery";
 import { SITE_URL } from "@/lib/site";
 
 export const runtime = "nodejs";
@@ -24,53 +24,13 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
 
-// Claim recipients before sending. The unique key on
-// (automation_id, subject_key, recipient) means a second sweep — or a second
-// cron firing — inserts nothing and therefore sends nothing.
-async function claimRecipients(
-  automationId: string, subjectKey: string, recipients: string[],
-): Promise<string[]> {
-  if (recipients.length === 0) return [];
-  const sb = getSupabaseAdmin();
-  const rows = [...new Set(recipients)].map((recipient) => ({
-    id: `${automationId}:${subjectKey}:${recipient}`,
-    automation_id: automationId,
-    subject_key: subjectKey,
-    recipient,
-  }));
-  const { data, error } = await sb.from("automation_deliveries")
-    .upsert(rows, { onConflict: "automation_id,subject_key,recipient", ignoreDuplicates: true })
-    .select("recipient");
-  if (error) return [];
-  return ((data ?? []) as { recipient: string }[]).map((r) => r.recipient);
-}
-
-// A claim that never turned into a delivery must not suppress the next attempt.
-async function releaseClaims(
-  automationId: string, subjectKey: string, recipients: string[],
-): Promise<void> {
-  if (recipients.length === 0) return;
-  const sb = getSupabaseAdmin();
-  await sb.from("automation_deliveries").delete()
-    .eq("automation_id", automationId).eq("subject_key", subjectKey)
-    .in("recipient", recipients);
-}
-
-// One recipient at a time, so a bad address costs only its own claim.
 async function sendClaimed(
   automationId: string,
   subjectKey: string,
   recipients: string[],
   variables: Record<string, string>,
 ): Promise<number> {
-  const claimed = await claimRecipients(automationId, subjectKey, recipients);
-  let sent = 0;
-  for (const address of claimed) {
-    const r = await sendAutomationEmail(automationId, [address], variables);
-    if (r.sent > 0) sent += 1;
-    else await releaseClaims(automationId, subjectKey, [address]);
-  }
-  return sent;
+  return (await deliverAutomationOnce(automationId, subjectKey, recipients, variables)).sent;
 }
 
 async function runSweep(viaCron: boolean) {
@@ -140,16 +100,13 @@ async function runSweep(viaCron: boolean) {
     const until = new Date(today); until.setDate(until.getDate() - 1);
     const { data: meetings } = await sb.from("pod_meetings")
       .select("id, pod_id, meets_on")
-      .gte("meets_on", iso(from)).lte("meets_on", iso(until));
+      .gte("meets_on", iso(from)).lte("meets_on", iso(until))
+      .is("attendance_finalized_at", null);
 
     let sent = 0;
     for (const m of meetings ?? []) {
       const pod = podById.get(String(m.pod_id));
       if (!pod) continue;
-      const { count } = await sb.from("pod_attendance")
-        .select("id", { count: "exact", head: true }).eq("meeting_id", m.id);
-      if ((count ?? 0) > 0) continue;                 // already filled in
-
       const lits = emailsFor(String(m.pod_id), "lit");
       if (lits.length === 0) continue;
       const n = await sendClaimed("pod_attendance_missing", String(m.id), lits, {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dbPatch, dbPush, dbRead, verifyCaller } from "@/lib/server/adminApi";
+import { dbPush, dbRead, verifyCaller } from "@/lib/server/adminApi";
 import {
   createTransportForFrom,
   getDefaultFromAddress,
@@ -24,10 +24,6 @@ function normalize(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
 }
 
-function normalizeName(value: unknown): string {
-  return normalize(value).replace(/[^a-z0-9]+/g, " ").trim();
-}
-
 function canonicalEmail(value: unknown): string {
   const raw = normalize(value);
   const [local, domain] = raw.split("@");
@@ -36,20 +32,6 @@ function canonicalEmail(value: unknown): string {
     return `${local.split("+")[0].replace(/\./g, "")}@gmail.com`;
   }
   return `${local}@${domain}`;
-}
-
-function namesLikelyMatch(a: unknown, b: unknown): boolean {
-  const left = normalizeName(a);
-  const right = normalizeName(b);
-  if (!left || !right) return false;
-  if (left === right || left.includes(right) || right.includes(left)) return true;
-  const lt = new Set(left.split(" ").filter(Boolean));
-  const rt = new Set(right.split(" ").filter(Boolean));
-  let overlap = 0;
-  lt.forEach((token) => {
-    if (rt.has(token)) overlap += 1;
-  });
-  return overlap >= 2;
 }
 
 function normalizeEmail(email: string): string {
@@ -124,7 +106,6 @@ export async function POST(req: NextRequest) {
     }
     const slotEmail = normalize(slot.bookerEmail);
     const slotCanonical = canonicalEmail(slot.bookerEmail);
-    const slotName = slot.bookerName;
     const slotToken = normalize(slot.bookedBy);
 
     let target = appEntries.find(({ row }) => normalize(row.interviewSlotId) === normalize(slotId)) ?? null;
@@ -137,9 +118,8 @@ export async function POST(req: NextRequest) {
         return em && (em === slotEmail || canonicalEmail(row.email) === slotCanonical);
       }) ?? null;
     }
-    if (!target) {
-      target = appEntries.find(({ row }) => namesLikelyMatch(row.fullName, slotName)) ?? null;
-    }
+    // A booked slot always has an email. If it does not match an application,
+    // do not merge on name alone — two applicants can legitimately share one.
 
     let appId = "";
     let fullName = String(slot.bookerName ?? "").trim() || "Applicant";
@@ -163,8 +143,8 @@ export async function POST(req: NextRequest) {
         grade: "",
         cityState: "",
         referral: "",
-        tracksSelected: "",
-        hasResume: "",
+        tracksSelected: [],
+        hasResume: false,
         resumeUrl: "",
         toolsSoftware: "",
         accomplishment: "",
@@ -183,26 +163,26 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    await dbPatch(`applications/${appId}`, {
-      status: "Accepted",
-      finalDecisionRole: teamRole,
-      interviewSlotId: slotId,
-      interviewScheduledAt: String(slot.datetime ?? ""),
-      notes: notes || String(target?.row.notes ?? ""),
-      updatedAt: new Date().toISOString(),
-    });
-
-    await promoteApplicantToMember({
-      fullName,
-      email,
-      schoolName,
-      grade,
-      tracksSelected: tracks,
-      role: teamRole,
-      source: "Added from completed interview",
-      applicationId: appId,
-      decidedBy: verified.caller.email ?? "",
-    });
+    try {
+      await promoteApplicantToMember({
+        fullName,
+        email,
+        schoolName,
+        grade,
+        tracksSelected: tracks,
+        role: teamRole,
+        source: "Added from completed interview",
+        applicationId: appId,
+        decidedBy: verified.caller.email ?? "",
+        markAcceptedRole: teamRole,
+        interviewSlotId: slotId,
+        interviewScheduledAt: String(slot.datetime ?? ""),
+        applicationNotes: notes || String(target?.row.notes ?? ""),
+      });
+    } catch {
+      failed.push(slotId);
+      continue;
+    }
 
     if (sendEmail) {
       try {

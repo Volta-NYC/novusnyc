@@ -287,7 +287,7 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
     <div className="relative w-full">
       <select
         {...props}
-        className={`w-full appearance-none bg-[#0F1014] border border-white/35 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
+        className={`w-full appearance-none bg-[#0F1014] border border-white/35 rounded-lg pl-3 pr-8 py-2.5 text-sm text-white focus:outline-none focus:border-[#F6B78D] transition-colors ${className}`}
       >
         {children ?? (
           <>
@@ -296,14 +296,6 @@ export function Select({ options, className = "", emptyLabel = "— Select —",
           </>
         )}
       </select>
-      {/* Custom chevron — positioned well inside the border */}
-      <svg
-        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
-        viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
     </div>
   );
 }

@@ -35,7 +35,7 @@ The portal does **not** have Tailwind tokens — use Tailwind arbitrary values. 
 | `--color-portal-input` (`#0F1014`) | `bg-[#0F1014]` | Input / select backgrounds |
 | `--color-portal-row` (`#13161D`) | `bg-[#13161D]` | Table row alternation, nested surfaces |
 
-Page background is `bg-[#0F1014]`. The `members-portal-light` class (for `authRole === "member"`) switches to `bg-[#F5F6F8]` / `bg-white` sidebar.
+`MembersLayout` applies `members-portal-light` for every role, switching the portal to `bg-[#F5F6F8]` with a white sidebar. Never branch theme treatment on `authRole`.
 
 #### Portal Green
 
@@ -213,6 +213,10 @@ Two capabilities are derived rather than stored in `auth_role`:
 
 Both leave `auth_role` at `member`.
 
+Certified hours are stored in the append-only `certified_hour_entries` journal.
+Attendance, task completion, projects and manual adjustments post correction
+entries; they must never recompute or delete previously certified history.
+
 Role is stored in `user_profiles.auth_role` and in the JWT `app_metadata.auth_role`. Read via `useAuth()` → `authRole`.
 
 ### Auth Context
@@ -234,9 +238,9 @@ const { user, userProfile, authRole, loading } = useAuth();
 | `/members/projects/showcase` | ✓ | ✓ | ✗ redirected (publishes to the public site) |
 | `/members/pods` | ✓ all pods | ✓ all pods | ✓ own pods only |
 | `/members/orgs` | ✓ full edit | ✗ redirected | ✗ redirected |
-| `/members/team` | ✓ full edit | ✗ redirected | ✗ redirected |
+| `/members/team` | ✓ full edit | ✓ read + hours adjustments | ✗ redirected |
 | `/members/applicants` | ✓ full edit | ✗ redirected | ✗ redirected |
-| `/members/email` | ✓ | ✗ redirected | ✗ redirected |
+| `/members/email` | ✓ | ✓ | ✗ redirected |
 | `/members/admin` | ✓ | ✗ redirected | ✗ redirected |
 | `/members/work` | ✗ redirected | ✗ redirected | ✓ |
 | `/members/me` | ✗ redirected | ✗ redirected | ✓ |
@@ -273,7 +277,7 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 ### Two UIs, One Repo
 
 - **Public site** (`/`, `/showcase`, `/apply`, etc.): light theme, `v-*` Tailwind tokens, `font-display` / `font-body`.
-- **Members portal** (`/members/*`): dark theme (`#0F1014` bg), `#F6B78D` as primary action, `font-display` / `font-body`.
+- **Members portal** (`/members/*`): light theme for every role via `members-portal-light`; `#F6B78D` is the primary action, `font-display` / `font-body`.
 - `members-portal` CSS class on the root element triggers portal-specific global styles (`.members-portal *` selectors in `globals.css`).
 
 ### State Management
@@ -332,4 +336,4 @@ Admin-only API routes additionally verify the JWT. Passing a guard at the page l
 | New admin API endpoint | `src/app/api/members/admin/[name]/route.ts` using `verifyCaller` |
 | New auth-required API endpoint | `src/app/api/members/[name]/route.ts`, verify JWT |
 | New public page | `src/app/[slug]/page.tsx` — use `v-*` tokens, `font-display`/`font-body` |
-| New portal page (admin) | `src/app/members/[slug]/page.tsx` — wrap with `MembersLayout`, use portal dark theme |
+| New portal page (admin) | `src/app/members/[slug]/page.tsx` — wrap with `MembersLayout`; global light remaps apply to every role |

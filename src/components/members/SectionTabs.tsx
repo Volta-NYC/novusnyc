@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/members/authContext";
 
 export type SectionTab = {
   href: string;
@@ -38,8 +37,9 @@ export default function SectionTabs({
   tabs: SectionTab[];
   className?: string;
 }) {
-  const { authRole } = useAuth();
-  const lightTheme = authRole === "member";
+  // MembersLayout uses the light portal theme for every role. Branching this
+  // by role made owner/admin tabs render dark controls on a light surface.
+  const lightTheme = true;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = (searchParams?.get("tab") ?? "").toLowerCase();
@@ -55,6 +55,7 @@ export default function SectionTabs({
             <Link
               key={tab.href}
               href={tab.href}
+              aria-current={active ? "page" : undefined}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
                 active
                   ? lightTheme
@@ -95,4 +96,3 @@ export const EMAIL_TABS: SectionTab[] = [
   { href: "/members/email/templates", label: "Templates" },
   { href: "/members/email/automations", label: "Automations" },
 ];
-

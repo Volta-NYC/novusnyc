@@ -20,6 +20,10 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as PromoteBody;
 
+  if (!body.applicationId || !body.markAccepted) {
+    return NextResponse.json({ error: "application_acceptance_required" }, { status: 400 });
+  }
+
   try {
     const result = await promoteApplicantToMember({
       fullName: body.fullName ?? "",

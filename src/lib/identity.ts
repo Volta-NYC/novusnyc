@@ -73,7 +73,7 @@ export function findPersonMatch<T>(
   candidates: T[],
   person: { email?: unknown; name?: unknown },
   read: (item: T) => { email?: unknown; alternateEmail?: unknown; name?: unknown },
-  opts: { strictNames?: boolean } = {},
+  opts: { strictNames?: boolean; allowNameFallbackWithEmail?: boolean } = {},
 ): { match: T | null; matchedOn: "email" | "name" | null } {
   const email = canonicalEmail(person.email);
 
@@ -84,6 +84,13 @@ export function findPersonMatch<T>(
         return { match: item, matchedOn: "email" };
       }
     }
+  }
+
+  // A valid but different email is strong evidence that this is a different
+  // person. Promotion callers disable the name fallback so two people with the
+  // same name cannot be merged merely because one email failed to match.
+  if (email && opts.allowNameFallbackWithEmail === false) {
+    return { match: null, matchedOn: null };
   }
 
   const name = normalizeKey(person.name);

@@ -45,6 +45,10 @@ export default function PodDetailPage() {
     () => (members ?? []).filter((m) => m.podId === pod?.id && !m.leftAt),
     [members, pod],
   );
+  const fullRoster = useMemo(
+    () => (members ?? []).filter((m) => m.podId === pod?.id),
+    [members, pod],
+  );
   const isLit = !!myId && roster.some((m) => m.memberId === myId && m.role === "lit");
   const canRun = isAdmin || isLit;
 
@@ -131,6 +135,7 @@ export default function PodDetailPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
+            aria-pressed={tab === t.key}
             className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
               tab === t.key
                 ? "border-[#F3E28D]/40 bg-[#F3E28D]/15 text-[#F3E28D]"
@@ -176,7 +181,7 @@ export default function PodDetailPage() {
                 key={selected.id}
                 pod={pod}
                 meeting={selected}
-                roster={roster}
+                roster={fullRoster}
                 nameById={nameById}
                 canEdit={canRun}
                 myId={myId}
