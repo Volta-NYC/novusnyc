@@ -284,7 +284,6 @@ export type LeadershipMember = {
   focus: string;
   whyNovus: string;
   interests: string[];
-  highlights?: string[];
   experience: LeadershipExperience[];
 };
 
