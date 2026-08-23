@@ -8,17 +8,16 @@ import { PageHeader, Btn, Badge, Empty, Field, Input, LoadError, Modal, Skeleton
 import {
   subscribePods, subscribePodMembers, subscribePodMeetings, subscribeTeam, subscribeChapters,
   subscribePodAssignments, createPodMeeting, deletePodMeeting, updatePod, updatePodMeeting,
-  addPodMember, removePodMember, setPodMemberRole,
-  type Pod, type PodMember, type PodMeeting, type TeamMember, type PodRole, type Chapter, type PodAssignment,
+  type Pod, type PodMember, type PodMeeting, type TeamMember, type Chapter, type PodAssignment,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
-import { isInactiveMember } from "@/lib/members/roles";
 import { getPodDivision, POD_DIVISION_META } from "@/lib/members/constants";
 import AttendanceGrid from "./AttendanceGrid";
 import PodAssignments from "./PodAssignments";
 import GrantTracker from "./GrantTracker";
+import TeamTracker from "./TeamTracker";
 
-type Tab = "overview" | "meetings" | "tasks" | "schedule" | "grants" | "roster" | "settings";
+type Tab = "tracker" | "tasks" | "schedule" | "grants" | "settings";
 
 export default function PodDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -32,7 +31,7 @@ export default function PodDetailPage() {
   const [assignments, setAssignments] = useState<PodAssignment[]>([]);
   const [team, setTeam]         = useState<TeamMember[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [tab, setTab]           = useState<Tab>("overview");
+  const [tab, setTab]           = useState<Tab>("tracker");
   const [openMeeting, setOpenMeeting] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<PodMeeting | null>(null);
@@ -105,23 +104,19 @@ export default function PodDetailPage() {
   const lits = roster.filter((m) => m.role === "lit").map((m) => nameById.get(m.memberId) ?? "Unknown");
   const selected = podMeetings.find((m) => m.id === openMeeting) ?? null;
   const today = new Date().toISOString().slice(0, 10);
-  const upcomingMeetings = podMeetings.filter((meeting) => meeting.meetsOn >= today).sort((a, b) => a.meetsOn.localeCompare(b.meetsOn));
   const attendanceDue = podMeetings.filter((meeting) => meeting.meetsOn < today && !meeting.attendanceFinalizedAt);
   const podAssignments = assignments.filter((assignment) => assignment.podId === pod.id);
   const activeAssignments = podAssignments.filter((assignment) => assignment.status !== "Done");
-  const overdueAssignments = activeAssignments.filter((assignment) => assignment.dueDate && assignment.dueDate < today);
   const reviewAssignments = activeAssignments.filter((assignment) => assignment.status === "In Review");
   const division = getPodDivision(pod.name);
   const divisionMeta = POD_DIVISION_META[division];
   const isFinancePod = division === "Finance";
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: "overview", label: "Overview" },
-    { key: "meetings", label: attendanceDue.length ? `Attendance · ${attendanceDue.length}` : "Attendance" },
-    { key: "tasks", label: reviewAssignments.length ? `Assignments · ${reviewAssignments.length}` : "Assignments" },
+    { key: "tracker", label: attendanceDue.length ? `Team tracker · ${attendanceDue.length}` : "Team tracker" },
+    { key: "tasks", label: reviewAssignments.length ? `Work · ${reviewAssignments.length}` : "Work" },
     { key: "schedule", label: "Schedule" },
     ...(isFinancePod ? [{ key: "grants" as Tab, label: "Grant tracker" }] : []),
-    { key: "roster", label: `Roster · ${roster.length}` },
     ...(canRun ? [{ key: "settings" as Tab, label: "Settings" }] : []),
   ];
 
@@ -160,68 +155,31 @@ export default function PodDetailPage() {
         ))}
       </div>
 
-      {tab === "overview" && (
+      {tab === "tracker" && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             <StatCard label="People" value={roster.length} color="text-sky-300" />
-            <StatCard label="Open assignments" value={activeAssignments.length} color="text-[#F6B78D]" />
+            <StatCard label="Open work" value={activeAssignments.length} color="text-[#F6B78D]" />
             <StatCard label="Needs review" value={reviewAssignments.length} color="text-yellow-300" />
             <StatCard label="Attendance due" value={attendanceDue.length} color={attendanceDue.length ? "text-red-400" : "text-green-400"} />
           </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <OverviewPanel title="Next meeting" action={canRun ? <button className="text-[11px] text-[#F6B78D] hover:underline" onClick={() => { setEditingMeeting(upcomingMeetings[0] ?? null); setScheduleOpen(true); }}>{upcomingMeetings[0] ? "Edit" : "Schedule"}</button> : undefined}>
-              {upcomingMeetings[0] ? <MeetingSummary meeting={upcomingMeetings[0]} /> : <OverviewEmpty text="No upcoming meeting scheduled." />}
-            </OverviewPanel>
-            <OverviewPanel title="What needs attention">
-              <div className="space-y-2">
-                {attendanceDue.length > 0 && <ActionRow tone="red" label={`${attendanceDue.length} meeting${attendanceDue.length === 1 ? "" : "s"} need attendance`} onClick={() => { setOpenMeeting(attendanceDue[0].id); setTab("meetings"); }} />}
-                {reviewAssignments.length > 0 && <ActionRow tone="yellow" label={`${reviewAssignments.length} assignment${reviewAssignments.length === 1 ? "" : "s"} ready for review`} onClick={() => setTab("tasks")} />}
-                {overdueAssignments.length > 0 && <ActionRow tone="red" label={`${overdueAssignments.length} overdue assignment${overdueAssignments.length === 1 ? "" : "s"}`} onClick={() => setTab("tasks")} />}
-                {attendanceDue.length + reviewAssignments.length + overdueAssignments.length === 0 && <OverviewEmpty text="Nothing urgent. This pod is up to date." />}
-              </div>
-            </OverviewPanel>
-          </div>
-          <OverviewPanel title="Roster" action={<button className="text-[11px] text-[#F6B78D] hover:underline" onClick={() => setTab("roster")}>Manage roster</button>}>
-            <div className="flex flex-wrap gap-2">
-              {roster.map((member) => <span key={member.id} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[11px] text-white/70">
-                {nameById.get(member.memberId) ?? "Unknown"}{member.role === "lit" && <Badge label="lit" />}
-              </span>)}
-              {roster.length === 0 && <OverviewEmpty text="No one is assigned to this pod yet." />}
-            </div>
-          </OverviewPanel>
-        </div>
-      )}
-
-      {tab === "meetings" && (
-        podMeetings.length === 0 ? (
-          <Empty
-            message="No meetings yet. Schedule the first call to create an attendance sheet."
-            action={canRun ? <Btn variant="primary" onClick={() => { setEditingMeeting(null); setScheduleOpen(true); }}>+ Schedule meeting</Btn> : undefined}
+          <TeamTracker
+            pod={pod}
+            roster={fullRoster}
+            meetings={podMeetings}
+            assignments={podAssignments}
+            team={team}
+            nameById={nameById}
+            canEdit={canRun}
+            myId={myId}
+            onScheduleMeeting={() => { setEditingMeeting(null); setScheduleOpen(true); }}
+            onOpenMeeting={(id) => {
+              setOpenMeeting(id);
+              window.setTimeout(() => document.getElementById("meeting-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+            }}
           />
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)]">
-            <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
-              {podMeetings.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setOpenMeeting(m.id)}
-                  className={`shrink-0 rounded-md border px-3 py-2 text-left transition-colors lg:shrink ${
-                    openMeeting === m.id
-                      ? "border-[#F3E28D]/40 bg-[#F3E28D]/10"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/25"
-                  }`}
-                >
-                  <div className={`font-mono text-[12px] tabular-nums ${openMeeting === m.id ? "text-[#F3E28D]" : "text-white/85"}`}>
-                    {m.meetsOn}
-                  </div>
-                  <div className="text-[10px] text-white/35">
-                    {m.title || `${m.hours}h`} · {m.attendanceFinalizedAt ? "complete" : m.meetsOn < today ? "attendance due" : "upcoming"}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {selected && (
+          {selected && (
+            <div id="meeting-detail" className="scroll-mt-4">
               <AttendanceGrid
                 key={selected.id}
                 pod={pod}
@@ -237,22 +195,16 @@ export default function PodDetailPage() {
                   setOpenMeeting(null);
                 }}
               />
-            )}
-          </div>
-        )
-      )}
-
-      {tab === "roster" && (
-        <Roster
-          pod={pod} roster={roster} team={team} canEdit={canRun} nameById={nameById}
-        />
+            </div>
+          )}
+        </div>
       )}
 
       {tab === "tasks" && (
         <PodAssignments pod={pod} roster={roster} nameById={nameById} canEdit={canRun} myId={myId} />
       )}
 
-      {tab === "schedule" && <PodSchedule meetings={podMeetings} assignments={podAssignments} pod={pod} onOpenMeeting={(id) => { setOpenMeeting(id); setTab("meetings"); }} />}
+      {tab === "schedule" && <PodSchedule meetings={podMeetings} assignments={podAssignments} pod={pod} onOpenMeeting={(id) => { setOpenMeeting(id); setTab("tracker"); }} />}
 
       {tab === "grants" && isFinancePod && <GrantTracker pod={pod} canEdit={canRun} />}
 
@@ -263,28 +215,10 @@ export default function PodDetailPage() {
         onClose={() => setScheduleOpen(false)}
         pod={pod}
         meeting={editingMeeting}
-        onCreated={(id) => { setOpenMeeting(id); setScheduleOpen(false); setTab("meetings"); }}
+        onCreated={(id) => { setOpenMeeting(id); setScheduleOpen(false); setTab("tracker"); }}
       />
     </MembersLayout>
   );
-}
-
-function OverviewPanel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return <section className="rounded-xl border border-white/10 bg-[#15181F] p-4">
-    <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-[11px] font-semibold uppercase tracking-wide text-white/55">{title}</h2>{action}</div>
-    {children}
-  </section>;
-}
-
-function OverviewEmpty({ text }: { text: string }) { return <p className="text-[12px] text-white/40">{text}</p>; }
-
-function ActionRow({ label, tone, onClick }: { label: string; tone: "red" | "yellow"; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-[12px] transition-colors ${tone === "red" ? "border-red-400/25 bg-red-400/[0.06] text-red-300 hover:bg-red-400/10" : "border-yellow-400/25 bg-yellow-400/[0.06] text-yellow-300 hover:bg-yellow-400/10"}`}><span>{label}</span><span aria-hidden="true">→</span></button>;
-}
-
-function MeetingSummary({ meeting }: { meeting: PodMeeting }) {
-  const when = meeting.startsAt ? new Date(meeting.startsAt).toLocaleString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }) : meeting.meetsOn;
-  return <div><p className="text-[15px] font-semibold text-white/90">{meeting.title || "Pod meeting"}</p><p className="mt-1 text-[12px] text-white/50">{when} · {meeting.hours}h</p>{meeting.meetingUrl && <a className="mt-2 inline-block text-[11px] text-sky-300 hover:underline" href={meeting.meetingUrl} target="_blank" rel="noopener noreferrer">Open meeting link ↗</a>}</div>;
 }
 
 function PodSchedule({ meetings, assignments, pod, onOpenMeeting }: { meetings: PodMeeting[]; assignments: PodAssignment[]; pod: Pod; onOpenMeeting: (id: string) => void }) {
@@ -338,138 +272,6 @@ function ScheduleMeetingModal({ open, onClose, pod, meeting, onCreated }: { open
     {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
     <div className="flex gap-2"><Btn type="submit" variant="primary" disabled={saving || !start}>{saving ? "Saving…" : meeting ? "Save schedule" : "Schedule meeting"}</Btn><Btn type="button" variant="ghost" onClick={onClose}>Cancel</Btn></div>
   </form></Modal>;
-}
-
-// ── Roster ───────────────────────────────────────────────────────────────────
-
-function Roster({
-  pod, roster, team, canEdit, nameById,
-}: {
-  pod: Pod;
-  roster: PodMember[];
-  team: TeamMember[];
-  canEdit: boolean;
-  nameById: Map<string, string>;
-}) {
-  const [query, setQuery] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const inPod = useMemo(
-    () => new Map(roster.map((m) => [m.memberId, m.role as PodRole])),
-    [roster],
-  );
-
-  const run = async (memberId: string, fn: () => Promise<void>) => {
-    setBusy(memberId);
-    setError(null);
-    try { await fn(); }
-    catch (err) { setError(err instanceof Error ? err.message : "That didn't save. Try again."); }
-    finally { setBusy(null); }
-  };
-
-  // The roster itself is already listed above as chips, so this list exists to
-  // add someone. It shows results for a search rather than ninety names.
-  const q = query.trim().toLowerCase();
-  const candidates = !q ? [] : team
-    .filter((t) => !isInactiveMember(t.status))
-    .filter((t) => t.name.toLowerCase().includes(q) || (t.email ?? "").toLowerCase().includes(q))
-    .sort((a, b) => {
-      const aOn = inPod.has(a.id), bOn = inPod.has(b.id);
-      if (aOn !== bOn) return aOn ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    })
-    .slice(0, 25);
-
-  return (
-    <div className="max-w-2xl">
-      {roster.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {roster.map((m) => (
-            <span key={m.id} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/80">
-              {nameById.get(m.memberId) ?? "Unknown"}
-              {m.role === "lit" && <Badge label="lit" />}
-              {canEdit && (
-                <button
-                  onClick={() => void run(m.memberId, () => removePodMember(pod.id, m.memberId))}
-                  disabled={busy === m.memberId}
-                  aria-label={`Remove ${nameById.get(m.memberId) ?? "member"} from ${pod.name}`}
-                  className="text-white/30 transition-colors hover:text-red-400"
-                >✕</button>
-              )}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {error && <p role="alert" className="mb-2 text-[11px] text-red-400">{error}</p>}
-
-      {canEdit ? (
-        <>
-          <input
-            className="mb-2 min-h-10 w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none"
-            placeholder="Search everyone by name or email…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <div className="max-h-[26rem] overflow-y-auto rounded-md border border-white/10 bg-[#0F1014]">
-            {candidates.map((t) => {
-              const role = inPod.get(t.id);
-              const isBusy = busy === t.id;
-              return (
-                <div
-                  key={t.id}
-                  className={`flex items-center gap-2 border-b border-white/5 px-2.5 py-1.5 last:border-b-0 hover:bg-white/[0.03] ${isBusy ? "opacity-50" : ""}`}
-                >
-                  <button
-                    onClick={() => void run(t.id, () => role
-                      ? removePodMember(pod.id, t.id)
-                      : addPodMember(pod.id, t.id, "member"))}
-                    disabled={isBusy}
-                    aria-pressed={!!role}
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                  >
-                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
-                        role ? "border-sky-400/50 bg-sky-400/20 text-sky-300" : "border-white/20 text-transparent"
-                    }`}>✓</span>
-                    <span className={`truncate text-[12px] ${role ? "text-white" : "text-white/55"}`}>{t.name}</span>
-                    {(t.divisions ?? []).length > 0 && (
-                      <span className="shrink-0 text-[9px] uppercase tracking-wide text-white/25">
-                        {(t.divisions ?? []).join(" · ")}
-                      </span>
-                    )}
-                  </button>
-
-                  {role && (
-                    <button
-                      onClick={() => void run(t.id, () => setPodMemberRole(pod.id, t.id, role === "lit" ? "member" : "lit"))}
-                      disabled={isBusy}
-                      aria-pressed={role === "lit"}
-                      title={role === "lit" ? "Demote to member" : "Make LIT of this pod"}
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide transition-colors ${
-                        role === "lit" ? "bg-sky-400/15 text-sky-300" : "text-white/30 hover:text-white/70"
-                      }`}
-                    >LIT</button>
-                  )}
-                </div>
-              );
-            })}
-            {candidates.length === 0 && (
-              <p className="px-2.5 py-3 text-[11px] text-white/30">
-                {q ? `No active member matches “${query.trim()}”.`
-                   : "Search for someone by name or email to add them."}
-              </p>
-            )}
-          </div>
-          <p className="mt-2 text-[10px] text-white/25">
-            Removing someone who has attended a meeting keeps their hours.
-          </p>
-        </>
-      ) : (
-        roster.length === 0 && <Empty message="No one in this pod yet." />
-      )}
-    </div>
-  );
 }
 
 // ── Settings ─────────────────────────────────────────────────────────────────

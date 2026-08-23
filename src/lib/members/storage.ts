@@ -1647,6 +1647,13 @@ export async function fetchAttendance(meetingId: string): Promise<PodAttendance[
   return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<PodAttendance>(r));
 }
 
+export async function fetchAttendanceForMeetings(meetingIds: string[]): Promise<PodAttendance[]> {
+  if (meetingIds.length === 0) return [];
+  const { data, error } = await supabase.from("pod_attendance").select("*").in("meeting_id", meetingIds);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => fromRow<PodAttendance>(r));
+}
+
 // The whole grid saves in one call — a LIT fills a column and presses save once.
 export async function saveAttendance(
   meetingId: string,
