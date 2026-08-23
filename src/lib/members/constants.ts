@@ -89,6 +89,32 @@ export const BUSINESS_SERVICES = [
 
 export type BusinessService = (typeof BUSINESS_SERVICES)[number];
 
+export type PodDivision = "Marketing" | "Finance";
+
+export const POD_DIVISION_META: Record<PodDivision, {
+  label: string;
+  accent: string;
+  soft: string;
+  border: string;
+}> = {
+  Marketing: {
+    label: "Marketing",
+    accent: "text-[#8B5E48]",
+    soft: "bg-n-orange/30",
+    border: "border-n-orange/70",
+  },
+  Finance: {
+    label: "Finance",
+    accent: "text-amber-700",
+    soft: "bg-n-yellow/40",
+    border: "border-n-yellow/80",
+  },
+};
+
+export function getPodDivision(name: string): PodDivision {
+  return /grant|fund/i.test(name) ? "Finance" : "Marketing";
+}
+
 // ── ROLES ─────────────────────────────────────────────────────────────────────
 
 export const AUTH_ROLES = ["owner", "admin", "member"] as const;

@@ -6,7 +6,7 @@ import MembersLayout from "@/components/members/MembersLayout";
 import { PageHeader, Badge, Empty, SkeletonRows, LoadError } from "@/components/members/ui";
 import {
   subscribePods, subscribePodMembers, subscribePodAssignments,
-  completePodAssignment, fetchMemberHours, subscribeBusinesses,
+  setPodAssignmentStatus, fetchMemberHours, subscribeBusinesses,
   type Pod, type PodMember, type PodAssignment, type HoursEntry, type Business,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
@@ -28,6 +28,8 @@ export default function MyWorkPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [businesses, setBusinesses]   = useState<Business[]>([]);
   const [hours, setHours]             = useState<HoursEntry[] | null>(null);
+  const [movingId, setMovingId]       = useState<string | null>(null);
+  const [moveError, setMoveError]     = useState<string | null>(null);
 
   useEffect(() => subscribePods(setPods), []);
   useEffect(() => subscribePodMembers(setPodMembers), []);
@@ -124,6 +126,7 @@ export default function MyWorkPage() {
 
       {/* Tasks */}
       <h2 className="mb-2 text-[11px] uppercase tracking-wide text-white/40">Assignments</h2>
+      {moveError && <p role="alert" className="mb-2 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-[11px] text-red-300">{moveError}</p>}
       {loadError ? (
         <LoadError message={loadError} onRetry={() => window.location.reload()} />
       ) : assignments === null ? (
@@ -135,14 +138,7 @@ export default function MyWorkPage() {
           {myTasks.map((a) => {
             const overdue = a.status !== "Done" && a.dueDate && a.dueDate < today;
             return (
-              <div key={a.id} className="flex items-start gap-3 px-3 py-2.5">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[#F3E28D]"
-                  checked={a.status === "Done"}
-                  onChange={(e) => void completePodAssignment(a.id, e.target.checked)}
-                  aria-label={`Mark ${a.title} done`}
-                />
+              <div key={a.id} className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-start">
                 <div className="min-w-0 flex-1">
                   <p className={`text-[12px] ${a.status === "Done" ? "text-white/35 line-through" : "text-white/90"}`}>
                     {a.title}
@@ -151,8 +147,38 @@ export default function MyWorkPage() {
                     {podName(a.podId)}
                     {a.dueDate && <span className={overdue ? " text-red-400" : ""}> · due {a.dueDate}</span>}
                   </p>
+                  {a.description && <p className="mt-1 text-[11px] leading-relaxed text-white/45">{a.description}</p>}
                 </div>
-                {overdue && <Badge label="Blocked" />}
+                <div className="flex shrink-0 items-center gap-2">
+                  {overdue && <Badge label="Blocked" />}
+                  <Badge label={a.status} />
+                  {a.status === "Open" && (
+                    <button
+                      type="button"
+                      disabled={movingId === a.id}
+                      onClick={async () => {
+                        setMovingId(a.id); setMoveError(null);
+                        try { await setPodAssignmentStatus(a.id, "In Progress"); }
+                        catch (error) { setMoveError(error instanceof Error ? error.message : "The assignment did not update."); }
+                        finally { setMovingId(null); }
+                      }}
+                      className="rounded-lg bg-[#F6B78D] px-3 py-1.5 text-[11px] font-semibold text-[#0D0D0D] disabled:opacity-50"
+                    >Start work</button>
+                  )}
+                  {a.status === "In Progress" && (
+                    <button
+                      type="button"
+                      disabled={movingId === a.id}
+                      onClick={async () => {
+                        setMovingId(a.id); setMoveError(null);
+                        try { await setPodAssignmentStatus(a.id, "In Review"); }
+                        catch (error) { setMoveError(error instanceof Error ? error.message : "The assignment did not update."); }
+                        finally { setMovingId(null); }
+                      }}
+                      className="rounded-lg bg-[#F6B78D] px-3 py-1.5 text-[11px] font-semibold text-[#0D0D0D] disabled:opacity-50"
+                    >Request review</button>
+                  )}
+                </div>
               </div>
             );
           })}

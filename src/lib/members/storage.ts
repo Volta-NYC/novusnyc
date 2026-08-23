@@ -2003,6 +2003,9 @@ export interface PodMeeting {
   title: string;
   hours: number;
   notes: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  meetingUrl: string;
   createdBy?: string;
   createdAt?: string;
   attendanceFinalizedAt?: string | null;
@@ -2083,15 +2086,17 @@ export async function removePodMember(podId: string, memberId: string): Promise<
 
 export async function createPodMeeting(
   podId: string,
-  meetsOn: string,
-  title: string,
-  hours: number,
+  meeting: Pick<PodMeeting, "meetsOn" | "title" | "hours"> &
+    Partial<Pick<PodMeeting, "notes" | "startsAt" | "endsAt" | "meetingUrl">>,
 ): Promise<string> {
   const id = genId();
   const { error } = await supabase.from("pod_meetings")
-    .insert(toRow({ id, podId, meetsOn, title, hours, notes: "", createdAt: nowISO() }));
+    .insert(toRow({
+      id, podId, ...meeting, notes: meeting.notes ?? "",
+      meetingUrl: meeting.meetingUrl ?? "", createdAt: nowISO(),
+    }));
   if (error) throw new Error(error.message);
-  await writeAuditLog({ action: "create", collection: "pod_meetings", recordId: id, details: { podId, meetsOn } });
+  await writeAuditLog({ action: "create", collection: "pod_meetings", recordId: id, details: { podId, meetsOn: meeting.meetsOn } });
   return id;
 }
 
@@ -2265,11 +2270,13 @@ export interface PodAssignment {
   podId: string;
   title: string;
   description: string;
-  status: "Open" | "Done";
+  status: "Open" | "In Progress" | "In Review" | "Done";
   assignedMemberIds: string[];
   assignedMemberNames: string[];
   dueDate?: string | null;
   hours?: number | null;
+  deliverableUrl?: string | null;
+  reviewRequestedAt?: string | null;
   completedAt?: string | null;
   completedBy?: string | null;
   createdAt?: string;
@@ -2296,6 +2303,7 @@ export async function updatePodAssignment(id: string, patch: Partial<PodAssignme
   const { error } = await supabase.from("assignments")
     .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
   if (error) throw new Error(error.message);
+  if (patch.assignedMemberIds) await notify("pod_task_assigned", { assignmentId: id });
 }
 
 export async function completePodAssignment(id: string, done: boolean): Promise<void> {
@@ -2307,8 +2315,72 @@ export async function completePodAssignment(id: string, done: boolean): Promise<
   await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { completed: done } });
 }
 
+export async function setPodAssignmentStatus(
+  id: string,
+  status: PodAssignment["status"],
+): Promise<void> {
+  const { error } = await supabase.rpc("set_assignment_workflow_status", {
+    p_assignment_id: id,
+    p_status: status,
+  });
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "assignments", recordId: id, details: { status } });
+}
+
 export async function deletePodAssignment(id: string): Promise<void> {
   const { error } = await supabase.from("assignments").delete().eq("id", id);
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "delete", collection: "assignments", recordId: id });
+}
+
+export const GRANT_STATUSES = ["Researching", "Ready to Share", "Shared", "Closed"] as const;
+export type GrantStatus = (typeof GRANT_STATUSES)[number];
+
+export interface GrantOpportunity {
+  id: string;
+  podId: string;
+  name: string;
+  funder: string;
+  url: string;
+  deadline?: string | null;
+  amount: string;
+  geography: string;
+  eligibility: string;
+  focusAreas: string[];
+  status: GrantStatus;
+  notes: string;
+  createdBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+}
+
+export const subscribeGrantOpportunities = makeSubscriber<GrantOpportunity>("grant_opportunities");
+
+export async function createGrantOpportunity(
+  data: Omit<GrantOpportunity, "id" | "createdAt" | "updatedAt" | "deletedAt">,
+): Promise<void> {
+  const id = genId();
+  const now = nowISO();
+  const { error } = await supabase.from("grant_opportunities")
+    .insert(toRow({ ...data, id, createdAt: now, updatedAt: now }));
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "create", collection: "grant_opportunities", recordId: id, details: { podId: data.podId } });
+}
+
+export async function updateGrantOpportunity(
+  id: string,
+  patch: Partial<GrantOpportunity>,
+): Promise<void> {
+  const { error } = await supabase.from("grant_opportunities")
+    .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "update", collection: "grant_opportunities", recordId: id, details: { fields: Object.keys(patch) } });
+}
+
+export async function deleteGrantOpportunity(id: string): Promise<void> {
+  const { error } = await supabase.from("grant_opportunities")
+    .update({ deleted_at: nowISO(), updated_at: nowISO() }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "grant_opportunities", recordId: id });
 }

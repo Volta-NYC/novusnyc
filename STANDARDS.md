@@ -217,6 +217,12 @@ Certified hours are stored in the append-only `certified_hour_entries` journal.
 Attendance, task completion, projects and manual adjustments post correction
 entries; they must never recompute or delete previously certified history.
 
+Pod work follows a review boundary: an assigned member may start work and
+request review, but only owner/admin or that pod's LIT can approve `Done` and
+therefore certify task hours. Meetings may be saved before every roster row is
+marked; the attendance sheet finalizes only when every eligible member has an
+explicit status. Excused absences earn zero hours.
+
 Role is stored in `user_profiles.auth_role` and in the JWT `app_metadata.auth_role`. Read via `useAuth()` → `authRole`.
 
 ### Auth Context

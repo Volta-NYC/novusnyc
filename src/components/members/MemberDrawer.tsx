@@ -8,8 +8,9 @@ import {
   type Infraction, type MemberStrike, type TeamMember,
   type Pod, type PodMember, type HoursEntry, type ApplicationRecord,
 } from "@/lib/members/storage";
-import { Btn, Select, useConfirm, useDialogBehavior } from "@/components/members/ui";
+import { Btn, Field, Input, Modal, Select, useConfirm, useDialogBehavior } from "@/components/members/ui";
 import PodPicker from "@/components/members/PodPicker";
+import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 const TRACKS = ["Tech", "Marketing", "Finance"] as const;
 
@@ -18,6 +19,7 @@ interface Props {
   reviewerLabel: string;
   canEdit?: boolean;
   canAdjustHours?: boolean;
+  canGenerateLetter?: boolean;
   canManageInfractions?: boolean;
   onClose: () => void;
 }
@@ -31,7 +33,7 @@ const SOURCE_LABEL: Record<HoursEntry["source"], string> = {
 
 export default function MemberDrawer({
   member, reviewerLabel, canEdit = false,
-  canAdjustHours = false, canManageInfractions = false, onClose,
+  canAdjustHours = false, canGenerateLetter = false, canManageInfractions = false, onClose,
 }: Props) {
   const [strikes, setStrikes]       = useState<MemberStrike[]>([]);
   const [infractions, setInfractions] = useState<Infraction[]>([]);
@@ -51,6 +53,12 @@ export default function MemberDrawer({
   const [adjOpen, setAdjOpen] = useState(false);
   const [adjHours, setAdjHours] = useState("");
   const [adjReason, setAdjReason] = useState("");
+  const year = new Date().getFullYear();
+  const secondHalf = new Date().getMonth() >= 6;
+  const [letterOpen, setLetterOpen] = useState(false);
+  const [letterFrom, setLetterFrom] = useState(`${year}-${secondHalf ? "07-01" : "01-01"}`);
+  const [letterTo, setLetterTo] = useState(`${year}-${secondHalf ? "12-31" : "06-30"}`);
+  const [letterStatus, setLetterStatus] = useState<"idle" | "busy" | "error">("idle");
 
   const drawerRef = useRef<HTMLElement>(null);
   const drawerTitleId = useId();
@@ -151,6 +159,28 @@ export default function MemberDrawer({
     }
   };
 
+  const generateLetter = async () => {
+    if (!member || !letterFrom || !letterTo || letterFrom > letterTo) return;
+    const popup = window.open("", "_blank");
+    setLetterStatus("busy");
+    try {
+      const token = await getAuthToken();
+      const params = new URLSearchParams({ memberId: member.id, from: letterFrom, to: letterTo });
+      const response = await fetch(`/api/members/service-letter?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error("The letter could not be generated.");
+      const html = await response.text();
+      const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+      if (popup) popup.location.href = url;
+      else window.location.href = url;
+      window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+      setLetterOpen(false);
+      setLetterStatus("idle");
+    } catch {
+      popup?.close();
+      setLetterStatus("error");
+    }
+  };
+
   if (!member) return null;
 
   const field = "w-full rounded-md border border-white/10 bg-[#0F1014] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none";
@@ -189,16 +219,14 @@ export default function MemberDrawer({
           )}
           {/* Hours */}
           <div className="mb-5">
-            <div className="mb-2 flex items-baseline justify-between">
+            <div className="mb-2 flex items-baseline justify-between gap-3">
               <p className="text-[10px] uppercase tracking-wide text-white/40">Hours</p>
-              {canAdjustHours && (
-                <button
-                  onClick={() => setAdjOpen((v) => !v)}
-                  className="text-[10px] text-white/35 transition-colors hover:text-white/70"
-                >
-                  {adjOpen ? "Cancel" : "Adjust"}
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {canGenerateLetter && <button onClick={() => { setLetterStatus("idle"); setLetterOpen(true); }} className="text-[10px] font-medium text-sky-300 transition-colors hover:text-sky-200">Service letter</button>}
+                {canAdjustHours && (
+                  <button onClick={() => setAdjOpen((v) => !v)} className="text-[10px] text-white/35 transition-colors hover:text-white/70">{adjOpen ? "Cancel" : "Adjust"}</button>
+                )}
+              </div>
             </div>
             <p className="font-mono text-3xl font-semibold tabular-nums text-[#F3E28D]">
               {totalHours.toFixed(1)}
@@ -475,6 +503,21 @@ export default function MemberDrawer({
           )}
         </div>
       </aside>
+      <Modal open={letterOpen} onClose={() => letterStatus !== "busy" && setLetterOpen(false)} title={`Service letter · ${member.name}`}>
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed text-white/55">Generate a one-page verification letter from the certified-hours journal. The letter includes the work performed and a department breakdown.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="From"><Input type="date" value={letterFrom} onChange={(e) => setLetterFrom(e.target.value)} /></Field>
+            <Field label="Through"><Input type="date" value={letterTo} onChange={(e) => setLetterTo(e.target.value)} /></Field>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Btn variant="secondary" size="sm" onClick={() => { setLetterFrom(`${year}-01-01`); setLetterTo(`${year}-06-30`); }}>Jan–Jun</Btn>
+            <Btn variant="secondary" size="sm" onClick={() => { setLetterFrom(`${year}-07-01`); setLetterTo(`${year}-12-31`); }}>Jul–Dec</Btn>
+          </div>
+          {letterStatus === "error" && <p role="alert" className="text-xs text-red-400">The letter could not be generated. Check the date range and try again.</p>}
+          <div className="flex gap-2"><Btn variant="primary" onClick={() => void generateLetter()} disabled={letterStatus === "busy" || !letterFrom || !letterTo || letterFrom > letterTo}>{letterStatus === "busy" ? "Generating…" : "Open service letter"}</Btn><Btn variant="ghost" onClick={() => setLetterOpen(false)} disabled={letterStatus === "busy"}>Cancel</Btn></div>
+        </div>
+      </Modal>
     </>
   );
 }

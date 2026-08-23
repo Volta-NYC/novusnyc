@@ -1324,6 +1324,7 @@ export default function TeamPage() {
           reviewerLabel={user?.email || user?.id || "admin"}
           canEdit={canEdit}
           canAdjustHours={authRole === "owner" || authRole === "admin"}
+          canGenerateLetter={authRole === "owner" || authRole === "admin"}
           canManageInfractions={authRole === "owner"}
           onClose={() => setDrawerMember(null)}
         />

@@ -20,6 +20,11 @@ function fmtDate(d: string): string {
     : parsed.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 
+function fmtTime(value: unknown): string {
+  const parsed = new Date(String(value ?? ""));
+  return Number.isNaN(parsed.getTime()) ? "Time listed in the portal" : parsed.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+}
+
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
@@ -68,7 +73,7 @@ async function runSweep(viaCron: boolean) {
     // next run still catches them, and the ledger stops anyone being told twice.
     const ahead = new Date(today); ahead.setDate(ahead.getDate() + 1);
     const { data: meetings } = await sb.from("pod_meetings")
-      .select("id, pod_id, meets_on, title")
+      .select("id, pod_id, meets_on, title, starts_at, meeting_url")
       .gte("meets_on", iso(today)).lte("meets_on", iso(ahead));
 
     let sent = 0;
@@ -77,11 +82,13 @@ async function runSweep(viaCron: boolean) {
       if (!pod || pod.status === "Archived") continue;
       const to = emailsFor(String(m.pod_id));
       if (to.length === 0) continue;
-      const n = await sendClaimed("pod_meeting_reminder", String(m.id), to, {
+      const n = await sendClaimed("pod_meeting_reminder", `${String(m.id)}:${String(m.starts_at ?? m.meets_on)}`, to, {
         memberName: "there",
         podName: String(pod.name),
         meetingDate: fmtDate(String(m.meets_on)),
+        meetingTime: fmtTime(m.starts_at),
         meetingTitle: String(m.title ?? "") || `${pod.name} meeting`,
+        meetingLink: String(m.meeting_url || `${SITE_URL}/members/pods/${pod.slug}`),
         portalLink: `${SITE_URL}/members/pods/${pod.slug}`,
       });
       sent += n;
@@ -140,7 +147,7 @@ async function runSweep(viaCron: boolean) {
       const to = ids.map((id) => memberById.get(id))
         .filter(Boolean).map((m) => String((m as { email?: string }).email ?? "")).filter(Boolean);
       if (to.length === 0) continue;
-      const n = await sendClaimed("pod_task_due_soon", String(t.id), to, {
+      const n = await sendClaimed("pod_task_due_soon", `${String(t.id)}:${String(t.due_date)}`, to, {
         memberName: "there",
         taskTitle: String(t.title ?? "Your task"),
         podName: pod ? String(pod.name) : "your pod",

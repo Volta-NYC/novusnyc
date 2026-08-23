@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Btn } from "@/components/members/ui";
+import { Badge, Btn } from "@/components/members/ui";
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 import {
   fetchAttendance, saveAttendance,
@@ -20,7 +20,7 @@ const STATUS_STYLE: Record<AttendanceStatus, string> = {
 // The only screen a LIT has to use. Nobody starts Present: certified hours are
 // written only after an explicit choice (or the explicit Mark all control).
 export default function AttendanceGrid({
-  pod, meeting, roster, nameById, canEdit, myId, onDelete,
+  pod, meeting, roster, nameById, canEdit, myId, onDelete, onEditSchedule,
 }: {
   pod: Pod;
   meeting: PodMeeting;
@@ -29,6 +29,7 @@ export default function AttendanceGrid({
   canEdit: boolean;
   myId: string | null;
   onDelete: () => void;
+  onEditSchedule: () => void;
 }) {
   const [cells, setCells]   = useState<Record<string, Cell> | null>(null);
   const [saving, setSaving] = useState(false);
@@ -38,6 +39,7 @@ export default function AttendanceGrid({
   const [title, setTitle]   = useState(meeting.title);
   const [issuedMemberIds, setIssuedMemberIds] = useState<Set<string>>(new Set());
   const [issuing, setIssuing] = useState<string | null>(null);
+  const [infractionError, setInfractionError] = useState("");
 
   useEffect(() => {
     if (!canEdit) return;
@@ -57,6 +59,7 @@ export default function AttendanceGrid({
 
   const issueAbsence = async (memberId: string) => {
     setIssuing(memberId);
+    setInfractionError("");
     try {
       const token = await getAuthToken();
       const response = await fetch("/api/members/pods/attendance-infraction", {
@@ -66,6 +69,8 @@ export default function AttendanceGrid({
       });
       if (!response.ok) throw new Error("Infraction could not be issued.");
       setIssuedMemberIds((prev) => new Set(prev).add(memberId));
+    } catch (error) {
+      setInfractionError(error instanceof Error ? error.message : "Infraction could not be issued.");
     } finally {
       setIssuing(null);
     }
@@ -141,6 +146,7 @@ export default function AttendanceGrid({
     }
     return t;
   }, [cells, gridRoster, hours]);
+  const unmarkedCount = cells ? gridRoster.filter((m) => !cells[m.memberId]?.status).length : gridRoster.length;
 
   const set = (memberId: string, patch: Partial<Cell>) =>
     setCells((prev) => (prev ? { ...prev, [memberId]: { ...prev[memberId], ...patch } } : prev));
@@ -216,6 +222,11 @@ export default function AttendanceGrid({
 
   return (
     <div className="rounded-lg border border-white/10 bg-[#111418]">
+      {meeting.attendanceFinalizedAt && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-green-400/20 bg-green-400/[0.06] px-4 py-2 text-[11px] text-green-300">
+          <Badge label="Complete" /> Attendance is finalized and certified hours have been posted. Saving again records any deliberate corrections.
+        </div>
+      )}
       <div className="flex flex-wrap items-end gap-3 border-b border-white/10 px-4 py-3">
         <div>
           <label htmlFor={`title-${meeting.id}`} className="mb-1 block text-[10px] uppercase tracking-wide text-white/40">
@@ -230,6 +241,15 @@ export default function AttendanceGrid({
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
+
+        {meeting.startsAt && (
+          <div className="pb-1 text-[11px] text-white/45">
+            {new Date(meeting.startsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+            {meeting.meetingUrl && <a href={meeting.meetingUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-sky-300 hover:underline">Join ↗</a>}
+          </div>
+        )}
+
+        {canEdit && <button type="button" onClick={onEditSchedule} className="pb-1 text-[11px] font-medium text-sky-300 hover:underline">Edit schedule</button>}
         <div>
           <label htmlFor={`hrs-${meeting.id}`} className="mb-1 block text-[10px] uppercase tracking-wide text-white/40">
             Hours
@@ -268,6 +288,23 @@ export default function AttendanceGrid({
         </div>
       </div>
 
+      {canEdit && (
+        <div className="grid grid-cols-2 gap-px border-b border-white/10 bg-white/10 sm:grid-cols-5">
+          {([
+            ["Present", totals.Present, "text-green-400"],
+            ["Excused", totals.Excused, "text-yellow-300"],
+            ["Unexcused", totals.Unexcused, "text-red-400"],
+            ["Work completed", totals.tasks, "text-sky-300"],
+            ["Unmarked", unmarkedCount, unmarkedCount ? "text-red-400" : "text-green-400"],
+          ] as const).map(([label, value, color]) => (
+            <div key={label} className="bg-[#15181F] px-3 py-2.5">
+              <p className={`font-display text-lg font-semibold tabular-nums ${color}`}>{value}</p>
+              <p className="text-[9px] font-medium uppercase tracking-wide text-white/40">{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {cells === null ? (
         <div className="p-6 text-center text-[12px] text-white/30">Loading…</div>
       ) : (
@@ -293,7 +330,7 @@ export default function AttendanceGrid({
                         {nameById.get(m.memberId) ?? "Unknown"}
                       </span>
                       {m.role === "lit" && (
-                        <span className="ml-1.5 text-[9px] uppercase tracking-wide text-white/30">LIT</span>
+                        <span className="ml-1.5"><Badge label="lit" /></span>
                       )}
                     </td>
                     <td className="px-3 py-1.5">
@@ -367,12 +404,18 @@ export default function AttendanceGrid({
       )}
 
       {canEdit && (
-        <div className="flex items-center gap-3 border-t border-white/10 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3 border-t border-white/10 px-4 py-3">
           <Btn variant="primary" onClick={save} disabled={saving || cells === null}>
-            {saving ? "Saving…" : "Save attendance"}
+            {saving ? "Saving…" : unmarkedCount === 0 ? "Finalize attendance" : "Save progress"}
           </Btn>
+          {!saving && !saved && !saveError && (
+            <span className="text-[11px] text-white/35">
+              {unmarkedCount === 0 ? "All rows are marked. This will certify present members’ hours." : `${unmarkedCount} row${unmarkedCount === 1 ? " is" : "s are"} still unmarked.`}
+            </span>
+          )}
           {saved && <span className="text-[11px] text-green-400">Saved</span>}
           {saveError && <span role="alert" className="text-[11px] text-red-400">{saveError}</span>}
+          {infractionError && <span role="alert" className="text-[11px] text-red-400">{infractionError}</span>}
           <button
             onClick={onDelete}
             className="ml-auto text-[11px] text-white/30 transition-colors hover:text-red-400"

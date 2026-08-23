@@ -16,6 +16,7 @@ export const EXPORT_SECTIONS = [
   { key: "podMembers",        label: "Pod Memberships",     table: "pod_members" },
   { key: "podMeetings",       label: "Pod Meetings",        table: "pod_meetings" },
   { key: "podAttendance",     label: "Pod Attendance",      table: "pod_attendance" },
+  { key: "grantOpportunities", label: "Grant Opportunities", table: "grant_opportunities" },
   { key: "certifiedHours",    label: "Certified Hours",     table: "certified_hour_entries" },
   { key: "hoursAdjustments",  label: "Hours Adjustments",   table: "hours_adjustments" },
   { key: "infractions",       label: "Infraction Types",    table: "infractions" },

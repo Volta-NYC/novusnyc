@@ -43,13 +43,17 @@ const BADGE_COLORS: Record<string, string> = {
   Present:             "bg-green-500/15 text-green-400 border-green-500/20",
   Excused:             "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
   Unexcused:           "bg-red-500/15 text-red-400 border-red-500/20",
-  lit:                 "bg-[#F3E28D]/15 text-[#F3E28D] border-[#F3E28D]/25",
+  lit:                 "bg-sky-400/10 text-sky-300 border-sky-400/35",
   Open:                "bg-gray-500/15 text-gray-300 border-gray-500/20",
   Blocked:             "bg-red-500/15 text-red-400 border-red-500/20",
   Rejected:            "bg-red-500/15 text-red-400 border-red-500/20",
   Paused:              "bg-orange-500/15 text-orange-400 border-orange-500/20",
   "On Hold":           "bg-orange-500/15 text-orange-400 border-orange-500/20",
   "In Review":         "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Researching:          "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  "Ready to Share":    "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  Shared:               "bg-green-500/15 text-green-400 border-green-500/20",
+  Closed:               "bg-gray-500/15 text-gray-400 border-gray-500/20",
   "Form Sent":         "bg-purple-500/15 text-purple-400 border-purple-500/20",
   Dead:                "bg-red-900/30 text-red-500 border-red-900/20",
   // interview status
@@ -77,7 +81,7 @@ export function Badge({ label }: { label: string }) {
   const colorClass = BADGE_COLORS[label] ?? "bg-gray-500/15 text-gray-400 border-gray-500/20";
   return (
     <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${colorClass} whitespace-nowrap`}>
-      {label}
+      {label === "lit" ? "LIT" : label}
     </span>
   );
 }

@@ -1,183 +1,139 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Btn, Badge, Empty } from "@/components/members/ui";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Badge, Btn, Empty, Field, Input, LoadError, Modal, SearchBar, Select, TextArea } from "@/components/members/ui";
 import {
-  subscribePodAssignments, createPodAssignment, completePodAssignment, deletePodAssignment,
-  type Pod, type PodMember, type PodAssignment,
+  createPodAssignment, deletePodAssignment, setPodAssignmentStatus, subscribePodAssignments,
+  updatePodAssignment, type Pod, type PodAssignment, type PodMember,
 } from "@/lib/members/storage";
 
-// Assignments are pushed to named people, not posted for anyone to claim. The
-// browse-and-claim catalog went from 54 people a month to 6 before it was retired.
-export default function PodAssignments({
-  pod, roster, nameById, canEdit, myId,
-}: {
-  pod: Pod;
-  roster: PodMember[];
-  nameById: Map<string, string>;
-  canEdit: boolean;
-  myId: string | null;
+const STATUSES: PodAssignment["status"][] = ["Open", "In Progress", "In Review", "Done"];
+type Draft = { title: string; description: string; dueDate: string; hours: string; deliverableUrl: string; assignedMemberIds: string[] };
+const blank = (pod: Pod): Draft => ({ title: "", description: "", dueDate: "", hours: String(pod.defaultTaskHours), deliverableUrl: "", assignedMemberIds: [] });
+const statusHelp = (status: PodAssignment["status"]) => status === "Open" ? "Not started" : status === "In Progress" ? "Member is working" : status === "In Review" ? "LIT needs to check it" : "Approved; hours certified";
+
+export default function PodAssignments({ pod, roster, nameById, canEdit, myId }: {
+  pod: Pod; roster: PodMember[]; nameById: Map<string, string>; canEdit: boolean; myId: string | null;
 }) {
   const [all, setAll] = useState<PodAssignment[] | null>(null);
-  const [composing, setComposing] = useState(false);
-  const [title, setTitle] = useState("");
-  const [due, setDue] = useState("");
-  const [hours, setHours] = useState("");
-  const [picked, setPicked] = useState<string[]>([]);
-  const [showDone, setShowDone] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<PodAssignment | "new" | null>(null);
+  const [draft, setDraft] = useState<Draft>(() => blank(pod));
+  const [filter, setFilter] = useState<"Active" | PodAssignment["status"] | "All">("Active");
+  const [query, setQuery] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-  useEffect(() => subscribePodAssignments(setAll), []);
-
+  useEffect(() => subscribePodAssignments((rows, state) => { setAll(rows); setLoadError(state.error); }), []);
+  const podRows = useMemo(() => (all ?? []).filter((a) => a.podId === pod.id), [all, pod.id]);
+  const counts = useMemo(() => Object.fromEntries(STATUSES.map((s) => [s, podRows.filter((r) => r.status === s).length])) as Record<PodAssignment["status"], number>, [podRows]);
   const items = useMemo(() => {
-    const mine = (all ?? []).filter((a) => a.podId === pod.id);
-    return mine
-      .filter((a) => showDone || a.status !== "Done")
-      .sort((a, b) => {
-        if ((a.status === "Done") !== (b.status === "Done")) return a.status === "Done" ? 1 : -1;
-        return (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999");
-      });
-  }, [all, pod.id, showDone]);
+    const q = query.trim().toLowerCase();
+    const rank = (s: PodAssignment["status"]) => s === "In Review" ? 0 : s === "Open" ? 1 : s === "In Progress" ? 2 : 3;
+    return podRows
+      .filter((row) => filter === "All" || (filter === "Active" ? row.status !== "Done" : row.status === filter))
+      .filter((row) => !q || [row.title, row.description, ...row.assignedMemberNames].some((v) => v.toLowerCase().includes(q)))
+      .sort((a, b) => rank(a.status) - rank(b.status) || (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999"));
+  }, [filter, podRows, query]);
 
-  const doneCount = (all ?? []).filter((a) => a.podId === pod.id && a.status === "Done").length;
-
-  const reset = () => {
-    setTitle(""); setDue(""); setHours(""); setPicked([]); setComposing(false);
+  const openNew = () => { setDraft(blank(pod)); setError(""); setEditing("new"); };
+  const openEdit = (item: PodAssignment) => {
+    setDraft({ title: item.title, description: item.description, dueDate: item.dueDate ?? "", hours: String(item.hours ?? pod.defaultTaskHours), deliverableUrl: item.deliverableUrl ?? "", assignedMemberIds: item.assignedMemberIds });
+    setError(""); setEditing(item);
+  };
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!draft.title.trim() || draft.assignedMemberIds.length === 0) return;
+    setSaving(true); setError("");
+    const value = {
+      podId: pod.id, title: draft.title.trim(), description: draft.description.trim(),
+      status: editing === "new" ? "Open" as const : editing?.status ?? "Open" as const,
+      assignedMemberIds: draft.assignedMemberIds,
+      assignedMemberNames: draft.assignedMemberIds.map((id) => nameById.get(id) ?? "Unknown"),
+      dueDate: draft.dueDate || null, hours: draft.hours === "" ? null : Number(draft.hours),
+      deliverableUrl: draft.deliverableUrl.trim() || null,
+      reviewRequestedAt: editing === "new" ? null : editing?.reviewRequestedAt ?? null,
+    };
+    try {
+      if (editing === "new") await createPodAssignment(value);
+      else if (editing) await updatePodAssignment(editing.id, value);
+      setEditing(null);
+    } catch (err) { setError(err instanceof Error ? err.message : "The assignment was not saved."); }
+    finally { setSaving(false); }
+  };
+  const move = async (item: PodAssignment, status: PodAssignment["status"]) => {
+    setActionId(item.id); setError("");
+    try { await setPodAssignmentStatus(item.id, status); }
+    catch (err) { setError(err instanceof Error ? err.message : "The assignment did not move."); }
+    finally { setActionId(null); }
   };
 
-  const create = async () => {
-    if (!title.trim() || picked.length === 0) return;
-    await createPodAssignment({
-      podId: pod.id,
-      title: title.trim(),
-      description: "",
-      status: "Open",
-      assignedMemberIds: picked,
-      assignedMemberNames: picked.map((id) => nameById.get(id) ?? ""),
-      dueDate: due || null,
-      hours: hours ? Number(hours) : null,
-    });
-    reset();
-  };
-
-  const field = "rounded-md border border-white/10 bg-[#0F1014] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none";
-
-  return (
-    <div className="max-w-3xl">
-      {canEdit && (
-        composing ? (
-          <div className="mb-4 rounded-lg border border-white/10 bg-[#111418] p-4">
-            <input
-              autoFocus
-              className={`${field} mb-2 w-full`}
-              placeholder="What needs doing?"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <div className="mb-3 flex flex-wrap gap-3">
-              <div>
-                <label className="mb-1 block text-[10px] uppercase tracking-wide text-white/40">Due</label>
-                <input type="date" className={`${field} w-36`} value={due} onChange={(e) => setDue(e.target.value)} />
-              </div>
-              <div>
-                <label className="mb-1 block text-[10px] uppercase tracking-wide text-white/40">Hours</label>
-                <input
-                  type="number" min="0" step="0.25"
-                  className={`${field} w-24`}
-                  placeholder={String(pod.defaultTaskHours)}
-                  value={hours}
-                  onChange={(e) => setHours(e.target.value)}
-                />
-              </div>
-            </div>
-            <p className="mb-1.5 text-[10px] uppercase tracking-wide text-white/40">
-              Assign to {picked.length > 0 && <span className="text-white/60">{picked.length}</span>}
-            </p>
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              {roster.map((m) => {
-                const on = picked.includes(m.memberId);
-                return (
-                  <button
-                    key={m.memberId}
-                    onClick={() => setPicked((p) => on ? p.filter((x) => x !== m.memberId) : [...p, m.memberId])}
-                    className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
-                      on ? "border-[#F3E28D]/40 bg-[#F3E28D]/15 text-[#F3E28D]"
-                         : "border-white/10 text-white/50 hover:border-white/25 hover:text-white/80"
-                    }`}
-                  >
-                    {nameById.get(m.memberId) ?? "Unknown"}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-2">
-              <Btn variant="primary" onClick={create} disabled={!title.trim() || picked.length === 0}>
-                Assign
-              </Btn>
-              <Btn variant="ghost" onClick={reset}>Cancel</Btn>
-              {picked.length === 0 && (
-                <span className="text-[11px] text-white/30">Pick at least one person.</span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <Btn variant="primary" className="mb-4" onClick={() => setComposing(true)}>+ New assignment</Btn>
-        )
-      )}
-
-      {all === null ? null : items.length === 0 ? (
-        <Empty message={showDone ? "Nothing here yet." : "No open assignments."} />
-      ) : (
-        <div className="divide-y divide-white/5 rounded-lg border border-white/10">
-          {items.map((a) => {
-            const names = a.assignedMemberIds.map((id) => nameById.get(id) ?? "Unknown");
-            const overdue = a.status !== "Done" && a.dueDate && a.dueDate < new Date().toISOString().slice(0, 10);
-            const isMine = !!myId && a.assignedMemberIds.includes(myId);
-            return (
-              <div key={a.id} className="flex items-start gap-3 px-3 py-2.5">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[#F3E28D]"
-                  checked={a.status === "Done"}
-                  disabled={!canEdit && !isMine}
-                  onChange={(e) => void completePodAssignment(a.id, e.target.checked)}
-                  aria-label={`Mark ${a.title} done`}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className={`text-[12px] ${a.status === "Done" ? "text-white/35 line-through" : "text-white/90"}`}>
-                    {a.title}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-white/35">
-                    {names.join(", ")}
-                    {a.dueDate && (
-                      <span className={overdue ? " text-red-400" : ""}> · due {a.dueDate}</span>
-                    )}
-                    <span> · {a.hours ?? pod.defaultTaskHours}h</span>
-                  </p>
-                </div>
-                {a.status === "Done" && <Badge label="Done" />}
-                {canEdit && (
-                  <button
-                    onClick={() => { if (window.confirm(`Delete "${a.title}"?`)) void deletePodAssignment(a.id); }}
-                    className="text-[11px] text-white/25 transition-colors hover:text-red-400"
-                    aria-label={`Delete ${a.title}`}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {doneCount > 0 && (
-        <button
-          onClick={() => setShowDone((s) => !s)}
-          className="mt-3 text-[11px] text-white/35 transition-colors hover:text-white/70"
-        >
-          {showDone ? "Hide" : "Show"} {doneCount} completed
-        </button>
-      )}
+  return <section aria-labelledby="assignments-title">
+    <h2 id="assignments-title" className="sr-only">Assignments</h2>
+    <div className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+      {STATUSES.map((status) => <button key={status} type="button" onClick={() => setFilter(status)} aria-pressed={filter === status}
+        className={`rounded-xl border p-3 text-left transition-colors ${filter === status ? "border-[#F6B78D]/50 bg-[#F6B78D]/10" : "border-white/10 bg-[#15181F] hover:border-white/25"}`}>
+        <span className="block font-display text-xl font-semibold tabular-nums text-white">{counts[status]}</span>
+        <span className="mt-1 block text-[11px] font-medium text-white/65">{status}</span>
+        <span className="mt-0.5 block text-[10px] text-white/35">{statusHelp(status)}</span>
+      </button>)}
     </div>
-  );
+    <div className="mb-3 flex flex-col gap-2 md:flex-row">
+      <SearchBar value={query} onChange={setQuery} placeholder="Search assignments or members…" />
+      <div className="flex gap-2">
+        <Select className="min-w-36" value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)}>
+          <option value="Active">Active work</option><option value="All">All assignments</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}
+        </Select>
+        {canEdit && <Btn variant="primary" className="shrink-0" onClick={openNew}>+ Assign work</Btn>}
+      </div>
+    </div>
+    {error && <p role="alert" className="mb-3 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-xs text-red-300">{error}</p>}
+    {loadError ? <LoadError message={loadError} onRetry={() => window.location.reload()} /> : all === null ? <div className="h-36 animate-pulse rounded-xl border border-white/10 bg-white/[0.03]" /> : items.length === 0 ?
+      <Empty message={podRows.length === 0 ? "No assignments yet. Create one after the next pod call." : "No assignments match this view."} action={canEdit && podRows.length === 0 ? <Btn variant="primary" onClick={openNew}>Create the first assignment</Btn> : undefined} /> :
+      <div className="space-y-2">{items.map((item) => {
+        const isMine = !!myId && item.assignedMemberIds.includes(myId);
+        const overdue = item.status !== "Done" && !!item.dueDate && item.dueDate < new Date().toISOString().slice(0, 10);
+        const next = item.status === "Open" ? "In Progress" : item.status === "In Progress" ? "In Review" : null;
+        return <article key={item.id} className={`rounded-xl border bg-[#15181F] p-4 ${item.status === "In Review" ? "border-yellow-400/35" : overdue ? "border-red-400/30" : "border-white/10"}`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start"><div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2"><h3 className="text-[14px] font-semibold text-white/95">{item.title}</h3><Badge label={item.status} />{overdue && <Badge label="Blocked" />}</div>
+            {item.description && <p className="mt-2 max-w-3xl whitespace-pre-wrap text-[12px] leading-relaxed text-white/55">{item.description}</p>}
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-white/40">
+              <span>{item.assignedMemberIds.map((id) => nameById.get(id) ?? "Unknown").join(", ")}</span>
+              <span className={overdue ? "text-red-400" : ""}>{item.dueDate ? `Due ${item.dueDate}` : "No deadline"}</span>
+              <span>{item.hours ?? pod.defaultTaskHours} certified hours</span>
+              {item.deliverableUrl && <a href={item.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-sky-300 hover:underline">Open deliverable ↗</a>}
+            </div>
+          </div><div className="flex shrink-0 flex-wrap items-center gap-2">
+            {canEdit ? <Select aria-label={`Status for ${item.title}`} className="min-w-36 py-1.5 text-xs" value={item.status} disabled={actionId === item.id} onChange={(e) => void move(item, e.target.value as PodAssignment["status"])} options={STATUSES} /> :
+              isMine && next ? <Btn size="sm" variant="primary" disabled={actionId === item.id} onClick={() => void move(item, next)}>{next === "In Progress" ? "Start work" : "Request review"}</Btn> : null}
+            {canEdit && <Btn size="sm" variant="ghost" onClick={() => openEdit(item)}>Edit</Btn>}
+          </div></div>
+        </article>;
+      })}</div>}
+
+    <Modal open={editing !== null} onClose={() => !saving && setEditing(null)} title={editing === "new" ? "Assign work" : "Edit assignment"}>
+      <form className="space-y-4" onSubmit={save}>
+        <Field label="Assignment" required><Input autoFocus value={draft.title} onChange={(e) => setDraft((v) => ({ ...v, title: e.target.value }))} /></Field>
+        <Field label="What does done look like?"><TextArea rows={4} placeholder="Describe the deliverable and where it should be shared." value={draft.description} onChange={(e) => setDraft((v) => ({ ...v, description: e.target.value }))} /></Field>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Due date"><Input type="date" value={draft.dueDate} onChange={(e) => setDraft((v) => ({ ...v, dueDate: e.target.value }))} /></Field>
+          <Field label="Service hours"><Input type="number" min="0" step="0.25" value={draft.hours} onChange={(e) => setDraft((v) => ({ ...v, hours: e.target.value }))} /></Field>
+          <Field label="Deliverable link"><Input type="url" placeholder="https://…" value={draft.deliverableUrl} onChange={(e) => setDraft((v) => ({ ...v, deliverableUrl: e.target.value }))} /></Field>
+        </div>
+        <Field label={`Assign to · ${draft.assignedMemberIds.length} selected`} required><div className="flex flex-wrap gap-2 rounded-xl border border-white/20 bg-[#0F1014] p-3">
+          {roster.map((member) => { const selected = draft.assignedMemberIds.includes(member.memberId); return <button type="button" key={member.memberId} aria-pressed={selected}
+            onClick={() => setDraft((value) => ({ ...value, assignedMemberIds: selected ? value.assignedMemberIds.filter((id) => id !== member.memberId) : [...value.assignedMemberIds, member.memberId] }))}
+            className={`rounded-full border px-3 py-1.5 text-[11px] transition-colors ${selected ? "border-sky-400/45 bg-sky-400/15 text-sky-300" : "border-white/15 text-white/55 hover:border-white/30 hover:text-white"}`}>
+            {nameById.get(member.memberId) ?? "Unknown"}{member.role === "lit" ? " · LIT" : ""}</button>; })}
+        </div></Field>
+        <div className="flex flex-wrap items-center gap-2">
+          <Btn type="submit" variant="primary" disabled={saving || !draft.title.trim() || draft.assignedMemberIds.length === 0}>{saving ? "Saving…" : editing === "new" ? "Create assignment" : "Save changes"}</Btn>
+          <Btn type="button" variant="ghost" onClick={() => setEditing(null)} disabled={saving}>Cancel</Btn>
+          {editing && editing !== "new" && canEdit && <Btn type="button" variant="danger" className="sm:ml-auto" onClick={async () => { if (!window.confirm(`Delete “${editing.title}”?`)) return; await deletePodAssignment(editing.id); setEditing(null); }}>Delete</Btn>}
+        </div>
+      </form>
+    </Modal>
+  </section>;
 }
