@@ -12,7 +12,6 @@ import {
   subscribeTeam, createTeamMember, updateTeamMember, deleteTeamMember,
   subscribeBusinesses,
   subscribePods, subscribePodMembers, fetchMemberContributions, getSiteSettings,
-  fetchDeletedTeamMembers, restoreTeamMember,
   subscribeApplications,
   type TeamMember, type Business, type ApplicationRecord,
   type Pod, type PodMember, type MemberContribution,
@@ -144,8 +143,6 @@ export default function TeamPage() {
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
   // Hours + pods drive the member row; credits were retired.
   const [thresholds, setThresholds] = useState(DEFAULT_INFRACTION_THRESHOLDS);
-  const [removed, setRemoved] = useState<TeamMember[]>([]);
-  const [showRemoved, setShowRemoved] = useState(false);
   const [contributions, setContributions] = useState<MemberContribution[]>([]);
   const [pods, setPods] = useState<Pod[]>([]);
   const [podMembers, setPodMembers] = useState<PodMember[]>([]);
@@ -201,11 +198,6 @@ export default function TeamPage() {
       unsubscribePodMembers();
     };
   }, []);
-
-  useEffect(() => {
-    if (!canEdit) { setRemoved([]); return; }
-    void fetchDeletedTeamMembers().then(setRemoved);
-  }, [canEdit]);
 
   useEffect(() => subscribeApplications(setApplications), []);
 
@@ -1297,40 +1289,6 @@ export default function TeamPage() {
           </div>
         </div>
       </Modal>
-
-      {canEdit && removed.length > 0 && (
-        <div className="mt-6">
-          <button
-            onClick={() => setShowRemoved((v) => !v)}
-            className="text-[11px] text-white/35 transition-colors hover:text-white/70"
-          >
-            {showRemoved ? "Hide" : "Show"} {removed.length} recently removed
-          </button>
-          {showRemoved && (
-            <div className="mt-2 max-w-2xl divide-y divide-white/5 rounded-lg border border-white/10">
-              {removed.map((m) => (
-                <div key={m.id} className="flex items-center gap-3 px-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[12px] text-white/70">{m.name}</p>
-                    <p className="text-[10px] text-white/30">
-                      {m.email || "no email"}
-                      {m.deletedAt ? ` · removed ${String(m.deletedAt).slice(0, 10)}` : ""}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => void restoreTeamMember(m.id).then(async () => {
-                      setRemoved(await fetchDeletedTeamMembers());
-                    })}
-                    className="rounded border border-white/15 px-2 py-0.5 text-[11px] text-white/60 transition-colors hover:border-white/35 hover:text-white"
-                  >
-                    Restore
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {drawerMember && (
         <MemberDrawer
