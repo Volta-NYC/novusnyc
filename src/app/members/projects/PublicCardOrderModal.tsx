@@ -101,7 +101,12 @@ export default function PublicCardOrderModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Arrange public cards" dismissible={!saving}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={surface === "showcase" ? "Arrange showcase cards" : "Arrange home page cards"}
+      dismissible={!saving}
+    >
       <div className="mb-5 grid grid-cols-2 rounded-xl border border-black/10 bg-[#F2F3F5] p-1.5">
         {(["showcase", "home"] as const).map((key) => (
           <button
@@ -126,7 +131,7 @@ export default function PublicCardOrderModal({
           No cards are enabled for this surface yet.
         </div>
       ) : (
-        <ol className="grid max-h-[56vh] grid-cols-1 gap-3 overflow-y-auto pr-2 sm:grid-cols-2">
+        <ol className="grid max-h-[56vh] grid-cols-1 gap-3 overflow-y-auto pr-2 md:grid-cols-3">
           {ordered.map((business, index) => (
             <li
               key={business.id}

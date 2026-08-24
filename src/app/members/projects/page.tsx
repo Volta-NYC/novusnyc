@@ -398,7 +398,7 @@ function ProjectsPageInner() {
       <PageHeader
         title="Tech Projects"
         subtitle="Website pipeline, ownership, links, and public presentation."
-        action={canPublish ? <Btn variant="secondary" onClick={() => setOrderOpen(true)}>Arrange public cards</Btn> : undefined}
+        action={canPublish ? <Btn variant="secondary" onClick={() => setOrderOpen(true)}>Arrange showcase cards</Btn> : undefined}
       />
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New website project">
