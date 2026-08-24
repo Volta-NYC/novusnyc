@@ -325,14 +325,18 @@ function FlagshipPartnerCard({ partner }: { partner: CommunityPartner }) {
 function PartnerLogoCard({
   partner,
   important,
+  accent,
   tabIndex,
   isDuplicate = false,
 }: {
   partner: CommunityPartner;
   important: boolean;
+  accent: "purple" | "yellow";
   tabIndex?: number;
   isDuplicate?: boolean;
 }) {
+  const borderClass = accent === "purple" ? "border-n-purple/35" : "border-n-yellow/60";
+
   return (
     <a
       href={partner.website}
@@ -341,10 +345,10 @@ function PartnerLogoCard({
       tabIndex={tabIndex}
       aria-hidden={isDuplicate || undefined}
       aria-label={`Visit ${partner.name} website`}
-      className={`partner-logo-card shrink-0 bg-white border-2 flex flex-col items-center justify-between text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
+      className={`partner-logo-card partner-logo-card--${accent} shrink-0 bg-white border-2 flex flex-col items-center justify-between text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
         important
-          ? "w-[230px] h-[168px] rounded-xl border-n-orange/35 px-4 py-5"
-          : "w-[230px] h-[168px] rounded-lg border-n-border px-4 py-5"
+          ? `w-[230px] h-[168px] rounded-xl ${borderClass} px-4 py-5`
+          : `w-[230px] h-[168px] rounded-lg ${borderClass} px-4 py-5`
       }`}
     >
       <div className="relative w-full h-[72px] shrink-0">
@@ -374,10 +378,12 @@ function PartnerMarquee({
   partners,
   important = false,
   reverse = false,
+  accent,
 }: {
   partners: CommunityPartner[];
   important?: boolean;
   reverse?: boolean;
+  accent: "purple" | "yellow";
 }) {
   return (
     <div className="partner-marquee -mx-5 overflow-hidden py-1 md:-mx-8">
@@ -389,6 +395,7 @@ function PartnerMarquee({
                 key={`${copy}-${partner.name}`}
                 partner={partner}
                 important={important}
+                accent={accent}
                 tabIndex={copy === 1 ? -1 : undefined}
                 isDuplicate={copy === 1}
               />
@@ -441,10 +448,10 @@ async function CommunityPartnersSection() {
                 ))}
               </div>
               <AnimatedSection delay={0.3} duration={0.32}>
-                <PartnerMarquee partners={importantPartners} important />
+                <PartnerMarquee partners={importantPartners} important accent="purple" />
               </AnimatedSection>
               <AnimatedSection delay={0.37} duration={0.32}>
-                <PartnerMarquee partners={neighborhoodPartners} reverse />
+                <PartnerMarquee partners={neighborhoodPartners} reverse accent="yellow" />
               </AnimatedSection>
             </div>
           </div>

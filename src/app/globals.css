@@ -1182,8 +1182,15 @@ body:has(.home-scroll-story) footer::before {
 
 .partner-logo-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(246, 183, 141, 0.5);
   box-shadow: 0 14px 34px rgba(35, 31, 36, 0.1);
+}
+
+.partner-logo-card--purple:hover {
+  border-color: rgba(191, 162, 219, 0.7);
+}
+
+.partner-logo-card--yellow:hover {
+  border-color: rgba(228, 210, 124, 0.9);
 }
 
 .partner-logo-image {
