@@ -62,7 +62,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
       <div className="absolute inset-0 home-shared-wash" />
       <div className="absolute inset-0 hero-vignette opacity-70 pointer-events-none" />
 
-      <div className="relative z-10 flex min-h-[100svh] flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-36">
+      <div className="home-initial-viewport relative z-10 flex min-h-[100svh] flex-col items-center justify-center px-5 pb-16 pt-28 sm:pb-20 sm:pt-32 md:pb-24 md:pt-36">
         <motion.div
           className="relative z-10 flex w-full max-w-6xl justify-center"
           style={{

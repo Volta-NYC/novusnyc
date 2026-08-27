@@ -175,6 +175,14 @@ body {
 /* Phone baseline for the public site. Individual mobile refinements live
    below this scope so the member portal and desktop layouts stay unchanged. */
 @media (max-width: 767px) {
+  /* Public nav is fixed over the document. A nominal 100svh hero therefore
+     starts underneath its 4rem bar, which lets the following section peek
+     into the first phone viewport. Keep the full hero visible below the nav
+     before normal scrolling begins. Desktop navigation is unaffected. */
+  .home-initial-viewport {
+    min-height: calc(100svh + 4rem);
+  }
+
   .page-photo-hero-overlay {
     background:
       linear-gradient(0deg, rgb(var(--color-dark) / 0.86), rgb(var(--color-dark) / 0.4) 72%, rgb(var(--color-dark) / 0.25));
