@@ -32,7 +32,7 @@ export default function ParallaxHero({
   });
 
   return (
-    <section ref={sectionRef} className={className} data-home-dark-end="true">
+    <section ref={sectionRef} className={`public-initial-viewport ${className}`} data-home-dark-end="true">
       <motion.div
         aria-hidden="true"
         className={mediaClassName}

@@ -179,7 +179,7 @@ body {
      starts underneath its 4rem bar, which lets the following section peek
      into the first phone viewport. Keep the full hero visible below the nav
      before normal scrolling begins. Desktop navigation is unaffected. */
-  .home-initial-viewport {
+  .public-initial-viewport {
     min-height: calc(100svh + 4rem);
   }
 

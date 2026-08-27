@@ -212,7 +212,7 @@ export default async function Partners() {
       <ParallaxHero
         image={petiteDumplingStorefront}
         alt="Petite Dumpling storefront in Park Slope, Brooklyn"
-        className="home-initial-viewport relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24"
+        className="relative flex min-h-[100svh] items-center overflow-hidden pt-32 pb-24"
         imageClassName="object-cover object-[60%_center] md:object-center"
         mediaClassName="absolute -inset-y-[16vh] inset-x-0"
         parallaxRange={[160, -40]}
