@@ -2025,15 +2025,74 @@ details[open] > .accordion-body {
   transition: max-height 0.4s cubic-bezier(0, 1, 0, 1);
 }
 
-/* Keep Leaflet map layers beneath nav/dropdowns on mobile and desktop */
-.leaflet-container {
+/* Public Showcase vector map */
+.maplibregl-map,
+.maplibregl-canvas-container,
+.maplibregl-canvas {
   z-index: 0;
 }
-.leaflet-pane,
-.leaflet-top,
-.leaflet-bottom,
-.leaflet-control {
-  z-index: 1 !important;
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-bottom-right {
+  z-index: 1;
+}
+.novus-map-marker {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.novus-map-marker__dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border: 1.25px solid;
+  border-radius: 9999px;
+}
+.novus-map-marker__dot--partner {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+.novus-map-popup {
+  min-width: 160px;
+  font-family: var(--font-dm-sans), sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.novus-map-popup__title {
+  padding-right: 12px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+}
+.novus-map-popup__muted {
+  color: #6B7280;
+  font-size: 11px;
+}
+.novus-map-popup__details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: #374151;
+  font-size: 11px;
+}
+.novus-map-popup__status,
+.novus-map-popup__link {
+  font-weight: 600;
+}
+.novus-map-popup__link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  text-decoration: none;
+}
+.novus-map-popup__link:hover {
+  text-decoration: underline;
 }
 
 /* ── ACCESSIBILITY ────────────────────────────────────────────────────────────
