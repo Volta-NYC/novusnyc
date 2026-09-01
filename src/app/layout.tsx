@@ -181,6 +181,12 @@ export default function RootLayout({
               sameAs: [
                 SOCIAL.linkedin,
                 SOCIAL.instagram,
+                // Google already holds a Knowledge Graph entity for Novus NYC
+                // (kgmid /g/11y_bpwdyp). Listing it here is the return half of
+                // the link — the profile points at this site, this confirms the
+                // profile — which is what binds the two into one entity and
+                // keeps us distinct from the similarly named NOVUS NY ensemble.
+                "https://www.google.com/search?kgmid=/g/11y_bpwdyp",
               ],
             }),
           }}
