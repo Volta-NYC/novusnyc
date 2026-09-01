@@ -130,7 +130,7 @@ export default function RootLayout({
                 email: EMAIL.info,
                 contactType: "customer service",
                 areaServed: "US",
-                availableLanguage: ["English", "Spanish", "Chinese", "Bengali", "Korean", "Arabic"],
+                availableLanguage: ["English", "Spanish", "French", "Chinese", "Korean", "Arabic"],
                 url: `${SITE_URL}/partners#contact`,
               },
               hasOfferCatalog: {
