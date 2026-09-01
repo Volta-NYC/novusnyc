@@ -296,7 +296,7 @@ export type LeadershipExperience = {
 export const teamMembers: LeadershipMember[] = [
   {
     name: "Ethan Zhang",
-    role: "Founder & Director",
+    role: "Co-Founder",
     roleDetails: "A Stuyvesant student who builds things — mostly software, occasionally organizations. He writes and maintains the platform Novus runs on, and is drawn to problems where a well-designed system replaces work that used to take a room full of people. Outside school he rows, runs, competes in math, and spends a fair amount of time behind a camera or a piano.",
     email: EMAIL.ethan,
     linkedin: "https://www.linkedin.com/in/ez09",
@@ -310,7 +310,7 @@ export const teamMembers: LeadershipMember[] = [
     experience: [
       {
         title: "Novus NYC",
-        role: "Founder & Director",
+        role: "Co-Founder & Executive Director",
         description: "Founded and co-directs a 400+ student organization serving small businesses across all five boroughs. Built partnerships and an 80+ business pipeline, scaled delivery to 100+ engagements, and developed the Next.js, TypeScript, and PostgreSQL platform coordinating 10+ concurrent projects.",
       },
       {
