@@ -8,7 +8,6 @@ import PageHeroContent from "@/components/PageHeroContent";
 import ParallaxHero from "@/components/ParallaxHero";
 import SectionProgressNav from "@/components/SectionProgressNav";
 import { aboutTimeline, aboutValues, teamMembers } from "@/data";
-import { getMemberEducationSnapshot } from "@/lib/server/memberEducation";
 import { getPublicStatSnapshot } from "@/lib/server/publicStats";
 import brooklynBridgePhoto from "../../../public/brooklyn-bridge.jpg";
 
@@ -25,10 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default async function About() {
-  const [education, { effectiveValues }] = await Promise.all([
-    getMemberEducationSnapshot(),
-    getPublicStatSnapshot(),
-  ]);
+  const { effectiveValues } = await getPublicStatSnapshot();
 
   return (
     <>
@@ -134,9 +130,7 @@ export default async function About() {
               </div>
               <div className="flex gap-8 md:pb-1 shrink-0">
                 {[
-                  { label: "High Schools", value: `${education.highSchoolCount}+` },
-                  { label: "Colleges", value: `${education.collegeCount}+` },
-                  { label: "States", value: `${education.stateCount}+` },
+                  { label: "Schools Represented", value: effectiveValues.homeSchoolsRepresented },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-bold text-n-orange text-3xl leading-none">{s.value}</p>
