@@ -285,6 +285,12 @@ function normalizeNeighborhood(value: unknown, row: Record<string, unknown>): st
   const explicit = asText(value);
   if (explicit) return explicit;
 
+  // Borough before the address: clearing boroughs out of the neighborhood
+  // column left clients whose only location is the borough, and most of those
+  // have no address to parse either.
+  const borough = asText(row.borough);
+  if (borough) return borough;
+
   const address = asText(row.address);
   if (!address) return "Neighborhood, Borough";
   const parts = address.split(",").map((part) => part.trim()).filter(Boolean);
