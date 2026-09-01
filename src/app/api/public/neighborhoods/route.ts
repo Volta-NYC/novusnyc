@@ -5,7 +5,7 @@ import { dbRead } from "@/lib/server/adminApi";
 // of neighborhoods derived from all businesses in the database. Used by the
 // public contact form to populate the neighborhood datalist.
 
-type BusinessRow = { neighborhood?: string };
+type BusinessRow = { neighborhood?: string; deleted_at?: string | null };
 
 export async function GET() {
   try {
@@ -16,6 +16,9 @@ export async function GET() {
 
     const seen = new Set<string>();
     for (const row of Object.values(data)) {
+      // Removed clients must not seed the public form. A soft-deleted record
+      // put "Staten island" in front of every visitor until this was added.
+      if (row?.deleted_at) continue;
       const raw = String(row?.neighborhood ?? "").trim();
       if (!raw) continue;
       // Strip borough suffix (e.g. "Park Slope, Brooklyn" → "Park Slope")
