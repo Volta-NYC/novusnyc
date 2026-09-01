@@ -1,6 +1,5 @@
 import "server-only";
 
-import { chapterLocations } from "@/data/network";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getPublicLiveStats } from "@/lib/server/publicShowcase";
 
@@ -10,7 +9,7 @@ export const PUBLIC_STAT_KEYS = [
   "homeStudentMembers",
   "homeBusinessesSupported",
   "communityOrganizations",
-  "homeNetworkLocations",
+  "homeSchoolsRepresented",
   "aboutBusinesses",
   "aboutWebsiteProjects",
   "aboutMarketingProjects",
@@ -47,6 +46,29 @@ async function getActiveMemberCount(): Promise<number> {
       .is("deleted_at", null)
       .neq("status", "Inactive");
     return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function getSchoolsRepresentedCount(): Promise<number> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("team")
+      .select("school")
+      .is("deleted_at", null)
+      .neq("status", "Inactive");
+    if (error) throw error;
+
+    // Distinct on the trimmed, case-folded name so "Stuyvesant High School" and
+    // a stray " stuyvesant high school " count once. Normalization of known
+    // aliases happens in migration 20260824000006; this only guards leftovers.
+    const names = new Set<string>();
+    for (const row of data ?? []) {
+      const name = typeof row.school === "string" ? row.school.trim() : "";
+      if (name) names.add(name.toLowerCase());
+    }
+    return names.size;
   } catch {
     return 0;
   }
@@ -99,11 +121,12 @@ export function publicCommunityOrganizationStat(overrides: PublicStatOverrides, 
  * effective values here prevents the admin preview from drifting from the site.
  */
 export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
-  const [rawOverrides, liveStats, communityOrganizations, activeMembers] = await Promise.all([
+  const [rawOverrides, liveStats, communityOrganizations, activeMembers, schoolsRepresented] = await Promise.all([
     getPublicStatOverrides(),
     getPublicLiveStats(),
     getCommunityOrganizationCount(),
     getActiveMemberCount(),
+    getSchoolsRepresentedCount(),
   ]);
 
   const overrides: PublicStatOverrides = { ...rawOverrides };
@@ -120,7 +143,7 @@ export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
     homeStudentMembers: `${activeMembers}`,
     homeBusinessesSupported: `${liveStats.totalBusinesses}`,
     communityOrganizations: `${communityOrganizations}+`,
-    homeNetworkLocations: `${chapterLocations.length}+`,
+    homeSchoolsRepresented: `${schoolsRepresented}+`,
     aboutBusinesses: `${liveStats.totalBusinesses}`,
     aboutWebsiteProjects: `${liveStats.websiteProjects}+`,
     aboutMarketingProjects: `${liveStats.marketingProjects}+`,
@@ -130,7 +153,7 @@ export async function getPublicStatSnapshot(): Promise<PublicStatSnapshot> {
     homeStudentMembers: publicStat(overrides, "homeStudentMembers", automaticValues.homeStudentMembers),
     homeBusinessesSupported: publicStat(overrides, "homeBusinessesSupported", automaticValues.homeBusinessesSupported),
     communityOrganizations: publicCommunityOrganizationStat(overrides, automaticValues.communityOrganizations),
-    homeNetworkLocations: publicStat(overrides, "homeNetworkLocations", automaticValues.homeNetworkLocations),
+    homeSchoolsRepresented: publicStat(overrides, "homeSchoolsRepresented", automaticValues.homeSchoolsRepresented),
     aboutBusinesses: publicStat(overrides, "aboutBusinesses", automaticValues.aboutBusinesses),
     aboutWebsiteProjects: publicStat(overrides, "aboutWebsiteProjects", automaticValues.aboutWebsiteProjects),
     aboutMarketingProjects: publicStat(overrides, "aboutMarketingProjects", automaticValues.aboutMarketingProjects),

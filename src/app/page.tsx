@@ -288,7 +288,7 @@ async function LiveHomeStats() {
     { value: effectiveValues.homeStudentMembers, label: "Student Members" },
     { value: effectiveValues.homeBusinessesSupported, label: "Businesses Supported" },
     { value: effectiveValues.communityOrganizations, label: "Community Partners" },
-    { value: effectiveValues.homeNetworkLocations, label: "Network Locations" },
+    { value: effectiveValues.homeSchoolsRepresented, label: "Schools Represented" },
   ];
 
   return <HomeStats stats={liveHomeStats} />;

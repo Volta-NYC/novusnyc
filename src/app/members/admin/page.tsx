@@ -735,7 +735,7 @@ const PUBLIC_STAT_FIELDS = [
   { key: "homeStudentMembers", label: "Homepage: Student members", source: "Live active-member records" },
   { key: "homeBusinessesSupported", label: "Homepage: Businesses supported", source: "Live business records" },
   { key: "communityOrganizations", label: "All public pages: Community organizations", source: "Live partner-organization records" },
-  { key: "homeNetworkLocations", label: "Homepage: Network locations", source: "Exact network-location list" },
+  { key: "homeSchoolsRepresented", label: "Homepage: Schools represented", source: "Distinct schools across active members" },
   { key: "aboutBusinesses", label: "About: Total businesses", source: "Live business records" },
   { key: "aboutWebsiteProjects", label: "About: Website projects", source: "Live Tech project-track records" },
   { key: "aboutMarketingProjects", label: "About: Marketing projects", source: "Live Marketing project-track records" },
