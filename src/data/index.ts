@@ -297,7 +297,7 @@ export const teamMembers: LeadershipMember[] = [
   {
     name: "Ethan Zhang",
     role: "Co-Founder",
-    roleDetails: "A Stuyvesant student who builds things — mostly software, occasionally organizations. He writes and maintains the platform Novus runs on, and is drawn to problems where a well-designed system replaces work that used to take a room full of people. Outside school he rows, runs, competes in math, and spends a fair amount of time behind a camera or a piano.",
+    roleDetails: "Co-Founder and Executive Director, setting organization-wide strategy, partnerships, and growth while developing and maintaining the website and backend platform Novus runs on. Works with the finance and marketing leads on planning across the organization.",
     email: EMAIL.ethan,
     linkedin: "https://www.linkedin.com/in/ez09",
     initial: "E",
