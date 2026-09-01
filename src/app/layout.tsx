@@ -171,6 +171,13 @@ export default function RootLayout({
                   },
                 ],
               },
+              founder: {
+                "@type": "Person",
+                name: "Ethan Zhang",
+                jobTitle: "Founder & Director",
+                affiliation: { "@id": `${SITE_URL}/#organization` },
+                url: `${SITE_URL}/about#leadership`,
+              },
               sameAs: [
                 SOCIAL.linkedin,
                 SOCIAL.instagram,
