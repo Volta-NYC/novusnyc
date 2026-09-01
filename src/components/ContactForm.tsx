@@ -30,17 +30,42 @@ const SERVICES_BY_LANG: Record<Lang, string[]> = {
 
 const COPY: Record<Lang, {
   businessName: string; ownerName: string; email: string; phone: string; neighborhood: string;
-  services: string; referredBy: string; referredByPlaceholder: string; message: string; messagePlaceholder: string; submit: string;
+  services: string; referredBy: string; referredByPlaceholder: string; referredByDetail: string; referredByDetailPlaceholder: string; message: string; messagePlaceholder: string; submit: string;
   submitting: string; successTitle: string; successBody: string; errorMsg: string;
   footerNote: string; dir: "ltr" | "rtl";
 }> = {
-  en: { businessName: "Business Name *", ownerName: "Your Name *", email: "Email *", phone: "Phone Number", neighborhood: "Neighborhood", services: "What do you need help with?", referredBy: "Who referred you?", referredByPlaceholder: "e.g. your BID, organization, flyer, social media…", message: "Tell us more", messagePlaceholder: "What's your biggest challenge right now?", submit: "Send Message", submitting: "Sending…", successTitle: "Got it. We'll be in touch.", successBody: "We'll review your submission and reach out within 2–3 business days.", errorMsg: `Something went wrong. Email us at ${EMAIL.info}`, footerNote: "We typically respond within 2–3 business days. Our services are 100% free.", dir: "ltr" },
-  es: { businessName: "Nombre del negocio *", ownerName: "Su nombre *", email: "Correo electrónico *", phone: "Número de teléfono", neighborhood: "Vecindario", services: "¿Con qué necesita ayuda?", referredBy: "¿Quién lo refirió?", referredByPlaceholder: "ej. su BID, organización, volante, redes sociales…", message: "Cuéntenos más", messagePlaceholder: "¿Cuál es su mayor desafío ahora mismo?", submit: "Enviar mensaje", submitting: "Enviando…", successTitle: "Recibido. Nos pondremos en contacto.", successBody: "Revisaremos su solicitud y le responderemos en 2–3 días hábiles.", errorMsg: `Algo salió mal. Escríbanos a ${EMAIL.info}`, footerNote: "Generalmente respondemos en 2–3 días hábiles. Nuestros servicios son 100% gratuitos.", dir: "ltr" },
-  zh: { businessName: "商户名称 *", ownerName: "您的姓名 *", email: "电子邮件 *", phone: "电话号码", neighborhood: "所在社区", services: "您需要哪方面的帮助？", referredBy: "谁推荐了您？", referredByPlaceholder: "例如：BID、组织、传单、社交媒体……", message: "请告诉我们更多", messagePlaceholder: "您目前面临的最大挑战是什么？", submit: "发送消息", submitting: "发送中…", successTitle: "已收到。我们会尽快联系您。", successBody: "我们将审核您的提交，并在 2–3 个工作日内回复您。", errorMsg: `出现错误。请发送邮件至 ${EMAIL.info}`, footerNote: "我们通常在 2–3 个工作日内回复。我们的服务完全免费。", dir: "ltr" },
-  ko: { businessName: "사업체명 *", ownerName: "성함 *", email: "이메일 *", phone: "전화번호", neighborhood: "동네", services: "어떤 도움이 필요하신가요?", referredBy: "누구에게 소개받으셨나요?", referredByPlaceholder: "예: BID, 단체, 전단지, 소셜 미디어…", message: "더 알려주세요", messagePlaceholder: "현재 가장 어려운 점은 무엇인가요?", submit: "메시지 보내기", submitting: "전송 중…", successTitle: "접수되었습니다. 곧 연락드리겠습니다.", successBody: "제출하신 내용을 검토하고 영업일 기준 2–3일 이내에 연락드리겠습니다.", errorMsg: `오류가 발생했습니다. ${EMAIL.info} 으로 이메일 보내주세요.`, footerNote: "보통 영업일 기준 2–3일 이내에 답변드립니다. 모든 서비스는 무료입니다.", dir: "ltr" },
-  ar: { businessName: "اسم النشاط التجاري *", ownerName: "اسمك *", email: "البريد الإلكتروني *", phone: "رقم الهاتف", neighborhood: "الحي", services: "ما الذي تحتاج إلى مساعدة فيه؟", referredBy: "من أحالك إلينا؟", referredByPlaceholder: "مثل: BID، منظمة، منشور، وسائل التواصل الاجتماعي…", message: "أخبرنا المزيد", messagePlaceholder: "ما هو أكبر تحديك الآن؟", submit: "إرسال الرسالة", submitting: "جارٍ الإرسال…", successTitle: "تم الاستلام. سنتواصل معك قريبًا.", successBody: "سنراجع طلبك ونتواصل معك خلال يومي عمل إلى ثلاثة أيام عمل.", errorMsg: `حدث خطأ ما. راسلنا على ${EMAIL.info}`, footerNote: "نرد عادةً خلال يومي عمل إلى ثلاثة أيام عمل. خدماتنا مجانية 100%.", dir: "rtl" },
-  fr: { businessName: "Nom de l'entreprise *", ownerName: "Votre nom *", email: "E-mail *", phone: "Numéro de téléphone", neighborhood: "Quartier", services: "De quoi avez-vous besoin ?", referredBy: "Qui vous a recommandé ?", referredByPlaceholder: "ex. votre BID, organisation, un flyer, les réseaux sociaux…", message: "Dites-nous en plus", messagePlaceholder: "Quel est votre plus grand défi en ce moment ?", submit: "Envoyer le message", submitting: "Envoi en cours…", successTitle: "Reçu. Nous vous recontacterons.", successBody: "Nous examinerons votre demande et vous répondrons sous 2 à 3 jours ouvrés.", errorMsg: `Une erreur s'est produite. Écrivez-nous à ${EMAIL.info}`, footerNote: "Nous répondons généralement sous 2 à 3 jours ouvrés. Nos services sont 100% gratuits.", dir: "ltr" },
+  en: { businessName: "Business Name *", ownerName: "Your Name *", email: "Email *", phone: "Phone Number", neighborhood: "Neighborhood", services: "What do you need help with?", referredBy: "Who referred you?", referredByPlaceholder: "Choose from the list, or type your own", referredByDetail: "Which one?", referredByDetailPlaceholder: "e.g. Instagram, a neighbor, a specific flyer…", message: "Tell us more", messagePlaceholder: "What's your biggest challenge right now?", submit: "Send Message", submitting: "Sending…", successTitle: "Got it. We'll be in touch.", successBody: "We'll review your submission and reach out within 2–3 business days.", errorMsg: `Something went wrong. Email us at ${EMAIL.info}`, footerNote: "We typically respond within 2–3 business days. Our services are 100% free.", dir: "ltr" },
+  es: { businessName: "Nombre del negocio *", ownerName: "Su nombre *", email: "Correo electrónico *", phone: "Número de teléfono", neighborhood: "Vecindario", services: "¿Con qué necesita ayuda?", referredBy: "¿Quién lo refirió?", referredByPlaceholder: "Elija de la lista o escriba el suyo", referredByDetail: "¿Cuál?", referredByDetailPlaceholder: "ej. Instagram, un vecino, un volante específico…", message: "Cuéntenos más", messagePlaceholder: "¿Cuál es su mayor desafío ahora mismo?", submit: "Enviar mensaje", submitting: "Enviando…", successTitle: "Recibido. Nos pondremos en contacto.", successBody: "Revisaremos su solicitud y le responderemos en 2–3 días hábiles.", errorMsg: `Algo salió mal. Escríbanos a ${EMAIL.info}`, footerNote: "Generalmente respondemos en 2–3 días hábiles. Nuestros servicios son 100% gratuitos.", dir: "ltr" },
+  zh: { businessName: "商户名称 *", ownerName: "您的姓名 *", email: "电子邮件 *", phone: "电话号码", neighborhood: "所在社区", services: "您需要哪方面的帮助？", referredBy: "谁推荐了您？", referredByPlaceholder: "从列表中选择，或自行输入", referredByDetail: "具体是哪一个？", referredByDetailPlaceholder: "例如：Instagram、邻居、某张传单……", message: "请告诉我们更多", messagePlaceholder: "您目前面临的最大挑战是什么？", submit: "发送消息", submitting: "发送中…", successTitle: "已收到。我们会尽快联系您。", successBody: "我们将审核您的提交，并在 2–3 个工作日内回复您。", errorMsg: `出现错误。请发送邮件至 ${EMAIL.info}`, footerNote: "我们通常在 2–3 个工作日内回复。我们的服务完全免费。", dir: "ltr" },
+  ko: { businessName: "사업체명 *", ownerName: "성함 *", email: "이메일 *", phone: "전화번호", neighborhood: "동네", services: "어떤 도움이 필요하신가요?", referredBy: "누구에게 소개받으셨나요?", referredByPlaceholder: "목록에서 선택하거나 직접 입력하세요", referredByDetail: "어느 쪽인가요?", referredByDetailPlaceholder: "예: 인스타그램, 이웃, 특정 전단지…", message: "더 알려주세요", messagePlaceholder: "현재 가장 어려운 점은 무엇인가요?", submit: "메시지 보내기", submitting: "전송 중…", successTitle: "접수되었습니다. 곧 연락드리겠습니다.", successBody: "제출하신 내용을 검토하고 영업일 기준 2–3일 이내에 연락드리겠습니다.", errorMsg: `오류가 발생했습니다. ${EMAIL.info} 으로 이메일 보내주세요.`, footerNote: "보통 영업일 기준 2–3일 이내에 답변드립니다. 모든 서비스는 무료입니다.", dir: "ltr" },
+  ar: { businessName: "اسم النشاط التجاري *", ownerName: "اسمك *", email: "البريد الإلكتروني *", phone: "رقم الهاتف", neighborhood: "الحي", services: "ما الذي تحتاج إلى مساعدة فيه؟", referredBy: "من أحالك إلينا؟", referredByPlaceholder: "اختر من القائمة أو اكتب إجابتك", referredByDetail: "أي واحدة؟", referredByDetailPlaceholder: "مثل: إنستغرام، جار، منشور معيّن…", message: "أخبرنا المزيد", messagePlaceholder: "ما هو أكبر تحديك الآن؟", submit: "إرسال الرسالة", submitting: "جارٍ الإرسال…", successTitle: "تم الاستلام. سنتواصل معك قريبًا.", successBody: "سنراجع طلبك ونتواصل معك خلال يومي عمل إلى ثلاثة أيام عمل.", errorMsg: `حدث خطأ ما. راسلنا على ${EMAIL.info}`, footerNote: "نرد عادةً خلال يومي عمل إلى ثلاثة أيام عمل. خدماتنا مجانية 100%.", dir: "rtl" },
+  fr: { businessName: "Nom de l'entreprise *", ownerName: "Votre nom *", email: "E-mail *", phone: "Numéro de téléphone", neighborhood: "Quartier", services: "De quoi avez-vous besoin ?", referredBy: "Qui vous a recommandé ?", referredByPlaceholder: "Choisissez dans la liste ou saisissez la vôtre", referredByDetail: "Laquelle ?", referredByDetailPlaceholder: "ex. Instagram, un voisin, un flyer précis…", message: "Dites-nous en plus", messagePlaceholder: "Quel est votre plus grand défi en ce moment ?", submit: "Envoyer le message", submitting: "Envoi en cours…", successTitle: "Reçu. Nous vous recontacterons.", successBody: "Nous examinerons votre demande et vous répondrons sous 2 à 3 jours ouvrés.", errorMsg: `Une erreur s'est produite. Écrivez-nous à ${EMAIL.info}`, footerNote: "Nous répondons généralement sous 2 à 3 jours ouvrés. Nos services sont 100% gratuits.", dir: "ltr" },
 };
+
+// Referral options that are categories rather than a named source. Picking one
+// answers "how" but not "who", so each triggers a follow-up field — otherwise
+// a quarter of submissions arrive saying only "Other".
+const REFERRAL_GENERIC = [
+  "Social media",
+  "Online search / Google",
+  "Flyer or printed material",
+  "Other",
+] as const;
+
+function isGenericReferral(value: string): boolean {
+  return (REFERRAL_GENERIC as readonly string[]).includes(value.trim());
+}
+
+// "Social media" alone is not a referral source anyone can act on. Storing the
+// bucket and the detail as one string keeps the existing referred_by column
+// usable — filterable by bucket, still readable as a sentence.
+function composeReferral(value: string, detail: string): string {
+  const base = value.trim();
+  const extra = detail.trim();
+  if (!base) return "";
+  if (!extra || !isGenericReferral(base)) return base;
+  return `${base} — ${extra}`;
+}
 
 const EMPTY: ContactFormValues = {
   businessName: "", name: "", email: "", phone: "", neighborhood: "", services: [], referredBy: "", message: "",
@@ -58,6 +83,7 @@ export default function ContactForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [neighborhoodOptions, setNeighborhoodOptions] = useState<string[]>([]);
   const [partnerOptions, setPartnerOptions] = useState<string[]>([]);
+  const [referredByDetail, setReferredByDetail] = useState("");
 
   useEffect(() => {
     fetch("/api/public/neighborhoods")
@@ -121,7 +147,7 @@ export default function ContactForm() {
           phone:        formData.phone,
           neighborhood: formData.neighborhood,
           services:     englishServices,
-          referredBy:   formData.referredBy,
+          referredBy:   composeReferral(formData.referredBy, referredByDetail),
           message:      formData.message,
           language:     LANG_LABELS[lang],
         }),
@@ -133,6 +159,7 @@ export default function ContactForm() {
       // translations, which is the point of the form being multilingual.
       trackEvent(GA_EVENTS.contactSubmitted, { lang });
       setFormData(EMPTY);
+      setReferredByDetail("");
     } catch {
       setStatus("error");
     }
@@ -270,10 +297,29 @@ export default function ContactForm() {
             id="contact-referred-by"
             theme="light"
             value={formData.referredBy}
-            onChange={(next) => setFormData((p) => ({ ...p, referredBy: next }))}
-            options={[...partnerOptions, "Social media", "Online search / Google", "Flyer or printed material", "Other"]}
+            onChange={(next) => {
+              setFormData((p) => ({ ...p, referredBy: next }));
+              if (!isGenericReferral(next)) setReferredByDetail("");
+            }}
+            options={[...partnerOptions, ...REFERRAL_GENERIC]}
             placeholder={c.referredByPlaceholder}
+            showOnEmpty
           />
+          {isGenericReferral(formData.referredBy) && (
+            <div className="mt-3">
+              <label htmlFor="contact-referred-by-detail" className="block font-body text-sm font-semibold text-n-ink mb-2">
+                {c.referredByDetail}
+              </label>
+              <input
+                id="contact-referred-by-detail"
+                type="text"
+                value={referredByDetail}
+                onChange={(e) => setReferredByDetail(e.target.value)}
+                className="novus-input"
+                placeholder={c.referredByDetailPlaceholder}
+              />
+            </div>
+          )}
         </div>
         <div>
           <label htmlFor="contact-message" className="block font-body text-sm font-semibold text-n-ink mb-2">{c.message}</label>
