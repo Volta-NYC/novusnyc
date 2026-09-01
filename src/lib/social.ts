@@ -5,6 +5,6 @@
  * remain stable and should not be rewritten to match the profile URLs.
  */
 export const SOCIAL = {
-  instagram: "https://www.instagram.com/nyc.novus",
-  linkedin: "https://www.linkedin.com/company/novusnyc",
+  instagram: "https://www.instagram.com/nyc.novus/",
+  linkedin: "https://www.linkedin.com/company/novusnyc/",
 } as const;
