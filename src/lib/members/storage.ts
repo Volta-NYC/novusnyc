@@ -77,6 +77,7 @@ export interface Business {
   alternatePhone: string;
   address: string;
   neighborhood?: string;
+  borough?: string;
   lat?: number;
   lng?: number;
   // ── Tech project tracker ──────────────────────────────────────────────────

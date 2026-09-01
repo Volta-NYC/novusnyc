@@ -89,6 +89,62 @@ export const BUSINESS_SERVICES = [
 
 export type BusinessService = (typeof BUSINESS_SERVICES)[number];
 
+// ── LOCATION ──────────────────────────────────────────────────────────────────
+// Business location vocabulary. neighborhood is free-ish text but must be an
+// actual neighborhood: boroughs live in businesses.borough, because a borough
+// stored as a neighborhood is what made the field unusable for grouping and
+// hid the fact that some clients have no neighborhood on record at all.
+
+export const NYC_BOROUGHS = [
+  "Bronx",
+  "Brooklyn",
+  "Manhattan",
+  "Queens",
+  "Staten Island",
+] as const;
+
+export type NycBorough = (typeof NYC_BOROUGHS)[number];
+
+// Every neighborhood currently in use, mapped to its borough. Extend this when
+// a new neighborhood appears rather than inferring from the address: the
+// address is missing on a third of clients, and parsing it guesses wrong on the
+// Queens neighborhoods that never say "Queens".
+export const NEIGHBORHOOD_BOROUGH: Record<string, NycBorough> = {
+  "Concourse": "Bronx",
+  "Morrisania": "Bronx",
+  "Bay Ridge": "Brooklyn",
+  "Bedford-Stuyvesant": "Brooklyn",
+  "Brighton Beach": "Brooklyn",
+  "Clinton Hill": "Brooklyn",
+  "Crown Heights": "Brooklyn",
+  "Cypress Hills": "Brooklyn",
+  "Dumbo": "Brooklyn",
+  "East New York": "Brooklyn",
+  "Flatbush": "Brooklyn",
+  "Little Caribbean": "Brooklyn",
+  "North Flatbush": "Brooklyn",
+  "Park Slope": "Brooklyn",
+  "Prospect Heights": "Brooklyn",
+  "Sunset Park": "Brooklyn",
+  "Chinatown": "Manhattan",
+  "East Village": "Manhattan",
+  "Financial District": "Manhattan",
+  "Harlem": "Manhattan",
+  "Upper East Side": "Manhattan",
+  "Upper West Side": "Manhattan",
+  "Bayside": "Queens",
+  "Flushing": "Queens",
+  "Jackson Heights": "Queens",
+  "Sunnyside": "Queens",
+  "Great Kills": "Staten Island",
+  "West New Brighton": "Staten Island",
+};
+
+export function boroughForNeighborhood(neighborhood?: string | null): NycBorough | undefined {
+  if (!neighborhood) return undefined;
+  return NEIGHBORHOOD_BOROUGH[neighborhood.trim()];
+}
+
 export type PodDivision = "Marketing" | "Finance";
 
 export const POD_DIVISION_META: Record<PodDivision, {
