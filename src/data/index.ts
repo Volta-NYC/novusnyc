@@ -304,29 +304,24 @@ export const teamMembers: LeadershipMember[] = [
     photo: "/team/ethan.jpeg",
     school: "Stuyvesant High School",
     grade: "Class of 2027",
-    focus: "Organizational strategy, technology systems, and scalable community partnerships.",
+    focus: "Organizational strategy and technology systems.",
     whyNovus: "I founded Novus to give ambitious students meaningful ownership while bringing practical technology, marketing, and consulting support to the small businesses that power New York's neighborhoods.",
     interests: ["Music", "Running", "Rowing", "Photography", "Competitive math"],
     experience: [
       {
-        title: "Novus NYC",
-        role: "Co-Founder & Executive Director",
-        description: "Founded and co-directs a 400+ student organization serving small businesses across all five boroughs. Built partnerships and an 80+ business pipeline, scaled delivery to 100+ engagements, and developed the Next.js, TypeScript, and PostgreSQL platform coordinating 10+ concurrent projects.",
-      },
-      {
         title: "Stuyvesant Bulls",
         role: "Co-President & Competitor",
-        description: "Co-led a six-person team to first place globally among 6,300+ teams in the Wharton Global High School Investment Competition. Developed a quantitative investment framework combining fundamental research, Black-Litterman allocation, multi-objective risk optimization, and a machine-learning regime classifier.",
+        description: "Co-led a six-person team to first place among 6,300+ teams worldwide in the Wharton Global High School Investment Competition.",
       },
       {
         title: "Junior Economic Club",
         role: "Global Technology Officer",
-        description: "Maintains web and database infrastructure for a global student economics community. Consolidated member and alumni data across 17+ chapters into a centralized directory serving 1,500+ members.",
+        description: "Maintains web and database systems for 17+ chapters, including a centralized directory serving 1,500+ members.",
       },
       {
         title: "Stuyvesant Study Society",
         role: "Director of Operations & Tutor",
-        description: "Delivered 120+ hours of one-on-one mathematics and STEM instruction before moving into operations. Now leads outreach for 100+ K-8 students and 80+ volunteer tutors, supported by an automated Google Apps Script logistics system.",
+        description: "Tutored mathematics and STEM for 120+ hours. Now leads outreach for 100+ K-8 students and 80+ volunteer tutors.",
       },
     ],
   },
@@ -340,7 +335,7 @@ export const teamMembers: LeadershipMember[] = [
     photo: "/team/andrew.jpg",
     school: "Stuyvesant High School",
     grade: "12th grade, Class of 2027",
-    focus: "Organization-wide strategy, product delivery, partnerships, and building high-performing student teams.",
+    focus: "Organization-wide strategy, product delivery, scalable community partnerships, and building high-performing student teams.",
     whyNovus: "I wanted to make real technical and operational support accessible to neighborhood businesses while giving students work they can be proud to own.",
     interests: ["Bouldering", "Competitive programming", "Running", "Content creation", "Travel"],
     experience: [
