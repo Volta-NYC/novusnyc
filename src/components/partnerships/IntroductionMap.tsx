@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
   KIND_TONE,
   ROLE_LABEL,
@@ -10,6 +10,8 @@ import {
   type PublicPartnership,
 } from "@/data/partnerships";
 import PartnerDetail from "./PartnerDetail";
+import PartnerSheet from "./PartnerSheet";
+import { usePanZoom } from "./usePanZoom";
 import { CENTER, NOVUS_RADIUS, SATELLITE_LABEL_SIZE, VIEW_HEIGHT, VIEW_WIDTH, computeLayout, type EdgeLayout } from "./mapLayout";
 
 const TONE_VAR: Record<PartnerTone, string> = {
@@ -22,6 +24,27 @@ const BASE_EDGE_OPACITY: Record<EdgeLayout["type"], number> = { spoke: 0.2, intr
 const ACTIVE_EDGE_OPACITY: Record<EdgeLayout["type"], number> = { spoke: 0.7, intro: 1 };
 const DIM = 0.15;
 
+// Phones and tablets open an organization in a full-screen sheet; mouse
+// screens keep the hover preview and the panel under the map.
+const COMPACT_QUERY = "(max-width: 767px), (pointer: coarse)";
+
+function useCompact(): boolean {
+  const [compact, setCompact] = useState(() => window.matchMedia(COMPACT_QUERY).matches);
+  useEffect(() => {
+    const query = window.matchMedia(COMPACT_QUERY);
+    const onChange = () => setCompact(query.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  return compact;
+}
+
+// Zoomed in far enough that labels read at phone size, but never past the
+// point where the whole ring height stops fitting.
+function initialScale({ h, fit }: { w: number; h: number; fit: number }): number {
+  return window.matchMedia(COMPACT_QUERY).matches ? Math.max(fit, Math.min(0.8, h / (VIEW_HEIGHT * 0.85))) : fit;
+}
+
 function monogram(partner: PublicPartnership): string {
   return partner.monogram ?? partner.shortName.split(" ").filter((word) => /^[A-Z]/.test(word)).map((word) => word[0]).join("").slice(0, 4);
 }
@@ -29,7 +52,7 @@ function monogram(partner: PublicPartnership): string {
 export default function IntroductionMap({ partners, describedBy }: { partners: PublicPartnership[]; describedBy: string }) {
   const reduced = useReducedMotion() ?? false;
   const frameRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(frameRef, { once: true, amount: 0.25 });
+  const inView = useInView(frameRef, { once: true, amount: 0.2 });
   const drawn = reduced || inView;
   const [settled, setSettled] = useState(false);
   // Hovering previews an organization; clicking or tabbing to it keeps it
@@ -37,6 +60,20 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const focusedId = hoveredId ?? selectedId;
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const compact = useCompact();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const sceneRef = useRef<SVGGElement>(null);
+  const { interacted, zoomedIn, zoomBy, showAll, centreOn, reveal } = usePanZoom({
+    svgRef,
+    sceneRef,
+    width: VIEW_WIDTH,
+    height: VIEW_HEIGHT,
+    maxScale: 2,
+    initialScale,
+    focus: CENTER,
+    reduced,
+  });
 
   const byId = useMemo(() => new Map(partners.map((partner) => [partner.id, partner])), [partners]);
   const layout = useMemo(
@@ -68,15 +105,18 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   useEffect(() => {
     const fromHash = () => {
       const id = window.location.hash.slice(1);
-      if (byId.has(id)) setSelectedId(id);
+      const node = layout.nodes.find((candidate) => candidate.id === id);
+      if (!node) return;
+      setSelectedId(id);
+      centreOn(node);
     };
     fromHash();
     window.addEventListener("hashchange", fromHash);
     return () => window.removeEventListener("hashchange", fromHash);
-  }, [byId]);
+  }, [layout, centreOn]);
 
   useEffect(() => {
-    if (!focusedId) return;
+    if (!focusedId || sheetId) return;
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
         setHoveredId(null);
@@ -85,7 +125,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [focusedId]);
+  }, [focusedId, sheetId]);
 
   const neighbors = useMemo(() => {
     if (!focusedId) return null;
@@ -98,10 +138,31 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
     return set;
   }, [focusedId, layout]);
 
+  const selectNode = (id: string) => {
+    setSelectedId(id);
+    if (compact) setSheetId(id);
+  };
+  const closeSheet = useCallback(() => {
+    const node = sheetId ? nodeById.get(sheetId) : undefined;
+    const partner = sheetId ? byId.get(sheetId) : undefined;
+    setSheetId(null);
+    if (!node || !partner) return;
+    const box = { x0: node.x - node.r, y0: node.y - node.r, x1: node.x + node.r, y1: node.y + node.r };
+    node.satellites.forEach((satellite, index) => {
+      const width = (partner.businesses?.[index]?.name.length ?? 0) * SATELLITE_LABEL_SIZE * 0.56;
+      const left = satellite.labelAnchor === "start" ? satellite.labelX : satellite.labelX - width;
+      box.x0 = Math.min(box.x0, left, satellite.x - 6);
+      box.x1 = Math.max(box.x1, left + width, satellite.x + 6);
+      box.y0 = Math.min(box.y0, satellite.y - 10);
+      box.y1 = Math.max(box.y1, satellite.y + 10);
+    });
+    reveal(box);
+  }, [byId, nodeById, reveal, sheetId]);
+
   const onNodeKey = (id: string) => (event: KeyboardEvent<SVGGElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      setSelectedId(id);
+      selectNode(id);
     }
   };
 
@@ -118,9 +179,13 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
 
   return (
     <div ref={frameRef}>
+      <div
+        className="relative overflow-hidden"
+        style={compact ? { height: "min(74svh, 760px)" } : { aspectRatio: `${VIEW_WIDTH} / ${VIEW_HEIGHT}` }}
+      >
       <svg
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-        className="block h-auto w-full select-none"
+        ref={svgRef}
+        className={`block h-full w-full touch-none select-none ${zoomedIn ? "cursor-grab active:cursor-grabbing" : ""}`}
         role="group"
         aria-label="Map of the organizations that introduce Novus to small businesses, and who introduced whom"
         aria-describedby={describedBy}
@@ -154,7 +219,9 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
           ))}
         </defs>
 
-        <rect x={0} y={0} width={VIEW_WIDTH} height={VIEW_HEIGHT} fill="transparent" onClick={() => setSelectedId(null)} />
+        <rect x={0} y={0} width="100%" height="100%" fill="transparent" onClick={() => setSelectedId(null)} />
+
+        <g ref={sceneRef}>
 
         <g aria-hidden="true" className={`pointer-events-none ${fade}`} style={{ opacity: focusedId ? 0 : 1 }}>
           {layout.sectorLabels.map((label) => (
@@ -273,12 +340,19 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
               aria-pressed={isFocused}
               className={`group cursor-pointer outline-none ${fade}`}
               style={{ opacity: nodeOpacity(node.id) }}
-              onMouseEnter={() => setHoveredId(node.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onFocus={() => setSelectedId(node.id)}
+              onPointerEnter={(event) => {
+                if (event.pointerType === "mouse") setHoveredId(node.id);
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType === "mouse") setHoveredId(null);
+              }}
+              onFocus={() => {
+                setSelectedId(node.id);
+                centreOn(node, true);
+              }}
               onClick={(event) => {
                 event.stopPropagation();
-                setSelectedId(node.id);
+                selectNode(node.id);
               }}
               onKeyDown={onNodeKey(node.id)}
             >
@@ -362,16 +436,59 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
             })}
           </g>
         )}
+        </g>
       </svg>
 
-      <div aria-live="polite" className="mt-6 min-h-[17rem] border-t border-white/10 pt-7">
-        {focused ? <PartnerDetail partner={focused} partnersById={byId} surface="dark" /> : <MapLegend />}
+      <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-xl border border-white/15 bg-n-dark/85 backdrop-blur-sm">
+        {[
+          { label: "Zoom in", onClick: () => zoomBy(1.4), path: "M10 4 V16 M4 10 H16" },
+          { label: "Zoom out", onClick: () => zoomBy(1 / 1.4), path: "M4 10 H16" },
+          { label: "Show the whole map", onClick: showAll, path: "M4 8 V4 H8 M12 4 H16 V8 M16 12 V16 H12 M8 16 H4 V12" },
+        ].map((control, index) => (
+          <button
+            key={control.label}
+            type="button"
+            onClick={control.onClick}
+            aria-label={control.label}
+            title={control.label}
+            className={`flex h-11 w-11 items-center justify-center text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 ${index > 0 ? "border-t border-white/10" : ""}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+              <path d={control.path} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ))}
       </div>
+
+      {compact && (
+        <p
+          aria-hidden="true"
+          className={`pointer-events-none absolute bottom-3 left-3 max-w-[15rem] rounded-full border border-white/15 bg-n-dark/85 px-3.5 py-2 font-body text-xs text-white/85 backdrop-blur-sm ${fade}`}
+          style={{ opacity: interacted ? 0 : 1 }}
+        >
+          Drag to explore, pinch to zoom, tap an organization
+        </p>
+      )}
+      </div>
+
+      {compact ? (
+        <div className="mt-6 border-t border-white/10 px-5 pt-6 md:px-0">
+          <MapLegend compact />
+        </div>
+      ) : (
+        <div aria-live="polite" className="mt-6 min-h-[17rem] border-t border-white/10 pt-7">
+          {focused ? <PartnerDetail partner={focused} partnersById={byId} surface="dark" /> : <MapLegend compact={false} />}
+        </div>
+      )}
+
+      {sheetId && byId.get(sheetId) && (
+        <PartnerSheet partner={byId.get(sheetId) as PublicPartnership} partnersById={byId} onClose={closeSheet} />
+      )}
     </div>
   );
 }
 
-function MapLegend() {
+function MapLegend({ compact }: { compact: boolean }) {
   const items = [
     { key: "spoke", label: "Works with Novus", icon: <line x1={2} y1={8} x2={30} y2={8} stroke="white" strokeOpacity={0.5} strokeWidth={1.4} /> },
     {
@@ -392,7 +509,9 @@ function MapLegend() {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
       <p className="max-w-sm font-body text-base leading-relaxed text-white/75">
-        Hover, tap or tab to an organization to read what it does and see the businesses that came to Novus through it.
+        {compact
+          ? "Tap an organization to read what it does. Its businesses fan out on the map when you come back."
+          : "Hover over an organization to preview it, or click to keep it open. Zoom with the buttons or a pinch, and drag to move around."}
       </p>
       <ul className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
         {items.map((item) => (
