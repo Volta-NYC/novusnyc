@@ -32,7 +32,11 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   const inView = useInView(frameRef, { once: true, amount: 0.25 });
   const drawn = reduced || inView;
   const [settled, setSettled] = useState(false);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  // Hovering previews an organization; clicking or tabbing to it keeps it
+  // selected so the panel stays put while the reader moves down to it.
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const focusedId = hoveredId ?? selectedId;
 
   const byId = useMemo(() => new Map(partners.map((partner) => [partner.id, partner])), [partners]);
   const layout = useMemo(
@@ -64,7 +68,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   useEffect(() => {
     const fromHash = () => {
       const id = window.location.hash.slice(1);
-      if (byId.has(id)) setFocusedId(id);
+      if (byId.has(id)) setSelectedId(id);
     };
     fromHash();
     window.addEventListener("hashchange", fromHash);
@@ -74,7 +78,10 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   useEffect(() => {
     if (!focusedId) return;
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setFocusedId(null);
+      if (event.key === "Escape") {
+        setHoveredId(null);
+        setSelectedId(null);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -94,7 +101,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   const onNodeKey = (id: string) => (event: KeyboardEvent<SVGGElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      setFocusedId(id);
+      setSelectedId(id);
     }
   };
 
@@ -147,7 +154,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
           ))}
         </defs>
 
-        <rect x={0} y={0} width={VIEW_WIDTH} height={VIEW_HEIGHT} fill="transparent" onClick={() => setFocusedId(null)} />
+        <rect x={0} y={0} width={VIEW_WIDTH} height={VIEW_HEIGHT} fill="transparent" onClick={() => setSelectedId(null)} />
 
         <g aria-hidden="true" className={`pointer-events-none ${fade}`} style={{ opacity: focusedId ? 0 : 1 }}>
           {layout.sectorLabels.map((label) => (
@@ -266,11 +273,12 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
               aria-pressed={isFocused}
               className={`group cursor-pointer outline-none ${fade}`}
               style={{ opacity: nodeOpacity(node.id) }}
-              onMouseEnter={() => setFocusedId(node.id)}
-              onFocus={() => setFocusedId(node.id)}
+              onMouseEnter={() => setHoveredId(node.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              onFocus={() => setSelectedId(node.id)}
               onClick={(event) => {
                 event.stopPropagation();
-                setFocusedId(node.id);
+                setSelectedId(node.id);
               }}
               onKeyDown={onNodeKey(node.id)}
             >
