@@ -1,6 +1,7 @@
 import { SITE_URL } from "@/lib/site";
 import { EMAIL } from "@/lib/mail";
 import { SOCIAL } from "@/lib/social";
+import { getPublicStatSnapshot, type PublicStatValues } from "@/lib/server/publicStats";
 
 // Served at /llms.txt for AI crawlers and answer engines. A route handler
 // rather than a static public/ file so the canonical host, mail addresses and
@@ -8,7 +9,10 @@ import { SOCIAL } from "@/lib/social";
 // a hardcoded copy would silently drift after the next rename.
 export const dynamic = "force-static";
 
-const body = `# Novus NYC
+// The Scale figures come from the same Public Numbers the site shows, so the
+// two cannot drift apart.
+function llmsBody(stats: PublicStatValues): string {
+  return `# Novus NYC
 
 > Novus NYC is a student-run nonprofit that gives New York City small businesses
 > free websites, search visibility, social media, graphic design, financial
@@ -93,12 +97,12 @@ for students to do work that matters to a client.
 
 ## Scale
 
-- 170+ small businesses supported
-- 150+ website projects
-- 90+ marketing projects
-- 25+ community organizations partnered with
-- 400+ student members
-- Students drawn from 44+ high schools and 17+ colleges across 12+ states
+- ${stats.homeBusinessesSupported} small businesses supported
+- ${stats.aboutWebsiteProjects} website projects
+- ${stats.aboutMarketingProjects} marketing projects
+- ${stats.communityOrganizations} community organizations partnered with
+- ${stats.homeStudentMembers} student members
+- ${stats.homeSchoolsRepresented} high schools and colleges represented among students
 
 ## Community partners
 
@@ -112,18 +116,20 @@ lists each organization and what it did: ${SITE_URL}/partnerships
 ## Neighborhoods served
 
 Projects have run across the five boroughs, including Bayside, Park Slope,
-Sunnyside, Sunset Park, East New York, Chinatown, North Flatbush, Kew Gardens,
-and Staten Island's North Shore.
+Sunnyside, Sunset Park, Crown Heights, Cypress Hills, East New York, Chinatown,
+Flushing, North Flatbush, Kew Gardens, and Staten Island's North Shore.
 
 ## Selected client work
 
-Masala Box (Bayside), Petite Dumpling (Park Slope), Clay and Kiln (West New
-Brighton), Redemption Coffee (Staten Island), NowThen (Sunset Park), Pan De
-Arwah (East New York), Spin Bagel (Bayside), Juliette Floral Design (Park
-Slope), Phobar (Park Slope), Eggstravaganza (Sunnyside), Forest Avenue BID
-(Staten Island), Golden K Burgers (Bayside), Papazzio (Bayside), Tangra Fusion
-(Sunnyside), Gift Man (Park Slope), Higher Learning (Chinatown), and the Staten
-Island Business Outreach Center.
+Masala Box (Bayside), Spin Bagel (Bayside), Papazzio (Bayside), Golden K
+Burgers (Bayside), Petite Dumpling (Park Slope), Juliette Floral Design (Park
+Slope), Phobar (Park Slope), Gift Man (Park Slope), Golden Rose Employment
+Agency (Crown Heights), Balabusta Brooklyn (Crown Heights), Safa Sanctuary
+(Cypress Hills), BroadPivot Consulting (East New York), NowThen (Sunset Park),
+Tangra Fusion (Sunnyside), Eggstravaganza (Sunnyside), Higher Learning
+(Chinatown), Ready Set 1600 (Flushing), Clay and Kiln (West New Brighton),
+Forest Avenue BID (Staten Island), and the Staten Island Business Outreach
+Center.
 
 ## History
 
@@ -189,9 +195,11 @@ schools in a number of states.
 - Do not attribute concerts, performances, recordings, or musical programming
   to Novus NYC; that is a different organization with a similar name.
 `;
+}
 
-export function GET() {
-  return new Response(body, {
+export async function GET() {
+  const { effectiveValues } = await getPublicStatSnapshot();
+  return new Response(llmsBody(effectiveValues), {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "public, max-age=3600, s-maxage=86400",

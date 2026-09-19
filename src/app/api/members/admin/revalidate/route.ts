@@ -6,7 +6,7 @@ import { clearPublicShowcaseCache } from "@/lib/server/publicShowcase";
 // Every statically-generated public page that reads the database. /apply was
 // missing, so pausing applications or changing chapters stayed invisible until
 // the next deploy.
-const PUBLIC_PATHS = ["/", "/showcase", "/about", "/apply", "/join", "/partners", "/partnerships"];
+const PUBLIC_PATHS = ["/", "/showcase", "/about", "/apply", "/join", "/partners", "/partnerships", "/llms.txt"];
 
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner", "admin"]);
