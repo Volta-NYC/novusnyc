@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import AnimatedSection from "@/components/AnimatedSection";
 import CoreValuesEarth from "@/components/CoreValuesEarth";
 import HistoryTimeline from "@/components/HistoryTimeline";
@@ -108,12 +109,19 @@ export default async function About() {
                 { value: effectiveValues.aboutBusinesses, label: "Total\nbusinesses", color: "text-n-orange-ink" },
                 { value: effectiveValues.aboutWebsiteProjects, label: "Website\nprojects", color: "text-n-purple-ink" },
                 { value: effectiveValues.aboutMarketingProjects, label: "Marketing\nprojects", color: "text-amber-700" },
-                { value: effectiveValues.communityOrganizations, label: "Community\norganizations", color: "text-amber-700" },
-              ].map((s, i) => (
-                <AnimatedSection key={s.label} delay={i * 0.06} className="flex min-h-28 flex-col justify-center bg-white px-3 py-5 text-center sm:px-5 sm:py-7 md:min-h-0 md:px-6 md:py-8">
-                  <div><p className={`mb-2 font-display text-3xl font-bold leading-none sm:text-4xl md:mb-3 md:text-5xl ${s.color}`}>{s.value}</p><p className="whitespace-pre-line font-body text-[10px] uppercase leading-relaxed tracking-[0.12em] text-n-muted">{s.label}</p></div>
-                </AnimatedSection>
-              ))}
+                { value: effectiveValues.communityOrganizations, label: "Community\norganizations", color: "text-amber-700", href: "/partnerships" },
+              ].map((s, i) => {
+                const inner = <><p className={`mb-2 font-display text-3xl font-bold leading-none sm:text-4xl md:mb-3 md:text-5xl ${s.color}`}>{s.value}</p><p className="whitespace-pre-line font-body text-[10px] uppercase leading-relaxed tracking-[0.12em] text-n-muted">{s.label}{s.href && <span aria-hidden="true"> →</span>}</p></>;
+                return (
+                  <AnimatedSection key={s.label} delay={i * 0.06} className="flex min-h-28 flex-col justify-center bg-white px-3 py-5 text-center sm:px-5 sm:py-7 md:min-h-0 md:px-6 md:py-8">
+                    {s.href ? (
+                      <Link href={s.href} className="block rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/60">{inner}</Link>
+                    ) : (
+                      <div>{inner}</div>
+                    )}
+                  </AnimatedSection>
+                );
+              })}
             </div>
           </AnimatedSection>
         </div>

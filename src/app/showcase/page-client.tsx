@@ -362,15 +362,19 @@ export default function ShowcaseClient({
                 <span className="text-n-orange">New York City</span>
               </h1>
               <div className="flex gap-8 md:pb-2">
-                {[
-                  { value: totalBusinesses, label: "Businesses" },
-                  { value: orgPartners, label: "Community organizations" },
-                ].map((s) => (
-                  <div key={s.label} className="text-center">
-                    <p className="font-display font-bold text-n-orange text-3xl leading-none">{s.value}</p>
-                    <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-1">{s.label}</p>
-                  </div>
-                ))}
+                <div className="text-center">
+                  <p className="font-display font-bold text-n-orange text-3xl leading-none">{totalBusinesses}</p>
+                  <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-1">Businesses</p>
+                </div>
+                <Link
+                  href="/partnerships"
+                  className="group rounded-md text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange"
+                >
+                  <p className="font-display font-bold text-n-orange text-3xl leading-none">{orgPartners}</p>
+                  <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-1 transition-colors group-hover:text-white">
+                    Community organizations <span aria-hidden="true">→</span>
+                  </p>
+                </Link>
               </div>
             </div>
           </AnimatedSection>
@@ -513,6 +517,12 @@ export default function ShowcaseClient({
             >
               Work with us
             </Link>
+            <p className="mt-6 font-body text-sm text-white/65">
+              Run a chamber, BID or community organization?{" "}
+              <Link href="/partnerships#what-partnering-means" className="font-semibold text-n-orange underline-offset-4 hover:underline">
+                See how partnering with Novus works
+              </Link>
+            </p>
           </AnimatedSection>
         </div>
       </section>

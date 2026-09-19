@@ -170,13 +170,16 @@ function createPopupContent(marker: PreparedMarker): HTMLElement {
   content.appendChild(details);
 
   if (marker.url) {
+    const internal = marker.url.startsWith("/");
     const link = document.createElement("a");
     link.className = "novus-map-popup__link";
     link.style.color = marker.textHex;
     link.href = marker.url;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = "View →";
+    if (!internal) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+    link.textContent = internal ? "How we work together →" : "View →";
     content.appendChild(link);
   }
 

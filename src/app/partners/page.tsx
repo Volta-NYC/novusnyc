@@ -332,6 +332,13 @@ export default async function Partners() {
                 </a>
               ))}
             </div>
+            <Link
+              href="/partnerships"
+              className="mt-6 inline-flex items-center font-display text-sm font-bold text-n-orange-ink underline-offset-4 hover:underline"
+            >
+              See every organization we work with, and what each one does
+              <span aria-hidden="true" className="ml-1.5">→</span>
+            </Link>
           </AnimatedSection>
         </div>
       </section>
