@@ -25,7 +25,8 @@ const ANCHOR_ANGLE = 90;
 const RING_POSITION = [
   "bronx-chamber", "third-avenue-bid",
   "queens-chamber", "licp", "sunnyside-shines", "bayside-village-bid", "qedc",
-  "bay-ridge-bid", "park-slope-bid", "north-flatbush-bid", "brooklyn-chamber", "chldc", "enyma", "ldceny",
+  "bay-ridge-bid", "atlantic-avenue-bid", "park-slope-bid", "north-flatbush-bid", "brooklyn-chamber",
+  "chldc", "cypress-hills-fulton-bid", "enyma", "ldceny",
   "si-chamber", "forest-avenue-bid", "siboc", "camo",
   "aaf", "manhattan-chamber", "nyc-sbs", "sbrn",
 ];
@@ -159,13 +160,13 @@ function wrapLabel(text: string, maxChars: number): string[] {
   return best;
 }
 
-function placeLabel(node: Circle, angle: number, text: string): LabelLayout {
+function placeLabel(node: Circle, angle: number, text: string, stagger = 0): LabelLayout {
   const fontSize = LABEL_SIZE;
   const lines = wrapLabel(text, 13);
   const blockHeight = lines.length * fontSize * 1.2;
   const cos = Math.cos(rad(angle));
   const sin = Math.sin(rad(angle));
-  const gap = node.r + 10;
+  const gap = node.r + 10 + stagger;
   const ax = node.x + cos * gap;
   const ay = node.y + sin * gap;
 
@@ -393,9 +394,14 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
       return inBounds(box) && !occupied.some((other) => other.id !== node.id && overlaps(box, other.box));
     };
     const deep = depthOf.get(node.id) === "deep";
-    const placed = [0, -22, 22, -40, 40]
-      .map((turn) => (turn === 0 ? node.label : placeLabel(node, node.angle + turn, nameOf.get(node.id) ?? "")))
-      .find(fits);
+    // Crowded labels try a slight turn first, then dropping a row below their
+    // neighbors' labels.
+    const name = nameOf.get(node.id) ?? "";
+    const placed = [
+      node.label,
+      ...[-22, 22, -40, 40].map((turn) => placeLabel(node, node.angle + turn, name)),
+      ...[0, -8, 8].map((turn) => placeLabel(node, node.angle + turn, name, LABEL_SIZE * 2.6)),
+    ].find(fits);
     if (placed) node.label = placed;
     node.label.visible = deep || Boolean(placed);
     if (node.label.visible) occupied.push({ id: `${node.id}-label`, box: labelBox(node.label) });

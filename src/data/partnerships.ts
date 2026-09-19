@@ -49,6 +49,8 @@ export interface Partnership {
   sector: PartnerSector;
   // Citywide organizations still need a place on the map's borough ring.
   mapSector?: Borough;
+  // An organization run by another partner, named so the two never read as one listed twice.
+  partOf?: string;
   depth: "deep" | "active";
   roles: PartnerRole[];
   summary: string;
@@ -171,16 +173,37 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["introduces-merchants", "field-outreach", "advises-novus"],
     summary:
-      "Cypress Hills Local Development Corporation refers entrepreneurs from its Business Partners program to Novus, and the team reports each project's progress back to the program. CHLDC staff have also given Novus guidance on operations and client management.",
-    facts: [
-      "Walked Cypress Hills with the team and the Cypress Hills Fulton BID, one of its programs, in March 2026.",
-      "Met with the team in April 2026 about Google Business Profiles and social media for local businesses.",
-    ],
+      "Cypress Hills Local Development Corporation refers entrepreneurs from its Business Partners program to Novus, and the team reports each project's progress back to the program. CHLDC staff have also given Novus guidance on operations and client management. CHLDC also runs the Cypress Hills Fulton BID, which works with Novus on Fulton Street.",
     businesses: [
       { name: "Safa Sanctuary", status: "live", url: "https://www.safasanctuary.org" },
       { name: "BroadPivot Consulting LLC", status: "live", url: "https://broadpivotllc.com" },
       { name: "Gloria Jean Community Art Center", status: "in-progress" },
     ],
+    since: "January 2026",
+  },
+  {
+    id: "cypress-hills-fulton-bid",
+    name: "Cypress Hills Fulton BID",
+    shortName: "Cypress Hills Fulton BID",
+    kind: "bid",
+    sector: "Brooklyn",
+    depth: "active",
+    partOf: "chldc",
+    roles: ["field-outreach"],
+    summary:
+      "The Cypress Hills Fulton BID is the business improvement district for Fulton Street in Cypress Hills. It walked Fulton Street with the team in March 2026 to meet merchants, and met with Novus in April 2026 about Google Business Profiles and social media for Fulton Street businesses.",
+    monogram: "CHF",
+  },
+  {
+    id: "atlantic-avenue-bid",
+    name: "Atlantic Avenue BID",
+    shortName: "Atlantic Avenue BID",
+    kind: "bid",
+    sector: "Brooklyn",
+    depth: "active",
+    roles: ["shares-resource"],
+    summary:
+      "The Atlantic Avenue BID in Brooklyn ran Novus's intake form in its newsletter and approached merchants on Atlantic Avenue about working with the team.",
     since: "January 2026",
   },
   {
