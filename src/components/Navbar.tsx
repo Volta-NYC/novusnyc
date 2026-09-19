@@ -7,8 +7,11 @@ import Wordmark from "@/components/Wordmark";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Our Work and Partnerships sit together as the proof of the work; the
+// audience pages follow About.
 const links = [
   { href: "/showcase", label: "Our Work" },
+  { href: "/partnerships", label: "Partnerships" },
   { href: "/about", label: "About" },
   { href: "/partners", label: "For Businesses" },
   { href: "/join", label: "For Students" },
@@ -111,7 +114,7 @@ export default function Navbar() {
             <Wordmark className="text-xl text-n-orange" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
             {links.map((l) => (
               <Link
                 key={l.href}
@@ -195,7 +198,7 @@ export default function Navbar() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-1 md:hidden">
+          <div className="flex items-center gap-1 lg:hidden">
             <Link
               href="/apply"
               className="rounded-full bg-n-orange px-3.5 py-2 font-display text-sm font-bold text-n-ink transition-colors hover:bg-n-orange-dark"
@@ -241,7 +244,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-4 overflow-y-auto bg-[#17151a] px-5 pb-8 pt-6 md:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-4 overflow-y-auto bg-[#17151a] px-5 pb-8 pt-6 lg:hidden"
             style={{ top: "calc(var(--banner-h, 0px) + 4rem)" }}
           >
             {links.map((l) => (
