@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { projects as fallbackProjects } from "@/data";
+import { visiblePartnerships } from "@/data/partnerships";
 import { getPublicMapEntries, getPublicShowcaseCards } from "@/lib/server/publicShowcase";
 import { getPublicStatSnapshot, PUBLISHED_IMPACT_TOTALS } from "@/lib/server/publicStats";
 import ShowcaseClient from "./page-client";
@@ -114,6 +115,9 @@ export default async function Showcase() {
     return colorOptions[idx] ?? "bg-violet-300";
   };
 
+  // Organization pins on the partnerships map open their entry there.
+  const partnershipIdByName = new Map(visiblePartnerships.map((partner) => [partner.name, partner.id]));
+
   const mapProjects = publicMapEntries.map((entry) => {
     const isBusinessWithoutCard =
       entry.source === "business" &&
@@ -132,7 +136,9 @@ export default async function Showcase() {
       lat: entry.lat,
       lng: entry.lng,
       status: normalizeProjectDisplayStatus(entry.status),
-      url: entry.url,
+      url: entry.source === "bid" && partnershipIdByName.has(entry.name)
+        ? `/partnerships#${partnershipIdByName.get(entry.name)}`
+        : entry.url,
       colorClass,
       source: entry.source,
     };

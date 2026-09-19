@@ -372,12 +372,12 @@ export default function BIDTrackerPage() {
                   </div>
                 )}
                 <div className="mt-auto flex items-center justify-between gap-2 border-t border-stone-100 pt-3">
-                  {publicPartner ? (
+                  {publicPartner?.website ? (
                     <a href={publicPartner.website} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-[#8B5E48] hover:underline">
                       Visit website ↗
                     </a>
                   ) : (
-                    <span className="text-[10px] text-stone-400">No public logo yet</span>
+                    <span className="text-[10px] text-stone-400">{publicPartner ? "No public website" : "No public logo yet"}</span>
                   )}
                   {canEdit && <Btn size="sm" variant="secondary" onClick={() => openEdit(bid)}>Edit details</Btn>}
                 </div>

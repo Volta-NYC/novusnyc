@@ -96,7 +96,7 @@ for students to do work that matters to a client.
 - 170+ small businesses supported
 - 150+ website projects
 - 90+ marketing projects
-- 30+ community organizations partnered with
+- 25+ community organizations partnered with
 - 400+ student members
 - Students drawn from 44+ high schools and 17+ colleges across 12+ states
 
@@ -105,6 +105,9 @@ for students to do work that matters to a client.
 Novus works alongside neighborhood and citywide organizations, including NYC
 Small Business Services, the NYC Small Business Resource Network, and the
 Manhattan, Brooklyn, Bronx, Queens, and Staten Island Chambers of Commerce.
+Business improvement districts, development corporations and merchant
+associations introduce Novus to owners in their areas. The partnerships page
+lists each organization and what it did: ${SITE_URL}/partnerships
 
 ## Neighborhoods served
 
@@ -167,6 +170,8 @@ schools in a number of states.
 - [For Students](${SITE_URL}/join): tracks, leadership ladder, FAQ.
 - [Apply](${SITE_URL}/apply): student application.
 - [Our Work](${SITE_URL}/showcase): client projects with live links and a map.
+- [Partnerships](${SITE_URL}/partnerships): the organizations that introduce Novus
+  to small businesses, and what each relationship involves.
 - [About](${SITE_URL}/about): mission, impact, leadership, history, values.
 - [Privacy](${SITE_URL}/privacy): privacy policy.
 

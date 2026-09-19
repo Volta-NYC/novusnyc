@@ -286,8 +286,8 @@ async function LiveHomeStats() {
   const { effectiveValues } = await getPublicStatSnapshot();
   const liveHomeStats = [
     { value: effectiveValues.homeStudentMembers, label: "Student Members" },
-    { value: effectiveValues.homeBusinessesSupported, label: "Businesses Supported" },
-    { value: effectiveValues.communityOrganizations, label: "Community Partners" },
+    { value: effectiveValues.homeBusinessesSupported, label: "Businesses Supported", href: "/showcase" },
+    { value: effectiveValues.communityOrganizations, label: "Community Partners", href: "/partnerships" },
     { value: effectiveValues.homeSchoolsRepresented, label: "Schools Represented" },
   ];
 
@@ -308,7 +308,7 @@ function FlagshipPartnerCard({
       href={partner.website}
       target="_blank"
       rel="noreferrer"
-      aria-label={isDuplicate ? undefined : `Visit ${partner.name} website`}
+      aria-label={isDuplicate || !partner.website ? undefined : `Visit ${partner.name} website`}
       aria-hidden={isDuplicate || undefined}
       tabIndex={isDuplicate ? -1 : undefined}
       className={`bg-white border-2 border-n-orange/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${className}`}
@@ -354,7 +354,7 @@ function PartnerLogoCard({
       rel="noreferrer"
       tabIndex={tabIndex}
       aria-hidden={isDuplicate || undefined}
-      aria-label={`Visit ${partner.name} website`}
+      aria-label={partner.website ? `Visit ${partner.name} website` : undefined}
       className={`partner-logo-card partner-logo-card--${accent} shrink-0 bg-white border-2 flex flex-col items-center justify-between text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
         important
           ? `w-[230px] h-[168px] rounded-xl ${borderClass} px-4 py-5`
@@ -464,9 +464,18 @@ async function CommunityPartnersSection() {
               Working with the organizations trusted by NYC small businesses.
             </h2>
           </div>
-          <p className="font-body text-n-muted text-sm md:text-base max-w-md leading-relaxed">
-            Chambers, BIDs, local development corporations, and merchant groups connect Novus teams directly with the businesses that need support.
-          </p>
+          <div className="max-w-md">
+            <p className="font-body text-n-muted text-sm md:text-base leading-relaxed">
+              Chambers, BIDs, local development corporations, and merchant groups connect Novus teams directly with the businesses that need support.
+            </p>
+            <Link
+              href="/partnerships"
+              className="mt-3 inline-flex items-center font-display text-sm font-bold text-n-orange-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50"
+            >
+              See what each partnership involves
+              <span aria-hidden="true" className="ml-1.5">→</span>
+            </Link>
+          </div>
         </div>
         <div>
           <div className="relative isolate">

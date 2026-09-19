@@ -27,7 +27,7 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 
 ### Two distinct UIs in one repo
 
-**Public site** (`/`, `/showcase`, `/about`, `/partners`, `/apply`, `/join`, `/privacy`) — light theme, `v-*` Tailwind color tokens, fonts: `font-display` (Space Grotesk) / `font-body` (DM Sans). Retired public URLs are permanent redirects in `next.config.mjs`.
+**Public site** (`/`, `/showcase`, `/partnerships`, `/about`, `/partners`, `/apply`, `/join`, `/privacy`) — light theme, `v-*` Tailwind color tokens, fonts: `font-display` (Space Grotesk) / `font-body` (DM Sans). Retired public URLs are permanent redirects in `next.config.mjs`.
 
 **Members portal** (`/members/*`) — light theme for every role. Components use the historical dark-theme utility vocabulary, and `.members-portal-light` remaps surfaces/text to accessible light values. Peach (`#F6B78D`) is the primary action color.
 
@@ -47,6 +47,7 @@ TypeScript is strict (`"strict": true`). Path alias `@/*` maps to `src/*`.
 | `src/components/members/RichTextEditor.tsx` | Tiptap wrapper; exposes `insertAtCursor` via `forwardRef` / `RichTextEditorHandle` |
 | `src/app/members/layout.tsx` | Wraps all `/members/*` pages with `<AuthProvider>` |
 | `src/app/globals.css` | Design token `:root` variables + shared utility classes |
+| `src/data/partnerships.ts` | Roster behind `/partnerships`. Every statement traces to the partnership research; a business is named only if it is live or already on `/showcase`, and no copy states or implies that services are free |
 | `src/app/api/submit/route.ts` | Handles contact + application form submissions; writes to Supabase and forwards to Google Sheets backup |
 | `supabase/migrations/` | Ordered SQL migrations for the linked Supabase project |
 
