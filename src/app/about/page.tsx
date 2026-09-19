@@ -71,7 +71,7 @@ export default async function About() {
               </div>
 
               <div className="grid grid-cols-12 items-center pb-5 sm:pb-8 lg:pb-10">
-                <figure className="relative z-10 col-[1/span_8] row-start-1 w-full -rotate-[3deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_24px_65px_rgba(42,35,43,0.18)] sm:col-[1/span_7] lg:col-[1/span_7] lg:max-w-[19rem] lg:-rotate-[4deg] xl:max-w-[21rem]">
+                <figure className="relative z-10 col-[1/span_7] row-start-1 w-full -rotate-[3deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_24px_65px_rgba(42,35,43,0.18)] sm:col-[1/span_6] lg:col-[1/span_7] lg:max-w-[19rem] lg:-rotate-[4deg] xl:max-w-[21rem]">
                   <Image
                     src="/novus1.jpg"
                     alt="Two Novus students with a local restaurant owner"
@@ -82,7 +82,7 @@ export default async function About() {
                   />
                 </figure>
 
-                <figure className="relative z-20 col-[4/span_9] row-start-1 mt-36 w-full rotate-[2.5deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_28px_70px_rgba(42,35,43,0.22)] sm:col-[4/span_8] sm:mt-40 lg:col-[6/span_7] lg:mt-28 lg:max-w-[25rem] lg:rotate-[3deg] xl:max-w-[28rem]">
+                <figure className="relative z-20 col-[6/span_7] row-start-1 mt-56 w-full rotate-[2.5deg] rounded-[1.15rem] bg-white ring-4 ring-white outline outline-1 outline-offset-4 outline-n-border/70 shadow-[0_28px_70px_rgba(42,35,43,0.22)] sm:col-[6/span_7] sm:mt-72 lg:col-[6/span_7] lg:mt-28 lg:max-w-[25rem] lg:rotate-[3deg] xl:max-w-[28rem]">
                   <Image
                     src="/novus2.jpeg"
                     alt="Three Novus students with a community partner at a neighborhood event"
