@@ -323,8 +323,8 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
       const { d, arrow, midpoint, control } = chord(from, to, 8);
       const edge: EdgeLayout = { key: `intro-${intro.from}-${partner.id}`, type: "intro", from: intro.from, to: partner.id, d, arrow };
       if (intro.via) {
-        const outward = unit(control, midpoint);
-        const labelPoint = { x: midpoint.x + outward.x * 14, y: midpoint.y + outward.y * 14 + 4 };
+        const outward = unit(midpoint, control);
+        const labelPoint = { x: midpoint.x + outward.x * 12, y: midpoint.y + outward.y * 12 + (outward.y > 0 ? 9 : 0) };
         edge.via = {
           label: `via ${intro.via}`,
           point: midpoint,
