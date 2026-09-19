@@ -75,7 +75,8 @@ export const communityPartners = [
   { name: "Castleton Avenue Merchants Organization", logo: "/partners/logos/castleton-avenue-merchants.png", website: "https://castleton-avenue-merchant-org.vercel.app/", important: false },
   { name: "Queens Economic Development Corporation", logo: "/partners/logos/queens-economic-development.png", website: "https://www.queensny.org/", important: false },
   { name: "Staten Island Board of Commerce", logo: "/partners/logos/siboc.png", website: "https://siboc.org/", important: false },
-  { name: "East New York Merchants Association", logo: "/partners/logos/east-new-york-merchants.png", website: "https://innresebv.org/home-program-services", important: false },
+  // No site of its own; the link that was here belonged to a different group.
+  { name: "East New York Merchants Association", logo: "/partners/logos/east-new-york-merchants.png", important: false },
 ];
 
 export type CommunityPartner = (typeof communityPartners)[number];

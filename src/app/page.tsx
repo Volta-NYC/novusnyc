@@ -308,7 +308,7 @@ function FlagshipPartnerCard({
       href={partner.website}
       target="_blank"
       rel="noreferrer"
-      aria-label={isDuplicate ? undefined : `Visit ${partner.name} website`}
+      aria-label={isDuplicate || !partner.website ? undefined : `Visit ${partner.name} website`}
       aria-hidden={isDuplicate || undefined}
       tabIndex={isDuplicate ? -1 : undefined}
       className={`bg-white border-2 border-n-orange/35 rounded-xl px-5 py-5 min-h-[164px] flex flex-col items-center justify-center text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${className}`}
@@ -354,7 +354,7 @@ function PartnerLogoCard({
       rel="noreferrer"
       tabIndex={tabIndex}
       aria-hidden={isDuplicate || undefined}
-      aria-label={`Visit ${partner.name} website`}
+      aria-label={partner.website ? `Visit ${partner.name} website` : undefined}
       className={`partner-logo-card partner-logo-card--${accent} shrink-0 bg-white border-2 flex flex-col items-center justify-between text-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50 focus-visible:ring-offset-2 ${
         important
           ? `w-[230px] h-[168px] rounded-xl ${borderClass} px-4 py-5`
