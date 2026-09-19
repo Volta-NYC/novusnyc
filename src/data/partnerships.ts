@@ -32,6 +32,8 @@ export interface PartnerBusiness {
   name: string;
   status: "live" | "in-progress";
   url?: string;
+  // The partner organization's own site, which Novus built.
+  ownSite?: boolean;
 }
 
 export interface Introduction {
@@ -193,7 +195,7 @@ export const partnerships: Partnership[] = [
       "Novus designed and built the Forest Avenue BID's own website. The BID also introduces merchants on Forest Avenue, coordinated visits along the corridor, and helps the team reach owners for the photos, menus and feedback their sites need.",
     facts: ["Novus added neighborhood and storefront photos to the BID's website in May 2026."],
     businesses: [
-      { name: "Forest Avenue BID website", status: "live", url: "https://forestavenuebid.com" },
+      { name: "forestavenuebid.com", status: "live", url: "https://forestavenuebid.com", ownSite: true },
       { name: "Moretti Bakery", status: "in-progress" },
       { name: "Chey Florist", status: "in-progress" },
       { name: "Taqueria El Buchon", status: "in-progress" },
@@ -214,7 +216,7 @@ export const partnerships: Partnership[] = [
       "Shared Novus's flyer with local merchants in February 2026.",
       "Novus added staff photos to SIBOC's website in August 2026.",
     ],
-    businesses: [{ name: "SIBOC website", status: "live", url: "https://siboc.org" }],
+    businesses: [{ name: "siboc.org", status: "live", url: "https://siboc.org", ownSite: true }],
   },
   {
     id: "sunnyside-shines",

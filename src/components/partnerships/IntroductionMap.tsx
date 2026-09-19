@@ -10,7 +10,7 @@ import {
   type PublicPartnership,
 } from "@/data/partnerships";
 import PartnerDetail from "./PartnerDetail";
-import { CENTER, NOVUS_RADIUS, VIEW_HEIGHT, VIEW_WIDTH, computeLayout, type EdgeLayout } from "./mapLayout";
+import { CENTER, NOVUS_RADIUS, SATELLITE_LABEL_SIZE, VIEW_HEIGHT, VIEW_WIDTH, computeLayout, type EdgeLayout } from "./mapLayout";
 
 const TONE_VAR: Record<PartnerTone, string> = {
   purple: "rgb(var(--color-purple))",
@@ -44,7 +44,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
           sector: partner.mapSector ?? (partner.sector === "citywide" ? "Manhattan" : partner.sector),
           depth: partner.depth,
           introducedBy: partner.introducedBy,
-          businessCount: partner.businesses?.length ?? 0,
+          businessNames: (partner.businesses ?? []).map((business) => business.name),
         })),
       ),
     [partners],
@@ -149,7 +149,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
 
         <rect x={0} y={0} width={VIEW_WIDTH} height={VIEW_HEIGHT} fill="transparent" onClick={() => setFocusedId(null)} />
 
-        <g aria-hidden="true" className={`pointer-events-none ${fade}`} style={{ opacity: focusedId ? 0.4 : 1 }}>
+        <g aria-hidden="true" className={`pointer-events-none ${fade}`} style={{ opacity: focusedId ? 0 : 1 }}>
           {layout.sectorLabels.map((label) => (
             <text
               key={label.sector}
@@ -183,7 +183,6 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
                 </g>
               );
             }
-            const showVia = Boolean(edge.via && focusedId && (edge.from === focusedId || edge.to === focusedId));
             return (
               <g key={edge.key} className={fade} style={{ opacity: edgeOpacity(edge) }}>
                 <path
@@ -203,17 +202,6 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
                     animate={{ opacity: drawn ? 1 : 0 }}
                     transition={{ duration: reduced ? 0 : 0.3, delay: reduced ? 0 : chordDelay + 0.8 }}
                   />
-                )}
-                {edge.via && (
-                  <text
-                    x={edge.via.point.x}
-                    y={edge.via.point.y}
-                    textAnchor="middle"
-                    className={`pmap-halo fill-n-orange font-body text-[12px] font-semibold ${fade}`}
-                    style={{ opacity: showVia ? 1 : 0 }}
-                  >
-                    {edge.via.label}
-                  </text>
                 )}
               </g>
             );
@@ -257,7 +245,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
             preserveAspectRatio="xMidYMid meet"
             clipPath="url(#pmap-novus-clip)"
           />
-          <text x={CENTER.x} y={CENTER.y + NOVUS_RADIUS + 22} textAnchor="middle" className="pmap-halo fill-white font-display text-[14px] font-bold">
+          <text x={CENTER.x} y={CENTER.y + NOVUS_RADIUS + 22} textAnchor="middle" className="pmap-halo fill-white font-display text-[15px] font-bold">
             Novus
           </text>
         </g>
@@ -267,7 +255,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
           if (!partner) return null;
           const tone = TONE_VAR[KIND_TONE[partner.kind]];
           const isFocused = node.id === focusedId;
-          const label = isFocused ? node.focusLabel : node.label;
+          const label = isFocused && node.satellites.length > 0 ? node.focusLabel : node.label;
           const roles = partner.roles.map((role) => ROLE_LABEL[role]).join(", ");
           return (
             <g
@@ -356,7 +344,8 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
                     x={satellite.labelX}
                     y={satellite.labelY}
                     textAnchor={satellite.labelAnchor}
-                    className="pmap-halo fill-white font-body text-[11.5px] font-medium"
+                    className="pmap-halo fill-white font-body font-medium"
+                    style={{ fontSize: SATELLITE_LABEL_SIZE }}
                   >
                     {business.name}
                   </text>

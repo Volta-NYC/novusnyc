@@ -9,7 +9,7 @@ const GROUPS: { title: string; match: (partner: PublicPartnership) => boolean }[
   { title: "Business Improvement Districts, development and merchant organizations", match: (partner) => KIND_TONE[partner.kind] === "orange" },
 ];
 
-// On phones this is the page's list of partners. From md up the map replaces
+// Below lg this is the page's list of partners. From lg up the map replaces
 // it visually, and it stays in the accessibility tree as the map's text
 // equivalent.
 export default function PartnerDirectory({ partners }: { partners: PublicPartnership[] }) {
@@ -20,10 +20,10 @@ export default function PartnerDirectory({ partners }: { partners: PublicPartner
     [...members].sort((a, b) => (a.depth === b.depth ? 0 : a.depth === "deep" ? -1 : 1));
 
   return (
-    <section id="organizations" aria-labelledby="organizations-heading" className="bg-n-bg py-12 md:sr-only">
-      <div className="mx-auto max-w-7xl px-4 sm:px-5">
+    <section id="organizations" aria-labelledby="organizations-heading" className="bg-n-bg py-12 lg:sr-only">
+      <div className="mx-auto max-w-3xl px-4 sm:px-5 md:px-8">
         <h2 id="organizations-heading" className="font-display text-2xl font-bold text-n-ink">The organizations</h2>
-        <div className="mt-4 flex flex-wrap gap-2 md:hidden" role="group" aria-label="Filter by borough">
+        <div className="mt-4 flex flex-wrap gap-2 lg:hidden" role="group" aria-label="Filter by borough">
           {SECTOR_ORDER.map((candidate) => (
             <button
               key={candidate}

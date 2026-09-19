@@ -47,7 +47,7 @@ export default async function PartnershipsPage() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-n-dark pb-12 pt-32 md:pb-6" data-home-dark-end="true">
+      <section className="relative overflow-hidden bg-n-dark pb-12 pt-32 lg:pb-6" data-home-dark-end="true">
         <div className="mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
           <AnimatedSection>
             <p className="mb-4 font-body text-sm font-semibold uppercase tracking-widest text-n-orange">Partnerships</p>
@@ -61,7 +61,7 @@ export default async function PartnershipsPage() {
         </div>
       </section>
 
-      <section id="introductions" className="relative scroll-mt-20 bg-n-dark pb-16 pt-6 max-md:hidden">
+      <section id="introductions" className="relative scroll-mt-20 bg-n-dark pb-16 pt-6 max-lg:hidden">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="border-t border-white/10 pt-10">
             <h2 className="font-display text-2xl font-bold text-white md:text-3xl">How the introductions connect</h2>
@@ -71,7 +71,7 @@ export default async function PartnershipsPage() {
             <p id={MAP_NOTE_ID} className="sr-only">
               Select an organization to read its full description below the map. The same descriptions are listed after the map.
             </p>
-            <div className="mx-auto mt-6 max-w-[68rem]">
+            <div className="mt-6">
               <IntroductionMapSection partners={partners} describedBy={MAP_NOTE_ID} />
             </div>
           </div>
