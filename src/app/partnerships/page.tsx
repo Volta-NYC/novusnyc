@@ -21,19 +21,19 @@ const DIVISION_OF_WORK = [
   {
     heading: "What a partner organization does",
     items: [
-      "Tells us which businesses in its area need a website, or introduces us to their owners.",
-      "Helps us reach owners when we need their feedback, photos or menus.",
-      "Passes along the changes owners want after their site is live.",
-      "Sometimes walks the neighborhood with us or invites us to a merchant event.",
+      "Gives us a footing in its community, so owners who need a website, better search visibility or steadier social media hear about Novus from a name they already know.",
+      "Refers the businesses it thinks are a good fit, and tells us what each owner is trying to solve.",
+      "Keeps its own line open to owners alongside ours, and relays a message when that is the faster way to reach someone.",
+      "Brings us into the neighborhood, whether that is a walk down the corridor or an introduction at a merchant event.",
     ],
   },
   {
     heading: "What Novus does",
     items: [
-      "Reviews each business's current web presence.",
-      "Builds a draft site and revises it with the owner until they approve it.",
-      "Launches the site and gives the owner access to it.",
-      "Keeps making updates after launch.",
+      "Talks with the owner about what the business needs, and looks at what it already has online.",
+      "Builds the work and revises it with the owner until they approve it.",
+      "Launches it and hands the owner control of it.",
+      "Keeps making updates as the business changes.",
     ],
   },
 ];
@@ -90,7 +90,7 @@ export default async function PartnershipsPage() {
             <p className="mb-4 font-body text-sm font-semibold uppercase tracking-widest text-n-orange-ink">For organizations</p>
             <h2 className="page-section-heading text-n-ink">What partnering means</h2>
             <p className="mt-4 max-w-2xl font-body text-lg leading-relaxed text-n-muted">
-              A partnership splits the work. You know the owners in your area. We build and maintain their websites.
+              A partnership splits the work. You know the owners in your area. We build what they need online and keep it current.
             </p>
             <div className="mt-10 grid gap-10 md:grid-cols-2 md:gap-12">
               {DIVISION_OF_WORK.map((column, columnIndex) => (
