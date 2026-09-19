@@ -692,6 +692,14 @@ body:has(.home-scroll-story) header .md\:hidden span {
   }
 }
 
+/* Dark outline behind partnership-map text so labels stay legible over edges. */
+.pmap-halo {
+  paint-order: stroke;
+  stroke: rgb(var(--color-dark));
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
 .home-network-section {
   isolation: isolate;
   background:
