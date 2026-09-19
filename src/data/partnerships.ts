@@ -302,6 +302,18 @@ export const partnerships: Partnership[] = [
     introducedBy: [{ from: "brooklyn-chamber" }],
   },
   {
+    // The March tour is from the founder; the February meeting is in the research.
+    id: "third-avenue-bid",
+    name: "Third Avenue BID",
+    shortName: "Third Avenue BID",
+    kind: "bid",
+    sector: "Bronx",
+    depth: "active",
+    roles: ["field-outreach"],
+    summary:
+      "The Third Avenue BID in the Bronx met with Novus in February 2026, and the team toured the district in person in March 2026.",
+  },
+  {
     id: "queens-chamber",
     name: "Queens Chamber of Commerce",
     shortName: "Queens Chamber",

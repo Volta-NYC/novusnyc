@@ -23,7 +23,7 @@ const ANCHOR_ANGLE = 90;
 // Order within a sector keeps introduction chords long enough to read instead
 // of collapsing between neighbors.
 const RING_POSITION = [
-  "bronx-chamber",
+  "bronx-chamber", "third-avenue-bid",
   "queens-chamber", "licp", "sunnyside-shines", "bayside-village-bid", "qedc",
   "bay-ridge-bid", "park-slope-bid", "north-flatbush-bid", "brooklyn-chamber", "chldc", "enyma", "ldceny",
   "si-chamber", "forest-avenue-bid", "siboc", "camo",
