@@ -7,7 +7,7 @@ const GROUPS: { title: string; match: (partner: PublicPartnership) => boolean }[
 ];
 
 // The map is the visual version of this list. The list stays in the
-// accessibility tree as its text equivalent and as the target of #id links.
+// accessibility tree as its text equivalent; #id links are handled by the map.
 export default function PartnerDirectory({ partners }: { partners: PublicPartnership[] }) {
   const byId = new Map(partners.map((partner) => [partner.id, partner]));
   const ordered = (members: PublicPartnership[]) =>
@@ -21,7 +21,7 @@ export default function PartnerDirectory({ partners }: { partners: PublicPartner
           <h3>{group.title}</h3>
           <ul>
             {ordered(partners.filter(group.match)).map((partner) => (
-              <li key={partner.id} id={partner.id}>
+              <li key={partner.id}>
                 <PartnerDetail partner={partner} partnersById={byId} surface="light" headingLevel="h4" />
               </li>
             ))}

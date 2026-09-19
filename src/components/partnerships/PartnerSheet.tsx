@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { PublicPartnership } from "@/data/partnerships";
 import PartnerDetail from "./PartnerDetail";
 
@@ -14,25 +15,47 @@ export default function PartnerSheet({
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
+  // Rendered outside <main> so the page behind can be made inert, which keeps
+  // focus and screen readers inside the sheet, as the mobile menu does.
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement || document.activeElement instanceof SVGElement ? document.activeElement : null;
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
+    const background = Array.from(document.querySelectorAll<HTMLElement>("body > *")).filter((element) => element !== sheetRef.current && element.tagName !== "SCRIPT");
+    background.forEach((element) => { element.inert = true; });
     closeRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !sheetRef.current) return;
+      const focusable = Array.from(sheetRef.current.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])'));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = overflow;
+      background.forEach((element) => { element.inert = false; });
       window.removeEventListener("keydown", onKey);
       previous?.focus();
     };
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
+      ref={sheetRef}
       role="dialog"
       aria-modal="true"
       aria-label={partner.name}
@@ -57,6 +80,7 @@ export default function PartnerSheet({
           <PartnerDetail partner={partner} partnersById={partnersById} surface="dark" headingLevel="h2" />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

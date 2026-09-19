@@ -45,6 +45,12 @@ function initialScale({ h, fit }: { w: number; h: number; fit: number }): number
   return window.matchMedia(COMPACT_QUERY).matches ? Math.max(fit, Math.min(0.8, h / (VIEW_HEIGHT * 0.85))) : fit;
 }
 
+// Logos are drawn about 54px wide; the optimizer serves them at that size
+// instead of the multi-hundred-kilobyte originals.
+function optimizedLogo(src: string): string {
+  return `/_next/image?url=${encodeURIComponent(src)}&w=128&q=80`;
+}
+
 function monogram(partner: PublicPartnership): string {
   return partner.monogram ?? partner.shortName.split(" ").filter((word) => /^[A-Z]/.test(word)).map((word) => word[0]).join("").slice(0, 4);
 }
@@ -109,6 +115,8 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
       if (!node) return;
       setSelectedId(id);
       centreOn(node);
+      frameRef.current?.scrollIntoView({ block: "start" });
+      if (window.matchMedia(COMPACT_QUERY).matches) setSheetId(id);
     };
     fromHash();
     window.addEventListener("hashchange", fromHash);
@@ -178,7 +186,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   const focusedNode = focusedId ? nodeById.get(focusedId) : undefined;
 
   return (
-    <div ref={frameRef}>
+    <div ref={frameRef} className="scroll-mt-20">
       <div
         className="relative overflow-hidden"
         style={compact ? { height: "min(74svh, 760px)" } : { aspectRatio: `${VIEW_WIDTH} / ${VIEW_HEIGHT}` }}
@@ -368,7 +376,7 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
               <circle cx={node.x} cy={node.y} r={node.r} fill="white" stroke={tone} strokeWidth={3} />
               {partner.logo ? (
                 <image
-                  href={partner.logo}
+                  href={optimizedLogo(partner.logo)}
                   x={node.x - (node.r - 6)}
                   y={node.y - (node.r - 6)}
                   width={(node.r - 6) * 2}
