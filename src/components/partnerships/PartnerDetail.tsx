@@ -32,39 +32,46 @@ const RING: Record<"purple" | "orange", string> = {
   orange: "ring-n-orange",
 };
 
-export function PartnerLogo({ partner, size = 56 }: { partner: PublicPartnership; size?: number }) {
+export function PartnerLogo({ partner, size = 84 }: { partner: PublicPartnership; size?: number }) {
   return (
     <div
-      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-2 ring-[3px] ${RING[KIND_TONE[partner.kind]]}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-3 ring-[3px] ${RING[KIND_TONE[partner.kind]]}`}
       style={{ width: size, height: size }}
     >
       {partner.logo ? (
         <Image src={partner.logo} alt="" width={size} height={size} loading="eager" className="h-full w-full object-contain" />
       ) : (
-        <span aria-hidden="true" className="font-display text-[10px] font-bold text-n-ink">{partner.monogram}</span>
+        <span aria-hidden="true" className="font-display text-sm font-bold text-n-ink">{partner.monogram}</span>
       )}
     </div>
   );
 }
 
-function SiteList({ label, businesses, styles }: { label: string; businesses: PartnerBusiness[]; styles: (typeof STYLES)[Surface] }) {
+// Named sites are a sample, never the full list, so the label promises no more
+// than it shows and Our Work carries the rest.
+function Spotlights({ businesses, styles }: { businesses: PartnerBusiness[]; styles: (typeof STYLES)[Surface] }) {
   if (businesses.length === 0) return null;
   return (
-    <p className={`font-body text-sm leading-relaxed ${styles.muted}`}>
-      <span className={`font-semibold ${styles.strong}`}>{label}: </span>
-      {businesses.map((business, index) => (
-        <Fragment key={business.name}>
-          {index > 0 && ", "}
-          {business.url ? (
-            <a href={business.url} target="_blank" rel="noopener noreferrer" className={`underline underline-offset-4 ${styles.link}`}>
-              {business.name}
-            </a>
-          ) : (
-            business.name
-          )}
-        </Fragment>
-      ))}
-    </p>
+    <div>
+      <p className={`font-body text-sm leading-relaxed ${styles.muted}`}>
+        <span className={`font-semibold ${styles.strong}`}>Spotlights: </span>
+        {businesses.map((business, index) => (
+          <Fragment key={business.name}>
+            {index > 0 && ", "}
+            {business.url ? (
+              <a href={business.url} target="_blank" rel="noopener noreferrer" className={`underline underline-offset-4 ${styles.link}`}>
+                {business.name}
+              </a>
+            ) : (
+              business.name
+            )}
+          </Fragment>
+        ))}
+      </p>
+      <a href="/showcase" className={`mt-1.5 inline-flex items-center font-body text-sm font-semibold underline underline-offset-4 ${styles.link}`}>
+        See more of our work<span aria-hidden="true" className="ml-1">→</span>
+      </a>
+    </div>
   );
 }
 
@@ -81,72 +88,60 @@ export default function PartnerDetail({
 }) {
   const styles = STYLES[surface];
   const Heading = headingLevel;
-  const businesses = partner.businesses ?? [];
+  const facts = partner.facts ?? [];
+  const spotlights = (partner.businesses ?? []).filter((business) => business.status === "live");
   const parent = partner.formedWith ? partnersById.get(partner.formedWith) : undefined;
   const intros = (partner.introducedBy ?? []).flatMap((intro) => {
     const from = partnersById.get(intro.from);
     return from ? [{ from, via: intro.via }] : [];
   });
+  const aside = spotlights.length > 0 || intros.length > 0 || Boolean(partner.testimonial);
 
   return (
-    <div className="flex flex-col gap-5 sm:flex-row sm:gap-6">
+    <div className="grid gap-x-10 gap-y-6 sm:grid-cols-[auto_minmax(0,1fr)]">
       <PartnerLogo partner={partner} />
-      <div className="min-w-0 max-w-3xl">
+      <div className="min-w-0">
         <p className={`font-body text-[11px] font-bold uppercase tracking-[0.16em] ${styles.meta}`}>
           {sectorLabel(partner.sector)} · {KIND_LABEL[partner.kind]}
           {parent && <> · Formed with {parent.shortName}</>}
           {partner.since && <> · Since {partner.since}</>}
         </p>
-        <Heading className={`mt-1 font-display text-xl font-bold leading-tight md:text-2xl ${styles.name}`}>{partner.name}</Heading>
-        <p className={`mt-3 font-body text-base leading-relaxed ${styles.body}`}>{partner.summary}</p>
-
-        {partner.facts && partner.facts.length > 0 && (
-          <ul className="mt-3 space-y-1.5">
-            {partner.facts.map((fact) => (
-              <li key={fact} className={`flex gap-3 font-body text-sm leading-relaxed ${styles.muted}`}>
-                <span aria-hidden="true" className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${styles.dot}`} />
-                {fact}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {partner.testimonial && (
-          <figure className={`mt-4 border-l-2 pl-4 ${styles.rule}`}>
-            <blockquote className={`font-body text-base italic leading-relaxed ${styles.body}`}>{partner.testimonial.quote}</blockquote>
-            <figcaption className={`mt-1 font-body text-sm ${styles.muted}`}>{partner.testimonial.name}, {partner.testimonial.business}</figcaption>
-          </figure>
-        )}
-
-        {(businesses.length > 0 || intros.length > 0) && (
-          <div className="mt-4 space-y-1">
-            <SiteList label="Sites live" businesses={businesses.filter((business) => business.status === "live")} styles={styles} />
-            <SiteList label="In progress" businesses={businesses.filter((business) => business.status === "in-progress")} styles={styles} />
-            {intros.map(({ from, via }) => (
-              <p key={from.id} className={`font-body text-sm leading-relaxed ${styles.muted}`}>
-                <span className={`font-semibold ${styles.strong}`}>Introduced by: </span>
-                {via ? <>{via}, a business the {from.name} referred</> : from.name}
-              </p>
-            ))}
-          </div>
-        )}
-
-        {partner.image && (
-          <Image src={partner.image.src} alt={partner.image.alt} width={720} height={480} className="mt-5 aspect-[3/2] w-full max-w-md rounded-xl object-cover" />
-        )}
-
-        {partner.website && (
-          <a
-            href={partner.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`mt-4 inline-flex items-center font-body text-sm font-semibold underline underline-offset-4 ${styles.link}`}
-          >
-            Visit their website<span className="sr-only"> ({partner.name})</span>
-            <span aria-hidden="true" className="ml-1">↗</span>
-          </a>
-        )}
+        <Heading className={`mt-1.5 font-display text-xl font-bold leading-tight ${styles.name} md:text-2xl`}>{partner.name}</Heading>
+        <p className={`mt-3 max-w-3xl font-body text-base leading-relaxed ${styles.body}`}>{partner.summary}</p>
       </div>
+
+      {(facts.length > 0 || aside) && (
+        <div className="grid gap-x-10 gap-y-5 sm:col-start-2 md:grid-cols-2">
+          {facts.length > 0 && (
+            <ul className="space-y-1.5">
+              {facts.map((fact) => (
+                <li key={fact} className={`flex gap-3 font-body text-sm leading-relaxed ${styles.muted}`}>
+                  <span aria-hidden="true" className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${styles.dot}`} />
+                  {fact}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {aside && (
+            <div className="space-y-3">
+              <Spotlights businesses={spotlights} styles={styles} />
+              {intros.map(({ from, via }) => (
+                <p key={from.id} className={`font-body text-sm leading-relaxed ${styles.muted}`}>
+                  <span className={`font-semibold ${styles.strong}`}>Introduced by: </span>
+                  {via ? <>{via}, a business the {from.name} referred</> : from.name}
+                </p>
+              ))}
+              {partner.testimonial && (
+                <figure className={`border-l-2 pl-4 ${styles.rule}`}>
+                  <blockquote className={`font-body text-sm italic leading-relaxed ${styles.body}`}>{partner.testimonial.quote}</blockquote>
+                  <figcaption className={`mt-1 font-body text-sm ${styles.muted}`}>{partner.testimonial.name}, {partner.testimonial.business}</figcaption>
+                </figure>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

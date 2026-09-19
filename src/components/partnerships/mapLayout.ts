@@ -6,12 +6,10 @@ export const CENTER = { x: 645, y: 416 };
 export const NOVUS_RADIUS = 52;
 export const NODE_RADIUS = { deep: 27, active: 21 };
 export const LABEL_SIZE = 14;
-export const SATELLITE_LABEL_SIZE = 13.5;
 
 const OUTER = { rx: 396, ry: 296 };
 const SECTOR_GAP_UNITS = 1;
 const MIN_SECTOR_UNITS = 2;
-const ROW_GAP = 25;
 const CHAR_WIDTH = 0.56;
 
 // Clockwise from the top, loosely following the city: the Bronx north, Queens
@@ -37,7 +35,6 @@ export interface LayoutInput {
   sector: Borough;
   depth: "deep" | "active";
   introducedBy?: { from: string }[];
-  businessNames: string[];
 }
 
 export interface Point { x: number; y: number }
@@ -51,15 +48,6 @@ export interface LabelLayout {
   visible: boolean;
 }
 
-export interface Satellite {
-  x: number;
-  y: number;
-  lineStart: Point;
-  labelX: number;
-  labelY: number;
-  labelAnchor: "start" | "end";
-}
-
 export interface NodeLayout {
   id: string;
   x: number;
@@ -67,8 +55,6 @@ export interface NodeLayout {
   r: number;
   angle: number;
   label: LabelLayout;
-  focusLabel: LabelLayout;
-  satellites: Satellite[];
 }
 
 export interface EdgeLayout {
@@ -207,101 +193,6 @@ function inBounds(box: Box): boolean {
   return box.x0 >= 6 && box.y0 >= 6 && box.x1 <= VIEW_WIDTH - 6 && box.y1 <= VIEW_HEIGHT - 6;
 }
 
-function boxHitsCircle(box: Box, circle: Circle, pad: number): boolean {
-  const nearestX = Math.max(box.x0, Math.min(circle.x, box.x1));
-  const nearestY = Math.max(box.y0, Math.min(circle.y, box.y1));
-  return Math.hypot(circle.x - nearestX, circle.y - nearestY) < circle.r + pad;
-}
-
-function segmentDistance(point: Point, a: Point, b: Point): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / (dx * dx + dy * dy || 1)));
-  return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
-}
-
-function segmentHitsBox(a: Point, b: Point, box: Box): boolean {
-  for (let step = 0; step <= 12; step += 1) {
-    const x = a.x + ((b.x - a.x) * step) / 12;
-    const y = a.y + ((b.y - a.y) * step) / 12;
-    if (x > box.x0 && x < box.x1 && y > box.y0 && y < box.y1) return true;
-  }
-  return false;
-}
-
-function makeSatellite(node: Circle, point: Point, anchor: "start" | "end"): Satellite {
-  const dir = unit(node, point);
-  return {
-    ...point,
-    lineStart: { x: node.x + dir.x * (node.r + 4), y: node.y + dir.y * (node.r + 4) },
-    labelX: anchor === "start" ? point.x + 10 : point.x - 10,
-    labelY: point.y + SATELLITE_LABEL_SIZE * 0.35,
-    labelAnchor: anchor,
-  };
-}
-
-// Businesses list outward from the ring, one line each, where nothing else
-// is drawn. Side nodes get a column beside them; top and bottom nodes get a
-// column stepping away from the ring. The column's distance (and, for top
-// and bottom nodes, its side) is searched until no line, dot or name touches
-// another circle or a visible label.
-function satellitesFor(node: NodeLayout, names: string[], circles: Circle[], labels: Box[]): Satellite[] {
-  const count = names.length;
-  if (count === 0) return [];
-  const out = unit(CENTER, node);
-  const vertical = Math.abs(out.y) > 0.75;
-  const sides: (1 | -1)[] = vertical
-    ? node.x >= CENTER.x ? [1, -1] : [-1, 1]
-    : [out.x >= 0 ? 1 : -1];
-
-  const build = (side: 1 | -1, reach: number) =>
-    names.map((_, index) => {
-      if (vertical) {
-        const point = {
-          x: node.x + side * (node.r + 22 + reach * 0.5),
-          y: node.y + Math.sign(out.y) * (node.r * 0.5 + 8 + reach * 0.4 + index * ROW_GAP),
-        };
-        return makeSatellite(node, point, side === 1 ? "start" : "end");
-      }
-      const offset = index - (count - 1) / 2;
-      const bulge = ((count - 1) / 2 - Math.abs(offset)) * 7;
-      const point = {
-        x: node.x + side * (node.r + reach + bulge),
-        y: node.y + offset * ROW_GAP + out.y * reach * 0.6,
-      };
-      return makeSatellite(node, point, side === 1 ? "start" : "end");
-    });
-
-  const collisions = (satellites: Satellite[]) => {
-    let hits = 0;
-    satellites.forEach((satellite, index) => {
-      const box = textBox(satellite.labelX, satellite.labelY, satellite.labelAnchor, [names[index]], SATELLITE_LABEL_SIZE, 3);
-      if (!inBounds(box)) hits += 1;
-      for (const circle of circles) {
-        if (segmentDistance(circle, satellite.lineStart, satellite) < circle.r + 5) hits += 1;
-        if (Math.hypot(circle.x - satellite.x, circle.y - satellite.y) < circle.r + 10) hits += 1;
-        if (boxHitsCircle(box, circle, 4)) hits += 1;
-      }
-      for (const label of labels) {
-        if (overlaps(box, label)) hits += 1;
-        if (segmentHitsBox(satellite.lineStart, satellite, label)) hits += 1;
-      }
-    });
-    return hits;
-  };
-
-  let best: { satellites: Satellite[]; hits: number } | null = null;
-  for (const side of sides) {
-    for (let reach = 30; reach <= 150; reach += 8) {
-      const satellites = build(side, reach);
-      const hits = collisions(satellites);
-      if (!best || hits < best.hits) best = { satellites, hits };
-      if (hits === 0) return satellites;
-    }
-  }
-  return best?.satellites ?? [];
-}
-
 function quadraticPoint(a: Point, c: Point, b: Point, t: number): Point {
   const u = 1 - t;
   return { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y };
@@ -359,7 +250,7 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
       const point = onEllipse(angle);
       const r = NODE_RADIUS[partner.depth];
       const label = placeLabel({ ...point, r }, angle, partner.shortName);
-      nodes.push({ id: partner.id, ...point, r, angle, label, focusLabel: placeLabel({ ...point, r }, angle + 180, partner.shortName), satellites: [] });
+      nodes.push({ id: partner.id, ...point, r, angle, label });
     });
 
     const middle = angleAt(cursor + span / 2);
@@ -380,7 +271,6 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
 
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const depthOf = new Map(partners.map((partner) => [partner.id, partner.depth]));
-  const novus = { ...CENTER, r: NOVUS_RADIUS + 12 };
 
   const occupied: { id: string; box: Box }[] = [
     { id: "novus", box: circleBox({ ...CENTER, r: NOVUS_RADIUS + 26 }) },
@@ -405,30 +295,6 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
     if (placed) node.label = placed;
     node.label.visible = deep || Boolean(placed);
     if (node.label.visible) occupied.push({ id: `${node.id}-label`, box: labelBox(node.label) });
-  }
-
-  const neighbors = new Map<string, Set<string>>();
-  for (const partner of partners) {
-    for (const intro of partner.introducedBy ?? []) {
-      neighbors.set(partner.id, (neighbors.get(partner.id) ?? new Set<string>()).add(intro.from));
-      neighbors.set(intro.from, (neighbors.get(intro.from) ?? new Set<string>()).add(partner.id));
-    }
-  }
-
-  for (const partner of partners) {
-    const node = byId.get(partner.id);
-    if (!node) continue;
-    const circles: Circle[] = [novus, ...nodes.filter((other) => other.id !== node.id)];
-    // While a node is focused, only its own label and its neighbors' labels are drawn.
-    const labels = [
-      labelBox(node.focusLabel),
-      textBox(CENTER.x, CENTER.y + NOVUS_RADIUS + 22, "middle", ["Novus"], 15),
-      ...[...(neighbors.get(node.id) ?? [])].flatMap((id) => {
-        const other = byId.get(id);
-        return other ? [labelBox(other.label)] : [];
-      }),
-    ];
-    node.satellites = satellitesFor(node, partner.businessNames, circles, labels);
   }
 
   const edges: EdgeLayout[] = nodes.map((node) => {

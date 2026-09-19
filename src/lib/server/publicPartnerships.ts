@@ -30,14 +30,11 @@ export async function getPublicPartnerships(): Promise<PublicPartnership[]> {
 
   return visiblePartnerships.map((partner) => {
     const fallback = editorial.get(normalizeName(partner.name));
-    const siteBusiness = partner.businesses?.find((business) => business.ownSite);
-    const website = siteBusiness?.url ?? fallback?.website;
 
     const { heldFacts: _heldFacts, testimonial, hidden: _hidden, ...rest } = partner;
     return {
       ...rest,
       logo: bidLogos.get(partner.name) ?? fallback?.logo,
-      website: website && !website.includes("vercel.app") ? website : undefined,
       testimonial: testimonial?.approved && testimonial.quote
         ? { quote: testimonial.quote, name: testimonial.name, business: testimonial.business }
         : undefined,

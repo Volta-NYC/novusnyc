@@ -12,7 +12,7 @@ import {
 import PartnerDetail from "./PartnerDetail";
 import PartnerSheet from "./PartnerSheet";
 import { usePanZoom } from "./usePanZoom";
-import { CENTER, NOVUS_RADIUS, SATELLITE_LABEL_SIZE, VIEW_HEIGHT, VIEW_WIDTH, computeLayout, type EdgeLayout } from "./mapLayout";
+import { CENTER, NOVUS_RADIUS, VIEW_HEIGHT, VIEW_WIDTH, computeLayout, type EdgeLayout, type NodeLayout } from "./mapLayout";
 
 const TONE_VAR: Record<PartnerTone, string> = {
   purple: "rgb(var(--color-purple))",
@@ -46,9 +46,11 @@ function initialScale({ h, fit }: { w: number; h: number; fit: number }): number
 }
 
 // Logos are drawn about 54px wide; the optimizer serves them at that size
-// instead of the multi-hundred-kilobyte originals.
+// instead of the multi-hundred-kilobyte originals. The quality has to be one
+// of next.config's images.qualities, or the optimizer answers 400 and every
+// logo on the map breaks at once.
 function optimizedLogo(src: string): string {
-  return `/_next/image?url=${encodeURIComponent(src)}&w=128&q=80`;
+  return `/_next/image?url=${encodeURIComponent(src)}&w=128&q=75`;
 }
 
 function monogram(partner: PublicPartnership): string {
@@ -66,6 +68,19 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const focusedId = hoveredId ?? selectedId;
+  // A cursor crossing the ring passes over several circles. Settling for a
+  // moment before the panel changes keeps a fast pass from flashing through
+  // half the roster, and the longer grace on the way out stops the gap
+  // between a circle and its label from closing the panel.
+  const hoverTarget = useRef<string | null>(null);
+  const hoverTimer = useRef<number | undefined>(undefined);
+  const hover = useCallback((id: string | null) => {
+    if (hoverTarget.current === id) return;
+    hoverTarget.current = id;
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => setHoveredId(id), id ? 70 : 260);
+  }, []);
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
   const [sheetId, setSheetId] = useState<string | null>(null);
   const compact = useCompact();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -91,7 +106,6 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
           sector: partner.mapSector ?? (partner.sector === "citywide" ? "Manhattan" : partner.sector),
           depth: partner.depth,
           introducedBy: partner.introducedBy,
-          businessNames: (partner.businesses ?? []).map((business) => business.name),
         })),
       ),
     [partners],
@@ -152,20 +166,10 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   };
   const closeSheet = useCallback(() => {
     const node = sheetId ? nodeById.get(sheetId) : undefined;
-    const partner = sheetId ? byId.get(sheetId) : undefined;
     setSheetId(null);
-    if (!node || !partner) return;
-    const box = { x0: node.x - node.r, y0: node.y - node.r, x1: node.x + node.r, y1: node.y + node.r };
-    node.satellites.forEach((satellite, index) => {
-      const width = (partner.businesses?.[index]?.name.length ?? 0) * SATELLITE_LABEL_SIZE * 0.56;
-      const left = satellite.labelAnchor === "start" ? satellite.labelX : satellite.labelX - width;
-      box.x0 = Math.min(box.x0, left, satellite.x - 6);
-      box.x1 = Math.max(box.x1, left + width, satellite.x + 6);
-      box.y0 = Math.min(box.y0, satellite.y - 10);
-      box.y1 = Math.max(box.y1, satellite.y + 10);
-    });
-    reveal(box);
-  }, [byId, nodeById, reveal, sheetId]);
+    if (!node) return;
+    reveal({ x0: node.x - node.r, y0: node.y - node.r, x1: node.x + node.r, y1: node.y + node.r });
+  }, [nodeById, reveal, sheetId]);
 
   const onNodeKey = (id: string) => (event: KeyboardEvent<SVGGElement>) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -183,7 +187,12 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   const fade = reduced ? "" : "transition-opacity duration-[250ms] ease-out";
 
   const focused = focusedId ? byId.get(focusedId) : undefined;
-  const focusedNode = focusedId ? nodeById.get(focusedId) : undefined;
+  // The panel keeps the organization it last showed while it fades out, so
+  // letting go of a circle never empties the page under the cursor.
+  const [shown, setShown] = useState<PublicPartnership | null>(null);
+  useEffect(() => {
+    if (focused) setShown(focused);
+  }, [focused]);
 
   return (
     <div ref={frameRef} className="scroll-mt-20">
@@ -337,7 +346,6 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
           if (!partner) return null;
           const tone = TONE_VAR[KIND_TONE[partner.kind]];
           const isFocused = node.id === focusedId;
-          const label = isFocused && node.satellites.length > 0 ? node.focusLabel : node.label;
           const roles = partner.roles.map((role) => ROLE_LABEL[role]).join(", ");
           return (
             <g
@@ -349,10 +357,10 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
               className={`group cursor-pointer outline-none ${fade}`}
               style={{ opacity: nodeOpacity(node.id) }}
               onPointerEnter={(event) => {
-                if (event.pointerType === "mouse") setHoveredId(node.id);
+                if (event.pointerType === "mouse") hover(node.id);
               }}
               onPointerLeave={(event) => {
-                if (event.pointerType === "mouse") setHoveredId(null);
+                if (event.pointerType === "mouse") hover(null);
               }}
               onFocus={() => {
                 setSelectedId(node.id);
@@ -374,37 +382,17 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
                 className={isFocused ? "opacity-80" : "opacity-0 group-focus-visible:opacity-100"}
               />
               <circle cx={node.x} cy={node.y} r={node.r} fill="white" stroke={tone} strokeWidth={3} />
-              {partner.logo ? (
-                <image
-                  href={optimizedLogo(partner.logo)}
-                  x={node.x - (node.r - 6)}
-                  y={node.y - (node.r - 6)}
-                  width={(node.r - 6) * 2}
-                  height={(node.r - 6) * 2}
-                  preserveAspectRatio="xMidYMid meet"
-                  clipPath={`url(#pmap-clip-${node.id})`}
-                />
-              ) : (
-                <text
-                  x={node.x}
-                  y={node.y + 3}
-                  textAnchor="middle"
-                  className="fill-n-ink font-display font-bold"
-                  style={{ fontSize: monogram(partner).length > 4 ? 7.5 : 10 }}
-                >
-                  {monogram(partner)}
-                </text>
-              )}
+              <NodeMark partner={partner} node={node} />
               {(isFocused || (node.label.visible && (!neighbors || neighbors.has(node.id)))) && (
                 <text
-                  x={label.x}
-                  y={label.y}
-                  textAnchor={label.anchor}
+                  x={node.label.x}
+                  y={node.label.y}
+                  textAnchor={node.label.anchor}
                   className={`pmap-halo fill-white font-body ${partner.depth === "deep" ? "font-semibold" : "font-medium"}`}
-                  style={{ fontSize: label.fontSize }}
+                  style={{ fontSize: node.label.fontSize }}
                 >
-                  {label.lines.map((line, index) => (
-                    <tspan key={line} x={label.x} dy={index === 0 ? 0 : label.fontSize * 1.2}>
+                  {node.label.lines.map((line, index) => (
+                    <tspan key={line} x={node.label.x} dy={index === 0 ? 0 : node.label.fontSize * 1.2}>
                       {line}
                     </tspan>
                   ))}
@@ -414,36 +402,6 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
           );
         })}
 
-        {focused && focusedNode && (
-          <g aria-hidden="true" className="pointer-events-none">
-            {focusedNode.satellites.map((satellite, index) => {
-              const business = focused.businesses?.[index];
-              if (!business) return null;
-              const tone = TONE_VAR[KIND_TONE[focused.kind]];
-              const live = business.status === "live";
-              return (
-                <motion.g
-                  key={business.name}
-                  initial={reduced ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: reduced ? 0 : 0.22, delay: reduced ? 0 : index * 0.03 }}
-                >
-                  <line x1={satellite.lineStart.x} y1={satellite.lineStart.y} x2={satellite.x} y2={satellite.y} stroke={tone} strokeOpacity={0.55} strokeWidth={1} />
-                  <circle cx={satellite.x} cy={satellite.y} r={5} fill={live ? tone : "rgb(var(--color-dark))"} stroke={tone} strokeWidth={1.8} />
-                  <text
-                    x={satellite.labelX}
-                    y={satellite.labelY}
-                    textAnchor={satellite.labelAnchor}
-                    className="pmap-halo fill-white font-body font-medium"
-                    style={{ fontSize: SATELLITE_LABEL_SIZE }}
-                  >
-                    {business.name}
-                  </text>
-                </motion.g>
-              );
-            })}
-          </g>
-        )}
         </g>
       </svg>
 
@@ -481,11 +439,18 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
 
       {compact ? (
         <div className="mt-6 border-t border-white/10 px-5 pt-6 md:px-0">
-          <MapLegend compact />
+          <MapKey />
         </div>
       ) : (
-        <div aria-live="polite" className="mt-6 min-h-[17rem] border-t border-white/10 pt-7">
-          {focused ? <PartnerDetail partner={focused} partnersById={byId} surface="dark" /> : <MapLegend compact={false} />}
+        <div aria-live="polite" className="mt-6 grid min-h-[25rem] border-t border-white/10 pt-7 lg:min-h-[22rem] xl:min-h-[19.5rem] [&>*]:col-start-1 [&>*]:row-start-1">
+          <div aria-hidden={Boolean(focused)} className={`self-center ${fade} ${focused ? "pointer-events-none opacity-0" : "opacity-100 delay-100"}`}>
+            <MapKey />
+          </div>
+          {shown && (
+            <div aria-hidden={!focused} className={`self-start ${fade} ${focused ? "opacity-100 delay-100" : "pointer-events-none opacity-0"}`}>
+              <PartnerDetail partner={shown} partnersById={byId} surface="dark" />
+            </div>
+          )}
         </div>
       )}
 
@@ -496,39 +461,64 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
   );
 }
 
-function MapLegend({ compact }: { compact: boolean }) {
+function MapKey() {
   const items = [
-    { key: "spoke", label: "Works with Novus", icon: <line x1={2} y1={8} x2={30} y2={8} stroke="white" strokeOpacity={0.5} strokeWidth={1.4} /> },
-    {
-      key: "intro",
-      label: "Introduced another organization",
-      icon: (
-        <>
-          <line x1={2} y1={8} x2={23} y2={8} stroke={PEACH} strokeWidth={1.8} strokeDasharray="6 5" />
-          <path d="M31,8 L22,3.5 L22,12.5 Z" fill={PEACH} />
-        </>
-      ),
-    },
-    { key: "live", label: "Site live", icon: <circle cx={16} cy={8} r={5} fill={PEACH} stroke={PEACH} strokeWidth={1.8} /> },
-    { key: "progress", label: "Site in progress", icon: <circle cx={16} cy={8} r={5} fill="none" stroke={PEACH} strokeWidth={1.8} /> },
-    { key: "orange", label: "Business Improvement Districts, development and merchant organizations", icon: <circle cx={16} cy={8} r={6} fill="white" stroke={TONE_VAR.orange} strokeWidth={3} /> },
-    { key: "purple", label: "Chambers and business organizations", icon: <circle cx={16} cy={8} r={6} fill="white" stroke={TONE_VAR.purple} strokeWidth={3} /> },
+    { key: "orange", label: "Business improvement districts, development and merchant organizations", tone: TONE_VAR.orange },
+    { key: "purple", label: "Chambers and business organizations", tone: TONE_VAR.purple },
   ];
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
-      <p className="max-w-sm font-body text-base leading-relaxed text-white/75">
-        {compact
-          ? "Tap an organization to read what it does. Its businesses fan out on the map when you come back."
-          : "Hover over an organization to preview it, or click to keep it open. Zoom with the buttons or a pinch, and drag to move around."}
-      </p>
-      <ul className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
-        {items.map((item) => (
-          <li key={item.key} className="flex items-start gap-3 font-body text-sm leading-snug text-white/80">
-            <svg width={32} height={16} viewBox="0 0 32 16" aria-hidden="true" className="mt-0.5 shrink-0">{item.icon}</svg>
-            {item.label}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
+      {items.map((item) => (
+        <li key={item.key} className="flex items-start gap-3 font-body text-sm leading-snug text-white/80">
+          <svg width={32} height={16} viewBox="0 0 32 16" aria-hidden="true" className="mt-0.5 shrink-0">
+            <circle cx={16} cy={8} r={6} fill="white" stroke={item.tone} strokeWidth={3} />
+          </svg>
+          {item.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// A logo that failed to load leaves the browser's broken-image mark inside the
+// circle, so each one is proven to load before it is drawn and the monogram
+// stands in until then.
+function NodeMark({ partner, node }: { partner: PublicPartnership; node: NodeLayout }) {
+  const src = partner.logo ? optimizedLogo(partner.logo) : null;
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!src) return;
+    let live = true;
+    const image = new window.Image();
+    image.onload = () => { if (live) setLoaded(true); };
+    image.src = src;
+    return () => { live = false; };
+  }, [src]);
+
+  if (!src || !loaded) {
+    const text = monogram(partner);
+    return (
+      <text
+        x={node.x}
+        y={node.y + 3}
+        textAnchor="middle"
+        className="fill-n-ink font-display font-bold"
+        style={{ fontSize: text.length > 4 ? 7.5 : 10 }}
+      >
+        {text}
+      </text>
+    );
+  }
+  return (
+    <image
+      href={src}
+      x={node.x - (node.r - 6)}
+      y={node.y - (node.r - 6)}
+      width={(node.r - 6) * 2}
+      height={(node.r - 6) * 2}
+      preserveAspectRatio="xMidYMid meet"
+      clipPath={`url(#pmap-clip-${node.id})`}
+    />
   );
 }
