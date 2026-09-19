@@ -198,11 +198,23 @@ function createMarkerElement(marker: PreparedMarker): HTMLButtonElement {
   return button;
 }
 
+// MapLibre needs WebGL2. Without it the constructor logs an error and leaves
+// the interaction handlers undefined, so the map is skipped instead of crashing
+// the page.
+function supportsWebGL2(): boolean {
+  try {
+    return Boolean(document.createElement("canvas").getContext("webgl2"));
+  } catch {
+    return false;
+  }
+}
+
 export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const hintTimerRef = useRef<number>();
   const [showZoomHint, setShowZoomHint] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapUnavailable, setMapUnavailable] = useState(false);
   const [zoomModifierLabel, setZoomModifierLabel] = useState("Ctrl");
 
   const markers = useMemo<PreparedMarker[]>(
@@ -232,6 +244,10 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    if (!supportsWebGL2()) {
+      setMapUnavailable(true);
+      return;
+    }
 
     setMapLoaded(false);
     const map = new MapLibreMap({
@@ -318,7 +334,13 @@ export default function NeighborhoodMap({ projects }: NeighborhoodMapProps) {
         aria-label="Interactive map of Novus NYC business locations across New York City"
       />
 
-      {!mapLoaded && (
+      {mapUnavailable ? (
+        <div className="absolute inset-0 z-[2] flex items-center justify-center bg-n-bg px-6 text-center">
+          <p className="max-w-sm font-body text-sm leading-relaxed text-n-muted">
+            This map needs WebGL, which your browser has turned off. Our projects are listed below.
+          </p>
+        </div>
+      ) : !mapLoaded && (
         <div className="absolute inset-0 z-[2]">
           <MapLoadingState />
         </div>
