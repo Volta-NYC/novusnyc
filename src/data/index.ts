@@ -69,7 +69,7 @@ export const communityPartners = [
   { name: "North Flatbush BID", logo: "/partners/logos/north-flatbush-bid.png", website: "https://www.northflatbushbid.nyc/", important: false },
   { name: "Third Avenue BID", logo: "/partners/logos/third-avenue-bid.png", website: "https://www.thirdavenuebid.org/", important: false },
   { name: "West Brighton Community Local Development Corporation", logo: "/partners/logos/west-brighton-cldc.png", website: "https://siboc.org/", important: false },
-  { name: "Atlantic Avenue Local Development Corporation", logo: "/partners/logos/atlantic-avenue-ldc.png", website: "https://www.atlanticave.org/", important: false },
+  { name: "Atlantic Avenue BID", logo: "/partners/logos/atlantic-avenue-bid.png", website: "https://atlanticavebid.org/", important: false },
   { name: "Long Island City Partnership", logo: "/partners/logos/long-island-city-partnership.png", website: "https://www.longislandcityqueens.com/", important: false },
   { name: "Asian American Federation", logo: "/partners/logos/asian-american-federation.png", website: "https://www.aafederation.org/", important: false },
   { name: "Castleton Avenue Merchants Organization", logo: "/partners/logos/castleton-avenue-merchants.png", website: "https://castleton-avenue-merchant-org.vercel.app/", important: false },
