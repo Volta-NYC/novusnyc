@@ -82,7 +82,7 @@ export default function PartnerDetail({
   const styles = STYLES[surface];
   const Heading = headingLevel;
   const businesses = partner.businesses ?? [];
-  const parent = partner.partOf ? partnersById.get(partner.partOf) : undefined;
+  const parent = partner.formedWith ? partnersById.get(partner.formedWith) : undefined;
   const intros = (partner.introducedBy ?? []).flatMap((intro) => {
     const from = partnersById.get(intro.from);
     return from ? [{ from, via: intro.via }] : [];
@@ -94,7 +94,7 @@ export default function PartnerDetail({
       <div className="min-w-0 max-w-3xl">
         <p className={`font-body text-[11px] font-bold uppercase tracking-[0.16em] ${styles.meta}`}>
           {sectorLabel(partner.sector)} · {KIND_LABEL[partner.kind]}
-          {parent && <> · Part of {parent.shortName}</>}
+          {parent && <> · Formed with {parent.shortName}</>}
           {partner.since && <> · Since {partner.since}</>}
         </p>
         <Heading className={`mt-1 font-display text-xl font-bold leading-tight md:text-2xl ${styles.name}`}>{partner.name}</Heading>

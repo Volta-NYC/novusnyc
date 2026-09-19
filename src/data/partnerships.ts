@@ -49,8 +49,8 @@ export interface Partnership {
   sector: PartnerSector;
   // Citywide organizations still need a place on the map's borough ring.
   mapSector?: Borough;
-  // An organization run by another partner, named so the two never read as one listed twice.
-  partOf?: string;
+  // A partner that helped form this one, named so the two never read as one listed twice.
+  formedWith?: string;
   depth: "deep" | "active";
   roles: PartnerRole[];
   summary: string;
@@ -173,7 +173,7 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["introduces-merchants", "field-outreach", "advises-novus"],
     summary:
-      "Cypress Hills Local Development Corporation refers entrepreneurs from its Business Partners program to Novus, and the team reports each project's progress back to the program. CHLDC staff have also given Novus guidance on operations and client management. CHLDC also runs the Cypress Hills Fulton BID, which works with Novus on Fulton Street.",
+      "Cypress Hills Local Development Corporation refers entrepreneurs from its Business Partners program to Novus, and the team reports each project's progress back to the program. CHLDC staff have also given Novus guidance on operations and client management. CHLDC also helped form the Cypress Hills Fulton BID, which works with Novus on Fulton Street.",
     businesses: [
       { name: "Safa Sanctuary", status: "live", url: "https://www.safasanctuary.org" },
       { name: "BroadPivot Consulting LLC", status: "live", url: "https://broadpivotllc.com" },
@@ -188,11 +188,10 @@ export const partnerships: Partnership[] = [
     kind: "bid",
     sector: "Brooklyn",
     depth: "active",
-    partOf: "chldc",
+    formedWith: "chldc",
     roles: ["field-outreach"],
     summary:
-      "The Cypress Hills Fulton BID is the business improvement district for Fulton Street in Cypress Hills. It walked Fulton Street with the team in March 2026 to meet merchants, and met with Novus in April 2026 about Google Business Profiles and social media for Fulton Street businesses.",
-    monogram: "CHF",
+      "The Cypress Hills Fulton BID, created in 2024, is the business improvement district for Fulton Street in Cypress Hills. It walked Fulton Street with the team in March 2026 to meet merchants, and met with Novus in April 2026 about Google Business Profiles and social media for Fulton Street businesses.",
   },
   {
     id: "atlantic-avenue-bid",
