@@ -659,9 +659,11 @@ export async function getPublicMapEntries(): Promise<PublicMapEntry[]> {
     const services = resolveServices(row);
     const mergedServices = services.length > 0 ? services : defaultServicesFromDivision(division);
     const status = mapBusinessStatusToShowcase(row.techStatus ?? row.projectStatus);
-    // A launched domain wins over its Vercel preview. There is no separate
-    // public-only URL to drift out of sync with the tracker.
-    const url = asText(row.liveUrl) || asText(row.previewUrl);
+    // A launched domain is public on its own. An unfinished preview is linked
+    // only once the business is cleared for the showcase, so a paused, closed
+    // or withdrawn project never publishes its draft from the map.
+    const previewUrl = row.showcaseEnabled === true ? asText(row.previewUrl) : "";
+    const url = asText(row.liveUrl) || previewUrl;
     const color = asText(row.showcaseColor)
       ? normalizeColor(row.showcaseColor)
       : defaultShowcaseColor();
