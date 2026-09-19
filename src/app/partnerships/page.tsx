@@ -7,12 +7,18 @@ import { ROLE_META, ROLE_ORDER, liveSiteCount } from "@/data/partnerships";
 import { EMAIL } from "@/lib/mail";
 import { getPublicPartnerships } from "@/lib/server/publicPartnerships";
 
+const DESCRIPTION =
+  "The chambers, business improvement districts and development corporations that introduce Novus NYC to small businesses, and what each relationship involves.";
+
 // Draft: kept out of the sitemap, nav, footer and llms.txt until approved.
+// Open Graph and Twitter are set here so the page does not inherit the root
+// layout's pricing language while the founder settles it.
 export const metadata: Metadata = {
   title: "Partnerships",
-  description:
-    "The chambers, business improvement districts and development corporations that introduce Novus NYC to small businesses, and what each relationship involves.",
+  description: DESCRIPTION,
   robots: { index: false, follow: false },
+  openGraph: { title: "Partnerships | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
+  twitter: { card: "summary_large_image", title: "Partnerships | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
 };
 
 const STEPS = [
